@@ -161,6 +161,7 @@ pub(super) fn build_write_plan_with_local_refs(
         WriteValidationError::new(error)
             .at("kind")
             .code("INVALID_KIND")
+            .allowed_values(crate::contract::writer_memory_kinds::WRITER_MEMORY_KINDS)
     })?;
     let current_summary = required_map_string(current, "summary", "summary")?;
     let current_evidence = optional_map_string(current, "evidence");

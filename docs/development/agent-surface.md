@@ -220,7 +220,11 @@ No deducirlos del texto del error. Conservar la categoría de un fallo del backe
 una instrucción de reparación no debe convertirlo en un error del llamante.
 Si se propone una lectura, incluir nombre y argumentos completos y probar que
 puede ejecutarse. Si falta evidencia, señalar el campo sin fabricar un payload.
-Revisar también los errores de esquema anteriores al planner y los índices del
+El vocabulario de tipos del escritor vive en
+`contract/writer_memory_kinds.rs`: schema, validación y `allowed_values` lo
+consumen directamente. Al ampliarlo, enseñar cuándo corresponde el tipo y
+verificar rechazo, elección basada en fuente y commit; nunca añadir un reemplazo
+automático deducido del nombre inválido. Revisar también los errores de esquema anteriores al planner y los índices del
 paquete. Las pruebas deben recorrer rechazo, lectura/corrección y commit, con
 verificación de que el paquete rechazado no produjo escrituras parciales.
 

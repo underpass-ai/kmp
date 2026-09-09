@@ -8,7 +8,12 @@ needed in this form. The former current/intent/scope input is rejected; there is
 Top-level labels are shared memberships, unioned with each record's labels.
 Every record must have at least one membership; none is invented. Repeating a
 pair in both shared and record labels is harmless; duplicates within either
-array are rejected. Every supplied label is materialized before commit.
+array are rejected. Every supplied label is materialized before commit. Put only memberships that
+apply to every record at the top level. If S1 supports one memory and S2 another,
+put `source: ["S1"]` and `source: ["S2"]` on those respective memories. Shared
+`source: ["S1", "S2"]` attaches both to both. Aliases mentioned only in prose do
+not create alias memberships; declare each source-supported alias explicitly.
+A source label helps navigation but never replaces its concrete evidence text.
 
 Use `connect_to.ref: "@source"` to address local id `source`, even if it appears
 later. Local targets count as `current_request` context. Stored rich targets
@@ -67,6 +72,12 @@ path to locate the problem; do not parse the prose to choose a repair.
 For example, `MEMORY_EVIDENCE_REQUIRED` at `memories[1].evidence` means the
 second record needs its real source. `SEARCH_SUMMARY_REQUIRED` at
 `memories[1].summary_en` asks for a faithful English search rendering.
+`INVALID_KIND` includes `allowed_values` from the same vocabulary as the schema.
+Choose the kind from the source's meaning; the server supplies no replacement.
+For example, an unapproved request may be recorded as an observation of the
+request, without `updates_state` or `supersedes` on the current decision.
+A later approval needs its own evidence. `request` and `outcome` are not kinds.
+See the semantic-batch example for individual source labels and this distinction.
 `RELATION_CLASS_MISMATCH` identifies the link's class. Do not invent evidence
 or weaken a relation just to make validation pass.
 

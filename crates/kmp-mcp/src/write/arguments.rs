@@ -100,10 +100,10 @@ pub(super) fn validate_intent(value: &str) -> Result<(), String> {
 }
 
 pub(super) fn validate_node_kind(value: &str) -> Result<(), String> {
-    match value {
-        "turn" | "observation" | "decision" | "feedback" | "semantic_delta" | "constraint"
-        | "preference" | "derived_value" | "error_path" | "success_path" => Ok(()),
-        other => Err(format!("invalid kmp_write_memory kind `{other}`")),
+    if crate::contract::writer_memory_kinds::WRITER_MEMORY_KINDS.contains(&value) {
+        Ok(())
+    } else {
+        Err(format!("invalid kmp_write_memory kind `{value}`"))
     }
 }
 

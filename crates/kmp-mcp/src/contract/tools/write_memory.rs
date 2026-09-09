@@ -1,3 +1,4 @@
+use crate::contract::writer_memory_kinds::WRITER_MEMORY_KINDS;
 use serde_json::{Value, json};
 
 use crate::contract::schema::definition::tool_definition_with_output;
@@ -43,7 +44,7 @@ pub(crate) fn write_memory_schema() -> Value {
             "properties":{
                 "id":{"type":"string","pattern":"^[A-Za-z][A-Za-z0-9_-]*$","description":"Local name. @name in connect_to.ref addresses this record, including forward links. local_refs returns its canonical address."},
                 "ref":string_schema("Omit for a new memory. An explicit canonical ref updates that exact entry and must be a safe descendant of this about, not its anchor or an internal evidence/dimension object."),
-                "kind":{"type":"string","enum":["turn","observation","decision","feedback","semantic_delta","constraint","preference","derived_value","error_path","success_path"],"description":"What this memory records. No separate writer intent is needed."},
+                "kind":{"type":"string","enum":WRITER_MEMORY_KINDS,"description":"What this memory records. No separate writer intent is needed."},
                 "summary":string_schema("Literal memory text, in the language of the work. Ask cites this text byte for byte."),
                 "summary_en":string_schema("Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples."),
                 "evidence":string_schema("Concrete source or observation supporting this memory. Required unless options.strict is explicitly false."),
@@ -190,6 +191,7 @@ fn write_memory_output_schema() -> Value {
                 "severity": described("string", "error for a refusal; warning for accepted relations whose prior context needs review."),
                 "field": described("string", "Argument path, for example memories[1].evidence; empty denotes the request as a whole."),
                 "reason": described("string", "What must be corrected using actual sources."),
+                "allowed_values": string_array("Valid vocabulary when the refused field has one; choose using the source, never automatically substitute a kind."),
                 "action": {"anyOf": [output_object(json!({
                     "tool": described("string", "Supported reading move, not proof that the proposed relation holds."),
                     "arguments": described("object", "Complete arguments to execute that read.")

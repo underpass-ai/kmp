@@ -7,8 +7,10 @@ Fictional sources:
   registry lists **Nebula cache** and **NC** as aliases. The event time is unknown.
 - R2, observed at 09:50 UTC: at 09:45 the team chose a retry because of R1's
   refresh race. This is a decision; it does not prove the retry worked.
+- R3, observed at 10:30 UTC: an operator asks to remove the retry selected in
+  R2. The team has not approved any change; R2 remains the selected behavior.
 
-Use a fresh teaching store. The writer observed the collected sources at 10:00 UTC; actual ingestion uses the kernel clock. A minimal
+Use a fresh teaching store. The writer collected R1/R2 at 10:00 UTC and records R3 later, at 10:30. Actual ingestion uses the kernel clock. A minimal
 write is a one-element `memories` array with id, kind, summary, evidence and
 labels, plus about, actor and observed_at. The packet below adds a second
 record and a forward local relation. Send only `arguments`; `${...}` copies
@@ -52,7 +54,12 @@ weaken validation merely to accept the packet.
             "why": "A retry addresses the refresh race recorded in R1.",
             "evidence": "R2 cites R1 as the reason for the retry."
           }
-        ]
+        ],
+        "labels": {
+          "source": [
+            "R2"
+          ]
+        }
       },
       {
         "id": "logs",
@@ -63,6 +70,9 @@ weaken validation merely to accept the packet.
           "alias": [
             "Nebula cache",
             "NC"
+          ],
+          "source": [
+            "R1"
           ]
         }
       }
@@ -88,7 +98,10 @@ weaken validation merely to accept the packet.
 
 `@logs` resolves inside the same packet, despite appearing later. It is not
 an existing memory ref and needs no fabricated read_context. Shared component
-membership applies to both records; only R1 has aliases. No process dimension
+membership applies to both records; only R1 has aliases. Each record gets its
+own source label: R1 on the logs and R2 on the decision. Putting both source
+values in top-level labels would attach both to every record; that would not
+represent these sources faithfully. No process dimension
 is invented. Sources and relation rationale remain separate.
 
 ```json
@@ -121,7 +134,12 @@ is invented. Sources and relation rationale remain separate.
             "why": "A retry addresses the refresh race recorded in R1.",
             "evidence": "R2 cites R1 as the reason for the retry."
           }
-        ]
+        ],
+        "labels": {
+          "source": [
+            "R2"
+          ]
+        }
       },
       {
         "id": "logs",
@@ -133,6 +151,9 @@ is invented. Sources and relation rationale remain separate.
           "alias": [
             "Nebula cache",
             "NC"
+          ],
+          "source": [
+            "R1"
           ]
         }
       }
@@ -258,7 +279,12 @@ known occurred_at. Retrying the exact packet keeps refs and sequences.
             "why": "A retry addresses the refresh race recorded in R1.",
             "evidence": "R2 cites R1 as the reason for the retry."
           }
-        ]
+        ],
+        "labels": {
+          "source": [
+            "R2"
+          ]
+        }
       },
       {
         "id": "logs",
@@ -270,6 +296,9 @@ known occurred_at. Retrying the exact packet keeps refs and sequences.
           "alias": [
             "Nebula cache",
             "NC"
+          ],
+          "source": [
+            "R1"
           ]
         }
       }
@@ -278,10 +307,41 @@ known occurred_at. Retrying the exact packet keeps refs and sequences.
 }
 ```
 
+## A request is not an approved state change
+
+R3 reports a request about R2; it does not replace or update R2. Use an
+observation for the request fact, with its source and explicit lack of approval.
+`request` and `outcome` are not kinds: INVALID_KIND returns `allowed_values`,
+but KMP does not decide which meaning fits the source. Do not automatically
+replace every rejected kind with observation.
+
+The earlier `choice` inspection supplies actual prior context. `uses_background`
+records that R3 refers to R2; its why/evidence do not claim a change. A future
+approval would need its own source and justified lifecycle relation. Do not
+infer validity dates from this request's observation time.
+
+```json
+{"tool":"kmp_write_memory","save_as":"request","arguments":{"about":"example:guide:semantic-batch","actor":"guide-writer","observed_at":"2026-09-01T10:30:00Z","idempotency_key":"guide-semantic-batch:request","labels":{"component":["neb"]},"read_context":{"inspected_refs":["${choice.object.ref}"]},"memories":[{"id":"request","kind":"observation","summary":"R3: An operator requests removal of the R2 retry; the team has not approved a change.","evidence":"R3 at 10:30 UTC: remove the retry selected in R2? The team has not approved any change; R2 remains the selected behavior.","labels":{"source":["R3"]},"connect_to":[{"ref":"${choice.object.ref}","rel":"uses_background","class":"evidential","why":"R3 refers to the R2 retry decision as the context for the request, without changing it.","evidence":"R3 explicitly asks about the retry selected in R2 and says no change has been approved."}]}]}}
+```
+
+```json
+{"tool":"kmp_inspect","save_as":"request_read","arguments":{"about":"example:guide:semantic-batch","ref":"${request.local_refs.request}","budget":{"max_bytes":30000}}}
+```
+
+```json
+{"tool":"kmp_inspect","save_as":"choice_after_request","arguments":{"about":"example:guide:semantic-batch","ref":"${choice.object.ref}","budget":{"max_bytes":30000}}}
+```
+
+```json
+{"tool":"kmp_goto","save_as":"request_time","arguments":{"about":"example:guide:semantic-batch","at":{"ref":"${request.local_refs.request}"},"axis":"observed","limit":{"entries":10},"budget":{"max_bytes":30000}}}
+```
+
 ## Check the shared graph
 
-Review two kinds, one causal chosen_because relation, the literal sources,
-component membership on both records and two aliases on R1 alone. Temporal
+Review three memories with two kinds: the decision has a causal chosen_because
+link to the logs; the later request has an evidential uses_background link to
+the decision. Component membership is shared, source labels are individual,
+and only R1 carries the two aliases. Temporal
 zoom and following the relation should take you from the decision to its proof.
 
 ```json
@@ -306,7 +366,7 @@ zoom and following the relation should take you from the decision to its proof.
     "focus": {
       "time_range": {
         "from": "2026-09-01T09:30:00Z",
-        "to": "2026-09-01T10:05:00Z",
+        "to": "2026-09-01T10:35:00Z",
         "axis": "observed"
       }
     },
@@ -328,8 +388,10 @@ zoom and following the relation should take you from the decision to its proof.
 }
 ```
 
-The accepted packet reports `coverage.label_memberships=4`: the shared component
-on both records and two aliases on the logs. `source_coverage=not_assessed` does
+The accepted packet reports `coverage.label_memberships=6`: the shared component
+on both records, one source label per record and two aliases on the logs.
+R3 is a separate later write. A label naming a source is not its evidence: the
+literal source text remains in each evidence field. `source_coverage=not_assessed` does
 not certify that R1/R2 contained no other facts. For this teaching audit, execute
 `written.receipt.action` verbatim. Inspect's `object.text` contains JSON with
 `receipt.writer.local_refs` and the accepted `receipt.canonical_memory`; its
