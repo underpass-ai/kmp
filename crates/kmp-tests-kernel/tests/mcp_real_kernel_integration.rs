@@ -1,5 +1,7 @@
 #![cfg(feature = "container-tests")]
 
+#[path = "mcp_real_kernel/relation_cursors.rs"]
+mod relation_cursors;
 mod support;
 #[path = "mcp_real_kernel/temporal_fields.rs"]
 mod temporal_fields;
@@ -125,6 +127,14 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         (
             "kmp_inspect",
             json!({"about":"project:parity-live","ref":"project:parity-live:observation:parity-after","include":{"details":true}}),
+        ),
+        (
+            "kmp_trace",
+            json!({"about":"project:parity-live","from":"project:parity-live:observation:parity-after","to":"project:parity-live:observation:parity-before","budget":{"max_bytes":512}}),
+        ),
+        (
+            "kmp_relate",
+            json!({"about":"project:parity-live","budget":{"max_bytes":512}}),
         ),
     ];
 
@@ -428,6 +438,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         );
     }
 
+    relation_cursors::check(&direct, &stdio, &http, &embedded).await;
     fixture.shutdown().await?;
     Ok(())
 }

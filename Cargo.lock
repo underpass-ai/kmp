@@ -1764,6 +1764,7 @@ dependencies = [
  "kmp-application",
  "kmp-domain",
  "kmp-proto",
+ "prost 0.13.5",
  "prost-types 0.13.5",
  "rust-stemmers",
  "serde",

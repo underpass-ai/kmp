@@ -127,5 +127,17 @@ proof and raw audit selection remain separate. A page cursor binds hidden
 content too. Expansions are fresh reads, not retained snapshots. This is selective
 retrieval, not a claim of lower total tokens when every body is expanded.
 
+Trace and Relate now follow the same complete-continuation principle. Their
+selected facts and relation proof remain whole under the byte budget. The kernel
+computes a digest before positional transport paging; MCP binds it to the query
+and returns executable continuation or restart actions. A later-page change is
+detected even when the first page is unchanged. Only page size and byte allowance
+may vary. These are the read fixes #608 and #609 adapted to the native
+writer, receipt and temporal contract; no compatibility layer is introduced.
+
+A complete action costs response tokens. Measure the full traversal with equal
+proof coverage before claiming any compression. These fixes do not change the
+separate Wake section-scope review or establish independent agent understanding.
+
 The remaining scope/signals review and agent evaluation still belong to their
 blocks. These increments do not authorize a benchmark reader awaiting human review.

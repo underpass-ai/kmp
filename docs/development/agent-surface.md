@@ -112,6 +112,22 @@ El detalle y los ejemplos viven en la guía consultable. Algunos hosts anteponen
 initialize a cada descripción: medir esa representación evita multiplicar un
 manual común. No acoplar esta distribución a tests de frases o de orden del texto.
 
+### Huellas de selección y cambios del transporte
+
+Trace y Relate calculan su huella sobre la selección completa antes de cortar
+la página. Al añadir un campo a esos resultados, incluirlo en la huella si
+cambia contenido, evidencia o alcance observables. El orden de mapas de metadata
+no tiene significado: su representación para el hash debe ser determinista.
+No ligar el hash sólo a la página que cabe ni transferir toda la selección al
+cliente para validarla. El MCP liga la huella a la consulta y cuenta también
+las acciones de continuación dentro del presupuesto de respuesta.
+
+Los campos de transporte se editan en `api/proto` y se sincronizan con la copia
+de `crates/kmp-proto/proto`. El MCP y el kernel deben compartir ese contrato;
+un backend sin huella se rechaza explícitamente. Comprobar continuación, cambio
+en una página posterior y acción de reinicio en los transportes afectados.
+Esta explicación es mantenimiento informativo; no añade un control de CI.
+
 ## 3. Regenerar con el motor correspondiente
 
 Desde la raíz del repo, usar un target separado si hay un binario congelado

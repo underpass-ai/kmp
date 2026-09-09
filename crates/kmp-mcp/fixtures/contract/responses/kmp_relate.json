@@ -178,9 +178,11 @@
         "text": "Rachel is moving to Boulder, not Denver."
       }
     ],
+    "next_actions": [],
     "page": {
       "has_more": false,
       "next_cursor": null,
+      "offset": 0,
       "returned": 11,
       "total": 11
     },

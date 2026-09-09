@@ -22,6 +22,7 @@ mod queries;
 mod question_intent;
 mod question_vocabulary;
 mod reach_graph;
+mod read_selection_fingerprint;
 mod relabel;
 mod relate;
 mod relate_proposals;

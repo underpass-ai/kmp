@@ -1,4 +1,5 @@
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
+use crate::projection::relation_page_budget::RelationPageBudget;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use std::path::Path;
 use std::sync::Arc;
@@ -526,7 +527,12 @@ async fn embedded_relate(
     );
     let response = relate_response_from_result(result, &query, bridge)
         .map_err(|status| mapping_error(&status))?;
-    Ok(tool_success_result(relate_from_response(response)))
+    let fingerprint = response.selection_fingerprint.clone();
+    Ok(tool_success_result(RelationPageBudget::Relate.apply(
+        relate_from_response(response),
+        arguments,
+        &fingerprint,
+    )?))
 }
 
 async fn embedded_trace(
@@ -550,9 +556,13 @@ async fn embedded_trace(
         result.path_bundle.metadata().revision,
         &result.rendered.quality,
     );
-    Ok(tool_success_result(trace_from_response(
-        trace_response_from_result(result, page),
-    )))
+    let response = trace_response_from_result(result, page);
+    let fingerprint = response.selection_fingerprint.clone();
+    Ok(tool_success_result(RelationPageBudget::Trace.apply(
+        trace_from_response(response),
+        arguments,
+        &fingerprint,
+    )?))
 }
 
 async fn embedded_inspect(

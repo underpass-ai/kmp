@@ -1,3 +1,4 @@
+use crate::projection::relation_cursor::RelationCursor;
 use kmp_proto::v1beta1::{
     AskRequest, InspectRequest, RelateRequest, TemporalMoveRequest, TemporalNearRequest,
     TraceRequest, WakeRequest,
@@ -102,7 +103,15 @@ pub(crate) fn relate_request_from_arguments(arguments: &Value) -> Result<RelateR
         interval: interval_from_arguments(arguments)?,
         axis: temporal_axis_from_arguments(arguments)?,
         budget: Some(memory_budget_from_arguments(arguments, 2400, 2)?),
-        page: page_from_arguments(arguments)?,
+        page: {
+            let mut page = page_from_arguments(arguments)?;
+            if let Some(page) = &mut page
+                && !page.cursor.is_empty()
+            {
+                page.cursor = RelationCursor::kernel_position(&page.cursor)?;
+            }
+            page
+        },
     })
 }
 
@@ -116,7 +125,15 @@ pub(crate) fn trace_request_from_arguments(arguments: &Value) -> Result<TraceReq
             .or_else(|| optional_string(arguments, "role"))
             .unwrap_or_default(),
         budget: Some(memory_budget_from_arguments(arguments, 1600, 1)?),
-        page: page_from_arguments(arguments)?,
+        page: {
+            let mut page = page_from_arguments(arguments)?;
+            if let Some(page) = &mut page
+                && !page.cursor.is_empty()
+            {
+                page.cursor = RelationCursor::kernel_position(&page.cursor)?;
+            }
+            page
+        },
     })
 }
 
