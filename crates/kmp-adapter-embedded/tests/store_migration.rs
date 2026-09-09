@@ -1,9 +1,8 @@
-//! Compatibility tests for the retired in-process store-migration API.
+//! Unsupported sources are rejected without mutation.
 //!
 //! The current layout never migrates in process. Unsupported sources are
-//! preserved for an external portable-bundle exporter, while an already-open
-//! SQLite destination remains usable for downstream callers that still use
-//! `open_or_migrate_data_dir`.
+//! left untouched; an already-current SQLite destination remains usable
+//! through `open_or_migrate_data_dir` without rewriting either directory.
 
 use kmp_adapter_embedded::{EmbeddedKernelStore, StorageEngine, format_version_path};
 
@@ -32,9 +31,9 @@ async fn unsupported_format_is_rejected_without_source_or_destination_mutation()
         message.contains("unsupported format version 1"),
         "{message}"
     );
-    assert!(
-        message.contains("archived compatible exporter"),
-        "{message}"
+    assert_eq!(
+        std::fs::read_to_string(format_version_path(source.path())).expect("source stamp"),
+        "1\n"
     );
     assert_eq!(
         std::fs::read(artifact).expect("source remains"),
