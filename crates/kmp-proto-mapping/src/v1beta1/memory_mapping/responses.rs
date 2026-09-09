@@ -39,6 +39,7 @@ use super::bundle_views::{
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::memory_catalog::labels_from_bundle;
 use super::memory_lifecycle::MemoryLifecycle;
+use super::read_selection_fingerprint::ReadSelectionFingerprint;
 use super::relation_signal_index::RelationSignalIndex;
 use super::scalars::{
     proto_confidence, proto_direction, proto_semantic_class, proto_temporal_axis,
@@ -996,8 +997,11 @@ pub fn trace_response_from_result(
         has_more,
     );
 
+    let summary = rendered_summary(&result.rendered);
+    let selection_fingerprint = ReadSelectionFingerprint::trace(&summary, &trace, path.is_some());
     TraceResponse {
-        summary: rendered_summary(&result.rendered),
+        summary,
+        selection_fingerprint,
         trace: returned_trace,
         warnings,
         page: Some(PageInfo {

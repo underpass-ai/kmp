@@ -619,6 +619,8 @@ message TraceResponse {
   repeated string warnings = 3;
   PageInfo page = 4;
   ResponseQuality quality = 5;
+  // Digest of the complete selected proof, before positional pagination.
+  string selection_fingerprint = 6;
 }
 
 // Relate: what memories of several abouts have to do with each other,
@@ -636,8 +638,8 @@ message RelateRequest {
   // The clock `interval` and the coordinate relations are read on.
   TemporalAxis axis = 4;
   MemoryBudget budget = 5;
-  // Continuation of a paged relate; the cursor is bound to the same
-  // request and selection.
+  // Positional transport page. MCP pairs it with selection_fingerprint
+  // and validates the complete query before returning a continuation.
   PageRequest page = 6;
 }
 
@@ -661,6 +663,8 @@ message RelateResponse {
   // same thing, each with the signals that made it say so. Never stored:
   // a writer may declare one, with this as the proof.
   repeated ProposedLink proposed = 9;
+  // Digest of every selected section and proof, before positional pagination.
+  string selection_fingerprint = 10;
 }
 
 // Two facts of different abouts proposed as the same thing, reproducible
