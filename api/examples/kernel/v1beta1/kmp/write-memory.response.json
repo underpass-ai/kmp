@@ -107,17 +107,17 @@
     "memory": {
       "dimensions": [
         {
-          "id": "incident:mobile-login",
+          "id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login",
           "kind": "task",
           "title": "Kernel write task"
         },
         {
-          "id": "incident:mobile-login:resolution",
+          "id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution",
           "kind": "agentic_process",
           "title": "Kernel write process"
         },
         {
-          "id": "incident:mobile-login:episode:backend",
+          "id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend",
           "kind": "agentic_episode",
           "title": "Kernel write episode"
         }
@@ -130,17 +130,17 @@
           "coordinates": [
             {
               "dimension": "task",
-              "scope_id": "incident:mobile-login",
+              "scope_id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login",
               "observed_at": "2026-05-06T10:00:00Z"
             },
             {
               "dimension": "agentic_process",
-              "scope_id": "incident:mobile-login:resolution",
+              "scope_id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution",
               "observed_at": "2026-05-06T10:00:00Z"
             },
             {
               "dimension": "agentic_episode",
-              "scope_id": "incident:mobile-login:episode:backend",
+              "scope_id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend",
               "observed_at": "2026-05-06T10:00:00Z"
             }
           ],
@@ -156,17 +156,17 @@
           "coordinates": [
             {
               "dimension": "task",
-              "scope_id": "incident:mobile-login",
+              "scope_id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login",
               "observed_at": "2026-05-06T10:00:00Z"
             },
             {
               "dimension": "agentic_process",
-              "scope_id": "incident:mobile-login:resolution",
+              "scope_id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution",
               "observed_at": "2026-05-06T10:00:00Z"
             },
             {
               "dimension": "agentic_episode",
-              "scope_id": "incident:mobile-login:episode:backend",
+              "scope_id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend",
               "observed_at": "2026-05-06T10:00:00Z"
             }
           ],
