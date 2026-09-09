@@ -284,7 +284,7 @@
           "depth": "basic",
           "text_file": "examples/preference-delta.md",
           "example_title": "Preference and explicit policy delta",
-          "evidence": "P1 preference, D1 default and D2 replacement preserve before/after and the generated delta links."
+          "evidence": "P1 preference, D1 default and D2 replacement preserve before/after and the writer-declared delta links."
         },
         {
           "id": "example:workflow-proof",
@@ -566,7 +566,7 @@
           "rel": "uses_background",
           "class": "evidential",
           "why": "This case applies the writer contract to explicit sources and reads every existing relation target.",
-          "evidence": "P1 preference, D1 default and D2 replacement preserve before/after and the generated delta links."
+          "evidence": "P1 preference, D1 default and D2 replacement preserve before/after and the writer-declared delta links."
         },
         {
           "from": "example:workflow-proof",
