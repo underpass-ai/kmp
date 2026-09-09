@@ -298,6 +298,53 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         "writer helper must compile to canonical dry-run Ingest"
     );
 
+    let mut batch = json!({
+        "about":"project:parity-packet", "actor":"parity-test",
+        "observed_at":"2026-08-25T00:00:00Z", "labels":{"component":["journal"]},
+        "idempotency_key":"parity-semantic-packet", "options":{"dry_run":true},
+        "memories":[
+            {"id":"decision", "kind":"decision", "summary":"The journal uses local storage.",
+             "evidence":"The design chooses local storage because writes must work offline.",
+             "connect_to":[{"ref":"@constraint", "rel":"chosen_because", "class":"causal",
+                "why":"Local storage satisfies the offline write requirement.",
+                "evidence":"The design cites offline writes as the reason for local storage."}]},
+            {"id":"constraint", "kind":"constraint", "summary":"Journal writes must work offline.",
+             "evidence":"The requirement explicitly prohibits a network dependency for journal writes.",
+             "labels":{"requirement":["offline","local"]}}
+        ]
+    });
+    let preview = call_tool(&stdio, 21, "kmp_write_memory", batch.clone()).await;
+    let http_preview = call_http_tool(&http, 21, "kmp_write_memory", batch.clone()).await;
+    let embedded_preview = call_tool(&embedded, 21, "kmp_write_memory", batch.clone()).await;
+    assert_tool_success(&preview);
+    assert_eq!(preview["result"], http_preview["result"]);
+    assert_eq!(preview["result"], embedded_preview["result"]);
+    batch["options"]["dry_run"] = json!(false);
+    let committed = call_tool(&stdio, 22, "kmp_write_memory", batch.clone()).await;
+    let http_retry = call_http_tool(&http, 22, "kmp_write_memory", batch.clone()).await;
+    let embedded_commit = call_tool(&embedded, 22, "kmp_write_memory", batch).await;
+    for result in [&committed, &http_retry, &embedded_commit] {
+        assert_tool_success(result);
+        assert_eq!(result["result"]["structuredContent"]["accepted"], true);
+        assert_eq!(
+            result["result"]["structuredContent"]["local_refs"],
+            preview["result"]["structuredContent"]["local_refs"]
+        );
+    }
+    let refs = &committed["result"]["structuredContent"]["local_refs"];
+    let trace_args =
+        json!({"about":"project:parity-packet", "from":refs["decision"], "to":refs["constraint"]});
+    let remote_proof = call_tool(&stdio, 23, "kmp_trace", trace_args.clone()).await;
+    let local_proof = call_tool(&embedded, 23, "kmp_trace", trace_args).await;
+    for proof in [remote_proof, local_proof] {
+        assert_tool_success(&proof);
+        assert!(
+            proof
+                .to_string()
+                .contains("The design cites offline writes")
+        );
+    }
+
     fixture.shutdown().await?;
     Ok(())
 }

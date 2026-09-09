@@ -13,14 +13,14 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_write_memory",
-        "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
         write_memory_schema(),
         write_memory_output_schema(),
     )
 }
 
 pub(crate) fn write_memory_schema() -> Value {
-    json!({
+    let mut schema = json!({
         "type": "object",
         "additionalProperties": false,
         "required": ["about", "intent", "actor", "observed_at", "scope", "current"],
@@ -188,7 +188,68 @@ pub(crate) fn write_memory_schema() -> Value {
                 }
             }
         }
-    })
+    });
+    let properties = schema["properties"].as_object().expect("writer properties");
+    let mut record = properties["current"].clone();
+    record["required"] = json!(["id", "kind", "summary"]);
+    record["properties"]["id"] = json!({
+        "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+        "description": "Local name in this packet. Use @name in connect_to.ref, including forward links. Returned local_refs maps names to canonical refs."
+    });
+    for field in [
+        "labels",
+        "connect_to",
+        "observed_at",
+        "occurred_at",
+        "valid_from",
+        "valid_until",
+        "rank",
+    ] {
+        record["properties"][field] = properties[field].clone();
+    }
+    record["properties"]["connect_to"]["description"] = json!(
+        "Justified links to records in this packet or stored memories. Independent source facts may be unlinked; never invent a relation to satisfy a shape."
+    );
+    record["properties"]["connect_to"]["items"]["properties"]["ref"]["description"] = json!(
+        "@local-id in this packet, or an existing canonical ref. Rich links to packet members use current_request context; stored targets require read_context. Cross-about equivalence still requires a kmp_relate proposal."
+    );
+    record["properties"]["kind"]["description"] =
+        json!("Stored semantic kind; the writer operation is inferred.");
+    record["properties"]["ref"]["description"] = json!(
+        "Omit for a new record. An explicit canonical ref updates that exact entry and must belong to this about. It cannot name the anchor or an internal dimension/evidence object."
+    );
+    record["properties"]["summary_en"]["description"] = json!(
+        "English search rendering of summary, retaining its numbers, identifiers and acronyms. Strict mode requires it for non-English text and rejects a faulty rendering; original summary remains the cited source. Consult Write for the rendering rules."
+    );
+    record["properties"]["labels"]["description"] = json!(
+        "Per-record memberships, unioned with the shared top-level labels. Declare all source-backed values; labels alone do not prove entity equivalence."
+    );
+    record["properties"]["connect_to"]["items"]["properties"]["rel"]["description"] = json!(
+        "Canonical relation type. Choose it from source evidence; use the relation guide for classes and examples. Honest fallback relations do not imply a richer dependency."
+    );
+    let single_condition = json!({
+        "required": ["intent", "scope", "current"],
+        "if": schema["if"], "then": schema["then"], "else": schema["else"]
+    });
+    schema["required"] = json!(["about", "actor", "observed_at"]);
+    schema["properties"]["memories"] = json!({
+        "type": "array", "minItems": 1, "items": record,
+        "description": "One or more semantic records committed atomically in this about. Use kind once per record; no top-level intent/current/scope/connect_to/semantic_delta. Shared labels are unioned with each record's labels; at least one membership is required per record. Each record inherits clocks unless overridden. KMP resolves local ids and validates the entire packet before writing anything."
+    });
+    schema["if"] = json!({"required": ["memories"]});
+    schema["then"] = json!({
+        "not": {"anyOf": [
+            {"required": ["current"]}, {"required": ["intent"]},
+            {"required": ["scope"]}, {"required": ["connect_to"]},
+            {"required": ["semantic_delta"]}
+        ]},
+        "if": {"not": {"required": ["options"], "properties": {"options": {
+            "required": ["strict"], "properties": {"strict": {"const": false}}
+        }}}},
+        "then": {"properties": {"memories": {"items": {"required": ["evidence"]}}}}
+    });
+    schema["else"] = single_condition;
+    schema
 }
 
 pub(crate) fn read_context_schema() -> Value {
@@ -264,6 +325,7 @@ fn write_memory_output_schema() -> Value {
         "warnings": string_array("Store validation notices returned with a preview."),
         "summary": described("string", "Counts and scope of the semantic write the planner prepared."),
         "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes."),
+        "local_refs": json!({"type": "object", "additionalProperties": {"type": "string"}, "description": "For a memories packet, local id to canonical memory ref. Preview refs are planned; accepted=true confirms persistence."}),
         "labels": output_object(json!({
             "written": described("array", "The labels this write carries, each `key` and `value`, in the order their coordinates were emitted."),
             "created": described("array", "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it."),

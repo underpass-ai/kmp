@@ -133,6 +133,7 @@ pub(crate) fn build_summary_plan(
     ));
     Ok(KernelWritePlan {
         about,
+        local_refs: Default::default(),
         dry_run,
         ingest_arguments,
         generated_refs: Vec::new(),

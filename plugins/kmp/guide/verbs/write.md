@@ -1,3 +1,36 @@
+## A semantic packet
+
+Use `memories` for one or more source-backed records in one about. Give each a
+short local `id`, `kind`, `summary`, `evidence`, and its label arrays. A single
+record is a one-element packet. No `intent`, `current` or process `scope` is
+needed in this form. The existing single-current form remains available during
+this integration; it is not a compatibility promise for the final redesign.
+
+Top-level labels are shared memberships, unioned with each record's labels.
+Every record must have at least one membership; none is invented. Repeating a
+pair in both shared and record labels is harmless; duplicates within either
+array are rejected. Every supplied label is materialized before commit.
+
+Use `connect_to.ref: "@source"` to address local id `source`, even if it appears
+later. Local targets count as `current_request` context. Stored rich targets
+still require an actual prior read declared in `read_context`; cross-about
+identity links retain the proposal rule. Do not claim to have inspected a new
+local target. Independent facts may be unlinked: do not invent a relation.
+
+Actor identifies the author; top-level observed_at is the packet's provenance
+observation time. Actual ingestion is recorded separately by the kernel. Each
+record may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP
+resolves all names and validates the entire packet before one canonical ingest.
+A rejected record writes none of the packet. The transaction covers one about.
+
+`local_refs` maps your ids to canonical refs. A preview plans those refs;
+`accepted=true` confirms persistence. Retry the unchanged logical packet with
+the same idempotency key. Duplicate ids, duplicate targets, self-links and
+undeclared local targets are errors. See
+`guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof
+link, a rejected packet and temporal/ChronoLoom review. Detailed receipts and
+the single-current form are still being simplified in this integration.
+
 ## What to write, and what never to write
 
 Write when something is **decided, constrained, or concluded**. Decisions,

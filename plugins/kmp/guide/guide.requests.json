@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:49b5022b1cfa6b181d64",
+    "idempotency_key": "ingest:guide-sync:1:agent:37e6c646414073553ebc",
     "memory": {
       "dimensions": [
         {
@@ -271,7 +271,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "## What to write, and what never to write\n\nWrite when something is **decided, constrained, or concluded**. Decisions,\nconstraints, outcomes — each with coordinates and evidence.\n\nNever write transcripts. Memory is not a log of the conversation; it is the\ndurable shape of the work. A transcript makes later traversal worthless.\n\nLabel what you write. Every label is a `(key, value)` membership within its\nabout. `scope.process` supplies the primary process; `scope.task` and\n`scope.episode` supply optional primary memberships. `labels` uses arrays,\neven for a single value, and may add further values under any key:\n\n```json\n\"labels\": {\n  \"alias\": [\"neb\", \"Nébula Cache\"],\n  \"component\": [\"neb\"],\n  \"environment\": [\"production\"]\n}\n```\n\nEach pair becomes its own coordinate with the memory's clocks. Two aliases\nunder `alias` are valid, as is `neb` under both `alias` and `component`.\nThe key distinguishes them. Repeating the exact pair, including a primary\nscope membership, is an error. Values may contain spaces, punctuation and\nUnicode. The server returns canonical refs: copy them when an exact graph\naddress is needed. Do not construct refs or infer entity identity from labels.\n\nRead the `labels` catalogue in `kmp_wake` to reuse existing vocabulary.\nResponses report labels written and created. A new spelling under the same\nkey, such as `component=kmp_viewer` when `component=kmp-viewer` exists, is\nrefused in strict mode or reported in `labels.resembling` in lax mode.\nSharing a value across different keys is valid and produces no resemblance\nwarning. `options.labels_new: [\"component\"]` confirms intentional new values\nunder that key; nothing is silently renamed or merged.\n\nUse `kmp_relabel` to change memberships later. Its `add` and `remove` use the\nsame arrays. For example, `add: {\"alias\": [\"Nébula Cache\", \"NC\"]}` adds two\naliases, and `remove: {\"alias\": [\"NC\"]}` later removes only that membership.\nGive the memory's returned `ref` and a source-backed `why`. The kernel refuses\nadding an existing pair, removing an absent pair, placing a pair on both\nsides, and removing the last label. Other values under the key remain.\nAdded memberships inherit the memory's clocks; the relabel's actor, receipt\ntime and rationale are recorded separately. Read back with `kmp_inspect`\nand `include.raw` to verify the memberships and evidence.\n\nFilter a facet with `dimensions.selectors`, for example\n`{\"key\":\"alias\",\"op\":\"in\",\"values\":[\"neb\"]}`. To require both an alias and\nan environment, supply one selector for each key. Shared labels locate\ncandidates; only justified relations declare that two memories concern the\nsame entity or event.\n\nWrite in the language of the work, and give the memory an English rendering\nfor search: `current.summary_en`, plain English a reader would ask with, every\nnumber, identifier and acronym kept exactly as written (`v0.7.0`, `#469`,\n`kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is\n`current.summary`, byte for byte — so an English question reaches a memory\nwritten in Spanish, and jargon (`rollout slipped`) is found by the words\npeople ask with (`launch postponed`). A strict write requires it when the\nmemory is not written in English and refuses one that fails the lint: wrong\nlanguage, too thin, a copy of the text, a dropped identifier. Fix the summary\nthe error names; never alter the text to fit it. A cited item that was reached\nthrough its summary says so with `matched_via: summary` and `summary_terms`.\n\nMemories written before summaries existed still owe one. `kmp-mcp summaries\npending [<about>] [--json]` lists them, with the text to render and, for a\nsummary the lint refuses, what is wrong with it; `kmp-mcp doctor` counts them.\nAttach each with `kmp_write_memory`, intent `record_summary`, `current.ref`\nand `current.summary_en` only: the text, kind and coordinates are read from\nthe store and cannot be supplied, no relation is written, and a rendering\nthat fails the lint is refused with every fault named. Do it once per store;\nan exact retry is a no-op.\n\nNormal writes are one call: omit `options.dry_run` or set it to false.\nThe relation guide documents explicit previews and validation before commit.\n\nUse one `idempotency_key` per logical write. Replaying the same accepted write\nreturns its success rather than duplicating memory. A `conflict` can also mean\nthe store advanced before this attempt committed: follow the error message,\nrebase, and retry the same logical write with the same key when it says the\nconflict is retryable. A key already accepted with different content must not\nbe reused.\n\nFor a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.\n\n## A preview checks the selected store\n\nUse `options.dry_run=true` only when a preview is useful. Embedded and gRPC\npreviews run the same kernel validation as a commit, including existing refs,\nlabel policy and coordinate ownership. A missing target or backend failure is\nan error; a syntactically valid packet is not enough. A successful preview has\n`accepted=false`, `dry_run=true` and `validation.scope=current_store`. It writes\nno event. The fixture backend reports `scope=fixture` and proves no live state.\n\nThe returned `ingest_preview` is the proposed canonical packet. Previewing\nreserves neither labels nor sequences; a later commit is validated again against\nthe then-current store. Do not repeat previews before every ordinary write:\nthe normal write already validates and commits in one call. Raw `kmp_ingest`\nwith `dry_run=true` also reaches the kernel and leaves memory uncommitted.\n"
+          "text": "## A semantic packet\n\nUse `memories` for one or more source-backed records in one about. Give each a\nshort local `id`, `kind`, `summary`, `evidence`, and its label arrays. A single\nrecord is a one-element packet. No `intent`, `current` or process `scope` is\nneeded in this form. The existing single-current form remains available during\nthis integration; it is not a compatibility promise for the final redesign.\n\nTop-level labels are shared memberships, unioned with each record's labels.\nEvery record must have at least one membership; none is invented. Repeating a\npair in both shared and record labels is harmless; duplicates within either\narray are rejected. Every supplied label is materialized before commit.\n\nUse `connect_to.ref: \"@source\"` to address local id `source`, even if it appears\nlater. Local targets count as `current_request` context. Stored rich targets\nstill require an actual prior read declared in `read_context`; cross-about\nidentity links retain the proposal rule. Do not claim to have inspected a new\nlocal target. Independent facts may be unlinked: do not invent a relation.\n\nActor identifies the author; top-level observed_at is the packet's provenance\nobservation time. Actual ingestion is recorded separately by the kernel. Each\nrecord may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP\nresolves all names and validates the entire packet before one canonical ingest.\nA rejected record writes none of the packet. The transaction covers one about.\n\n`local_refs` maps your ids to canonical refs. A preview plans those refs;\n`accepted=true` confirms persistence. Retry the unchanged logical packet with\nthe same idempotency key. Duplicate ids, duplicate targets, self-links and\nundeclared local targets are errors. See\n`guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof\nlink, a rejected packet and temporal/ChronoLoom review. Detailed receipts and\nthe single-current form are still being simplified in this integration.\n\n## What to write, and what never to write\n\nWrite when something is **decided, constrained, or concluded**. Decisions,\nconstraints, outcomes — each with coordinates and evidence.\n\nNever write transcripts. Memory is not a log of the conversation; it is the\ndurable shape of the work. A transcript makes later traversal worthless.\n\nLabel what you write. Every label is a `(key, value)` membership within its\nabout. `scope.process` supplies the primary process; `scope.task` and\n`scope.episode` supply optional primary memberships. `labels` uses arrays,\neven for a single value, and may add further values under any key:\n\n```json\n\"labels\": {\n  \"alias\": [\"neb\", \"Nébula Cache\"],\n  \"component\": [\"neb\"],\n  \"environment\": [\"production\"]\n}\n```\n\nEach pair becomes its own coordinate with the memory's clocks. Two aliases\nunder `alias` are valid, as is `neb` under both `alias` and `component`.\nThe key distinguishes them. Repeating the exact pair, including a primary\nscope membership, is an error. Values may contain spaces, punctuation and\nUnicode. The server returns canonical refs: copy them when an exact graph\naddress is needed. Do not construct refs or infer entity identity from labels.\n\nRead the `labels` catalogue in `kmp_wake` to reuse existing vocabulary.\nResponses report labels written and created. A new spelling under the same\nkey, such as `component=kmp_viewer` when `component=kmp-viewer` exists, is\nrefused in strict mode or reported in `labels.resembling` in lax mode.\nSharing a value across different keys is valid and produces no resemblance\nwarning. `options.labels_new: [\"component\"]` confirms intentional new values\nunder that key; nothing is silently renamed or merged.\n\nUse `kmp_relabel` to change memberships later. Its `add` and `remove` use the\nsame arrays. For example, `add: {\"alias\": [\"Nébula Cache\", \"NC\"]}` adds two\naliases, and `remove: {\"alias\": [\"NC\"]}` later removes only that membership.\nGive the memory's returned `ref` and a source-backed `why`. The kernel refuses\nadding an existing pair, removing an absent pair, placing a pair on both\nsides, and removing the last label. Other values under the key remain.\nAdded memberships inherit the memory's clocks; the relabel's actor, receipt\ntime and rationale are recorded separately. Read back with `kmp_inspect`\nand `include.raw` to verify the memberships and evidence.\n\nFilter a facet with `dimensions.selectors`, for example\n`{\"key\":\"alias\",\"op\":\"in\",\"values\":[\"neb\"]}`. To require both an alias and\nan environment, supply one selector for each key. Shared labels locate\ncandidates; only justified relations declare that two memories concern the\nsame entity or event.\n\nWrite in the language of the work, and give the memory an English rendering\nfor search: `current.summary_en`, plain English a reader would ask with, every\nnumber, identifier and acronym kept exactly as written (`v0.7.0`, `#469`,\n`kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is\n`current.summary`, byte for byte — so an English question reaches a memory\nwritten in Spanish, and jargon (`rollout slipped`) is found by the words\npeople ask with (`launch postponed`). A strict write requires it when the\nmemory is not written in English and refuses one that fails the lint: wrong\nlanguage, too thin, a copy of the text, a dropped identifier. Fix the summary\nthe error names; never alter the text to fit it. A cited item that was reached\nthrough its summary says so with `matched_via: summary` and `summary_terms`.\n\nMemories written before summaries existed still owe one. `kmp-mcp summaries\npending [<about>] [--json]` lists them, with the text to render and, for a\nsummary the lint refuses, what is wrong with it; `kmp-mcp doctor` counts them.\nAttach each with `kmp_write_memory`, intent `record_summary`, `current.ref`\nand `current.summary_en` only: the text, kind and coordinates are read from\nthe store and cannot be supplied, no relation is written, and a rendering\nthat fails the lint is refused with every fault named. Do it once per store;\nan exact retry is a no-op.\n\nNormal writes are one call: omit `options.dry_run` or set it to false.\nThe relation guide documents explicit previews and validation before commit.\n\nUse one `idempotency_key` per logical write. Replaying the same accepted write\nreturns its success rather than duplicating memory. A `conflict` can also mean\nthe store advanced before this attempt committed: follow the error message,\nrebase, and retry the same logical write with the same key when it says the\nconflict is retryable. A key already accepted with different content must not\nbe reused.\n\nFor a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.\n\n## A preview checks the selected store\n\nUse `options.dry_run=true` only when a preview is useful. Embedded and gRPC\npreviews run the same kernel validation as a commit, including existing refs,\nlabel policy and coordinate ownership. A missing target or backend failure is\nan error; a syntactically valid packet is not enough. A successful preview has\n`accepted=false`, `dry_run=true` and `validation.scope=current_store`. It writes\nno event. The fixture backend reports `scope=fixture` and proves no live state.\n\nThe returned `ingest_preview` is the proposed canonical packet. Previewing\nreserves neither labels nor sequences; a later commit is validated again against\nthe then-current store. Do not repeat previews before every ordinary write:\nthe normal write already validates and commits in one call. Raw `kmp_ingest`\nwith `dry_run=true` also reaches the kernel and leaves memory uncommitted.\n"
         },
         {
           "coordinates": [
@@ -1231,7 +1231,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "# Find a concrete example by capability\n\nStart with [one decision and its reason](./first-decision.md). It has two\nsource lines and a direct write → inspect → retrieve → audit path. The other\nbasic files group independent small cases so each relation has its own source,\nrationale and limit. Read the source and prerequisite writes before a selected\ncall; a binding to an earlier result is not a ref you can invent.\n\nThis index was reviewed against the development tools/list on September 8,\n2026: fifteen tools, ten memory kinds and thirty-one writer relations. It is\nan informative map, not a CI gate or a promise that another LLM has learned\nthese choices. Runtime names and allowed classes come from tools/list.\n\nA `save_as` name identifies the exact JSON call inside its lesson. In KMP,\ninspect the corresponding guide ref from the table at the end, using about\n`guide:kmp-agent`. The lesson contains the literal sources, valid arguments,\nreturned-ref bindings, expected evidence and negative limits.\n\n## Tools\n\n| Tool | Concrete call | Limit to read with it |\n| --- | --- | --- |\n| `kmp_ingest` | [canonical-ingest](./canonical-ingest.md), `ingested` | The referenced constraint must already exist; preview alone writes nothing. |\n| `kmp_write_memory` | [first-decision](./first-decision.md), `constraint` | A recorded choice is not a passed test. |\n| `kmp_wake` | [preference-delta](./preference-delta.md), `present` | A compact catalogue does not include every expanded proof item. |\n| `kmp_ask` | [first-decision](./first-decision.md), `answer` | For absent evidence, use the terminal UNKNOWN case in budget-proof. |\n| `kmp_relate` | [distributed-incident](./distributed-incident.md), `related` | A proposal does not write or prove an equivalence. |\n| `kmp_goto` | [decision-history](./decision-history.md), `start` | Keep the requested clock and the inclusive boundary. |\n| `kmp_near` | [alias-ownership](./alias-ownership.md), `account_history` | Copy the returned ref; nearby mentions are not proven identities. |\n| `kmp_rewind` | [decision-history](./decision-history.md), `earlier` | An older decision remains historical after replacement. |\n| `kmp_forward` | [budget-proof](./budget-proof.md), `temporal_first` | Continue temporal_second; exclude the interval end. |\n| `kmp_trace` | [first-decision](./first-decision.md), `packet_proof` | For an absent path, use no_path in budget-proof. |\n| `kmp_inspect` | [first-decision](./first-decision.md), `constraint_read` | If a page is partial, finish it before claiming full evidence. |\n| `kmp_relabel` | [labels-negation](./labels-negation.md), `canonical_label` | Rename a label without inventing identity or replacing the source. |\n| `kmp_view_open` | [first-decision](./first-decision.md), `view` | The view is process-scoped; memory is durable. |\n| `kmp_view_apply_intent` | [first-decision](./first-decision.md), `frame` | After a revision conflict, read the human frame before another move. |\n| `kmp_view_get_state` | [shared-resumption](./shared-resumption.md), `human_state` | A screen gesture is not authorization to write feedback. |\n\n## Memory kinds\n\nIntent names the writer operation; kind names what is remembered. In the\nrecord_delta case, the writer also generates a separate semantic_delta entry.\n\n| Kind | Source and call | What it records |\n| --- | --- | --- |\n| `turn` | [shared-resumption](./shared-resumption.md), `handoff` | H1: Please confirm D1 is the selection to review for HND-9. The offline restore test is still pending; no test report is available. |\n| `observation` | [workflow-proof](./workflow-proof.md), `slow` | B1: LAT-3 build A measured 150 ms for the response under the R1 test conditions. |\n| `decision` | [first-decision](./first-decision.md), `decision` | D1: START-1 chooses SQLite because C1 requires journal writes without a network. |\n| `feedback` | [quantities](./quantities.md), `void` | TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled. |\n| `semantic_delta` | [preference-delta](./preference-delta.md), `new_policy` | D2: POL-2 replaces D1 for normal NOTIFY-2 events: use immediate notices because the operations team requested immediate updates. Urgent alerts remain immediate. |\n| `constraint` | [first-decision](./first-decision.md), `constraint` | C1: START-1 requires the journal to accept writes without a network. |\n| `preference` | [preference-delta](./preference-delta.md), `preference` | P1: For NOTIFY-2, I prefer one daily digest of normal events. Urgent alerts may interrupt; this is a preference, not a mandatory limit. |\n| `derived_value` | [structure-parts](./structure-parts.md), `total` | TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included. |\n| `error_path` | [distributed-incident](./distributed-incident.md), `audit` | The deployment of rel-17 exhausted Atlas database connections at 09:00 UTC on September 1: outage EVT-17-F in INC-17. The audit compared it with recovery EVT-17-R. |\n| `success_path` | [workflow-proof](./workflow-proof.md), `execution` | EX1: RLS-3 staging deployment OP1 completed after its checksum check. The execution log names A1 as the approval required before this deployment could run. |\n\n## Writer relations\n\nThe selected class is the one justified by that source. The allowed column\nshows the current alternatives; it does not tell the writer to emit all of them.\nStructural links below connect source-declared user memories. Internal records,\ncontains_entry and has_dimension links are created by KMP and are not copied.\n\n| Relation | Concrete source call | Class used; allowed classes | Rationale to check against the source |\n| --- | --- | --- | --- |\n| `follows` | [labels-negation](./labels-negation.md), `later_decision` | `procedural`; `procedural` | La decisión D1 se registra después de revisar los informes de RUN-7; este enlace conserva el orden y no verifica ni sustituye sus estados anteriores. |\n| `answers` | [shared-resumption](./shared-resumption.md), `feedback` | `evidential`; `evidential` | F1 explicitly answers H1, the stored request for confirmation of the review selection. |\n| `uses_background` | [structure-parts](./structure-parts.md), `total` | `evidential`; `evidential` | TOTAL1 settles the two components described by BREAKDOWN1; the literal settlement supplies amounts and exclusions. |\n| `depends_on` | [workflow-proof](./workflow-proof.md), `execution` | `causal`; `causal` | EX1 records A1 as the required approval for this completed staging deployment. |\n| `chosen_because` | [first-decision](./first-decision.md), `decision` | `motivational`; `causal`, `motivational` | D1 explicitly chooses SQLite for the offline-write requirement recorded by C1. |\n| `triggers` | [workflow-proof](./workflow-proof.md), `sample` | `causal`; `causal` | The S1 rule log identifies this threshold event as the cause of AL1, not merely an earlier sample. |\n| `authorizes` | [workflow-proof](./workflow-proof.md), `approval` | `motivational`; `causal`, `motivational` | A1 explicitly permits OP1 in staging, with checksum verification required and production excluded. |\n| `verified_by` | [budget-proof](./budget-proof.md), `result` | `evidential`; `evidential` | R1's matching-checksum and offline-completion claims are verified by the measured result recorded in T1. |\n| `semantic_delta_from` | [preference-delta](./preference-delta.md), `new_policy` (generated delta link) | `causal`; `causal` | D2 replaces the default because operations requested immediate updates; the urgent-alert policy is unchanged. |\n| `updates_state` | [preference-delta](./preference-delta.md), `new_policy` (generated delta link) | `causal`; `causal` | D2 replaces the default because operations requested immediate updates; the urgent-alert policy is unchanged. |\n| `supports` | [quantities](./quantities.md), `statement` | `evidential`; `evidential` | The closing statement independently confirms the corrected settled hotel figure; it does not create another charge. |\n| `supersedes` | [preference-delta](./preference-delta.md), `new_policy` | `evidential`; `evidential` | D2 explicitly replaces D1 for normal NOTIFY-2 events while retaining the urgent-alert exception. |\n| `contradicts` | [labels-negation](./labels-negation.md), `negative` | `evidential`; `evidential` | S1 afirma habilitado y S3 lo niega para el mismo RUN-7, prod, Ana e instante; G1 prueba que bitácora y journal designan el mismo componente en este catálogo. |\n| `satisfies_constraint` | [workflow-proof](./workflow-proof.md), `fast` | `constraint`; `constraint` | G1 measures 80 ms under R1 conditions, within the required maximum of 100 ms. |\n| `violates_constraint` | [workflow-proof](./workflow-proof.md), `slow` | `constraint`; `constraint` | B1 measures 150 ms under R1 conditions, exceeding the required maximum of 100 ms. |\n| `contributes_to` | [structure-parts](./structure-parts.md), `bus` | `evidential`; `evidential` | BUS1 is explicitly included as 20 EUR in TOTAL1, whose source also identifies HOTEL1 at 35 EUR. |\n| `excluded_from` | [quantities](./quantities.md), `exclusions` | `constraint`; `constraint` | These documented candidates are deliberately omitted from this EUR subtotal for replacement, duplicate, void or unit mismatch reasons. |\n| `checked_against` | [quantities](./quantities.md), `total` | `constraint`; `constraint` | The calculation is checked against the rule requiring unique settled EUR charges and no voids or currency conversion. |\n| `derived_from` | [quantities](./quantities.md), `exclusions` | `evidential`; `evidential` | This is the preliminary operand omitted after its explicit correction. |\n| `confirms_selection` | [shared-resumption](./shared-resumption.md), `feedback` | `evidential`; `evidential`, `motivational` | F1 explicitly confirms D1 as the selection to review. It limits that confirmation to selection and leaves the offline test pending. |\n| `restates` | [labels-negation](./labels-negation.md), `restated` | `evidential`; `evidential` | S2 declara que reformula S1: ambos afirman habilitado para RUN-7, prod, Ana y el mismo instante; G1 identifica los dos nombres del componente. |\n| `corrects` | [quantities](./quantities.md), `hotel_final` | `evidential`; `evidential` | The final invoice corrects the amount of this same hotel transaction; it must replace, not be added to, the preliminary figure. |\n| `component_of` | [structure-parts](./structure-parts.md), `bus` | `evidential`; `evidential` | BUS1 is the transport component explicitly listed in BREAKDOWN1. |\n| `total_of` | [quantities](./quantities.md), `total` | `evidential`; `evidential` | The subtotal includes this distinct settled transport charge exactly once. |\n| `same_event_as` | [quantities](./quantities.md), `hotel_copy` | `evidential`; `evidential` | The copy and final invoice report one hotel charge; the explicit transaction and copy statement justify counting it once. |\n| `same_entity_as` | [alias-ownership](./alias-ownership.md), `alias` | `evidential`; `evidential` | La aclaración firmada identifica expresamente al sujeto llamado Nora con Elena Vega, la persona nombrada en el directorio. |\n| `qualifies_as` | [structure-parts](./structure-parts.md), `bus` | `evidential`; `evidential` | BUS1 meets the CATEGORY1 criteria through its identified receipt, amount, public transport and work purpose. |\n| `matches_requirement` | [workflow-proof](./workflow-proof.md), `candidate` | `constraint`; `constraint` | C1 has both properties required by R2: local checksum verification and operation without a network. |\n| `contains` | [structure-parts](./structure-parts.md), `plan` | `structural`; `structural` | PLAN1 explicitly lists PH1 as a phase of PLAN-4; this records organization only. |\n| `member_of` | [structure-parts](./structure-parts.md), `member` | `structural`; `structural` | MEMBER1 names Ivo in the REVIEW-4 roster and states no approval rights. |\n| `scoped_to` | [structure-parts](./structure-parts.md), `rule` | `structural`; `structural` | RULE1 limits its 30-day retention requirement to STAGE-4 and excludes a claim about production. |\n\n## Exact KMP lesson references\n\nThese refs are copied from the generated guide requests. Load one selected\nlesson, reuse it within the session, and read its prerequisites as needed.\n\n| Lesson | Ref in guide:kmp-agent |\n| --- | --- |\n| [first-decision](./first-decision.md) | `guide:kmp-agent:example:first-decision` |\n| [preference-delta](./preference-delta.md) | `guide:kmp-agent:example:preference-delta` |\n| [workflow-proof](./workflow-proof.md) | `guide:kmp-agent:example:workflow-proof` |\n| [structure-parts](./structure-parts.md) | `guide:kmp-agent:example:structure-parts` |\n| [canonical-ingest](./canonical-ingest.md) | `guide:kmp-agent:example:canonical-ingest` |\n| [budget-proof](./budget-proof.md) | `guide:kmp-agent:example:budget-proof` |\n| [quantities](./quantities.md) | `guide:kmp-agent:example:quantities` |\n| [shared-resumption](./shared-resumption.md) | `guide:kmp-agent:example:shared-resumption` |\n| [labels-negation](./labels-negation.md) | `guide:kmp-agent:example:labels-negation` |\n| [decision-history](./decision-history.md) | `guide:kmp-agent:example:decision-history` |\n| [alias-ownership](./alias-ownership.md) | `guide:kmp-agent:example:alias-ownership` |\n| [distributed-incident](./distributed-incident.md) | `guide:kmp-agent:example:distributed-incident` |\n| [four-clocks](./four-clocks.md) | `guide:kmp-agent:example:four-clocks` |\n| [late-conflict](./late-conflict.md) | `guide:kmp-agent:example:late-conflict` |\n\n## What this review proves\n\nThe linked calls exercise all the named capabilities with explicit source\ninterpretations. The standalone replays check kinds, refs, clocks and proof\npreservation; the visual reviews check their presentation. Counting a name\nin a file would not prove any of those properties. Independent learning on\nnew sources and reader questions remains a separate evaluation.\n\nThe multivalue contract is demonstrated in [dimensional-memberships](./dimensional-memberships.md), exact ref `guide:kmp-agent:example:dimensional-memberships`: arrays, independent keys, selectors, late relabel and visual review.\n"
+          "text": "# Find a concrete example by capability\n\nStart with [one semantic packet](./semantic-batch.md) for local ids and an atomic write, or [one decision and its reason](./first-decision.md). It has two\nsource lines and a direct write → inspect → retrieve → audit path. The other\nbasic files group independent small cases so each relation has its own source,\nrationale and limit. Read the source and prerequisite writes before a selected\ncall; a binding to an earlier result is not a ref you can invent.\n\nThis index was reviewed against the development tools/list on September 8,\n2026: fifteen tools, ten memory kinds and thirty-one writer relations. It is\nan informative map, not a CI gate or a promise that another LLM has learned\nthese choices. Runtime names and allowed classes come from tools/list.\n\nA `save_as` name identifies the exact JSON call inside its lesson. In KMP,\ninspect the corresponding guide ref from the table at the end, using about\n`guide:kmp-agent`. The lesson contains the literal sources, valid arguments,\nreturned-ref bindings, expected evidence and negative limits.\n\n## Tools\n\n| Tool | Concrete call | Limit to read with it |\n| --- | --- | --- |\n| `kmp_ingest` | [canonical-ingest](./canonical-ingest.md), `ingested` | The referenced constraint must already exist; preview alone writes nothing. |\n| `kmp_write_memory` | [first-decision](./first-decision.md), `constraint` | A recorded choice is not a passed test. |\n| `kmp_wake` | [preference-delta](./preference-delta.md), `present` | A compact catalogue does not include every expanded proof item. |\n| `kmp_ask` | [first-decision](./first-decision.md), `answer` | For absent evidence, use the terminal UNKNOWN case in budget-proof. |\n| `kmp_relate` | [distributed-incident](./distributed-incident.md), `related` | A proposal does not write or prove an equivalence. |\n| `kmp_goto` | [decision-history](./decision-history.md), `start` | Keep the requested clock and the inclusive boundary. |\n| `kmp_near` | [alias-ownership](./alias-ownership.md), `account_history` | Copy the returned ref; nearby mentions are not proven identities. |\n| `kmp_rewind` | [decision-history](./decision-history.md), `earlier` | An older decision remains historical after replacement. |\n| `kmp_forward` | [budget-proof](./budget-proof.md), `temporal_first` | Continue temporal_second; exclude the interval end. |\n| `kmp_trace` | [first-decision](./first-decision.md), `packet_proof` | For an absent path, use no_path in budget-proof. |\n| `kmp_inspect` | [first-decision](./first-decision.md), `constraint_read` | If a page is partial, finish it before claiming full evidence. |\n| `kmp_relabel` | [labels-negation](./labels-negation.md), `canonical_label` | Rename a label without inventing identity or replacing the source. |\n| `kmp_view_open` | [first-decision](./first-decision.md), `view` | The view is process-scoped; memory is durable. |\n| `kmp_view_apply_intent` | [first-decision](./first-decision.md), `frame` | After a revision conflict, read the human frame before another move. |\n| `kmp_view_get_state` | [shared-resumption](./shared-resumption.md), `human_state` | A screen gesture is not authorization to write feedback. |\n\n## Memory kinds\n\nIntent names the writer operation; kind names what is remembered. In the\nrecord_delta case, the writer also generates a separate semantic_delta entry.\n\n| Kind | Source and call | What it records |\n| --- | --- | --- |\n| `turn` | [shared-resumption](./shared-resumption.md), `handoff` | H1: Please confirm D1 is the selection to review for HND-9. The offline restore test is still pending; no test report is available. |\n| `observation` | [workflow-proof](./workflow-proof.md), `slow` | B1: LAT-3 build A measured 150 ms for the response under the R1 test conditions. |\n| `decision` | [first-decision](./first-decision.md), `decision` | D1: START-1 chooses SQLite because C1 requires journal writes without a network. |\n| `feedback` | [quantities](./quantities.md), `void` | TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled. |\n| `semantic_delta` | [preference-delta](./preference-delta.md), `new_policy` | D2: POL-2 replaces D1 for normal NOTIFY-2 events: use immediate notices because the operations team requested immediate updates. Urgent alerts remain immediate. |\n| `constraint` | [first-decision](./first-decision.md), `constraint` | C1: START-1 requires the journal to accept writes without a network. |\n| `preference` | [preference-delta](./preference-delta.md), `preference` | P1: For NOTIFY-2, I prefer one daily digest of normal events. Urgent alerts may interrupt; this is a preference, not a mandatory limit. |\n| `derived_value` | [structure-parts](./structure-parts.md), `total` | TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included. |\n| `error_path` | [distributed-incident](./distributed-incident.md), `audit` | The deployment of rel-17 exhausted Atlas database connections at 09:00 UTC on September 1: outage EVT-17-F in INC-17. The audit compared it with recovery EVT-17-R. |\n| `success_path` | [workflow-proof](./workflow-proof.md), `execution` | EX1: RLS-3 staging deployment OP1 completed after its checksum check. The execution log names A1 as the approval required before this deployment could run. |\n\n## Writer relations\n\nThe selected class is the one justified by that source. The allowed column\nshows the current alternatives; it does not tell the writer to emit all of them.\nStructural links below connect source-declared user memories. Internal records,\ncontains_entry and has_dimension links are created by KMP and are not copied.\n\n| Relation | Concrete source call | Class used; allowed classes | Rationale to check against the source |\n| --- | --- | --- | --- |\n| `follows` | [labels-negation](./labels-negation.md), `later_decision` | `procedural`; `procedural` | La decisión D1 se registra después de revisar los informes de RUN-7; este enlace conserva el orden y no verifica ni sustituye sus estados anteriores. |\n| `answers` | [shared-resumption](./shared-resumption.md), `feedback` | `evidential`; `evidential` | F1 explicitly answers H1, the stored request for confirmation of the review selection. |\n| `uses_background` | [structure-parts](./structure-parts.md), `total` | `evidential`; `evidential` | TOTAL1 settles the two components described by BREAKDOWN1; the literal settlement supplies amounts and exclusions. |\n| `depends_on` | [workflow-proof](./workflow-proof.md), `execution` | `causal`; `causal` | EX1 records A1 as the required approval for this completed staging deployment. |\n| `chosen_because` | [first-decision](./first-decision.md), `decision` | `motivational`; `causal`, `motivational` | D1 explicitly chooses SQLite for the offline-write requirement recorded by C1. |\n| `triggers` | [workflow-proof](./workflow-proof.md), `sample` | `causal`; `causal` | The S1 rule log identifies this threshold event as the cause of AL1, not merely an earlier sample. |\n| `authorizes` | [workflow-proof](./workflow-proof.md), `approval` | `motivational`; `causal`, `motivational` | A1 explicitly permits OP1 in staging, with checksum verification required and production excluded. |\n| `verified_by` | [budget-proof](./budget-proof.md), `result` | `evidential`; `evidential` | R1's matching-checksum and offline-completion claims are verified by the measured result recorded in T1. |\n| `semantic_delta_from` | [preference-delta](./preference-delta.md), `new_policy` (generated delta link) | `causal`; `causal` | D2 replaces the default because operations requested immediate updates; the urgent-alert policy is unchanged. |\n| `updates_state` | [preference-delta](./preference-delta.md), `new_policy` (generated delta link) | `causal`; `causal` | D2 replaces the default because operations requested immediate updates; the urgent-alert policy is unchanged. |\n| `supports` | [quantities](./quantities.md), `statement` | `evidential`; `evidential` | The closing statement independently confirms the corrected settled hotel figure; it does not create another charge. |\n| `supersedes` | [preference-delta](./preference-delta.md), `new_policy` | `evidential`; `evidential` | D2 explicitly replaces D1 for normal NOTIFY-2 events while retaining the urgent-alert exception. |\n| `contradicts` | [labels-negation](./labels-negation.md), `negative` | `evidential`; `evidential` | S1 afirma habilitado y S3 lo niega para el mismo RUN-7, prod, Ana e instante; G1 prueba que bitácora y journal designan el mismo componente en este catálogo. |\n| `satisfies_constraint` | [workflow-proof](./workflow-proof.md), `fast` | `constraint`; `constraint` | G1 measures 80 ms under R1 conditions, within the required maximum of 100 ms. |\n| `violates_constraint` | [workflow-proof](./workflow-proof.md), `slow` | `constraint`; `constraint` | B1 measures 150 ms under R1 conditions, exceeding the required maximum of 100 ms. |\n| `contributes_to` | [structure-parts](./structure-parts.md), `bus` | `evidential`; `evidential` | BUS1 is explicitly included as 20 EUR in TOTAL1, whose source also identifies HOTEL1 at 35 EUR. |\n| `excluded_from` | [quantities](./quantities.md), `exclusions` | `constraint`; `constraint` | These documented candidates are deliberately omitted from this EUR subtotal for replacement, duplicate, void or unit mismatch reasons. |\n| `checked_against` | [quantities](./quantities.md), `total` | `constraint`; `constraint` | The calculation is checked against the rule requiring unique settled EUR charges and no voids or currency conversion. |\n| `derived_from` | [quantities](./quantities.md), `exclusions` | `evidential`; `evidential` | This is the preliminary operand omitted after its explicit correction. |\n| `confirms_selection` | [shared-resumption](./shared-resumption.md), `feedback` | `evidential`; `evidential`, `motivational` | F1 explicitly confirms D1 as the selection to review. It limits that confirmation to selection and leaves the offline test pending. |\n| `restates` | [labels-negation](./labels-negation.md), `restated` | `evidential`; `evidential` | S2 declara que reformula S1: ambos afirman habilitado para RUN-7, prod, Ana y el mismo instante; G1 identifica los dos nombres del componente. |\n| `corrects` | [quantities](./quantities.md), `hotel_final` | `evidential`; `evidential` | The final invoice corrects the amount of this same hotel transaction; it must replace, not be added to, the preliminary figure. |\n| `component_of` | [structure-parts](./structure-parts.md), `bus` | `evidential`; `evidential` | BUS1 is the transport component explicitly listed in BREAKDOWN1. |\n| `total_of` | [quantities](./quantities.md), `total` | `evidential`; `evidential` | The subtotal includes this distinct settled transport charge exactly once. |\n| `same_event_as` | [quantities](./quantities.md), `hotel_copy` | `evidential`; `evidential` | The copy and final invoice report one hotel charge; the explicit transaction and copy statement justify counting it once. |\n| `same_entity_as` | [alias-ownership](./alias-ownership.md), `alias` | `evidential`; `evidential` | La aclaración firmada identifica expresamente al sujeto llamado Nora con Elena Vega, la persona nombrada en el directorio. |\n| `qualifies_as` | [structure-parts](./structure-parts.md), `bus` | `evidential`; `evidential` | BUS1 meets the CATEGORY1 criteria through its identified receipt, amount, public transport and work purpose. |\n| `matches_requirement` | [workflow-proof](./workflow-proof.md), `candidate` | `constraint`; `constraint` | C1 has both properties required by R2: local checksum verification and operation without a network. |\n| `contains` | [structure-parts](./structure-parts.md), `plan` | `structural`; `structural` | PLAN1 explicitly lists PH1 as a phase of PLAN-4; this records organization only. |\n| `member_of` | [structure-parts](./structure-parts.md), `member` | `structural`; `structural` | MEMBER1 names Ivo in the REVIEW-4 roster and states no approval rights. |\n| `scoped_to` | [structure-parts](./structure-parts.md), `rule` | `structural`; `structural` | RULE1 limits its 30-day retention requirement to STAGE-4 and excludes a claim about production. |\n\n## Exact KMP lesson references\n\nThese refs are copied from the generated guide requests. Load one selected\nlesson, reuse it within the session, and read its prerequisites as needed.\n\n| Lesson | Ref in guide:kmp-agent |\n| --- | --- |\n| [first-decision](./first-decision.md) | `guide:kmp-agent:example:first-decision` |\n| [preference-delta](./preference-delta.md) | `guide:kmp-agent:example:preference-delta` |\n| [workflow-proof](./workflow-proof.md) | `guide:kmp-agent:example:workflow-proof` |\n| [structure-parts](./structure-parts.md) | `guide:kmp-agent:example:structure-parts` |\n| [canonical-ingest](./canonical-ingest.md) | `guide:kmp-agent:example:canonical-ingest` |\n| [budget-proof](./budget-proof.md) | `guide:kmp-agent:example:budget-proof` |\n| [quantities](./quantities.md) | `guide:kmp-agent:example:quantities` |\n| [shared-resumption](./shared-resumption.md) | `guide:kmp-agent:example:shared-resumption` |\n| [labels-negation](./labels-negation.md) | `guide:kmp-agent:example:labels-negation` |\n| [decision-history](./decision-history.md) | `guide:kmp-agent:example:decision-history` |\n| [alias-ownership](./alias-ownership.md) | `guide:kmp-agent:example:alias-ownership` |\n| [distributed-incident](./distributed-incident.md) | `guide:kmp-agent:example:distributed-incident` |\n| [four-clocks](./four-clocks.md) | `guide:kmp-agent:example:four-clocks` |\n| [late-conflict](./late-conflict.md) | `guide:kmp-agent:example:late-conflict` |\n\n## What this review proves\n\nThe linked calls exercise all the named capabilities with explicit source\ninterpretations. The standalone replays check kinds, refs, clocks and proof\npreservation; the visual reviews check their presentation. Counting a name\nin a file would not prove any of those properties. Independent learning on\nnew sources and reader questions remains a separate evaluation.\n\nThe multivalue contract is demonstrated in [dimensional-memberships](./dimensional-memberships.md), exact ref `guide:kmp-agent:example:dimensional-memberships`: arrays, independent keys, selectors, late relabel and visual review.\n"
         },
         {
           "coordinates": [
@@ -1253,17 +1253,16 @@
               "sequence": 40
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:semantic-batch",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:ask",
+            "example_title": "Atomic semantic packet with local proof links",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
+          "text": "# One packet, local proof links and independent clocks\n\nFictional sources:\n\n- R1, observed September 1 at 09:35 UTC: request logs for component **neb**\n  show refresh success followed immediately by an unauthorized request. Its\n  registry lists **Nebula cache** and **NC** as aliases. The event time is unknown.\n- R2, observed at 09:50 UTC: at 09:45 the team chose a retry because of R1's\n  refresh race. This is a decision; it does not prove the retry worked.\n\nUse a fresh teaching store. The writer observed the collected sources at 10:00 UTC; actual ingestion uses the kernel clock. A minimal\nwrite is a one-element `memories` array with id, kind, summary, evidence and\nlabels, plus about, actor and observed_at. The packet below adds a second\nrecord and a forward local relation. Send only `arguments`; `${...}` copies\nexact returned values. This replay checks the native contract, not LLM learning.\n\n## Rejection leaves the about empty\n\nThis deliberately invalid packet has a valid first record and a second one\nwithout evidence. Strict is the default. Repair the source field; do not\nweaken validation merely to accept the packet.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"rejected\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"actor\": \"guide-writer\",\n    \"observed_at\": \"2026-09-01T10:00:00Z\",\n    \"labels\": {\n      \"component\": [\n        \"neb\"\n      ]\n    },\n    \"idempotency_key\": \"guide-semantic-batch:1\",\n    \"memories\": [\n      {\n        \"id\": \"choice\",\n        \"kind\": \"decision\",\n        \"summary\": \"R2: The team chooses a retry after token refresh.\",\n        \"evidence\": \"R2 selects a retry because R1 logs show the refresh race.\",\n        \"observed_at\": \"2026-09-01T09:50:00Z\",\n        \"occurred_at\": \"2026-09-01T09:45:00Z\",\n        \"connect_to\": [\n          {\n            \"ref\": \"@logs\",\n            \"rel\": \"chosen_because\",\n            \"class\": \"causal\",\n            \"why\": \"A retry addresses the refresh race recorded in R1.\",\n            \"evidence\": \"R2 cites R1 as the reason for the retry.\"\n          }\n        ]\n      },\n      {\n        \"id\": \"logs\",\n        \"kind\": \"observation\",\n        \"summary\": \"R1: Request logs show a token refresh race.\",\n        \"observed_at\": \"2026-09-01T09:35:00Z\",\n        \"labels\": {\n          \"alias\": [\n            \"Nebula cache\",\n            \"NC\"\n          ]\n        }\n      }\n    ]\n  },\n  \"expect_error\": \"invalid_argument\"\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"still_empty\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"ref\": \"example:guide:semantic-batch\"\n  },\n  \"expect_error\": \"not_found\"\n}\n```\n\n## Write both records and their proof in one call\n\n`@logs` resolves inside the same packet, despite appearing later. It is not\nan existing memory ref and needs no fabricated read_context. Shared component\nmembership applies to both records; only R1 has aliases. No process dimension\nis invented. Sources and relation rationale remain separate.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"written\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"actor\": \"guide-writer\",\n    \"observed_at\": \"2026-09-01T10:00:00Z\",\n    \"labels\": {\n      \"component\": [\n        \"neb\"\n      ]\n    },\n    \"idempotency_key\": \"guide-semantic-batch:1\",\n    \"memories\": [\n      {\n        \"id\": \"choice\",\n        \"kind\": \"decision\",\n        \"summary\": \"R2: The team chooses a retry after token refresh.\",\n        \"evidence\": \"R2 selects a retry because R1 logs show the refresh race.\",\n        \"observed_at\": \"2026-09-01T09:50:00Z\",\n        \"occurred_at\": \"2026-09-01T09:45:00Z\",\n        \"connect_to\": [\n          {\n            \"ref\": \"@logs\",\n            \"rel\": \"chosen_because\",\n            \"class\": \"causal\",\n            \"why\": \"A retry addresses the refresh race recorded in R1.\",\n            \"evidence\": \"R2 cites R1 as the reason for the retry.\"\n          }\n        ]\n      },\n      {\n        \"id\": \"logs\",\n        \"kind\": \"observation\",\n        \"summary\": \"R1: Request logs show a token refresh race.\",\n        \"evidence\": \"R1 shows refresh success followed immediately by an unauthorized request; its registry lists Nebula cache and NC for neb.\",\n        \"observed_at\": \"2026-09-01T09:35:00Z\",\n        \"labels\": {\n          \"alias\": [\n            \"Nebula cache\",\n            \"NC\"\n          ]\n        }\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"choice\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"ref\": \"${written.local_refs.choice}\",\n    \"include\": {\n      \"raw\": true\n    },\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"logs\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"ref\": \"${written.local_refs.logs}\",\n    \"include\": {\n      \"raw\": true\n    },\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"proof\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"from\": \"${written.local_refs.choice}\",\n    \"to\": \"${written.local_refs.logs}\",\n    \"budget\": {\n      \"max_bytes\": 30000\n    }\n  }\n}\n```\n\n## Read the timeline and retry safely\n\nAt 09:40 on the observed clock only R1 is available. At 09:55 R2 joins it.\nThe later receipt does not replace either observation time. R1 still has no\nknown occurred_at. Retrying the exact packet keeps refs and sequences.\n\n```json\n{\n  \"tool\": \"kmp_goto\",\n  \"save_as\": \"before_choice\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"at\": {\n      \"time\": \"2026-09-01T09:40:00Z\"\n    },\n    \"budget\": {\n      \"max_bytes\": 30000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_goto\",\n  \"save_as\": \"after_choice\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"at\": {\n      \"time\": \"2026-09-01T09:55:00Z\"\n    },\n    \"budget\": {\n      \"max_bytes\": 30000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"retry\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\",\n    \"actor\": \"guide-writer\",\n    \"observed_at\": \"2026-09-01T10:00:00Z\",\n    \"labels\": {\n      \"component\": [\n        \"neb\"\n      ]\n    },\n    \"idempotency_key\": \"guide-semantic-batch:1\",\n    \"memories\": [\n      {\n        \"id\": \"choice\",\n        \"kind\": \"decision\",\n        \"summary\": \"R2: The team chooses a retry after token refresh.\",\n        \"evidence\": \"R2 selects a retry because R1 logs show the refresh race.\",\n        \"observed_at\": \"2026-09-01T09:50:00Z\",\n        \"occurred_at\": \"2026-09-01T09:45:00Z\",\n        \"connect_to\": [\n          {\n            \"ref\": \"@logs\",\n            \"rel\": \"chosen_because\",\n            \"class\": \"causal\",\n            \"why\": \"A retry addresses the refresh race recorded in R1.\",\n            \"evidence\": \"R2 cites R1 as the reason for the retry.\"\n          }\n        ]\n      },\n      {\n        \"id\": \"logs\",\n        \"kind\": \"observation\",\n        \"summary\": \"R1: Request logs show a token refresh race.\",\n        \"evidence\": \"R1 shows refresh success followed immediately by an unauthorized request; its registry lists Nebula cache and NC for neb.\",\n        \"observed_at\": \"2026-09-01T09:35:00Z\",\n        \"labels\": {\n          \"alias\": [\n            \"Nebula cache\",\n            \"NC\"\n          ]\n        }\n      }\n    ]\n  }\n}\n```\n\n## Check the shared graph\n\nReview two kinds, one causal chosen_because relation, the literal sources,\ncomponent membership on both records and two aliases on R1 alone. Temporal\nzoom and following the relation should take you from the decision to its proof.\n\n```json\n{\n  \"tool\": \"kmp_view_open\",\n  \"save_as\": \"view\",\n  \"arguments\": {\n    \"about\": \"example:guide:semantic-batch\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"frame\",\n  \"arguments\": {\n    \"view_id\": \"${view.view_id}\",\n    \"expected_revision\": \"${view.view_revision}\",\n    \"idempotency_key\": \"guide-semantic-batch:view\",\n    \"selection\": \"${written.local_refs.choice}\",\n    \"focus\": {\n      \"time_range\": {\n        \"from\": \"2026-09-01T09:30:00Z\",\n        \"to\": \"2026-09-01T10:05:00Z\",\n        \"axis\": \"observed\"\n      }\n    },\n    \"projection\": {\n      \"semantic_zoom\": \"moment\"\n    },\n    \"explanation\": \"Review the packet, separate clocks, labels and the decision proof\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"view_state\",\n  \"arguments\": {\n    \"view_id\": \"${view.view_id}\"\n  }\n}\n```\n"
         },
         {
           "coordinates": [
@@ -1285,17 +1284,17 @@
               "sequence": 41
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:ask",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
+          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
         },
         {
           "coordinates": [
@@ -1317,7 +1316,7 @@
               "sequence": 42
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1325,9 +1324,9 @@
             "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
         },
         {
           "coordinates": [
@@ -1349,17 +1348,17 @@
               "sequence": 43
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -1381,17 +1380,17 @@
               "sequence": 44
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -1413,17 +1412,17 @@
               "sequence": 45
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object."
         },
         {
           "coordinates": [
@@ -1445,17 +1444,17 @@
               "sequence": 46
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -1477,17 +1476,17 @@
               "sequence": 47
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:relate",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -1509,17 +1508,17 @@
               "sequence": 48
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:relate",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -1541,17 +1540,17 @@
               "sequence": 49
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -1573,17 +1572,17 @@
               "sequence": 50
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -1605,7 +1604,7 @@
               "sequence": 51
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1613,9 +1612,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -1637,7 +1636,7 @@
               "sequence": 52
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1645,9 +1644,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1669,17 +1668,17 @@
               "sequence": 53
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1701,6 +1700,38 @@
               "sequence": 54
             }
           ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:54:00Z",
+              "occurred_at": "2026-08-28T00:54:00Z",
+              "scope_id": "timeline",
+              "sequence": 55
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 55
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 55
+            }
+          ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
           "kind": "reference",
           "metadata": {
@@ -1711,7 +1742,7 @@
             "source": "tools/list",
             "tool_name": "kmp_write_memory"
           },
-          "text": "LIVE TOOL kmp_write_memory. Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself."
+          "text": "LIVE TOOL kmp_write_memory. Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself."
         }
       ],
       "evidence": [
@@ -1816,7 +1847,7 @@
           "supports": [
             "guide:kmp-agent:verb:write"
           ],
-          "text": "Native writer and canonical ingest previews now use kernel validation against the selected store. store_validated_preview checks rejection and no events; grpc_backend checks forwarding with dry_run=true.",
+          "text": "Native writer and canonical ingest previews now use kernel validation against the selected store. store_validated_preview checks rejection and no events; grpc_backend checks forwarding with dry_run=true. Semantic packets resolve every local id before one ingest and preserve per-record clocks and all declared memberships.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2223,6 +2254,19 @@
           "time": "2026-08-28T00:00:00Z"
         },
         {
+          "id": "evidence:guide:kmp-agent:example:semantic-batch",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:semantic-batch"
+          ],
+          "text": "Two fictional R1/R2 sources exercise one-about atomic validation, forward local refs, all declared labels, independent clocks, exact retry and shared ChronoLoom proof inspection.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
           "id": "evidence:guide:kmp-agent:tool:kmp_ask",
           "metadata": {
             "audience": "agent",
@@ -2414,7 +2458,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_write_memory"
           ],
-          "text": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+          "text": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "time": "2026-08-28T00:00:00Z"
         }
       ],
@@ -2892,7 +2936,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+          "evidence": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
           "sequence": 48,
