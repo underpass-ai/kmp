@@ -5,6 +5,7 @@ use crate::application::dto::guide_request_document_dto::GuideRequestDocumentDto
 use crate::application::dto::guide_source_about_dto::GuideSourceAboutDto;
 use crate::application::dto::guide_source_dto::GuideSourceDto;
 use crate::application::dto::guide_tool_dto::GuideToolDto;
+use crate::domain::guide_position_timestamp::GuidePositionTimestamp;
 use crate::domain::release_error::ReleaseError;
 
 pub struct GuideRequestMapper;
@@ -66,7 +67,7 @@ impl GuideRequestMapper {
                 &entry.evidence,
                 entry.example_title.as_deref(),
                 None,
-            );
+            )?;
             if let Some(title) = &entry.guide_title {
                 if title.trim().is_empty() || title.contains(['|', '\n', '`']) {
                     return Err(ReleaseError::invalid(
@@ -102,7 +103,7 @@ impl GuideRequestMapper {
                     tool.description.trim(),
                     None,
                     Some((&tool.name, verb)),
-                );
+                )?;
             }
         }
         let mut relations = about
@@ -195,7 +196,8 @@ impl GuideRequestMapper {
         evidence: &str,
         example_title: Option<&str>,
         generated_tool: Option<(&str, &str)>,
-    ) {
+    ) -> Result<(), ReleaseError> {
+        let position = GuidePositionTimestamp::from_sequence(sequence)?;
         let source_kind = if generated_tool.is_some() {
             "tools/list"
         } else {
@@ -224,8 +226,8 @@ impl GuideRequestMapper {
                     "dimension": "timeline",
                     "scope_id": "timeline",
                     "sequence": sequence,
-                    "occurred_at": Self::sequence_time(sequence),
-                    "observed_at": Self::sequence_time(sequence),
+                    "occurred_at": position.as_str(),
+                    "observed_at": position.as_str(),
                 },
                 {
                     "dimension": "audience",
@@ -248,10 +250,7 @@ impl GuideRequestMapper {
             "time": observed_at,
             "metadata": {"guide_version": guide_version, "audience": audience},
         }));
-    }
-
-    fn sequence_time(sequence: usize) -> String {
-        format!("2026-08-28T00:{:02}:00Z", sequence.saturating_sub(1))
+        Ok(())
     }
 
     fn tool_verb(name: &str) -> Result<&'static str, ReleaseError> {
