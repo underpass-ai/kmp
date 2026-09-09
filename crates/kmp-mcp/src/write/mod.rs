@@ -36,6 +36,7 @@ mod search_summary;
 pub(crate) mod summary_planner;
 pub(crate) mod validated_arguments;
 pub(crate) mod validation_error;
+pub(crate) mod validation_errors;
 mod writer_identity_audit;
 pub(crate) mod writer_label;
 

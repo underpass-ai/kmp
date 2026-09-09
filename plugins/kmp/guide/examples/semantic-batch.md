@@ -397,3 +397,38 @@ not certify that R1/R2 contained no other facts. For this teaching audit, execut
 `receipt.writer.local_refs` and the accepted `receipt.canonical_memory`; its
 chosen_because relation keeps R2's reason and proof. This detail is available on
 demand and need not be loaded after every successful write.
+
+## Self-check fidelity and navigation
+
+An accepted packet is what you submitted, not proof that you interpreted the
+sources correctly. Before a handoff or after a difficult extraction, compare
+the source with the receipt or the relevant memory's Inspect result. Reuse the
+results you already read; this is not a second full receipt read after every write.
+
+| Source fact | Check in this lesson | Why it matters |
+| --- | --- | --- |
+| R1 was observed at 09:35; event time is unknown | `logs` has observed_at 09:35 and no occurred_at | A midnight default or packet time would move the observation |
+| R2 was chosen at 09:45 and observed at 09:50 | `choice` carries those two distinct clocks | The packet's 10:00 provenance is neither event |
+| R1 names Nebula cache and NC for component neb | Both alias memberships and component=neb exist | A spelling only in prose cannot be selected as a label |
+| R3 requests removing the retry but changes no decision | R2 stays selected; the request does not supersede it | A proposal is not an approval or an executed violation |
+
+For facts with different lifecycles, split the memories before writing. For
+example, a source may state a person's role, their use of `@north`, and a data
+residency requirement. If the account later changes hands, only its assignment
+expires; the role and requirement remain. Use `account: ["@north"]` for both
+assignments, with separate person labels and evidence-backed validity. Keep a
+literal ambiguous signature searchable without asserting the person's identity.
+The complete account history is `guide:kmp-agent:example:alias-ownership`.
+
+Check at least the route the memory is meant to support: reuse a catalogue
+label, move through its timeline with Forward/Goto and inspect a relevant link's
+proof. Use Trace when the claimed explanation spans several links. In ChronoLoom,
+select that label, choose the source's clock, zoom to the event and follow the
+relation. Seeing one known answer with Ask does not verify these other routes.
+
+When a source says `UE`, an English search rendering can say `UE (EU)`; `EU`
+alone fails the literal identifier lint. If the source text says `2026`, `09:00`
+and `UTC`, keep those tokens in the rendering even when also adding an ISO date.
+Never alter the canonical text to satisfy the lint. Review the complete feedback
+array so independent record errors are repaired together. The lint checks literal
+identifiers, not semantic equivalence or fidelity of clocks to prose evidence.

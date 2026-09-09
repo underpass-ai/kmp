@@ -69,6 +69,12 @@ stable-object floor and its warnings apply.
 A refusal carries `feedback`: a stable `code`, `severity`, `field`, `reason`
 and an optional `action` with `tool` and complete `arguments`. Use the field
 path to locate the problem; do not parse the prose to choose a repair.
+Read the whole feedback array. Once the packet shape and local identities are
+usable, KMP reports the first compiler failure from each invalid record together,
+for both memories and search_summaries. Correct all listed fields and resubmit
+the whole packet. This is not an exhaustive source audit: another rule in the
+same record may fail after its first error is repaired. An unusable packet shape,
+ambiguous local id or failed store read can still stop the check earlier.
 For example, `MEMORY_EVIDENCE_REQUIRED` at `memories[1].evidence` means the
 second record needs its real source. `SEARCH_SUMMARY_REQUIRED` at
 `memories[1].summary_en` asks for a faithful English search rendering.
@@ -141,6 +147,14 @@ sides, and removing the last label. Other values under the key remain.
 Added memberships inherit the memory's clocks; the relabel's actor, receipt
 time and rationale are recorded separately. Read back with `kmp_inspect`
 and `include.raw` to verify the memberships and evidence.
+
+Choose keys for the routes you will need: project/source alone cannot select a
+person, account or component. Reuse the same key for the same route over time;
+`alias: ["@north"]` and `account: ["@north"]` are distinct selectors. Separate
+facts when one can expire or be replaced without changing the others. A person's
+role, an account assignment and a permanent constraint need not share a lifecycle.
+See `guide:kmp-agent:example:alias-ownership` for separate assignments and
+`guide:kmp-agent:example:semantic-batch` for a source-to-memory self-check.
 
 Filter a facet with `dimensions.selectors`, for example
 `{"key":"alias","op":"in","values":["neb"]}`. To require both an alias and
