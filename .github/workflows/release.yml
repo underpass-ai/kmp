@@ -50,12 +50,6 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Verify versioned changelog
-        shell: bash
-        run: |
-          VERSION="$(cargo run --locked --quiet -p kmp-release -- version current)"
-          cargo run --locked --quiet -p kmp-release -- changelog check "${VERSION}"
-
       - name: Install protoc (Linux)
         if: runner.os == 'Linux'
         run: bash scripts/ci/install-protoc.sh
@@ -79,6 +73,14 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Verify versioned changelog
+        shell: bash
+        run: |
+          VERSION="$(cargo run --locked --quiet -p kmp-release -- version current)"
+          cargo run --locked --quiet -p kmp-release -- changelog check "${VERSION}"
 
       - name: Build release binary
         shell: bash
@@ -160,6 +162,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-rust
+
+      - name: Cache release tool
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          shared-key: release-tools
+          cache-workspace-crates: true
 
       - name: Download the five release binaries
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -274,6 +285,12 @@ jobs:
 
       - name: Install Rust toolchain
         uses: ./.github/actions/install-rust
+
+      - name: Cache release tool
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          shared-key: release-tools
+          cache-workspace-crates: true
 
       - name: Resolve the candidate named by the annotated tag
         id: candidate

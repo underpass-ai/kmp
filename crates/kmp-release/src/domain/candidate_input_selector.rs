@@ -38,6 +38,11 @@ impl CandidateInputSelector {
 
     pub fn includes(&self, relative: &Path) -> bool {
         let relative = relative.to_string_lossy().replace('\\', "/");
+        // Cargo's integration tests are separate executables, not inputs to
+        // the shipped binaries. Their own CI still validates changes to them.
+        if relative.starts_with("crates/") && relative.split('/').nth(2) == Some("tests") {
+            return false;
+        }
         Self::EXACT.contains(&relative.as_str())
             || Self::PREFIXES
                 .iter()
@@ -81,6 +86,21 @@ mod tests {
 
         assert!(!selector.includes(Path::new("docs/development/releasing.md")));
         assert!(!selector.includes(Path::new("CHANGELOG.md")));
+    }
+
+    #[test]
+    fn integration_test_repairs_do_not_invalidate_the_shipped_binaries() {
+        let selector = CandidateInputSelector::new();
+        assert!(!selector.includes(Path::new("crates/kmp-mcp/tests/lifecycle_real_hosts.rs")));
+        for input in [
+            "crates/kmp-mcp/src/serving/rpc_dispatch.rs",
+            "crates/kmp-mcp/src/tests.rs",
+            "crates/kmp-mcp/Cargo.toml",
+            "crates/kmp-mcp/build.rs",
+            "crates/kmp-mcp/fixtures/kernel/contract.json",
+        ] {
+            assert!(selector.includes(Path::new(input)), "{input}");
+        }
     }
 
     #[test]

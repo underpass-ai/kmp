@@ -11,6 +11,18 @@ a KMP workspace, supply `--root` where supported or all required file paths
 for `readme` and `changelog`. The `scripts/release.sh` wrapper selects the
 checkout containing that script before invoking the binary.
 
+The candidate digest covers production source, build inputs and packaged assets.
+Cargo integration tests under `crates/*/tests/` are separate executables and do
+not invalidate a candidate when their contents change. They still run through
+their normal checks. Keep production inputs out of those test directories;
+`src/`, manifests, build scripts and crate assets remain bound to the candidate.
+
+Release jobs restore Cargo caches before their first Cargo command. Platform
+builds have distinct target keys; MCPB assembly and promotion also cache the
+release tool. A cache hit depends on GitHub's branch visibility and retained
+entries, so the first run can still compile. Cargo validates cached inputs and
+the tag still promotes the exact verified candidate bytes.
+
 ## Two commands and a gate
 
 A release is one editorial act and two words. Write the `[Unreleased]` notes,

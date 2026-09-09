@@ -78,11 +78,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Check whether Windows packaging can change
+        id: impact
+        shell: bash
+        run: |
+          changed_paths="$(git diff --name-only '${{ github.event.pull_request.base.sha }}' '${{ github.event.pull_request.head.sha }}')"
+          windows=false
+          while IFS= read -r path; do
+            if [[ ! "$path" =~ ^crates/[^/]+/tests/ && "$path" != docs/* ]]; then
+              windows=true
+            fi
+          done <<< "$changed_paths"
+          echo "windows=${windows}" >> "$GITHUB_OUTPUT"
 
       - name: Install Rust toolchain
+        if: steps.impact.outputs.windows == 'true'
         uses: ./.github/actions/install-rust
 
       - name: Install protoc
+        if: steps.impact.outputs.windows == 'true'
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip" -OutFile protoc.zip
@@ -90,15 +107,18 @@ jobs:
           Add-Content $env:GITHUB_PATH "$env:USERPROFILE\protoc\bin"
 
       - name: Cache Rust build artifacts
+        if: steps.impact.outputs.windows == 'true'
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           shared-key: plugin-validation
 
       - name: Build the launcher engine once
+        if: steps.impact.outputs.windows == 'true'
         shell: bash
         run: cargo build --release --locked -p kmp-mcp --features sqlite
 
       - name: Package the prebuilt engine for the launcher
+        if: steps.impact.outputs.windows == 'true'
         shell: bash
         run: |
           KMP_PLUGIN_PREBUILT_BINARY=target/release/kmp-mcp.exe \
@@ -106,5 +126,6 @@ jobs:
             bash scripts/plugin/package-kmp-plugin.sh
 
       - name: Smoke-test Windows launcher version selection
+        if: steps.impact.outputs.windows == 'true'
         shell: pwsh
         run: ./scripts/ci/kmp-windows-launcher-smoke.ps1
