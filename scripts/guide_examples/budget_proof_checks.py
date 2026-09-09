@@ -77,6 +77,39 @@ def check(saved, client, authored):
     assert complete['evidence'] and complete['links']['outgoing']
     assert authored['inspect_complete']['page']['cursor'] == partial['page']['next_cursor']
     assert authored['inspect_complete']['budget']['max_bytes'] == partial['page']['required_bytes']
+    # Execute the server's calls unchanged as a separate path through the same
+    # stored source. The authored two-call alternative above exercises reuse.
+    paths = (('evidence',), ('links', 'incoming'), ('links', 'outgoing'), ('raw',))
+    def section(value, path):
+        for key in path:
+            value = value[key]
+        return value
+    whole_arguments = dict(authored['inspect_partial'], budget={'max_bytes': 100000})
+    whole = client.call('kmp_inspect', whole_arguments)
+    assert not whole['page']['has_more']
+    accumulated = {path: list(section(partial, path)) for path in paths}
+    page, pages = partial, [partial]
+    while page['page']['has_more']:
+        assert len(pages) < 100
+        action = page['next_actions'][0]
+        assert action['tool'] == 'kmp_inspect'
+        assert action['arguments']['about'] == authored['inspect_partial']['about']
+        assert action['arguments']['ref'] == authored['inspect_partial']['ref']
+        stalled = page['page']['returned'] == 0
+        page = client.call(action['tool'], action['arguments'])
+        if stalled:
+            assert page['page']['returned'] > 0
+        assert page['object'] == whole['object']
+        for path in paths:
+            accumulated[path].extend(section(page, path))
+        pages.append(page)
+    assert not page['next_actions']
+    for path in paths:
+        assert accumulated[path] == section(whole, path)
+    saved['inspection_action_walk'] = {
+        'pages': len(pages), 'additional_native_calls': len(pages),
+        'complete_expansion_equal': True,
+        'full_required_bytes': whole['page']['required_bytes']}
     capped = saved['capped_recall']['projection']
     available = saved['catalogue']['projection']['sections']['proof.evidence']['total']
     assert capped['selection_omitted'] == available - 1 > 0
@@ -96,13 +129,14 @@ def check(saved, client, authored):
             'next_call': {'tool': 'kmp_forward', 'arguments': authored['temporal_second']}},
         'inspection_at_512_bytes': {
             'status': 'partial', 'required_bytes': partial['page']['required_bytes'],
-            'next_call': {'tool': 'kmp_inspect', 'arguments': authored['inspect_complete']}}}
+            'minimum_progress_bytes': partial['page']['minimum_progress_bytes'],
+            'next_call': partial['next_actions'][0]}}
     return ['five source records retain text, kinds and evidence',
             'historical proof and dimensionally filtered about context declare their distinct scope',
             'inclusive boundary and two temporal pages recover the half-open interval',
             'opaque continuation cursors preserve all bound selection arguments',
             'three trace pages retain the directed relation proof exactly',
-            'stable-floor inspection resumes without pretending omitted proof was read',
+            'stable-floor inspection resumes through returned calls and reconstructs the complete selected proof',
             'selection omission is distinguished from pending pagination',
             'an unrelated source has no manufactured semantic path',
             'two semantic UNKNOWN selections are terminal',

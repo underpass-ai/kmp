@@ -35,6 +35,7 @@
       ],
       "outgoing": []
     },
+    "next_actions": [],
     "object": {
       "kind": "string",
       "metadata": {},

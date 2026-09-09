@@ -75,8 +75,13 @@ fn inspect_output_schema() -> Value {
             "omitted": described("object", "Counts still remaining after this page, by details, evidence, outgoing, incoming and raw section."),
             "sections": described("object", "Per-section returned-on-page, remaining and total counts."),
             "required_bytes": described("integer", "Exact serialized bytes required by the complete inspection including its full object, even when this continuation reuses that object."),
+            "minimum_progress_bytes": described("integer", "Present only when this page cannot return an expansion item. The next action offers at least this allowance, preferring the complete inspection up to the usual 10,000-byte budget. required_bytes still measures the complete inspection."),
             "guidance": nullable_described("string", "Continuation, narrowing and budget guidance when this response is partial; null for a complete first page.")
         })),
+        "next_actions": {"type":"array","description":"Complete calls for the same inspection, including an increased byte allowance when no whole item fits. Execute in order and retain earlier pages; empty when complete.","items":output_object(json!({
+            "tool": {"type":"string","const":"kmp_inspect"},
+            "arguments": described("object", "The complete call, preserving about, ref, include and object reuse.")
+        }))},
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
         "warnings": warnings_output_schema()
     }))

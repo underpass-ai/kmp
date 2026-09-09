@@ -1,5 +1,7 @@
 #![cfg(feature = "container-tests")]
 
+#[path = "mcp_real_kernel/inspect_actions.rs"]
+mod inspect_actions;
 #[path = "mcp_real_kernel/relation_cursors.rs"]
 mod relation_cursors;
 mod support;
@@ -175,6 +177,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
     temporal_pages::check(&direct, &stdio, &http, &embedded).await;
     temporal_intervals::check(&direct, &stdio, &http, &embedded).await;
     temporal_fields::check(&direct, &stdio, &http, &embedded).await;
+    inspect_actions::check(&direct, &stdio, &http, &embedded).await;
 
     let first_page_arguments = json!({
         "about":"project:parity-live",

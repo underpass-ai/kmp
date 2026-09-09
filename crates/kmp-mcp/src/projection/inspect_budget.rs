@@ -21,7 +21,7 @@
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
-use kmp_proto_mapping::v1beta1::recall_projection::requested_byte_limit;
+use kmp_proto_mapping::v1beta1::recall_projection::{DEFAULT_MAX_BYTES, requested_byte_limit};
 
 use super::serialized_size::serialized_len;
 use crate::serving::ToolError;
@@ -77,87 +77,91 @@ pub(crate) fn enforce_inspect_output_budget(
     let items = inspect_page_items(&value);
     let selection_hash = inspect_selection_hash(&value, &items, arguments);
     let offset = inspect_page_offset(arguments, &selection_hash, items.len())?;
-    let required_bytes = inspect_full_required_bytes(&value, &items, &selection_hash);
+    let required_bytes = inspect_full_required_bytes(&value, &items, &selection_hash, arguments);
     // Hash and size the complete inspection before reusing any part of it.
-    // A changed text, metadata, relation or proof must still reject the cursor.
     let mut value = value;
     if !repeat_object {
         value["object"] = json!({"ref": value["object"]["ref"]});
         value["object_reused"] = json!(true);
     }
-    let full = render_inspect_page(
-        &value,
-        &items,
-        0,
-        items.len(),
-        &selection_hash,
-        required_bytes,
-    );
-    if offset == 0 && serialized_len(&full) <= limit {
-        return Ok(full);
-    }
-
-    let remaining = items.len().saturating_sub(offset);
-    let empty = render_inspect_page(&value, &items, offset, 0, &selection_hash, required_bytes);
-    let mut best = (serialized_len(&empty) <= limit).then_some(empty);
-
-    // Every non-final candidate carries the same guidance shape and grows as
-    // items are appended, so find the largest fitting prefix in logarithmic
-    // probes. Test the final page separately because its shorter guidance can
-    // make the complete remainder fit when the preceding partial did not.
-    let (mut low, mut high) = (1usize, remaining.saturating_sub(1));
-    while low <= high {
-        let middle = low + (high - low) / 2;
-        let candidate = render_inspect_page(
+    let render = |count, args: &Value| {
+        render_inspect_page(
             &value,
             &items,
             offset,
-            middle,
+            count,
             &selection_hash,
             required_bytes,
-        );
+            args,
+        )
+    };
+    let remaining = items.len().saturating_sub(offset);
+    let complete = render(remaining, arguments);
+    if serialized_len(&complete) <= limit {
+        return Ok(complete);
+    }
+
+    let mut best = render(0, arguments);
+    // A non-final prefix grows by whole items; the complete remainder was
+    // checked separately because it no longer carries a continuation action.
+    let (mut low, mut high) = (1usize, remaining.saturating_sub(1));
+    while low <= high {
+        let middle = low + (high - low) / 2;
+        let candidate = render(middle, arguments);
         if serialized_len(&candidate) <= limit {
-            best = Some(candidate);
-            low = middle.saturating_add(1);
-        } else if middle == 0 {
-            break;
+            best = candidate;
+            low = middle + 1;
         } else {
             high = middle - 1;
         }
     }
-    if remaining > 0 {
-        let final_page = render_inspect_page(
-            &value,
-            &items,
-            offset,
-            remaining,
-            &selection_hash,
-            required_bytes,
-        );
-        if serialized_len(&final_page) <= limit {
-            best = Some(final_page);
-        }
-    }
-
-    match best {
-        Some(page) => Ok(page),
-        None => {
-            // The stable object is always returned by design, so when even
-            // its floor exceeds the ceiling, return the floor and say so —
-            // the contract recall adopted in #439 and temporal in #441.
-            let mut floor =
-                render_inspect_page(&value, &items, offset, 0, &selection_hash, required_bytes);
-            let floor_bytes = serialized_len(&floor);
-            if let Some(warnings) = floor["warnings"].as_array_mut() {
-                warnings.push(serde_json::json!(format!(
-                    "budget.max_bytes {limit} is below this response's stable floor; returned \
-                     the {floor_bytes}-byte floor instead — raise max_bytes past it to see \
-                     more (the full response requires {required_bytes} bytes)"
-                )));
+    if best["page"]["returned"] == 0 && remaining > 0 {
+        // Size an actual progressing response, including its continuation.
+        // Only the decimal allowance can grow during this fixed point.
+        let mut retry = arguments.clone();
+        let mut required = serialized_len(&render(1, &retry)).max(512);
+        loop {
+            retry["budget"]["max_bytes"] = json!(required);
+            let measured = serialized_len(&render(1, &retry));
+            if measured <= required {
+                break;
             }
-            Ok(floor)
+            required = measured;
+        }
+        // The final remainder can be smaller than a one-item continuation
+        // because it carries no next action. Prefer a useful normal-size
+        // retry over forcing every caller through one item per response.
+        required = required.min(serialized_len(&complete));
+        let suggested = required.max(required_bytes.min(DEFAULT_MAX_BYTES));
+        retry["budget"]["max_bytes"] = json!(suggested);
+        best["page"]["minimum_progress_bytes"] = json!(required);
+        best["next_actions"] = json!([inspect_action(
+            &retry,
+            best["page"]["next_cursor"]
+                .as_str()
+                .expect("pending cursor")
+        )]);
+        best["warnings"].as_array_mut().expect("warnings").push(json!(
+            "the next whole inspection item does not fit; execute next_actions with its negotiated byte allowance, or retain this result as partial if the budget is fixed"
+        ));
+    }
+    if serialized_len(&best) > limit {
+        let warnings = best["warnings"].as_array_mut().expect("warnings");
+        warnings.push(json!(""));
+        let index = warnings.len() - 1;
+        let mut size = 0;
+        loop {
+            best["warnings"][index] = json!(format!(
+                "budget.max_bytes {limit} is below this response's stable floor; returned the {size}-byte floor instead (the full response requires {required_bytes} bytes)"
+            ));
+            let measured = serialized_len(&best);
+            if measured == size {
+                break;
+            }
+            size = measured;
         }
     }
+    Ok(best)
 }
 
 fn inspect_page_items(value: &Value) -> Vec<InspectPageItem> {
@@ -248,8 +252,15 @@ fn inspect_page_offset(
         ));
     }
     if hash != Some(selection_hash) {
-        return Err(ToolError::invalid_argument(
-            "invalid page.cursor: it does not match this inspect selection",
+        let mut restart = arguments.clone();
+        // A restart must return the changed object, even after a reused page.
+        restart.as_object_mut().expect("arguments").remove("page");
+        return Err(ToolError::conflict(
+            "page.cursor does not match this inspect selection; restart the read",
+        )
+        .with_feedback(
+            json!({"code":"READ_SELECTION_CHANGED","field":"page.cursor",
+            "action":{"tool":"kmp_inspect","arguments":restart}}),
         ));
     }
     if offset >= total {
@@ -264,10 +275,19 @@ fn inspect_full_required_bytes(
     value: &Value,
     items: &[InspectPageItem],
     selection_hash: &str,
+    arguments: &Value,
 ) -> usize {
     let mut required = serialized_len(value);
     for _ in 0..8 {
-        let candidate = render_inspect_page(value, items, 0, items.len(), selection_hash, required);
+        let candidate = render_inspect_page(
+            value,
+            items,
+            0,
+            items.len(),
+            selection_hash,
+            required,
+            arguments,
+        );
         let measured = serialized_len(&candidate);
         if measured == required {
             return measured;
@@ -284,6 +304,7 @@ fn render_inspect_page(
     keep: usize,
     selection_hash: &str,
     required_bytes: usize,
+    arguments: &Value,
 ) -> Value {
     let mut page = value.clone();
     page["evidence"] = json!([]);
@@ -333,10 +354,9 @@ fn render_inspect_page(
     let next_cursor = has_more.then(|| format!("{INSPECT_CURSOR_VERSION}:{end}:{selection_hash}"));
     let guidance = if has_more {
         Some(format!(
-            "Inspect is partial. Repeat the same bound arguments with page.cursor set to the \
-             returned next_cursor. The full response requires {required_bytes} bytes; narrow \
-             include.details/include.outgoing/include.incoming/include.raw or raise \
-             budget.max_bytes to restart with more context."
+            "Inspect is partial. Execute next_actions and combine the returned expansion items. \
+             The full response requires {required_bytes} bytes; minimum_progress_bytes, when \
+             present, is the allowance for at least one next item."
         ))
     } else if offset > 0 {
         Some(
@@ -347,6 +367,10 @@ fn render_inspect_page(
     } else {
         None
     };
+    page["next_actions"] = next_cursor
+        .as_deref()
+        .map(|cursor| json!([inspect_action(arguments, cursor)]))
+        .unwrap_or_else(|| json!([]));
     page["page"] = json!({
         "offset": offset,
         "returned": end.saturating_sub(offset),
@@ -371,4 +395,10 @@ fn render_inspect_page(
         quality.insert("relationships".to_string(), json!(relationships));
     }
     page
+}
+
+fn inspect_action(arguments: &Value, cursor: &str) -> Value {
+    let mut next = arguments.clone();
+    next["page"]["cursor"] = json!(cursor);
+    json!({"tool":"kmp_inspect","arguments":next})
 }
