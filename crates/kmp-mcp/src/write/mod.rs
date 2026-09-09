@@ -17,6 +17,7 @@ pub(crate) mod ingest_validation;
 pub(crate) mod plan;
 mod planner;
 mod planner_audit;
+mod planner_cross_about_audit;
 mod planner_labels_audit;
 pub(crate) mod read_context;
 pub(crate) mod relabel_plan;
