@@ -12,6 +12,7 @@ use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_su
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 use crate::write::validation_error::WriteValidationError;
+use crate::write::validation_errors::WriteValidationErrors;
 use crate::write::{
     build_batch_plan, build_summary_plan, write_commit_result, write_dry_run_result,
 };
@@ -152,6 +153,7 @@ impl KernelMcpServer {
             .unwrap_or_else(|| crate::write::generated_ref::stable_idempotency_key(object));
         let mut targets = std::collections::BTreeSet::new();
         let mut plans = Vec::new();
+        let mut errors = Vec::new();
         for (index, record) in records.iter().enumerate() {
             let record = record.as_object().ok_or_else(|| {
                 WriteValidationError::new(format!("search_summaries[{index}] must be an object"))
@@ -180,12 +182,20 @@ impl KernelMcpServer {
             request.remove("search_summaries");
             request.insert("current".into(), Value::Object(record.clone()));
             request.insert("idempotency_key".into(), serde_json::json!(identity));
-            let mut plan = build_summary_plan(&Value::Object(request), &existing)
-                .map_err(|error| error.within(&format!("search_summaries[{index}]")))?;
+            let mut plan = match build_summary_plan(&Value::Object(request), &existing) {
+                Ok(plan) => plan,
+                Err(error) => {
+                    errors.push(error.within(&format!("search_summaries[{index}]")));
+                    continue;
+                }
+            };
             for action in &mut plan.next_suggested_reads {
                 action["about"] = serde_json::json!(about);
             }
             plans.push(plan);
+        }
+        if let Some(errors) = WriteValidationErrors::collected(errors) {
+            return Err(errors.into());
         }
         let mut result = plans.remove(0);
         for plan in plans {

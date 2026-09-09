@@ -64,6 +64,23 @@ haya una confusión probable: compartir etiqueta no prueba identidad; ocurrido
 ayer no significa observado ayer. Un replay escrito demuestra un contrato;
 no demuestra que otro LLM haya aprendido a usarlo.
 
+En escritura, consumir toda la lista `feedback`: cada registro que falla durante
+la compilación independiente aporta su primer error, con código, ruta y acción
+si existe. Conservar esos campos al agrupar; no reconstruir reparaciones desde
+el mensaje general. La forma del paquete, sus identidades y los fallos del
+backend pueden detener la validación antes. Tampoco es una lista exhaustiva de
+todos los errores de un mismo registro. Comprobar que el rechazo completo no
+escribe nada y que las acciones siguen siendo ejecutables después de agrupar.
+
+La autoverificación del escritor debe comparar fuentes con lo que realmente
+guardó: reloj de observación frente a ocurrencia, vigencia, prueba y una ruta
+dimensional útil. Reutilizar el contexto ya disponible y ampliar sólo lo necesario.
+La cobertura del paquete no demuestra cobertura de la fuente; el lint literal
+de `summary_en` no comprueba equivalencias semánticas ni fechas dentro de la
+prosa. Enseñar ejemplos concretos de esas diferencias, claves estables para una
+misma ruta y hechos con ciclos de vida separados. No imponer cuotas de tipos o
+etiquetas ni convertir esta revisión informativa en un gate editorial.
+
 Al cambiar la representación de una continuación, comprobar la reconstrucción
 completa desde sus páginas contra una lectura sin paginar. En Inspect,
 `page.repeat_object=false` sólo sirve con un cursor y el objeto inicial
