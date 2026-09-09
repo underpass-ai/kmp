@@ -672,6 +672,23 @@ pub fn temporal_response_from_result(
     result: TemporalMemoryResult,
 ) -> TemporalMoveResponse {
     let traversal = result.traversal;
+    // Goto projects history as of its resolved cursor. Its proof must stand
+    // there too, including links learned after two already-existing entries.
+    // Other moves enumerate a neighborhood rather than an as-of state.
+    let proof_selection = if direction == TemporalDirection::Goto {
+        cursor_instant(traversal.resolved_cursor(), traversal.axis()).map_or(
+            TemporalSelection::Frontier,
+            |instant| TemporalSelection::AsOf {
+                cursor: kmp_domain::TemporalCursor::Time(instant.to_string()),
+                axis: traversal.axis(),
+            },
+        )
+    } else {
+        TemporalSelection::Frontier
+    };
+    let admission = TemporalAdmission::read(&result.source_bundle, &proof_selection)
+        .expect("a resolved time needs no reference lookup");
+    let proof_bundle = admission.bound(&result.source_bundle);
     let expired = expired_at_cursor(
         traversal.entries(),
         &result.source_bundle,
@@ -701,15 +718,17 @@ pub fn temporal_response_from_result(
     // for the full relation path. Keep the selected entries' supersession
     // edges long enough to populate proof.superseded, then honor `include`
     // for the visible path itself.
-    let selected_relationships =
-        temporal_relations_from_bundle(&result.source_bundle, &selected_refs);
+    let selected_relationships = temporal_relations_from_bundle(&proof_bundle, &selected_refs);
     let relationships = if result.include.relations {
         selected_relationships.clone()
     } else {
         Vec::new()
     };
     let evidence = if result.include.evidence {
-        temporal_evidence_from_bundle(&result.source_bundle, &selected_refs)
+        temporal_evidence_from_bundle(&proof_bundle, &selected_refs)
+            .into_iter()
+            .filter(|item| admission.admits(item))
+            .collect()
     } else {
         Vec::new()
     };
@@ -783,6 +802,9 @@ pub fn temporal_response_from_result(
     );
     temporal_proof.superseded = superseded_from_relations(&selected_relationships);
     temporal_proof.expired = expired;
+    let proof_time = admission.proof_fields();
+    temporal_proof.axis = proof_time.axis;
+    temporal_proof.as_of = proof_time.as_of;
 
     TemporalMoveResponse {
         summary: match absent_requested_clock {

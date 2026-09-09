@@ -58,6 +58,27 @@ Exclude entries at or after `end`. If a budget or selection cap prevents a
 complete boundary probe or interval, report the exact continuation action;
 never call a partial page the whole period.
 
+## Goto carries proof from its historical instant
+
+`kmp_goto` selects a state at its resolved `at` cursor. Its proof uses that
+same inclusive instant and selected clock, declared in `proof.as_of` and
+`proof.axis`. A later replacement, relation or explicitly later observed
+report cannot rewrite the earlier result. This also applies when `at.ref`
+resolves to an earlier memory. Hiding the relation path does not make a
+future replacement current in `proof.superseded`.
+
+For example, CSV is recorded on September 1; JSON is approved on September 3
+and takes effect on September 5. Goto on `observed` before September 3 must
+not report that approval as known. Goto on `validity` before September 5 must
+not mark CSV replaced by JSON. Each boundary is inclusive: the approval is
+known at its observation instant, and the replacement applies at its validity
+start. Keep the original CSV observation; do not anticipate the later change
+by backdating knowledge of its end.
+
+Near, Forward and Rewind enumerate related historical positions. Their cursor
+is not an as-of proof boundary. Use Goto for a state, or bounded Wake/Ask when
+the request is to recover or answer from knowledge at a particular instant.
+
 ## `observed_at` is the real clock, in UTC
 
 Every normal write carries `observed_at`: when this information was observed.

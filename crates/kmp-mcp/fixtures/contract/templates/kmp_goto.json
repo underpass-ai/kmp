@@ -60,8 +60,8 @@
     "proof": {
       "abouts_empty_in_selection": [],
       "abouts_selected": [],
-      "as_of": "null",
-      "axis": "null",
+      "as_of": "string",
+      "axis": "string",
       "confidence": "string",
       "conflicts": [],
       "evidence": [],
