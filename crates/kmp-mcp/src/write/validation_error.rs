@@ -1,5 +1,6 @@
 use serde_json::{Value, json};
 
+use super::json_value_type::JsonValueType;
 use crate::serving::ToolError;
 
 /// A writer refusal, located where the rule is checked, never by parsing prose.
@@ -11,6 +12,7 @@ pub(crate) struct WriteValidationError {
     global: bool,
     action: Option<Value>,
     allowed_values: Option<&'static [&'static str]>,
+    type_mismatch: Option<(JsonValueType, JsonValueType)>,
 }
 
 impl WriteValidationError {
@@ -22,6 +24,7 @@ impl WriteValidationError {
             global: false,
             action: None,
             allowed_values: None,
+            type_mismatch: None,
         }
     }
 
@@ -60,6 +63,17 @@ impl WriteValidationError {
         self.allowed_values = Some(values);
         self
     }
+
+    pub(super) fn wrong_type(field: &str, expected: JsonValueType, value: &Value) -> Self {
+        let received = JsonValueType::from(value);
+        let mut error = Self::new(format!(
+            "{field} must be a JSON {expected}; received {received}"
+        ))
+        .at(field)
+        .code("INVALID_TYPE");
+        error.type_mismatch = Some((expected, received));
+        error
+    }
 }
 
 impl From<String> for WriteValidationError {
@@ -91,6 +105,10 @@ impl From<WriteValidationError> for ToolError {
         });
         if let Some(values) = error.allowed_values {
             feedback["allowed_values"] = json!(values);
+        }
+        if let Some((expected, received)) = error.type_mismatch {
+            feedback["expected_type"] = json!(expected);
+            feedback["received_type"] = json!(received);
         }
         Self::invalid_argument(error.message).with_feedback(feedback)
     }

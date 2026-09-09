@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde_json::{Map, Value, json};
 
 use super::generated_ref::{generated_entry_ref, stable_idempotency_key};
+use super::json_value_type::JsonValueType;
 use super::plan::KernelWritePlan;
 use super::planner::build_write_plan_with_local_refs;
 use super::relation_quality::relation_quality_metrics;
@@ -37,15 +38,21 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Wri
             )));
         }
     }
-    let memories = object
-        .get("memories")
-        .and_then(Value::as_array)
-        .filter(|memories| !memories.is_empty())
-        .ok_or_else(|| {
-            WriteValidationError::new("memories must be a non-empty array")
+    let memories = object.get("memories").ok_or_else(|| {
+        WriteValidationError::new("memories is required")
+            .at("memories")
+            .code("REQUIRED_FIELD")
+    })?;
+    let memories = memories.as_array().ok_or_else(|| {
+        WriteValidationError::wrong_type("memories", JsonValueType::Array, memories)
+    })?;
+    if memories.is_empty() {
+        return Err(
+            WriteValidationError::new("memories must contain at least one record")
                 .at("memories")
-                .code("REQUIRED_FIELD")
-        })?;
+                .code("EMPTY_MEMORIES"),
+        );
+    }
     let identity = optional_string(object.get("idempotency_key"))
         .map(str::to_owned)
         .unwrap_or_else(|| stable_idempotency_key(object));
@@ -53,9 +60,13 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Wri
     let mut targets = BTreeSet::new();
     // Resolve forward references as well as references to earlier records.
     for (index, memory) in memories.iter().enumerate() {
-        let memory = memory
-            .as_object()
-            .ok_or_else(|| format!("memories[{index}] must be an object"))?;
+        let memory = memory.as_object().ok_or_else(|| {
+            WriteValidationError::wrong_type(
+                &format!("memories[{index}]"),
+                JsonValueType::Object,
+                memory,
+            )
+        })?;
         let id = required_map_string(memory, "id", &format!("memories[{index}].id"))?;
         if !id.as_bytes()[0].is_ascii_alphabetic()
             || !id

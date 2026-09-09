@@ -1126,12 +1126,20 @@
                   "description": "Stable rule identifier.",
                   "type": "string"
                 },
+                "expected_type": {
+                  "description": "JSON type required by an INVALID_TYPE refusal, such as array or object.",
+                  "type": "string"
+                },
                 "field": {
                   "description": "Argument path, for example memories[1].evidence; empty denotes the request as a whole.",
                   "type": "string"
                 },
                 "reason": {
                   "description": "What must be corrected using actual sources.",
+                  "type": "string"
+                },
+                "received_type": {
+                  "description": "Actual JSON type at the refused field; a JSON-encoded string remains string and is never coerced.",
                   "type": "string"
                 },
                 "severity": {

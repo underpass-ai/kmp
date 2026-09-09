@@ -67,7 +67,7 @@
           "id": "verb:write",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "Native writer validation returns field-localized repair feedback and exact supported read actions; semantic packets validate before commit. Accepted packets return declared coverage and an immutable command receipt recoverable through Inspect; source coverage remains unassessed and store errors preserve their categories. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision.",
+          "evidence": "Native writer validation returns field-localized repair feedback and exact supported read actions; semantic packets validate before commit. Accepted packets return declared coverage and an immutable command receipt recoverable through Inspect; source coverage remains unassessed and store errors preserve their categories. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. INVALID_TYPE distinguishes present JSON type errors with expected_type and received_type; EMPTY_MEMORIES distinguishes an empty array. Native tests verify atomic rejection and correction without coercion.",
           "text_file": "verbs/write.md",
           "guide_title": "Write evidence or change labels"
         },

@@ -15,6 +15,7 @@ pub(crate) mod ingest_change;
 pub(crate) mod ingest_plan;
 pub(crate) mod ingest_planner;
 pub(crate) mod ingest_validation;
+mod json_value_type;
 mod operation;
 pub(crate) mod plan;
 mod planner;
