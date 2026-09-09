@@ -1736,7 +1736,7 @@ async fn memory_service_returns_typed_stale_recall_cursor_details() {
         .await
         .expect_err("changed bound arguments invalidate the cursor");
 
-    assert_eq!(status.code(), tonic::Code::InvalidArgument);
+    assert_eq!(status.code(), tonic::Code::Aborted);
     let detail = RecallCursorError::decode(status.details()).expect("typed cursor detail");
     assert_eq!(detail.cursor, cursor);
     assert_eq!(

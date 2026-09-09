@@ -717,7 +717,12 @@ fn recall_projection_status(error: RecallProjectionError) -> Status {
     let message = error.to_string();
     match error.cursor_detail() {
         Some(detail) => Status::with_details(
-            Code::InvalidArgument,
+            if detail.reason == kmp_proto::v1beta1::RecallCursorErrorReason::SelectionChanged as i32
+            {
+                Code::Aborted
+            } else {
+                Code::InvalidArgument
+            },
             message,
             detail.encode_to_vec().into(),
         ),

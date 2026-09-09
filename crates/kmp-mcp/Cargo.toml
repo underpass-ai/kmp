@@ -20,6 +20,7 @@ sqlite = ["kmp-embedded/sqlite"]
 [dependencies]
 opentelemetry.workspace = true
 prost-types.workspace = true
+prost.workspace = true
 kmp-domain.workspace = true
 kmp-application.workspace = true
 kmp-embedded.workspace = true

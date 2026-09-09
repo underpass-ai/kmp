@@ -24,9 +24,26 @@
       "core_text_shortened": "boolean",
       "detail": "string",
       "excluded_by_detail": "integer",
-      "next_action": "string",
+      "next_action": {
+        "arguments": {
+          "about": "string",
+          "answer_policy": "string",
+          "budget": {
+            "depth": "integer",
+            "detail": "string",
+            "max_bytes": "integer",
+            "tokens": "integer"
+          },
+          "page": {
+            "cursor": "string"
+          },
+          "question": "string"
+        },
+        "tool": "string"
+      },
       "page": {
         "has_more": "boolean",
+        "minimum_progress_bytes": "string",
         "next_cursor": "string",
         "offset": "integer",
         "returned": "integer",

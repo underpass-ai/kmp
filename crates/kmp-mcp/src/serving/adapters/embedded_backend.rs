@@ -362,7 +362,7 @@ async fn embedded_wake(
             .map_err(|status| mapping_error(&status))?,
         &request,
     )
-    .map_err(|error| ToolError::invalid_argument(error.to_string()))?;
+    .map_err(crate::projection::recall_error::projection)?;
     Ok(tool_success_result(wake_from_response(response)))
 }
 
@@ -433,7 +433,7 @@ async fn embedded_ask(
         response.warnings.push(warning);
     }
     let response = project_ask_response(response, &request)
-        .map_err(|error| ToolError::invalid_argument(error.to_string()))?;
+        .map_err(crate::projection::recall_error::projection)?;
     Ok(tool_success_result(ask_from_response(response)))
 }
 

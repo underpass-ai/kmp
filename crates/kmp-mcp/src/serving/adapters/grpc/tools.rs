@@ -1,4 +1,5 @@
 use crate::projection::relation_page_budget::RelationPageBudget;
+use prost::Message;
 use serde_json::Value;
 
 use crate::projection::{
@@ -32,7 +33,15 @@ use crate::serving::{app_data_success_result, tool_success_result};
 /// future backend should copy this shape so an agent reads one grammar.
 fn grpc_error(operation: &str, subject: &str) -> impl FnOnce(tonic::Status) -> ToolError {
     let context = format!("KernelMemoryService.{operation} failed for `{subject}`");
+    let is_recall = matches!(operation, "Wake" | "Ask");
     move |status| {
+        if is_recall
+            && !status.details().is_empty()
+            && let Ok(detail) = kmp_proto::v1beta1::RecallCursorError::decode(status.details())
+            && detail.restart.is_some()
+        {
+            return crate::projection::recall_error::cursor(detail);
+        }
         let code = match status.code() {
             tonic::Code::NotFound => ToolErrorCode::NotFound,
             tonic::Code::InvalidArgument | tonic::Code::OutOfRange => {

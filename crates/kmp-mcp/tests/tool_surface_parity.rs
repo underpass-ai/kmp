@@ -222,7 +222,7 @@ fn calls() -> Vec<(&'static str, Value)> {
             json!({
                 "about": ABOUT,
                 "question": "Where is Rachel moving?",
-                "budget": {"detail": "compact", "max_bytes": 6500}
+                "budget": {"detail": "compact", "max_bytes": 7500}
             }),
         ),
         (
@@ -449,7 +449,13 @@ fn blessing() -> bool {
 /// Masking the value keeps the key pinned: a rename still fails, only the
 /// count stops being asserted. A flaky red would be worse than that, and a
 /// bless taken under the flake would pin a number every later run rejects.
-const VOLATILE_KEYS: [&str; 4] = ["at", "ingested_at", "content_hash", "required_bytes"];
+const VOLATILE_KEYS: [&str; 5] = [
+    "at",
+    "ingested_at",
+    "content_hash",
+    "required_bytes",
+    "minimum_progress_bytes",
+];
 const REDACTED: &str = "<stamped at call time>";
 
 /// An inspect cursor is `kmpi1:<offset>:<sha256>`, and the digest covers the
@@ -466,6 +472,18 @@ fn redact_inspect_digest(text: &str) -> Option<String> {
 fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
+            // Recovery allowance includes the complete proof's ingestion-clock
+            // bytes. Native action tests execute it; snapshot its shape, not
+            // the fractional timestamp precision of this particular run.
+            if fields
+                .get("page")
+                .and_then(|page| page.get("minimum_progress_bytes"))
+                .is_some_and(Value::is_number)
+                && let Some(action) = fields.get_mut("next_action")
+                && action.is_object()
+            {
+                action["arguments"]["budget"]["max_bytes"] = json!(REDACTED);
+            }
             for (key, child) in fields.iter_mut() {
                 if VOLATILE_KEYS.contains(&key.as_str()) && !child.is_object() {
                     *child = json!(REDACTED);

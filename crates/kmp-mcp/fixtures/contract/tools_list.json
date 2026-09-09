@@ -1522,9 +1522,27 @@
                 "type": "integer"
               },
               "next_action": {
-                "description": "The exact call that continues this page, or null when there is nothing after it.",
+                "additionalProperties": false,
+                "description": "Execute this complete native call. It continues expansion, or restarts without page.cursor when core_text_shortened to recover the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
+                "properties": {
+                  "arguments": {
+                    "description": "Complete bound request; question, original wording, clock, interval and dimension filters are preserved.",
+                    "type": "object"
+                  },
+                  "tool": {
+                    "enum": [
+                      "kmp_ask",
+                      "kmp_wake"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tool",
+                  "arguments"
+                ],
                 "type": [
-                  "string",
+                  "object",
                   "null"
                 ]
               },
@@ -1534,6 +1552,13 @@
                   "has_more": {
                     "description": "More items remain; this page is incomplete.",
                     "type": "boolean"
+                  },
+                  "minimum_progress_bytes": {
+                    "description": "When stalled or core_text_shortened, a sufficient byte allowance for the unshortened core and expansion progress. The returned action adds 10000 bytes for useful expansion instead of negotiating only one item.",
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "next_cursor": {
                     "description": "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",
@@ -2147,9 +2172,27 @@
                 "type": "integer"
               },
               "next_action": {
-                "description": "The exact call that continues this page, or null when there is nothing after it.",
+                "additionalProperties": false,
+                "description": "Execute this complete native call. It continues expansion, or restarts without page.cursor when core_text_shortened to recover the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
+                "properties": {
+                  "arguments": {
+                    "description": "Complete bound request; question, original wording, clock, interval and dimension filters are preserved.",
+                    "type": "object"
+                  },
+                  "tool": {
+                    "enum": [
+                      "kmp_ask",
+                      "kmp_wake"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tool",
+                  "arguments"
+                ],
                 "type": [
-                  "string",
+                  "object",
                   "null"
                 ]
               },
@@ -2159,6 +2202,13 @@
                   "has_more": {
                     "description": "More items remain; this page is incomplete.",
                     "type": "boolean"
+                  },
+                  "minimum_progress_bytes": {
+                    "description": "When stalled or core_text_shortened, a sufficient byte allowance for the unshortened core and expansion progress. The returned action adds 10000 bytes for useful expansion instead of negotiating only one item.",
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "next_cursor": {
                     "description": "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",

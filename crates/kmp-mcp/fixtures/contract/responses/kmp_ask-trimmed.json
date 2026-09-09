@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Retrieved 5 m…",
+      "text": "Retrieved 5 memory items for: Where is Rachel moving?",
       "type": "text"
     }
   ],
@@ -32,7 +32,7 @@
     ],
     "projection": {
       "budget": {
-        "max_bytes": 6500,
+        "max_bytes": 7500,
         "tokens_advisory": 2400,
         "used_bytes": "<verified shortened byte count>"
       },
@@ -40,10 +40,24 @@
       "core_text_shortened": true,
       "detail": "compact",
       "excluded_by_detail": 13,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:1:6e9016028233796cd29cb49d67486ebda243d9e070d8e10e09b9f7e848f9e59c\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": {
+        "arguments": {
+          "about": "question:parity",
+          "answer_policy": "evidence_or_unknown",
+          "budget": {
+            "depth": 2,
+            "detail": "compact",
+            "max_bytes": "<stamped at call time>",
+            "tokens": 2400
+          },
+          "question": "Where is Rachel moving?"
+        },
+        "tool": "kmp_ask"
+      },
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:1:6e9016028233796cd29cb49d67486ebda243d9e070d8e10e09b9f7e848f9e59c",
+        "minimum_progress_bytes": "<stamped at call time>",
+        "next_cursor": "kmp1:1:aa8028b67e04939706cf1e28894763d689c460f8f6f68146b17fe66e0a51cd35",
         "offset": 0,
         "returned": 1,
         "total": 3
@@ -85,7 +99,7 @@
           "supports": [
             "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
           ],
-          "text": "From: Rachel …"
+          "text": "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one."
         },
         {
           "id": "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
@@ -98,7 +112,7 @@
           "supports": [
             "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
           ],
-          "text": "Rachel is mov…"
+          "text": "Rachel is moving to Boulder, not Denver."
         },
         {
           "id": "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
@@ -109,7 +123,7 @@
           "supports": [
             "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
           ],
-          "text": "Both statemen…",
+          "text": "Both statements are hers, minutes apart.",
           "time": "2026-04-12T17:00:00Z"
         },
         {
@@ -122,7 +136,7 @@
             "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
             "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
           ],
-          "text": "Both statemen…",
+          "text": "Both statements are hers, minutes apart.",
           "time": "2026-04-12T17:00:00Z"
         },
         {
@@ -134,7 +148,7 @@
           "supports": [
             "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
           ],
-          "text": "She corrected…",
+          "text": "She corrected the city in the same conversation.",
           "time": "2026-04-12T17:00:00Z"
         }
       ],
@@ -179,13 +193,13 @@
         {
           "ref": "question:parity:claim:denver",
           "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
-          "why": "The corrected…"
+          "why": "The corrected city replaces the first one while the first stays readable as history."
         }
       ]
     },
-    "summary": "Retrieved 5 m…",
+    "summary": "Retrieved 5 memory items for: Where is Rachel moving?",
     "truncation": {
-      "byte_limit": 6500,
+      "byte_limit": 7500,
       "omitted": {
         "core_text_shortened": true,
         "excluded_by_detail": 13,

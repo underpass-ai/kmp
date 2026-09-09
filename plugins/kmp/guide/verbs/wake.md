@@ -60,3 +60,15 @@ The current about comes first, then by use. The most used labels are the
 first expansion the packet fills; the rest page after the causal spine, and
 `truncation` says what did not fit — raise `budget.max_bytes` or follow the
 cursor when you need the whole catalogue.
+
+Execute `projection.next_action` as the next native call, copying its `tool`
+and complete `arguments`. It preserves role, intent, dimensions, clock and
+time selection. When `core_text_shortened` is true, the call omits
+`page.cursor` and proposes a sufficient allowance: discard the partial
+reconstruction and restart to recover the full core. Otherwise append only
+the expansion beyond each section's `core` count. Stop when `next_action`
+is null; `has_more=false` alone only finishes expansion. Detail and selection
+caps still qualify coverage. If the allowance is unavailable, keep the result
+partial. A cursor conflict supplies `feedback[].action` to start a fresh read;
+never combine pages from different selections. The budget-proof lesson
+executes both restoration and continuation against its stored sources.

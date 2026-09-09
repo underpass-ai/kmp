@@ -154,6 +154,10 @@ objects or selected proof return conflict with a fresh read that restores the
 full object. Native checks execute the calls and reconstruct all selected
 sections; the same calls run across embedded, gRPC, stdio and HTTP.
 
-Executable Ask/Wake actions and independent agent evaluation remain in their
-blocks. These increments do not authorize a benchmark reader awaiting
-human review.
+Ask and Wake now return executable calls through the shared typed projection.
+The calls retain question, original wording, temporal selection and dimensions.
+They negotiate enough bytes when stalled and restart a shortened core to restore
+its full content. Typed cursor failures carry a fresh call instead of requiring
+argument reconstruction. Native walks compare complete selected sections with a
+full same-store reference. Independent agent evaluation remains a separate block;
+these increments do not authorize a benchmark reader awaiting human review.
