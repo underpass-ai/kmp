@@ -2610,16 +2610,12 @@ fn relate_reads_what_two_abouts_share_and_pages_by_position() {
     );
     assert_eq!(first["facts"].as_array().map(Vec::len), Some(3), "{first}");
     assert_eq!(first["page"]["has_more"], true);
-    assert_eq!(first["page"]["next_cursor"], "3");
-    let rest = call(
-        6,
-        "kmp_relate",
-        serde_json::json!({
-            "about": "service:alpha", "dimensions": both,
-            "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"},
-            "page": {"entries": 100, "cursor": "3"}
-        }),
-    );
+    assert_eq!(first["page"]["offset"], 0);
+    assert_eq!(first["next_actions"][0]["tool"], "kmp_relate");
+    let mut continuation = first["next_actions"][0]["arguments"].clone();
+    continuation["page"]["entries"] = serde_json::json!(100);
+    let rest = call(6, "kmp_relate", continuation);
+    assert_eq!(rest["page"]["offset"], 3);
     assert_eq!(
         rest["facts"].as_array().map(Vec::len),
         Some(1),

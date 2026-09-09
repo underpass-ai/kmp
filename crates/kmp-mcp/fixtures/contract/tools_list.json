@@ -2388,6 +2388,10 @@
             "description": "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`) or `expired` (with `valid_until`) — as the lifecycle stood at the end of the interval.",
             "type": "array"
           },
+          "next_actions": {
+            "description": "Complete tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; empty at the end. Execute without reconstructing filters or cursors.",
+            "type": "array"
+          },
           "page": {
             "additionalProperties": false,
             "properties": {
@@ -2396,11 +2400,19 @@
                 "type": "boolean"
               },
               "next_cursor": {
-                "description": "Opaque relate cursor; repeat it as page.cursor with every other argument unchanged.",
+                "description": "Opaque relate cursor; repeat it as page.cursor with selection arguments unchanged. budget.max_bytes and page.entries may vary; changed selected content or arguments return a conflict with a complete restart action.",
                 "type": [
                   "string",
                   "null"
                 ]
+              },
+              "offset": {
+                "description": "Number of selected items already read before this page.",
+                "type": "integer"
+              },
+              "required_bytes": {
+                "description": "When no whole item fits, retry page.next_cursor with budget.max_bytes at least this allowance to make progress. Absent otherwise.",
+                "type": "integer"
               },
               "returned": {
                 "description": "Items returned on this page.",
@@ -4871,6 +4883,10 @@
       "outputSchema": {
         "additionalProperties": false,
         "properties": {
+          "next_actions": {
+            "description": "Complete tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; empty at the end. Execute without reconstructing filters or cursors.",
+            "type": "array"
+          },
           "page": {
             "additionalProperties": false,
             "properties": {
@@ -4879,11 +4895,19 @@
                 "type": "boolean"
               },
               "next_cursor": {
-                "description": "Opaque trace cursor; repeat it as page.cursor with every other argument unchanged.",
+                "description": "Opaque trace cursor; repeat it as page.cursor with selection arguments unchanged. budget.max_bytes and page.entries may vary; changed selected content or arguments return a conflict with a complete restart action.",
                 "type": [
                   "string",
                   "null"
                 ]
+              },
+              "offset": {
+                "description": "Number of selected items already read before this page.",
+                "type": "integer"
+              },
+              "required_bytes": {
+                "description": "When no whole item fits, retry page.next_cursor with budget.max_bytes at least this allowance to make progress. Absent otherwise.",
+                "type": "integer"
               },
               "returned": {
                 "description": "Items returned on this page.",
@@ -4935,7 +4959,7 @@
             "type": "string"
           },
           "trace": {
-            "description": "Ordered typed relations connecting from to to; empty means no path in the same memory graph.",
+            "description": "Ordered typed relations connecting from to to; empty with page.has_more=false means no path in the same memory graph; otherwise proof remains pending.",
             "type": "array"
           },
           "warnings": {

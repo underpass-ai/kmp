@@ -7,9 +7,11 @@
   ],
   "isError": false,
   "structuredContent": {
+    "next_actions": [],
     "page": {
       "has_more": false,
       "next_cursor": null,
+      "offset": 0,
       "returned": 1,
       "total": 1
     },
