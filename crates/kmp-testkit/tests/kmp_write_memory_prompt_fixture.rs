@@ -19,10 +19,10 @@ fn writer_inference_fixture_uses_the_native_argument_schema() {
     let catalog = kmp_mcp::kmp_mcp_tools_list_result();
     let native = catalog["tools"]
         .as_array()
-        .unwrap()
+        .expect("tools/list must return a tools array")
         .iter()
         .find(|tool| tool["name"] == "kmp_write_memory")
-        .unwrap();
+        .expect("native catalogue must include the writer");
     // The inference client must constrain the same payload accepted by MCP.
     // Editorial wording is deliberately excluded from this contract check.
     assert_eq!(
