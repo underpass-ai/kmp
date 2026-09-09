@@ -1075,6 +1075,7 @@ fn can_shorten(key: &str, value: &Value) -> bool {
             | "text"
             | "why"
             | "evidence"
+            | "because"
             | "objective"
             | "current_state"
             | "open_loops"
@@ -2716,6 +2717,38 @@ mod tests {
             .expect("second page accounting");
         assert_eq!(second_page.offset, 4);
         assert!(second_page.returned > 0);
+    }
+
+    #[test]
+    fn bounded_wake_roundtrip_preserves_long_causal_rationales() {
+        let mut response = typed_wake_fixture(24);
+        let wake = response.wake.as_mut().expect("wake");
+        wake.objective = "Continue the verified storage rollout. ".repeat(80);
+        wake.causal_spine[0].because =
+            "The verified decision addresses the recorded storage requirement. ".repeat(80);
+        for max_bytes in [3_000, 6_500, 8_000, 12_000] {
+            let request = WakeRequest {
+                about: "project:kmp".into(),
+                budget: Some(kmp_proto::v1beta1::MemoryBudget {
+                    max_bytes,
+                    detail: MemoryDetailLevel::Full as i32,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
+            let expected = projected(wake_value(&response), wake_arguments(&request));
+            let actual =
+                wake_value(&project_wake_response(response.clone(), &request).expect("typed wake"));
+            assert_eq!(
+                actual, expected,
+                "wake must retain its planned rationale and proof"
+            );
+            assert_eq!(
+                actual["projection"]["budget"]["used_bytes"],
+                serde_json::to_vec(&actual).expect("bytes").len()
+            );
+            assert!(serde_json::to_vec(&actual).expect("bytes").len() <= max_bytes as usize);
+        }
     }
 
     #[test]
