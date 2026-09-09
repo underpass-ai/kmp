@@ -54,7 +54,7 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
 }
 
 pub(crate) fn tool_error_result(error: &ToolError) -> Value {
-    json!({
+    let mut result = json!({
         "content": [
             {
                 "type": "text",
@@ -68,7 +68,11 @@ pub(crate) fn tool_error_result(error: &ToolError) -> Value {
             }
         },
         "isError": true
-    })
+    });
+    if !error.feedback.is_empty() {
+        result["structuredContent"]["feedback"] = json!(error.feedback);
+    }
+    result
 }
 
 #[cfg(test)]

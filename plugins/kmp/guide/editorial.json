@@ -67,7 +67,7 @@
           "id": "verb:write",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "Native writer and canonical ingest previews now use kernel validation against the selected store. store_validated_preview checks rejection and no events; grpc_backend checks forwarding with dry_run=true. Semantic packets resolve every local id before one ingest and preserve per-record clocks and all declared memberships. The public writer now has only memories and the separate search_summaries operation; legacy fields are rejected.",
+          "evidence": "Native writer validation returns field-localized repair feedback and exact supported read actions; semantic packets validate before commit.",
           "text_file": "verbs/write.md",
           "guide_title": "Write evidence or change labels"
         },

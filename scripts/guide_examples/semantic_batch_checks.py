@@ -5,7 +5,9 @@ def check(saved, client, authored):
     refs = saved['written']['local_refs']
     assert saved['written']['accepted'] and saved['retry']['accepted']
     assert refs == saved['retry']['local_refs']
-    assert 'memories[1]' in saved['rejected']['error']['message']
+    assert saved['rejected']['feedback'][0]['code'] == 'MEMORY_EVIDENCE_REQUIRED'
+    assert saved['rejected']['feedback'][0]['field'] == 'memories[1].evidence'
+    assert saved['rejected']['feedback'][0]['action'] is None
     for index, name in enumerate(('choice', 'logs')):
         expected = authored['written']['memories'][index]
         record = next(row for row in saved[name]['raw'] if row['ref'] == refs[name])

@@ -60,7 +60,9 @@ mod tests {
         let error = build_write_plan(&request).expect_err("bad key");
 
         assert!(
-            error.starts_with("`labels.Release Train` is not a label key"),
+            error
+                .message
+                .starts_with("`labels.Release Train` is not a label key"),
             "{error}"
         );
     }
@@ -73,7 +75,10 @@ mod tests {
         assert_eq!(plan.labels.len(), 5);
         request["labels"] = json!({"agentic_process": ["incident:mobile-login:resolution"]});
         let error = build_write_plan(&request).expect_err("exact duplicate");
-        assert!(error.contains("repeat `agentic_process="), "{error}");
+        assert!(
+            error.message.contains("repeat `agentic_process="),
+            "{error}"
+        );
     }
 
     #[test]
@@ -179,7 +184,7 @@ mod tests {
         request["options"]["labels_new"] = json!(["release"]);
         let error = build_write_plan(&request).expect_err("unknown key");
         assert_eq!(
-            error,
+            error.message,
             "options.labels_new names `release`, which is not a label of this write"
         );
     }

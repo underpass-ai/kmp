@@ -29,6 +29,8 @@ pub(crate) mod relations;
 pub(crate) mod results;
 mod search_summary;
 pub(crate) mod summary_planner;
+pub(crate) mod validated_arguments;
+pub(crate) mod validation_error;
 mod writer_identity_audit;
 pub(crate) mod writer_label;
 

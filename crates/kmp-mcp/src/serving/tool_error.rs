@@ -7,6 +7,7 @@ pub use crate::serving::tool_error_code::ToolErrorCode;
 pub struct ToolError {
     pub code: ToolErrorCode,
     pub message: String,
+    pub feedback: Vec<serde_json::Value>,
 }
 
 impl ToolError {
@@ -14,7 +15,13 @@ impl ToolError {
         Self {
             code,
             message: message.into(),
+            feedback: Vec::new(),
         }
+    }
+
+    pub(crate) fn with_feedback(mut self, feedback: serde_json::Value) -> Self {
+        self.feedback.push(feedback);
+        self
     }
 
     pub fn invalid_argument(message: impl Into<String>) -> Self {

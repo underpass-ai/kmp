@@ -199,6 +199,15 @@ Si se elimina detalle del contexto inicial, contar también la lectura posterior
 de ese detalle. No sumar dos representaciones alternativas como si ambas se
 inyectaran, ni presentar estos conteos como facturación o ahorro monetario.
 
+Para errores de escritura, asignar código y ruta donde se valida el campo.
+No deducirlos del texto del error. Conservar la categoría de un fallo del backend;
+una instrucción de reparación no debe convertirlo en un error del llamante.
+Si se propone una lectura, incluir nombre y argumentos completos y probar que
+puede ejecutarse. Si falta evidencia, señalar el campo sin fabricar un payload.
+Revisar también los errores de esquema anteriores al planner y los índices del
+paquete. Las pruebas deben recorrer rechazo, lectura/corrección y commit, con
+verificación de que el paquete rechazado no produjo escrituras parciales.
+
 Cuando el cambio dependa de cómo aprende o decide un LLM, probarlo por separado
 con fuentes nuevas y preguntas ocultas al escritor, dentro del presupuesto y
 estado de pausa autorizados. La validación nativa no reanuda por sí sola una

@@ -1,3 +1,4 @@
+use super::validation_error::WriteValidationError;
 use serde_json::{Value, json};
 
 use std::collections::BTreeSet;
@@ -5,7 +6,6 @@ use std::collections::BTreeSet;
 use kmp_application::{validate_ref_token, validate_supplied_entry_ref};
 use kmp_domain::{INTENDED_NEW_LABEL_METADATA_KEY, MemoryRelationType};
 
-use super::arguments::*;
 use super::coordinates::*;
 use super::generated_ref::*;
 use super::plan::KernelWritePlan;
@@ -13,13 +13,14 @@ use super::read_context::ReadContext;
 use super::relation_quality::*;
 use super::relations::*;
 use super::search_summary::decide_search_summary;
+use super::validated_arguments::*;
 use super::writer_label::*;
 
 const DEFAULT_CONFIDENCE: &str = "high";
 const DEFAULT_SOURCE_KIND: &str = "agent";
 
 #[cfg(test)]
-pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, String> {
+pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, WriteValidationError> {
     build_write_plan_with_root(arguments, false)
 }
 
@@ -32,7 +33,7 @@ pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, Str
 pub(crate) fn build_write_plan_with_root(
     arguments: &Value,
     allow_unlinked_root: bool,
-) -> Result<KernelWritePlan, String> {
+) -> Result<KernelWritePlan, WriteValidationError> {
     build_write_plan_with_local_refs(arguments, allow_unlinked_root, &BTreeSet::new())
 }
 
@@ -42,17 +43,24 @@ pub(super) fn build_write_plan_with_local_refs(
     arguments: &Value,
     allow_unlinked_root: bool,
     batch_refs: &BTreeSet<String>,
-) -> Result<KernelWritePlan, String> {
+) -> Result<KernelWritePlan, WriteValidationError> {
     let arguments = arguments
         .as_object()
         .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
     let about = required_string(arguments, "about")?;
-    validate_ref_token("about", &about)?;
+    validate_ref_token("about", &about)
+        .map_err(|error| WriteValidationError::new(error).at("about").global())?;
     let intent = required_string(arguments, "intent")?;
     validate_intent(&intent)?;
     let actor = required_string(arguments, "actor")?;
     let observed_at = required_string(arguments, "observed_at")?;
-    reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds())?;
+    reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds()).map_err(
+        |error| {
+            WriteValidationError::new(error)
+                .at("observed_at")
+                .code("FUTURE_OBSERVATION")
+        },
+    )?;
     let clocks = WriterCoordinate {
         occurred_at: optional_string(arguments.get("occurred_at")),
         observed_at: &observed_at,
@@ -71,7 +79,8 @@ pub(super) fn build_write_plan_with_local_refs(
         // a process scope. The single-current contract still requires it.
         arguments.get("scope").and_then(Value::as_object)
     };
-    let read_context = ReadContext::from_arguments(arguments)?;
+    let read_context = ReadContext::from_arguments(arguments)
+        .map_err(|error| WriteValidationError::new(error).at("read_context").global())?;
     let process_scope = scope
         .map(|scope| required_map_string(scope, "process", "scope.process"))
         .transpose()?;
@@ -82,7 +91,12 @@ pub(super) fn build_write_plan_with_local_refs(
         task_scope,
         episode_scope,
         arguments.get("labels"),
-    )?;
+    )
+    .map_err(|error| {
+        WriteValidationError::new(error)
+            .at("labels")
+            .code("INVALID_LABELS")
+    })?;
     let options = arguments.get("options").and_then(Value::as_object);
     // A tool called write_memory commits. Previewing was the default here,
     // so every caller that did not know to pass `dry_run: false` got
@@ -126,9 +140,9 @@ pub(super) fn build_write_plan_with_local_refs(
         .unwrap_or_default();
     for key in &labels_new {
         if !labels.iter().any(|label| label.key == *key) {
-            return Err(format!(
+            return Err(WriteValidationError::new(format!(
                 "options.labels_new names `{key}`, which is not a label of this write"
-            ));
+            )));
         }
     }
     // The logical write identity is also the uniqueness component of every
@@ -143,11 +157,19 @@ pub(super) fn build_write_plan_with_local_refs(
 
     let current = required_object(arguments, "current")?;
     let current_kind = required_map_string(current, "kind", "kind")?;
-    validate_node_kind(current_kind)?;
+    validate_node_kind(current_kind).map_err(|error| {
+        WriteValidationError::new(error)
+            .at("kind")
+            .code("INVALID_KIND")
+    })?;
     let current_summary = required_map_string(current, "summary", "summary")?;
     let current_evidence = optional_map_string(current, "evidence");
     if strict && current_evidence.is_none() {
-        return Err("strict kmp_write_memory requires evidence".to_string());
+        return Err(
+            WriteValidationError::new("strict kmp_write_memory requires evidence")
+                .at("evidence")
+                .code("MEMORY_EVIDENCE_REQUIRED"),
+        );
     }
     let search_summary = decide_search_summary(
         current_summary,
@@ -156,7 +178,11 @@ pub(super) fn build_write_plan_with_local_refs(
     )?;
 
     let current_ref = if let Some(current_ref) = optional_map_string(current, "ref") {
-        validate_supplied_entry_ref(&about, "ref", current_ref)?;
+        validate_supplied_entry_ref(&about, "ref", current_ref).map_err(|error| {
+            WriteValidationError::new(error)
+                .at("ref")
+                .code("INVALID_REF")
+        })?;
         current_ref.to_string()
     } else {
         generated_entry_ref(
@@ -216,10 +242,8 @@ pub(super) fn build_write_plan_with_local_refs(
 
     let connect_to = optional_array(arguments.get("connect_to"), "connect_to")?;
     if strict && connect_to.is_empty() && !allow_unlinked_root {
-        return Err(
-            "strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
-                .to_string(),
-        );
+        return Err(WriteValidationError::new("strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
+                .to_string()));
     }
     for (index, link) in connect_to.iter().enumerate() {
         let link = link
@@ -232,11 +256,15 @@ pub(super) fn build_write_plan_with_local_refs(
         let rel = relation_type.as_str();
         let semantic_class =
             required_map_string(link, "class", &format!("connect_to[{index}].class"))?;
-        validate_semantic_class(semantic_class)?;
+        validate_semantic_class(semantic_class).map_err(|error| {
+            WriteValidationError::new(error).at(format!("connect_to[{index}].class"))
+        })?;
         let why = required_relation_string(link, "why", semantic_class, index)?;
         let relation_evidence = required_relation_string(link, "evidence", semantic_class, index)?;
         let confidence = optional_map_string(link, "confidence").unwrap_or(DEFAULT_CONFIDENCE);
-        validate_confidence(confidence)?;
+        validate_confidence(confidence).map_err(|error| {
+            WriteValidationError::new(error).at(format!("connect_to[{index}].confidence"))
+        })?;
         let quality = relation_quality_diagnostic(RelationQualityInput {
             about: &about,
             from: &current_ref,
@@ -249,7 +277,8 @@ pub(super) fn build_write_plan_with_local_refs(
             strict,
             read_context: &read_context,
             local_refs: &local_refs,
-        })?;
+        })
+        .map_err(|error| error.within(&format!("connect_to[{index}]")))?;
 
         let mut link_value = relation(
             &current_ref,

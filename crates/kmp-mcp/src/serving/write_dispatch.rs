@@ -11,6 +11,7 @@ use crate::serving::kernel_mcp_server::KernelMcpServer;
 use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
+use crate::write::validation_error::WriteValidationError;
 use crate::write::{
     build_batch_plan, build_summary_plan, write_commit_result, write_dry_run_result,
 };
@@ -25,7 +26,10 @@ impl KernelMcpServer {
         let planned = match (arguments.get("memories"), arguments.get("search_summaries")) {
             (Some(_), None) => build_batch_plan(arguments),
             (None, Some(_)) => self.plan_search_summary_packet(arguments).await,
-            _ => Err("provide exactly one of memories or search_summaries".to_string()),
+            _ => Err(WriteValidationError::new(
+                "provide exactly one of memories or search_summaries",
+            )
+            .code("WRITE_OPERATION_REQUIRED")),
         };
         let plan = match planned {
             Ok(plan) => plan,
@@ -34,7 +38,7 @@ impl KernelMcpServer {
                 // arguments: a missing field, an unsupported relation, a rich
                 // link with no evidence. The caller can fix all of it, and
                 // only the caller can.
-                let error = ToolError::invalid_argument(message);
+                let error = ToolError::from(message);
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
@@ -95,8 +99,8 @@ impl KernelMcpServer {
     async fn plan_search_summary_packet(
         &self,
         arguments: &Value,
-    ) -> Result<crate::write::plan::KernelWritePlan, String> {
-        use crate::write::arguments::{required_map_string, required_string};
+    ) -> Result<crate::write::plan::KernelWritePlan, WriteValidationError> {
+        use crate::write::validated_arguments::{required_map_string, required_string};
         let object = arguments
             .as_object()
             .ok_or("tool arguments must be an object")?;
@@ -110,9 +114,9 @@ impl KernelMcpServer {
             "read_context",
         ] {
             if object.contains_key(field) {
-                return Err(format!(
+                return Err(WriteValidationError::new(format!(
                     "search_summaries preserves stored source and coordinates; `{field}` cannot accompany it"
-                ));
+                )).at(field).code("PRESERVED_FIELD"));
             }
         }
         for field in ["sequence", "labels_new"] {
@@ -120,9 +124,11 @@ impl KernelMcpServer {
                 .get("options")
                 .is_some_and(|options| options.get(field).is_some())
             {
-                return Err(format!(
+                return Err(WriteValidationError::new(format!(
                     "options.{field} does not apply to search_summaries"
-                ));
+                ))
+                .at(format!("options.{field}"))
+                .code("INAPPLICABLE_OPTION"));
             }
         }
         let records = object
@@ -150,9 +156,11 @@ impl KernelMcpServer {
                 reference,
             )?;
             if !targets.insert(reference) {
-                return Err(format!(
+                return Err(WriteValidationError::new(format!(
                     "search_summaries[{index}].ref repeats target `{reference}`"
-                ));
+                ))
+                .at(format!("search_summaries[{index}].ref"))
+                .code("DUPLICATE_TARGET"));
             }
             let existing = read_existing_entry(self.backend.as_ref(), &about, reference).await?;
             let mut request = object.clone();
@@ -160,7 +168,7 @@ impl KernelMcpServer {
             request.insert("current".into(), Value::Object(record.clone()));
             request.insert("idempotency_key".into(), serde_json::json!(identity));
             let mut plan = build_summary_plan(&Value::Object(request), &existing)
-                .map_err(|error| format!("search_summaries[{index}]: {error}"))?;
+                .map_err(|error| error.within(&format!("search_summaries[{index}]")))?;
             for action in &mut plan.next_suggested_reads {
                 action["about"] = serde_json::json!(about);
             }

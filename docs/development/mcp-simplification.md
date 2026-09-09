@@ -79,3 +79,8 @@ operation. The former `current`/`intent`/`scope` fields are rejected; semantic d
 are explicit packet members with justified relations. Compact recoverable
 receipts, declared coverage and structured repair signals still belong to block 2.
 A native packet replay is not independent agent evaluation and does not resume a reader awaiting human review.
+
+Writer validation now carries stable feedback codes and member/field paths.
+A missing prior read can return an executable Inspect action with about and ref.
+No message parsing or evidence synthesis chooses the code or action. Receipts
+and declared coverage remain pending; this is not completion of block 2.

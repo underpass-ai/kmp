@@ -27,7 +27,26 @@ A rejected record writes none of the packet. The transaction covers one about.
 the same idempotency key. Duplicate ids, duplicate targets, self-links and
 undeclared local targets are errors. See
 `guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof
-link, a rejected packet and temporal/ChronoLoom review. Compact receipts and structured repair signals are the remaining writing work.
+link, a rejected packet and temporal/ChronoLoom review. Compact recoverable receipts are still being developed.
+
+## Repair a refused packet
+
+A refusal carries `feedback`: a stable `code`, `severity`, `field`, `reason`
+and an optional `action` with `tool` and complete `arguments`. Use the field
+path to locate the problem; do not parse the prose to choose a repair.
+For example, `MEMORY_EVIDENCE_REQUIRED` at `memories[1].evidence` means the
+second record needs its real source. `SEARCH_SUMMARY_REQUIRED` at
+`memories[1].summary_en` asks for a faithful English search rendering.
+`RELATION_CLASS_MISMATCH` identifies the link's class. Do not invent evidence
+or weaken a relation just to make validation pass.
+
+For `PRIOR_CONTEXT_REQUIRED`, KMP can supply a complete `kmp_inspect` action
+for the existing target. Execute the read, evaluate its evidence, then declare
+the actual returned ref in `read_context` and resubmit the corrected packet.
+The action is a supported reading move, not proof that the relation is true.
+An absent action means no source-backed automatic correction is known.
+Planner refusals commit none of the packet; store failures still carry their
+backend error. A normal accepted write does not require routine readback.
 
 ## What to write, and what never to write
 

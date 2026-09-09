@@ -1,17 +1,19 @@
 //! Compile one about's semantic records into a single canonical ingest.
 //! No member is sent to storage until all local refs and proofs are valid.
 
+use super::validation_error::WriteValidationError;
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value, json};
 
-use super::arguments::{optional_string, required_map_string, required_string};
 use super::generated_ref::{generated_entry_ref, stable_idempotency_key};
 use super::plan::KernelWritePlan;
 use super::planner::build_write_plan_with_local_refs;
 use super::relation_quality::relation_quality_metrics;
+use super::validated_arguments::{optional_string, required_map_string, required_string};
 
-pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, String> {
+pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, WriteValidationError> {
     let object = arguments
         .as_object()
         .ok_or("tool arguments must be an object")?;
@@ -22,19 +24,28 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Str
     super::coordinates::reject_a_time_that_has_not_happened(
         &observed_at,
         crate::clock::now_seconds(),
-    )?;
+    )
+    .map_err(|error| {
+        WriteValidationError::new(error)
+            .at("observed_at")
+            .code("FUTURE_OBSERVATION")
+    })?;
     for field in ["current", "intent", "semantic_delta", "connect_to", "scope"] {
         if object.contains_key(field) {
-            return Err(format!(
+            return Err(WriteValidationError::new(format!(
                 "`{field}` cannot accompany memories; declare each record's kind, labels and connect_to inside memories"
-            ));
+            )));
         }
     }
     let memories = object
         .get("memories")
         .and_then(Value::as_array)
         .filter(|memories| !memories.is_empty())
-        .ok_or("memories must be a non-empty array")?;
+        .ok_or_else(|| {
+            WriteValidationError::new("memories must be a non-empty array")
+                .at("memories")
+                .code("REQUIRED_FIELD")
+        })?;
     let identity = optional_string(object.get("idempotency_key"))
         .map(str::to_owned)
         .unwrap_or_else(|| stable_idempotency_key(object));
@@ -51,9 +62,9 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Str
                 .bytes()
                 .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
         {
-            return Err(format!(
+            return Err(WriteValidationError::new(format!(
                 "memories[{index}].id must start with a letter and contain only letters, digits, _ or -"
-            ));
+            )).at(format!("memories[{index}].id")).code("INVALID_LOCAL_ID"));
         }
         let kind = required_map_string(memory, "kind", &format!("memories[{index}].kind"))?;
         let summary =
@@ -63,18 +74,29 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Str
                 &about,
                 &format!("memories[{index}].ref"),
                 reference,
-            )?;
+            )
+            .map_err(|error| {
+                WriteValidationError::new(error)
+                    .at(format!("memories[{index}].ref"))
+                    .code("INVALID_REF")
+            })?;
             reference.to_owned()
         } else {
             generated_entry_ref(&about, kind, summary, &identity, id)
         };
         if refs.insert(id.to_owned(), reference.clone()).is_some() {
-            return Err(format!("memories[{index}].id repeats local id `{id}`"));
+            return Err(WriteValidationError::new(format!(
+                "memories[{index}].id repeats local id `{id}`"
+            ))
+            .at(format!("memories[{index}].id"))
+            .code("DUPLICATE_LOCAL_ID"));
         }
         if !targets.insert(reference.clone()) {
-            return Err(format!(
+            return Err(WriteValidationError::new(format!(
                 "memories[{index}].ref repeats write target `{reference}`"
-            ));
+            ))
+            .at(format!("memories[{index}].ref"))
+            .code("DUPLICATE_TARGET"));
         }
     }
 
@@ -96,9 +118,9 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Str
                         .is_some_and(|labels| labels.get(key).is_some())
                 })
             {
-                return Err(format!(
+                return Err(WriteValidationError::new(format!(
                     "options.labels_new names `{key}`, which no batch member declares"
-                ));
+                )));
             }
         }
     }
@@ -136,8 +158,10 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Str
                 request.insert(field.into(), value.clone());
             }
         }
-        let labels = merged_labels(object.get("labels"), memory.get("labels"))
-            .map_err(|error| format!("memories[{index}].labels: {error}"))?;
+        let labels =
+            merged_labels(object.get("labels"), memory.get("labels")).map_err(|error| {
+                WriteValidationError::new(error).at(format!("memories[{index}].labels"))
+            })?;
         request.insert("labels".into(), labels.clone());
         if let Some(options) = request.get_mut("options").and_then(Value::as_object_mut) {
             // The declaration applies only to the labels that this member uses.
@@ -169,9 +193,9 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Str
                 format!("memories[{index}].connect_to[{link_index}].ref is required")
             })?;
             if let Some(local) = target.strip_prefix('@') {
-                let reference = refs.get(local).ok_or_else(|| format!(
+                let reference = refs.get(local).ok_or_else(|| WriteValidationError::new(format!(
                     "memories[{index}].connect_to[{link_index}].ref names unknown local id `{local}`; declare it in memories or use an existing canonical ref"
-                ))?;
+                )).at(format!("memories[{index}].connect_to[{link_index}].ref")).code("UNKNOWN_LOCAL_REF"))?;
                 link["ref"] = json!(reference);
             }
         }
@@ -179,7 +203,7 @@ pub(crate) fn build_batch_plan(arguments: &Value) -> Result<KernelWritePlan, Str
         // A batch can record independent source facts. Strict proof validation
         // still applies to every claimed link; never fabricate links for access.
         let plan = build_write_plan_with_local_refs(&Value::Object(request), true, &targets)
-            .map_err(|error| format!("memories[{index}]: {error}"))?;
+            .map_err(|error| error.within(&format!("memories[{index}]")))?;
         plans.push(plan);
     }
     let mut all = plans.remove(0);
