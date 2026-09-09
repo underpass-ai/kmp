@@ -51,7 +51,10 @@ impl KernelMcpServer {
                     &error.message,
                     start.elapsed(),
                 );
-                return jsonrpc_result(id, tool_error_result(&error));
+                return jsonrpc_result(
+                    id,
+                    tool_error_result("kmp_write_memory", arguments, &error),
+                );
             }
         };
 
@@ -94,7 +97,7 @@ impl KernelMcpServer {
                     &error.message,
                     start.elapsed(),
                 );
-                jsonrpc_result(id, tool_error_result(&error))
+                jsonrpc_result(id, tool_error_result("kmp_write_memory", arguments, &error))
             }
         }
     }
