@@ -257,5 +257,10 @@
       "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
       "to": "incident:mobile-login:observation:401-refresh-race"
     }
-  ]
+  ],
+  "validation": {
+    "backend": "fixture",
+    "scope": "fixture"
+  },
+  "warnings": []
 }

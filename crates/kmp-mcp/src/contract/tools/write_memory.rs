@@ -139,7 +139,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "properties": {
                     "dry_run": {
                         "type": "boolean",
-                        "description": "When true, only return the compiled canonical kmp_ingest preview and write nothing. Defaults to false: the call commits."
+                        "description": "When true, validate the compiled packet against the selected store and return its preview without committing. Requires the backend to be available; it reserves no refs or sequence numbers. Defaults to false: the call validates and commits."
                     },
                     "labels_new": {
                         "type": "array",
@@ -258,6 +258,11 @@ fn write_memory_output_schema() -> Value {
     output_object(json!({
         "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
         "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
+        "validation": output_object(json!({
+            "backend": described("string", "Backend that performed preview validation."),
+            "scope": described("string", "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.")
+        })),
+        "warnings": string_array("Store validation notices returned with a preview."),
         "summary": described("string", "Counts and scope of the semantic write the planner prepared."),
         "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes."),
         "labels": output_object(json!({

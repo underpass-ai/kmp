@@ -42,6 +42,7 @@
             "type": "string"
           },
           "dry_run": {
+            "description": "Validate against the selected store without committing. References, labels and coordinates are checked by the kernel; the backend must be reachable. This reserves no future write.",
             "type": "boolean"
           },
           "idempotency_key": {
@@ -749,7 +750,7 @@
             "additionalProperties": false,
             "properties": {
               "dry_run": {
-                "description": "When true, only return the compiled canonical kmp_ingest preview and write nothing. Defaults to false: the call commits.",
+                "description": "When true, validate the compiled packet against the selected store and return its preview without committing. Requires the backend to be available; it reserves no refs or sequence numbers. Defaults to false: the call validates and commits.",
                 "type": "boolean"
               },
               "labels_new": {
@@ -1061,6 +1062,20 @@
             "description": "Counts and scope of the semantic write the planner prepared.",
             "type": "string"
           },
+          "validation": {
+            "additionalProperties": false,
+            "properties": {
+              "backend": {
+                "description": "Backend that performed preview validation.",
+                "type": "string"
+              },
+              "scope": {
+                "description": "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "viewer": {
             "additionalProperties": false,
             "properties": {
@@ -1074,6 +1089,13 @@
               }
             },
             "type": "object"
+          },
+          "warnings": {
+            "description": "Store validation notices returned with a preview.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "type": "object"

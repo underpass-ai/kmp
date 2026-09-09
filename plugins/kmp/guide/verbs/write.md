@@ -82,3 +82,18 @@ conflict is retryable. A key already accepted with different content must not
 be reused.
 
 For a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.
+
+## A preview checks the selected store
+
+Use `options.dry_run=true` only when a preview is useful. Embedded and gRPC
+previews run the same kernel validation as a commit, including existing refs,
+label policy and coordinate ownership. A missing target or backend failure is
+an error; a syntactically valid packet is not enough. A successful preview has
+`accepted=false`, `dry_run=true` and `validation.scope=current_store`. It writes
+no event. The fixture backend reports `scope=fixture` and proves no live state.
+
+The returned `ingest_preview` is the proposed canonical packet. Previewing
+reserves neither labels nor sequences; a later commit is validated again against
+the then-current store. Do not repeat previews before every ordinary write:
+the normal write already validates and commits in one call. Raw `kmp_ingest`
+with `dry_run=true` also reaches the kernel and leaves memory uncommitted.

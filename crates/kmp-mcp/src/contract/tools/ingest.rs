@@ -139,7 +139,8 @@ pub(crate) fn definition() -> Value {
                 },
                 "idempotency_key": string_schema("Required stable idempotency key for replay-safe ingest."),
                 "dry_run": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Validate against the selected store without committing. References, labels and coordinates are checked by the kernel; the backend must be reachable. This reserves no future write."
                 },
                 "label_policy": {
                     "type": "string",

@@ -28,7 +28,7 @@ C1: STORE-5 requires the journal to accept writes without a network.
 {"tool":"kmp_inspect","save_as":"constraint_read","arguments":{"about":"example:guide:canonical-ingest","ref":"${constraint.generated_refs.0}","budget":{"max_bytes":22000}}}
 ```
 
-## D1 — compile a preview without committing it
+## D1 — validate a preview without committing it
 
 D1: STORE-5 chooses SQLite because C1 requires journal writes without a network.
 
@@ -46,6 +46,10 @@ referenced object. A recipient missing C1 needs that dependency first.
 ```json
 {"tool":"kmp_inspect","save_as":"not_committed","expect_error":"not_found","arguments":{"about":"example:guide:canonical-ingest","ref":"${preview.generated_refs.0}"}}
 ```
+
+The preview checks the selected store, including the existing C1 target. It
+reports `validation.scope=current_store` and `accepted=false`. It does not
+reserve labels, refs or sequence numbers; the later commit checks again.
 
 ## Coordinate ownership
 
