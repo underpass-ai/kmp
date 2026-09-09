@@ -114,6 +114,18 @@ manual común. No acoplar esta distribución a tests de frases o de orden del te
 
 ### Huellas de selección y cambios del transporte
 
+En Wake, `scope.selection` identifica la prueba y las secciones sujetas al reloj
+y al intervalo o instante declarados en `proof`. `scope.context` identifica el
+contexto del about, cuyo tiempo es `unbounded`; puede describir recuerdos fuera
+de esa selección histórica. `scope.dimensions` declara los filtros aplicados a
+ambos grupos, con sus valores y predicados. El catálogo conserva las etiquetas
+de las entradas que pasan: filtrar por una etiqueta no elimina sus otras etiquetas.
+Conservar esta señal dentro del presupuesto y a través del transporte tipado.
+Verificar una ventana con prueba, otra sin prueba pero con contexto, y filtros
+dimensionales; un about inexistente es un caso distinto. `wake.objective` procede
+del solicitante, no es evidencia recuperada. Enseñar estas diferencias en el
+verbo y en una lección con fuentes, también visible en ChronoLoom.
+
 Trace y Relate calculan su huella sobre la selección completa antes de cortar
 la página. Al añadir un campo a esos resultados, incluirlo en la huella si
 cambia contenido, evidencia o alcance observables. El orden de mapas de metadata

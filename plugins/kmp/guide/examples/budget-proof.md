@@ -368,6 +368,41 @@ catalogue and refs instead of repeating this fresh-store assumption.
 
 ```json
 {
+  "tool": "kmp_wake",
+  "save_as": "historical_context",
+  "arguments": {
+    "about": "example:guide:budget-proof",
+    "axis": "observed",
+    "interval": {"start": "2026-09-01T08:00:00Z", "end": "2026-09-01T09:00:00Z"},
+    "budget": {"max_bytes": 100000, "detail": "full"}
+  }
+}
+```
+
+The historical proof contains C1. `scope.context` identifies the state lines,
+summary, semantic next actions and labels drawn from other times as well;
+D1 in those state lines does not place D1 inside the selected hour.
+
+```json
+{
+  "tool": "kmp_wake",
+  "save_as": "empty_history",
+  "arguments": {
+    "about": "example:guide:budget-proof",
+    "axis": "observed",
+    "interval": {"start": "2026-09-01T08:00:00Z", "end": "2026-09-01T09:00:00Z"},
+    "dimensions": {"selectors": [{"key": "component", "op": "in", "values": ["warehouse"]}]},
+    "budget": {"max_bytes": 100000, "detail": "full"}
+  }
+}
+```
+
+The warehouse source arrived later. This hour has empty proof and a null
+resume cursor, while its about context and labels still describe the warehouse.
+The response's scope distinguishes that context from evidence for the hour.
+
+```json
+{
   "tool": "kmp_view_open",
   "save_as": "view",
   "arguments": {
@@ -408,7 +443,7 @@ the inclusive 08:00 boundary with Goto. Retain only records exactly on that
 boundary; the point lookup can also return older state in larger histories.
 Then Forward starts strictly after 08:00. A page is a slice, not the interval.
 
-The first Forward page contains D1 and T1. Preserve it and its opaque
+The first Forward page contains D1 and T1. Preserve it and execute
 the returned next_actions call. If the reading allowance ends here, report these refs,
 the covered boundary, the unchanged clock/labels/limit/budget and the exact
 continuation call shown next. Do not answer as though R1 or later records

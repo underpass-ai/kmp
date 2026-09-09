@@ -83,20 +83,7 @@
       "axis": "null",
       "confidence": "string",
       "conflicts": [],
-      "evidence": [
-        {
-          "id": "string",
-          "metadata": {
-            "proof_role": "string"
-          },
-          "source": "string",
-          "supports": [
-            "string"
-          ],
-          "text": "string",
-          "time": "string"
-        }
-      ],
+      "evidence": [],
       "expired": [
         {
           "ref": "string",
@@ -135,6 +122,22 @@
       "ref": "string",
       "sequence": "integer",
       "time": "string"
+    },
+    "scope": {
+      "context": [
+        "string"
+      ],
+      "context_time": "string",
+      "dimensions": {
+        "mode": "string",
+        "scope": "string"
+      },
+      "request": [
+        "string"
+      ],
+      "selection": [
+        "string"
+      ]
     },
     "summary": "string",
     "truncation": {

@@ -94,9 +94,10 @@ impl std::fmt::Display for RecallProjectionError {
 impl std::error::Error for RecallProjectionError {}
 
 pub fn project_wake_response(
-    response: WakeResponse,
+    mut response: WakeResponse,
     request: &WakeRequest,
 ) -> Result<WakeResponse, RecallProjectionError> {
+    response.dimension_selection = Some(request.dimensions.clone().unwrap_or_default());
     let arguments = wake_arguments(request);
     project_typed_recall(response, arguments, 1_600, wake_value, apply_wake_value)
 }
@@ -1196,7 +1197,7 @@ fn budget_value(
 }
 
 fn dimension_selection_value(selection: &DimensionSelection) -> Value {
-    json!({
+    let mut value = json!({
         "mode": match DimensionSelectionMode::try_from(selection.mode) {
             Ok(DimensionSelectionMode::Only) => "only",
             Ok(DimensionSelectionMode::Except) => "except",
@@ -1210,8 +1211,24 @@ fn dimension_selection_value(selection: &DimensionSelection) -> Value {
             _ => "current_about",
         },
         "abouts": selection.abouts,
-        "scope_ids": selection.scope_ids
-    })
+        "scope_ids": selection.scope_ids,
+        "selectors": selection.selectors.iter().map(|selector| {
+            let mut value = json!({"key":selector.key,"op":match kmp_proto::v1beta1::LabelSelectorOperator::try_from(selector.op) {
+                Ok(kmp_proto::v1beta1::LabelSelectorOperator::In) => "in",
+                Ok(kmp_proto::v1beta1::LabelSelectorOperator::NotIn) => "notin",
+                Ok(kmp_proto::v1beta1::LabelSelectorOperator::Exists) => "exists",
+                Ok(kmp_proto::v1beta1::LabelSelectorOperator::NotExists) => "notexists",
+                _ => "unspecified",
+            }});
+            if !selector.values.is_empty() { value["values"] = json!(selector.values); }
+            value
+        }).collect::<Vec<_>>()
+    });
+    value
+        .as_object_mut()
+        .expect("dimensions")
+        .retain(|_, value| !value.as_array().is_some_and(Vec::is_empty));
+    value
 }
 
 fn page_request_value(page: &kmp_proto::v1beta1::PageRequest) -> Value {
@@ -1226,6 +1243,13 @@ fn page_request_value(page: &kmp_proto::v1beta1::PageRequest) -> Value {
 pub fn wake_value(response: &WakeResponse) -> Value {
     let wake = response.wake.as_ref();
     let mut value = json!({
+        "scope": {
+            "selection": ["proof", "resume_cursor", "wake.causal_spine", "wake.guardrails"],
+            "context": ["summary", "wake.current_state", "wake.open_loops", "wake.next_actions", "labels"],
+            "context_time": "unbounded",
+            "dimensions": response.dimension_selection.as_ref().map(dimension_selection_value),
+            "request": ["wake.objective"]
+        },
         "summary": response.summary,
         "wake": {
             "objective": wake.map(|wake| wake.objective.as_str()).unwrap_or(""),
@@ -2722,6 +2746,7 @@ mod tests {
     #[test]
     fn bounded_wake_roundtrip_preserves_long_causal_rationales() {
         let mut response = typed_wake_fixture(24);
+        response.dimension_selection = Some(DimensionSelection::default());
         let wake = response.wake.as_mut().expect("wake");
         wake.objective = "Continue the verified storage rollout. ".repeat(80);
         wake.causal_spine[0].because =
@@ -2968,6 +2993,7 @@ mod tests {
             .proof
             .expect("typed ask fixture proof");
         WakeResponse {
+            dimension_selection: None,
             summary: "Deterministic wake packet.".to_string(),
             labels: Vec::new(),
             wake: Some(kmp_proto::v1beta1::WakePacket {

@@ -161,6 +161,7 @@ pub fn wake_response_from_result(
     let labels = labels_from_bundle(&result.bundle);
 
     Ok(WakeResponse {
+        dimension_selection: None,
         projection: selection_projection,
         truncation: None,
         resume_cursor,

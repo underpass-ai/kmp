@@ -27,7 +27,7 @@
           "id": "verb:wake",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The live kmp_wake contract returns an about-scoped continuation packet, a resume cursor and the labels catalogue read off the about's coordinates.",
+          "evidence": "The live Wake scope identifies selected historical proof and unbounded-time about context after dimensional filtering, alongside caller intent.",
           "text_file": "verbs/wake.md",
           "guide_title": "Resume known work"
         },

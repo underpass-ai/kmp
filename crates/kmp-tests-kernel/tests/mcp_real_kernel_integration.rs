@@ -93,6 +93,18 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         ),
         ("kmp_wake", json!({"about":"project:parity-live","depth":2})),
         (
+            "kmp_wake",
+            json!({"about":"project:parity-live","axis":"occurred",
+                "interval":{"start":"2026-08-25T00:00:00Z","end":"2026-08-25T00:01:00Z"},
+                "budget":{"detail":"full","max_bytes":100000}}),
+        ),
+        (
+            "kmp_wake",
+            json!({"about":"project:parity-live","axis":"occurred",
+                "interval":{"start":"2026-08-24T00:00:00Z","end":"2026-08-24T00:01:00Z"},
+                "budget":{"detail":"full","max_bytes":512}}),
+        ),
+        (
             "kmp_ask",
             json!({"about":"project:parity-live","question":"What changed in the parity fixture?","budget":{"detail":"balanced","max_bytes":10000}}),
         ),
