@@ -46,7 +46,7 @@ fn raw_record() -> Value {
         "text": TEXT,
         "coordinates": [{
             "dimension": "work",
-            "scope_id": "about:project:kmp:dimension:work:main",
+            "scope_id": "label:v1:project%3Akmp:work:work%3Amain",
             "occurred_at": "2026-05-06T10:00:00Z",
             "ingested_at": "2026-05-06T10:00:01Z",
             "sequence": 3

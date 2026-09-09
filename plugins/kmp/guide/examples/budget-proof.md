@@ -71,10 +71,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
       "process": "budget-review",
       "task": "export-check"
     },
-    "labels": {
-      "packet": "PACK-8",
-      "component": "export"
-    },
+    "labels": {"packet": ["PACK-8"], "component": ["export"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T08:00:00Z",
     "current": {
@@ -113,10 +110,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
       "process": "budget-review",
       "task": "export-check"
     },
-    "labels": {
-      "packet": "PACK-8",
-      "component": "export"
-    },
+    "labels": {"packet": ["PACK-8"], "component": ["export"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:00:00Z",
     "current": {
@@ -170,10 +164,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
       "process": "budget-review",
       "task": "export-check"
     },
-    "labels": {
-      "packet": "PACK-8",
-      "component": "export"
-    },
+    "labels": {"packet": ["PACK-8"], "component": ["export"]},
     "occurred_at": "2026-09-01T10:00:00Z",
     "observed_at": "2026-09-01T10:00:00Z",
     "current": {
@@ -227,10 +218,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
       "process": "budget-review",
       "task": "export-check"
     },
-    "labels": {
-      "packet": "PACK-8",
-      "component": "export"
-    },
+    "labels": {"packet": ["PACK-8"], "component": ["export"]},
     "occurred_at": "2026-09-01T11:00:00Z",
     "observed_at": "2026-09-01T11:00:00Z",
     "current": {
@@ -284,10 +272,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
       "process": "budget-review",
       "task": "warehouse-inspection"
     },
-    "labels": {
-      "packet": "PACK-8",
-      "component": "warehouse"
-    },
+    "labels": {"packet": ["PACK-8"], "component": ["warehouse"]},
     "occurred_at": "2026-09-01T12:00:00Z",
     "observed_at": "2026-09-01T12:00:00Z",
     "current": {

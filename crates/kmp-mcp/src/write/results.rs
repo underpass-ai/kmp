@@ -70,10 +70,13 @@ fn created_labels(plan: &KernelWritePlan, ingest_result: &Value) -> Vec<Value> {
         .iter()
         .filter(|label| {
             let value = label["value"].as_str().unwrap_or_default();
+            let key = label["key"].as_str().unwrap_or_default();
             !value.is_empty()
-                && created
-                    .iter()
-                    .any(|id| id == value || id.ends_with(&format!(":dimension:{value}")))
+                && created.iter().any(|id| {
+                    kmp_domain::MemoryDimensionIdentity::parse(id).is_some_and(|identity| {
+                        identity.key() == key && identity.dimension_id() == value
+                    })
+                })
         })
         .cloned()
         .collect()

@@ -113,7 +113,7 @@ mod tests {
     fn the_compiled_formats_name_the_engines_this_build_carries() {
         let formats = compiled_formats();
         assert!(!formats.contains("legacy read"), "{formats}");
-        assert!(formats.contains("2 (sqlite)"), "{formats}");
+        assert!(formats.contains("3 (sqlite)"), "{formats}");
     }
     #[test]
     fn an_empty_directory_reports_no_engine_rather_than_guessing() {
@@ -128,7 +128,7 @@ mod tests {
         std::fs::write(&store, b"memory is still present").expect("store marker");
         let resolved = ResolvedDataDir::Explicit(dir.path().to_path_buf());
 
-        for stamp in [Some("3\n"), Some("banana\n"), None] {
+        for stamp in [Some("4\n"), Some("banana\n"), None] {
             match stamp {
                 Some(stamp) => std::fs::write(kmp_embedded::format_version_path(dir.path()), stamp)
                     .expect("write invalid stamp"),

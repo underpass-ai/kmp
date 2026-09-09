@@ -300,8 +300,11 @@ fn collect_coordinate_scope_refs(value: &Value, out: &mut BTreeSet<String>) {
             .map(Vec::as_slice)
             .unwrap_or(&[]);
         for coordinate in coordinates {
-            if let Some(scope_id) = coordinate.get("scope_id").and_then(Value::as_str) {
-                out.insert(format!("about:{about}:dimension:{scope_id}"));
+            if let Some(scope_id) = coordinate.get("scope_id").and_then(Value::as_str)
+                && let Some(identity) =
+                    kmp_domain::MemoryDimensionIdentity::resolve(about, scope_id)
+            {
+                out.insert(identity.node_id());
             }
         }
     }
@@ -373,6 +376,10 @@ fn foreign_refs(refs: &BTreeSet<String>, expected_run_id: &str) -> Vec<String> {
 }
 
 fn extract_run_id(reference: &str) -> Option<String> {
+    let identity = kmp_domain::MemoryDimensionIdentity::parse(reference);
+    let reference = identity
+        .as_ref()
+        .map_or(reference, |identity| identity.about());
     let start = reference.find("run:")? + "run:".len();
     let rest = &reference[start..];
     let end = rest.find(":task_type")?;
@@ -721,7 +728,7 @@ mod tests {
         );
         assert_eq!(
             extract_run_id(
-                "about:memoryarena:run:run-a:task_type:progressive_search:task:0:dimension:x"
+                "label:v1:memoryarena%3Arun%3Arun-a%3Atask_type%3Aprogressive_search%3Atask%3A0:agentic_process:x"
             )
             .as_deref(),
             Some("run-a")

@@ -196,7 +196,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                 ),
                 neighbors: vec![
                     temporal_projection(
-                        "about:question:evidence-answer:dimension:conversation",
+                        "label:v1:question%3Aevidence-answer:conversation:conversation",
                         "memory_dimension",
                         "Evidence answer conversation",
                     ),
@@ -207,7 +207,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                 ],
                 relations: vec![
                     temporal_contains_entry(
-                        "about:question:evidence-answer:dimension:conversation",
+                        "label:v1:question%3Aevidence-answer:conversation:conversation",
                         "claim:answer",
                         "conversation",
                         1,
@@ -216,7 +216,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                         None,
                     ),
                     temporal_contains_entry(
-                        "about:question:evidence-answer:dimension:conversation",
+                        "label:v1:question%3Aevidence-answer:conversation:conversation",
                         "claim:unrelated-a",
                         "conversation",
                         2,
@@ -225,7 +225,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                         None,
                     ),
                     temporal_contains_entry(
-                        "about:question:evidence-answer:dimension:conversation",
+                        "label:v1:question%3Aevidence-answer:conversation:conversation",
                         "claim:unrelated-b",
                         "conversation",
                         3,
@@ -261,7 +261,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                 ),
                 neighbors: vec![
                     temporal_projection(
-                        "about:question:topical-overlap:dimension:conversation",
+                        "label:v1:question%3Atopical-overlap:conversation:conversation",
                         "memory_dimension",
                         "CI completion conversation",
                     ),
@@ -274,7 +274,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                 ],
                 relations: vec![
                     temporal_contains_entry(
-                        "about:question:topical-overlap:dimension:conversation",
+                        "label:v1:question%3Atopical-overlap:conversation:conversation",
                         "claim:ci-complete",
                         "conversation",
                         1,
@@ -302,7 +302,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                 ),
                 neighbors: vec![
                     temporal_projection(
-                        "about:question:conflict-answer:dimension:conversation",
+                        "label:v1:question%3Aconflict-answer:conversation:conversation",
                         "memory_dimension",
                         "Conflict answer conversation",
                     ),
@@ -321,7 +321,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                 ],
                 relations: vec![
                     temporal_contains_entry(
-                        "about:question:conflict-answer:dimension:conversation",
+                        "label:v1:question%3Aconflict-answer:conversation:conversation",
                         "claim:cache-enabled",
                         "conversation",
                         1,
@@ -330,7 +330,7 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                         None,
                     ),
                     temporal_contains_entry(
-                        "about:question:conflict-answer:dimension:conversation",
+                        "label:v1:question%3Aconflict-answer:conversation:conversation",
                         "claim:cache-disabled",
                         "conversation",
                         2,
@@ -452,7 +452,7 @@ impl NodeRelationshipReader for SeededGraphNeighborhoodReader {
             "node-123" => Some(NodeRelationships {
                 incoming: vec![
                     temporal_contains_entry(
-                        "about:node-123:dimension:conversation",
+                        "label:v1:node-123:conversation:conversation",
                         "node-123",
                         "conversation",
                         4,
@@ -679,17 +679,17 @@ impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
                 ),
                 neighbors: vec![
                     temporal_projection(
-                        "about:question:830ce83f:dimension:conversation",
+                        "label:v1:question%3A830ce83f:conversation:conversation",
                         "memory_dimension",
                         "Rachel relocation discussion",
                     ),
                     temporal_projection(
-                        "about:question:830ce83f:dimension:entity",
+                        "label:v1:question%3A830ce83f:entity:entity",
                         "memory_dimension",
                         "Rachel",
                     ),
                     temporal_projection(
-                        "about:question:830ce83f:dimension:benchmark_record",
+                        "label:v1:question%3A830ce83f:benchmark_record:benchmark_record",
                         "memory_dimension",
                         "Benchmark item",
                     ),
@@ -706,7 +706,7 @@ impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
                 ],
                 relations: vec![
                     temporal_contains_entry(
-                        "about:question:830ce83f:dimension:conversation",
+                        "label:v1:question%3A830ce83f:conversation:conversation",
                         "claim:rachel-denver",
                         "conversation",
                         1,
@@ -715,7 +715,7 @@ impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
                         None,
                     ),
                     temporal_contains_entry(
-                        "about:question:830ce83f:dimension:entity",
+                        "label:v1:question%3A830ce83f:entity:entity",
                         "claim:rachel-denver",
                         "entity",
                         1,
@@ -724,7 +724,7 @@ impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
                         None,
                     ),
                     temporal_contains_entry(
-                        "about:question:830ce83f:dimension:conversation",
+                        "label:v1:question%3A830ce83f:conversation:conversation",
                         "claim:rachel-austin",
                         "conversation",
                         2,
@@ -733,7 +733,7 @@ impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
                         None,
                     ),
                     temporal_contains_entry(
-                        "about:question:830ce83f:dimension:entity",
+                        "label:v1:question%3A830ce83f:entity:entity",
                         "claim:rachel-austin",
                         "entity",
                         2,
@@ -742,7 +742,7 @@ impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
                         None,
                     ),
                     temporal_contains_entry(
-                        "about:question:830ce83f:dimension:benchmark_record",
+                        "label:v1:question%3A830ce83f:benchmark_record:benchmark_record",
                         "claim:rachel-austin",
                         "benchmark_record",
                         7,
@@ -764,7 +764,7 @@ impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
                 root: temporal_projection("question:porto", "memory_anchor", "Porto travel memory"),
                 neighbors: vec![
                     temporal_projection(
-                        "about:question:porto:dimension:conversation",
+                        "label:v1:question%3Aporto:conversation:conversation",
                         "memory_dimension",
                         "Porto travel discussion",
                     ),
@@ -775,7 +775,7 @@ impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
                     ),
                 ],
                 relations: vec![temporal_contains_entry(
-                    "about:question:porto:dimension:conversation",
+                    "label:v1:question%3Aporto:conversation:conversation",
                     "claim:porto-lisbon",
                     "conversation",
                     3,
@@ -1897,7 +1897,9 @@ async fn memory_service_temporal_methods_use_domain_traversal() {
                 exclude: Vec::new(),
                 scope: ProtoDimensionScopeMode::AllAbouts as i32,
                 abouts: Vec::new(),
-                scope_ids: vec!["about:question:830ce83f:dimension:conversation".to_string()],
+                scope_ids: vec![
+                    "label:v1:question%3A830ce83f:conversation:conversation".to_string(),
+                ],
                 selectors: Vec::new(),
             },
         )))
@@ -1915,7 +1917,7 @@ async fn memory_service_temporal_methods_use_domain_traversal() {
     let exact_coverage = exact_scope_forward.coverage.expect("coverage");
     assert_eq!(
         exact_coverage.requested.expect("requested").scope_ids,
-        vec!["about:question:830ce83f:dimension:conversation".to_string()]
+        vec!["label:v1:question%3A830ce83f:conversation:conversation".to_string()]
     );
 }
 
@@ -2183,7 +2185,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
     assert_eq!(raw.raw[0].coordinates[0].dimension, "conversation");
     assert_eq!(
         raw.raw[0].coordinates[0].scope_id,
-        "about:node-123:dimension:conversation"
+        "label:v1:node-123:conversation:conversation"
     );
     assert_eq!(raw.raw[0].coordinates[0].sequence, Some(4));
 }

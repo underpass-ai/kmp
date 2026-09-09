@@ -189,7 +189,7 @@ mod tests {
                 .map(|id| {
                     node(
                         &id,
-                        if id.contains(":dimension:") {
+                        if id.starts_with("label:v1:") {
                             "memory_dimension"
                         } else {
                             "decision"
@@ -204,9 +204,9 @@ mod tests {
         .expect("bundle")
     }
 
-    const TASK_A: &str = "about:a:dimension:task-a";
-    const TASK_B: &str = "about:a:dimension:task-b";
-    const PROCESS: &str = "about:a:dimension:p-1";
+    const TASK_A: &str = "label:v1:a:task:task-a";
+    const TASK_B: &str = "label:v1:a:task:task-b";
+    const PROCESS: &str = "label:v1:a:agentic_process:p-1";
 
     #[test]
     fn the_catalogue_names_every_pair_most_used_first_with_bare_values() {
@@ -248,7 +248,7 @@ mod tests {
             ("task".to_string(), TASK_A.to_string()),
             (
                 "incident".to_string(),
-                "about:a:dimension:inc-9".to_string(),
+                "label:v1:a:incident:inc-9".to_string(),
             ),
         ];
         let counted = VisualLabel::counted(catalogue, in_range.iter());

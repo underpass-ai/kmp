@@ -83,6 +83,7 @@
           "coordinate": {
             "dimension": "string",
             "ingested_at": "string",
+            "observed_at": "string",
             "occurred_at": "string",
             "scope_id": "string",
             "sequence": "integer"

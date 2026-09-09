@@ -8,6 +8,8 @@ contract. SQL, GraphQL and another query language are out of scope for this trac
 - Base evolution branches on `integration/mcp-simplification` and target their
   pull requests at that branch. Do not target `main` or `work/sota-gaps` for this
   redesign. Pass the PR base explicitly; the repository default remains `main`.
+- This is a breaking redesign. Backward compatibility, legacy-ref adapters and
+  old-store migration are not requirements. Reject unsupported formats explicitly.
 - Implement in this order: dimensions; semantic writing and actionable feedback;
   reading and continuations; independent agent evaluation.
 - Keep changes reviewable and run the behavioral checks appropriate to each

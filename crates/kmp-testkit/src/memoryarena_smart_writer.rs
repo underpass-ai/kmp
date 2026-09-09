@@ -835,7 +835,9 @@ fn fallback_connect_to(input: &EntryWriteInput) -> Vec<Value> {
 }
 
 fn namespaced_dimension_ref(about: &str, scope_id: &str) -> String {
-    format!("about:{about}:dimension:{scope_id}")
+    kmp_domain::MemoryDimensionIdentity::new(about, "agentic_process", scope_id)
+        .expect("process label")
+        .node_id()
 }
 
 fn preferred_candidate<'a>(
@@ -1408,7 +1410,7 @@ mod tests {
         assert_eq!(connect_to[0]["class"], "structural");
         assert_eq!(
             connect_to[0]["ref"],
-            "about:memoryarena:x:dimension:memoryarena:process:x"
+            "label:v1:memoryarena%3Ax:agentic_process:memoryarena%3Aprocess%3Ax"
         );
         assert_eq!(connect_to[0]["evidence"], "background");
     }

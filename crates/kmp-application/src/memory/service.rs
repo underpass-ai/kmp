@@ -665,70 +665,19 @@ fn memory_render_options(
 }
 
 fn requested_dimension_scopes(
-    current_about: &str,
+    _current_about: &str,
     selection: &DimensionSelection,
-    context_roots: &[String],
+    _context_roots: &[String],
 ) -> Vec<String> {
+    // Hints are keys, bare values or complete refs. The adapter compares
+    // them to the decoded label identity; callers never manufacture refs.
     if !selection.scope_ids().is_empty() {
-        return requested_explicit_dimension_scopes(current_about, selection, context_roots);
+        return selection.scope_ids().iter().cloned().collect();
     }
-
-    match selection.mode() {
-        DimensionSelectionMode::Only => match selection.scope_mode() {
-            DimensionScopeMode::CurrentAbout => selection
-                .dimensions()
-                .iter()
-                .filter_map(|dimension| namespaced_dimension_id(current_about, dimension))
-                .collect(),
-            DimensionScopeMode::Abouts => selection
-                .abouts()
-                .iter()
-                .flat_map(|about| {
-                    selection
-                        .dimensions()
-                        .iter()
-                        .filter_map(|dimension| namespaced_dimension_id(about, dimension))
-                        .collect::<Vec<_>>()
-                })
-                .collect(),
-            DimensionScopeMode::AllAbouts => context_roots
-                .iter()
-                .flat_map(|about| {
-                    selection
-                        .dimensions()
-                        .iter()
-                        .filter_map(|dimension| namespaced_dimension_id(about, dimension))
-                        .collect::<Vec<_>>()
-                })
-                .collect(),
-        },
-        DimensionSelectionMode::Except | DimensionSelectionMode::All => Vec::new(),
+    if selection.mode() == DimensionSelectionMode::Only {
+        return selection.dimensions().iter().cloned().collect();
     }
-}
-
-fn requested_explicit_dimension_scopes(
-    current_about: &str,
-    selection: &DimensionSelection,
-    context_roots: &[String],
-) -> Vec<String> {
-    let abouts = match selection.scope_mode() {
-        DimensionScopeMode::CurrentAbout => vec![current_about.to_string()],
-        DimensionScopeMode::Abouts => selection.abouts().iter().cloned().collect(),
-        DimensionScopeMode::AllAbouts => context_roots.to_vec(),
-    };
-
-    abouts
-        .iter()
-        .flat_map(|about| {
-            selection
-                .scope_ids()
-                .iter()
-                .filter_map(|scope_id| resolve_dimension_scope_id(about, scope_id))
-                .collect::<Vec<_>>()
-        })
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .collect()
+    Vec::new()
 }
 
 fn context_roots(
@@ -1007,20 +956,6 @@ fn relationship_key(relationship: &BundleRelationship) -> (String, String, Strin
     )
 }
 
-fn namespaced_dimension_id(about: &str, dimension: &str) -> Option<String> {
-    MemoryDimensionIdentity::new(about, dimension)
-        .ok()
-        .map(|identity| identity.node_id())
-}
-
-fn resolve_dimension_scope_id(about: &str, scope_id: &str) -> Option<String> {
-    let scope_id = scope_id.trim();
-    if scope_id.is_empty() {
-        return None;
-    }
-    MemoryDimensionIdentity::resolve(about, scope_id).map(|identity| identity.node_id())
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
@@ -1043,7 +978,7 @@ mod tests {
     }
 
     #[test]
-    fn requested_scopes_expands_all_abouts_from_indexed_roots() {
+    fn requested_scopes_preserves_keys_as_index_hints() {
         let selection = DimensionSelection::only(["timeline"]).with_all_about_scope();
         let scopes = requested_dimension_scopes(
             "question:current",
@@ -1051,31 +986,24 @@ mod tests {
             &["question:a".to_string(), "question:b".to_string()],
         );
 
-        assert_eq!(
-            scopes,
-            vec![
-                "about:question:a:dimension:timeline".to_string(),
-                "about:question:b:dimension:timeline".to_string()
-            ]
-        );
+        assert_eq!(scopes, vec!["timeline".to_string()]);
     }
 
     #[test]
-    fn requested_scopes_expand_explicit_scope_ids_against_selected_abouts() {
+    fn requested_scopes_preserves_values_and_exact_refs_as_index_hints() {
         let selection = DimensionSelection::only(["conversation"])
             .with_about_scope(["question:a", "question:b"])
             .with_scope_ids([
                 "conversation:alpha",
-                "about:question:b:dimension:conversation:beta",
+                "label:v1:question%3Ab:conversation:conversation%3Abeta",
             ]);
         let scopes = requested_dimension_scopes("question:current", &selection, &[]);
 
         assert_eq!(
             scopes,
             vec![
-                "about:question:a:dimension:conversation:alpha".to_string(),
-                "about:question:b:dimension:conversation:alpha".to_string(),
-                "about:question:b:dimension:conversation:beta".to_string()
+                "conversation:alpha".to_string(),
+                "label:v1:question%3Ab:conversation:conversation%3Abeta".to_string()
             ]
         );
     }
@@ -1106,14 +1034,14 @@ mod tests {
             })
             .collect::<Vec<_>>();
 
-        assert!(node_ids.contains(&"about:question:a:dimension:conversation:alpha"));
+        assert!(node_ids.contains(&"label:v1:question%3Aa:conversation:conversation%3Aalpha"));
         assert!(node_ids.contains(&"claim:alpha"));
-        assert!(!node_ids.contains(&"about:question:a:dimension:conversation:beta"));
+        assert!(!node_ids.contains(&"label:v1:question%3Aa:conversation:conversation%3Abeta"));
         assert!(!node_ids.contains(&"claim:beta"));
         assert_eq!(
             relationships,
             vec![(
-                "about:question:a:dimension:conversation:alpha",
+                "label:v1:question%3Aa:conversation:conversation%3Aalpha",
                 "claim:alpha",
                 "contains_entry"
             )]
@@ -1153,7 +1081,7 @@ mod tests {
             relationships,
             vec![
                 (
-                    "about:question:a:dimension:conversation:alpha",
+                    "label:v1:question%3Aa:conversation:conversation%3Aalpha",
                     "claim:alpha",
                     "contains_entry"
                 ),
@@ -1306,19 +1234,19 @@ mod tests {
                 BTreeMap::new(),
             ),
             vec![
-                memory_dimension_node("about:question:a:dimension:conversation:alpha"),
-                memory_dimension_node("about:question:a:dimension:conversation:beta"),
+                memory_dimension_node("label:v1:question%3Aa:conversation:conversation%3Aalpha"),
+                memory_dimension_node("label:v1:question%3Aa:conversation:conversation%3Abeta"),
                 claim_node("claim:alpha"),
                 claim_node("claim:beta"),
             ],
             vec![
                 contains_entry(
-                    "about:question:a:dimension:conversation:alpha",
+                    "label:v1:question%3Aa:conversation:conversation%3Aalpha",
                     "claim:alpha",
                     1,
                 ),
                 contains_entry(
-                    "about:question:a:dimension:conversation:beta",
+                    "label:v1:question%3Aa:conversation:conversation%3Abeta",
                     "claim:beta",
                     2,
                 ),
@@ -1344,20 +1272,20 @@ mod tests {
                 BTreeMap::new(),
             ),
             vec![
-                memory_dimension_node("about:question:a:dimension:conversation:alpha"),
-                memory_dimension_node("about:question:a:dimension:conversation:beta"),
+                memory_dimension_node("label:v1:question%3Aa:conversation:conversation%3Aalpha"),
+                memory_dimension_node("label:v1:question%3Aa:conversation:conversation%3Abeta"),
                 claim_node("claim:alpha"),
                 claim_node("claim:beta"),
                 evidence_node("evidence:alpha"),
             ],
             vec![
                 contains_entry(
-                    "about:question:a:dimension:conversation:alpha",
+                    "label:v1:question%3Aa:conversation:conversation%3Aalpha",
                     "claim:alpha",
                     1,
                 ),
                 contains_entry(
-                    "about:question:a:dimension:conversation:beta",
+                    "label:v1:question%3Aa:conversation:conversation%3Abeta",
                     "claim:beta",
                     2,
                 ),

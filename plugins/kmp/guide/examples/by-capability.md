@@ -124,3 +124,5 @@ interpretations. The standalone replays check kinds, refs, clocks and proof
 preservation; the visual reviews check their presentation. Counting a name
 in a file would not prove any of those properties. Independent learning on
 new sources and reader questions remains a separate evaluation.
+
+The multivalue contract is demonstrated in [dimensional-memberships](./dimensional-memberships.md), exact ref `guide:kmp-agent:example:dimensional-memberships`: arrays, independent keys, selectors, late relabel and visual review.

@@ -56,11 +56,11 @@ pub fn validate_supplied_member_ref(
     validate_ref_token(path, member_ref)?;
     let entry_prefix = format!("{about}:");
     let evidence_prefix = format!("evidence:{about}:");
-    let dimension_prefix = format!("about:{about}:dimension:");
+    let owned_dimension = kmp_domain::MemoryDimensionIdentity::resolve(about, member_ref).is_some();
     if member_ref != about
         && !member_ref.starts_with(&entry_prefix)
         && !member_ref.starts_with(&evidence_prefix)
-        && !member_ref.starts_with(&dimension_prefix)
+        && !owned_dimension
     {
         return Err(format!(
             "`{path}` `{member_ref}` does not belong to about `{about}`"
@@ -117,7 +117,7 @@ mod tests {
             ABOUT,
             "incident:alfa:entry:decision:one",
             "evidence:incident:alfa:entry:decision:one:current",
-            "about:incident:alfa:dimension:agentic_process:run",
+            "label:v1:incident%3Aalfa:agentic_process:agentic_process%3Arun",
         ] {
             validate_supplied_member_ref(ABOUT, "member", member).expect("owned member");
         }

@@ -872,8 +872,8 @@ mod tests {
             selected_abouts_from_bundle_and_scope_ids(
                 &bundle,
                 [
-                    "about:question:other:dimension:timeline",
-                    "about:question:current:dimension:timeline",
+                    "label:v1:question%3Aother:timeline:timeline",
+                    "label:v1:question%3Acurrent:timeline:timeline",
                 ],
             ),
             vec!["question:current", "question:other"]

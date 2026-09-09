@@ -1,6 +1,6 @@
 //! The two guides shipped in the plugin must remain importable and useful.
 //!
-//! The regular format-2 bundle is the empty-store fast path used by setup.
+//! The regular format-3 bundle is the empty-store fast path used by setup.
 //! Later guide versions converge through public ingest, but both paths are
 //! generated from the same requests and must preserve the agent/human split.
 
@@ -22,7 +22,7 @@ async fn shipped_guides_import_and_keep_distinct_audiences() {
     let header: serde_json::Value =
         serde_json::from_str(bundle.lines().next().expect("the bundle has a header"))
             .expect("the guide header is JSON");
-    assert_eq!(header["bundle_format"], 2);
+    assert_eq!(header["bundle_format"], 3);
     assert_eq!(header["event_count"], 2);
     assert_eq!(header["kernel_version"], env!("CARGO_PKG_VERSION"));
     assert_eq!(

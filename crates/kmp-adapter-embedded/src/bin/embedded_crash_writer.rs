@@ -14,7 +14,7 @@ use kmp_domain::{
 
 const DEFAULT_ABOUT: &str = "crash:test";
 const ROLE: &str = "memory";
-const SCOPE: &str = "about:crash:test:dimension:conversation:s1";
+const SCOPE: &str = "label:v1:crash%3Atest:conversation:conversation%3As1";
 
 fn entry_id(revision: u64) -> String {
     format!("claim:{revision:06}")

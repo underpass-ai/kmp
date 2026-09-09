@@ -4,17 +4,12 @@ pub enum ResemblanceKind {
     /// The same label spelled differently: `component=kmp_viewer` beside
     /// `component=kmp-viewer`, or `Component=…` beside `component=…`.
     SameLabelSpelledDifferently,
-    /// The same value, up to spelling, already stands under another key:
-    /// `repo=kmp-viewer` beside `component=kmp-viewer`. Within an about a
-    /// scope id names one label, so this is a reuse in the making.
-    ValueUnderAnotherKey,
 }
 
 impl ResemblanceKind {
     pub fn name(self) -> &'static str {
         match self {
             Self::SameLabelSpelledDifferently => "same_label_spelled_differently",
-            Self::ValueUnderAnotherKey => "value_under_another_key",
         }
     }
 }
@@ -55,10 +50,6 @@ impl LabelResemblance {
         match self.kind {
             ResemblanceKind::SameLabelSpelledDifferently => format!(
                 "`{}={}` resembles `{}={}`, already in the about: the same identifier up to case and separators. Reuse the existing spelling, or insist on the new label if it means something else.",
-                self.key, self.value, self.existing_key, self.existing_value
-            ),
-            ResemblanceKind::ValueUnderAnotherKey => format!(
-                "`{}={}` resembles `{}={}`, already in the about: the same value under another key. Within an about a scope id names one label; reuse the existing label, choose a distinct value, or insist if this is a different thing.",
                 self.key, self.value, self.existing_key, self.existing_value
             ),
         }
@@ -109,6 +100,7 @@ pub fn label_resemblances<'a>(
         .into_iter()
         .filter(|(existing_key, existing_value)| {
             !(*existing_key == key && *existing_value == value)
+                && normalized_label_token(existing_key) == folded_key
                 && normalized_label_token(existing_value) == folded_value
         })
         .map(|(existing_key, existing_value)| LabelResemblance {
@@ -116,11 +108,7 @@ pub fn label_resemblances<'a>(
             value: value.to_string(),
             existing_key: existing_key.to_string(),
             existing_value: existing_value.to_string(),
-            kind: if normalized_label_token(existing_key) == folded_key {
-                ResemblanceKind::SameLabelSpelledDifferently
-            } else {
-                ResemblanceKind::ValueUnderAnotherKey
-            },
+            kind: ResemblanceKind::SameLabelSpelledDifferently,
         })
         .collect()
 }
@@ -177,20 +165,8 @@ mod tests {
             "kmp-506",
             Some(ResemblanceKind::SameLabelSpelledDifferently),
         ),
-        (
-            "repo",
-            "kmp-viewer",
-            "component",
-            "kmp-viewer",
-            Some(ResemblanceKind::ValueUnderAnotherKey),
-        ),
-        (
-            "repo",
-            "KMP_VIEWER",
-            "component",
-            "kmp-viewer",
-            Some(ResemblanceKind::ValueUnderAnotherKey),
-        ),
+        ("repo", "kmp-viewer", "component", "kmp-viewer", None),
+        ("repo", "KMP_VIEWER", "component", "kmp-viewer", None),
         ("component", "kmp-viewer", "component", "kmp-viewer", None),
         ("component", "kmp-view", "component", "kmp-viewer", None),
         (
@@ -236,13 +212,16 @@ mod tests {
 
     #[test]
     fn the_why_names_both_labels_and_the_way_out() {
-        let found = label_resemblances("repo", "kmp_viewer", [("component", "kmp-viewer")]);
+        let found = label_resemblances("component", "kmp_viewer", [("component", "kmp-viewer")]);
         assert_eq!(found.len(), 1);
         let why = found[0].why();
         assert!(
-            why.contains("`repo=kmp_viewer` resembles `component=kmp-viewer`"),
+            why.contains("`component=kmp_viewer` resembles `component=kmp-viewer`"),
             "{why}"
         );
-        assert!(why.contains("the same value under another key"), "{why}");
+        assert!(
+            why.contains("same identifier up to case and separators"),
+            "{why}"
+        );
     }
 }

@@ -216,7 +216,7 @@ mod tests {
             "incident:other:entry:observation:foreign",
             "incident:other",
             "evidence:incident:other:entry:observation:foreign:current",
-            "about:incident:other:dimension:shared",
+            "label:v1:incident%3Aother:agentic_process:shared",
             "../../incident:other:entry:observation:foreign",
             "incident:mobile-login:entry:x\nincident:other:entry:y",
         ];

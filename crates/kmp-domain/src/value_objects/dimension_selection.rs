@@ -236,11 +236,13 @@ mod tests {
     #[test]
     fn selection_filters_about_scope_when_resolved() {
         let current = DimensionSelection::only(["timeline"]).resolve_current_about("question:a");
-        assert!(current.includes_coordinate("timeline", "about:question:a:dimension:timeline"));
-        assert!(!current.includes_coordinate("timeline", "about:question:b:dimension:timeline"));
+        assert!(current.includes_coordinate("timeline", "label:v1:question%3Aa:timeline:timeline"));
+        assert!(
+            !current.includes_coordinate("timeline", "label:v1:question%3Ab:timeline:timeline")
+        );
 
         let all = DimensionSelection::only(["timeline"]).with_all_about_scope();
-        assert!(all.includes_coordinate("timeline", "about:question:b:dimension:timeline"));
+        assert!(all.includes_coordinate("timeline", "label:v1:question%3Ab:timeline:timeline"));
     }
 
     #[test]
@@ -250,25 +252,26 @@ mod tests {
             .with_scope_ids(["conversation:alpha"]);
         assert!(local.includes_coordinate(
             "conversation",
-            "about:question:a:dimension:conversation:alpha"
+            "label:v1:question%3Aa:conversation:conversation%3Aalpha"
         ));
         assert!(!local.includes_coordinate(
             "conversation",
-            "about:question:a:dimension:conversation:beta"
+            "label:v1:question%3Aa:conversation:conversation%3Abeta"
         ));
-        assert!(
-            !local.includes_coordinate("topic", "about:question:a:dimension:conversation:alpha")
-        );
+        assert!(!local.includes_coordinate(
+            "topic",
+            "label:v1:question%3Aa:conversation:conversation%3Aalpha"
+        ));
 
         let namespaced = DimensionSelection::all()
-            .with_scope_ids(["about:question:a:dimension:conversation:alpha"]);
+            .with_scope_ids(["label:v1:question%3Aa:conversation:conversation%3Aalpha"]);
         assert!(namespaced.includes_coordinate(
             "conversation",
-            "about:question:a:dimension:conversation:alpha"
+            "label:v1:question%3Aa:conversation:conversation%3Aalpha"
         ));
         assert!(!namespaced.includes_coordinate(
             "conversation",
-            "about:question:b:dimension:conversation:alpha"
+            "label:v1:question%3Ab:conversation:conversation%3Aalpha"
         ));
     }
 
@@ -298,7 +301,7 @@ mod tests {
         // `except task` keeps an entry through its other coordinates;
         // `notexists task` keeps only entries with no task label at all.
         let except = DimensionSelection::except(["task"]);
-        assert!(except.includes_coordinate("agentic_process", "about:a:dimension:p-1"));
+        assert!(except.includes_coordinate("agentic_process", "label:v1:a:agentic_process:p-1"));
         let entry = EntryLabels::from_pairs([("agentic_process", "p-1"), ("task", "t-1")]);
         let absent = DimensionSelection::all().with_selectors([LabelSelector::new(
             "task",

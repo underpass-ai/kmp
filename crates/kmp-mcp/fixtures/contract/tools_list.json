@@ -50,7 +50,7 @@
             "type": "string"
           },
           "label_policy": {
-            "description": "What to do with a dimension that resembles a label the about already holds — the same identifier up to case and separators, or the same value under another key. `warn` (the default) writes it and says so in `warnings` and `memory.resembling_labels`; `refuse` rejects the ingest naming both labels, unless the dimension carries the metadata `writer_intended_new: \"true\"`.",
+            "description": "What to do with a dimension that resembles a label the about already holds — the same identifier under the same key up to case and separators. `warn` (the default) writes it and says so in `warnings` and `memory.resembling_labels`; `refuse` rejects the ingest naming both labels, unless the dimension carries the metadata `writer_intended_new: \"true\"`.",
             "enum": [
               "warn",
               "refuse"
@@ -472,7 +472,7 @@
                 "type": "object"
               },
               "created_dimensions": {
-                "description": "Dimension nodes this ingest declared for the first time, namespaced `about:{about}:dimension:{scope}`: the labels the write created rather than reused.",
+                "description": "Refs of label dimensions this ingest created, identified by about, key and value. Copy returned refs; do not construct them.",
                 "items": {
                   "type": "string"
                 },
@@ -487,7 +487,7 @@
                 "type": "boolean"
               },
               "resembling_labels": {
-                "description": "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently` or `value_under_another_key`) and `why`.",
+                "description": "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently`) and `why`.",
                 "type": "array"
               }
             },
@@ -723,11 +723,16 @@
           },
           "labels": {
             "additionalProperties": {
-              "description": "The scope id this memory stands in under that key.",
-              "minLength": 1,
-              "type": "string"
+              "description": "The values this memory stands in under this key.",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
             },
-            "description": "Any other label this memory stands in, `key: value`: `component`, `release`, `customer`, whatever catalogues this about. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned before naming one and reuse what exists. Within an about a scope id names one label and keeps the kind of its first use, so a value already used under another key is refused, naming both. Each label becomes a coordinate with the same clocks; `scope.process`, `scope.task` and `scope.episode` are the same thing under their well-known keys and cannot be given twice.",
+            "description": "Labels as key-to-array values, for example alias: [neb, nebula]. Keys name dimensions; each key/value pair becomes a coordinate with the same clocks. The same value under another key is a distinct label. Additional values under scope keys are allowed; repeating an exact pair is an error. Read the about catalogue to reuse intended vocabulary.",
             "type": "object"
           },
           "observed_at": {
@@ -1204,7 +1209,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -1689,7 +1694,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -2096,7 +2101,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -2461,7 +2466,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -2905,7 +2910,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -3328,7 +3333,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -3772,7 +3777,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -4494,7 +4499,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
+      "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -4510,11 +4515,16 @@
           },
           "add": {
             "additionalProperties": {
-              "description": "The scope id the memory now stands in under that key.",
-              "minLength": 1,
-              "type": "string"
+              "description": "Values of the memberships under this key.",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
             },
-            "description": "Labels to add, `key: value`. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned and reuse what exists: a value already used under another key in this about is refused, naming both. A label the memory already stands in is refused too.",
+            "description": "Labels to add as key-to-array values. Multiple values per key and the same value under different keys are valid. An exact membership already present is refused.",
             "type": "object"
           },
           "idempotency_key": {
@@ -4557,11 +4567,16 @@
           },
           "remove": {
             "additionalProperties": {
-              "description": "The scope id to take the memory out of under that key.",
-              "minLength": 1,
-              "type": "string"
+              "description": "Values of the memberships under this key.",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
             },
-            "description": "Labels to take off, `key: value`, as `kmp_inspect` with `include.raw` lists them on the memory (the `dimension` is the key, the bare `scope_id` the value). A label the memory does not stand in is refused, naming the ones it does; so is taking off its last label, since a memory stands in at least one.",
+            "description": "Labels to remove as key-to-array values. Only the named memberships change; a missing membership or removal of the last label is refused.",
             "type": "object"
           },
           "source_kind": {

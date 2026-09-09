@@ -64,8 +64,8 @@ pub(crate) fn write_memory_schema() -> Value {
             },
             "labels": {
                 "type": "object",
-                "additionalProperties": string_schema("The scope id this memory stands in under that key."),
-                "description": "Any other label this memory stands in, `key: value`: `component`, `release`, `customer`, whatever catalogues this about. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned before naming one and reuse what exists. Within an about a scope id names one label and keeps the kind of its first use, so a value already used under another key is refused, naming both. Each label becomes a coordinate with the same clocks; `scope.process`, `scope.task` and `scope.episode` are the same thing under their well-known keys and cannot be given twice."
+                "additionalProperties": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}, "description": "The values this memory stands in under this key."},
+                "description": "Labels as key-to-array values, for example alias: [neb, nebula]. Keys name dimensions; each key/value pair becomes a coordinate with the same clocks. The same value under another key is a distinct label. Additional values under scope keys are allowed; repeating an exact pair is an error. Read the about catalogue to reuse intended vocabulary."
             },
             "current": {
                 "type": "object",

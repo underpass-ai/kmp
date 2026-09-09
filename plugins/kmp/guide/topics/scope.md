@@ -75,8 +75,11 @@ key to values and keeps the entries that satisfy every predicate:
 Four operators: `in` (one of the entry's values under `key` is listed),
 `notin` (none is — and an entry without the key passes, as in Kubernetes),
 `exists`, `notexists` (the key is present or absent; `values` stays empty).
-Values are the bare label values `kmp_wake` lists in `labels`; a namespaced
-scope id is read as its bare value.
+Values are the bare label values `kmp_wake` lists in `labels`. A canonical
+label ref can be read as its value; the selector key still chooses the facet.
+Multiple values under the same key are supported: `in` matches any listed
+value. Two selectors under that key require both predicates. Each memory
+is returned once even when several memberships match.
 
 This is a different grain from `mode`, `include`, `exclude` and
 `scope_ids`, which read one coordinate at a time and keep an entry when

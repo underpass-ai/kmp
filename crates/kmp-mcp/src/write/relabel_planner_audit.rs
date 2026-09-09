@@ -15,8 +15,8 @@ fn arguments() -> Value {
         "actor": "claude",
         "observed_at": "2026-09-05T12:00:00Z",
         "why": "The decision belongs to the issue it closed.",
-        "add": {"issue": "506"},
-        "remove": {"task": "launch"}
+        "add": {"issue": ["506"]},
+        "remove": {"task": ["launch"]}
     })
 }
 
@@ -91,7 +91,7 @@ fn nothing_to_relabel_and_a_pair_on_both_sides_are_refused() {
     assert!(error.contains("nothing to relabel"), "{error}");
 
     let mut arguments = self::arguments();
-    arguments["remove"] = json!({"issue": "506"});
+    arguments["remove"] = json!({"issue": ["506"]});
     let error = build_relabel_plan(&arguments).expect_err("both sides");
     assert!(
         error.contains("`issue=506` is both added and removed"),
@@ -102,18 +102,21 @@ fn nothing_to_relabel_and_a_pair_on_both_sides_are_refused() {
 #[test]
 fn a_key_a_filter_cannot_name_and_a_value_used_twice_are_refused_at_their_field() {
     let mut arguments = arguments();
-    arguments["add"] = json!({"Issue": "506"});
+    arguments["add"] = json!({"Issue": ["506"]});
     let error = build_relabel_plan(&arguments).expect_err("a bad key");
     assert!(error.contains("`add.Issue` is not a label key"), "{error}");
 
-    arguments["add"] = json!({"issue": "506", "ticket": "506"});
-    let error = build_relabel_plan(&arguments).expect_err("one value, one key");
-    assert!(error.contains("`add` uses `506` under two keys"), "{error}");
+    arguments["add"] = json!({"issue": ["506"], "ticket": ["506"]});
+    let plan = build_relabel_plan(&arguments).expect("same value under different keys");
+    assert_eq!(plan.add.len(), 2);
+    arguments["add"] = json!({"alias": ["neb", "neb"]});
+    let error = build_relabel_plan(&arguments).expect_err("duplicate membership");
+    assert!(error.contains("repeats `neb`"), "{error}");
 
-    arguments["add"] = json!({"issue": ""});
+    arguments["add"] = json!({"issue": [""]});
     let error = build_relabel_plan(&arguments).expect_err("an empty value");
     assert!(
-        error.contains("`add.issue` must be a non-empty scope id"),
+        error.contains("`add.issue[0]` must be a non-empty string"),
         "{error}"
     );
 }

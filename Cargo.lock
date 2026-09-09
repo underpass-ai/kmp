@@ -1694,6 +1694,7 @@ dependencies = [
  "base64 0.22.1",
  "jsonwebtoken",
  "kmp-mcp",
+ "kmp-domain",
  "reqwest 0.12.28",
  "serde",
  "serde_json",

@@ -821,7 +821,7 @@ mod tests {
                 ],
                 "path": [
                     {
-                        "from": "about:longmemeval:run:lme:item:q:dimension:longmemeval:session:s1",
+                        "from": "label:v1:longmemeval%3Arun%3Alme%3Aitem%3Aq:longmemeval:longmemeval%3Asession%3As1",
                         "to": "longmemeval:run:lme:item:q"
                     }
                 ]
@@ -833,7 +833,9 @@ mod tests {
         assert!(refs.contains("turn:run:lme:question:q:answer:a:1"));
         assert!(refs.contains("evidence:run:lme:question:q:answer:a:1"));
         assert!(refs.contains("question:run:lme:question:q"));
-        assert!(refs.contains("about:longmemeval:run:lme:item:q:dimension:longmemeval:session:s1"));
+        assert!(refs.contains(
+            "label:v1:longmemeval%3Arun%3Alme%3Aitem%3Aq:longmemeval:longmemeval%3Asession%3As1"
+        ));
         assert!(refs.contains("longmemeval:run:lme:item:q"));
         assert!(!refs.contains("turn:run:lme:question:q:answer:a:2"));
     }

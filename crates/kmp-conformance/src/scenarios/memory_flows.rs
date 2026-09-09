@@ -23,7 +23,9 @@ const ABOUT: &str = "question:conformance";
 const SCOPE_ALIAS: &str = "conversation:session-a";
 
 fn namespaced_scope() -> String {
-    format!("about:{ABOUT}:dimension:{SCOPE_ALIAS}")
+    kmp_domain::MemoryDimensionIdentity::new(ABOUT, "conversation", SCOPE_ALIAS)
+        .expect("label")
+        .node_id()
 }
 
 fn coordinate(occurred_at: &str, sequence: u32) -> MemoryCoordinateData {

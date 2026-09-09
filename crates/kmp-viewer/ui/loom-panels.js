@@ -326,7 +326,7 @@ KMP_APP.panels = (() => {
         el(
           "li",
           "",
-          `${c.dimension} / ${c.scope}` +
+          `${c.dimension}=${c.value} / ${c.scope}` +
             (c.sequence !== null ? ` · #${c.sequence}` : "") +
             (c.rank !== null ? ` · rank ${c.rank}` : "")
         )

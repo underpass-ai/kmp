@@ -113,7 +113,7 @@ KMP_APP.evidence = (() => {
         el(
           "span",
           "mono muted",
-          `${order.dimension}${order.sequence !== null ? " #" + order.sequence : ""}${order.rank !== null ? " · rank " + order.rank : ""}`,
+          `${order.dimension}=${order.value}${order.sequence !== null ? " #" + order.sequence : ""}${order.rank !== null ? " · rank " + order.rank : ""}`,
         ),
       );
       box.append(row);

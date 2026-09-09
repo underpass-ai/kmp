@@ -70,7 +70,7 @@ it a future `valid_until` learned from S3.
     "about": "example:guide:decision-history", "actor": "guide-writer",
     "intent": "record_observation", "idempotency_key": "guide-history:offline:v1",
     "scope": {"process": "atlas-planning", "task": "journal-decision"},
-    "labels": {"component": "journal", "environment": "field"},
+    "labels": {"component": ["journal"], "environment": ["field"]},
     "occurred_at": "2026-09-01T09:00:00Z", "observed_at": "2026-09-01T09:00:00Z",
     "valid_from": "2026-09-01T09:00:00Z", "source_kind": "human",
     "current": {
@@ -98,7 +98,7 @@ and is not a substitute for doing them.
     "about": "example:guide:decision-history", "actor": "guide-writer",
     "intent": "record_decision", "idempotency_key": "guide-history:sqlite:v1",
     "scope": {"process": "atlas-planning", "task": "journal-decision"},
-    "labels": {"component": "journal", "environment": "field"},
+    "labels": {"component": ["journal"], "environment": ["field"]},
     "occurred_at": "2026-09-02T09:00:00Z", "observed_at": "2026-09-02T09:00:00Z",
     "valid_from": "2026-09-02T09:00:00Z", "source_kind": "human",
     "current": {
@@ -133,7 +133,7 @@ separate evidence for changing the decision.
     "about": "example:guide:decision-history", "actor": "guide-writer",
     "intent": "record_observation", "idempotency_key": "guide-history:shared:v1",
     "scope": {"process": "atlas-planning", "task": "journal-decision"},
-    "labels": {"component": "journal", "environment": "field"},
+    "labels": {"component": ["journal"], "environment": ["field"]},
     "occurred_at": "2026-09-05T09:00:00Z", "observed_at": "2026-09-05T09:00:00Z",
     "valid_from": "2026-09-05T09:00:00Z", "source_kind": "human",
     "current": {
@@ -166,7 +166,7 @@ separate evidence for changing the decision.
     "about": "example:guide:decision-history", "actor": "guide-writer",
     "intent": "record_decision", "idempotency_key": "guide-history:postgres:v1",
     "scope": {"process": "atlas-planning", "task": "journal-decision"},
-    "labels": {"component": "journal", "environment": "field"},
+    "labels": {"component": ["journal"], "environment": ["field"]},
     "occurred_at": "2026-09-05T09:05:00Z", "observed_at": "2026-09-05T09:05:00Z",
     "valid_from": "2026-09-05T09:05:00Z", "source_kind": "human",
     "current": {

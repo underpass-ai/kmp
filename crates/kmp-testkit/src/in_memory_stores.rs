@@ -77,7 +77,9 @@ impl MemoryAboutIndexReader for InMemoryGraphNeighborhoodReader {
 fn dimension_matches(node_id: &str, wanted: &HashSet<&str>) -> bool {
     wanted.contains(node_id)
         || MemoryDimensionIdentity::parse(node_id)
-            .map(|identity| wanted.contains(identity.dimension_id()))
+            .map(|identity| {
+                wanted.contains(identity.dimension_id()) || wanted.contains(identity.key())
+            })
             .unwrap_or(false)
 }
 

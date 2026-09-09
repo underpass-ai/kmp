@@ -15,7 +15,7 @@
         "relations": 1
       },
       "created_dimensions": [
-        "about:question:parity:dimension:conversation:rachel"
+        "label:v1:question%3Aparity:conversation:conversation%3Arachel"
       ],
       "memory_id": "memory:parity:ingest:1",
       "read_after_write_ready": true,

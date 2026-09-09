@@ -6,42 +6,49 @@ constraints, outcomes — each with coordinates and evidence.
 Never write transcripts. Memory is not a log of the conversation; it is the
 durable shape of the work. A transcript makes later traversal worthless.
 
-Label what you write. `scope.process` is the label every write carries;
-`scope.task` and `scope.episode` are the two well-known ones; `labels`
-names any other facet the about is catalogued by — `component`, `release`,
-`customer`, `risk` — as `key: value`. Every label becomes a coordinate with
-the same clocks, so a later filter, a `relate` across abouts and a lane in
-the viewer can stand on it. Before naming one, read the `labels` catalogue
-`kmp_wake` returned and reuse what exists: a filter hides what it misses,
-and a value already used under another key is refused, because within an
-about a scope id names one label and keeps the kind of its first use. The
-response says which labels were written and, after a commit, which were
-created; a created label is vocabulary growing, so make sure it was meant.
+Label what you write. Every label is a `(key, value)` membership within its
+about. `scope.process` supplies the primary process; `scope.task` and
+`scope.episode` supply optional primary memberships. `labels` uses arrays,
+even for a single value, and may add further values under any key:
 
-The kernel asks the same question you should: does one resemble it? A new
-label is folded — only case and separators forgiven — and compared with the
-catalogue. A strict write that names `component=kmp_viewer` where
-`component=kmp-viewer` exists, or `repo=kmp-viewer` where that value already
-stands under `component`, is refused, and the error names both labels. A lax
-write goes through and says so in `labels.resembling`. When you read the
-catalogue and still mean a new label, say so with `options.labels_new:
-["component"]`; the kernel leaves that label alone. Nothing is renamed in
-silence, and nothing is guessed: the threshold forgives spelling and nothing
-else.
+```json
+"labels": {
+  "alias": ["neb", "Nébula Cache"],
+  "component": ["neb"],
+  "environment": ["production"]
+}
+```
 
-A label decided late goes on with `kmp_relabel`, never with a rewrite: give
-the memory's `ref`, the pairs to `add` and to `remove`, and a `why` a later
-reader can check. The kernel reads what the memory stands in and refuses,
-naming it, a label it already stands in, one it does not, a value already used
-under another key, and taking its last label off — a memory stands in at
-least one, which is where its time lives. The same resemblance check runs
-against the catalogue, with the same `options.strict` and
-`options.labels_new`. The added label inherits the memory's clocks, so
-`kmp_rewind` and `kmp_forward` still find the memory where it was; the change
-itself is on the edge it added (`method: kmp_relabel`, your `why`) and in the
-event log, with who did it when. Undoing a relabel is another relabel the
-other way; nothing is deleted. Read the memory back with `kmp_inspect` and
-`include.raw` to see every label it stands in now.
+Each pair becomes its own coordinate with the memory's clocks. Two aliases
+under `alias` are valid, as is `neb` under both `alias` and `component`.
+The key distinguishes them. Repeating the exact pair, including a primary
+scope membership, is an error. Values may contain spaces, punctuation and
+Unicode. The server returns canonical refs: copy them when an exact graph
+address is needed. Do not construct refs or infer entity identity from labels.
+
+Read the `labels` catalogue in `kmp_wake` to reuse existing vocabulary.
+Responses report labels written and created. A new spelling under the same
+key, such as `component=kmp_viewer` when `component=kmp-viewer` exists, is
+refused in strict mode or reported in `labels.resembling` in lax mode.
+Sharing a value across different keys is valid and produces no resemblance
+warning. `options.labels_new: ["component"]` confirms intentional new values
+under that key; nothing is silently renamed or merged.
+
+Use `kmp_relabel` to change memberships later. Its `add` and `remove` use the
+same arrays. For example, `add: {"alias": ["Nébula Cache", "NC"]}` adds two
+aliases, and `remove: {"alias": ["NC"]}` later removes only that membership.
+Give the memory's returned `ref` and a source-backed `why`. The kernel refuses
+adding an existing pair, removing an absent pair, placing a pair on both
+sides, and removing the last label. Other values under the key remain.
+Added memberships inherit the memory's clocks; the relabel's actor, receipt
+time and rationale are recorded separately. Read back with `kmp_inspect`
+and `include.raw` to verify the memberships and evidence.
+
+Filter a facet with `dimensions.selectors`, for example
+`{"key":"alias","op":"in","values":["neb"]}`. To require both an alias and
+an environment, supply one selector for each key. Shared labels locate
+candidates; only justified relations declare that two memories concern the
+same entity or event.
 
 Write in the language of the work, and give the memory an English rendering
 for search: `current.summary_en`, plain English a reader would ask with, every

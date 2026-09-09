@@ -50,22 +50,6 @@
     "links": {
       "incoming": [
         {
-          "class": "structural",
-          "confidence": "unknown",
-          "coordinate": {
-            "dimension": "conversation",
-            "ingested_at": "<stamped at call time>",
-            "occurred_at": "2026-04-12T15:00:00Z",
-            "scope_id": "about:question:parity:dimension:conversation:rachel",
-            "sequence": 1
-          },
-          "from": "about:question:parity:dimension:conversation:rachel",
-          "rel": "contains_entry",
-          "sequence": 1,
-          "to": "question:parity:claim:denver",
-          "why": "Memory scope contains this entry."
-        },
-        {
           "class": "evidential",
           "confidence": "unknown",
           "evidence": "Rachel named Denver twice in the same conversation.",
@@ -91,6 +75,22 @@
           "rel": "supports",
           "to": "question:parity:claim:denver",
           "why": "Evidence supports this memory entry."
+        },
+        {
+          "class": "structural",
+          "confidence": "unknown",
+          "coordinate": {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T15:00:00Z",
+            "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
+            "sequence": 1
+          },
+          "from": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
+          "rel": "contains_entry",
+          "sequence": 1,
+          "to": "question:parity:claim:denver",
+          "why": "Memory scope contains this entry."
         },
         {
           "class": "structural",
@@ -202,7 +202,7 @@
             "dimension": "conversation",
             "ingested_at": "<stamped at call time>",
             "occurred_at": "2026-04-12T15:00:00Z",
-            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
             "sequence": 1
           }
         ],

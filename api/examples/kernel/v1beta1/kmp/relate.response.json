@@ -9,7 +9,7 @@
       "coordinates": [
         {
           "dimension": "release",
-          "scope_id": "about:service:alpha:dimension:release:spring",
+          "scope_id": "label:v1:service%3Aalpha:release:release%3Aspring",
           "occurred_at": "2026-03-10T10:00:00Z",
           "sequence": 1
         }
@@ -24,7 +24,7 @@
       "coordinates": [
         {
           "dimension": "release",
-          "scope_id": "about:service:beta:dimension:release:spring",
+          "scope_id": "label:v1:service%3Abeta:release:release%3Aspring",
           "occurred_at": "2026-03-20T10:00:00Z",
           "sequence": 1
         }

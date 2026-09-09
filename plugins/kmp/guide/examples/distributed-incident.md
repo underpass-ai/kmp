@@ -83,10 +83,7 @@ the missing-about assumption. Every logical write has its own idempotency key.
     "scope": {
       "process": "atlas-incident-review"
     },
-    "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
-    },
+    "labels": {"incident": ["INC-17"], "event": ["EVT-17-F"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:05:00Z",
     "current": {
@@ -125,10 +122,7 @@ the missing-about assumption. Every logical write has its own idempotency key.
     "scope": {
       "process": "atlas-incident-review"
     },
-    "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-R"
-    },
+    "labels": {"incident": ["INC-17"], "event": ["EVT-17-R"]},
     "occurred_at": "2026-09-01T09:30:00Z",
     "observed_at": "2026-09-01T09:35:00Z",
     "current": {
@@ -238,10 +232,7 @@ A compact wake does not include the full proof; the targeted inspections do.
     "scope": {
       "process": "atlas-incident-review"
     },
-    "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
-    },
+    "labels": {"incident": ["INC-17"], "event": ["EVT-17-F"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-02T08:00:00Z",
     "current": {
@@ -432,10 +423,7 @@ fails before ingest; it does not add a fifth memory or change either report.
     "scope": {
       "process": "atlas-incident-review"
     },
-    "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
-    },
+    "labels": {"incident": ["INC-17"], "event": ["EVT-17-F"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-02T08:30:00Z",
     "current": {
@@ -489,10 +477,7 @@ Only the permitted equivalences cross this boundary through the writer.
     "scope": {
       "process": "atlas-incident-review"
     },
-    "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
-    },
+    "labels": {"incident": ["INC-17"], "event": ["EVT-17-F"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-02T08:30:00Z",
     "current": {
@@ -561,10 +546,7 @@ is filled with a matching score as a substitute for the source.
     "scope": {
       "process": "atlas-incident-review"
     },
-    "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
-    },
+    "labels": {"incident": ["INC-17"], "event": ["EVT-17-F"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-02T08:30:00Z",
     "current": {

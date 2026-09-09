@@ -26,16 +26,9 @@
         {
           "class": "string",
           "confidence": "string",
-          "coordinate": {
-            "dimension": "string",
-            "ingested_at": "string",
-            "occurred_at": "string",
-            "scope_id": "string",
-            "sequence": "integer"
-          },
+          "evidence": "string",
           "from": "string",
           "rel": "string",
-          "sequence": "integer",
           "to": "string",
           "why": "string"
         }

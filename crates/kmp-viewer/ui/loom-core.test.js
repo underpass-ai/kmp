@@ -401,3 +401,14 @@ test("adding a selector merges values on the same key and operator", () => {
   assert.equal(loom.labelQuery(selectors), "task in a|b;task notin c;task exists");
   assert.equal(loom.labelQuery(loom.withSelector(selectors, { key: "", op: "in", values: ["x"] })), loom.labelQuery(selectors));
 });
+
+
+test("the prism distinguishes the values of each sequence under a shared key", () => {
+  const m = entry([
+    {dimension: "alias", scope_id: "label:v1:project%3Ax:alias:NC", sequence: 1},
+    {dimension: "alias", scope_id: "label:v1:project%3Ax:alias:N%C3%A9bula%20Cache", sequence: 7},
+    {dimension: "component", scope_id: "label:v1:project%3Ax:component:NC", sequence: 2},
+  ]);
+  assert.deepEqual(loom.prism(m).order.map(c => [c.dimension, c.value, c.sequence]),
+    [["alias", "NC", 1], ["alias", "Nébula Cache", 7], ["component", "NC", 2]]);
+});

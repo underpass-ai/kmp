@@ -609,7 +609,7 @@
           "items": {
             "$ref": "#/$defs/non_empty_string"
           },
-          "description": "Exact dimension scope ids to include. Values may be local dimension ids or namespaced about:<about>:dimension:<dimension_id> ids."
+          "description": "Exact label refs or bare values to include. Combine bare values with a dimension key to select a facet."
         }
       }
     },

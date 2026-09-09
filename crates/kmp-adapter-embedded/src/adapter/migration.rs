@@ -1,6 +1,6 @@
 //! Compatibility API for store-layout migration receipts.
 //!
-//! Current KMP has one supported layout, SQLite format 2, so there is no live
+//! Current KMP has one supported layout, SQLite format 3, so there is no live
 //! in-process migration path. These APIs remain available to avoid breaking
 //! downstream Rust callers: a current source reports that migration is
 //! unnecessary, and an unsupported source is preserved with the same generic
@@ -71,7 +71,7 @@ impl EmbeddedKernelStore {
         }
         if source_format == StorageEngine::Sqlite.format_version() {
             return Err(PortError::Unavailable(format!(
-                "migration from a SQLite format-2 store is unnecessary and unsupported; the \
+                "migration from a SQLite format-3 store is unnecessary and unsupported; the \
                  source at `{}` is left untouched",
                 source_dir.display()
             )));
@@ -79,9 +79,8 @@ impl EmbeddedKernelStore {
         let _ = destination_engine;
         Err(PortError::InvalidState(format!(
             "migration source `{}` uses unsupported format version {source_format}; current \
-             KMP left it untouched. Preserve the source, use an explicitly archived compatible \
-             exporter to create `.kmp/memory.jsonl`, then import that bundle into an empty \
-             current store",
+             KMP left it untouched. Old contracts are not migrated by this redesign; \
+             use a compatible binary to inspect the source and start a fresh current store",
             source_dir.display()
         )))
     }

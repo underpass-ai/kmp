@@ -124,7 +124,7 @@ mod tests {
             added: vec![label("issue", "506")],
             removed: vec![],
             labels: vec![label("issue", "506"), label("release", "spring")],
-            created_dimensions: vec!["about:service:alpha:dimension:506".to_string()],
+            created_dimensions: vec!["label:v1:service%3Aalpha:issue:506".to_string()],
             resembling_labels: vec![],
             read_after_write_ready: true,
             warnings: vec![],

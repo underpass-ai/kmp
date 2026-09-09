@@ -274,7 +274,7 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "dimensions": {
                     "mode": "only",
                     "include": ["conversation"],
-                    "scope_ids": ["about:question:parity:dimension:conversation:rachel"]
+                    "scope_ids": ["label:v1:question%3Aparity:conversation:conversation%3Arachel"]
                 }
             }),
         ),
@@ -374,7 +374,7 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "actor": "parity-test",
                 "observed_at": "2026-04-12T19:00:00Z",
                 "why": "The claim is the one the parity fixture catalogues by issue.",
-                "add": {"issue": "parity-1"},
+                "add": {"issue": ["parity-1"]},
                 "idempotency_key": "parity:relabel:1"
             }),
         ),

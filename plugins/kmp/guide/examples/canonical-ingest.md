@@ -21,7 +21,7 @@ runtime clock. No source below states a validity interval.
 C1: STORE-5 requires the journal to accept writes without a network.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"constraint","arguments":{"about":"example:guide:canonical-ingest","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-canonical-ingest:constraint:v1","scope":{"process":"capability-examples"},"labels":{"case":"canonical-ingest"},"occurred_at":"2026-09-02T09:01:00Z","observed_at":"2026-09-02T09:01:00Z","current":{"kind":"constraint","summary":"C1: STORE-5 requires the journal to accept writes without a network.","evidence":"C1: STORE-5 requires the journal to accept writes without a network."}}}
+{"tool":"kmp_write_memory","save_as":"constraint","arguments":{"about":"example:guide:canonical-ingest","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-canonical-ingest:constraint:v1","scope":{"process":"capability-examples"},"labels":{"case": ["canonical-ingest"]},"occurred_at":"2026-09-02T09:01:00Z","observed_at":"2026-09-02T09:01:00Z","current":{"kind":"constraint","summary":"C1: STORE-5 requires the journal to accept writes without a network.","evidence":"C1: STORE-5 requires the journal to accept writes without a network."}}}
 ```
 
 ```json
@@ -40,7 +40,7 @@ depends on C1 in this isolated store: it is not a portable bundle of every
 referenced object. A recipient missing C1 needs that dependency first.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"preview","arguments":{"about":"example:guide:canonical-ingest","intent":"record_decision","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-canonical-ingest:decision:v1","scope":{"process":"capability-examples"},"labels":{"case":"canonical-ingest"},"occurred_at":"2026-09-02T09:02:00Z","observed_at":"2026-09-02T09:03:00Z","current":{"kind":"decision","summary":"D1: STORE-5 chooses SQLite because C1 requires journal writes without a network.","evidence":"D1: STORE-5 chooses SQLite because C1 requires journal writes without a network."},"connect_to":[{"ref":"${constraint.generated_refs.0}","rel":"chosen_because","class":"motivational","confidence":"high","why":"D1 explicitly chooses SQLite for the offline-write requirement recorded by C1.","evidence":"D1: STORE-5 chooses SQLite because C1 requires journal writes without a network."}],"read_context":{"inspected_refs":["${constraint.generated_refs.0}"]},"options":{"dry_run":true}}}
+{"tool":"kmp_write_memory","save_as":"preview","arguments":{"about":"example:guide:canonical-ingest","intent":"record_decision","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-canonical-ingest:decision:v1","scope":{"process":"capability-examples"},"labels":{"case": ["canonical-ingest"]},"occurred_at":"2026-09-02T09:02:00Z","observed_at":"2026-09-02T09:03:00Z","current":{"kind":"decision","summary":"D1: STORE-5 chooses SQLite because C1 requires journal writes without a network.","evidence":"D1: STORE-5 chooses SQLite because C1 requires journal writes without a network."},"connect_to":[{"ref":"${constraint.generated_refs.0}","rel":"chosen_because","class":"motivational","confidence":"high","why":"D1 explicitly chooses SQLite for the offline-write requirement recorded by C1.","evidence":"D1: STORE-5 chooses SQLite because C1 requires journal writes without a network."}],"read_context":{"inspected_refs":["${constraint.generated_refs.0}"]},"options":{"dry_run":true}}}
 ```
 
 ```json
