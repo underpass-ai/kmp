@@ -164,6 +164,7 @@
     "temporal": {
       "axis": "occurred",
       "direction": "forward",
+      "interval": null,
       "requested": {
         "time": "2026-04-12T15:00:00Z"
       },

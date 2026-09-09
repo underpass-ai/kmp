@@ -73,6 +73,7 @@ mod tests {
         let response = TemporalMoveResponse {
             summary: "Returned 1 temporal entry.".to_string(),
             temporal: Some(TemporalState {
+                interval: None,
                 direction: TemporalDirection::Forward as i32,
                 axis: TemporalAxis::Observed as i32,
                 requested: Some(TemporalCursor {

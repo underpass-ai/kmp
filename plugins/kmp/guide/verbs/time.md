@@ -44,18 +44,31 @@ covered. Do not invent a date merely to fit the bounded-interval recipe.
 
 Resolve relative dates in the user's timezone. If the timezone is genuinely
 unknown and changes the answer, ask for it. Convert a bounded calendar window
-to an explicit half-open UTC interval `[start, end)`. Use `kmp_goto`,
-`kmp_near`, `kmp_rewind` or `kmp_forward`, keep only entries whose effective
-time is inside the interval, and follow the returned `next_actions`.
+to an explicit half-open UTC interval `[start, end)`. Pass it directly to
+`kmp_forward` for oldest first, or `kmp_rewind` for newest first. Omit `from`
+on the first interval read. KMP includes every start-time tie and excludes
+the end, without a separate boundary probe or client-side date filtering.
 
-The start is inclusive but `kmp_forward` is strictly after its cursor. First
-call `kmp_goto` at `start` and retain entries whose effective time equals
-`start`; discard older state. Then call `kmp_forward` from the same `start` for
-the strictly later entries. Merge and deduplicate refs from both reads. Execute
-the returned `next_actions` with their complete arguments.
-Exclude entries at or after `end`. If a budget or selection cap prevents a
-complete boundary probe or interval, report the exact continuation action;
-never call a partial page the whole period.
+```json
+{"about":"project:release","interval":{"start":"2026-09-01T00:00:00Z","end":"2026-09-02T00:00:00Z"},"axis":"observed","limit":{"entries":10}}
+```
+
+Execute the returned `next_actions` with their complete arguments. They retain
+the interval, clock and dimension selection across both proof pages and history
+moves. `from` remains a strict cursor when supplied; interval continuations use
+returned refs, never a sequence. Goto and Near can narrow their cursor/window
+with the same interval but still require their initial cursor.
+
+Either bound may be open. On validity, a memory qualifies when its applicability
+overlaps the interval. On the other clocks, its recorded instant must fall
+inside. The selected entries obey `temporal.interval`; proof may retain earlier
+antecedents needed to explain them. Explicitly later proof is excluded at the
+finite end. With no end, `proof.missing: ["expiry_boundary"]` says expiry has not
+been assessed: supply `interval.end` to ask what had expired before that instant.
+An empty `proof.expired` alone does not establish that every returned state holds.
+
+If a budget or selection cap prevents completion, report the exact pending
+continuation; never call a partial packet the whole period.
 
 ## Complete the selected packet before navigating onward
 
@@ -99,6 +112,16 @@ An observed recall excludes evidence whose explicit receipt time is after
 entry. It does not invent dates for evidence without a timestamp. On the
 occurred axis, late evidence can still describe the earlier event; that does
 not establish that the evidence was known at the event time.
+
+A relation has its own clocks, independently of its endpoints. In bounded
+Wake, Ask and Relate reads, a link explicitly later on the selected clock
+cannot change the earlier proof or replacement state. For two memories from
+10:00 linked by a review first observed at 13:00, `axis: "observed"` with
+`as_of.time: "2026-09-01T12:00:00Z"` excludes that link. At 13:00 an `as_of`
+read includes it, while an interval ending at 13:00 still excludes it.
+Earlier antecedents remain available; a missing relation clock is not proof
+of later arrival and is not replaced by another clock. Inspect the relation
+before inferring when an undated link was known.
 
 ## Select entries and choose returned lanes
 

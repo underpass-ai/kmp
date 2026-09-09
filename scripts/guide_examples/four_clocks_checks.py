@@ -44,12 +44,10 @@ def check(saved, client, authored):
         return {entry['ref'] for entry in saved[name]['entries']}
 
     assert entries('occurred_start') == {refs['permit']}
-    assert entries('occurred_later') == {refs['signature'], refs['receipt']}
-    interval = {entry['ref'] for name in ('occurred_start', 'occurred_later')
-                for entry in saved[name]['entries']
-                if any(clock['occurred'] <= coord['occurred_at'] < clock['day2']
-                       for coord in entry['coordinates'])}
-    assert interval == {refs['permit'], refs['signature']}
+    interval = {refs['permit'], refs['signature']}
+    assert entries('occurred_interval') == interval
+    assert saved['occurred_interval']['temporal']['interval'] == {
+        'start': clock['occurred'], 'end': clock['day2']}
     assert entries('before_end') == interval
     assert entries('observed_start') == {refs['permit']}
     assert entries('observed_later') == {refs['signature'], refs['receipt']}
@@ -84,7 +82,7 @@ def check(saved, client, authored):
     assert saved['view_state']['state']['selection'] == refs['permit']
     return ['three typed source-backed memories', 'actual kernel ingestion on day four',
             'four distinct answers at the same day-two instant', 'exclusive validity expiry',
-            'inclusive goto plus strict forward and excluded end boundary',
+            'direct interval includes the start and excludes the end in both directions',
             'observation and ingestion timelines retain every source', 'writer rejects forged ingestion',
             'signature proof survives trace', 'seven explicit viewer clock and zoom stages',
             'view changes neither explicit MCP selection nor stored object']

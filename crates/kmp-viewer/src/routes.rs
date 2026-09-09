@@ -307,7 +307,8 @@ where
             about: about.to_string(),
             direction,
             axis,
-            cursor,
+            cursor: Some(cursor),
+            interval: None,
             dimensions,
             window: TemporalWindow::new(
                 param_or_refuse!(window_param(request, "before")),

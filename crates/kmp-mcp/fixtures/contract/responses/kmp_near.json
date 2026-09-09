@@ -590,6 +590,7 @@
     "temporal": {
       "axis": "occurred",
       "direction": "near",
+      "interval": null,
       "requested": {
         "time": "2026-04-12T15:00:00Z"
       },

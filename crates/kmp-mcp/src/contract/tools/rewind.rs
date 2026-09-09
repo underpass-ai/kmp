@@ -5,7 +5,7 @@ use crate::contract::schema::temporal_family::temporal_tool_definition;
 pub(crate) fn definition() -> Value {
     temporal_tool_definition(
         "kmp_rewind",
-        "Move strictly before `from` (time, sequence or ref), newest-to-oldest. Execute next_actions unchanged to reconstruct the packet and then continue earlier history. page.has_more counts entry/proof expansion; selection.has_more reports history outside the packet.",
+        "Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval.",
         "from",
     )
 }

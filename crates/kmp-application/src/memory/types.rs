@@ -1,6 +1,6 @@
 use kmp_domain::{
     DimensionSelection, ResolutionTier, TemporalAxis, TemporalCoordinate, TemporalCursor,
-    TemporalDirection, TemporalSelection, TemporalWindow,
+    TemporalDirection, TemporalInterval, TemporalSelection, TemporalWindow,
 };
 
 use crate::queries::{GetNodeDetailResult, GraphRelationshipView};
@@ -218,7 +218,8 @@ pub struct TemporalMemoryQuery {
     pub about: String,
     pub direction: TemporalDirection,
     pub axis: TemporalAxis,
-    pub cursor: TemporalCursor,
+    pub cursor: Option<TemporalCursor>,
+    pub interval: Option<TemporalInterval>,
     pub dimensions: DimensionSelection,
     pub window: TemporalWindow,
     pub limit_entries: Option<usize>,

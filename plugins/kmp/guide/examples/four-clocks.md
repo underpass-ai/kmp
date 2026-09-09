@@ -106,24 +106,24 @@ source for a stronger authorization or causal claim.
 
 ## Enumerate a half-open interval without losing either boundary
 
-For occurred [D1 09:00, D2 00:00), first keep only entries exactly at the
-start from goto. Then read strictly later entries with forward, paginate if
-needed, merge by ref and exclude times at or after D2 00:00. Expected: S1 and
-S2; the receipt S3 lies exactly at the excluded end. Forward alone omits S1.
-Rewind from the end independently checks the two earlier entries in this case.
-Use the document lane consistently so extra label coordinates do not duplicate
-entry counts. This is temporal enumeration and does not require Ask.
+For occurred [D1 09:00, D2 00:00), pass the interval directly to Forward
+without `from`. Expected: S1 and S2; the receipt S3 lies exactly at the excluded
+end. No date filtering or boundary union is needed. The separate Goto below
+locates the start moment for comparison with the viewer; it is not a prerequisite
+for enumeration. Rewind with the same interval independently checks the reverse
+order. Use the document lane consistently so extra label coordinates do not
+duplicate entry counts. This temporal enumeration does not require Ask.
 
 ```json
 {"tool":"kmp_goto","save_as":"occurred_start","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.occurred}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_forward","save_as":"occurred_later","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.occurred}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_forward","save_as":"occurred_interval","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"}}}
 ```
 
 ```json
-{"tool":"kmp_rewind","save_as":"before_end","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.day2}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_rewind","save_as":"before_end","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"}}}
 ```
 
 ## Stand at D2 with each of the four clocks

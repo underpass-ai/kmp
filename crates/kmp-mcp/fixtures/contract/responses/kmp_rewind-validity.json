@@ -152,6 +152,7 @@
     "temporal": {
       "axis": "validity",
       "direction": "rewind",
+      "interval": null,
       "requested": {
         "ref": "question:parity:claim:boulder-current"
       },
