@@ -60,16 +60,21 @@ impl NeighborhoodRequest {
     /// that admits it, so narrowing at the dimension narrows everything below
     /// without ever having to reason about what a node is.
     ///
-    /// A requested dimension admits its own scopes: asking for
-    /// `about:a:dimension:timeline` is asking for
-    /// `about:a:dimension:timeline:q3` as well.
+    /// Hints name a key, bare value (including its colon-delimited children),
+    /// or a complete ref. A complete ref selects just that label.
     pub fn admits(&self, node_id: &str) -> bool {
-        if self.scopes.is_empty() || MemoryDimensionIdentity::parse(node_id).is_none() {
+        if self.scopes.is_empty() {
             return true;
         }
+        let Some(identity) = MemoryDimensionIdentity::parse(node_id) else {
+            return true;
+        };
         self.scopes.iter().any(|scope| {
             node_id == scope
-                || node_id
+                || identity.key() == scope
+                || identity.dimension_id() == scope
+                || identity
+                    .dimension_id()
                     .strip_prefix(scope.as_str())
                     .is_some_and(|rest| rest.starts_with(':'))
         })
@@ -84,7 +89,7 @@ mod tests {
     fn a_request_without_scopes_admits_everything() {
         let request = NeighborhoodRequest::new("about:project", 3);
 
-        assert!(request.admits("about:project:dimension:timeline"));
+        assert!(request.admits("label:v1:about%3Aproject:timeline:timeline"));
         assert!(request.admits("project:entry:one"));
         assert_eq!(request.depth(), 3);
         assert_eq!(request.root_node_id(), "about:project");
@@ -93,30 +98,29 @@ mod tests {
     #[test]
     fn only_dimensions_are_ever_refused() {
         let request = NeighborhoodRequest::new("about:project", 3)
-            .with_scopes(["about:project:dimension:timeline"]);
+            .with_scopes(["label:v1:about%3Aproject:timeline:timeline"]);
 
-        assert!(request.admits("about:project:dimension:timeline"));
-        assert!(!request.admits("about:project:dimension:conversation"));
+        assert!(request.admits("label:v1:about%3Aproject:timeline:timeline"));
+        assert!(!request.admits("label:v1:about%3Aproject:conversation:conversation"));
         // An entry is not a dimension and is reached through one anyway.
         assert!(request.admits("project:entry:one"));
     }
 
     #[test]
     fn asking_for_a_dimension_asks_for_its_scopes() {
-        let request = NeighborhoodRequest::new("about:project", 3)
-            .with_scopes(["about:project:dimension:conversation"]);
+        let request = NeighborhoodRequest::new("about:project", 3).with_scopes(["conversation"]);
 
-        assert!(request.admits("about:project:dimension:conversation:alpha"));
-        assert!(!request.admits("about:project:dimension:conversationalist"));
+        assert!(request.admits("label:v1:about%3Aproject:conversation:conversation%3Aalpha"));
+        assert!(!request.admits("label:v1:about%3Aproject:conversationalist:conversationalist"));
     }
 
     #[test]
     fn an_exact_scope_does_not_admit_its_siblings() {
         let request = NeighborhoodRequest::new("about:project", 3)
-            .with_scopes(["about:project:dimension:conversation:alpha"]);
+            .with_scopes(["label:v1:about%3Aproject:conversation:conversation%3Aalpha"]);
 
-        assert!(request.admits("about:project:dimension:conversation:alpha"));
-        assert!(!request.admits("about:project:dimension:conversation:beta"));
+        assert!(request.admits("label:v1:about%3Aproject:conversation:conversation%3Aalpha"));
+        assert!(!request.admits("label:v1:about%3Aproject:conversation:conversation%3Abeta"));
     }
 
     #[test]
@@ -124,6 +128,6 @@ mod tests {
         let request = NeighborhoodRequest::new("about:project", 3).with_scopes(["", "   "]);
 
         assert!(request.scopes().is_empty());
-        assert!(request.admits("about:project:dimension:conversation"));
+        assert!(request.admits("label:v1:about%3Aproject:conversation:conversation"));
     }
 }

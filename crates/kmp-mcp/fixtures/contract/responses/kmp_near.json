@@ -37,7 +37,7 @@
             "dimension": "conversation",
             "ingested_at": "<stamped at call time>",
             "occurred_at": "2026-04-12T15:00:00Z",
-            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
             "sequence": 1
           }
         ],
@@ -53,7 +53,7 @@
             "ingested_at": "<stamped at call time>",
             "occurred_at": "2026-04-12T15:05:00Z",
             "rank": 2,
-            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
             "sequence": 2,
             "valid_from": "2026-04-12T15:05:00Z",
             "valid_until": "2026-04-12T18:00:00Z"
@@ -71,7 +71,7 @@
             "ingested_at": "<stamped at call time>",
             "observed_at": "2026-04-12T16:00:00Z",
             "occurred_at": "2026-04-12T16:00:00Z",
-            "scope_id": "about:question:parity:dimension:parity",
+            "scope_id": "label:v1:question%3Aparity:agentic_process:parity",
             "sequence": 1
           }
         ],
@@ -197,10 +197,32 @@
           "class": "structural",
           "confidence": "unknown",
           "coordinate": {
+            "dimension": "agentic_process",
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T16:00:00Z",
+            "occurred_at": "2026-04-12T16:00:00Z",
+            "scope_id": "label:v1:question%3Aparity:agentic_process:parity",
+            "sequence": 1
+          },
+          "evidence_refs": [
+            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:current",
+            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+            "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b"
+          ],
+          "from": "label:v1:question%3Aparity:agentic_process:parity",
+          "rel": "contains_entry",
+          "sequence": 1,
+          "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+          "why": "Memory scope contains this entry."
+        },
+        {
+          "class": "structural",
+          "confidence": "unknown",
+          "coordinate": {
             "dimension": "conversation",
             "ingested_at": "<stamped at call time>",
             "occurred_at": "2026-04-12T15:00:00Z",
-            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
             "sequence": 1
           },
           "evidence_refs": [
@@ -210,32 +232,10 @@
             "detail:question:parity:claim:denver",
             "detail:question:parity:claim:denver-detail"
           ],
-          "from": "about:question:parity:dimension:conversation:rachel",
+          "from": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
           "rel": "contains_entry",
           "sequence": 1,
           "to": "question:parity:claim:denver",
-          "why": "Memory scope contains this entry."
-        },
-        {
-          "class": "structural",
-          "confidence": "unknown",
-          "coordinate": {
-            "dimension": "agentic_process",
-            "ingested_at": "<stamped at call time>",
-            "observed_at": "2026-04-12T16:00:00Z",
-            "occurred_at": "2026-04-12T16:00:00Z",
-            "scope_id": "about:question:parity:dimension:parity",
-            "sequence": 1
-          },
-          "evidence_refs": [
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:current",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
-            "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b"
-          ],
-          "from": "about:question:parity:dimension:parity",
-          "rel": "contains_entry",
-          "sequence": 1,
-          "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
           "why": "Memory scope contains this entry."
         },
         {
@@ -280,7 +280,7 @@
             "ingested_at": "<stamped at call time>",
             "occurred_at": "2026-04-12T15:05:00Z",
             "rank": 2,
-            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
             "sequence": 2,
             "valid_from": "2026-04-12T15:05:00Z",
             "valid_until": "2026-04-12T18:00:00Z"
@@ -288,7 +288,7 @@
           "evidence_refs": [
             "detail:question:parity:claim:denver-detail"
           ],
-          "from": "about:question:parity:dimension:conversation:rachel",
+          "from": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
           "rel": "contains_entry",
           "sequence": 2,
           "to": "question:parity:claim:denver-detail",

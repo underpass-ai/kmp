@@ -311,7 +311,7 @@ mod tests {
                 "project:alpha",
                 vec![coordinate_of_kind(
                     "owner",
-                    "about:project:alpha:dimension:kmp",
+                    "label:v1:project%3Aalpha:owner:kmp",
                     Some("2026-03-04T01:00:00Z"),
                     (None, None),
                     Some(1),
@@ -323,7 +323,7 @@ mod tests {
                 "project:beta",
                 vec![coordinate_of_kind(
                     "repo",
-                    "about:project:beta:dimension:kmp",
+                    "label:v1:project%3Abeta:repo:kmp",
                     Some("2026-03-04T01:20:00Z"),
                     (None, None),
                     Some(1),
@@ -348,7 +348,7 @@ mod tests {
                 "project:alpha:e1",
                 "project:alpha",
                 vec![coordinate(
-                    "about:project:alpha:dimension:north",
+                    "label:v1:project%3Aalpha:incident:north",
                     Some("2026-03-04T01:00:00Z"),
                     (None, None),
                     None,
@@ -359,7 +359,7 @@ mod tests {
                 "project:beta:e1",
                 "project:beta",
                 vec![coordinate(
-                    "about:project:beta:dimension:north",
+                    "label:v1:project%3Abeta:incident:north",
                     Some("2026-03-04T01:20:00Z"),
                     (None, None),
                     None,
@@ -389,7 +389,7 @@ mod tests {
                 "project:alpha:e1",
                 "project:alpha",
                 vec![coordinate(
-                    "about:project:alpha:dimension:incident:north",
+                    "label:v1:project%3Aalpha:incident:incident%3Anorth",
                     Some("2026-03-04T01:00:00Z"),
                     (None, None),
                     Some(1),
@@ -400,7 +400,7 @@ mod tests {
                 "project:beta:e1",
                 "project:beta",
                 vec![coordinate(
-                    "about:project:beta:dimension:incident:north",
+                    "label:v1:project%3Abeta:incident:incident%3Anorth",
                     Some("2026-03-04T01:20:00Z"),
                     (None, None),
                     Some(1),
@@ -411,7 +411,7 @@ mod tests {
                 "project:alpha:e2",
                 "project:alpha",
                 vec![coordinate(
-                    "about:project:alpha:dimension:incident:north",
+                    "label:v1:project%3Aalpha:incident:incident%3Anorth",
                     Some("2026-03-04T02:00:00Z"),
                     (None, None),
                     None,
@@ -422,7 +422,7 @@ mod tests {
                 "project:gamma:e1",
                 "project:gamma",
                 vec![coordinate(
-                    "about:project:gamma:dimension:work:main",
+                    "label:v1:project%3Agamma:incident:work%3Amain",
                     Some("2026-03-04T02:00:00Z"),
                     (None, None),
                     None,
@@ -475,7 +475,7 @@ mod tests {
                 "project:alpha:rule",
                 "project:alpha",
                 vec![coordinate(
-                    "about:project:alpha:dimension:release:spring",
+                    "label:v1:project%3Aalpha:incident:release%3Aspring",
                     None,
                     (Some(from), until),
                     None,
@@ -488,7 +488,7 @@ mod tests {
                 "project:beta:rule",
                 "project:beta",
                 vec![coordinate(
-                    "about:project:beta:dimension:release:spring",
+                    "label:v1:project%3Abeta:incident:release%3Aspring",
                     None,
                     (Some(from), until),
                     None,
@@ -550,7 +550,7 @@ mod tests {
                 "project:alpha:e1",
                 "project:alpha",
                 vec![coordinate(
-                    "about:project:alpha:dimension:incident:north",
+                    "label:v1:project%3Aalpha:incident:incident%3Anorth",
                     Some("2026-03-04T01:00:00Z"),
                     (None, None),
                     None,
@@ -561,7 +561,7 @@ mod tests {
                 "project:beta:e1",
                 "project:beta",
                 vec![coordinate(
-                    "about:project:beta:dimension:incident:north",
+                    "label:v1:project%3Abeta:incident:incident%3Anorth",
                     None,
                     (None, None),
                     None,
@@ -589,7 +589,7 @@ mod tests {
                 "project:alpha:freeze",
                 "project:alpha",
                 vec![coordinate(
-                    "about:project:alpha:dimension:release:spring",
+                    "label:v1:project%3Aalpha:incident:release%3Aspring",
                     Some("2026-03-01T00:00:00Z"),
                     (None, None),
                     None,
@@ -600,7 +600,7 @@ mod tests {
                 "project:alpha:ship",
                 "project:alpha",
                 vec![coordinate(
-                    "about:project:alpha:dimension:release:spring",
+                    "label:v1:project%3Aalpha:incident:release%3Aspring",
                     Some("2026-03-05T00:00:00Z"),
                     (None, None),
                     None,
@@ -611,7 +611,7 @@ mod tests {
                 "project:alpha:old",
                 "project:alpha",
                 vec![coordinate(
-                    "about:project:alpha:dimension:release:spring",
+                    "label:v1:project%3Aalpha:incident:release%3Aspring",
                     Some("2026-02-01T00:00:00Z"),
                     (None, None),
                     None,
@@ -668,7 +668,9 @@ mod tests {
                     &format!("{about}:e{index}"),
                     about,
                     vec![coordinate(
-                        &format!("about:{about}:dimension:work:main"),
+                        &crate::MemoryDimensionIdentity::new(about, "incident", "work:main")
+                            .expect("label")
+                            .node_id(),
                         Some("2026-03-04T01:00:00Z"),
                         (None, None),
                         None,
@@ -707,7 +709,9 @@ mod tests {
                     about,
                     vec![coordinate_of_kind(
                         "alpha",
-                        &format!("about:{about}:dimension:main"),
+                        &crate::MemoryDimensionIdentity::new(about, "alpha", "main")
+                            .expect("label")
+                            .node_id(),
                         Some("2026-03-04T01:00:00Z"),
                         (None, None),
                         None,
@@ -722,7 +726,9 @@ mod tests {
                 about,
                 vec![coordinate_of_kind(
                     "zeta",
-                    &format!("about:{about}:dimension:north"),
+                    &crate::MemoryDimensionIdentity::new(about, "zeta", "north")
+                        .expect("label")
+                        .node_id(),
                     Some("2026-03-04T02:00:00Z"),
                     (None, None),
                     None,
@@ -775,7 +781,9 @@ mod tests {
                         about,
                         vec![coordinate_of_kind(
                             kind,
-                            &format!("about:{about}:dimension:{scope}"),
+                            &crate::MemoryDimensionIdentity::new(about, kind, scope)
+                                .expect("label")
+                                .node_id(),
                             Some("2026-03-04T01:00:00Z"),
                             (None, None),
                             None,

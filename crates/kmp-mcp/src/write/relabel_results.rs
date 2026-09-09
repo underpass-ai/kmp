@@ -16,10 +16,16 @@ pub(crate) fn relabel_result(plan: &RelabelPlan, kernel_result: Value) -> Value 
         .iter()
         .filter(|label| {
             let value = label["value"].as_str().unwrap_or_default();
-            let namespaced = format!("about:{}:dimension:{value}", plan.about);
+            let key = label["key"].as_str().unwrap_or_default();
             created_dimensions
                 .iter()
-                .any(|dimension| dimension.as_str() == Some(namespaced.as_str()))
+                .filter_map(Value::as_str)
+                .filter_map(kmp_domain::MemoryDimensionIdentity::parse)
+                .any(|identity| {
+                    identity.about() == plan.about
+                        && identity.key() == key
+                        && identity.dimension_id() == value
+                })
         })
         .cloned()
         .collect::<Vec<_>>();

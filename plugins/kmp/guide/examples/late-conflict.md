@@ -91,11 +91,7 @@ inspect the existing memory and labels; never bypass strict linking rules.
       "process": "duty-review",
       "task": "responsibility-review"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
-    },
+    "labels": {"component": ["journal"], "environment": ["field"], "shift": ["SHIFT-6"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-02T09:00:00Z",
     "source_kind": "human",
@@ -215,11 +211,7 @@ reuse the catalogue. Do not add `supersedes`: neither source withdraws R1.
       "process": "duty-review",
       "task": "responsibility-review"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
-    },
+    "labels": {"component": ["journal"], "environment": ["field"], "shift": ["SHIFT-6"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-03T09:00:00Z",
     "source_kind": "human",
@@ -275,11 +267,7 @@ reuse the catalogue. Do not add `supersedes`: neither source withdraws R1.
       "process": "duty-review",
       "task": "responsibility-review"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
-    },
+    "labels": {"component": ["journal"], "environment": ["field"], "shift": ["SHIFT-6"]},
     "occurred_at": "2026-09-03T10:00:00Z",
     "observed_at": "2026-09-03T10:00:00Z",
     "source_kind": "human",
@@ -426,11 +414,7 @@ the signatures and their matching shift scope are explicit premises here.
       "process": "duty-review",
       "task": "responsibility-review"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
-    },
+    "labels": {"component": ["journal"], "environment": ["field"], "shift": ["SHIFT-6"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-05T09:00:00Z",
     "source_kind": "human",
@@ -521,11 +505,7 @@ specific replacement. Do not delete either old object or change its clocks.
       "process": "duty-review",
       "task": "responsibility-review"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
-    },
+    "labels": {"component": ["journal"], "environment": ["field"], "shift": ["SHIFT-6"]},
     "occurred_at": "2026-09-05T09:05:00Z",
     "observed_at": "2026-09-05T09:05:00Z",
     "source_kind": "human",

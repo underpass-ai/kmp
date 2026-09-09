@@ -11,7 +11,7 @@ use super::arguments::*;
 use super::coordinates::reject_a_time_that_has_not_happened;
 use super::generated_ref::short_hash;
 use super::relabel_plan::RelabelPlan;
-use super::writer_label::validate_label_key_at;
+use super::writer_label::{label_values, validate_label_key_at};
 
 const DEFAULT_SOURCE_KIND: &str = "agent";
 
@@ -121,22 +121,13 @@ fn labels_of(value: Option<&Value>, field: &str) -> Result<Vec<(String, String)>
     };
     let object: &Map<String, Value> = value
         .as_object()
-        .ok_or_else(|| format!("`{field}` must be an object of `key: value` labels"))?;
+        .ok_or_else(|| format!("`{field}` must map each key to a non-empty array of strings"))?;
     let mut labels = Vec::with_capacity(object.len());
     for (key, value) in object {
         validate_label_key_at(field, key)?;
-        let value = value
-            .as_str()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .ok_or_else(|| format!("`{field}.{key}` must be a non-empty scope id"))?;
-        validate_ref_token(&format!("{field}.{key}"), value)?;
-        if labels.iter().any(|(_, other)| other == value) {
-            return Err(format!(
-                "`{field}` uses `{value}` under two keys; within an about a scope id names one label and keeps the kind of its first use"
-            ));
+        for value in label_values(value, &format!("{field}.{key}"))? {
+            labels.push((key.clone(), value));
         }
-        labels.push((key.clone(), value.to_string()));
     }
     Ok(labels)
 }

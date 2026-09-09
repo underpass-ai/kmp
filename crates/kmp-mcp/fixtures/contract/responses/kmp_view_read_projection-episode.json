@@ -21,7 +21,7 @@
         },
         "dimension": "agentic_process",
         "from": "2026-04-12T15:45:00Z",
-        "scope_id": "about:question:parity:dimension:parity",
+        "scope_id": "label:v1:question%3Aparity:agentic_process:parity",
         "to": "2026-04-12T16:07:30Z",
         "total": 1
       },
@@ -31,7 +31,7 @@
         },
         "dimension": "agentic_process",
         "from": "2026-04-12T16:52:30Z",
-        "scope_id": "about:question:parity:dimension:parity",
+        "scope_id": "label:v1:question%3Aparity:agentic_process:parity",
         "to": "2026-04-12T17:15:00Z",
         "total": 2
       },
@@ -41,7 +41,7 @@
         },
         "dimension": "conversation",
         "from": "2026-04-12T15:00:00Z",
-        "scope_id": "about:question:parity:dimension:conversation:rachel",
+        "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
         "to": "2026-04-12T15:22:30Z",
         "total": 2
       },
@@ -51,7 +51,7 @@
         },
         "dimension": "conversation",
         "from": "2026-04-12T18:00:00Z",
-        "scope_id": "about:question:parity:dimension:conversation:rachel",
+        "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
         "to": "2026-04-12T18:22:30Z",
         "total": 1
       }
@@ -72,7 +72,7 @@
         "refs": [
           "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b"
         ],
-        "scope_id": "about:question:parity:dimension:parity",
+        "scope_id": "label:v1:question%3Aparity:agentic_process:parity",
         "to": "2026-04-12T16:00:00Z",
         "total": 1
       },
@@ -87,7 +87,7 @@
           "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
           "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
         ],
-        "scope_id": "about:question:parity:dimension:parity",
+        "scope_id": "label:v1:question%3Aparity:agentic_process:parity",
         "to": "2026-04-12T17:00:00Z",
         "total": 2
       },
@@ -102,7 +102,7 @@
           "question:parity:claim:denver",
           "question:parity:claim:denver-detail"
         ],
-        "scope_id": "about:question:parity:dimension:conversation:rachel",
+        "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
         "to": "2026-04-12T15:05:00Z",
         "total": 2
       },
@@ -116,7 +116,7 @@
         "refs": [
           "question:parity:claim:boulder-current"
         ],
-        "scope_id": "about:question:parity:dimension:conversation:rachel",
+        "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
         "to": "2026-04-12T18:00:00Z",
         "total": 1
       }
@@ -149,7 +149,7 @@
         "entries": 3,
         "in_range": 3,
         "last_observed_at": "2026-04-12T17:00:00Z",
-        "scope_id": "about:question:parity:dimension:parity",
+        "scope_id": "label:v1:question%3Aparity:agentic_process:parity",
         "value": "parity"
       },
       {
@@ -157,7 +157,7 @@
         "entries": 3,
         "in_range": 3,
         "last_observed_at": "2026-04-12T18:00:00Z",
-        "scope_id": "about:question:parity:dimension:conversation:rachel",
+        "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
         "value": "conversation:rachel"
       }
     ],

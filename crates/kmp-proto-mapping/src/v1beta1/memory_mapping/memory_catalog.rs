@@ -149,7 +149,7 @@ mod tests {
                 .map(|id| {
                     node(
                         id,
-                        if id.contains(":dimension:") {
+                        if id.starts_with("label:v1:") {
                             "memory_dimension"
                         } else {
                             "memory"
@@ -170,28 +170,28 @@ mod tests {
             "project:x",
             vec![
                 coordinate(
-                    "about:project:x:dimension:kmp-506",
+                    "label:v1:project%3Ax:task:kmp-506",
                     "task",
                     "kmp-506",
                     "project:x:entry:a",
                     "2026-09-01T10:00:00Z",
                 ),
                 coordinate(
-                    "about:project:x:dimension:kmp-506",
+                    "label:v1:project%3Ax:task:kmp-506",
                     "task",
                     "kmp-506",
                     "project:x:entry:b",
                     "2026-09-03T10:00:00Z",
                 ),
                 coordinate(
-                    "about:project:x:dimension:kmp-506",
+                    "label:v1:project%3Ax:task:kmp-506",
                     "task",
                     "kmp-506",
                     "project:x:entry:b",
                     "2026-09-02T10:00:00Z",
                 ),
                 coordinate(
-                    "about:project:x:dimension:diagnostics",
+                    "label:v1:project%3Ax:agentic_process:diagnostics",
                     "agentic_process",
                     "diagnostics",
                     "project:x:entry:a",
@@ -219,21 +219,21 @@ mod tests {
             "project:x",
             vec![
                 coordinate(
-                    "about:project:y:dimension:kmp-506",
+                    "label:v1:project%3Ay:task:kmp-506",
                     "task",
                     "kmp-506",
                     "project:y:entry:c",
                     "2026-09-05T10:00:00Z",
                 ),
                 coordinate(
-                    "about:project:x:dimension:why",
+                    "label:v1:project%3Ax:agentic_episode:why",
                     "agentic_episode",
                     "why",
                     "project:x:entry:a",
                     "2026-09-01T10:00:00Z",
                 ),
                 coordinate(
-                    "about:project:x:dimension:kmp-506",
+                    "label:v1:project%3Ax:task:kmp-506",
                     "task",
                     "kmp-506",
                     "project:x:entry:b",
@@ -261,9 +261,9 @@ mod tests {
         let labels = labels_from_bundle(&bundle(
             "project:x",
             vec![coordinate(
-                "about:project:x:dimension:kmp-506",
+                "label:v1:project%3Ax:task:kmp-506",
                 "task",
-                "about:project:x:dimension:kmp-506",
+                "label:v1:project%3Ax:task:kmp-506",
                 "project:x:entry:a",
                 "2026-09-01T10:00:00Z",
             )],
@@ -280,7 +280,7 @@ mod tests {
         let labels = labels_from_bundle(&bundle(
             "project:x",
             vec![BundleRelationship::new(
-                "about:project:x:dimension:kmp-506",
+                "label:v1:project%3Ax:task:kmp-506",
                 "project:x:entry:a",
                 "contains_entry",
                 explanation,

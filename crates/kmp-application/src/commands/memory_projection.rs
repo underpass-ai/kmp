@@ -143,6 +143,12 @@ fn memory_dimension_mutations(
         .unwrap_or_else(|| format!("Memory dimension `{kind}` for `{}`.", command.root_node_id));
     let mut properties = properties_from_payload(command, change, &payload)?;
     properties.insert("dimension_kind".to_string(), kind.clone());
+    if let Some(identity) = kmp_domain::MemoryDimensionIdentity::parse(&dimension_id) {
+        properties.insert(
+            "dimension_value".to_string(),
+            identity.dimension_id().to_string(),
+        );
+    }
 
     Ok(vec![
         ProjectionMutation::UpsertNode(NodeProjection {
@@ -609,7 +615,7 @@ mod tests {
             "text": "Replayed decision.",
             "coordinates": [{
                 "dimension": "conversation",
-                "scope_id": "about:question:r:dimension:conversation:s1",
+                "scope_id": "label:v1:question%3Ar:conversation:conversation%3As1",
                 "occurred_at": "2026-07-01T10:00:00Z",
                 "sequence": 1
             }]
@@ -629,7 +635,7 @@ mod tests {
                 entity_id: "claim:replayed".to_string(),
                 payload_json: entry_change_payload(),
                 reason: Some("KMP memory entry ingest".to_string()),
-                scopes: vec!["about:question:r:dimension:conversation:s1".to_string()],
+                scopes: vec!["label:v1:question%3Ar:conversation:conversation%3As1".to_string()],
             }],
             idempotency_key: Some("ingest:replay-test".to_string()),
             logical_digest: None,
@@ -651,7 +657,7 @@ mod tests {
                 entity_id: "claim:replayed".to_string(),
                 payload_json: entry_change_payload(),
                 reason: "KMP memory entry ingest".to_string(),
-                scopes: vec!["about:question:r:dimension:conversation:s1".to_string()],
+                scopes: vec!["label:v1:question%3Ar:conversation:conversation%3As1".to_string()],
             }],
             expected_revision: None,
             expected_content_hash: None,
@@ -688,13 +694,13 @@ mod tests {
                     "ref": "question:r:claim:replayed",
                     "add": [{
                         "dimension": "issue",
-                        "scope_id": "about:question:r:dimension:506",
+                        "scope_id": "label:v1:question%3Ar:issue:506",
                         "occurred_at": "2026-07-01T10:00:00Z",
                         "sequence": 1
                     }],
                     "remove": [{
                         "dimension": "conversation",
-                        "scope_id": "about:question:r:dimension:conversation:s1"
+                        "scope_id": "label:v1:question%3Ar:conversation:conversation%3As1"
                     }],
                     "why": "It closed the issue.",
                     "actor": "agent-r",
@@ -720,7 +726,7 @@ mod tests {
         let ProjectionMutation::UpsertNodeRelation(added) = &mutations[1] else {
             panic!("an added edge: {:?}", mutations[1]);
         };
-        assert_eq!(added.source_node_id, "about:question:r:dimension:506");
+        assert_eq!(added.source_node_id, "label:v1:question%3Ar:issue:506");
         assert_eq!(added.target_node_id, "question:r:claim:replayed");
         assert_eq!(added.relation_type, "contains_entry");
         assert_eq!(added.explanation.rationale(), Some("It closed the issue."));
@@ -738,7 +744,7 @@ mod tests {
         assert_eq!(
             mutations[2],
             ProjectionMutation::RemoveNodeRelation {
-                source_node_id: "about:question:r:dimension:conversation:s1".to_string(),
+                source_node_id: "label:v1:question%3Ar:conversation:conversation%3As1".to_string(),
                 target_node_id: "question:r:claim:replayed".to_string(),
                 relation_type: "contains_entry".to_string(),
             }

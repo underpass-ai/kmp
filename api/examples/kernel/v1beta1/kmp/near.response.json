@@ -32,13 +32,13 @@
       "coordinates": [
         {
           "dimension": "conversation",
-          "scope_id": "about:question:830ce83f:dimension:conversation:rachel-2026-04-12",
+          "scope_id": "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12",
           "sequence": 1,
           "occurred_at": "2026-04-12T15:00:00Z"
         },
         {
           "dimension": "entity",
-          "scope_id": "about:question:830ce83f:dimension:person:rachel",
+          "scope_id": "label:v1:question%3A830ce83f:entity:person%3Arachel",
           "valid_from": "2026-04-12T15:00:00Z"
         }
       ]
@@ -50,13 +50,13 @@
       "coordinates": [
         {
           "dimension": "conversation",
-          "scope_id": "about:question:830ce83f:dimension:conversation:rachel-2026-04-12",
+          "scope_id": "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12",
           "sequence": 2,
           "occurred_at": "2026-04-12T15:05:00Z"
         },
         {
           "dimension": "entity",
-          "scope_id": "about:question:830ce83f:dimension:person:rachel",
+          "scope_id": "label:v1:question%3A830ce83f:entity:person%3Arachel",
           "valid_from": "2026-04-12T15:05:00Z"
         }
       ]

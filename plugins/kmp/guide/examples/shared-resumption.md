@@ -77,10 +77,7 @@ and idempotency_key; it does not rephrase the source or create a new key.
       "process": "handoff-review",
       "task": "journal-choice"
     },
-    "labels": {
-      "component": "journal",
-      "review": "HND-9"
-    },
+    "labels": {"component": ["journal"], "review": ["HND-9"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:05:00Z",
     "current": {
@@ -121,10 +118,7 @@ and idempotency_key; it does not rephrase the source or create a new key.
       "process": "handoff-review",
       "task": "journal-choice"
     },
-    "labels": {
-      "component": "journal",
-      "review": "HND-9"
-    },
+    "labels": {"component": ["journal"], "review": ["HND-9"]},
     "occurred_at": "2026-09-01T09:10:00Z",
     "observed_at": "2026-09-01T09:15:00Z",
     "current": {
@@ -180,10 +174,7 @@ and idempotency_key; it does not rephrase the source or create a new key.
       "process": "handoff-review",
       "task": "journal-choice"
     },
-    "labels": {
-      "component": "journal",
-      "review": "HND-9"
-    },
+    "labels": {"component": ["journal"], "review": ["HND-9"]},
     "occurred_at": "2026-09-01T09:10:00Z",
     "observed_at": "2026-09-01T09:15:00Z",
     "current": {
@@ -225,10 +216,7 @@ and idempotency_key; it does not rephrase the source or create a new key.
       "process": "handoff-review",
       "task": "journal-choice"
     },
-    "labels": {
-      "component": "journal",
-      "review": "HND-9"
-    },
+    "labels": {"component": ["journal"], "review": ["HND-9"]},
     "occurred_at": "2026-09-01T09:20:00Z",
     "observed_at": "2026-09-01T09:25:00Z",
     "current": {
@@ -624,10 +612,7 @@ is at 10:10 UTC, after F1 was received.
       "process": "handoff-review",
       "task": "journal-choice"
     },
-    "labels": {
-      "component": "journal",
-      "review": "HND-9"
-    },
+    "labels": {"component": ["journal"], "review": ["HND-9"]},
     "occurred_at": "2026-09-01T10:00:00Z",
     "observed_at": "2026-09-01T10:05:00Z",
     "current": {

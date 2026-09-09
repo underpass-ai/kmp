@@ -291,10 +291,7 @@ fn reference_belongs_to_about(reference: &str, about: &str) -> bool {
             .strip_prefix("evidence:")
             .and_then(|reference| reference.strip_prefix(about))
             .is_some_and(|suffix| suffix.starts_with(':'))
-        || reference
-            .strip_prefix("about:")
-            .and_then(|reference| reference.strip_prefix(about))
-            .is_some_and(|suffix| suffix.starts_with(":dimension:"))
+        || kmp_domain::MemoryDimensionIdentity::resolve(about, reference).is_some()
 }
 
 fn require_allowed(
@@ -471,7 +468,7 @@ mod tests {
             "about":"project:kmp",
             "memory":{"dimensions":[{"id":"timeline:kmp"}], "entries":[],
                 "relations":[{
-                    "from":"about:project:kmp:dimension:timeline:kmp",
+                    "from":"label:v1:project%3Akmp:timeline:timeline%3Akmp",
                     "to":"project:kmp:entry:1"
                 }]}
         });

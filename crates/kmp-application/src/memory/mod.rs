@@ -1,3 +1,4 @@
+mod dimension_registry;
 mod ingest;
 mod ref_boundary;
 mod relabel;

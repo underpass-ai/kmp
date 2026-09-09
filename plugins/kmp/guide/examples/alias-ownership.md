@@ -62,7 +62,7 @@ names the account, not its owner. First write S1 without a prior relation.
   "arguments":{
     "about":"example:guide:alias-ownership", "intent":"record_observation", "actor":"guide-writer",
     "idempotency_key":"guide-alias:elena:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"person":"elena-vega"},
+    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"person": ["elena-vega"]},
     "occurred_at":"2026-09-01T08:00:00Z", "observed_at":"2026-09-01T08:00:00Z", "valid_from":"2026-09-01T08:00:00Z",
     "current":{"kind":"observation","summary":"Elena Vega coordina Atlas.",
       "summary_en":"Elena Vega coordinates the Atlas project.",
@@ -85,7 +85,7 @@ authorization, dependency or identity link.
   "arguments":{
     "about":"example:guide:alias-ownership", "intent":"record_decision", "actor":"guide-writer",
     "idempotency_key":"guide-alias:jon:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"access-review"}, "labels":{"account":"@oak"},
+    "scope":{"process":"atlas-registry","task":"access-review"}, "labels":{"account": ["@oak"]},
     "occurred_at":"2026-09-01T10:00:00Z", "observed_at":"2026-09-01T10:00:00Z", "valid_from":"2026-09-01T10:00:00Z",
     "current":{"kind":"decision","summary":"Asignamos la cuenta @oak a Jon para operar Atlas.",
       "summary_en":"We assigned the @oak account to Jon to operate Atlas.",
@@ -116,7 +116,7 @@ not require a cross-about proposal. Across abouts the writer needs the
   "arguments":{
     "about":"example:guide:alias-ownership", "intent":"record_observation", "actor":"guide-writer",
     "idempotency_key":"guide-alias:nora:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"person":"elena-vega","alias":"Nora"},
+    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"person": ["elena-vega"], "alias": ["Nora"]},
     "occurred_at":"2026-09-02T09:00:00Z", "observed_at":"2026-09-02T09:00:00Z", "valid_from":"2026-09-02T09:00:00Z",
     "current":{"kind":"observation","summary":"Elena Vega firma también como Nora; ambos nombres identifican a la misma persona.",
       "summary_en":"Elena Vega also signs as Nora; both names identify the same person.",
@@ -144,7 +144,7 @@ was applied, not a new occurrence time for the old memory.
   "arguments":{
     "about":"example:guide:alias-ownership", "ref":"${elena.generated_refs.0}", "actor":"guide-writer",
     "idempotency_key":"guide-alias:catalogue-nora:v1", "observed_at":"2026-09-02T09:00:00Z", "source_kind":"human",
-    "add":{"alias":"Nora"},
+    "add":{"alias": ["Nora"]},
     "why":"S3 identifica expresamente a Elena Vega con Nora; añadimos la etiqueta ya usada en la memoria de esa aclaración, sin cambiar el texto ni la fecha original del directorio."
   }
 }
@@ -166,7 +166,7 @@ that name; it does not authorize `same_entity_as` or `person=elena-vega`.
   "arguments":{
     "about":"example:guide:alias-ownership", "intent":"record_observation", "actor":"guide-writer",
     "idempotency_key":"guide-alias:unresolved-visitor:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"alias":"Nora"},
+    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"alias": ["Nora"]},
     "occurred_at":"2026-09-03T11:00:00Z", "observed_at":"2026-09-03T11:00:00Z", "valid_from":"2026-09-03T11:00:00Z",
     "current":{"kind":"observation","summary":"El registro de visitas a Atlas menciona Nora sin apellidos ni identificador de persona; no permite confirmar su identidad.",
       "summary_en":"The Atlas visitor log mentions Nora without surnames or a person identifier; it does not establish the visitor's identity.",
@@ -195,7 +195,7 @@ that name; it does not authorize `same_entity_as` or `person=elena-vega`.
   "arguments":{
     "about":"example:guide:alias-ownership", "intent":"record_decision", "actor":"guide-writer",
     "idempotency_key":"guide-alias:rui:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"access-review"}, "labels":{"account":"@oak"},
+    "scope":{"process":"atlas-registry","task":"access-review"}, "labels":{"account": ["@oak"]},
     "occurred_at":"2026-09-05T10:00:00Z", "observed_at":"2026-09-05T10:00:00Z", "valid_from":"2026-09-05T10:00:00Z",
     "current":{"kind":"decision","summary":"Asignamos la cuenta @oak a Rui; esta asignación sustituye la anterior a Jon. Jon y Rui son personas distintas.",
       "summary_en":"We assigned the @oak account to Rui; this assignment replaces the previous assignment to Jon. Jon and Rui are distinct people.",

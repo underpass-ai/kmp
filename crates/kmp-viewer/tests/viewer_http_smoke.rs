@@ -1359,7 +1359,7 @@ async fn a_relabelled_entry_stands_in_its_own_row_and_says_why() {
     assert!(
         labels[1]["scope_id"]
             .as_str()
-            .is_some_and(|scope| scope.ends_with(":dimension:viewer-labels")),
+            .is_some_and(|scope| scope.ends_with(":task:viewer-labels")),
         "the namespaced id travels beside the bare value: {labels:?}"
     );
 

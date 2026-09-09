@@ -144,7 +144,7 @@ pub(crate) fn definition() -> Value {
                 "label_policy": {
                     "type": "string",
                     "enum": ["warn", "refuse"],
-                    "description": "What to do with a dimension that resembles a label the about already holds — the same identifier up to case and separators, or the same value under another key. `warn` (the default) writes it and says so in `warnings` and `memory.resembling_labels`; `refuse` rejects the ingest naming both labels, unless the dimension carries the metadata `writer_intended_new: \"true\"`."
+                    "description": "What to do with a dimension that resembles a label the about already holds — the same identifier under the same key up to case and separators. `warn` (the default) writes it and says so in `warnings` and `memory.resembling_labels`; `refuse` rejects the ingest naming both labels, unless the dimension carries the metadata `writer_intended_new: \"true\"`."
                 }
             }
         }),
@@ -164,8 +164,8 @@ fn ingest_output_schema() -> Value {
                 "evidence": described("integer", "Number of evidence items accepted.")
             })),
             "read_after_write_ready": described("boolean", "Whether a read issued now is guaranteed to observe this write."),
-            "created_dimensions": string_array("Dimension nodes this ingest declared for the first time, namespaced `about:{about}:dimension:{scope}`: the labels the write created rather than reused."),
-            "resembling_labels": described("array", "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently` or `value_under_another_key`) and `why`.")
+            "created_dimensions": string_array("Refs of label dimensions this ingest created, identified by about, key and value. Copy returned refs; do not construct them."),
+            "resembling_labels": described("array", "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently`) and `why`.")
         })),
         "warnings": warnings_output_schema()
     }))

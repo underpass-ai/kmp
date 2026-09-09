@@ -6,10 +6,8 @@ use crate::value_objects::memory_dimension_identity::MemoryDimensionIdentity;
 /// coordinate's `dimension` kind is the key and its scope, stripped of the
 /// about that namespaces it, is the value.
 ///
-/// Within one about a scope keeps the kind of its first use, so a key
-/// normally maps to one value; the map still holds a set, because nothing
-/// in the store forbids an entry from standing in `task=a` and `task=b`
-/// and a selector has to read what is there, not what is usual.
+/// Each key holds independent memberships. A memory can stand in several
+/// values under one key; a value under another key is a different label.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct EntryLabels {
     by_key: BTreeMap<String, BTreeSet<String>>,
@@ -71,7 +69,7 @@ mod tests {
     #[test]
     fn coordinates_read_as_key_to_bare_values() {
         let labels = EntryLabels::from_coordinates([
-            ("task", "about:project:kmp:dimension:kmp-506"),
+            ("task", "label:v1:project%3Akmp:task:kmp-506"),
             ("agentic_process", "kmp:v0.11.0:verification"),
             ("", "ignored"),
             ("release", "  "),

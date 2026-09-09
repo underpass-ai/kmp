@@ -21,7 +21,7 @@
       }
     ],
     "created_dimensions": [
-      "about:service:alpha:dimension:506"
+      "label:v1:service%3Aalpha:issue:506"
     ],
     "resembling_labels": [],
     "read_after_write_ready": true

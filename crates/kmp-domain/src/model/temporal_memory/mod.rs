@@ -989,10 +989,10 @@ mod tests {
         use crate::{LabelSelector, LabelSelectorOperator};
 
         let bundle = temporal_bundle(&[
-            ("entry-1", "task", "about:question:a:dimension:t-1", 1),
-            ("entry-1", "env", "about:question:a:dimension:prod", 1),
-            ("entry-2", "task", "about:question:a:dimension:t-2", 2),
-            ("entry-3", "env", "about:question:a:dimension:prod", 3),
+            ("entry-1", "task", "label:v1:question%3Aa:task:t-1", 1),
+            ("entry-1", "env", "label:v1:question%3Aa:env:prod", 1),
+            ("entry-2", "task", "label:v1:question%3Aa:task:t-2", 2),
+            ("entry-3", "env", "label:v1:question%3Aa:env:prod", 3),
         ]);
         let rewind = |selection: DimensionSelection| {
             TemporalMemoryTraversal::traverse(
@@ -1043,9 +1043,9 @@ mod tests {
     #[test]
     fn a_sequence_cursor_across_labels_is_warned_about_and_pinning_one_silences_it() {
         let bundle = temporal_bundle(&[
-            ("entry-1", "task", "about:question:a:dimension:t-1", 1),
-            ("entry-2", "task", "about:question:a:dimension:t-2", 1),
-            ("entry-3", "task", "about:question:a:dimension:t-1", 2),
+            ("entry-1", "task", "label:v1:question%3Aa:task:t-1", 1),
+            ("entry-2", "task", "label:v1:question%3Aa:task:t-2", 1),
+            ("entry-3", "task", "label:v1:question%3Aa:task:t-1", 2),
         ]);
         let rewind = |selection: DimensionSelection| {
             TemporalMemoryTraversal::traverse(

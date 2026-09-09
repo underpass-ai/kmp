@@ -7,14 +7,16 @@ use kmp_domain::PortError;
 /// The layout this binary creates for a fresh data directory: shareable
 /// SQLite ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 ///
-/// `FORMAT_VERSION` in a data directory names the *layout* — which engine
-/// wrote `store/`, and how. Bumping it is what makes a binary that predates
+/// `FORMAT_VERSION` names the storage layout and logical identity contract.
+/// Format 3 requires dimensional identities with about, key and value.
+/// Format 3 changes dimensional identity; there is no legacy migration.
+/// Bumping it is what makes a binary that predates
 /// a layout refuse the directory instead of opening an empty store beside
 /// it, so a new engine is a new number ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 pub const SUPPORTED_FORMAT_VERSION: u32 = StorageEngine::Sqlite.format_version();
 
 /// The logical shape of the event log carried by a portable bundle.
-pub const EVENT_FORMAT_VERSION: u32 = 1;
+pub const EVENT_FORMAT_VERSION: u32 = 2;
 
 const FORMAT_VERSION_FILE: &str = "FORMAT_VERSION";
 
@@ -31,7 +33,7 @@ impl StorageEngine {
     /// The `FORMAT_VERSION` this engine stamps.
     pub const fn format_version(self) -> u32 {
         match self {
-            StorageEngine::Sqlite => 2,
+            StorageEngine::Sqlite => 3,
         }
     }
 
@@ -41,7 +43,7 @@ impl StorageEngine {
 
     pub(crate) const fn from_format_version(version: u32) -> Option<Self> {
         match version {
-            2 => Some(StorageEngine::Sqlite),
+            3 => Some(StorageEngine::Sqlite),
             _ => None,
         }
     }
@@ -248,8 +250,8 @@ fn resolve_stamped(data_dir: &Path, version: u32) -> Result<StorageEngine, PortE
         return Err(PortError::InvalidState(format!(
             "embedded store at `{}` uses unsupported format version {version}; current KMP \
              opens format {SUPPORTED_FORMAT_VERSION} only and left the directory untouched. \
-             Preserve the source, use an explicitly archived compatible exporter to create \
-             `.kmp/memory.jsonl`, then import that bundle into an empty current store",
+             Preserve that directory and use a compatible binary to inspect it. \
+             This redesign requires a fresh store; old refs and bundles are not migrated",
             data_dir.display(),
         )));
     }
@@ -337,7 +339,7 @@ mod tests {
         let store = store_file_path_for(invalid.path(), StorageEngine::Sqlite);
         fs::create_dir_all(store.parent().expect("parent")).expect("mkdir");
         fs::write(&store, b"memory remains here").expect("store marker");
-        for stamp in [Some("3\n"), Some("banana\n"), None] {
+        for stamp in [Some("4\n"), Some("banana\n"), None] {
             match stamp {
                 Some(stamp) => fs::write(format_version_path(invalid.path()), stamp)
                     .expect("write invalid stamp"),
@@ -362,7 +364,7 @@ mod tests {
     #[test]
     fn a_stamp_cannot_hide_an_unsupported_storage_artifact() {
         let dir = tempfile::tempdir().expect("tempdir");
-        fs::write(format_version_path(dir.path()), "2\n").expect("sqlite stamp");
+        fs::write(format_version_path(dir.path()), "3\n").expect("sqlite stamp");
         let unsupported = dir.path().join("store/retired-layout.bin");
         fs::create_dir_all(unsupported.parent().expect("parent")).expect("mkdir");
         fs::write(unsupported, b"legacy memory").expect("legacy marker");
@@ -377,7 +379,7 @@ mod tests {
     #[test]
     fn a_transient_sqlite_rollback_journal_is_part_of_the_supported_layout() {
         let dir = tempfile::tempdir().expect("tempdir");
-        fs::write(format_version_path(dir.path()), "2\n").expect("sqlite stamp");
+        fs::write(format_version_path(dir.path()), "3\n").expect("sqlite stamp");
         let journal = dir.path().join("store/kernel.sqlite3-journal");
         fs::create_dir_all(journal.parent().expect("parent")).expect("mkdir");
         fs::write(&journal, b"startup in progress").expect("journal marker");
@@ -403,17 +405,14 @@ mod tests {
             message.contains("unsupported format version 1"),
             "{message}"
         );
-        assert!(
-            message.contains("archived compatible exporter"),
-            "{message}"
-        );
+        assert!(message.contains("fresh store"), "{message}");
         assert_eq!(fs::read(&store).expect("source remains"), b"legacy bytes");
     }
 
     #[test]
     fn sqlite_layout_is_always_available() {
         let dir = tempfile::tempdir().expect("tempdir");
-        fs::write(format_version_path(dir.path()), "2\n").expect("write");
+        fs::write(format_version_path(dir.path()), "3\n").expect("write");
 
         assert_eq!(
             check_or_stamp(dir.path()).expect("sqlite is always compiled in"),

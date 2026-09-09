@@ -62,11 +62,7 @@ pages instead of treating them as complete.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "P7",
-      "role": "rule"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["P7"], "role": ["rule"]},
     "current": {
       "kind": "constraint",
       "summary": "P7 limits TRIP-7 settlement to unique settled EUR transactions, corrected amounts and no voids.",
@@ -104,13 +100,7 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "R-TRAIN",
-      "transaction": "TX-TRAIN",
-      "currency": "EUR",
-      "role": "source"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["R-TRAIN"], "transaction": ["TX-TRAIN"], "currency": ["EUR"], "role": ["source"]},
     "current": {
       "kind": "observation",
       "summary": "TRIP-7 transaction TX-TRAIN: settled transport charge 20.00 EUR, tax included.",
@@ -154,13 +144,7 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "H-0",
-      "transaction": "TX-HOTEL",
-      "currency": "EUR",
-      "role": "source"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["H-0"], "transaction": ["TX-HOTEL"], "currency": ["EUR"], "role": ["source"]},
     "current": {
       "kind": "observation",
       "summary": "TRIP-7 transaction TX-HOTEL: hotel invoice initially reports 30.00 EUR, tax included.",
@@ -204,13 +188,7 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "M-1",
-      "transaction": "TX-MEAL",
-      "currency": "EUR",
-      "role": "source"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["M-1"], "transaction": ["TX-MEAL"], "currency": ["EUR"], "role": ["source"]},
     "current": {
       "kind": "observation",
       "summary": "TRIP-7 transaction TX-MEAL: posted meal charge 10.00 EUR, tax included.",
@@ -254,13 +232,7 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "U-1",
-      "transaction": "TX-USD",
-      "currency": "USD",
-      "role": "source"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["U-1"], "transaction": ["TX-USD"], "currency": ["USD"], "role": ["source"]},
     "current": {
       "kind": "observation",
       "summary": "TRIP-7 transaction TX-USD: settled local transport charge 7.00 USD, tax included.",
@@ -315,13 +287,7 @@ Now record the later documents with their actual later document clocks.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "H-1",
-      "transaction": "TX-HOTEL",
-      "currency": "EUR",
-      "role": "source"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["H-1"], "transaction": ["TX-HOTEL"], "currency": ["EUR"], "role": ["source"]},
     "current": {
       "kind": "observation",
       "summary": "TRIP-7 correction H-1 replaces H-0 for transaction TX-HOTEL: the settled hotel amount is 35.00 EUR including tax, not 30.00 EUR. This is not a second transaction.",
@@ -370,13 +336,7 @@ Now record the later documents with their actual later document clocks.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "H-1-C",
-      "transaction": "TX-HOTEL",
-      "currency": "EUR",
-      "role": "source"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["H-1-C"], "transaction": ["TX-HOTEL"], "currency": ["EUR"], "role": ["source"]},
     "current": {
       "kind": "observation",
       "summary": "TRIP-7 copy H-1-C reproduces H-1 for transaction TX-HOTEL, 35.00 EUR including tax. It is a duplicate document, not another charge.",
@@ -425,13 +385,7 @@ Now record the later documents with their actual later document clocks.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "V-MEAL",
-      "transaction": "TX-MEAL",
-      "currency": "EUR",
-      "role": "source"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["V-MEAL"], "transaction": ["TX-MEAL"], "currency": ["EUR"], "role": ["source"]},
     "current": {
       "kind": "feedback",
       "summary": "TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled.",
@@ -475,11 +429,7 @@ Now record the later documents with their actual later document clocks.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "STMT-7",
-      "role": "source"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["STMT-7"], "role": ["source"]},
     "current": {
       "kind": "observation",
       "summary": "TRIP-7 closing statement: TX-TRAIN settled 20.00 EUR; TX-HOTEL settled 35.00 EUR; TX-MEAL voided, settled 0.00 EUR; TX-USD settled 7.00 USD. No currency conversion rate.",
@@ -594,12 +544,7 @@ EUR settlement subtotal, not a new primary receipt or a universal trip total.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "CALC-7",
-      "currency": "EUR",
-      "role": "result"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["CALC-7"], "currency": ["EUR"], "role": ["result"]},
     "current": {
       "kind": "derived_value",
       "summary": "TRIP-7 settled EUR subtotal is 55.00 EUR from TX-TRAIN and corrected TX-HOTEL.",
@@ -676,11 +621,7 @@ record to reach the duplicate, correction, void and currency source.
     "scope": {
       "process": "trip-settlement"
     },
-    "labels": {
-      "trip": "TRIP-7",
-      "document": "AUDIT-7",
-      "role": "audit"
-    },
+    "labels": {"trip": ["TRIP-7"], "document": ["AUDIT-7"], "role": ["audit"]},
     "current": {
       "kind": "decision",
       "summary": "Exclude H-0, duplicate H-1-C, voided M-1 and USD receipt U-1 from the TRIP-7 EUR subtotal CALC-7.",

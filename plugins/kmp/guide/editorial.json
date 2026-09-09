@@ -84,7 +84,7 @@
           "kind": "instruction",
           "depth": "basic",
           "text": "Synchronize guide assets for requested guide setup/update, a human guide opening that needs current assets, or a confirmed store/version mismatch. The installed guide/AGENT.md is a brief entry with exact references to extended verbs and examples. Read it once while it remains in context; a routine memory call needs no full documentation wake. Sync converges both fixed guide abouts idempotently through kmp-guide-sync.sh; it writes the selected store and may update its maintained bundle. Check the selected store and matching assets before applying them. Software setup/update do not write memory: kmp-update.sh lets the native lifecycle choose the latest public release, or forwards an explicit --version target. The plugin manifest selects the bootstrap engine and default setup version; it must not pin an ordinary update to the old release.",
-          "evidence": "The plugin ships one content-addressed request set and a regular format-2 bundle for deterministic guide convergence.",
+          "evidence": "The plugin ships one content-addressed request set and a regular format-3 bundle for deterministic guide convergence.",
           "guide_title": "Synchronize guide assets"
         },
         {
@@ -187,7 +187,7 @@
           "id": "examples:index",
           "kind": "instruction",
           "depth": "basic",
-          "text": "For a first use, read guide:kmp-agent:example:first-decision: two sources, one decision and its reason. Find a specific tool, kind or relation in guide:kmp-agent:examples:by-capability. Basic cases are grouped in preference-delta, workflow-proof, structure-parts and canonical-ingest; use the exact references in that map. Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added. Budgeted pages and insufficient proof: guide:kmp-agent:example:budget-proof. Its additional prerequisites are guide:kmp-agent:advanced:budgets and guide:kmp-agent:advanced:language. Fresh reader and shared-view review: guide:kmp-agent:example:shared-resumption, also consulting guide:kmp-agent:gate:invocation. It distinguishes durable memory from a process-scoped view and reuses guidance within each fresh session.",
+          "text": "For a first use, read guide:kmp-agent:example:first-decision: two sources, one decision and its reason. Find a specific tool, kind or relation in guide:kmp-agent:examples:by-capability. Basic cases are grouped in preference-delta, workflow-proof, structure-parts and canonical-ingest; use the exact references in that map. Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Multiple aliases and distinct facets: guide:kmp-agent:example:dimensional-memberships. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added. Budgeted pages and insufficient proof: guide:kmp-agent:example:budget-proof. Its additional prerequisites are guide:kmp-agent:advanced:budgets and guide:kmp-agent:advanced:language. Fresh reader and shared-view review: guide:kmp-agent:example:shared-resumption, also consulting guide:kmp-agent:gate:invocation. It distinguishes durable memory from a process-scoped view and reuses guidance within each fresh session.",
           "evidence": "The generated agent Markdown preserves the operating bodies and supplies exact kmp_inspect arguments for the indexed examples stored in the guide. Native replays check the paths separately from LLM learning."
         },
         {
@@ -247,6 +247,14 @@
           "example_title": "Conflicting assignments and evidence received late"
         },
         {
+          "id": "example:dimensional-memberships",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text_file": "examples/dimensional-memberships.md",
+          "example_title": "Multiple aliases, distinct facets and late memberships",
+          "evidence": "Two fictional registry sources demonstrate array labels, the same value under distinct keys, selection without duplicate memories, one-membership relabel, inherited clocks and ChronoLoom inspection with a key and value identifying each sequence."
+        },
+        {
           "id": "example:labels-negation",
           "kind": "instruction",
           "depth": "advanced",
@@ -300,7 +308,7 @@
           "depth": "basic",
           "text_file": "examples/canonical-ingest.md",
           "example_title": "Validated canonical ingest and exact retry",
-          "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay."
+          "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay. Coordinate ownership explains preservation of a redundant contains_entry declaration and refusal when its membership cannot be resolved; regression #576 exercises committed MCP and export/import."
         },
         {
           "id": "examples:by-capability",
@@ -574,7 +582,7 @@
           "rel": "uses_background",
           "class": "evidential",
           "why": "This case applies the writer contract to explicit sources and reads every existing relation target.",
-          "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay."
+          "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay. Coordinate ownership explains preservation of a redundant contains_entry declaration and refusal when its membership cannot be resolved; regression #576 exercises committed MCP and export/import."
         }
       ]
     },
@@ -651,7 +659,7 @@
           "kind": "concept",
           "depth": "advanced",
           "text": "Named snapshots are deliberate recovery points. Content-addressed exports are deterministic heads. Bundle merge only fast-forwards identical history or an exact prefix; KMP refuses to invent order for divergent branches.",
-          "evidence": "The format-2 bundle contract binds content digest, about coverage and event range before import or merge."
+          "evidence": "The format-3 bundle contract binds content digest, about coverage and event range before import or merge."
         },
         {
           "id": "advanced:shared-store",

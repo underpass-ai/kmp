@@ -438,7 +438,7 @@ pub async fn about_index_lists_anchors_and_filters_by_dimension(
     let backend = factory.fresh().await;
     let writer = backend.projection_writer();
 
-    let timeline_dimension = "about:question:a:dimension:timeline:sessions";
+    let timeline_dimension = "label:v1:question%3Aa:timeline:timeline%3Asessions";
     writer
         .apply_mutations(vec![
             ProjectionMutation::UpsertNode(node("question:a", "memory_anchor", "A")),

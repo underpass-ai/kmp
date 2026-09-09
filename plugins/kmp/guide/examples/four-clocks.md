@@ -81,10 +81,7 @@ and catalogue reuse; do not treat it as empty.
     "scope": {
       "process": "atlas-permit-review"
     },
-    "labels": {
-      "document": "TEMP-4",
-      "record": "permit"
-    },
+    "labels": {"document": ["TEMP-4"], "record": ["permit"]},
     "occurred_at": "${clock.occurred}",
     "observed_at": "${clock.observed}",
     "valid_from": "${clock.day2}",
@@ -124,10 +121,7 @@ its evidence is the observed check. It does not prove permission before D2.
     "scope": {
       "process": "atlas-permit-review"
     },
-    "labels": {
-      "document": "TEMP-4",
-      "record": "signature-check"
-    },
+    "labels": {"document": ["TEMP-4"], "record": ["signature-check"]},
     "occurred_at": "${clock.checked}",
     "observed_at": "${clock.check_observed}",
     "current": {
@@ -174,10 +168,7 @@ source for a stronger authorization or causal claim.
     "scope": {
       "process": "atlas-permit-review"
     },
-    "labels": {
-      "document": "TEMP-4",
-      "record": "delivery-receipt"
-    },
+    "labels": {"document": ["TEMP-4"], "record": ["delivery-receipt"]},
     "occurred_at": "${clock.day2}",
     "observed_at": "${clock.receipt_observed}",
     "current": {
@@ -299,7 +290,7 @@ The normal writer has no ingested_at input. Canonical migration/replay is a
 different operation; it is not a way to backdate a new writer observation.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"forged_ingestion","arguments":{"about":"example:guide:four-clocks","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:forged-ingestion:v1","scope":{"process":"atlas-permit-review"},"labels":{"document":"TEMP-4","record":"signature-check"},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","current":{"kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."},"read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}],"ingested_at":"${clock.day1}"},"expect_error":"invalid_argument"}
+{"tool":"kmp_write_memory","save_as":"forged_ingestion","arguments":{"about":"example:guide:four-clocks","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:forged-ingestion:v1","scope":{"process":"atlas-permit-review"},"labels":{"document": ["TEMP-4"], "record": ["signature-check"]},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","current":{"kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."},"read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}],"ingested_at":"${clock.day1}"},"expect_error":"invalid_argument"}
 ```
 
 ```json

@@ -76,13 +76,7 @@ catalogue and use the actual refs instead of pretending the history is empty.
       "process": "lexicon-review",
       "task": "operation-check"
     },
-    "labels": {
-      "component": "bitácora",
-      "environment": "prod",
-      "owner": "ana",
-      "run": "RUN-7",
-      "state": "enabled"
-    },
+    "labels": {"component": ["bitácora"], "environment": ["prod"], "owner": ["ana"], "run": ["RUN-7"], "state": ["enabled"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T08:10:00Z",
     "current": {
@@ -151,9 +145,7 @@ into another enabled-state report. Read the catalogue after writing G1.
       "process": "lexicon-review",
       "task": "catalogue-rule"
     },
-    "labels": {
-      "component": "journal"
-    },
+    "labels": {"component": ["journal"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:00:00Z",
     "current": {
@@ -216,8 +208,8 @@ into another enabled-state report. Read the catalogue after writing G1.
     "source_kind": "human",
     "idempotency_key": "guide-labels-negation:canonical-component:v1",
     "observed_at": "2026-09-01T09:01:00Z",
-    "remove": {"component": "bitácora"},
-    "add": {"component": "journal"},
+    "remove": {"component": ["bitácora"]},
+    "add": {"component": ["journal"]},
     "why": "G1 identifica bitácora y journal como el mismo componente de LEX-7 y prescribe journal para el catálogo; se conserva el texto, la prueba y los relojes de S1."
   }
 }
@@ -266,13 +258,7 @@ claims; sharing journal alone would not justify it.
       "process": "lexicon-review",
       "task": "operation-check"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "prod",
-      "owner": "ana",
-      "run": "RUN-7",
-      "state": "enabled"
-    },
+    "labels": {"component": ["journal"], "environment": ["prod"], "owner": ["ana"], "run": ["RUN-7"], "state": ["enabled"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T09:10:00Z",
     "current": {
@@ -341,13 +327,7 @@ owner. Later receipt alone does not supersede S1 or S2.
       "process": "lexicon-review",
       "task": "operation-check"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "prod",
-      "owner": "ana",
-      "run": "RUN-7",
-      "state": "disabled"
-    },
+    "labels": {"component": ["journal"], "environment": ["prod"], "owner": ["ana"], "run": ["RUN-7"], "state": ["disabled"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T09:20:00Z",
     "current": {
@@ -453,13 +433,7 @@ the historical RUN-7 disagreement. `follows` records only order.
       "process": "lexicon-review",
       "task": "operation-check"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "staging",
-      "owner": "ana",
-      "run": "RUN-7",
-      "state": "disabled"
-    },
+    "labels": {"component": ["journal"], "environment": ["staging"], "owner": ["ana"], "run": ["RUN-7"], "state": ["disabled"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T09:30:00Z",
     "current": {
@@ -514,13 +488,7 @@ the historical RUN-7 disagreement. `follows` records only order.
       "process": "lexicon-review",
       "task": "maintenance-decision"
     },
-    "labels": {
-      "component": "journal",
-      "environment": "prod",
-      "owner": "ana",
-      "run": "RUN-8",
-      "state": "disabled"
-    },
+    "labels": {"component": ["journal"], "environment": ["prod"], "owner": ["ana"], "run": ["RUN-8"], "state": ["disabled"]},
     "occurred_at": "2026-09-02T08:00:00Z",
     "observed_at": "2026-09-02T08:00:00Z",
     "current": {

@@ -1847,7 +1847,7 @@ async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root(
     let forbidden_refs = [
         beta_ref,
         "incident:beta",
-        "about:incident:beta:dimension:patrol",
+        "label:v1:incident%3Abeta:agentic_process:patrol",
         "../../incident:beta:entry:x",
         "incident:alpha:entry:x\nincident:beta:entry:y",
     ];

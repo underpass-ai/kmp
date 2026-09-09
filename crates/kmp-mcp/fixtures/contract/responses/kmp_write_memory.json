@@ -22,7 +22,7 @@
           "relations": 1
         },
         "created_dimensions": [
-          "about:question:parity:dimension:parity"
+          "label:v1:question%3Aparity:agentic_process:parity"
         ],
         "memory_id": "memory:write:f44bcf5cd628fba5",
         "read_after_write_ready": true,

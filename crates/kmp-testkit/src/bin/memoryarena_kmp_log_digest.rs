@@ -864,15 +864,21 @@ fn format_ref(value: &str, show_ref: bool) -> String {
 }
 
 fn ref_alias(value: &str) -> Option<String> {
+    if let Some(identity) = kmp_domain::MemoryDimensionIdentity::parse(value) {
+        let parts = identity.about().split(':').collect::<Vec<_>>();
+        let task = value_after(&parts, "task")?;
+        return Some(format!(
+            "t{task}/{}={}",
+            identity.key(),
+            identity.dimension_id()
+        ));
+    }
     let parts = value.split(':').collect::<Vec<_>>();
     let task = value_after(&parts, "task")?;
     let subtask = value_after(&parts, "subtask");
     if let Some(subtask) = subtask {
         let role = parts.last().copied().unwrap_or("entry");
         return Some(format!("t{task}/s{subtask}/{role}"));
-    }
-    if let Some(dimension) = value_after(&parts, "dimension") {
-        return Some(format!("t{task}/dim:{dimension}"));
     }
     Some(format!("t{task}/about"))
 }
@@ -967,10 +973,10 @@ mod tests {
         );
         assert_eq!(
             ref_alias(
-                "about:memoryarena:run:r1:task_type:progressive_search:task:2:dimension:episode-1"
+                "label:v1:memoryarena%3Arun%3Ar1%3Atask_type%3Aprogressive_search%3Atask%3A2:agentic_episode:episode-1"
             )
             .as_deref(),
-            Some("t2/dim:episode-1")
+            Some("t2/agentic_episode=episode-1")
         );
     }
 

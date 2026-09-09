@@ -185,16 +185,12 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn rejects_scope_ids_reused_across_dimensions_before_ingest() {
+    fn scope_values_can_be_reused_across_dimensions() {
         let mut request = sample_write_request();
         request["scope"]["task"] = json!("incident:mobile-login:resolution");
-
-        let error = build_write_plan(&request).expect_err("scope ids must be distinct");
-
-        assert_eq!(
-            error,
-            "scope.process and scope.task reuse `incident:mobile-login:resolution`; within an about a scope id names one label and keeps the kind of its first use, so one id cannot be two kinds"
-        );
+        let plan = build_write_plan(&request).expect("same value, different keys");
+        let dimensions = &plan.ingest_arguments["memory"]["dimensions"];
+        assert_ne!(dimensions[0]["id"], dimensions[1]["id"]);
     }
 
     #[test]
