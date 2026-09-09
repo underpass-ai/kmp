@@ -724,6 +724,55 @@ the about root, sweep other abouts, navigate time, or fabricate an approver
 from the export history. Earlier traversal and audit calls above answer
 different requests; they are not a fallback after this terminal result.
 
+Ask and Wake also return executable `projection.next_action` calls. These
+requests deliberately begin at 512 bytes, with the same clock, interval and
+component filter. Send the returned `arguments` unchanged to its `tool`.
+If `core_text_shortened` is true, the action omits `page.cursor`: discard that
+partial reconstruction and restart at the proposed allowance to restore the
+full core. Otherwise append only the expansions beyond each section's `core`
+count. Continue until `next_action` is null; `has_more=false` alone only says
+that expansion has finished. A fixed budget may leave the result partial.
+A cursor conflict returns `feedback[].action` for a fresh selection; never
+combine the old pages with the restarted selection.
+
+```json
+{
+  "tool": "kmp_wake",
+  "save_as": "wake_action_start",
+  "expect_partial": true,
+  "arguments": {
+    "about": "example:guide:budget-proof",
+    "role": "reviewer", "intent": "Review offline export",
+    "axis": "observed",
+    "interval": {"start": "2026-09-01T08:00:00Z", "end": "2026-09-01T12:00:00Z"},
+    "dimensions": {"selectors": [{"key": "component", "op": "in", "values": ["export"]}]},
+    "budget": {"max_bytes": 512, "detail": "full"}
+  }
+}
+```
+
+```json
+{
+  "tool": "kmp_ask",
+  "save_as": "ask_action_start",
+  "expect_partial": true,
+  "arguments": {
+    "about": "example:guide:budget-proof",
+    "question": "Why does export EXP-8 use SQLite without network access?",
+    "asked_as": "¿Por qué la exportación EXP-8 usa SQLite sin acceso a la red?",
+    "axis": "observed",
+    "interval": {"start": "2026-09-01T08:00:00Z", "end": "2026-09-01T12:00:00Z"},
+    "dimensions": {"selectors": [{"key": "component", "op": "in", "values": ["export"]}]},
+    "budget": {"max_bytes": 512, "detail": "full"}
+  }
+}
+```
+
+The native replay executes these returned actions to completion and compares
+all reconstructed sections against a full read of the same store. It does not
+invent a cursor or recover a missing field from the lesson. The next two
+questions concern an unrelated, unsupported authorization:
+
 ```json
 {
   "tool": "kmp_ask",

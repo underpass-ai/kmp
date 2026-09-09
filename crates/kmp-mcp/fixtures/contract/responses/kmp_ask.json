@@ -34,16 +34,33 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9315
+        "used_bytes": 9430
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 7,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:3:5570a20a13863aa65f3435ebc5fc9b0015c6a32c7536d12e554783e37b8fe403\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": {
+        "arguments": {
+          "about": "question:parity",
+          "answer_policy": "evidence_or_unknown",
+          "budget": {
+            "depth": 2,
+            "detail": "balanced",
+            "max_bytes": 10000,
+            "tokens": 2400
+          },
+          "page": {
+            "cursor": "kmp1:3:1dacfa8ca6996056e3aa4a1968401e5b18c3432eb51ae3e5eb314987adeceaba"
+          },
+          "question": "Where is Rachel moving?"
+        },
+        "tool": "kmp_ask"
+      },
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:3:5570a20a13863aa65f3435ebc5fc9b0015c6a32c7536d12e554783e37b8fe403",
+        "minimum_progress_bytes": "<stamped at call time>",
+        "next_cursor": "kmp1:3:1dacfa8ca6996056e3aa4a1968401e5b18c3432eb51ae3e5eb314987adeceaba",
         "offset": 0,
         "returned": 3,
         "total": 9

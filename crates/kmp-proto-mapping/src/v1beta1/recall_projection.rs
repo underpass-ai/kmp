@@ -15,8 +15,14 @@ use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
+#[path = "recall_actions.rs"]
+mod actions;
+
 pub const DEFAULT_MAX_BYTES: usize = 10_000;
 
+#[cfg(test)]
+#[path = "recall_action_tests.rs"]
+mod action_tests;
 #[cfg(test)]
 #[path = "recall_projection_rank_tests.rs"]
 mod rank_tests;
@@ -57,6 +63,7 @@ pub enum RecallProjectionError {
         reason: RecallCursorErrorReason,
         cursor: String,
         message: String,
+        restart: Option<Value>,
     },
     CoreTooLarge,
 }
@@ -68,10 +75,12 @@ impl RecallProjectionError {
                 reason,
                 cursor,
                 message,
+                restart,
             } => Some(ProtoRecallCursorError {
                 reason: *reason as i32,
                 cursor: cursor.clone(),
                 message: message.clone(),
+                restart: restart.as_ref().map(actions::call_from_value),
             }),
             _ => None,
         }
@@ -135,7 +144,7 @@ pub fn project_recall_output(
         .map_err(|error| error.to_string())
 }
 
-fn project_recall_output_typed(
+pub fn project_recall_output_typed(
     value: Value,
     arguments: &Value,
     default_tokens: u32,
@@ -144,6 +153,7 @@ fn project_recall_output_typed(
     let budget = ProjectionBudget::from_arguments(arguments, default_tokens)
         .map_err(RecallProjectionError::InvalidRequest)?;
     let mut plan = ProjectionPlan::build(value, &budget);
+    plan.arguments = arguments.clone();
     let eligible = plan
         .items
         .iter()
@@ -156,7 +166,14 @@ fn project_recall_output_typed(
         arguments.pointer("/page/cursor").and_then(Value::as_str),
         &selection_hash,
         eligible.len(),
-    )?;
+    )
+    .map_err(|mut error| {
+        if let RecallProjectionError::Cursor { restart, .. } = &mut error {
+            *restart = Some(actions::call(arguments, None, None));
+        }
+        error
+    })?;
+    plan.progress_bytes = actions::progress_bytes(&plan, &selection_hash, &budget);
 
     // Size the core against one worst-case metadata envelope so its bytes do
     // not change with detail, cursor offset, or an advisory-token override.
@@ -442,6 +459,8 @@ struct ProjectionPlan {
     items: Vec<ProjectionItem>,
     core_lengths: BTreeMap<Section, usize>,
     selection_omitted: usize,
+    arguments: Value,
+    progress_bytes: usize,
 }
 
 impl ProjectionPlan {
@@ -578,6 +597,8 @@ impl ProjectionPlan {
             items,
             core_lengths,
             selection_omitted,
+            arguments: Value::Null,
+            progress_bytes: 0,
         }
     }
 }
@@ -734,19 +755,25 @@ fn attach_metadata(
         || plan.selection_omitted > 0
         || core_text_shortened;
     let stalled = !planning && has_more && selected.is_empty();
-    let next_action = if stalled {
-        format!(
-            "This page cannot advance at the current byte budget. Increase budget.max_bytes \
-             and continue with page.cursor=\"{cursor}\", keeping other bound arguments unchanged; \
-             or retain this selection as partial if the budget is fixed."
-        )
-    } else if planning || has_more {
-        format!(
-            "Call the same recall tool with identical bound arguments and page.cursor=\"{cursor}\"; budget.tokens, budget.max_bytes, and page.entries may change."
-        )
-    } else {
-        String::new()
-    };
+    let next_action = (planning || has_more || core_text_shortened).then(|| {
+        let max_bytes = if planning {
+            usize::MAX
+        } else if stalled || core_text_shortened {
+            plan.progress_bytes
+                .saturating_add(DEFAULT_MAX_BYTES)
+                .max(budget.byte_limit)
+        } else {
+            budget.byte_limit
+        };
+        // A shortened core cannot be combined as if it were the full first
+        // page. Restart the same selection at a sufficient allowance.
+        let continuation = if core_text_shortened && !planning {
+            None
+        } else {
+            Some(cursor.as_str())
+        };
+        actions::call(&plan.arguments, continuation, Some(max_bytes))
+    });
     value["projection"] = json!({
         "contract": PROJECTION_CONTRACT,
         "detail": budget.detail.as_str(),
@@ -760,13 +787,14 @@ fn attach_metadata(
             "returned": if planning { eligible.len() } else { selected.len() },
             "total": eligible.len(),
             "has_more": planning || has_more,
-            "next_cursor": if cursor.is_empty() { Value::Null } else { json!(cursor) }
+            "next_cursor": if cursor.is_empty() { Value::Null } else { json!(cursor) },
+            "minimum_progress_bytes": if planning { Some(usize::MAX) } else if stalled || core_text_shortened { Some(plan.progress_bytes) } else { None }
         },
         "sections": sections,
         "excluded_by_detail": excluded_by_detail,
         "selection_omitted": plan.selection_omitted,
         "core_text_shortened": core_text_shortened,
-        "next_action": if next_action.is_empty() { Value::Null } else { json!(next_action) }
+        "next_action": next_action
     });
     if truncated {
         let remaining_page_items = eligible.len().saturating_sub(next_offset);
@@ -913,6 +941,7 @@ fn cursor_error(
         reason,
         cursor: cursor.to_string(),
         message: message.to_string(),
+        restart: None,
     }
 }
 
@@ -1144,6 +1173,12 @@ fn wake_arguments(request: &WakeRequest) -> Value {
     if let Some(page) = request.page.as_ref() {
         arguments.insert("page".to_string(), page_request_value(page));
     }
+    actions::insert_time(
+        &mut arguments,
+        request.axis,
+        request.as_of.as_ref(),
+        request.interval.as_ref(),
+    );
     Value::Object(arguments)
 }
 
@@ -1151,6 +1186,7 @@ fn ask_arguments(request: &AskRequest) -> Value {
     let mut arguments = Map::new();
     arguments.insert("about".to_string(), json!(request.about));
     arguments.insert("question".to_string(), json!(request.question));
+    insert_non_empty(&mut arguments, "asked_as", &request.asked_as);
     arguments.insert(
         "answer_policy".to_string(),
         json!(
@@ -1174,6 +1210,12 @@ fn ask_arguments(request: &AskRequest) -> Value {
     if let Some(page) = request.page.as_ref() {
         arguments.insert("page".to_string(), page_request_value(page));
     }
+    actions::insert_time(
+        &mut arguments,
+        request.axis,
+        request.as_of.as_ref(),
+        request.interval.as_ref(),
+    );
     Value::Object(arguments)
 }
 
@@ -1183,7 +1225,7 @@ fn budget_value(
     default_depth: u32,
 ) -> Value {
     let budget = budget.cloned().unwrap_or_default();
-    json!({
+    let mut value = json!({
         "tokens": if budget.tokens == 0 { default_tokens } else { budget.tokens },
         "detail": detail_label(budget.detail),
         "depth": if budget.depth == 0 { default_depth } else { budget.depth },
@@ -1193,7 +1235,14 @@ fn budget_value(
         } else {
             budget.max_bytes
         }
-    })
+    });
+    if budget.max_entries == 0 {
+        value
+            .as_object_mut()
+            .expect("budget object")
+            .remove("max_entries");
+    }
+    value
 }
 
 fn dimension_selection_value(selection: &DimensionSelection) -> Value {
@@ -1557,13 +1606,14 @@ fn projection_value(projection: &RecallProjection) -> Value {
             "returned": page.returned,
             "total": page.total,
             "has_more": page.has_more,
-            "next_cursor": page.next_cursor.clone().map(Value::String).unwrap_or(Value::Null)
+            "next_cursor": page.next_cursor.clone().map(Value::String).unwrap_or(Value::Null),
+            "minimum_progress_bytes": page.minimum_progress_bytes
         },
         "sections": sections,
         "excluded_by_detail": projection.excluded_by_detail,
         "selection_omitted": projection.selection_omitted,
         "core_text_shortened": projection.core_text_shortened,
-        "next_action": projection.next_action.clone().map(Value::String).unwrap_or(Value::Null)
+        "next_action": projection.next_call.as_ref().map(actions::call_value).unwrap_or(Value::Null)
     })
 }
 
@@ -1606,6 +1656,9 @@ fn projection_from_value(value: &Value) -> Option<RecallProjection> {
             tokens_advisory: u32_at(value, "/budget/tokens_advisory"),
         }),
         page: Some(RecallProjectionPage {
+            minimum_progress_bytes: value
+                .pointer("/page/minimum_progress_bytes")
+                .and_then(Value::as_u64),
             offset: u64_at(value, "/page/offset"),
             returned: u64_at(value, "/page/returned"),
             total: u64_at(value, "/page/total"),
@@ -1625,10 +1678,11 @@ fn projection_from_value(value: &Value) -> Option<RecallProjection> {
             .get("core_text_shortened")
             .and_then(Value::as_bool)
             .unwrap_or(false),
-        next_action: value
+        next_action: None,
+        next_call: value
             .get("next_action")
-            .and_then(Value::as_str)
-            .map(ToString::to_string),
+            .filter(|value| value.is_object())
+            .map(actions::call_from_value),
     })
 }
 
@@ -2063,10 +2117,10 @@ mod tests {
         assert_eq!(stalled["projection"]["page"]["next_cursor"], cursor);
         assert_eq!(stalled["because"], packet["because"]);
         assert!(
-            stalled["projection"]["next_action"]
-                .as_str()
-                .expect("continuation guidance")
-                .contains("Increase budget.max_bytes")
+            stalled["projection"]["next_action"]["arguments"]["budget"]["max_bytes"]
+                .as_u64()
+                .expect("proposed allowance")
+                > 10_000
         );
         assert!(
             stalled["warnings"]
@@ -2564,9 +2618,11 @@ mod tests {
                 let cursor = page.next_cursor.expect("continuation");
                 if !cursors.insert(cursor.clone()) {
                     assert!(
-                        actual["projection"]["next_action"]
-                            .as_str()
-                            .is_some_and(|action| action.contains("Increase budget.max_bytes")),
+                        actual["projection"]["next_action"]["arguments"]["budget"]["max_bytes"]
+                            .as_u64()
+                            .is_some_and(
+                                |bytes| bytes > request.budget.as_ref().expect("budget").max_bytes
+                            ),
                         "a stalled page must explain how to continue"
                     );
                     let budget = request.budget.as_mut().expect("budget");

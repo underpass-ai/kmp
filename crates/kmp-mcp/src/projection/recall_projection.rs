@@ -4,7 +4,9 @@ use kmp_proto::v1beta1::{AskResponse, WakeResponse};
 
 use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
-use kmp_proto_mapping::v1beta1::recall_projection::{ProjectionOutcome, project_recall_output};
+use kmp_proto_mapping::v1beta1::recall_projection::{
+    ProjectionOutcome, project_recall_output_typed,
+};
 
 use crate::serving::tool_error::ToolError;
 
@@ -57,7 +59,9 @@ fn try_enforce_recall_output_budget_with_estimator(
     default_tokens: u32,
     estimator: &dyn TokenEstimator,
 ) -> Result<Value, ToolError> {
-    match project_recall_output(value, arguments, default_tokens, estimator)? {
+    match project_recall_output_typed(value, arguments, default_tokens, estimator)
+        .map_err(super::recall_error::projection)?
+    {
         ProjectionOutcome::Projected(value) => Ok(value),
         ProjectionOutcome::CoreTooLarge => Err(ToolError::invalid_argument(
             "recall projection byte budget is smaller than the stable citation core; raise \

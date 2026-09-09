@@ -91,6 +91,10 @@ fn projection_output_schema() -> Value {
         "integer",
         "Number of eligible expansion items reconstructed by earlier pages.",
     );
+    page["properties"]["minimum_progress_bytes"] = nullable_described(
+        "integer",
+        "When stalled or core_text_shortened, a sufficient byte allowance for the unshortened core and expansion progress. The returned action adds 10000 bytes for useful expansion instead of negotiating only one item.",
+    );
     output_object(json!({
         "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v1."),
         "budget": described("object", "The normative byte ceiling, bytes actually used, and retained token-planning hint."),
@@ -99,10 +103,16 @@ fn projection_output_schema() -> Value {
             "integer",
             "Excluded by detail tier, not truncation; increase budget.detail to include them."
         ),
-        "next_action": nullable_described(
-            "string",
-            "The exact call that continues this page, or null when there is nothing after it."
-        ),
+        "next_action": {
+            "type":["object","null"],
+            "description":"Execute this complete native call. It continues expansion, or restarts without page.cursor when core_text_shortened to recover the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
+            "additionalProperties":false,
+            "required":["tool","arguments"],
+            "properties":{
+                "tool":{"type":"string","enum":["kmp_ask","kmp_wake"]},
+                "arguments":{"type":"object","description":"Complete bound request; question, original wording, clock, interval and dimension filters are preserved."}
+            }
+        },
         "page": page,
         "sections": described("object", "Per-section core, returned, eligible, and total counts for reconstructing the full proof."),
         "selection_omitted": described("integer", "Items excluded by budget.max_entries before paging."),

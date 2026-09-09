@@ -6,6 +6,7 @@ pub(crate) mod ingest_projection;
 pub(crate) mod inspect_budget;
 pub(crate) mod inspect_projection;
 mod recall_budget_audit;
+pub(crate) mod recall_error;
 pub(crate) mod recall_projection;
 pub(crate) mod relabel_projection;
 pub(crate) mod relate_projection;

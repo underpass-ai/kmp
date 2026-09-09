@@ -946,7 +946,16 @@ message RecallProjection {
   uint64 excluded_by_detail = 6;
   uint64 selection_omitted = 7;
   bool core_text_shortened = 8;
+  // Retired prose field. New responses leave it unset; there is no fallback.
   optional string next_action = 9;
+  RecallCall next_call = 10;
+}
+
+// An executable native recall call. JSON preserves integer arguments without
+// the floating-point conversion of google.protobuf.Struct.
+message RecallCall {
+  string tool = 1;
+  string arguments_json = 2;
 }
 
 message RecallProjectionBudget {
@@ -962,6 +971,8 @@ message RecallProjectionPage {
   uint64 total = 3;
   bool has_more = 4;
   optional string next_cursor = 5;
+  // A sufficient byte allowance for unshortened core and expansion progress.
+  optional uint64 minimum_progress_bytes = 6;
 }
 
 message RecallProjectionSection {
@@ -989,14 +1000,15 @@ message RecallOmitted {
   bool core_text_shortened = 6;
 }
 
-// Machine-readable detail carried by INVALID_ARGUMENT when a Wake/Ask
-// continuation cursor cannot be used. Tonic serializes this message directly
+// Machine-readable detail for a Wake/Ask continuation failure: ABORTED for
+// a changed selection, INVALID_ARGUMENT for malformed or out-of-range cursors. Tonic serializes this message directly
 // into grpc-status-details-bin; clients can branch on `reason` without parsing
 // the human diagnostic.
 message RecallCursorError {
   RecallCursorErrorReason reason = 1;
   string cursor = 2;
   string message = 3;
+  RecallCall restart = 4;
 }
 
 enum RecallCursorErrorReason {

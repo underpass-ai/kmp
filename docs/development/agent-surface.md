@@ -147,6 +147,34 @@ un backend sin huella se rechaza explícitamente. Comprobar continuación, cambi
 en una página posterior y acción de reinicio en los transportes afectados.
 Esta explicación es mantenimiento informativo; no añade un control de CI.
 
+### Continuaciones de Ask y Wake
+
+`kmp-proto-mapping/src/v1beta1/recall_projection.rs` cuenta la acción antes
+que la expansión. `recall_actions.rs` construye la llamada y su presupuesto
+suficiente. Al añadir un argumento a Ask/Wake, actualizar su conversión a
+argumentos nativos, la identidad del cursor y la prueba que ejecuta la llamada
+recibida. Conservar selección temporal, dimensiones y `asked_as`; omitir
+`max_entries` ilimitado en vez de enviar un cero rechazado por el MCP.
+
+La respuesta MCP usa `projection.next_action: {tool, arguments}`. El proto
+transporta `RecallCall` en `next_call`, con argumentos JSON para conservar
+enteros exactamente; el antiguo campo de prosa queda sin emitir y no tiene
+adaptador de compatibilidad. Los errores tipados transportan `restart` y el
+MCP lo expone como `feedback[].action`. Mantener ambas copias del proto y
+comprobar ejecución equivalente en los transportes.
+
+Una acción sin cursor tras `core_text_shortened` restaura el núcleo con una
+lectura nueva: descartar la reconstrucción parcial anterior. Las continuaciones
+ordinarias añaden sólo expansiones. Probar el recorrido completo contra una
+lectura amplia del mismo store, restauración desde 512 bytes, límites y errores
+sin analizar el texto del diagnóstico. Medir argumentos más respuestas de todo
+el recorrido, incluyendo reinicios. La recuperación propone el tamaño suficiente
+más 10.000 bytes para expansión; ofrecer sólo el mínimo puede multiplicar llamadas.
+En paridad, aislar XDG_DATA_HOME para que el almacén local no cargue una tabla
+léxica personal ausente en el servidor de prueba; comparar la misma configuración
+de recuperación en ambos caminos. La comprobación nativa no mide aprendizaje
+LLM ni facturación del host. Estas instrucciones son documentación informativa.
+
 ## 3. Regenerar con el motor correspondiente
 
 Desde la raíz del repo, usar un target separado si hay un binario congelado

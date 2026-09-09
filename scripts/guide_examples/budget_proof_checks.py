@@ -1,3 +1,5 @@
+from recall_action_checks import check as check_recall_actions
+
 """Audit actual partial pages without treating their success as completeness."""
 
 
@@ -120,7 +122,8 @@ def check(saved, client, authored):
         assert saved[name]['answer'] == 'UNKNOWN'
         assert saved[name]['proof']['missing']
     assert list(authored)[-2:] == ['unknown_english', 'unknown_original']
-    assert sum(a.get('question') is not None for a in authored.values()) == 2
+    assert sum(a.get('question') is not None for a in authored.values()) == 3
+    saved['recall_action_walks'] = check_recall_actions(saved, client, authored)
     for name in ('packet', 'export_proof', 'unrelated_source'):
         assert not saved[name + '_frame']['unhonored']
     saved['pending_checkpoints'] = {
@@ -131,7 +134,8 @@ def check(saved, client, authored):
             'status': 'partial', 'required_bytes': partial['page']['required_bytes'],
             'minimum_progress_bytes': partial['page']['minimum_progress_bytes'],
             'next_call': partial['next_actions'][0]}}
-    return ['five source records retain text, kinds and evidence',
+    return ['Ask and Wake execute returned calls, restore shortened core and reconstruct all selected sections',
+            'five source records retain text, kinds and evidence',
             'historical proof and dimensionally filtered about context declare their distinct scope',
             'inclusive boundary and two temporal pages recover the half-open interval',
             'opaque continuation cursors preserve all bound selection arguments',

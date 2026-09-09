@@ -27,18 +27,33 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9800
+        "used_bytes": 9255
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 22,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:17:4d4d20e113c42c1eeaf4440879d27668bf0d8ba988eafe4455d6908ba32e4998\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": {
+        "arguments": {
+          "about": "question:parity",
+          "budget": {
+            "depth": 2,
+            "detail": "balanced",
+            "max_bytes": 10000,
+            "tokens": 1600
+          },
+          "page": {
+            "cursor": "kmp1:16:0c8bacac3ee923c39e6ab47f48f794aa232d3a518eb2cf7a605d6e2c2b590627"
+          }
+        },
+        "tool": "kmp_wake"
+      },
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:17:4d4d20e113c42c1eeaf4440879d27668bf0d8ba988eafe4455d6908ba32e4998",
+        "minimum_progress_bytes": "<stamped at call time>",
+        "next_cursor": "kmp1:16:0c8bacac3ee923c39e6ab47f48f794aa232d3a518eb2cf7a605d6e2c2b590627",
         "offset": 0,
-        "returned": 17,
+        "returned": 16,
         "total": 44
       },
       "sections": {
@@ -57,7 +72,7 @@
         "proof.path": {
           "core": 0,
           "eligible": 17,
-          "returned_on_page": 4,
+          "returned_on_page": 3,
           "total": 39
         },
         "wake.causal_spine": {
@@ -149,20 +164,6 @@
           "sequence": 1,
           "to": "question:parity:claim:denver",
           "why": "The corrected city replaces the first one while the first stays readable as history."
-        },
-        {
-          "class": "evidential",
-          "confidence": "medium",
-          "evidence_refs": [
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
-          ],
-          "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
-          "rel": "uses_background",
-          "sequence": 1,
-          "to": "question:parity:claim:denver",
-          "why": "The decision was taken while reading this claim back."
         }
       ],
       "superseded": [
@@ -207,9 +208,9 @@
       "omitted": {
         "core_text_shortened": false,
         "excluded_by_detail": 22,
-        "page_items": 27,
+        "page_items": 28,
         "prior_page_items": 0,
-        "remaining_page_items": 27,
+        "remaining_page_items": 28,
         "selection_items": 0
       },
       "token_limit": 1600,

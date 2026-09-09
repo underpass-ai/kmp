@@ -2,6 +2,8 @@
 
 #[path = "mcp_real_kernel/inspect_actions.rs"]
 mod inspect_actions;
+#[path = "mcp_real_kernel/recall_actions.rs"]
+mod recall_actions;
 #[path = "mcp_real_kernel/relation_cursors.rs"]
 mod relation_cursors;
 mod support;
@@ -178,6 +180,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
     temporal_intervals::check(&direct, &stdio, &http, &embedded).await;
     temporal_fields::check(&direct, &stdio, &http, &embedded).await;
     inspect_actions::check(&direct, &stdio, &http, &embedded).await;
+    recall_actions::check(&direct, &stdio, &http, &embedded).await;
 
     let first_page_arguments = json!({
         "about":"project:parity-live",
@@ -307,7 +310,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         &embedded,
         "kmp_wake",
         stale_arguments,
-        "invalid_argument",
+        "conflict",
     )
     .await;
 
@@ -570,10 +573,10 @@ fn parity_seed_arguments() -> Value {
                 {"from":"project:parity-live:observation:parity-proof-3","to":"project:parity-live:observation:parity-proof-2","rel":"follows","class":"procedural","why":"The full check followed balanced.","evidence":"The parity test sequence records this order.","confidence":"high"}
             ],
             "evidence":[
-                {"id":"evidence:project:parity-live:parity-live","supports":["project:parity-live:observation:parity-after"],"text":"The semantic results matched exactly.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:project:parity-live:parity-compact","supports":["project:parity-live:observation:parity-proof-1"],"text":"Compact stayed under the byte limit.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:project:parity-live:parity-balanced","supports":["project:parity-live:observation:parity-proof-2"],"text":"Balanced retained cited evidence.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:project:parity-live:parity-full","supports":["project:parity-live:observation:parity-proof-3"],"text":"Full retained the relation rationale.","source":"grpc_mcp_semantic_parity"}
+                {"id":"evidence:project:parity-live:parity-live","supports":["project:parity-live:observation:parity-after"],"text":"The semantic results matched exactly.","source":"grpc_mcp_semantic_parity","time":"2026-08-25T00:01:00Z"},
+                {"id":"evidence:project:parity-live:parity-compact","supports":["project:parity-live:observation:parity-proof-1"],"text":"Compact stayed under the byte limit.","source":"grpc_mcp_semantic_parity","time":"2026-08-25T00:02:00Z"},
+                {"id":"evidence:project:parity-live:parity-balanced","supports":["project:parity-live:observation:parity-proof-2"],"text":"Balanced retained cited evidence.","source":"grpc_mcp_semantic_parity","time":"2026-08-25T00:03:00Z"},
+                {"id":"evidence:project:parity-live:parity-full","supports":["project:parity-live:observation:parity-proof-3"],"text":"Full retained the relation rationale.","source":"grpc_mcp_semantic_parity","time":"2026-08-25T00:04:00Z"}
             ]
         },
         "provenance":{"source_kind":"agent","source_agent":"grpc_mcp_semantic_parity","observed_at":"2026-08-25T00:01:00Z"},
