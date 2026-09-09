@@ -671,6 +671,7 @@ impl KernelMemoryService for FakeMemoryService {
         Ok(Response::new(IngestResponse {
             summary: format!("Ingested memory for {}.", request.about),
             memory: Some(IngestedMemory {
+                receipt_ref: None,
                 about: request.about,
                 memory_id,
                 accepted: Some(AcceptedCounts {

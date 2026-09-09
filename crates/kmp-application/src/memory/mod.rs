@@ -1,5 +1,6 @@
 mod dimension_registry;
 mod ingest;
+mod receipt;
 mod ref_boundary;
 mod relabel;
 mod service;

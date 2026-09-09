@@ -19,6 +19,7 @@
       ],
       "memory_id": "memory:parity:ingest:1",
       "read_after_write_ready": true,
+      "receipt_ref": null,
       "resembling_labels": []
     },
     "summary": "Ingested 3 entries, 1 relation, and 1 evidence item for question:parity.",

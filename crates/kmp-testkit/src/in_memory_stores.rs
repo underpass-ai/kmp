@@ -291,6 +291,7 @@ impl ContextEventStore for InMemoryContextEventStore {
         event: ContextUpdatedEvent,
         expected_revision: u64,
     ) -> Result<u64, PortError> {
+        let accepted = IdempotentOutcome::for_event(&event, expected_revision + 1)?;
         let key = Self::aggregate_key(&event.root_node_id, &event.role);
         let mut revisions = self.revisions.lock().await;
         let current = revisions.get(&key).copied().unwrap_or(0);
@@ -306,14 +307,10 @@ impl ContextEventStore for InMemoryContextEventStore {
             .await
             .insert(key, event.content_hash.clone());
         if let Some(ref idem_key) = event.idempotency_key {
-            self.idempotency.lock().await.insert(
-                idem_key.clone(),
-                IdempotentOutcome {
-                    revision: new_revision,
-                    content_hash: event.content_hash,
-                    logical_digest: event.logical_digest,
-                },
-            );
+            self.idempotency
+                .lock()
+                .await
+                .insert(idem_key.clone(), accepted);
         }
         Ok(new_revision)
     }

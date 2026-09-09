@@ -12,6 +12,7 @@ pub(crate) fn write_dry_run_result(
     let mut result = json!({
         "accepted": false,
         "dry_run": true,
+        "coverage": super::coverage::write_coverage(plan),
         "validation": {"scope": if backend == "fixture" { "fixture" } else { "current_store" }},
         "warnings": validation.get("warnings").cloned().unwrap_or_else(|| json!([])),
         "summary": write_summary(plan),
@@ -44,16 +45,32 @@ pub(crate) fn write_commit_result(
     let mut result = json!({
         "accepted": true,
         "dry_run": false,
-        "summary": write_summary(plan),
+        "coverage": super::coverage::write_coverage(plan),
+        "summary": ingest_result["summary"],
+        "read_after_write_ready": ingest_result["memory"]["read_after_write_ready"],
+        "warnings": ingest_result.get("warnings").cloned().unwrap_or_else(|| json!([])),
         "generated_refs": plan.generated_refs,
         "labels": { "written": plan.labels, "created": created, "resembling": resembling },
         "relations": plan.relations,
-        "relation_quality": plan.relation_quality,
-        "relation_quality_metrics": plan.relation_quality_metrics,
-        "ingest_result": ingest_result,
-        "diagnostics": plan.diagnostics,
-        "next_suggested_reads": plan.next_suggested_reads
+        "diagnostics": plan.diagnostics
     });
+    if let Some(reference) = ingest_result
+        .pointer("/memory/receipt_ref")
+        .and_then(Value::as_str)
+    {
+        result["receipt"] = json!({"ref": reference,
+            "action": super::receipt::receipt_action(&plan.about, reference)});
+    }
+    let suspect = plan.relation_quality_metrics["relation_suspect_count"]
+        .as_u64()
+        .unwrap_or_default();
+    if suspect > 0 {
+        result["feedback"] = json!([{
+            "code": "RELATION_CONTEXT_UNVERIFIED", "severity": "warning", "field": "",
+            "reason": format!("{suspect} accepted relations lack verified prior context; review their sources before relying on them."),
+            "action": result.pointer("/receipt/action").cloned().unwrap_or(Value::Null)
+        }]);
+    }
     if !plan.local_refs.is_empty() {
         result["local_refs"] = json!(plan.local_refs);
     }

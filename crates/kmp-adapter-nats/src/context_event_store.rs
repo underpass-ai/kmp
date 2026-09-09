@@ -118,6 +118,7 @@ impl ContextEventStore for NatsContextEventStore {
         }
 
         let new_revision = current_revision + 1;
+        let idem_outcome = IdempotentOutcome::for_event(&event, new_revision)?;
         let subject = self.event_subject(&event.root_node_id, &event.role);
 
         // Persist the full event as JSON with CAS via expected_last_subject_sequence.
@@ -158,11 +159,6 @@ impl ContextEventStore for NatsContextEventStore {
 
         if let Some(ref idem_key) = event.idempotency_key {
             let idem_subject = self.idem_subject(idem_key);
-            let idem_outcome = IdempotentOutcome {
-                revision: new_revision,
-                content_hash: event.content_hash.clone(),
-                logical_digest: event.logical_digest.clone(),
-            };
             let idem_payload = serde_json::to_vec(&idem_outcome).map_err(|error| {
                 PortError::Unavailable(format!("failed to serialize idempotent outcome: {error}"))
             })?;

@@ -445,6 +445,7 @@ pub(super) fn build_write_plan_with_local_refs(
     let relation_quality_metrics = relation_quality_metrics(&relation_quality);
 
     Ok(KernelWritePlan {
+        operation: super::operation::WriteOperation::Memories,
         about,
         local_refs: Default::default(),
         dry_run,

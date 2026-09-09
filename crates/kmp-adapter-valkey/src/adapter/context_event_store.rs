@@ -50,6 +50,7 @@ impl ContextEventStore for ValkeyContextEventStore {
         expected_revision: u64,
     ) -> Result<u64, PortError> {
         let new_revision = expected_revision + 1;
+        let accepted = IdempotentOutcome::for_event(&event, new_revision)?;
         let rev_key = self.revision_key(&event.root_node_id, &event.role);
         let hash_key = self.hash_key(&event.root_node_id, &event.role);
         let event_key = self.event_key(&event.root_node_id, &event.role, new_revision);
@@ -85,11 +86,10 @@ impl ContextEventStore for ValkeyContextEventStore {
 
         if let Some(ref idem_key) = event.idempotency_key {
             let key = self.idempotency_key(idem_key);
-            let value = encode_idempotent_value(
-                new_revision,
-                &event.content_hash,
-                event.logical_digest.as_deref(),
-            );
+            let value = serde_json::to_string(&accepted).map_err(|error| {
+                PortError::InvalidState(format!("cannot encode accepted command: {error}"))
+            })?;
+
             execute_set_command(&self.endpoint, &key, &value, None).await?;
         }
 
@@ -125,33 +125,9 @@ impl ContextEventStore for ValkeyContextEventStore {
     }
 }
 
-fn encode_idempotent_value(
-    revision: u64,
-    content_hash: &str,
-    logical_digest: Option<&str>,
-) -> String {
-    match logical_digest {
-        Some(digest) => format!("{revision}:{content_hash}:{digest}"),
-        None => format!("{revision}:{content_hash}"),
-    }
-}
-
 fn parse_idempotent_outcome(value: &str) -> Result<IdempotentOutcome, PortError> {
-    let (revision_str, content_hash) = value
-        .split_once(':')
-        .ok_or_else(|| PortError::InvalidState(format!("malformed idempotency value: {value}")))?;
-    let revision = revision_str.parse::<u64>().map_err(|error| {
-        PortError::InvalidState(format!("invalid idempotency revision: {error}"))
-    })?;
-    let (content_hash, logical_digest) = match content_hash.split_once(':') {
-        Some((hash, digest)) => (hash, Some(digest.to_string())),
-        None => (content_hash, None),
-    };
-    Ok(IdempotentOutcome {
-        revision,
-        content_hash: content_hash.to_string(),
-        logical_digest,
-    })
+    serde_json::from_str(value)
+        .map_err(|error| PortError::InvalidState(format!("invalid idempotency outcome: {error}")))
 }
 
 fn parse_revision(value: &str) -> Result<u64, PortError> {
@@ -183,44 +159,21 @@ mod tests {
     }
 
     #[test]
-    fn encode_and_parse_idempotent_value_roundtrips() {
-        let encoded = encode_idempotent_value(42, "abc123", None);
-        assert_eq!(encoded, "42:abc123");
-
-        let parsed = parse_idempotent_outcome(&encoded).expect("should parse");
-        assert_eq!(parsed.revision, 42);
-        assert_eq!(parsed.content_hash, "abc123");
-        assert_eq!(parsed.logical_digest, None);
-    }
-
-    #[test]
-    fn a_logical_digest_rides_the_value_and_an_old_value_reads_as_none() {
-        let encoded = encode_idempotent_value(42, "abc123", Some("d1g3st"));
-        assert_eq!(encoded, "42:abc123:d1g3st");
-
-        let parsed = parse_idempotent_outcome(&encoded).expect("should parse");
-        assert_eq!(parsed.content_hash, "abc123");
-        assert_eq!(parsed.logical_digest.as_deref(), Some("d1g3st"));
-
-        let legacy = parse_idempotent_outcome("7:beef").expect("should parse");
-        assert_eq!(legacy.revision, 7);
-        assert_eq!(legacy.content_hash, "beef");
-        assert_eq!(
-            legacy.logical_digest, None,
-            "a value written before the digest existed must not invent one"
-        );
-    }
-
-    #[test]
-    fn parse_idempotent_outcome_rejects_malformed_value() {
-        let err = parse_idempotent_outcome("no-colon").expect_err("should fail");
-        assert!(err.to_string().contains("malformed"));
-    }
-
-    #[test]
-    fn parse_idempotent_outcome_rejects_non_numeric_revision() {
-        let err = parse_idempotent_outcome("abc:hash").expect_err("should fail");
-        assert!(err.to_string().contains("invalid idempotency revision"));
+    fn structured_outcome_preserves_the_receipt_and_exact_payload() {
+        let outcome = IdempotentOutcome {
+            revision: 42,
+            content_hash: "abc123".into(),
+            logical_digest: Some("digest".into()),
+            receipt: Some(kmp_domain::StoredCommandReceipt {
+                reference: "receipt:v1:project:key".into(),
+                payload_json: r#"{"text":"á:b"}"#.into(),
+            }),
+        };
+        let encoded = serde_json::to_string(&outcome).expect("serialize");
+        assert_eq!(parse_idempotent_outcome(&encoded).expect("parse"), outcome);
+        for invalid in ["42:abc123", "abc:hash", "{}", r#"{"revision":"abc"}"#] {
+            assert!(parse_idempotent_outcome(invalid).is_err());
+        }
     }
 
     #[test]

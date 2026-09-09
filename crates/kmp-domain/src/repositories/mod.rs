@@ -1,4 +1,6 @@
 pub mod context_event_store;
+pub mod stored_command_receipt;
+pub use stored_command_receipt::{COMMAND_RECEIPT_ENTITY_KIND, StoredCommandReceipt};
 pub mod graph_neighborhood_reader;
 pub mod memory_about_index_reader;
 pub mod neighborhood_request;

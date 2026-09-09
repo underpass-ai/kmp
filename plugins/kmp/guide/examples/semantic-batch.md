@@ -327,3 +327,11 @@ zoom and following the relation should take you from the decision to its proof.
   }
 }
 ```
+
+The accepted packet reports `coverage.label_memberships=4`: the shared component
+on both records and two aliases on the logs. `source_coverage=not_assessed` does
+not certify that R1/R2 contained no other facts. For this teaching audit, execute
+`written.receipt.action` verbatim. Inspect's `object.text` contains JSON with
+`receipt.writer.local_refs` and the accepted `receipt.canonical_memory`; its
+chosen_because relation keeps R2's reason and proof. This detail is available on
+demand and need not be loaded after every successful write.

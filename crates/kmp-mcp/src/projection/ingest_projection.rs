@@ -11,6 +11,7 @@ pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
         "memory": {
             "about": memory.map(|memory| memory.about.as_str()).unwrap_or(""),
             "memory_id": memory.map(|memory| memory.memory_id.as_str()).unwrap_or(""),
+            "receipt_ref": memory.and_then(|memory| memory.receipt_ref.as_deref()),
             "accepted": {
                 "entries": accepted.map(|accepted| accepted.entries).unwrap_or_default(),
                 "relations": accepted.map(|accepted| accepted.relations).unwrap_or_default(),

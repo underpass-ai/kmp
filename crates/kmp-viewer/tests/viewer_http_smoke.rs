@@ -39,6 +39,7 @@ fn entry(id: &str, text: &str, occurred_at: &str, sequence: u32) -> MemoryEntryD
 
 fn corpus() -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -672,6 +673,7 @@ fn sub_second_corpus(
     observed_at: &str,
 ) -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: about.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {

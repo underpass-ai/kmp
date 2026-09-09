@@ -21,6 +21,8 @@ pub struct MemoryIngestCommand {
     pub idempotency_key: String,
     pub dry_run: bool,
     pub label_policy: LabelPolicy,
+    /// Writer diagnostics attached to the accepted command, never semantic memory.
+    pub receipt_context: Option<serde_json::Value>,
 }
 
 /// What an ingest does with a dimension that resembles a label the about
@@ -38,7 +40,7 @@ pub enum LabelPolicy {
 }
 
 /// A label a write named beside the existing label it resembles.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ResemblingLabelData {
     pub key: String,
     pub value: String,
@@ -149,7 +151,7 @@ pub struct MemoryProvenanceData {
     pub causation_id: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct MemoryAcceptedCounts {
     pub entries: usize,
     pub relations: usize,
@@ -158,6 +160,7 @@ pub struct MemoryAcceptedCounts {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MemoryIngestOutcome {
+    pub receipt_ref: Option<String>,
     pub about: String,
     pub memory_id: String,
     pub accepted: MemoryAcceptedCounts,

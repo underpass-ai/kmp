@@ -606,7 +606,7 @@ async fn kmp_write_memory_commit_uses_canonical_ingest_backend_path() {
     assert_eq!(response["result"]["isError"], false);
     assert_eq!(response["result"]["structuredContent"]["accepted"], true);
     assert_eq!(
-        response["result"]["structuredContent"]["ingest_result"]["memory"]["accepted"]["relations"],
+        response["result"]["structuredContent"]["coverage"]["relations"],
         3
     );
 

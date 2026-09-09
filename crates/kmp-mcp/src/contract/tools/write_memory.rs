@@ -184,10 +184,10 @@ fn write_memory_output_schema() -> Value {
     output_object(json!({
         "feedback": json!({
             "type": "array",
-            "description": "Refusal signals. Codes and paths come from validation, not message parsing. Never invent missing proof; acceptance needs no routine readback.",
+            "description": "Validation signals. Codes and paths come from validation, not message parsing. A warning can accompany acceptance; never invent missing proof.",
             "items": output_object(json!({
                 "code": described("string", "Stable rule identifier."),
-                "severity": described("string", "error for a refused write."),
+                "severity": described("string", "error for a refusal; warning for accepted relations whose prior context needs review."),
                 "field": described("string", "Argument path, for example memories[1].evidence; empty denotes the request as a whole."),
                 "reason": described("string", "What must be corrected using actual sources."),
                 "action": {"anyOf": [output_object(json!({
@@ -201,7 +201,26 @@ fn write_memory_output_schema() -> Value {
         "validation": output_object(json!({
             "scope": described("string", "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.")
         })),
-        "warnings": string_array("Store validation notices returned with a preview."),
+        "warnings": string_array("Store notices qualifying this preview or accepted write; retain them."),
+        "read_after_write_ready": described("boolean", "Whether a read now observes the accepted write."),
+        "coverage": output_object(json!({
+            "scope": described("string", "submitted_packet: coverage of the declaration only."),
+            "complete": described("boolean", "All declared records and label memberships validated; accepted determines persistence."),
+            "source_coverage": described("string", "not_assessed: KMP cannot detect facts omitted by the writer."),
+            "memories": described("integer", "Declared source memories."),
+            "search_summaries": described("integer", "Updated search renderings."),
+            "relations": described("integer", "Declared semantic links."),
+            "evidence": described("integer", "Compiled evidence objects."),
+            "label_memberships": described("integer", "Declared per-memory key/value pairs after shared-label union."),
+            "preserved_memberships": described("integer", "Existing memberships preserved by search_summaries.")
+        })),
+        "receipt": output_object(json!({
+            "ref": described("string", "Immutable accepted-command audit ref. Absent for previews and simulated backends."),
+            "action": output_object(json!({
+                "tool": described("string", "kmp_inspect; execute only when accepted detail is needed."),
+                "arguments": described("object", "Complete arguments. object.text holds JSON with receipt.canonical_memory, receipt.writer diagnostics and command revision/hash. It is a historical snapshot, not current graph state.")
+            }))
+        })),
         "summary": described("string", "Counts and scope of the semantic write the planner prepared."),
         "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes."),
         "local_refs": json!({"type": "object", "additionalProperties": {"type": "string"}, "description": "For a memories packet, local id to canonical memory ref. Preview refs are planned; accepted=true confirms persistence."}),
@@ -211,12 +230,11 @@ fn write_memory_output_schema() -> Value {
             "resembling": described("array", "After a committed non-strict write: the labels written that resemble one the about already held, each with `key`, `value`, `existing_key`, `existing_value`, `kind` and `why`. Under strict such a write is refused instead, naming both labels, unless `options.labels_new` insists.")
         })),
         "relations": string_array("Typed relation names compiled into the canonical ingest."),
-        "relation_quality": described("array", "Per-relation validation, including rich/anemic quality and prior-context evidence."),
-        "relation_quality_metrics": described("object", "Aggregate counts and prior-context coverage for the compiled relations."),
+        "relation_quality": described("array", "Preview per-relation validation. After commit, recover it with receipt.action."),
+        "relation_quality_metrics": described("object", "Preview counts and prior-context coverage; stored in the receipt after commit."),
         "ingest_preview": described("object", "Canonical kmp_ingest arguments. Present only on dry-run."),
-        "ingest_result": described("object", "Canonical kmp_ingest result. Present only after a committed write."),
         "diagnostics": described("array", "Planner diagnostics that qualify the write."),
-        "next_suggested_reads": string_array("Concrete refs worth reading next to verify or continue the write."),
+        "next_suggested_reads": described("array", "Optional preview reading suggestions. Accepted writes need no routine verification; receipt.action retrieves audit detail on demand."),
         "viewer": output_object(json!({
             "url": described("string", "Loopback, read-only viewer URL carrying this session's capability."),
             "tell_the_user": described("string", "One-time handoff text for the human; it is not another kernel instruction.")

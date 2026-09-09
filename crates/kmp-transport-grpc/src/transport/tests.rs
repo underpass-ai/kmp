@@ -2301,6 +2301,7 @@ fn helper_mappers_cover_versions_errors_and_trim_logic() {
 
 fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
     IngestRequest {
+        receipt_context_json: None,
         about: "question:830ce83f".to_string(),
         memory: Some(Memory {
             dimensions: vec![MemoryDimension {

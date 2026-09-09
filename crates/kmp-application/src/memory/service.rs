@@ -85,6 +85,7 @@ where
         }
         let (update_context, mut outcome) = translate_memory_ingest(&command, &existing)?;
         if command.dry_run {
+            outcome.receipt_ref = None;
             outcome
                 .warnings
                 .push("dry_run=true; validated memory without writing to the kernel".to_string());
@@ -342,6 +343,23 @@ where
         &self,
         query: InspectMemoryQuery,
     ) -> Result<InspectMemoryResult, ApplicationError> {
+        if query.ref_id.starts_with("receipt:") {
+            let reference = kmp_domain::MemoryReceiptRef::parse(&query.ref_id)
+                .ok_or_else(|| ApplicationError::Validation("invalid receipt ref".into()))?;
+            if reference.about() != query.about {
+                return Err(ApplicationError::Validation(
+                    "receipt ref belongs to another about".into(),
+                ));
+            }
+            let accepted = self
+                .command_application
+                .accepted_outcome(reference.idempotency_key())
+                .await?
+                .ok_or_else(|| {
+                    ApplicationError::NotFound(format!("receipt not found: {}", query.ref_id))
+                })?;
+            return super::receipt::inspect_receipt(query, accepted);
+        }
         self.validate_read_members(&query.about, &[("ref", query.ref_id.as_str())])
             .await?;
         let include_incoming = query.include_incoming;

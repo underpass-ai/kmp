@@ -77,10 +77,19 @@ kernel's actual ingestion clock.
 The unified public writer accepts `memories` or the separate `search_summaries`
 operation. The former `current`/`intent`/`scope` fields are rejected; semantic deltas
 are explicit packet members with justified relations. Compact recoverable
-receipts, declared coverage and structured repair signals still belong to block 2.
+receipts, declared coverage and structured repair signals complete the native writer contract.
 A native packet replay is not independent agent evaluation and does not resume a reader awaiting human review.
 
 Writer validation now carries stable feedback codes and member/field paths.
 A missing prior read can return an executable Inspect action with about and ref.
 No message parsing or evidence synthesis chooses the code or action. Receipts
-and declared coverage remain pending; this is not completion of block 2.
+now return compact acceptance with coverage of the submitted packet. Full normalized
+memory, proof, coordinates and diagnostics are stored in the accepted command and
+recovered by the returned Inspect action, without adding graph memories. A preview
+never creates a receipt; a lax accepted relation with unverified prior context
+still warns. Receipt inspection is historical, not a current-memory read.
+
+The writer acceptance checks exercise the returned action, restart, later search
+summary changes, bundle import and the native/gRPC boundary. They do not establish
+independent agent understanding. The requested Luna/Terra/Sol writer check follows
+writer integration while the next block implements reading and continuations.

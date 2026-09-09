@@ -8,6 +8,15 @@ def check(saved, client, authored):
     assert saved['rejected']['feedback'][0]['code'] == 'MEMORY_EVIDENCE_REQUIRED'
     assert saved['rejected']['feedback'][0]['field'] == 'memories[1].evidence'
     assert saved['rejected']['feedback'][0]['action'] is None
+    assert saved['written']['coverage']['source_coverage'] == 'not_assessed'
+    assert saved['written']['coverage']['label_memberships'] == 4
+    action = saved['written']['receipt']['action']
+    detail = client.call(action['tool'], action['arguments'])
+    import json
+    receipt = json.loads(detail['object']['text'])['receipt']
+    assert receipt['writer']['local_refs'] == refs
+    assert receipt['writer']['coverage'] == saved['written']['coverage']
+    assert receipt['canonical_memory']['relations'][0]['evidence'] == 'R2 cites R1 as the reason for the retry.'
     for index, name in enumerate(('choice', 'logs')):
         expected = authored['written']['memories'][index]
         record = next(row for row in saved[name]['raw'] if row['ref'] == refs[name])
@@ -22,7 +31,8 @@ def check(saved, client, authored):
     assert {e['ref'] for e in saved['after_choice']['entries']} == set(refs.values())
     assert not saved['frame']['unhonored']
     assert saved['view_state']['state']['selection'] == refs['choice']
-    return ['invalid packet leaves the about absent',
+    return ['accepted receipt action recovers immutable canonical proof and declared coverage',
+            'invalid packet leaves the about absent',
             'local forward link resolves to stored proof without invented prior reads',
             'all declared labels and individual clocks survive',
             'temporal selection distinguishes observation from receipt',

@@ -76,6 +76,12 @@ async fn forward_local_links_commit_once_with_complete_labels_proof_and_clocks()
     assert_eq!(preview["isError"], false, "{preview}");
     let planned = &preview["structuredContent"];
     assert_eq!(planned["accepted"], false);
+    assert_eq!(planned["coverage"]["scope"], "submitted_packet");
+    assert_eq!(planned["coverage"]["source_coverage"], "not_assessed");
+    assert_eq!(planned["coverage"]["memories"], 2);
+    assert_eq!(planned["coverage"]["relations"], 1);
+    assert_eq!(planned["coverage"]["evidence"], 3);
+    assert_eq!(planned["coverage"]["label_memberships"], 4);
     assert_eq!(planned["validation"]["scope"], "current_store");
     assert_eq!(
         planned["relation_quality"][0]["prior_context_sources"],
@@ -85,6 +91,10 @@ async fn forward_local_links_commit_once_with_complete_labels_proof_and_clocks()
     args["options"]["dry_run"] = json!(false);
     let written = call(&server, "kmp_write_memory", args.clone()).await;
     assert_eq!(written["structuredContent"]["accepted"], true, "{written}");
+    assert_eq!(
+        written["structuredContent"]["coverage"],
+        planned["coverage"]
+    );
     assert_eq!(events(&store).await, 1, "the packet is one event");
     let refs = &written["structuredContent"]["local_refs"];
     assert_eq!(refs, &planned["local_refs"]);
@@ -261,6 +271,18 @@ async fn search_summary_packet_is_atomic_and_preserves_every_stored_source_and_c
         "{committed}"
     );
     assert_eq!(events(&store).await, 2);
+    assert_eq!(
+        committed["structuredContent"]["coverage"]["search_summaries"],
+        2
+    );
+    assert_eq!(
+        committed["structuredContent"]["coverage"]["label_memberships"],
+        0
+    );
+    assert_eq!(
+        committed["structuredContent"]["coverage"]["preserved_memberships"],
+        4
+    );
     for (index, id) in ["choice", "logs"].into_iter().enumerate() {
         let after = call(
             &server,
