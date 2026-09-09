@@ -57,7 +57,13 @@ fn candidate_assembly_and_verification_share_one_exact_asset_contract() {
         "[workspace.package]\nversion = \"0.4.2\"\n",
     )
     .expect("Cargo.toml");
-    git(&root, &["add", "Cargo.toml"]);
+    std::fs::create_dir_all(root.join("crates/demo/src")).expect("source directory");
+    std::fs::create_dir_all(root.join("crates/demo/tests")).expect("test directory");
+    let production = root.join("crates/demo/src/lib.rs");
+    let integration_test = root.join("crates/demo/tests/contract.rs");
+    std::fs::write(&production, b"pub fn version() {}\n").expect("source");
+    std::fs::write(&integration_test, b"#[test] fn contract() {}\n").expect("test");
+    git(&root, &["add", "Cargo.toml", "crates"]);
     git(&root, &["commit", "-m", "fixture"]);
     let version = ReleaseVersion::parse("0.4.2").expect("version");
     let source = temporary.path().join("source");
@@ -101,6 +107,23 @@ fn candidate_assembly_and_verification_share_one_exact_asset_contract() {
         .execute(&repository_root, &version, &output, None, Some("42"))
         .expect("verify candidate");
     assert_eq!(verified, assembled);
+
+    std::fs::write(&integration_test, b"#[test] fn repaired_contract() {}\n")
+        .expect("repair integration test");
+    VerifyCandidate::new(&file_system, &git)
+        .execute(&repository_root, &version, &output, None, Some("42"))
+        .expect("test-only repair must reuse the unchanged candidate");
+
+    std::fs::write(&production, b"pub fn changed_version() {}\n").expect("change source");
+    let rejected = VerifyCandidate::new(&file_system, &git)
+        .execute(&repository_root, &version, &output, None, Some("42"))
+        .expect_err("production change must invalidate the candidate");
+    assert!(
+        rejected
+            .to_string()
+            .contains("candidate release inputs differ")
+    );
+    std::fs::write(&production, b"pub fn version() {}\n").expect("restore source");
 
     let first = assets.payloads().next().expect("payload");
     std::fs::write(output.join("assets").join(first), b"changed").expect("mutate asset");

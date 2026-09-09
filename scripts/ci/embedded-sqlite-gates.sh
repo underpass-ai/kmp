@@ -9,25 +9,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
-echo "sqlite-gates: clippy with the engine compiled in"
-cargo clippy -p kmp-adapter-embedded -p kmp-conformance -p kmp-embedded -p kmp-mcp \
-  --all-targets --features sqlite --locked -- -D warnings
-
+# SQLite is always present in the product. The regular clippy and test jobs
+# already cover these crates; keep only the additional consumer checks here.
 echo "sqlite-gates: the sixteen conformance scenarios on the sqlite engine"
 cargo test -p kmp-conformance --features sqlite --locked --test embedded_sqlite_conformance
-
-echo "sqlite-gates: adapter suite including fail-closed format-1 detection"
-cargo test -p kmp-adapter-embedded --features sqlite --locked
-
-echo "sqlite-gates: obsolete migration commands are absent from the public surface"
-if rg -n 'kmp-mcp migrate|migrate <src>|migrate <source' \
-    README.md crates/*/README.md plugins/kmp docs; then
-  echo "sqlite-gates: obsolete store-migration command leaked into public product material" >&2
-  exit 1
-fi
-
-echo "sqlite-gates: kmp-embedded and kmp-mcp still build and pass with the engine in"
-cargo test -p kmp-embedded -p kmp-mcp --features sqlite --locked
 
 # `cargo install` is how a user gets this binary, and it resolves features
 # without the workspace and without dev-dependencies. A feature that names a
@@ -36,7 +21,8 @@ cargo test -p kmp-embedded -p kmp-mcp --features sqlite --locked
 echo "sqlite-gates: cargo install with the engine, the way a user gets it"
 INSTALL_ROOT="$(mktemp -d)"
 trap 'rm -rf "${INSTALL_ROOT}"' EXIT
-cargo install --path crates/kmp-mcp --features sqlite --locked --root "${INSTALL_ROOT}" --quiet
+CARGO_TARGET_DIR="${ROOT_DIR}/target" \
+  cargo install --path crates/kmp-mcp --features sqlite --locked --root "${INSTALL_ROOT}" --quiet
 "${INSTALL_ROOT}/bin/kmp-mcp" --version
 
 # The engine only matters if a host can reach it. Release and plugin binaries

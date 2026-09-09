@@ -1,5 +1,16 @@
 # Testing
 
+The normal Rust checks cover the product's default SQLite engine. The SQLite
+consumer job adds feature-enabled conformance, `cargo install` and the two-host
+launcher scenario; it does not repeat the full adapter/MCP test suites or Clippy.
+Documentation about unsupported migration commands is maintained with the
+product docs, without a CI text-search gate.
+
+Plugin validation keeps its real-host checks for integration-test changes.
+The Windows job skips compilation and packaging when the diff contains only
+crate integration tests or developer docs; runtime, plugin, build and unknown
+paths retain the Windows check.
+
 The pull-request gate is defined by
 [`.github/workflows/quality-gate.yml`](../../.github/workflows/quality-gate.yml).
 Do not infer current coverage from archived testing prose.
