@@ -447,7 +447,7 @@ pub struct TimelinePageView {
 pub struct TimelineView {
     pub about: String,
     pub direction: String,
-    pub resolved_cursor: CoordinateView,
+    pub resolved_cursor: Option<CoordinateView>,
     pub included_dimensions: Vec<String>,
     pub missing_dimensions: Vec<String>,
     pub entries: Vec<TimelineEntryView>,
@@ -460,7 +460,9 @@ pub fn timeline_view(about: &str, result: &TemporalMemoryResult) -> TimelineView
     TimelineView {
         about: about.to_string(),
         direction: direction_name(traversal.direction()).to_string(),
-        resolved_cursor: CoordinateView::from_coordinate(traversal.resolved_cursor()),
+        resolved_cursor: traversal
+            .resolved_cursor()
+            .map(CoordinateView::from_coordinate),
         included_dimensions: traversal.included_dimensions().to_vec(),
         missing_dimensions: traversal.missing_dimensions().to_vec(),
         entries: traversal

@@ -152,6 +152,7 @@
     "temporal": {
       "axis": "string",
       "direction": "string",
+      "interval": "null",
       "requested": {
         "ref": "string"
       },

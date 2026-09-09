@@ -295,6 +295,7 @@ mod tests {
                     "depth",
                     "dimensions",
                     "include",
+                    "interval",
                     "limit",
                     "page", // MCP response projection; the typed query remains unchanged.
                     "window",

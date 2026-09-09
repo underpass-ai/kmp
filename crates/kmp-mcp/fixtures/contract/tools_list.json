@@ -2707,6 +2707,24 @@
             },
             "type": "object"
           },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it.",
+            "minProperties": 1,
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "limit": {
             "additionalProperties": false,
             "properties": {
@@ -2999,7 +3017,7 @@
             "type": "string"
           },
           "temporal": {
-            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "description": "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor.",
             "type": [
               "object",
               "null"
@@ -3208,6 +3226,24 @@
               },
               "relations": {
                 "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it.",
+            "minProperties": 1,
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
               }
             },
             "type": "object"
@@ -3504,7 +3540,7 @@
             "type": "string"
           },
           "temporal": {
-            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "description": "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor.",
             "type": [
               "object",
               "null"
@@ -3525,9 +3561,21 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Move strictly before `from` (time, sequence or ref), newest-to-oldest. Execute next_actions unchanged to reconstruct the packet and then continue earlier history. page.has_more counts entry/proof expansion; selection.has_more reports history outside the packet.",
+      "description": "Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval.",
       "inputSchema": {
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "from"
+            ]
+          },
+          {
+            "required": [
+              "interval"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
@@ -3717,6 +3765,24 @@
             },
             "type": "object"
           },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it.",
+            "minProperties": 1,
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "limit": {
             "additionalProperties": false,
             "properties": {
@@ -3763,8 +3829,7 @@
           }
         },
         "required": [
-          "about",
-          "from"
+          "about"
         ],
         "type": "object"
       },
@@ -4009,7 +4074,7 @@
             "type": "string"
           },
           "temporal": {
-            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "description": "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor.",
             "type": [
               "object",
               "null"
@@ -4030,9 +4095,21 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. Execute next_actions unchanged to reconstruct entries and proof before continuing history. For [start,end), retain exact-start entries from Goto, merge Forward by ref and exclude entries at or after end.",
+      "description": "Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval.",
       "inputSchema": {
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "from"
+            ]
+          },
+          {
+            "required": [
+              "interval"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
@@ -4222,6 +4299,24 @@
             },
             "type": "object"
           },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it.",
+            "minProperties": 1,
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "limit": {
             "additionalProperties": false,
             "properties": {
@@ -4268,8 +4363,7 @@
           }
         },
         "required": [
-          "about",
-          "from"
+          "about"
         ],
         "type": "object"
       },
@@ -4514,7 +4608,7 @@
             "type": "string"
           },
           "temporal": {
-            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "description": "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor.",
             "type": [
               "object",
               "null"

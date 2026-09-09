@@ -171,6 +171,7 @@
     "temporal": {
       "axis": "occurred",
       "direction": "goto",
+      "interval": null,
       "requested": {
         "time": "2026-04-12T15:05:00Z"
       },

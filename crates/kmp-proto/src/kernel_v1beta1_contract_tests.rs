@@ -255,6 +255,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -268,6 +269,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -281,6 +283,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -294,6 +297,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -307,6 +311,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -320,6 +325,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     // The four temporal-move responses share one field set (including the

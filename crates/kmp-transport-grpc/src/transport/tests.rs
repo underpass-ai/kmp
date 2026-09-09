@@ -1769,6 +1769,7 @@ async fn memory_service_temporal_methods_use_domain_traversal() {
 
     let near = service
         .near(Request::new(NearRequest {
+            interval: None,
             about: "question:830ce83f".to_string(),
             around: Some(ProtoTemporalCursor {
                 time: Some(ts(103)),
@@ -2359,6 +2360,7 @@ fn temporal_move_request(
     dimensions: ProtoDimensionSelection,
 ) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: None,
         about: "question:830ce83f".to_string(),
         cursor,
         dimensions: Some(dimensions),
@@ -2387,6 +2389,7 @@ fn goto_request(
 ) -> GotoRequest {
     let request = temporal_move_request(cursor, dimensions);
     GotoRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -2404,6 +2407,7 @@ fn rewind_request(
 ) -> RewindRequest {
     let request = temporal_move_request(cursor, dimensions);
     RewindRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -2424,6 +2428,7 @@ fn forward_request(
 
 fn forward_request_from_temporal(request: TemporalMoveRequest) -> ForwardRequest {
     ForwardRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,

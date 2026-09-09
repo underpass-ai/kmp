@@ -93,6 +93,16 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
         }
     });
     input_schema["properties"][cursor_key] = cursor_schema;
+    let mut interval = interval_schema();
+    interval["minProperties"] = json!(1);
+    interval["description"] = json!(
+        "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it."
+    );
+    input_schema["properties"]["interval"] = interval;
+    if matches!(name, "kmp_forward" | "kmp_rewind") {
+        input_schema["required"] = json!(["about"]);
+        input_schema["anyOf"] = json!([{"required":[cursor_key]}, {"required":["interval"]}]);
+    }
     tool_definition_with_output(
         name,
         description,
@@ -125,7 +135,7 @@ pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Val
             "matching_entries":described("integer", "Matching temporal entries reported by the kernel before its entry/window limit."),
             "has_more":described("boolean", "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.")
         })),
-        "temporal": nullable_described("object", "Resolved direction, selected clock axis, requested cursor, and resolved coordinate."),
+        "temporal": nullable_described("object", "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor."),
         "coverage": output_object(json!({
             "requested": nullable_described("object", "Dimension selection requested by the caller."),
             "included": string_array("Dimension scope ids included in the result."),

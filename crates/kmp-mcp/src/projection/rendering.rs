@@ -74,8 +74,8 @@ pub(super) fn proof_json(proof: &kmp_proto::v1beta1::Proof) -> Value {
         "matched_terms": proof.matched_terms,
         "matched_relations": proof.matched_relations,
         "confidence": confidence_label(proof.confidence),
-        // Where the recall stood in time, when the caller named it. A
-        // temporal move stands at its cursor and leaves these null.
+        // Recall bounds, or the upper bound of a temporal interval's proof.
+        // Its earlier antecedents may precede the selected entry interval.
         "interval": proof.interval.as_ref().map(|interval| json!({
             "start": interval.start.map(|at| at.to_string()),
             "end": interval.end.map(|at| at.to_string())
@@ -198,6 +198,10 @@ pub(super) fn temporal_state_json(state: &kmp_proto::v1beta1::TemporalState) -> 
     json!({
         "direction": temporal_direction_label(state.direction),
         "axis": temporal_axis_label(state.axis),
+        "interval": state.interval.as_ref().map(|interval| json!({
+            "start": interval.start.map(|at| at.to_string()),
+            "end": interval.end.map(|at| at.to_string())
+        })),
         "requested": state
             .requested
             .as_ref()

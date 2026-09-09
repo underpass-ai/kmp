@@ -585,6 +585,11 @@ fn temporal_result(
         .with_dimensions(dimensions.clone())
         .with_requested_dimensions(query.dimensions.clone())
         .with_window(query.window);
+    let request = if let Some(interval) = query.interval {
+        request.with_interval(interval)
+    } else {
+        request
+    };
     let request = if let Some(limit_entries) = query.limit_entries {
         request.with_limit_entries(limit_entries)?
     } else {

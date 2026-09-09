@@ -539,6 +539,7 @@ where
 
 fn temporal_move_request_from_goto(request: GotoRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -552,6 +553,7 @@ fn temporal_move_request_from_goto(request: GotoRequest) -> TemporalMoveRequest 
 
 fn temporal_move_request_from_rewind(request: RewindRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -565,6 +567,7 @@ fn temporal_move_request_from_rewind(request: RewindRequest) -> TemporalMoveRequ
 
 fn temporal_move_request_from_forward(request: ForwardRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -578,6 +581,7 @@ fn temporal_move_request_from_forward(request: ForwardRequest) -> TemporalMoveRe
 
 fn temporal_near_request_from_near(request: NearRequest) -> TemporalNearRequest {
     TemporalNearRequest {
+        interval: request.interval,
         about: request.about,
         around: request.around,
         dimensions: request.dimensions,
