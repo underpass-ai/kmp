@@ -318,6 +318,7 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
         sorted_strs(&[
             "accepted",
             "validation",
+            "coverage",
             "warnings",
             "local_refs",
             "dry_run",
