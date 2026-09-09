@@ -9,6 +9,22 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** semantic writes use one `memories` packet with local IDs, per-record evidence and label arrays. `search_summaries` is a separate batch operation. The former `current`, `intent` and process `scope` writer shape is rejected.
+- **Breaking:** dimensional identity includes the owning about, label key and value. Multiple values under one key and identical values under different keys remain distinct memberships. Previous dimensional/store formats are unsupported; this release does not provide a legacy adapter or migration.
+- Writer previews validate against the selected store. Commits are atomic and return compact acknowledgements with immutable, inspectable receipts. Field-level feedback reports independent repairable errors together while preserving backend error categories.
+- Temporal verbs accept direct intervals and selective entry fields. Temporal, Inspect, Trace, Relate, Ask and Wake reads supply executable continuations, budget recovery and restart actions with their bound arguments. Changed selections invalidate cursors.
+- Wake separates temporally selected proof from unbounded about context and declares dimensional scope. Guide examples cover the revised writer, source memberships, four clocks, aliases, receipts and complete navigation.
+
+### Fixed
+
+- Preserve coordinates when canonical ingest repeats an existing `contains_entry` membership.
+- Preserve evidence through bounded typed recall and bind relation continuations to the complete selected content.
+- Bound historical Goto proof at its cursor or a stricter interval end, so later relations and replacements do not rewrite earlier knowledge.
+
+The initial agent schema that expands with use and persistent consultation profiles are planned for a subsequent increment. Qualitative agent writing checks do not constitute a completed independent writer/reader benchmark.
+
 ## [0.14.0] - 2026-09-08
 
 ### Added
