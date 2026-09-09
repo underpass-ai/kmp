@@ -50,6 +50,10 @@ async fn preview_checks_existing_refs_without_committing_and_can_then_be_written
         "evidence":"The source links this change to the prior configuration.","confidence":"high"}]);
     let invalid = call(&server, "kmp_write_memory", args.clone()).await;
     assert_eq!(invalid["isError"], true, "{invalid}");
+    assert_eq!(
+        invalid["structuredContent"]["error"]["code"],
+        "invalid_argument"
+    );
     assert_eq!(events(&store).await, 1);
     args["connect_to"][0]["ref"] = json!(SEED);
     let preview = call(&server, "kmp_write_memory", args.clone()).await;

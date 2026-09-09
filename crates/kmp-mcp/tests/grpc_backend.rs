@@ -511,6 +511,10 @@ async fn grpc_backend_dry_run_ingest_reaches_the_kernel_with_writes_disabled() {
         requests[0].dry_run,
         "the kernel validates without committing"
     );
+    assert_eq!(
+        ingest["result"]["structuredContent"]["memory"]["read_after_write_ready"],
+        false
+    );
 }
 
 #[tokio::test]
@@ -680,7 +684,7 @@ impl KernelMemoryService for FakeMemoryService {
                         .map(|memory| memory.evidence.len())
                         .unwrap_or_default() as u32,
                 }),
-                read_after_write_ready: true,
+                read_after_write_ready: !request.dry_run,
                 created_dimensions: Vec::new(),
                 resembling_labels: Vec::new(),
             }),
