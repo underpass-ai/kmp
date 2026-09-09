@@ -37,7 +37,7 @@
         },
         {
           "dimension": "entity",
-          "scope_id": "label:v1:question%3A830ce83f:person:person%3Arachel",
+          "scope_id": "label:v1:question%3A830ce83f:entity:person%3Arachel",
           "valid_from": "2026-04-12T15:05:00Z"
         }
       ]
