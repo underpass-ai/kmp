@@ -10,6 +10,7 @@ pub(crate) struct WriteValidationError {
     field: String,
     global: bool,
     action: Option<Value>,
+    allowed_values: Option<&'static [&'static str]>,
 }
 
 impl WriteValidationError {
@@ -20,6 +21,7 @@ impl WriteValidationError {
             field: String::new(),
             global: false,
             action: None,
+            allowed_values: None,
         }
     }
 
@@ -53,6 +55,11 @@ impl WriteValidationError {
         self.action = Some(json!({"tool": tool, "arguments": arguments}));
         self
     }
+
+    pub(crate) fn allowed_values(mut self, values: &'static [&'static str]) -> Self {
+        self.allowed_values = Some(values);
+        self
+    }
 }
 
 impl From<String> for WriteValidationError {
@@ -75,13 +82,16 @@ impl std::fmt::Display for WriteValidationError {
 
 impl From<WriteValidationError> for ToolError {
     fn from(error: WriteValidationError) -> Self {
-        let feedback = json!({
+        let mut feedback = json!({
             "code": error.code,
             "severity": "error",
             "field": error.field,
             "reason": error.message,
             "action": error.action
         });
+        if let Some(values) = error.allowed_values {
+            feedback["allowed_values"] = json!(values);
+        }
         Self::invalid_argument(error.message).with_feedback(feedback)
     }
 }

@@ -1115,6 +1115,13 @@
                     }
                   ]
                 },
+                "allowed_values": {
+                  "description": "Valid vocabulary when the refused field has one; choose using the source, never automatically substitute a kind.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
                 "code": {
                   "description": "Stable rule identifier.",
                   "type": "string"

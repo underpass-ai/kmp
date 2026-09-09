@@ -11,6 +11,7 @@ pub(crate) mod temporal_entry_field;
 pub(crate) mod tools;
 pub(crate) mod validator;
 mod writer_audit;
+pub(crate) mod writer_memory_kinds;
 
 pub(crate) use handshake::{
     CHRONOLOOM_APP_URI, MCP_APP_MIME, canonical_tool_name, initialize_result_with_apps,
