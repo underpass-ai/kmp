@@ -8,22 +8,24 @@
 //! else about the memory can change through this path, because nothing else
 //! is taken from the caller.
 
+use super::validation_error::WriteValidationError;
+
 use serde_json::{Value, json};
 
-use super::arguments::*;
 use super::coordinates::reject_a_time_that_has_not_happened;
 use super::existing_entry::ExistingEntry;
 use super::generated_ref::stable_idempotency_key;
 use super::plan::KernelWritePlan;
 use super::relation_quality::relation_quality_metrics;
 use super::search_summary::decide_search_summary;
+use super::validated_arguments::*;
 
 const DEFAULT_SOURCE_KIND: &str = "agent";
 
 pub(crate) fn build_summary_plan(
     arguments: &Value,
     existing: &ExistingEntry,
-) -> Result<KernelWritePlan, String> {
+) -> Result<KernelWritePlan, WriteValidationError> {
     let arguments = arguments
         .as_object()
         .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
@@ -35,10 +37,10 @@ pub(crate) fn build_summary_plan(
     let summary = required_map_string(current, "summary_en", "summary_en")?;
     for field in ["summary", "kind", "evidence"] {
         if current.contains_key(field) {
-            return Err(format!(
+            return Err(WriteValidationError::new(format!(
                 "search_summaries attaches a rendering to a memory that exists; {field} is \
                  read from the store and cannot be supplied"
-            ));
+            )));
         }
     }
     if arguments
@@ -47,10 +49,10 @@ pub(crate) fn build_summary_plan(
         .is_some_and(|links| !links.is_empty())
         || arguments.get("semantic_delta").is_some()
     {
-        return Err(
+        return Err(WriteValidationError::new(
             "search_summaries writes no relation and no delta: attach the summary on its own"
                 .to_string(),
-        );
+        ));
     }
     let options = arguments.get("options").and_then(Value::as_object);
     let dry_run = options
@@ -67,7 +69,9 @@ pub(crate) fn build_summary_plan(
     // the writer can still fix it.
     let decision = decide_search_summary(&existing.text, Some(summary), strict)?;
     let Some(stored) = decision.stored else {
-        return Err("search_summaries requires summary_en".to_string());
+        return Err(WriteValidationError::new(
+            "search_summaries requires summary_en".to_string(),
+        ));
     };
 
     let mut metadata = existing.metadata.clone();
@@ -201,9 +205,9 @@ mod tests {
         )
         .expect_err("a dropped identifier is refused");
 
-        assert!(error.contains("refuses summary_en"), "{error}");
-        assert!(error.contains("7.2"), "{error}");
-        assert!(error.contains("adr-018"), "{error}");
+        assert!(error.message.contains("refuses summary_en"), "{error}");
+        assert!(error.message.contains("7.2"), "{error}");
+        assert!(error.message.contains("adr-018"), "{error}");
     }
 
     #[test]
@@ -211,12 +215,15 @@ mod tests {
         let mut with_text = request("Valkey 7.2 was adopted for the shared store (ADR-018).");
         with_text["current"]["summary"] = json!("something else");
         let error = build_summary_plan(&with_text, &existing()).expect_err("text is the store's");
-        assert!(error.contains("summary is read from the store"), "{error}");
+        assert!(
+            error.message.contains("summary is read from the store"),
+            "{error}"
+        );
 
         let mut with_link = request("Valkey 7.2 was adopted for the shared store (ADR-018).");
         with_link["connect_to"] =
             json!([{"ref": "project:kmp:x", "rel": "follows", "class": "procedural"}]);
         let error = build_summary_plan(&with_link, &existing()).expect_err("no relations");
-        assert!(error.contains("writes no relation"), "{error}");
+        assert!(error.message.contains("writes no relation"), "{error}");
     }
 }

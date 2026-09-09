@@ -17,7 +17,9 @@ exact returned values. This replay checks the native contract, not LLM learning.
 ## Rejection leaves the about empty
 
 This deliberately invalid packet has a valid first record and a second one
-without evidence. Strict is the default. Repair the source field; do not
+without evidence. The refusal returns code `MEMORY_EVIDENCE_REQUIRED`,
+field `memories[1].evidence` and no fabricated repair action. Strict is the
+default. Repair the source field; do not
 weaken validation merely to accept the packet.
 
 ```json

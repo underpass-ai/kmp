@@ -182,6 +182,20 @@ pub(crate) fn read_context_schema() -> Value {
 
 fn write_memory_output_schema() -> Value {
     output_object(json!({
+        "feedback": json!({
+            "type": "array",
+            "description": "Refusal signals. Codes and paths come from validation, not message parsing. Never invent missing proof; acceptance needs no routine readback.",
+            "items": output_object(json!({
+                "code": described("string", "Stable rule identifier."),
+                "severity": described("string", "error for a refused write."),
+                "field": described("string", "Argument path, for example memories[1].evidence; empty denotes the request as a whole."),
+                "reason": described("string", "What must be corrected using actual sources."),
+                "action": {"anyOf": [output_object(json!({
+                    "tool": described("string", "Supported reading move, not proof that the proposed relation holds."),
+                    "arguments": described("object", "Complete arguments to execute that read.")
+                })), {"type":"null"}]}
+            }))
+        }),
         "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
         "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
         "validation": output_object(json!({

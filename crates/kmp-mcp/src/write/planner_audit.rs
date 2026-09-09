@@ -181,7 +181,7 @@ pub(crate) mod tests {
 
         let error = build_write_plan(&request).expect_err("process scope is required");
 
-        assert_eq!(error, "missing required argument `scope.process`");
+        assert_eq!(error.message, "missing required argument `scope.process`");
     }
 
     #[test]
@@ -219,7 +219,10 @@ pub(crate) mod tests {
 
         let error = build_write_plan(&request).expect_err("relation evidence is required");
 
-        assert_eq!(error, "missing required argument `connect_to[0].evidence`");
+        assert_eq!(
+            error.message,
+            "missing required argument `connect_to[0].evidence`"
+        );
     }
 
     #[test]
@@ -233,7 +236,7 @@ pub(crate) mod tests {
         let error = build_write_plan(&request).expect_err("strict write requires a relation");
 
         assert_eq!(
-            error,
+            error.message,
             "strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
         );
     }
@@ -268,7 +271,7 @@ pub(crate) mod tests {
         let error = build_write_plan(&request).expect_err("rich relation requires prior read");
 
         assert_eq!(
-            error,
+            error.message,
             "strict kmp_write_memory rich relation `chosen_because` to `incident:mobile-login:observation:401-refresh-race` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback"
         );
     }
@@ -283,7 +286,7 @@ pub(crate) mod tests {
         let error = build_write_plan(&request).expect_err("self-loop should fail");
 
         assert_eq!(
-            error,
+            error.message,
             "kmp_write_memory relation `chosen_because` cannot point from and to the same ref `incident:mobile-login:entry:decision:self`"
         );
     }
@@ -344,7 +347,7 @@ pub(crate) mod tests {
         let error = build_write_plan(&request).expect_err("vague relation should fail");
 
         assert_eq!(
-            error,
+            error.message,
             "unsupported or vague kmp_write_memory relation `related_to`"
         );
     }
@@ -386,8 +389,8 @@ pub(crate) mod tests {
             json!("El despliegue de v0.7.0 se retrasó porque los auditores no firmaron.");
 
         let error = build_write_plan(&request).expect_err("no rendering, no strict write");
-        assert!(error.contains("requires summary_en"), "{error}");
-        assert!(error.contains("leans to spanish"), "{error}");
+        assert!(error.message.contains("requires summary_en"), "{error}");
+        assert!(error.message.contains("leans to spanish"), "{error}");
 
         request["current"]["summary_en"] =
             json!("The v0.7.0 launch was postponed because the auditors had not signed off.");
@@ -414,9 +417,11 @@ pub(crate) mod tests {
 
         let error = build_write_plan(&request).expect_err("a dropped identifier is refused");
 
-        assert!(error.contains("refuses summary_en"), "{error}");
+        assert!(error.message.contains("refuses summary_en"), "{error}");
         assert!(
-            error.contains("drops identifiers the text carries: v0.7.0"),
+            error
+                .message
+                .contains("drops identifiers the text carries: v0.7.0"),
             "{error}"
         );
     }
@@ -570,7 +575,9 @@ pub(crate) mod tests {
         let error =
             build_write_plan_with_root(&follows, false).expect_err("no other relation crosses");
         assert!(
-            error.contains("only with `same_event_as` or `same_entity_as`"),
+            error
+                .message
+                .contains("only with `same_event_as` or `same_entity_as`"),
             "{error}"
         );
 
@@ -578,13 +585,19 @@ pub(crate) mod tests {
         unproven["read_context"] = json!({"inspected_refs": ["incident:platform:outcome:freeze"]});
         let error = build_write_plan_with_root(&unproven, false)
             .expect_err("an inspection is not a proposal");
-        assert!(error.contains("read_context.relate_proposals"), "{error}");
+        assert!(
+            error.message.contains("read_context.relate_proposals"),
+            "{error}"
+        );
 
         let mut foreign_pair = cross_about_request();
         foreign_pair["read_context"]["relate_proposals"][0]["from"] =
             json!("incident:other:entry:x");
         let error = build_write_plan_with_root(&foreign_pair, false)
             .expect_err("one ref of the proposal must be this about's");
-        assert!(error.contains("read_context.relate_proposals"), "{error}");
+        assert!(
+            error.message.contains("read_context.relate_proposals"),
+            "{error}"
+        );
     }
 }

@@ -1040,6 +1040,53 @@
             "description": "Whether this response is a validated preview that wrote nothing.",
             "type": "boolean"
           },
+          "feedback": {
+            "description": "Refusal signals. Codes and paths come from validation, not message parsing. Never invent missing proof; acceptance needs no routine readback.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "arguments": {
+                          "description": "Complete arguments to execute that read.",
+                          "type": "object"
+                        },
+                        "tool": {
+                          "description": "Supported reading move, not proof that the proposed relation holds.",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "code": {
+                  "description": "Stable rule identifier.",
+                  "type": "string"
+                },
+                "field": {
+                  "description": "Argument path, for example memories[1].evidence; empty denotes the request as a whole.",
+                  "type": "string"
+                },
+                "reason": {
+                  "description": "What must be corrected using actual sources.",
+                  "type": "string"
+                },
+                "severity": {
+                  "description": "error for a refused write.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
           "generated_refs": {
             "description": "Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes.",
             "items": {

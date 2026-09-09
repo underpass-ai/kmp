@@ -9,6 +9,8 @@
 //! It is policy, not parsing: it takes what the caller already supplied and
 //! judges it. Extracting arguments from JSON stays with the writer.
 
+use super::validation_error::WriteValidationError;
+
 use kmp_domain::{MemoryRelationQuality, MemoryRelationType, RelationSemanticClass};
 use std::collections::BTreeSet;
 
@@ -36,39 +38,47 @@ pub(super) struct RelationQualityInput<'a> {
 
 pub(super) fn relation_quality_diagnostic(
     input: RelationQualityInput<'_>,
-) -> Result<Value, String> {
-    let spec = relation_spec(input.rel, input.strict)?;
+) -> Result<Value, WriteValidationError> {
+    let spec = relation_spec(input.rel, input.strict).map_err(|error| {
+        WriteValidationError::new(error)
+            .at("rel")
+            .code("INVALID_RELATION")
+    })?;
     let semantic_class = RelationSemanticClass::parse(input.semantic_class)
         .map_err(|error| format!("kmp_write_memory relation class is invalid: {error}"))?;
     if !spec.classes.contains(&semantic_class) {
-        return Err(format!(
+        return Err(WriteValidationError::new(format!(
             "kmp_write_memory relation `{}` cannot use class `{}`; expected one of {}",
             input.rel,
             input.semantic_class,
             class_names(spec.classes).join(", ")
-        ));
+        ))
+        .at("class")
+        .code("RELATION_CLASS_MISMATCH"));
     }
 
     let target_present = !input.to.trim().is_empty();
     let proof_complete = input.semantic_class == "structural"
         || (!input.why.trim().is_empty() && !input.evidence.trim().is_empty());
     if !target_present {
-        return Err(format!(
+        return Err(WriteValidationError::new(format!(
             "kmp_write_memory relation `{}` requires a target ref",
             input.rel
-        ));
+        )));
     }
     if input.from == input.to {
-        return Err(format!(
+        return Err(WriteValidationError::new(format!(
             "kmp_write_memory relation `{}` cannot point from and to the same ref `{}`",
             input.rel, input.from
-        ));
+        ))
+        .at("ref")
+        .code("SELF_RELATION"));
     }
     if input.strict && input.semantic_class != "structural" && !proof_complete {
-        return Err(format!(
+        return Err(WriteValidationError::new(format!(
             "kmp_write_memory relation `{}` requires both why and evidence in strict mode",
             input.rel
-        ));
+        )));
     }
 
     // The one relation that may cross an about: an equivalence, with why and
@@ -83,20 +93,20 @@ pub(super) fn relation_quality_diagnostic(
         let may_cross = MemoryRelationType::new(input.rel)
             .is_ok_and(|relation_type| relation_type.may_cross_abouts());
         if !may_cross {
-            return Err(format!(
+            return Err(WriteValidationError::new(format!(
                 "kmp_write_memory can connect to `{}` of another about only with `same_event_as` or `same_entity_as`, declared from a kmp_relate proposal; `{}` stays inside about `{}`",
                 input.to, input.rel, input.about
-            ));
+            )).at("ref").code("CROSS_ABOUT_RELATION"));
         }
         if input
             .read_context
             .relate_proposal_for(input.about, input.to)
             .is_none()
         {
-            return Err(format!(
+            return Err(WriteValidationError::new(format!(
                 "kmp_write_memory equivalence `{}` to `{}` of another about requires the kmp_relate proposal in read_context.relate_proposals: its from, to and proposed_by as kmp_relate returned them, one of the two refs belonging to about `{}`",
                 input.rel, input.to, input.about
-            ));
+            )).at("read_context.relate_proposals").global().code("RELATE_PROPOSAL_REQUIRED"));
         }
     }
     let prior_context_sources = if target_is_local {
@@ -110,10 +120,10 @@ pub(super) fn relation_quality_diagnostic(
         && !target_is_local
         && !prior_context_observed
     {
-        return Err(format!(
+        return Err(WriteValidationError::new(format!(
             "strict kmp_write_memory rich relation `{}` to `{}` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback",
             input.rel, input.to
-        ));
+        )).at("ref").code("PRIOR_CONTEXT_REQUIRED").action("kmp_inspect", json!({"about": input.about, "ref": input.to})));
     }
 
     let quality = if !input.strict
