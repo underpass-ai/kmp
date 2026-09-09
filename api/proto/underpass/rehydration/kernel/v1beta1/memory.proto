@@ -266,6 +266,8 @@ message WakeResponse {
   // first; the rest follow the causal spine, and `truncation` reports what
   // did not fit. Nothing of the core is shortened to make room for a label.
   repeated MemoryLabel labels = 8;
+  // Dimensions applied before forming both about context and proof.
+  DimensionSelection dimension_selection = 9;
 }
 
 // One label an about's memory carries: a `dimension` kind read as the key

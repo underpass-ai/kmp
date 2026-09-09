@@ -1269,7 +1269,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
+      "description": "Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -1657,6 +1657,139 @@
               "null"
             ]
           },
+          "scope": {
+            "additionalProperties": false,
+            "properties": {
+              "context": {
+                "description": "Response paths from the about context after dimensional filtering, before temporal selection. They can describe earlier or later memories; do not treat them as the selected historical state.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "context_time": {
+                "const": "unbounded",
+                "description": "Context does not apply the requested as_of or interval.",
+                "type": "string"
+              },
+              "dimensions": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Applied dimensional selection with explicit mode and scope defaults. Both proof and about context use it. The catalogue retains those entries' labels; a predicate does not filter individual catalogue labels. Null means the backend supplied no selection metadata.",
+                    "properties": {
+                      "abouts": {
+                        "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
+                        "items": {
+                          "description": "Memory about id.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "exclude": {
+                        "items": {
+                          "description": "Dimension kind to exclude.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "include": {
+                        "items": {
+                          "description": "Dimension kind to include.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "mode": {
+                        "enum": [
+                          "all",
+                          "only",
+                          "except"
+                        ],
+                        "type": "string"
+                      },
+                      "scope": {
+                        "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
+                        "enum": [
+                          "current_about",
+                          "abouts",
+                          "all_abouts"
+                        ],
+                        "type": "string"
+                      },
+                      "scope_ids": {
+                        "items": {
+                          "description": "Bare label value or complete label ref returned by KMP.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "selectors": {
+                        "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "key": {
+                              "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "op": {
+                              "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
+                              "enum": [
+                                "in",
+                                "notin",
+                                "exists",
+                                "notexists"
+                              ],
+                              "type": "string"
+                            },
+                            "values": {
+                              "items": {
+                                "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "op"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "request": {
+                "description": "Response paths supplied by the caller, not conclusions from stored memory.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "selection": {
+                "description": "Response paths based on the temporal selection declared in proof; requested dimensions also apply. Proof may explicitly identify outside matches or omitted evidence.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Four-line L0 resume summary: objective, status, blocker, and next action.",
             "type": "string"
@@ -1691,7 +1824,7 @@
                 "type": "array"
               },
               "current_state": {
-                "description": "Current semantic state selected from the rendered memory.",
+                "description": "State lines from about context, not a historical-state answer; see scope.context.",
                 "items": {
                   "type": "string"
                 },

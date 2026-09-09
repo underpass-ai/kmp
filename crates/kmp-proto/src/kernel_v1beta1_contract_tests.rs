@@ -126,6 +126,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "projection",
             "truncation",
             "labels",
+            "dimension_selection",
         ]
     );
     assert_eq!(

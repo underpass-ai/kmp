@@ -139,5 +139,14 @@ A complete action costs response tokens. Measure the full traversal with equal
 proof coverage before claiming any compression. These fixes do not change the
 separate Wake section-scope review or establish independent agent understanding.
 
-The remaining scope/signals review and agent evaluation still belong to their
-blocks. These increments do not authorize a benchmark reader awaiting human review.
+Wake now declares response paths derived from selected proof separately from
+about context. Its context is not time-bounded; applied dimensions and their
+predicates are reported for both groups. This metadata is counted before byte
+projection and preserved by the typed transport. A historical window can have
+empty proof and a null resume cursor while the about still has context and labels.
+The native lesson and transport checks exercise that distinction; the change does
+not reinterpret current-state prose as a historical answer.
+
+Executable Ask/Wake/Inspect actions and independent agent evaluation remain in
+their blocks. These increments do not authorize a benchmark reader awaiting
+human review.

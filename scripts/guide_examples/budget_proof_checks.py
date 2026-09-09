@@ -13,6 +13,24 @@ def check(saved, client, authored):
         assert any(e['text'] == source['memories'][0]['evidence'] for e in read['evidence'])
 
     boundary = saved['boundary']['entries']
+    historical = saved['historical_context']
+    supported = {ref for item in historical['proof']['evidence'] for ref in item['supports']}
+    assert supported.intersection(refs.values()) == {refs['constraint']}
+    source = authored['constraint']['memories'][0]
+    assert {item['text'] for item in historical['proof']['evidence']} == {
+        source['summary'], source['evidence']}
+    assert 'proof' in historical['scope']['selection']
+    assert 'wake.current_state' in historical['scope']['context']
+    assert historical['scope']['context_time'] == 'unbounded'
+    assert any(refs['decision'] in line for line in historical['wake']['current_state'])
+    empty = saved['empty_history']
+    assert not empty['proof']['evidence'] and empty['resume_cursor'] is None
+    assert empty['proof']['abouts_empty_in_selection'] == [authored['empty_history']['about']]
+    assert any(refs['unrelated'] in line for line in empty['wake']['current_state'])
+    assert all(label['value'] != 'export' for label in empty['labels'])
+    assert empty['scope']['selection'] == historical['scope']['selection']
+    assert empty['scope']['context'] == historical['scope']['context']
+    assert empty['scope']['dimensions']['selectors'] == authored['empty_history']['dimensions']['selectors']
     assert {e['ref'] for e in boundary} == {refs['constraint']}
     first, second = saved['temporal_first'], saved['temporal_second']
     assert not first['page']['has_more'] and not second['page']['has_more']
@@ -80,6 +98,7 @@ def check(saved, client, authored):
             'status': 'partial', 'required_bytes': partial['page']['required_bytes'],
             'next_call': {'tool': 'kmp_inspect', 'arguments': authored['inspect_complete']}}}
     return ['five source records retain text, kinds and evidence',
+            'historical proof and dimensionally filtered about context declare their distinct scope',
             'inclusive boundary and two temporal pages recover the half-open interval',
             'opaque continuation cursors preserve all bound selection arguments',
             'three trace pages retain the directed relation proof exactly',

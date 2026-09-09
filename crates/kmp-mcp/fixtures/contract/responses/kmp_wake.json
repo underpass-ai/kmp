@@ -27,18 +27,18 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9771
+        "used_bytes": 9800
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 22,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:18:24e8211147c76a5e8c81bbcfc7a99a3f3f60382ce49373f83c1d30cd6826b716\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:17:4d4d20e113c42c1eeaf4440879d27668bf0d8ba988eafe4455d6908ba32e4998\"; budget.tokens, budget.max_bytes, and page.entries may change.",
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:18:24e8211147c76a5e8c81bbcfc7a99a3f3f60382ce49373f83c1d30cd6826b716",
+        "next_cursor": "kmp1:17:4d4d20e113c42c1eeaf4440879d27668bf0d8ba988eafe4455d6908ba32e4998",
         "offset": 0,
-        "returned": 18,
+        "returned": 17,
         "total": 44
       },
       "sections": {
@@ -51,7 +51,7 @@
         "proof.evidence": {
           "core": 0,
           "eligible": 14,
-          "returned_on_page": 1,
+          "returned_on_page": 0,
           "total": 14
         },
         "proof.path": {
@@ -90,20 +90,7 @@
       "axis": null,
       "confidence": "medium",
       "conflicts": [],
-      "evidence": [
-        {
-          "id": "detail:evidence:question:parity:denver",
-          "metadata": {
-            "proof_role": "stored_evidence"
-          },
-          "source": "parity fixture",
-          "supports": [
-            "evidence:question:parity:denver"
-          ],
-          "text": "Rachel named Denver twice in the same conversation.",
-          "time": "2026-04-12T15:00:00Z"
-        }
-      ],
+      "evidence": [],
       "expired": [
         {
           "ref": "question:parity:claim:denver-detail",
@@ -191,15 +178,38 @@
       "sequence": 3,
       "time": "2026-04-12T18:00:00Z"
     },
+    "scope": {
+      "context": [
+        "summary",
+        "wake.current_state",
+        "wake.open_loops",
+        "wake.next_actions",
+        "labels"
+      ],
+      "context_time": "unbounded",
+      "dimensions": {
+        "mode": "all",
+        "scope": "current_about"
+      },
+      "request": [
+        "wake.objective"
+      ],
+      "selection": [
+        "proof",
+        "resume_cursor",
+        "wake.causal_spine",
+        "wake.guardrails"
+      ]
+    },
     "summary": "Objective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
     "truncation": {
       "byte_limit": 10000,
       "omitted": {
         "core_text_shortened": false,
         "excluded_by_detail": 22,
-        "page_items": 26,
+        "page_items": 27,
         "prior_page_items": 0,
-        "remaining_page_items": 26,
+        "remaining_page_items": 27,
         "selection_items": 0
       },
       "token_limit": 1600,

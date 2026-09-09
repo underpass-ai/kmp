@@ -698,6 +698,7 @@ impl KernelMemoryService for FakeMemoryService {
         self.recorded.wakes.lock().await.push(request.clone());
 
         let response = WakeResponse {
+            dimension_selection: None,
             summary: format!("Wake summary for {}.", request.about),
             labels: Vec::new(),
             wake: Some(WakePacket {
