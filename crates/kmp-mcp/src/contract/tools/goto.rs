@@ -5,7 +5,7 @@ use crate::contract::schema::temporal_family::temporal_tool_definition;
 pub(crate) fn definition() -> Value {
     temporal_tool_definition(
         "kmp_goto",
-        "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
+        "Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it.",
         "at",
     )
 }

@@ -3178,9 +3178,13 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
             1
         );
         assert_eq!(entries[0]["coordinates"][0]["dimension"], "document");
-        assert_eq!(result["page"]["has_more"], page_index == 0);
+        assert_eq!(result["page"]["has_more"], false);
+        assert_eq!(result["selection"]["has_more"], page_index == 0);
         if page_index == 0 {
-            page_args["from"] = json!({"ref":result["page"]["next_cursor"]});
+            let action = &result["next_actions"][0];
+            assert_eq!(action["tool"], "kmp_forward");
+            assert_eq!(action["arguments"]["dimensions"], page_args["dimensions"]);
+            page_args = action["arguments"].clone();
         }
     }
     paged_refs.sort();

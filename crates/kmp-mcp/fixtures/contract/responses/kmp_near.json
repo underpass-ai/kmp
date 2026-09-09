@@ -84,12 +84,100 @@
         "text": "Pin the answered surface, not only the advertised one."
       }
     ],
-    "next_action": "kmp_near is an anchor, not a self-paginator. Continue earlier with kmp_rewind using from.ref=\"question:parity:claim:denver\" and later with kmp_forward using from.ref=\"question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151\". Keep about, axis, dimensions, include, depth, budget, and limit unchanged. Do not pass page.next_cursor back to kmp_near.",
+    "next_actions": [
+      {
+        "arguments": {
+          "about": "question:parity",
+          "axis": "occurred",
+          "budget": {
+            "max_bytes": 40000
+          },
+          "from": {
+            "ref": "question:parity:claim:denver"
+          },
+          "include": {
+            "evidence": true,
+            "relations": true
+          }
+        },
+        "tool": "kmp_rewind"
+      },
+      {
+        "arguments": {
+          "about": "question:parity",
+          "axis": "occurred",
+          "budget": {
+            "max_bytes": 40000
+          },
+          "from": {
+            "ref": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
+          },
+          "include": {
+            "evidence": true,
+            "relations": true
+          }
+        },
+        "tool": "kmp_forward"
+      }
+    ],
     "page": {
-      "has_more": true,
-      "next_cursor": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
-      "returned": 3,
-      "total": 6
+      "has_more": false,
+      "next_cursor": null,
+      "offset": 0,
+      "returned": 28,
+      "sections": {
+        "entries": {
+          "remaining": 0,
+          "returned_on_page": 3,
+          "total": 3
+        },
+        "proof.conflicts": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.evidence": {
+          "remaining": 0,
+          "returned_on_page": 8,
+          "total": 8
+        },
+        "proof.expired": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.matched_relations": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.matched_terms": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.missing": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.path": {
+          "remaining": 0,
+          "returned_on_page": 16,
+          "total": 16
+        },
+        "proof.superseded": {
+          "remaining": 0,
+          "returned_on_page": 1,
+          "total": 1
+        },
+        "raw_refs": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        }
+      },
+      "total": 28
     },
     "proof": {
       "abouts_empty_in_selection": [],
@@ -492,6 +580,12 @@
       "truncated": true
     },
     "raw_refs": [],
+    "selection": {
+      "entries": 3,
+      "has_more": true,
+      "matching_entries": 6,
+      "scope": "selected_packet"
+    },
     "summary": "Returned 3 temporal entries.",
     "temporal": {
       "axis": "occurred",

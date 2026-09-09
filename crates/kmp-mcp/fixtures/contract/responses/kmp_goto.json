@@ -50,12 +50,89 @@
         "text": "She starts the new job in Denver in June."
       }
     ],
-    "next_action": "Continue the earlier history with kmp_rewind using from.ref=\"question:parity:claim:denver-detail\". Keep about, axis, dimensions, include, depth, budget, and limit unchanged. Do not pass this cursor back to kmp_goto.",
+    "next_actions": [
+      {
+        "arguments": {
+          "about": "question:parity",
+          "axis": "occurred",
+          "dimensions": {
+            "abouts": [
+              "question:parity"
+            ],
+            "include": [
+              "conversation"
+            ],
+            "mode": "only",
+            "scope": "abouts"
+          },
+          "from": {
+            "ref": "question:parity:claim:denver-detail"
+          },
+          "limit": {
+            "entries": 1
+          }
+        },
+        "tool": "kmp_rewind"
+      }
+    ],
     "page": {
-      "has_more": true,
-      "next_cursor": "question:parity:claim:denver-detail",
+      "has_more": false,
+      "next_cursor": null,
+      "offset": 0,
       "returned": 1,
-      "total": 2
+      "sections": {
+        "entries": {
+          "remaining": 0,
+          "returned_on_page": 1,
+          "total": 1
+        },
+        "proof.conflicts": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.evidence": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.expired": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.matched_relations": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.matched_terms": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.missing": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.path": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.superseded": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "raw_refs": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        }
+      },
+      "total": 1
     },
     "proof": {
       "abouts_empty_in_selection": [],
@@ -84,6 +161,12 @@
       "truncated": true
     },
     "raw_refs": [],
+    "selection": {
+      "entries": 1,
+      "has_more": true,
+      "matching_entries": 2,
+      "scope": "selected_packet"
+    },
     "summary": "Returned 1 temporal entry.",
     "temporal": {
       "axis": "occurred",

@@ -15,7 +15,9 @@ in March — is not a catch-up: it is one `kmp_ask` with that interval as
 For a bounded interval, use half-open UTC bounds `[start, end)`. `kmp_forward`
 is strictly after its cursor, so first use `kmp_goto` at `start` and retain only
 entries whose effective time equals the inclusive boundary. Then
-`kmp_forward` from `start`, continue every page while `page.has_more`, merge and
+`kmp_forward` from `start`. Execute the returned `next_actions`: finish the
+packet's entries and proof while `page.has_more`, then navigate remaining
+history while `selection.has_more` and it falls before `end`. Merge and
 deduplicate refs, and exclude entries at or after `end`. If a budget or
 selection cap prevents completion, report the exact continuation action
 instead of calling the partial result complete. Inspect relations that

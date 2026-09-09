@@ -409,7 +409,7 @@ boundary; the point lookup can also return older state in larger histories.
 Then Forward starts strictly after 08:00. A page is a slice, not the interval.
 
 The first Forward page contains D1 and T1. Preserve it and its opaque
-page.next_cursor. If the reading allowance ends here, report these refs,
+the returned next_actions call. If the reading allowance ends here, report these refs,
 the covered boundary, the unchanged clock/labels/limit/budget and the exact
 continuation call shown next. Do not answer as though R1 or later records
 had already been read. A continuation goes in from.ref; do not replace it
@@ -425,7 +425,7 @@ with the last record's timestamp or restart at the original time.
     "axis": "observed",
     "dimensions": {"mode": "only", "include": ["packet"], "selectors": [{"key": "packet", "op": "in", "values": ["PACK-8"]}]},
     "limit": {"entries": 10},
-    "budget": {"max_bytes": 12000}
+    "budget": {"max_bytes": 30000}
   }
 }
 ```
@@ -441,7 +441,7 @@ with the last record's timestamp or restart at the original time.
     "axis": "observed",
     "dimensions": {"mode": "only", "include": ["packet"], "selectors": [{"key": "packet", "op": "in", "values": ["PACK-8"]}]},
     "limit": {"entries": 2},
-    "budget": {"max_bytes": 12000}
+    "budget": {"max_bytes": 30000}
   }
 }
 ```
@@ -451,21 +451,15 @@ that selection with all bound arguments unchanged. In this small packet it
 returns R1 and X1; X1 is exactly at 12:00 and must be excluded from the
 half-open interval. Merge C1, D1, T1 and R1 by exact ref. Do not count X1,
 and do not count repeated coordinates of one entry as separate memories.
-If has_more stays true, keep the new cursor and continue the same operation.
+Complete page.has_more first by executing next_actions and collecting each section.
+Then selection.has_more reports remaining history; execute the returned navigation call.
 A repeated cursor without progress is a reason to stop and report the problem.
 
 ```json
 {
   "tool": "kmp_forward",
   "save_as": "temporal_second",
-  "arguments": {
-    "about": "example:guide:budget-proof",
-    "from": {"ref": "${temporal_first.page.next_cursor}"},
-    "axis": "observed",
-    "dimensions": {"mode": "only", "include": ["packet"], "selectors": [{"key": "packet", "op": "in", "values": ["PACK-8"]}]},
-    "limit": {"entries": 2},
-    "budget": {"max_bytes": 12000}
-  }
+  "arguments": "${temporal_first.next_actions.0.arguments}"
 }
 ```
 
@@ -477,7 +471,7 @@ R1 verified_by T1, T1 uses_background D1, D1 chosen_because C1. Each link's
 reason and evidence still need to support its own claim.
 
 Limit the response to one relation per page. Trace continuation uses
-page.cursor, unlike the temporal from.ref above. Keep both endpoints,
+page.cursor; the temporal next_actions above carries its own complete arguments. Keep both endpoints,
 about, depth, byte budget and page size unchanged. Save each returned edge
 and verify that new edges arrive and the opaque cursor advances; a page
 marker is not a new path selection. Trace has no offset field to inspect.

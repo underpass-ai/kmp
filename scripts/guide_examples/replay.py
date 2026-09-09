@@ -109,7 +109,7 @@ def run(args):
                     arguments = bind(call['arguments'], saved)
                     result = client.call(call['tool'], arguments, call.get('expect_error'))
                     if call.get('expect_partial'):
-                        pages = (result.get('page', {}), result.get('projection', {}).get('page', {}))
+                        pages = (result.get('page', {}), result.get('projection', {}).get('page', {}), result.get('selection', {}))
                         if not any(page.get('has_more') for page in pages):
                             raise ValueError('Expected an explicitly partial teaching response')
                     else:

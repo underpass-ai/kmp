@@ -15,11 +15,10 @@ def check(saved, client, authored):
     boundary = saved['boundary']['entries']
     assert {e['ref'] for e in boundary} == {refs['constraint']}
     first, second = saved['temporal_first'], saved['temporal_second']
-    assert first['page']['has_more'] and not second['page']['has_more']
-    assert first['page']['next_cursor']
-    assert authored['temporal_second']['from'] == {'ref': first['page']['next_cursor']}
-    assert {k: v for k, v in authored['temporal_first'].items() if k != 'from'} == {
-        k: v for k, v in authored['temporal_second'].items() if k != 'from'}
+    assert not first['page']['has_more'] and not second['page']['has_more']
+    assert first['selection']['has_more'] and not second['selection']['has_more']
+    assert authored['temporal_second'] == first['next_actions'][0]['arguments']
+    assert first['next_actions'][0]['tool'] == 'kmp_forward'
     assert {e['ref'] for e in first['entries']} == {refs['decision'], refs['test']}
     assert {e['ref'] for e in second['entries']} == {refs['result'], refs['unrelated']}
     entries = boundary + first['entries'] + second['entries']

@@ -46,17 +46,36 @@ Resolve relative dates in the user's timezone. If the timezone is genuinely
 unknown and changes the answer, ask for it. Convert a bounded calendar window
 to an explicit half-open UTC interval `[start, end)`. Use `kmp_goto`,
 `kmp_near`, `kmp_rewind` or `kmp_forward`, keep only entries whose effective
-time is inside the interval, and continue while `page.has_more`.
+time is inside the interval, and follow the returned `next_actions`.
 
 The start is inclusive but `kmp_forward` is strictly after its cursor. First
 call `kmp_goto` at `start` and retain entries whose effective time equals
 `start`; discard older state. Then call `kmp_forward` from the same `start` for
-the strictly later entries. Merge and deduplicate refs from both reads. Put
-each returned `page.next_cursor` in the next move's cursor field — for example
-`from.ref` for `kmp_forward` — while keeping the other arguments unchanged.
+the strictly later entries. Merge and deduplicate refs from both reads. Execute
+the returned `next_actions` with their complete arguments.
 Exclude entries at or after `end`. If a budget or selection cap prevents a
 complete boundary probe or interval, report the exact continuation action;
 never call a partial page the whole period.
+
+## Complete the selected packet before navigating onward
+
+`page.has_more` means entry or proof items remain in this response selection.
+Execute `next_actions` exactly, appending each section using `page.sections`.
+`page.next_cursor` is opaque and belongs in `page.cursor`; it is never a memory
+ref. A cursor binds the verb, arguments and complete selected content. Changing
+a filter, clock, entry limit or stored proof rejects it; the error supplies a
+fresh read. Only `page.entries` and `budget.max_bytes` may vary while continuing.
+
+After the packet is complete, `selection.has_more` reports history outside it.
+The returned actions then navigate that history; Near can offer earlier and
+later calls. Top-level summary, coverage and quality describe the selected
+packet, while page counts describe the items carried by this response. Neither
+establishes that all memory or the user's entire question has been covered.
+
+If no complete next item fits, `page.minimum_progress_bytes` names the required
+budget and `next_actions` supplies a retry that admits an item. If the allowance
+cannot increase, report the exact pending action and partial coverage. Do not
+repeat an empty page at the unchanged budget.
 
 ## `observed_at` is the real clock, in UTC
 

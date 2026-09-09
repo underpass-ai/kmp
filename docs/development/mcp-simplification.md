@@ -93,3 +93,28 @@ The writer acceptance checks exercise the returned action, restart, later search
 summary changes, bundle import and the native/gRPC boundary. They do not establish
 independent agent understanding. The requested Luna/Terra/Sol writer check follows
 writer integration while the next block implements reading and continuations.
+
+## Reading increment: bounded temporal response pages
+
+The independent writer check exposed a stored packet whose complete proof kept
+all three selected entries out of a 30,000-byte response. Temporal verbs now page
+entries and proof as complete items. The reader appends each section and executes
+the returned `next_actions` until `page.has_more` is false. `selection.has_more`
+then distinguishes history outside the kernel's selected packet; its actions
+navigate that history without guessing a new clock, selector or boundary.
+
+The opaque response cursor binds the selected content and query arguments. A
+changed selection returns a conflict and a fresh-read action. Byte allowance and
+response item count may change; an indivisible item returns the minimum budget
+and a retry that makes progress. Stable selection metadata can itself exceed an
+unreasonably small byte budget, which remains explicit in the response.
+
+This is an MCP projection over the same typed kernel selection, shared by embedded
+and gRPC transports. It adds no reader session or stored pagination state; each
+continuation recomputes the bounded selection. It does not promise a snapshot
+across subsequent temporal moves or reduced total traversal tokens. Native tests
+reconstruct complete sections and execute the actions, including transport parity.
+
+Direct interval arguments and field projection remain pending in block 3. This
+increment does not complete the reading block or authorize a benchmark reader
+awaiting human review.

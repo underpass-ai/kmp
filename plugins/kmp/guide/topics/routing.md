@@ -88,6 +88,10 @@ Route again after every response:
   repository files while a relevant KMP page or interval is incomplete. If
   files are consulted after the memory route is complete, identify them as
   repository evidence rather than stored KMP evidence.
-- A temporal response with `page.has_more=true` must consume
-  `page.next_cursor` until complete or report the exact continuation. Never
-  present the first page as the interval.
+- A temporal response with `page.has_more=true` still owes entry or proof
+  items. Execute its `next_actions` with all arguments unchanged until the
+  response packet is complete, or report the pending action. Its opaque
+  `page.next_cursor` is not a memory ref. Then `selection.has_more` identifies
+  history outside that packet; use the returned navigation actions as needed
+  for the requested interval. Never present one response page or one selected
+  packet as the entire interval.
