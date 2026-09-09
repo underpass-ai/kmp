@@ -32,6 +32,16 @@ pub(crate) fn build_write_plan_with_root(
     arguments: &Value,
     allow_unlinked_root: bool,
 ) -> Result<KernelWritePlan, String> {
+    build_write_plan_with_local_refs(arguments, allow_unlinked_root, &BTreeSet::new())
+}
+
+/// All batch entry refs are known before any member is compiled. They are
+/// current-request context, never a claim that a stored target was inspected.
+pub(super) fn build_write_plan_with_local_refs(
+    arguments: &Value,
+    allow_unlinked_root: bool,
+    batch_refs: &BTreeSet<String>,
+) -> Result<KernelWritePlan, String> {
     let arguments = arguments
         .as_object()
         .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
@@ -53,11 +63,19 @@ pub(crate) fn build_write_plan_with_root(
             .and_then(|value| u32::try_from(value).ok())
             .filter(|value| *value > 0),
     };
-    let scope = required_object(arguments, "scope")?;
+    let scope = if batch_refs.is_empty() {
+        Some(required_object(arguments, "scope")?)
+    } else {
+        // Packet records use their explicit memberships without synthesizing
+        // a process scope. The single-current contract still requires it.
+        arguments.get("scope").and_then(Value::as_object)
+    };
     let read_context = ReadContext::from_arguments(arguments)?;
-    let process_scope = required_map_string(scope, "process", "scope.process")?;
-    let task_scope = optional_map_string(scope, "task");
-    let episode_scope = optional_map_string(scope, "episode");
+    let process_scope = scope
+        .map(|scope| required_map_string(scope, "process", "scope.process"))
+        .transpose()?;
+    let task_scope = scope.and_then(|scope| optional_map_string(scope, "task"));
+    let episode_scope = scope.and_then(|scope| optional_map_string(scope, "episode"));
     let labels = writer_labels(
         process_scope,
         task_scope,
@@ -149,7 +167,10 @@ pub(crate) fn build_write_plan_with_root(
         )
     };
     let mut generated_refs = vec![current_ref.clone()];
-    let mut local_refs = BTreeSet::from([current_ref.clone()]);
+    let mut local_refs = std::borrow::Cow::Borrowed(batch_refs);
+    if !local_refs.contains(&current_ref) {
+        local_refs.to_mut().insert(current_ref.clone());
+    }
     let mut dimensions = Vec::new();
     let mut coordinates = Vec::new();
     for label in &labels {
@@ -294,7 +315,7 @@ pub(crate) fn build_write_plan_with_root(
             )
         };
         reject_duplicate_ref(&mut generated_refs, &delta_ref)?;
-        local_refs.insert(delta_ref.clone());
+        local_refs.to_mut().insert(delta_ref.clone());
         entries.push(json!({
             "id": delta_ref.clone(),
             "kind": "semantic_delta",
@@ -395,6 +416,7 @@ pub(crate) fn build_write_plan_with_root(
 
     Ok(KernelWritePlan {
         about,
+        local_refs: Default::default(),
         dry_run,
         ingest_arguments,
         generated_refs,
@@ -412,11 +434,11 @@ pub(crate) fn build_write_plan_with_root(
 
 /// The labels a write emits, in the order the ingest has always carried
 /// them: the well-known task, process and episode scopes first, then the
-/// caller's own `labels` by key. `scope.process` is the one label every
-/// write carries; `scope.task` and `scope.episode` are the two well-known
-/// ones; `labels` adds memberships, including further values under those keys.
+/// caller's own `labels` by key. Packet records can supply only labels;
+/// the single-current form provides the well-known process/task/episode
+/// memberships through scope. Neither path invents a label.
 fn writer_labels(
-    process: &str,
+    process: Option<&str>,
     task: Option<&str>,
     episode: Option<&str>,
     labels: Option<&Value>,
@@ -430,12 +452,14 @@ fn writer_labels(
             "Kernel write task",
         ));
     }
-    emitted.push(WriterLabel::new(
-        "agentic_process",
-        process,
-        "scope.process",
-        "Kernel write process",
-    ));
+    if let Some(process) = process {
+        emitted.push(WriterLabel::new(
+            "agentic_process",
+            process,
+            "scope.process",
+            "Kernel write process",
+        ));
+    }
     if let Some(episode) = episode {
         emitted.push(WriterLabel::new(
             "agentic_episode",
@@ -459,6 +483,12 @@ fn writer_labels(
         }
     }
     validate_distinct_labels(&emitted)?;
+    if emitted.is_empty() {
+        return Err(
+            "labels must declare at least one key/value membership for temporal navigation"
+                .to_string(),
+        );
+    }
     Ok(emitted)
 }
 

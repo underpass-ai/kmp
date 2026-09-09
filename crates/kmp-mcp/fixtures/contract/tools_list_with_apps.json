@@ -513,55 +513,77 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+      "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
       "inputSchema": {
         "additionalProperties": false,
         "else": {
-          "if": {
-            "not": {
+          "else": {
+            "if": {
+              "not": {
+                "properties": {
+                  "options": {
+                    "properties": {
+                      "strict": {
+                        "const": false
+                      }
+                    },
+                    "required": [
+                      "strict"
+                    ]
+                  }
+                },
+                "required": [
+                  "options"
+                ]
+              }
+            },
+            "properties": {
+              "current": {
+                "required": [
+                  "kind",
+                  "summary"
+                ]
+              }
+            },
+            "then": {
               "properties": {
-                "options": {
-                  "properties": {
-                    "strict": {
-                      "const": false
-                    }
-                  },
+                "current": {
                   "required": [
-                    "strict"
+                    "evidence"
                   ]
                 }
-              },
-              "required": [
-                "options"
-              ]
+              }
             }
           },
-          "properties": {
-            "current": {
-              "required": [
-                "kind",
-                "summary"
-              ]
-            }
+          "if": {
+            "properties": {
+              "intent": {
+                "const": "record_summary"
+              }
+            },
+            "required": [
+              "intent"
+            ]
           },
+          "required": [
+            "intent",
+            "scope",
+            "current"
+          ],
           "then": {
             "properties": {
               "current": {
                 "required": [
-                  "evidence"
+                  "ref",
+                  "summary_en"
                 ]
               }
             }
           }
         },
         "if": {
-          "properties": {
-            "intent": {
-              "const": "record_summary"
-            }
-          },
           "required": [
-            "intent"
+            "memories"
           ]
         },
         "properties": {
@@ -735,6 +757,190 @@
             },
             "description": "Labels as key-to-array values, for example alias: [neb, nebula]. Keys name dimensions; each key/value pair becomes a coordinate with the same clocks. The same value under another key is a distinct label. Additional values under scope keys are allowed; repeating an exact pair is an error. Read the about catalogue to reuse intended vocabulary.",
             "type": "object"
+          },
+          "memories": {
+            "description": "One or more semantic records committed atomically in this about. Use kind once per record; no top-level intent/current/scope/connect_to/semantic_delta. Shared labels are unioned with each record's labels; at least one membership is required per record. Each record inherits clocks unless overridden. KMP resolves local ids and validates the entire packet before writing anything.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "connect_to": {
+                  "description": "Justified links to records in this packet or stored memories. Independent source facts may be unlinked; never invent a relation to satisfy a shape.",
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "class": {
+                        "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                        "enum": [
+                          "structural",
+                          "causal",
+                          "motivational",
+                          "procedural",
+                          "evidential",
+                          "constraint"
+                        ],
+                        "type": "string"
+                      },
+                      "confidence": {
+                        "enum": [
+                          "high",
+                          "medium",
+                          "low",
+                          "unknown"
+                        ],
+                        "type": "string"
+                      },
+                      "evidence": {
+                        "description": "The concrete observation or source that supports the relation rationale. Required for non-structural relations.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "ref": {
+                        "description": "@local-id in this packet, or an existing canonical ref. Rich links to packet members use current_request context; stored targets require read_context. Cross-about equivalence still requires a kmp_relate proposal.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "rel": {
+                        "description": "Canonical relation type. Choose it from source evidence; use the relation guide for classes and examples. Honest fallback relations do not imply a richer dependency.",
+                        "enum": [
+                          "follows",
+                          "answers",
+                          "uses_background",
+                          "depends_on",
+                          "chosen_because",
+                          "triggers",
+                          "authorizes",
+                          "verified_by",
+                          "semantic_delta_from",
+                          "updates_state",
+                          "supports",
+                          "supersedes",
+                          "contradicts",
+                          "satisfies_constraint",
+                          "violates_constraint",
+                          "contributes_to",
+                          "excluded_from",
+                          "checked_against",
+                          "derived_from",
+                          "confirms_selection",
+                          "restates",
+                          "corrects",
+                          "component_of",
+                          "total_of",
+                          "same_event_as",
+                          "same_entity_as",
+                          "qualifies_as",
+                          "matches_requirement",
+                          "contains",
+                          "member_of",
+                          "scoped_to"
+                        ],
+                        "type": "string"
+                      },
+                      "why": {
+                        "description": "Why this specific semantic connection holds and what a later reader should understand when traversing it. Required for non-structural relations.",
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "ref",
+                      "rel",
+                      "class"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "evidence": {
+                  "description": "Direct evidence for the new memory entry. Required when options.strict is omitted or true; optional only when the caller explicitly sets options.strict=false.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "id": {
+                  "description": "Local name in this packet. Use @name in connect_to.ref, including forward links. Returned local_refs maps names to canonical refs.",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+                  "type": "string"
+                },
+                "kind": {
+                  "description": "Stored semantic kind; the writer operation is inferred.",
+                  "enum": [
+                    "turn",
+                    "observation",
+                    "decision",
+                    "feedback",
+                    "semantic_delta",
+                    "constraint",
+                    "preference",
+                    "derived_value",
+                    "error_path",
+                    "success_path"
+                  ],
+                  "type": "string"
+                },
+                "labels": {
+                  "additionalProperties": {
+                    "description": "The values this memory stands in under this key.",
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "description": "Per-record memberships, unioned with the shared top-level labels. Declare all source-backed values; labels alone do not prove entity equivalence.",
+                  "type": "object"
+                },
+                "observed_at": {
+                  "description": "RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused — read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "occurred_at": {
+                  "description": "Optional RFC3339 timestamp for when the recorded fact or event happened. Omit it when the writer does not know; observed_at is not a substitute.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "rank": {
+                  "description": "Optional positive rank within each emitted coordinate.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "ref": {
+                  "description": "Omit for a new record. An explicit canonical ref updates that exact entry and must belong to this about. It cannot name the anchor or an internal dimension/evidence object.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "summary": {
+                  "description": "Concise semantic memory text to store, in the language of the work. This is what kmp_ask cites, byte for byte.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "summary_en": {
+                  "description": "English search rendering of summary, retaining its numbers, identifiers and acronyms. Strict mode requires it for non-English text and rejects a faulty rendering; original summary remains the cited source. Consult Write for the rendering rules.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "valid_from": {
+                  "description": "Optional RFC3339 start of the interval in which the recorded state is valid.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "valid_until": {
+                  "description": "Optional RFC3339 exclusive end of the interval in which the recorded state is valid.",
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "summary"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
           },
           "observed_at": {
             "description": "RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused — read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error.",
@@ -969,19 +1175,67 @@
         },
         "required": [
           "about",
-          "intent",
           "actor",
-          "observed_at",
-          "scope",
-          "current"
+          "observed_at"
         ],
         "then": {
-          "properties": {
-            "current": {
+          "if": {
+            "not": {
+              "properties": {
+                "options": {
+                  "properties": {
+                    "strict": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "strict"
+                  ]
+                }
+              },
               "required": [
-                "ref",
-                "summary_en"
+                "options"
               ]
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "current"
+                ]
+              },
+              {
+                "required": [
+                  "intent"
+                ]
+              },
+              {
+                "required": [
+                  "scope"
+                ]
+              },
+              {
+                "required": [
+                  "connect_to"
+                ]
+              },
+              {
+                "required": [
+                  "semantic_delta"
+                ]
+              }
+            ]
+          },
+          "then": {
+            "properties": {
+              "memories": {
+                "items": {
+                  "required": [
+                    "evidence"
+                  ]
+                }
+              }
             }
           }
         },
@@ -1034,6 +1288,13 @@
                 "type": "array"
               }
             },
+            "type": "object"
+          },
+          "local_refs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "For a memories packet, local id to canonical memory ref. Preview refs are planned; accepted=true confirms persistence.",
             "type": "object"
           },
           "next_suggested_reads": {

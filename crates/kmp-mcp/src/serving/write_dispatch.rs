@@ -12,8 +12,8 @@ use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_su
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 use crate::write::{
-    build_summary_plan, build_write_plan_with_root, is_summary_write, summary_target,
-    write_commit_result, write_dry_run_result,
+    build_batch_plan, build_summary_plan, build_write_plan_with_root, is_summary_write,
+    summary_target, write_commit_result, write_dry_run_result,
 };
 
 impl KernelMcpServer {
@@ -25,7 +25,8 @@ impl KernelMcpServer {
     ) -> String {
         // A summary attaches to a memory that exists, so the unlinked-root
         // allowance has nothing to say about it and its read is not made.
-        let preflight = if is_summary_write(arguments) {
+        let is_batch = arguments.get("memories").is_some();
+        let preflight = if is_batch || is_summary_write(arguments) {
             Ok(false)
         } else {
             self.allow_unlinked_strict_root(arguments).await
@@ -45,7 +46,9 @@ impl KernelMcpServer {
                 return jsonrpc_result(id, tool_error_result(&error));
             }
         };
-        let planned = if is_summary_write(arguments) {
+        let planned = if is_batch {
+            build_batch_plan(arguments)
+        } else if is_summary_write(arguments) {
             self.plan_summary_write(arguments).await
         } else {
             build_write_plan_with_root(arguments, allow_unlinked_root)

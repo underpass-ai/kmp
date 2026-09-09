@@ -141,7 +141,7 @@ mod tests {
         assert!(writer_description.contains("Normal writes are one call"));
         assert!(writer_description.contains("validation failures write nothing"));
         assert!(writer_description.contains("explicitly requested preview"));
-        assert_eq!(tools[1]["inputSchema"]["required"][1], "intent");
+        assert_eq!(tools[1]["inputSchema"]["required"][1], "actor");
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["connect_to"]["items"]["properties"]["rel"]["enum"]
                 [0],
@@ -369,6 +369,7 @@ mod tests {
                 "idempotency_key",
                 "intent",
                 "labels",
+                "memories",
                 "occurred_at",
                 "observed_at",
                 "options",

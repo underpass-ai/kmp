@@ -5,6 +5,7 @@ use serde_json::Value;
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct KernelWritePlan {
     pub(crate) about: String,
+    pub(crate) local_refs: std::collections::BTreeMap<String, String>,
     pub(crate) dry_run: bool,
     pub(crate) ingest_arguments: Value,
     pub(crate) generated_refs: Vec<String>,

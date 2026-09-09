@@ -63,3 +63,19 @@ relations, clocks and validity intact in storage. Compare compact native output
 with the completed uncompressed contract using answer quality, proof retention,
 whole-session tokens (including expansions) and total latency. This is a later
 experiment, not a dependency on SuperCompress or part of this integration goal.
+
+## Writing increments on integration
+
+Store-validated previews are integrated in #580. The semantic packet increment
+adds `memories`: one about, one canonical ingest, local ids resolved before any
+member is committed. Shared labels union with per-record memberships; the kind
+selects the ordinary operation. Independent source facts can be unlinked, while
+all claimed rich relations retain proof requirements. Per-record observation,
+occurrence and validity remain distinct from the packet's provenance and the
+kernel's actual ingestion clock.
+
+The current-entry form remains available during these integration increments.
+This is not a compatibility commitment: consolidating the final public writer
+shape, compact recoverable receipts, declared coverage and structured repair
+signals still belongs to block 2. A native packet replay is not independent
+agent evaluation and does not resume a reader awaiting human review.

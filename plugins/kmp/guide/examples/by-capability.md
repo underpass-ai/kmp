@@ -1,6 +1,6 @@
 # Find a concrete example by capability
 
-Start with [one decision and its reason](./first-decision.md). It has two
+Start with [one semantic packet](./semantic-batch.md) for local ids and an atomic write, or [one decision and its reason](./first-decision.md). It has two
 source lines and a direct write → inspect → retrieve → audit path. The other
 basic files group independent small cases so each relation has its own source,
 rationale and limit. Read the source and prerequisite writes before a selected

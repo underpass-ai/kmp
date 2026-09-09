@@ -9,7 +9,7 @@ pub(crate) fn write_dry_run_result(
     validation: Value,
     backend: &str,
 ) -> Value {
-    json!({
+    let mut result = json!({
         "accepted": false,
         "dry_run": true,
         "validation": {"scope": if backend == "fixture" { "fixture" } else { "current_store" }},
@@ -23,7 +23,11 @@ pub(crate) fn write_dry_run_result(
         "ingest_preview": plan.ingest_arguments,
         "diagnostics": plan.diagnostics,
         "next_suggested_reads": plan.next_suggested_reads
-    })
+    });
+    if !plan.local_refs.is_empty() {
+        result["local_refs"] = json!(plan.local_refs);
+    }
+    result
 }
 
 pub(crate) fn write_commit_result(
@@ -50,6 +54,9 @@ pub(crate) fn write_commit_result(
         "diagnostics": plan.diagnostics,
         "next_suggested_reads": plan.next_suggested_reads
     });
+    if !plan.local_refs.is_empty() {
+        result["local_refs"] = json!(plan.local_refs);
+    }
     if let Some(url) = viewer_url {
         result["viewer"] = viewer_invitation(url);
     }
