@@ -1020,7 +1020,7 @@ fn max_text_chars(value: &Value) -> usize {
         Value::Array(items) => items.iter().map(max_text_chars).max().unwrap_or(0),
         Value::Object(object) => object
             .iter()
-            .filter(|(key, _)| !is_reference_key(key))
+            .filter(|(key, value)| can_shorten(key, value))
             .map(|(_, value)| max_text_chars(value))
             .max()
             .unwrap_or(0),
@@ -1055,11 +1055,35 @@ fn truncate_json_text(value: &mut Value, max_chars: usize) -> usize {
             .sum(),
         Value::Object(object) => object
             .iter_mut()
-            .filter(|(key, _)| !is_reference_key(key))
+            .filter(|(key, value)| can_shorten(key, value))
             .map(|(_, value)| truncate_json_text(value, max_chars))
             .sum(),
         _ => 0,
     }
+}
+
+// Only prose can be shortened. Enums, clocks, matched terms, identifiers
+// and provenance remain data even when their serialized representation is text.
+fn can_shorten(key: &str, value: &Value) -> bool {
+    if is_reference_key(key) || key == "metadata" {
+        return false;
+    }
+    matches!(
+        key,
+        "summary"
+            | "answer"
+            | "text"
+            | "why"
+            | "evidence"
+            | "objective"
+            | "current_state"
+            | "open_loops"
+            | "next_actions"
+            | "guardrails"
+    ) || value.is_object()
+        || value
+            .as_array()
+            .is_some_and(|items| items.iter().any(Value::is_object))
 }
 
 fn is_reference_key(key: &str) -> bool {
@@ -1212,7 +1236,7 @@ pub fn wake_value(response: &WakeResponse) -> Value {
             "next_actions": wake.map(|wake| wake.next_actions.clone()).unwrap_or_default(),
             "guardrails": wake.map(|wake| wake.guardrails.clone()).unwrap_or_default()
         },
-        "proof": response.proof.as_ref().map(proof_value).unwrap_or_else(empty_proof_value),
+        "proof": response.proof.as_ref().map(|proof| proof_value(proof, response.projection.is_none())).unwrap_or_else(empty_proof_value),
         "labels": response.labels.iter().map(memory_label_value).collect::<Vec<_>>(),
         "resume_cursor": response.resume_cursor.as_ref().map(temporal_cursor_value).unwrap_or(Value::Null),
         "warnings": response.warnings
@@ -1231,12 +1255,16 @@ pub fn ask_value(response: &AskResponse) -> Value {
         .as_ref()
         .map(|proof| proof.evidence.as_slice())
         .unwrap_or_default();
-    let answer = normalized_ask_answer(&response.answer, &response.because, evidence);
+    let answer = if response.projection.is_some() {
+        response.answer.clone()
+    } else {
+        normalized_ask_answer(&response.answer, &response.because, evidence)
+    };
     let mut value = json!({
         "summary": response.summary,
         "answer": if answer.trim().is_empty() { Value::Null } else { Value::String(answer) },
-        "because": response.because.iter().map(|reason| answer_reason_value(reason, evidence)).collect::<Vec<_>>(),
-        "proof": response.proof.as_ref().map(proof_value).unwrap_or_else(empty_proof_value),
+        "because": response.because.iter().map(|reason| if response.projection.is_some() { raw_answer_reason_value(reason) } else { answer_reason_value(reason, evidence) }).collect::<Vec<_>>(),
+        "proof": response.proof.as_ref().map(|proof| proof_value(proof, response.projection.is_none())).unwrap_or_else(empty_proof_value),
         "warnings": response.warnings
     });
     if !response.asked_as.is_empty() {
@@ -1311,9 +1339,24 @@ fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskResponse {
         .iter()
         .map(|reason| normalized_answer_reason(reason, evidence))
         .collect::<Vec<_>>();
-    response.because = select_projected(&normalized, &projected_reasons, |reason| {
-        answer_reason_value(reason, evidence)
-    });
+    response.because = projected_reasons
+        .iter()
+        .filter_map(|wanted| {
+            let mut reason = normalized
+                .iter()
+                .find(|reason| {
+                    wanted["ref"].as_str() == Some(reason.r#ref.as_str())
+                        && wanted["claim"].as_str() == Some(reason.claim.as_str())
+                })?
+                .clone();
+            reason.evidence = wanted
+                .get("evidence")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            (raw_answer_reason_value(&reason) == *wanted).then_some(reason)
+        })
+        .collect();
     if let Some(proof) = response.proof.as_mut()
         && let Some(projected) = value.get("proof")
     {
@@ -1583,9 +1626,9 @@ fn truncation_from_value(value: &Value) -> Option<RecallTruncation> {
     })
 }
 
-fn proof_value(proof: &kmp_proto::v1beta1::Proof) -> Value {
+fn proof_value(proof: &kmp_proto::v1beta1::Proof, normalize: bool) -> Value {
     json!({
-        "path": proof.path.iter().map(|relation| memory_relation_value(&normalized_proof_relation(relation, &proof.evidence))).collect::<Vec<_>>(),
+        "path": proof.path.iter().map(|relation| if normalize { memory_relation_value(&normalized_proof_relation(relation, &proof.evidence)) } else { memory_relation_value(relation) }).collect::<Vec<_>>(),
         "evidence": proof.evidence.iter().map(memory_evidence_value).collect::<Vec<_>>(),
         "conflicts": proof.conflicts,
         "superseded": proof.superseded.iter().map(superseded_value).collect::<Vec<_>>(),
@@ -1700,7 +1743,10 @@ fn normalized_answer_reason(reason: &AnswerReason, evidence: &[MemoryEvidence]) 
 }
 
 fn answer_reason_value(reason: &AnswerReason, evidence: &[MemoryEvidence]) -> Value {
-    let reason = normalized_answer_reason(reason, evidence);
+    raw_answer_reason_value(&normalized_answer_reason(reason, evidence))
+}
+
+fn raw_answer_reason_value(reason: &AnswerReason) -> Value {
     let mut value = Map::new();
     value.insert("claim".to_string(), json!(reason.claim));
     insert_non_empty(&mut value, "evidence", &reason.evidence);
@@ -2435,6 +2481,79 @@ mod tests {
             let path = outputs[0]["proof"]["path"].as_array().expect("path").len();
             assert!(path >= previous_path, "larger byte budget lost proof path");
             previous_path = path;
+        }
+    }
+
+    #[test]
+    fn bounded_ask_roundtrip_retains_every_projected_field() {
+        let mut response = typed_ask_fixture(24);
+        for (index, evidence) in response
+            .proof
+            .as_mut()
+            .expect("proof")
+            .evidence
+            .iter_mut()
+            .enumerate()
+        {
+            evidence.text = format!(
+                "Fact {index}: {}",
+                "The team verified the refresh race in request logs. ".repeat(20)
+            );
+        }
+        for (index, reason) in response.because.iter_mut().enumerate() {
+            reason.evidence = format!(
+                "Rationale {index}: {}",
+                "The selected retry directly addresses the observed refresh race. ".repeat(20)
+            );
+        }
+        response.answer = "The selected retry addresses the refresh race. ".repeat(30);
+        for max_bytes in [3_000, 6_500, 8_000, 12_000] {
+            let mut request = AskRequest {
+                about: "project:kmp".into(),
+                question: "Which storage engine is current?".into(),
+                budget: Some(kmp_proto::v1beta1::MemoryBudget {
+                    max_bytes,
+                    detail: MemoryDetailLevel::Full as i32,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
+            let mut cursors = BTreeSet::new();
+            loop {
+                let expected = projected(ask_value(&response), ask_arguments(&request));
+                let typed =
+                    project_ask_response(response.clone(), &request).expect("typed projection");
+                let actual = ask_value(&typed);
+                assert_eq!(
+                    actual, expected,
+                    "the typed round trip must retain the exact planned JSON at {max_bytes} bytes"
+                );
+                assert_eq!(
+                    actual["projection"]["budget"]["used_bytes"],
+                    serde_json::to_vec(&actual).expect("serialized page").len()
+                );
+                let page = typed.projection.expect("projection").page.expect("page");
+                if !page.has_more {
+                    break;
+                }
+                let cursor = page.next_cursor.expect("continuation");
+                if !cursors.insert(cursor.clone()) {
+                    assert!(
+                        actual["projection"]["next_action"]
+                            .as_str()
+                            .is_some_and(|action| action.contains("Increase budget.max_bytes")),
+                        "a stalled page must explain how to continue"
+                    );
+                    let budget = request.budget.as_mut().expect("budget");
+                    assert!(
+                        budget.max_bytes < 30_000,
+                        "this fixture must advance with its full budget"
+                    );
+                    budget.max_bytes = 30_000;
+                }
+                assert!(cursors.len() <= 32, "finite fixture must finish");
+                request.page = Some(kmp_proto::v1beta1::PageRequest { cursor, entries: 0 });
+            }
         }
     }
 
