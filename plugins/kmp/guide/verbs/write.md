@@ -74,6 +74,12 @@ second record needs its real source. `SEARCH_SUMMARY_REQUIRED` at
 `memories[1].summary_en` asks for a faithful English search rendering.
 `INVALID_KIND` includes `allowed_values` from the same vocabulary as the schema.
 Choose the kind from the source's meaning; the server supplies no replacement.
+`INVALID_TYPE` reports the exact field with `expected_type` and `received_type`.
+For example, `memories: "[]"` is a string: send a JSON array of record objects.
+KMP does not parse a string into memories. A non-object array member reports
+`memories[index]`, expecting `object`. `EMPTY_MEMORIES` means the array is present
+but contains no records. Omitting both `memories` and `search_summaries` returns
+`WRITE_OPERATION_REQUIRED`; other absent required fields use `REQUIRED_FIELD`.
 For example, an unapproved request may be recorded as an observation of the
 request, without `updates_state` or `supersedes` on the current decision.
 A later approval needs its own evidence. `request` and `outcome` are not kinds.

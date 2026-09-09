@@ -192,6 +192,8 @@ fn write_memory_output_schema() -> Value {
                 "field": described("string", "Argument path, for example memories[1].evidence; empty denotes the request as a whole."),
                 "reason": described("string", "What must be corrected using actual sources."),
                 "allowed_values": string_array("Valid vocabulary when the refused field has one; choose using the source, never automatically substitute a kind."),
+                "expected_type": described("string", "JSON type required by an INVALID_TYPE refusal, such as array or object."),
+                "received_type": described("string", "Actual JSON type at the refused field; a JSON-encoded string remains string and is never coerced."),
                 "action": {"anyOf": [output_object(json!({
                     "tool": described("string", "Supported reading move, not proof that the proposed relation holds."),
                     "arguments": described("object", "Complete arguments to execute that read.")
