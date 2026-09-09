@@ -1,53 +1,52 @@
 use kmp_domain::KnownMemoryRelationType;
 use serde_json::Value;
 
-const PROMPT: &str = include_str!("../../../api/examples/inference-prompts/kmp-write-memory.txt");
 const REQUEST: &str =
     include_str!("../../../api/examples/inference-prompts/kmp-write-memory.request.json");
 const KMP_SCHEMA: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/kernel-memory-protocol.schema.json");
 
 #[test]
-fn kmp_write_memory_prompt_fixture_is_schema_constrained() {
-    assert!(PROMPT.contains("kmp_write_memory"));
-    assert!(PROMPT.contains("read_context"));
-    assert!(PROMPT.contains("Do not use vague relations"));
-    assert!(PROMPT.contains("`why` explains why the specific semantic"));
-    assert!(PROMPT.contains("`evidence` names the concrete observation or source"));
-    assert!(PROMPT.contains("does not generate"));
-    assert!(PROMPT.contains("a missing rationale or proof"));
-
+fn writer_inference_fixture_uses_the_native_argument_schema() {
     let request: Value = serde_json::from_str(REQUEST)
         .expect("kernel write memory request fixture should be valid JSON");
-    let request_prompt = request["messages"][1]["content"]
-        .as_str()
-        .expect("request fixture should carry the writer prompt");
-    assert!(request_prompt.contains("why explains why the specific semantic connection holds"));
-    assert!(request_prompt.contains("evidence names the concrete observation or source"));
-    assert!(request_prompt.contains("does not generate a missing rationale or proof"));
+    assert_eq!(request["response_format"]["type"], "json_schema");
     assert_eq!(
         request["response_format"]["json_schema"]["name"],
         "kmp_write_memory_arguments"
     );
 
-    let schema = &request["response_format"]["json_schema"]["schema"];
-    assert_eq!(schema["type"], "object");
-    assert!(
-        schema["required"]
-            .as_array()
-            .expect("schema required should be an array")
-            .iter()
-            .any(|field| field == "read_context")
-    );
-    assert!(schema["properties"].get("connect_to").is_some());
-    assert!(schema["properties"].get("read_context").is_some());
-
-    let rel_enum = schema["$defs"]["write_link"]["properties"]["rel"]["enum"]
+    let catalog = kmp_mcp::kmp_mcp_tools_list_result();
+    let native = catalog["tools"]
         .as_array()
-        .expect("relation enum should be an array");
-    assert!(rel_enum.iter().any(|rel| rel == "chosen_because"));
-    assert!(!rel_enum.iter().any(|rel| rel == "related_to"));
-    assert_eq!(string_enum(rel_enum), core_writer_relation_names());
+        .unwrap()
+        .iter()
+        .find(|tool| tool["name"] == "kmp_write_memory")
+        .unwrap();
+    // The inference client must constrain the same payload accepted by MCP.
+    // Editorial wording is deliberately excluded from this contract check.
+    assert_eq!(
+        without_descriptions(request["response_format"]["json_schema"]["schema"].clone()),
+        without_descriptions(native["inputSchema"].clone())
+    );
+}
+
+fn without_descriptions(mut value: Value) -> Value {
+    match &mut value {
+        Value::Object(fields) => {
+            fields.remove("description");
+            for field in fields.values_mut() {
+                *field = without_descriptions(field.take());
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                *item = without_descriptions(item.take());
+            }
+        }
+        _ => {}
+    }
+    value
 }
 
 #[test]
