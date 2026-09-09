@@ -300,7 +300,7 @@
           "depth": "basic",
           "text_file": "examples/canonical-ingest.md",
           "example_title": "Validated canonical ingest and exact retry",
-          "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay."
+          "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay. Coordinate ownership explains preservation of a redundant contains_entry declaration and refusal when its membership cannot be resolved; regression #576 exercises committed MCP and export/import."
         },
         {
           "id": "examples:by-capability",
@@ -574,7 +574,7 @@
           "rel": "uses_background",
           "class": "evidential",
           "why": "This case applies the writer contract to explicit sources and reads every existing relation target.",
-          "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay."
+          "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay. Coordinate ownership explains preservation of a redundant contains_entry declaration and refusal when its membership cannot be resolved; regression #576 exercises committed MCP and export/import."
         }
       ]
     },
