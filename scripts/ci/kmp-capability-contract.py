@@ -16,6 +16,7 @@ CONTRACT = json.loads((PLUGIN / "capabilities.json").read_text(encoding="utf-8")
 # Memory and semantic viewer tools exposed by the package.
 # The view tools are read-only with respect to memory by construction.
 EXPECTED_TOOLS = {
+    "kmp_guide",
     "kmp_ingest",
     "kmp_write_memory",
     "kmp_wake",

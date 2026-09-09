@@ -157,6 +157,10 @@ impl KernelMcpServer {
             return jsonrpc_result(id, tool_error_result(name, arguments, &error));
         }
 
+        if name == "kmp_guide" {
+            return self.handle_kmp_guide(id, arguments, start).await;
+        }
+
         if name == "kmp_write_memory" {
             return self.handle_kmp_write_memory(id, arguments, start).await;
         }

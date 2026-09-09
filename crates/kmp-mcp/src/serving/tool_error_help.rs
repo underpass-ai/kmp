@@ -73,6 +73,7 @@ impl ToolErrorHelp {
 
     fn route(tool: &str) -> Option<(&'static str, &'static str)> {
         Some(match tool {
+            "kmp_guide" => ("verb:guide", "card:guide"),
             "kmp_write_memory" => ("verb:write", "example:semantic-batch"),
             "kmp_relabel" => ("verb:write", "example:dimensional-memberships"),
             "kmp_ingest" => ("verb:write", "example:canonical-ingest"),

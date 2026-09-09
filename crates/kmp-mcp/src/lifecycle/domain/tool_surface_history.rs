@@ -10,6 +10,7 @@ const TOOLS_ADDED_LATER: &[(&str, &str)] = &[
     ("kmp_relate", "0.10.0"),
     // The fifteenth: every release up to 0.11.0 answered fourteen.
     ("kmp_relabel", "0.11.0"),
+    ("kmp_guide", "0.15.0"),
 ];
 
 /// The tool surface an engine of `target` is held to.

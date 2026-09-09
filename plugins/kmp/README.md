@@ -3,8 +3,8 @@
 <!-- kmp:public-overview:begin -->
 KMP gives Codex and Claude Code local-first memory that preserves what
 happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through eleven memory tools plus three
-semantic view tools over a shared ChronoLoom view.
+on embedded SQLite, and exposes them through twelve memory tools, three
+semantic view tools over a shared ChronoLoom view and a progressive agent guide.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
 evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
@@ -181,11 +181,12 @@ The skill points at `tools/list` as the authority on the relation vocabulary,
 because that catalog is generated from the kernel's own writer spec and moves
 with the kernel. The skill teaches the shape; the schema carries the truth.
 
-An explicit `/kmp:guide` synchronizes `guide:kmp-agent`, a versioned operating
-guide inside KMP itself. Its explicit verb cards say when to use a move, when
-not to, the minimum input, the expected result and the normal next move. The
-separate `guide:kmp` is for people and opens visually in ChronoLoom; it is not
-a shorter set of agent instructions.
+`kmp_guide` starts with a brief capability map and a persistent agent identity
+with a random display name. Open one worked card by topic and consult its
+extended verb when needed. Context resets preserve identity; delivery records
+mean guidance was served, not learned. Agent metadata stays outside memory
+retrieval. The explicit `/kmp:guide` sync installs the versioned lessons in KMP.
+The separate `guide:kmp` is for people and opens visually in ChronoLoom.
 
 The payoff appears on the read path: `kmp_wake` reconstructs the causal
 spine, `kmp_ask` can keep the right citation when the question is
@@ -214,7 +215,7 @@ Codex gets all ten as native `kmp-setup`, `kmp-doctor` and so on. Standalone
 Codex keeps the equivalent `/kmp-*` prompts. Claude Code keeps `/kmp:*`
 commands. [`capabilities.json`](capabilities.json) is the machine-checked
 inventory that maps each workflow to its owner and exposure; the twelve memory
-tools sit inside the separate fifteen-tool MCP contract. [VOICE.md](VOICE.md)
+tools sit inside the separate sixteen-tool MCP contract. [VOICE.md](VOICE.md)
 remains the source of truth
 for how the host workflows talk.
 

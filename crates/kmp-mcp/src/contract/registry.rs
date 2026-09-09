@@ -39,6 +39,7 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
         tools.push(open);
         tools.push(view_apply_intent::definition());
         tools.push(view_get_state::definition());
+        tools.push(crate::contract::tools::guide::definition());
         if apps {
             tools.push(app_visual_projection::definition());
             tools.push(app_view_undo::definition());

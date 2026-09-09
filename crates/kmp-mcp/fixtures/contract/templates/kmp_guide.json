@@ -1,0 +1,30 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "agent": {
+      "id": "string",
+      "name": "string"
+    },
+    "card": "null",
+    "context_id": "string",
+    "durable": "boolean",
+    "expanded": [],
+    "guide_changed": "boolean",
+    "guide_revision": "string",
+    "next_actions": [],
+    "scheme": [
+      {
+        "purpose": "string",
+        "topic": "string"
+      }
+    ],
+    "served": [],
+    "summary": "string"
+  }
+}

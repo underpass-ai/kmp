@@ -131,7 +131,7 @@ mod tests {
             .as_array()
             .expect("tools should be an array");
 
-        assert_eq!(tools.len(), 15, "twelve memory tools and three view tools");
+        assert_eq!(tools.len(), 16, "memory, view and progressive guide tools");
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");

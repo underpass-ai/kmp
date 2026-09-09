@@ -195,6 +195,28 @@ LLM ni facturación del host. Estas instrucciones son documentación informativa
 
 ### Descubrimiento progresivo y errores
 
+`kmp_guide` sirve el esquema y una ficha por consulta. Identidad y contextos
+viven en `agent-users.sqlite3` junto al store embedded; para gRPC son metadatos
+locales del cliente, separados por endpoint. No forman parte de la memoria,
+la evidencia, los bundles ni la autorización. Una conexión compartida no
+identifica al agente: el cliente conserva los ids devueltos.
+
+La clave de registro identifica un agente lógico y hace idempotente su alta.
+`context_id` basta para continuar; `agent_id` con una nueva `context_key`
+identifica un reinicio de contexto tras compactación. `served` registra entrega,
+no aprendizaje ni retención. `fold` cambia lo expandido y conserva esa entrega.
+Un cambio de revisión de guía abre una vista nueva de entregas sin borrar el
+historial. El cliente debe recuperar las fichas que necesite de nuevo.
+
+Las fichas breves viven en `guide/cards/`; los verbos extendidos en `verbs/`.
+El mapper estampa el digest del asset en cada nodo: cambiar contenido exige
+regenerar el conjunto. Al añadir un tema, actualizar esquema, schema, ficha,
+verbo y relación entre ambos; ejecutar las acciones de ampliación devueltas.
+Initialize y las skills entran por el esquema; el Markdown es la alternativa.
+No duplicar ambas cargas. Reutilizar el target de este checkout para iterar;
+no repetir suites ya aprobadas si no cambia el comportamiento que comprueban.
+
+
 La entrada generada muestra los grupos de verbos y dos mapas de ejemplos. Los
 temas y lecciones completos siguen en KMP. Consultar el verbo antes del primer
 uso si no está en contexto y abrir el ejemplo necesario; no cargar todos los

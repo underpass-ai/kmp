@@ -8,6 +8,7 @@ pub(crate) mod environment;
 mod existing_entry_read;
 pub(crate) mod grpc_tls_config;
 pub(crate) mod grpc_tls_mode;
+mod guide_dispatch;
 pub(crate) mod json_rpc;
 pub(crate) mod kernel_mcp_server;
 pub(crate) mod ports;
