@@ -89,7 +89,13 @@ async fn reduced_entries_recover_complete_bodies_with_original_scope_and_clock()
         )
         .await;
         assert_eq!(expanded["page"]["has_more"], false);
-        assert_eq!(expanded["entries"], json!([original]));
+        assert_eq!(expanded["entries"], full["entries"]);
+        assert!(
+            expanded["entries"]
+                .as_array()
+                .expect("entries")
+                .contains(original)
+        );
     }
 }
 
@@ -121,9 +127,19 @@ async fn empty_fields_keep_identity_and_do_not_silently_remove_requested_proof_o
                 .collect();
             assert_eq!(keys, ["detail_action", "kind", "ref"]);
             let action = &entry["detail_action"];
-            let expanded = call(&server, "kmp_goto", action["arguments"].clone()).await;
-            assert_eq!(expanded["entries"][0]["ref"], entry["ref"]);
-            assert!(expanded["entries"][0]["text"].is_string());
+            let expanded = call(
+                &server,
+                action["tool"].as_str().expect("tool"),
+                action["arguments"].clone(),
+            )
+            .await;
+            let body = expanded["entries"]
+                .as_array()
+                .expect("entries")
+                .iter()
+                .find(|body| body["ref"] == entry["ref"])
+                .expect("expanded entry");
+            assert!(body["text"].is_string());
         }
     }
 }
@@ -226,11 +242,20 @@ async fn expanding_a_ref_preserves_distinct_membership_clocks() {
         {
             let detail = call(
                 &server,
-                "kmp_goto",
+                entry["detail_action"]["tool"].as_str().expect("tool"),
                 entry["detail_action"]["arguments"].clone(),
             )
             .await;
-            assert_eq!(detail["entries"], json!([original]));
+            assert_eq!(detail["entries"], full["entries"]);
+            assert!(
+                detail["entries"]
+                    .as_array()
+                    .expect("entries")
+                    .contains(original)
+            );
         }
     }
 }
+
+#[path = "support/temporal_detail_checks.rs"]
+mod temporal_detail_checks;

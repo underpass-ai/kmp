@@ -41,31 +41,30 @@ impl TemporalEntryProjection {
         if self.omitted.is_empty() {
             return Ok(());
         }
+        let direction = value
+            .pointer("/temporal/direction")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ToolError::backend("temporal detail requires the original direction"))?;
+        let tool = match direction {
+            "goto" | "near" | "forward" | "rewind" => format!("kmp_{direction}"),
+            _ => return Err(ToolError::backend("invalid temporal detail direction")),
+        };
+        // Full detail replays the selected packet. Moving to an entry ref
+        // would change its cutoff and potentially discard later eligible proof.
+        let mut detail = arguments.clone();
+        let args = detail.as_object_mut().expect("validated arguments");
+        args.remove("fields");
+        args.remove("page");
+        let action = json!({"tool":tool,"arguments":detail});
         let entries = value["entries"]
             .as_array_mut()
             .ok_or_else(|| ToolError::backend("temporal response lacks entries"))?;
         for entry in entries {
-            let reference = entry["ref"]
-                .as_str()
-                .ok_or_else(|| ToolError::backend("temporal entry lacks a ref"))?
-                .to_string();
             let object = entry
                 .as_object_mut()
                 .ok_or_else(|| ToolError::backend("temporal entry is not an object"))?;
             object.retain(|key, _| self.included.iter().any(|field| field.as_str() == key));
-            // Goto retains the original about scope, labels and interval. An
-            // Inspect action cannot safely guess the owner of a cross-about ref.
-            let mut detail = arguments.clone();
-            let args = detail.as_object_mut().expect("validated arguments");
-            for key in ["fields", "page", "from", "around", "at", "window"] {
-                args.remove(key);
-            }
-            args.insert("at".into(), json!({"ref":reference}));
-            detail["limit"]["entries"] = json!(1);
-            object.insert(
-                "detail_action".into(),
-                json!({"tool":"kmp_goto","arguments":detail}),
-            );
+            object.insert("detail_action".into(), action.clone());
         }
         Ok(())
     }
