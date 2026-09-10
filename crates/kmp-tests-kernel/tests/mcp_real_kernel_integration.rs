@@ -397,9 +397,51 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
     assert_eq!(preview["result"], http_preview["result"]);
     assert_eq!(preview["result"], embedded_preview["result"]);
     batch["options"]["dry_run"] = json!(false);
-    let committed = call_tool(&stdio, 22, "kmp_write_memory", batch.clone()).await;
-    let http_retry = call_http_tool(&http, 22, "kmp_write_memory", batch.clone()).await;
-    let embedded_commit = call_tool(&embedded, 22, "kmp_write_memory", batch).await;
+    let pending = call_tool(&stdio, 22, "kmp_write_memory", batch.clone()).await;
+    let http_pending = call_http_tool(&http, 22, "kmp_write_memory", batch.clone()).await;
+    let embedded_pending = call_tool(&embedded, 22, "kmp_write_memory", batch).await;
+    for result in [&pending, &http_pending, &embedded_pending] {
+        assert_tool_success(result);
+        let body = &result["result"]["structuredContent"];
+        assert_eq!(body["status"], "needs_review");
+        assert_eq!(body["accepted"], false);
+        assert_eq!(body["next_actions"][0]["tool"], "kmp_write_memory");
+    }
+    // Explicitly acknowledge each transport's retained proposal. HTTP shares
+    // the gRPC store and must replay the command stdio has already committed.
+    let committed = call_tool(
+        &stdio,
+        23,
+        "kmp_write_memory",
+        pending["result"]["structuredContent"]["next_actions"][0]["arguments"].clone(),
+    )
+    .await;
+    let http_retry = call_http_tool(
+        &http,
+        23,
+        "kmp_write_memory",
+        http_pending["result"]["structuredContent"]["next_actions"][0]["arguments"].clone(),
+    )
+    .await;
+    let embedded_commit = call_tool(
+        &embedded,
+        23,
+        "kmp_write_memory",
+        embedded_pending["result"]["structuredContent"]["next_actions"][0]["arguments"].clone(),
+    )
+    .await;
+    assert_eq!(
+        committed["result"]["structuredContent"]["status"],
+        "committed"
+    );
+    assert_eq!(
+        http_retry["result"]["structuredContent"]["status"],
+        "replayed"
+    );
+    assert_eq!(
+        embedded_commit["result"]["structuredContent"]["status"],
+        "committed"
+    );
     for result in [&committed, &http_retry, &embedded_commit] {
         assert_tool_success(result);
         assert_eq!(result["result"]["structuredContent"]["accepted"], true);
