@@ -18,6 +18,9 @@ mod date_fidelity_tests;
 #[cfg(test)]
 mod partial_date_fidelity_tests;
 
+#[cfg(test)]
+mod possessive_fidelity_tests;
+
 pub use entities::proper_names;
 pub(crate) use identifiers::dropped_identifiers;
 pub use identifiers::{identifiers, surface_tokens};
