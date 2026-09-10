@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:c5a34cde5892780f75ad",
+    "idempotency_key": "ingest:guide-sync:1:agent:c356639507c49c37f16f",
     "memory": {
       "dimensions": [
         {
@@ -51,7 +51,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -82,7 +82,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Choose and continue a memory route",
             "guide_version": "1",
             "source": "editorial"
@@ -114,7 +114,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Resume known work",
             "guide_version": "1",
             "source": "editorial"
@@ -146,12 +146,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Ask a semantic question",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Complete Spanish/English month-name dates and ISO YYYY-MM-DD may preserve the same calendar day; other identifiers remain literal. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN. After the permitted selections, a genuinely semantic UNKNOWN is terminal. Do not inspect the root, sweep all abouts, change optional arguments or traverse the graph to bypass it. Reclassify only when the original goal actually asks for temporal state. Read the language and retrieved-proof topics when their warnings or provenance matter. For a partial read, execute projection.next_action with its complete arguments, preserving question, asked_as, dimensions and temporal selection. If core_text_shortened, its call restarts without page.cursor at a sufficient allowance; discard the earlier partial reconstruction. Otherwise append only expansion beyond each section core. Finish when next_action is null; detail or selection caps remain explicit. A stale cursor returns conflict and feedback[].action for a fresh read; never combine different selections."
+          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Complete Spanish/English month-name dates and ISO YYYY-MM-DD may preserve the same calendar day; other identifiers remain literal. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN. After the permitted selections, a genuinely semantic UNKNOWN is terminal. Do not inspect the root, sweep all abouts, change optional arguments or traverse the graph to bypass it. Reclassify only when the original goal actually asks for temporal state. Read the language and retrieved-proof topics when their warnings or provenance matter. For a partial read, execute projection.next_action with its complete arguments, preserving question, asked_as, dimensions and temporal selection. If core_text_shortened, its call restarts without page.cursor at a sufficient allowance; discard the earlier partial reconstruction. Otherwise append only expansion beyond each section core. Finish when next_action is null; detail or selection caps remain explicit. A stale cursor returns conflict and feedback[].action for a fresh read; never combine different selections. Named dates without a year preserve only month/day: 18 de agosto matches August 18 or a valid ISO date ending in -08-18. The lint neither supplies nor verifies an added year; keep it absent unless evidence supports it. A complete source date must retain its year. A missing partial date is reported as --08-18; repair the month/day, never pad the rendering with a bare 18."
         },
         {
           "coordinates": [
@@ -178,7 +178,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Compare memories across abouts",
             "guide_version": "1",
             "source": "editorial"
@@ -210,7 +210,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Navigate and zoom in time",
             "guide_version": "1",
             "source": "editorial"
@@ -242,7 +242,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Inspect evidence and trace a connection",
             "guide_version": "1",
             "source": "editorial"
@@ -274,12 +274,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Write evidence or change labels",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "## A semantic packet\n\nUse `memories` for one or more source-backed records in one about. Give each a\nshort local `id`, `kind`, `summary`, `evidence`, and its label arrays. A single\nrecord is a one-element packet. No `intent`, `current` or process `scope` is\nneeded in this form. The former current/intent/scope input is rejected; there is no compatibility adapter.\n\nTop-level labels are shared memberships, unioned with each record's labels.\nEvery record must have at least one membership; none is invented. Repeating a\npair in both shared and record labels is harmless; duplicates within either\narray are rejected. Every supplied label is materialized before commit. Put only memberships that\napply to every record at the top level. If S1 supports one memory and S2 another,\nput `source: [\"S1\"]` and `source: [\"S2\"]` on those respective memories. Shared\n`source: [\"S1\", \"S2\"]` attaches both to both. Aliases mentioned only in prose do\nnot create alias memberships; declare each source-supported alias explicitly.\nA source label helps navigation but never replaces its concrete evidence text.\n\nUse `connect_to.ref: \"source\"` or `\"@source\"` to address exact local id `source`,\neven if it appears later. No fuzzy matching or target creation occurs. An unknown\nlocal name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.\nLocal targets count as `current_request` context. Stored rich targets\nstill require an actual prior read declared in `read_context`; cross-about\nidentity links retain the proposal rule. Do not claim to have inspected a new\nlocal target. Independent facts may be unlinked: do not invent a relation.\n\nThe containing memory is the source of each link; `connect_to.ref` is its\ntarget. Read the proposed triple aloud: approval **authorizes** action, outcome\n**verified_by** check, exclusion **excluded_from** total. A relation name alone\ndoes not describe its direction. See `guide:kmp-agent:advanced:relations` for\nendpoint examples and partial corrections. `supersedes` marks the **whole**\ntarget SUPERSEDED. If a report holds independent facts, isolate the relevant\nfact or use `corrects` with the precise correction; preserve the other facts.\n\nOmit `class` when `rel` has exactly one allowed class. For example,\n`{\"ref\":\"check\",\"rel\":\"verified_by\",\"why\":\"H verifies the deployed version.\",\"evidence\":\"H reports the expected version.\"}`\ncompiles to `evidential`. An explicit class is checked, never overwritten.\n`authorizes` and `chosen_because` require a choice of `motivational` or `causal`;\n`confirms_selection` requires `evidential` or `motivational`. Decide from the\nsource. The canonical receipt and relation-quality detail retain the resolved\nclass. This completion changes neither proof requirements nor the relation's\ndirection and does not infer whether it is true.\n\nWith `context_id`, actor defaults to the persistent agent name; an explicit\nactor overrides it. Without context, actor is required. Actor identifies the author; top-level observed_at is the packet's provenance\nobservation time, required even when every record overrides it. A missing root\n`observed_at` needs the actual packet observation with its UTC offset; KMP does\nnot choose a date from the records or substitute its ingestion clock. Actual\ningestion is recorded separately by the kernel. Each\nrecord may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP\nresolves all names and validates the entire packet before one canonical ingest.\nA rejected record writes none of the packet. The transaction covers one about.\nOmit unknown validity boundaries too. Observing an existing state does not\nestablish when it began; a later report does not give an earlier writer knowledge\nof when it will end.\n\n`local_refs` maps your ids to canonical refs. A preview plans those refs;\n`accepted=true` confirms persistence. Retry the unchanged logical packet with\nthe same idempotency key. Duplicate ids, duplicate targets, self-links and\nundeclared local targets are errors. See\n`guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof\nlink, a rejected packet and temporal/ChronoLoom review. Accepted writes return a compact acknowledgment; recover the detailed receipt only when needed.\n\n## Read the acknowledgment\n\n`accepted=true` confirms the submitted packet was committed. Read `warnings`,\n`diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.\nA lax write can carry `RELATION_CONTEXT_UNVERIFIED` with severity warning and\nan audit action. Acceptance does not establish an unverified causal claim.\n`relations` lists compact `{from, rel, to}` triples in canonical ingest order.\nEndpoints from this packet use `@id`, resolved by `local_refs`; stored endpoints\nkeep their canonical refs. Read their direction and scope against the source.\nThe acknowledgment exposes what was compiled; it cannot certify that an\napproval verifies execution or that a correction replaces an entire report.\n`coverage` counts declared memories, relations, evidence objects and per-memory\nlabel memberships after the shared-label union. `complete=true` applies only to\nthe submitted packet. `source_coverage=not_assessed` means KMP cannot tell whether\nthe writer omitted a source fact, alias or date. For `search_summaries`, the\ncoverage separates updated renderings from preserved memberships.\n\nThe accepted response omits repeated canonical data and per-relation diagnostics.\n`receipt.ref` identifies immutable command detail. Execute `receipt.action`\nverbatim when you need to audit the accepted write; it supplies `kmp_inspect`\nwith the about, ref and include options. No routine readback is required.\nFor example, after a packet with local ids `source` and `decision`, the action's\n`object.text` is JSON: `receipt.writer.local_refs` maps both ids, and\n`receipt.canonical_memory` preserves their actual coordinates, assigned sequences,\nsource evidence and relation proof. `receipt.writer.relation_quality` retains the\ncompiler's per-link checks. `command` gives the accepted revision and content hash.\n\nThis is the original accepted snapshot. A later relabel or search rendering does\nnot rewrite it; inspect the memory's own ref for its current state. Receipts survive\nrestart and bundle export/import and are not graph memories, label matches or\nWake evidence. Previews have no durable receipt and retain `ingest_preview` for\nreview. A simulated backend does not prove receipt persistence. Full receipt\ninspection costs more context than the acknowledgment; the ordinary Inspect\nstable-object floor and its warnings apply.\n\n## Repair a refused packet\n\nA refusal carries `feedback`: a stable `code`, `severity`, `field`, `reason`\nand an optional `action` with `tool` and complete `arguments`. Use the field\npath to locate the problem; do not parse the prose to choose a repair.\nRead the whole feedback array. Once the packet shape and local identities are\nusable, KMP reports the first compiler failure from each invalid record together,\nfor both memories and search_summaries. Correct all listed fields and resubmit\nthe whole packet. This is not an exhaustive source audit: another rule in the\nsame record may fail after its first error is repaired. An unusable packet shape,\nambiguous local id or failed store read can still stop the check earlier.\nFor example, `MEMORY_EVIDENCE_REQUIRED` at `memories[1].evidence` means the\nsecond record needs its real source. `SEARCH_SUMMARY_REQUIRED` at\n`memories[1].summary_en` asks for a faithful English search rendering.\n`INVALID_KIND` includes `allowed_values` from the same vocabulary as the schema.\nChoose the kind from the source's meaning; the server supplies no replacement.\n`INVALID_TYPE` reports the exact field with `expected_type` and `received_type`.\nFor example, `memories: \"[]\"` is a string: send a JSON array of record objects.\nKMP does not parse a string into memories. A non-object array member reports\n`memories[index]`, expecting `object`. `EMPTY_MEMORIES` means the array is present\nbut contains no records. Omitting both `memories` and `search_summaries` returns\n`WRITE_OPERATION_REQUIRED`; other absent required fields use `REQUIRED_FIELD`.\nFor example, an unapproved request may be recorded as an observation of the\nrequest, without `updates_state` or `supersedes` on the current decision.\nA later approval needs its own evidence. `request` and `outcome` are not kinds.\nSee the semantic-batch example for individual source labels and this distinction.\n`RELATION_CLASS_REQUIRED` means this relation has more than one possible class;\n`RELATION_CLASS_MISMATCH` means the explicit choice is incompatible. Both identify\nthe field and include `allowed_values`. Do not invent evidence or weaken a\nrelation just to make validation pass. Missing class is different from null or\nan empty string; only omission requests deterministic completion.\n\nFor `PRIOR_CONTEXT_REQUIRED`, KMP can supply a complete `kmp_inspect` action\nfor the existing target. Execute the read, evaluate its evidence, then declare\nthe actual returned ref in `read_context` and resubmit the corrected packet.\nThe action is a supported reading move, not proof that the relation is true.\nAn absent action means no source-backed automatic correction is known.\nPlanner refusals commit none of the packet; store failures still carry their\nbackend error. A failed pre-read retains unavailable, not_found, conflict or\nbackend_error; do not treat it as a malformed source packet. Malformed successful\nstore data is a backend_error. A normal accepted write does not require routine readback.\n\n## What to write, and what never to write\n\nWrite when something is **decided, constrained, or concluded**. Decisions,\nconstraints, outcomes — each with coordinates and evidence.\n\nNever write transcripts. Memory is not a log of the conversation; it is the\ndurable shape of the work. A transcript makes later traversal worthless.\n\nLabel what you write. Every label is a `(key, value)` membership within its\nabout. Use keys such as agentic_process, task and agentic_episode when the source\nsupports those memberships. `labels` uses arrays,\neven for a single value, and may add further values under any key:\n\n```json\n\"labels\": {\n  \"alias\": [\"neb\", \"Nébula Cache\"],\n  \"component\": [\"neb\"],\n  \"environment\": [\"production\"]\n}\n```\n\nEach pair becomes its own coordinate with the memory's clocks. Two aliases\nunder `alias` are valid, as is `neb` under both `alias` and `component`.\nThe key distinguishes them. Repeating a value inside an array is an error. Shared and record labels are unioned. Values may contain spaces, punctuation and\nUnicode. The server returns canonical refs: copy them when an exact graph\naddress is needed. Do not construct refs or infer entity identity from labels.\n\nRead the `labels` catalogue in `kmp_wake` to reuse existing vocabulary.\nResponses report labels written and created. A new spelling under the same\nkey, such as `component=kmp_viewer` when `component=kmp-viewer` exists, is\nrefused in strict mode or reported in `labels.resembling` in lax mode.\nSharing a value across different keys is valid and produces no resemblance\nwarning. `options.labels_new: [\"component\"]` confirms intentional new values\nunder that key; nothing is silently renamed or merged.\n\nUse `kmp_relabel` to change memberships later. Its `add` and `remove` use the\nsame arrays. For example, `add: {\"alias\": [\"Nébula Cache\", \"NC\"]}` adds two\naliases, and `remove: {\"alias\": [\"NC\"]}` later removes only that membership.\nGive the memory's returned `ref` and a source-backed `why`. The kernel refuses\nadding an existing pair, removing an absent pair, placing a pair on both\nsides, and removing the last label. Other values under the key remain.\nAdded memberships inherit the memory's clocks; the relabel's actor, receipt\ntime and rationale are recorded separately. Read back with `kmp_inspect`\nand `include.raw` to verify the memberships and evidence.\n\nChoose keys for the routes you will need: project/source alone cannot select a\nperson, account or component. Reuse the same key for the same route over time;\n`alias: [\"@north\"]` and `account: [\"@north\"]` are distinct selectors. Separate\nfacts when one can expire or be replaced without changing the others. A person's\nrole, an account assignment and a permanent constraint need not share a lifecycle.\nSee `guide:kmp-agent:example:alias-ownership` for separate assignments and\n`guide:kmp-agent:example:semantic-batch` for a source-to-memory self-check.\n\nFilter a facet with `dimensions.selectors`, for example\n`{\"key\":\"alias\",\"op\":\"in\",\"values\":[\"neb\"]}`. To require both an alias and\nan environment, supply one selector for each key. Shared labels locate\ncandidates; only justified relations declare that two memories concern the\nsame entity or event.\n\nWrite in the language of the work, and give the memory an English rendering\nfor search: `memories[].summary_en`, plain English a reader would ask with,\nidentifiers, amounts and acronyms kept exactly as written (`v0.7.0`, `#469`,\n`kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is\n`memories[].summary`, byte for byte — so an English question reaches a memory\nwritten in Spanish, and jargon (`rollout slipped`) is found by the words\npeople ask with (`launch postponed`). A strict write requires it when the\nmemory is not written in English and refuses one that fails the lint: wrong\nlanguage, too thin, a copy of the text, a dropped identifier. Fix the summary\nthe error names; never alter the text to fit it. A cited item that was reached\nthrough its summary says so with `matched_via: summary` and `summary_terms`.\n\nMemories written before summaries existed still owe one. `kmp-mcp summaries\npending [<about>] [--json]` lists them, with the text to render and, for a\nsummary the lint refuses, what is wrong with it; `kmp-mcp doctor` counts them.\nAttach one or more with `kmp_write_memory`, using `search_summaries` records\ncontaining only `ref` and `summary_en`: the text, kind and coordinates are read from\nthe store and cannot be supplied, no relation is written, and a rendering\nthat fails the lint is refused with every fault named. Each target must belong to the declared about; all renderings are validated\nbefore one commit. An exact retry is a no-op.\n\nNormal writes are one call: omit `options.dry_run` or set it to false.\nThe relation guide documents explicit previews and validation before commit.\n\nUse one `idempotency_key` per logical write. Replaying the same accepted write\nreturns its success rather than duplicating memory. A `conflict` can also mean\nthe store advanced before this attempt committed: follow the error message,\nrebase, and retry the same logical write with the same key when it says the\nconflict is retryable. A key already accepted with different content must not\nbe reused.\n\nFor a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.\n\n## A preview checks the selected store\n\nUse `options.dry_run=true` only when a preview is useful. Embedded and gRPC\npreviews run the same kernel validation as a commit, including existing refs,\nlabel policy and coordinate ownership. A missing target or backend failure is\nan error; a syntactically valid packet is not enough. A successful preview has\n`accepted=false`, `dry_run=true` and `validation.scope=current_store`. It writes\nno event. The fixture backend reports `scope=fixture` and proves no live state.\n\nThe returned `ingest_preview` is the proposed canonical packet. Previewing\nreserves neither labels nor sequences; a later commit is validated again against\nthe then-current store. Do not repeat previews before every ordinary write:\nthe normal write already validates and commits in one call. Raw `kmp_ingest`\nwith `dry_run=true` also reaches the kernel and leaves memory uncommitted.\n\n## Restricted HTTP clients\n\nAn HTTP bearer token may restrict abouts, label values and external refs. Those\ngrants apply to shared and per-record labels, each array member, explicit entry\nrefs, relation targets and search-summary refs. Relabel additions obey the same\nlabel grants. A local @id is resolved inside its packet; it does not name an\nexternal memory. A forbidden request must stop before any backend call. Do not\nremove source-supported labels or refs just to evade a permission error.\n\n### Read the outcome and stored clocks\n\n`status=committed` appended the logical command; `replayed` returns its earlier\nacceptance without another write. Both keep `accepted=true`. `validated` is a\ndry-run, and `rejected` is a validation refusal. `unconfirmed` cannot establish\npersistence: retain the same idempotency key when resolving a transport error.\nDo not turn an uncertain reply into a new logical write.\n\n`clocks.scope=accepted_command` summarizes the clocks actually in that command,\nincluding on replay. Each clock counts memories once across all label memberships:\n`entries`, `distinct_values`, and an RFC3339 `single_value` when there is only one.\nZero occurred entries means no event time was recorded. One observed instant\nacross nine memories is worth comparing with the nine sources; KMP cannot decide\nwhether those sources were observed together. Missing occurrence is legitimate\nwhen its source does not supply one. Do not invent clocks to fill a count.\n\nExample: two memories with four label memberships can report two observations\nat one instant, one occurrence, and one valid_from. Inspect receipt.action only\nwhen the individual historical clocks or evidence are needed. Its receipt retains\nthose clocks even after a later write, restart or bundle import. The current graph\ncan have changed. Null clock coverage is unavailable, not zero; previews do not\nreport saved clocks. Packet coverage still cannot assess source completeness.\n\n### Complete calendar dates in search renderings\n\n`El 17 de agosto de 2026 se abrió la ruta.` may use\n`The route opened on 2026-08-17.` as summary_en in strict mode. The lint compares\ncomplete Spanish or English month-name dates with ISO YYYY-MM-DD dates, including\nthe month and valid Gregorian day. It leaves both stored strings unchanged.\nEnglish `August 17, 2026` and `17 August 2026` are equivalent forms here.\n\nOther formats, times, amounts, versions and acronyms remain literal. An amount\nof 17 EUR still needs its own 17; the day in a date does not preserve that amount.\nThis check does not prove the meaning of the rest of the summary. A changed or\nomitted recognized date is reported as its canonical ISO identifier.\n"
+          "text": "## A semantic packet\n\nUse `memories` for one or more source-backed records in one about. Give each a\nshort local `id`, `kind`, `summary`, `evidence`, and its label arrays. A single\nrecord is a one-element packet. No `intent`, `current` or process `scope` is\nneeded in this form. The former current/intent/scope input is rejected; there is no compatibility adapter.\n\nTop-level labels are shared memberships, unioned with each record's labels.\nEvery record must have at least one membership; none is invented. Repeating a\npair in both shared and record labels is harmless; duplicates within either\narray are rejected. Every supplied label is materialized before commit. Put only memberships that\napply to every record at the top level. If S1 supports one memory and S2 another,\nput `source: [\"S1\"]` and `source: [\"S2\"]` on those respective memories. Shared\n`source: [\"S1\", \"S2\"]` attaches both to both. Aliases mentioned only in prose do\nnot create alias memberships; declare each source-supported alias explicitly.\nA source label helps navigation but never replaces its concrete evidence text.\n\nUse `connect_to.ref: \"source\"` or `\"@source\"` to address exact local id `source`,\neven if it appears later. No fuzzy matching or target creation occurs. An unknown\nlocal name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.\nLocal targets count as `current_request` context. Stored rich targets\nstill require an actual prior read declared in `read_context`; cross-about\nidentity links retain the proposal rule. Do not claim to have inspected a new\nlocal target. Independent facts may be unlinked: do not invent a relation.\n\nThe containing memory is the source of each link; `connect_to.ref` is its\ntarget. Read the proposed triple aloud: approval **authorizes** action, outcome\n**verified_by** check, exclusion **excluded_from** total. A relation name alone\ndoes not describe its direction. See `guide:kmp-agent:advanced:relations` for\nendpoint examples and partial corrections. `supersedes` marks the **whole**\ntarget SUPERSEDED. If a report holds independent facts, isolate the relevant\nfact or use `corrects` with the precise correction; preserve the other facts.\n\nOmit `class` when `rel` has exactly one allowed class. For example,\n`{\"ref\":\"check\",\"rel\":\"verified_by\",\"why\":\"H verifies the deployed version.\",\"evidence\":\"H reports the expected version.\"}`\ncompiles to `evidential`. An explicit class is checked, never overwritten.\n`authorizes` and `chosen_because` require a choice of `motivational` or `causal`;\n`confirms_selection` requires `evidential` or `motivational`. Decide from the\nsource. The canonical receipt and relation-quality detail retain the resolved\nclass. This completion changes neither proof requirements nor the relation's\ndirection and does not infer whether it is true.\n\nWith `context_id`, actor defaults to the persistent agent name; an explicit\nactor overrides it. Without context, actor is required. Actor identifies the author; top-level observed_at is the packet's provenance\nobservation time, required even when every record overrides it. A missing root\n`observed_at` needs the actual packet observation with its UTC offset; KMP does\nnot choose a date from the records or substitute its ingestion clock. Actual\ningestion is recorded separately by the kernel. Each\nrecord may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP\nresolves all names and validates the entire packet before one canonical ingest.\nA rejected record writes none of the packet. The transaction covers one about.\nOmit unknown validity boundaries too. Observing an existing state does not\nestablish when it began; a later report does not give an earlier writer knowledge\nof when it will end.\n\n`local_refs` maps your ids to canonical refs. A preview plans those refs;\n`accepted=true` confirms persistence. Retry the unchanged logical packet with\nthe same idempotency key. Duplicate ids, duplicate targets, self-links and\nundeclared local targets are errors. See\n`guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof\nlink, a rejected packet and temporal/ChronoLoom review. Accepted writes return a compact acknowledgment; recover the detailed receipt only when needed.\n\n## Read the acknowledgment\n\n`accepted=true` confirms the submitted packet was committed. Read `warnings`,\n`diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.\nA lax write can carry `RELATION_CONTEXT_UNVERIFIED` with severity warning and\nan audit action. Acceptance does not establish an unverified causal claim.\n`relations` lists compact `{from, rel, to}` triples in canonical ingest order.\nEndpoints from this packet use `@id`, resolved by `local_refs`; stored endpoints\nkeep their canonical refs. Read their direction and scope against the source.\nThe acknowledgment exposes what was compiled; it cannot certify that an\napproval verifies execution or that a correction replaces an entire report.\n`coverage` counts declared memories, relations, evidence objects and per-memory\nlabel memberships after the shared-label union. `complete=true` applies only to\nthe submitted packet. `source_coverage=not_assessed` means KMP cannot tell whether\nthe writer omitted a source fact, alias or date. For `search_summaries`, the\ncoverage separates updated renderings from preserved memberships.\n\nThe accepted response omits repeated canonical data and per-relation diagnostics.\n`receipt.ref` identifies immutable command detail. Execute `receipt.action`\nverbatim when you need to audit the accepted write; it supplies `kmp_inspect`\nwith the about, ref and include options. No routine readback is required.\nFor example, after a packet with local ids `source` and `decision`, the action's\n`object.text` is JSON: `receipt.writer.local_refs` maps both ids, and\n`receipt.canonical_memory` preserves their actual coordinates, assigned sequences,\nsource evidence and relation proof. `receipt.writer.relation_quality` retains the\ncompiler's per-link checks. `command` gives the accepted revision and content hash.\n\nThis is the original accepted snapshot. A later relabel or search rendering does\nnot rewrite it; inspect the memory's own ref for its current state. Receipts survive\nrestart and bundle export/import and are not graph memories, label matches or\nWake evidence. Previews have no durable receipt and retain `ingest_preview` for\nreview. A simulated backend does not prove receipt persistence. Full receipt\ninspection costs more context than the acknowledgment; the ordinary Inspect\nstable-object floor and its warnings apply.\n\n## Repair a refused packet\n\nA refusal carries `feedback`: a stable `code`, `severity`, `field`, `reason`\nand an optional `action` with `tool` and complete `arguments`. Use the field\npath to locate the problem; do not parse the prose to choose a repair.\nRead the whole feedback array. Once the packet shape and local identities are\nusable, KMP reports the first compiler failure from each invalid record together,\nfor both memories and search_summaries. Correct all listed fields and resubmit\nthe whole packet. This is not an exhaustive source audit: another rule in the\nsame record may fail after its first error is repaired. An unusable packet shape,\nambiguous local id or failed store read can still stop the check earlier.\nFor example, `MEMORY_EVIDENCE_REQUIRED` at `memories[1].evidence` means the\nsecond record needs its real source. `SEARCH_SUMMARY_REQUIRED` at\n`memories[1].summary_en` asks for a faithful English search rendering.\n`INVALID_KIND` includes `allowed_values` from the same vocabulary as the schema.\nChoose the kind from the source's meaning; the server supplies no replacement.\n`INVALID_TYPE` reports the exact field with `expected_type` and `received_type`.\nFor example, `memories: \"[]\"` is a string: send a JSON array of record objects.\nKMP does not parse a string into memories. A non-object array member reports\n`memories[index]`, expecting `object`. `EMPTY_MEMORIES` means the array is present\nbut contains no records. Omitting both `memories` and `search_summaries` returns\n`WRITE_OPERATION_REQUIRED`; other absent required fields use `REQUIRED_FIELD`.\nFor example, an unapproved request may be recorded as an observation of the\nrequest, without `updates_state` or `supersedes` on the current decision.\nA later approval needs its own evidence. `request` and `outcome` are not kinds.\nSee the semantic-batch example for individual source labels and this distinction.\n`RELATION_CLASS_REQUIRED` means this relation has more than one possible class;\n`RELATION_CLASS_MISMATCH` means the explicit choice is incompatible. Both identify\nthe field and include `allowed_values`. Do not invent evidence or weaken a\nrelation just to make validation pass. Missing class is different from null or\nan empty string; only omission requests deterministic completion.\n\nFor `PRIOR_CONTEXT_REQUIRED`, KMP can supply a complete `kmp_inspect` action\nfor the existing target. Execute the read, evaluate its evidence, then declare\nthe actual returned ref in `read_context` and resubmit the corrected packet.\nThe action is a supported reading move, not proof that the relation is true.\nAn absent action means no source-backed automatic correction is known.\nPlanner refusals commit none of the packet; store failures still carry their\nbackend error. A failed pre-read retains unavailable, not_found, conflict or\nbackend_error; do not treat it as a malformed source packet. Malformed successful\nstore data is a backend_error. A normal accepted write does not require routine readback.\n\n## What to write, and what never to write\n\nWrite when something is **decided, constrained, or concluded**. Decisions,\nconstraints, outcomes — each with coordinates and evidence.\n\nNever write transcripts. Memory is not a log of the conversation; it is the\ndurable shape of the work. A transcript makes later traversal worthless.\n\nLabel what you write. Every label is a `(key, value)` membership within its\nabout. Use keys such as agentic_process, task and agentic_episode when the source\nsupports those memberships. `labels` uses arrays,\neven for a single value, and may add further values under any key:\n\n```json\n\"labels\": {\n  \"alias\": [\"neb\", \"Nébula Cache\"],\n  \"component\": [\"neb\"],\n  \"environment\": [\"production\"]\n}\n```\n\nEach pair becomes its own coordinate with the memory's clocks. Two aliases\nunder `alias` are valid, as is `neb` under both `alias` and `component`.\nThe key distinguishes them. Repeating a value inside an array is an error. Shared and record labels are unioned. Values may contain spaces, punctuation and\nUnicode. The server returns canonical refs: copy them when an exact graph\naddress is needed. Do not construct refs or infer entity identity from labels.\n\nRead the `labels` catalogue in `kmp_wake` to reuse existing vocabulary.\nResponses report labels written and created. A new spelling under the same\nkey, such as `component=kmp_viewer` when `component=kmp-viewer` exists, is\nrefused in strict mode or reported in `labels.resembling` in lax mode.\nSharing a value across different keys is valid and produces no resemblance\nwarning. `options.labels_new: [\"component\"]` confirms intentional new values\nunder that key; nothing is silently renamed or merged.\n\nUse `kmp_relabel` to change memberships later. Its `add` and `remove` use the\nsame arrays. For example, `add: {\"alias\": [\"Nébula Cache\", \"NC\"]}` adds two\naliases, and `remove: {\"alias\": [\"NC\"]}` later removes only that membership.\nGive the memory's returned `ref` and a source-backed `why`. The kernel refuses\nadding an existing pair, removing an absent pair, placing a pair on both\nsides, and removing the last label. Other values under the key remain.\nAdded memberships inherit the memory's clocks; the relabel's actor, receipt\ntime and rationale are recorded separately. Read back with `kmp_inspect`\nand `include.raw` to verify the memberships and evidence.\n\nChoose keys for the routes you will need: project/source alone cannot select a\nperson, account or component. Reuse the same key for the same route over time;\n`alias: [\"@north\"]` and `account: [\"@north\"]` are distinct selectors. Separate\nfacts when one can expire or be replaced without changing the others. A person's\nrole, an account assignment and a permanent constraint need not share a lifecycle.\nSee `guide:kmp-agent:example:alias-ownership` for separate assignments and\n`guide:kmp-agent:example:semantic-batch` for a source-to-memory self-check.\n\nFilter a facet with `dimensions.selectors`, for example\n`{\"key\":\"alias\",\"op\":\"in\",\"values\":[\"neb\"]}`. To require both an alias and\nan environment, supply one selector for each key. Shared labels locate\ncandidates; only justified relations declare that two memories concern the\nsame entity or event.\n\nWrite in the language of the work, and give the memory an English rendering\nfor search: `memories[].summary_en`, plain English a reader would ask with,\nidentifiers, amounts and acronyms kept exactly as written (`v0.7.0`, `#469`,\n`kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is\n`memories[].summary`, byte for byte — so an English question reaches a memory\nwritten in Spanish, and jargon (`rollout slipped`) is found by the words\npeople ask with (`launch postponed`). A strict write requires it when the\nmemory is not written in English and refuses one that fails the lint: wrong\nlanguage, too thin, a copy of the text, a dropped identifier. Fix the summary\nthe error names; never alter the text to fit it. A cited item that was reached\nthrough its summary says so with `matched_via: summary` and `summary_terms`.\n\nMemories written before summaries existed still owe one. `kmp-mcp summaries\npending [<about>] [--json]` lists them, with the text to render and, for a\nsummary the lint refuses, what is wrong with it; `kmp-mcp doctor` counts them.\nAttach one or more with `kmp_write_memory`, using `search_summaries` records\ncontaining only `ref` and `summary_en`: the text, kind and coordinates are read from\nthe store and cannot be supplied, no relation is written, and a rendering\nthat fails the lint is refused with every fault named. Each target must belong to the declared about; all renderings are validated\nbefore one commit. An exact retry is a no-op.\n\nNormal writes are one call: omit `options.dry_run` or set it to false.\nThe relation guide documents explicit previews and validation before commit.\n\nUse one `idempotency_key` per logical write. Replaying the same accepted write\nreturns its success rather than duplicating memory. A `conflict` can also mean\nthe store advanced before this attempt committed: follow the error message,\nrebase, and retry the same logical write with the same key when it says the\nconflict is retryable. A key already accepted with different content must not\nbe reused.\n\nFor a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.\n\n## A preview checks the selected store\n\nUse `options.dry_run=true` only when a preview is useful. Embedded and gRPC\npreviews run the same kernel validation as a commit, including existing refs,\nlabel policy and coordinate ownership. A missing target or backend failure is\nan error; a syntactically valid packet is not enough. A successful preview has\n`accepted=false`, `dry_run=true` and `validation.scope=current_store`. It writes\nno event. The fixture backend reports `scope=fixture` and proves no live state.\n\nThe returned `ingest_preview` is the proposed canonical packet. Previewing\nreserves neither labels nor sequences; a later commit is validated again against\nthe then-current store. Do not repeat previews before every ordinary write:\nthe normal write already validates and commits in one call. Raw `kmp_ingest`\nwith `dry_run=true` also reaches the kernel and leaves memory uncommitted.\n\n## Restricted HTTP clients\n\nAn HTTP bearer token may restrict abouts, label values and external refs. Those\ngrants apply to shared and per-record labels, each array member, explicit entry\nrefs, relation targets and search-summary refs. Relabel additions obey the same\nlabel grants. A local @id is resolved inside its packet; it does not name an\nexternal memory. A forbidden request must stop before any backend call. Do not\nremove source-supported labels or refs just to evade a permission error.\n\n### Read the outcome and stored clocks\n\n`status=committed` appended the logical command; `replayed` returns its earlier\nacceptance without another write. Both keep `accepted=true`. `validated` is a\ndry-run, and `rejected` is a validation refusal. `unconfirmed` cannot establish\npersistence: retain the same idempotency key when resolving a transport error.\nDo not turn an uncertain reply into a new logical write.\n\n`clocks.scope=accepted_command` summarizes the clocks actually in that command,\nincluding on replay. Each clock counts memories once across all label memberships:\n`entries`, `distinct_values`, and an RFC3339 `single_value` when there is only one.\nZero occurred entries means no event time was recorded. One observed instant\nacross nine memories is worth comparing with the nine sources; KMP cannot decide\nwhether those sources were observed together. Missing occurrence is legitimate\nwhen its source does not supply one. Do not invent clocks to fill a count.\n\nExample: two memories with four label memberships can report two observations\nat one instant, one occurrence, and one valid_from. Inspect receipt.action only\nwhen the individual historical clocks or evidence are needed. Its receipt retains\nthose clocks even after a later write, restart or bundle import. The current graph\ncan have changed. Null clock coverage is unavailable, not zero; previews do not\nreport saved clocks. Packet coverage still cannot assess source completeness.\n\n### Calendar dates in search renderings\n\n`El 17 de agosto de 2026 se abrió la ruta.` may use\n`The route opened on 2026-08-17.` as summary_en in strict mode. The lint compares\ncomplete Spanish or English month-name dates with ISO YYYY-MM-DD dates, including\nthe month and valid Gregorian day. It leaves both stored strings unchanged.\nEnglish `August 17, 2026` and `17 August 2026` are equivalent forms here.\n\nFor `El parte llegó el 18 de agosto.`, use `The report arrived on August 18.`\nwhen the year is unknown. A full rendering such as `2026-08-18` preserves the\nknown month/day too, but this lint neither supplies nor verifies its extra year:\nthe writer must justify it from evidence. A complete source date must keep its\nyear. A missing partial date is reported as `--08-18`; repair its month/day,\nnot by adding a redundant bare `18`. Changed months or days still fail.\n\nOther formats, times, amounts, versions and acronyms remain literal. An amount\nof 17 EUR still needs its own 17; the day in a date does not preserve that amount.\nThis check does not prove the meaning of the rest of the summary. A changed or\nomitted recognized date is reported as its canonical ISO identifier.\n"
         },
         {
           "coordinates": [
@@ -306,7 +306,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Frame and share ChronoLoom",
             "guide_version": "1",
             "source": "editorial"
@@ -338,7 +338,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Synchronize guide assets",
             "guide_version": "1",
             "source": "editorial"
@@ -370,7 +370,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Install an optional lexical bridge",
             "guide_version": "1",
             "source": "editorial"
@@ -402,7 +402,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Cross abouts, labels and selectors",
             "guide_version": "1",
             "source": "editorial"
@@ -434,7 +434,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Choose a relation and justify it",
             "guide_version": "1",
             "source": "editorial"
@@ -466,7 +466,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Retry one logical write",
             "guide_version": "1",
             "source": "editorial"
@@ -498,7 +498,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Complete a bounded read",
             "guide_version": "1",
             "source": "editorial"
@@ -530,7 +530,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Choose a byte ceiling",
             "guide_version": "1",
             "source": "editorial"
@@ -562,7 +562,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Replace, contradict or expire",
             "guide_version": "1",
             "source": "editorial"
@@ -594,7 +594,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Interpret retrieved proof",
             "guide_version": "1",
             "source": "editorial"
@@ -626,7 +626,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Search language and literal evidence",
             "guide_version": "1",
             "source": "editorial"
@@ -658,12 +658,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Write or repair search summaries",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as memories[].summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach one or more with kmp_write_memory, search_summaries containing ref and summary_en only, and the stored text stays exactly as it was. The lint preserves literal identifiers: render UE as UE (EU), and retain times such as 09:00 and UTC. Complete Spanish/English month-name dates and ISO YYYY-MM-DD compare by calendar day: 17 de agosto de 2026 equals August 17, 2026 or 2026-08-17. Invalid or other date formats stay literal; amounts outside a date still need their own numbers. This never changes stored text or proves semantic fidelity. The writer returns independent record failures together; repair every feedback item and resend the whole packet. Further failures in a record may appear after its first error is fixed."
+          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as memories[].summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach one or more with kmp_write_memory, search_summaries containing ref and summary_en only, and the stored text stays exactly as it was. The lint preserves literal identifiers: render UE as UE (EU), and retain times such as 09:00 and UTC. Complete Spanish/English month-name dates and ISO YYYY-MM-DD compare by calendar day: 17 de agosto de 2026 equals August 17, 2026 or 2026-08-17. Invalid or other date formats stay literal; amounts outside a date still need their own numbers. This never changes stored text or proves semantic fidelity. The writer returns independent record failures together; repair every feedback item and resend the whole packet. Further failures in a record may appear after its first error is fixed. Named dates without a year preserve only month/day: 18 de agosto matches August 18 or a valid ISO date ending in -08-18. The lint neither supplies nor verifies an added year; keep it absent unless evidence supports it. A complete source date must retain its year. A missing partial date is reported as --08-18; repair the month/day, never pad the rendering with a bare 18."
         },
         {
           "coordinates": [
@@ -691,7 +691,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Start here: one decision and its stated reason",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -723,7 +723,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Decision history and past validity",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -754,7 +754,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -786,7 +786,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Aliases, unresolved names and account assignment",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -817,7 +817,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Repository bundles and snapshots",
             "guide_version": "1",
             "source": "editorial"
@@ -849,7 +849,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Diagnose missing tools and errors",
             "guide_version": "1",
             "source": "editorial"
@@ -882,7 +882,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Distributed incident, proposed identity and late reports",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -914,7 +914,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Four clocks, interval boundaries and zoom to proof",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -946,7 +946,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Quantities, corrections, duplicates and exclusions",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -978,7 +978,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Conflicting assignments and evidence received late",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1010,7 +1010,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Multiple aliases, distinct facets and late memberships",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1042,7 +1042,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Labels, synonyms and negation under explicit conditions",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1074,7 +1074,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1106,7 +1106,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Fresh-session handoff and shared-view revision conflicts",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1138,7 +1138,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Preference and explicit policy delta",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1170,7 +1170,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Authorization, dependency and measured constraints",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1202,7 +1202,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Structure, membership and included contributions",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1234,7 +1234,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Validated canonical ingest and exact retry",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1265,7 +1265,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Find a concrete example for a tool, kind or relation",
             "guide_version": "1",
             "source": "editorial"
@@ -1298,7 +1298,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Atomic semantic packet with local proof links",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1329,7 +1329,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1360,7 +1360,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1391,7 +1391,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1422,7 +1422,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1453,7 +1453,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1484,7 +1484,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1515,7 +1515,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1546,7 +1546,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1577,7 +1577,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_title": "Manage agent identity and guidance",
             "guide_version": "1",
             "source": "editorial"
@@ -1610,7 +1610,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:ask",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ask"
@@ -1643,7 +1643,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_forward"
@@ -1676,7 +1676,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_goto"
@@ -1709,7 +1709,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:guide",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_guide"
@@ -1742,7 +1742,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ingest"
@@ -1775,7 +1775,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_inspect"
@@ -1808,7 +1808,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_near"
@@ -1841,7 +1841,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relabel"
@@ -1874,7 +1874,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:relate",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relate"
@@ -1907,7 +1907,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_rewind"
@@ -1940,7 +1940,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_trace"
@@ -1973,7 +1973,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_apply_intent"
@@ -2006,7 +2006,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_get_state"
@@ -2039,7 +2039,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_open"
@@ -2072,7 +2072,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:wake",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_wake"
@@ -2105,7 +2105,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "c5a34cde5892780f75ad20fd704869b8aa35c51b22acef85268f41ec7e3db9a1",
+            "guide_revision": "c356639507c49c37f16face4d78cc320a66f8ecd61701dfc6b9e2f378dae320e",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_write_memory"

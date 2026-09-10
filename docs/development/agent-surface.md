@@ -91,7 +91,11 @@ dimensional útil. Reutilizar el contexto ya disponible y ampliar sólo lo neces
 La cobertura del paquete no demuestra cobertura de la fuente; el lint literal
 de `summary_en` no comprueba equivalencia semántica. El comparador de
 identificadores reconoce fechas completas con mes escrito en español/inglés y
-YYYY-MM-DD; otros formatos conservan comparación literal. Probar que un número
+YYYY-MM-DD. Una fecha con mes escrito y sin año conserva mes/día como `--MM-DD`;
+una fecha completa del rendering puede cubrir esos componentes, sin que el lint
+valide su año añadido. Enseñar a mantener el año ausente si la evidencia no lo
+justifica. Una fecha fuente completa nunca pierde el año. Otros formatos
+conservan comparación literal. Probar que un número
 ajeno a la fecha no queda cubierto por ella y que los textos almacenados y los
 tokens de recuperación permanecen intactos. Enseñar ejemplos concretos de esas diferencias, claves estables para una
 misma ruta y hechos con ciclos de vida separados. No imponer cuotas de tipos o
