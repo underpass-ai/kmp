@@ -425,3 +425,12 @@ comprobar que el host entrega el bloque adicional al modelo. Una aplicación que
 sólo conserva structuredContent oculta la ayuda. El fallo de metadatos después
 de una escritura aceptada debe conservar la aceptación y el recibo; el contador
 de uso nunca certifica una nueva escritura frente a un replay.
+
+### Ejemplos de inferencia
+
+Los archivos de api/examples/inference-prompts son ejemplos adaptables, no
+un segundo contrato del MCP. Un consumidor construye su petición desde
+inputSchema del tools/list vigente. No exigir igualdad de todo el schema
+entre un ejemplo estático y el motor: una capacidad opcional nueva no invalida
+por sí sola un ejemplo que no la usa. Revisar el comportamiento ilustrado al
+modificarlo; mantener las pruebas del contrato nativo y del vocabulario real.
