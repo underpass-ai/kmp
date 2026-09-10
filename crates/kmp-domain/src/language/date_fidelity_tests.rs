@@ -61,7 +61,6 @@ fn unsupported_or_invalid_dates_keep_literal_identifiers() {
         ("31 de abril de 2026", "2026-04-31"),
         ("0 de agosto de 2026", "2026-08-00"),
         ("17 de agosto de 0000", "0000-08-17"),
-        ("17 de agosto", "2026-08-17"),
         ("17/08/2026", "2026-08-17"),
     ] {
         assert!(!dropped_identifiers(source, target).is_empty(), "{source}");

@@ -7,7 +7,7 @@ use std::collections::BTreeSet;
 
 use super::fold_search_term;
 
-/// Identifier fidelity after folding complete named calendar dates to ISO.
+/// Identifier fidelity after folding named calendar dates, retaining missing years.
 /// Keep this out of retrieval tokenization: stored words and search stay intact.
 pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
     let normalized = |text: &str| {
@@ -28,7 +28,13 @@ pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
             literal_ids.contains(token)
                 || token.bytes().any(|b| b.is_ascii_digit()) && is_identifier(token)
         })
-        .filter(|identifier| !carried.contains(identifier))
+        .filter(|identifier| {
+            !carried.contains(identifier)
+                && (!identifier.starts_with("--")
+                    || !carried.iter().any(|candidate| {
+                        super::date_tokens::carries_partial_date(identifier, candidate)
+                    }))
+        })
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect()
