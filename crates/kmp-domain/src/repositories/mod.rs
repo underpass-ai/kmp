@@ -1,4 +1,6 @@
 pub mod context_event_store;
+pub mod context_revision;
+pub use context_revision::ContextRevision;
 pub mod stored_command_receipt;
 pub use stored_command_receipt::{COMMAND_RECEIPT_ENTITY_KIND, StoredCommandReceipt};
 pub mod graph_neighborhood_reader;

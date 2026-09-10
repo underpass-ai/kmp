@@ -63,6 +63,18 @@ where
         } else {
             None
         };
+        // SQLite publishes events and projections together. Sampling each
+        // about before and after reading rejects a mixed-version neighborhood
+        // even when another process commits between the individual queries.
+        let mut revisions = BTreeMap::new();
+        if reviewing {
+            revisions.insert(
+                command.about.clone(),
+                self.command_application
+                    .memory_revision(&command.about)
+                    .await?,
+            );
+        }
         let mut bundles = self
             .existing_memory_bundle(&command.about)
             .await?
@@ -101,9 +113,14 @@ where
                         if !bundles
                             .iter()
                             .any(|bundle| bundle.root_node_id().as_str() == owner)
-                            && let Some(bundle) = self.existing_memory_bundle(owner).await?
                         {
-                            bundles.push(bundle);
+                            revisions.insert(
+                                owner.clone(),
+                                self.command_application.memory_revision(owner).await?,
+                            );
+                            if let Some(bundle) = self.existing_memory_bundle(owner).await? {
+                                bundles.push(bundle);
+                            }
                         }
                     }
                     existing.foreign.insert(target_ref);
@@ -113,7 +130,6 @@ where
             }
         }
         let (update_context, mut outcome) = translate_memory_ingest(&command, &existing)?;
-        let mut revisions = BTreeMap::new();
         if reviewing
             && self
                 .command_application
@@ -123,10 +139,13 @@ where
         {
             let neighborhood = super::write_neighborhood::build_neighborhood(&command, &bundles);
             for about in &neighborhood.abouts {
-                revisions.insert(
-                    about.clone(),
-                    self.command_application.memory_revision(about).await?,
-                );
+                if revisions.get(about).copied()
+                    != Some(self.command_application.memory_revision(about).await?)
+                {
+                    return Err(ApplicationError::RetryableConflict(
+                        "write neighborhood changed during read; retry the same logical write to refresh it".into(),
+                    ));
+                }
             }
             if command.neighborhood_review.as_deref() != Some(neighborhood.token.as_str()) {
                 outcome.neighborhood = Some(neighborhood);

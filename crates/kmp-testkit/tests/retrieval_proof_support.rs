@@ -24,13 +24,20 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
 }
 
 async fn seed(server: &KernelMcpServer) -> Value {
-    call(
+    let pending = call(
         server,
         "kmp_write_memory",
         serde_json::from_str(SOURCE).expect("source fixture"),
     )
-    .await["local_refs"]
-        .clone()
+    .await;
+    assert_eq!(pending["status"], "needs_review", "{pending}");
+    assert_eq!(pending["accepted"], false, "{pending}");
+    let next = &pending["next_actions"][0];
+    assert_eq!(next["tool"], "kmp_write_memory", "{pending}");
+    let committed = call(server, "kmp_write_memory", next["arguments"].clone()).await;
+    assert_eq!(committed["status"], "committed", "{committed}");
+    assert_eq!(committed["accepted"], true, "{committed}");
+    committed["local_refs"].clone()
 }
 
 fn query(refs: &Value) -> Value {

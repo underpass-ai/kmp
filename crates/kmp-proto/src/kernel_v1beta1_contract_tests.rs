@@ -94,7 +94,9 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "idempotency_key",
             "dry_run",
             "label_policy",
-            "receipt_context_json"
+            "receipt_context_json",
+            "default_observation_to_ingestion",
+            "neighborhood_review"
         ]
     );
     assert_eq!(

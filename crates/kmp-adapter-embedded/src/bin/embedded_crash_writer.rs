@@ -98,14 +98,27 @@ async fn main() {
     let stdout = std::io::stdout();
 
     for revision in 1..=count {
-        let committed = store
-            .append(event_for(&about, revision), revision - 1)
-            .await
-            .expect("append should succeed");
-        store
-            .apply_mutations(projection_for(committed))
-            .await
-            .expect("projection should apply");
+        let committed = if std::env::var_os("KMP_TEST_ATOMIC_PROJECTION").is_some() {
+            store
+                .append_projected(
+                    event_for(&about, revision),
+                    revision - 1,
+                    vec![],
+                    projection_for(revision),
+                )
+                .await
+                .expect("atomic append should succeed")
+        } else {
+            let committed = store
+                .append(event_for(&about, revision), revision - 1)
+                .await
+                .expect("append should succeed");
+            store
+                .apply_mutations(projection_for(committed))
+                .await
+                .expect("projection should apply");
+            committed
+        };
         let mut lock = stdout.lock();
         writeln!(lock, "{committed}").expect("stdout write");
         lock.flush().expect("stdout flush");

@@ -14,7 +14,13 @@ const ROLE: &str = "memory";
 #[tokio::test]
 async fn kill_nine_mid_write_loses_at_most_the_inflight_event_and_replays_cleanly() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
-    kill_nine_and_recover(data_dir.path()).await;
+    kill_nine_and_recover(data_dir.path(), false).await;
+}
+
+#[tokio::test]
+async fn kill_nine_during_atomic_commit_leaves_no_unprojected_event() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    kill_nine_and_recover(data_dir.path(), true).await;
 }
 
 /// The same contract on the SQLite engine (ADR-018): WAL with
@@ -32,11 +38,15 @@ async fn kill_nine_mid_write_on_sqlite_loses_at_most_the_inflight_event_and_repl
         )
         .expect("stamp the directory for sqlite"),
     );
-    kill_nine_and_recover(data_dir.path()).await;
+    kill_nine_and_recover(data_dir.path(), false).await;
 }
 
-async fn kill_nine_and_recover(data_dir: &std::path::Path) {
-    let mut writer = Command::new(env!("CARGO_BIN_EXE_embedded_crash_writer"))
+async fn kill_nine_and_recover(data_dir: &std::path::Path, atomic: bool) {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_embedded_crash_writer"));
+    if atomic {
+        command.env("KMP_TEST_ATOMIC_PROJECTION", "1");
+    }
+    let mut writer = command
         .arg(data_dir)
         .arg("100000")
         .stdout(Stdio::piped())
@@ -76,6 +86,25 @@ async fn kill_nine_and_recover(data_dir: &std::path::Path) {
     );
 
     let (log_length, last_sequence) = store.event_log_stats().await.expect("log stats");
+    if atomic {
+        // No recovery/replay has run: every surviving event already has its
+        // complete detail projection, even if its acknowledgement was lost.
+        for index in 1..=revision {
+            let detail = store
+                .load_node_detail(&format!("claim:{index:06}"))
+                .await
+                .expect("atomic detail lookup")
+                .expect("committed detail");
+            assert_eq!(detail.revision, index);
+        }
+        assert!(
+            store
+                .load_node_detail(&format!("claim:{:06}", revision + 1))
+                .await
+                .expect("next detail")
+                .is_none()
+        );
+    }
     assert_eq!(
         log_length, revision,
         "event log length must equal the aggregate revision: no loss, no duplicates"

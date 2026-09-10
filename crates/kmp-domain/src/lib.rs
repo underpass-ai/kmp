@@ -27,9 +27,9 @@ pub use projection::{
 };
 pub use repositories::{COMMAND_RECEIPT_ENTITY_KIND, StoredCommandReceipt};
 pub use repositories::{
-    ContextEventChange, ContextEventStore, ContextUpdatedEvent, GraphNeighborhoodReader,
-    IdempotentOutcome, MemoryAboutIndexReader, NeighborhoodRequest, NodeDetailReader,
-    NodeRelationshipReader, NodeRelationships, PortError, ProcessedEventStore,
+    ContextEventChange, ContextEventStore, ContextRevision, ContextUpdatedEvent,
+    GraphNeighborhoodReader, IdempotentOutcome, MemoryAboutIndexReader, NeighborhoodRequest,
+    NodeDetailReader, NodeRelationshipReader, NodeRelationships, PortError, ProcessedEventStore,
     ProjectionCheckpointStore, ProjectionWriter, QualityMetricsObserver, QualityObservationContext,
     SnapshotSaveOptions, SnapshotStore, TokenEstimator,
 };
