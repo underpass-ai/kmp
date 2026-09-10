@@ -54,7 +54,8 @@ pub(super) fn relation_quality_diagnostic(
             class_names(spec.classes).join(", ")
         ))
         .at("class")
-        .code("RELATION_CLASS_MISMATCH"));
+        .code("RELATION_CLASS_MISMATCH")
+        .allowed_values(class_names(spec.classes)));
     }
 
     let target_present = !input.to.trim().is_empty();

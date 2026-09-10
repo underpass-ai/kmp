@@ -72,6 +72,8 @@ pub fn translate_memory_ingest(
 
     let mut changes = memory_changes(&memory)?;
     let mut outcome = MemoryIngestOutcome {
+        replayed: false,
+        clocks: Some(super::WriteClocks::for_memory(&memory)),
         receipt_ref: None,
         about: command.about.clone(),
         memory_id: memory_id_from_idempotency_key(&command.idempotency_key),

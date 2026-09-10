@@ -154,6 +154,7 @@ pub fn temporal_query_from_move_proto(
         budget: request.budget,
         axis: request.axis,
         direction,
+        entry_selection: request.entry_selection,
     })
 }
 
@@ -171,6 +172,7 @@ pub fn temporal_query_from_near_proto(
         budget: request.budget,
         axis: request.axis,
         direction: TemporalDirection::Near,
+        entry_selection: request.entry_selection,
     })
 }
 
@@ -208,6 +210,7 @@ pub fn inspect_query_from_proto(request: InspectRequest) -> ProtoMappingResult<I
 }
 
 struct TemporalQueryParts {
+    entry_selection: Option<kmp_proto::v1beta1::TemporalEntrySelection>,
     about: String,
     cursor: Option<kmp_proto::v1beta1::TemporalCursor>,
     interval: Option<kmp_proto::v1beta1::TemporalInterval>,
@@ -263,6 +266,11 @@ fn temporal_query(parts: TemporalQueryParts) -> ProtoMappingResult<TemporalMemor
     Ok(TemporalMemoryQuery {
         about: parts.about,
         direction: parts.direction,
+        entry_selection: parts
+            .entry_selection
+            .map(|selection| kmp_domain::TemporalEntrySelection::new(selection.refs))
+            .transpose()
+            .map_err(|error| invalid_argument(error.to_string()))?,
         axis: temporal_axis_from_proto(parts.axis)?,
         cursor,
         interval,
@@ -298,9 +306,10 @@ fn temporal_include_from_proto(
     value: TemporalInclude,
 ) -> ProtoMappingResult<TemporalIncludeOptions> {
     Ok(TemporalIncludeOptions {
-        evidence: value.evidence,
-        relations: value.relations,
+        evidence: value.evidence || value.dependencies,
+        relations: value.relations || value.dependencies,
         raw_refs: value.raw_refs,
+        dependencies: value.dependencies,
     })
 }
 

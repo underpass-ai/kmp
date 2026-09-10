@@ -44,9 +44,9 @@ one call:
 kmp_forward { about: "project:kmp", from: <the resume_cursor> }
 ```
 
-The kernel does not remember where each reader got to, deliberately: that
-would be state about the reader rather than about the work. The bookmark is
-yours to hold. `resume_cursor` is `null` when nothing in the packet carries a
+Memory evidence does not store a mutable reader position. Agent metadata can
+retain an exact continuation call; its identifier replays that call, without
+advancing on retry. Keep the bookmark for the work you intend to resume. `resume_cursor` is `null` when nothing in the packet carries a
 temporal coordinate.
 
 Wake also returns `labels`: the catalogue of the about — every label its
@@ -72,3 +72,11 @@ caps still qualify coverage. If the allowance is unavailable, keep the result
 partial. A cursor conflict supplies `feedback[].action` to start a fresh read;
 never combine pages from different selections. The budget-proof lesson
 executes both restoration and continuation against its stored sources.
+
+`projection.sections` names what remains: `remaining` counts eligible expansion
+after this page, excluding repeated core and all earlier pages. For example,
+`proof.evidence.remaining: 2` and `proof.path.remaining: 0` mean two source
+passages are still unread although the selected relations have arrived. Follow
+the returned action to obtain them. Zero in every section finishes this packet's
+expansion; it does not prove the history complete or the evidence sufficient.
+Check `core_text_shortened`, `excluded_by_detail` and `selection_omitted` separately.

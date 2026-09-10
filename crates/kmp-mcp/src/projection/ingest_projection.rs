@@ -12,6 +12,8 @@ pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
             "about": memory.map(|memory| memory.about.as_str()).unwrap_or(""),
             "memory_id": memory.map(|memory| memory.memory_id.as_str()).unwrap_or(""),
             "receipt_ref": memory.and_then(|memory| memory.receipt_ref.as_deref()),
+            "replayed": memory.map(|memory| memory.replayed),
+            "clocks": memory.and_then(|memory| memory.clocks.as_ref()).map(write_clocks_json),
             "accepted": {
                 "entries": accepted.map(|accepted| accepted.entries).unwrap_or_default(),
                 "relations": accepted.map(|accepted| accepted.relations).unwrap_or_default(),
@@ -43,5 +45,26 @@ pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
                 .unwrap_or_default()
         },
         "warnings": response.warnings
+    })
+}
+
+fn write_clocks_json(value: &kmp_proto::v1beta1::WriteClocks) -> Value {
+    fn clock(value: Option<&kmp_proto::v1beta1::WriteClockCoverage>) -> Value {
+        value
+            .map(|v| {
+                json!({
+                    "entries": v.entries, "distinct_values": v.distinct_values,
+                    "single_value": v.single_value.map(|time| time.to_string())
+                })
+            })
+            .unwrap_or(Value::Null)
+    }
+    json!({
+        "scope": "accepted_command", "entries": value.entries,
+        "occurred": clock(value.occurred.as_ref()),
+        "observed": clock(value.observed.as_ref()),
+        "ingested": clock(value.ingested.as_ref()),
+        "valid_from": clock(value.valid_from.as_ref()),
+        "valid_until": clock(value.valid_until.as_ref())
     })
 }

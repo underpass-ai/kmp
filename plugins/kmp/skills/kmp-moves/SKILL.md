@@ -1,6 +1,6 @@
 ---
 name: kmp-moves
-description: Explain the live fifteen-tool KMP MCP surface and relation vocabulary. Use when the user asks what KMP can do or which move fits a task.
+description: Explain the live sixteen-tool KMP MCP surface and relation vocabulary. Use when the user asks what KMP can do or which move fits a task.
 ---
 
 # KMP moves
@@ -9,6 +9,7 @@ Prefer the live `tools/list` result. Its twelve memory tools must expose
 exactly: `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
 `kmp_relate`, `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
 `kmp_trace`, `kmp_inspect`, and `kmp_relabel`.
+`kmp_guide` manages the persistent agent identity and progressive scheme.
 Its three semantic view tools are `kmp_view_open`,
 `kmp_view_apply_intent`, and `kmp_view_get_state`.
 

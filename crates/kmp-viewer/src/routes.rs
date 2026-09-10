@@ -18,6 +18,7 @@ use crate::query_params::{
     axis_param, budget_param, cursor_param, depth_param, dimension_selection, direction_param,
     numeric_param, tier_param, window_param,
 };
+use crate::renderer_asset::renderer_source;
 use crate::{MemoryViewerServer, view, views};
 
 /// Unwraps a parameter, or returns its refusal from the enclosing handler.
@@ -91,8 +92,6 @@ pub(crate) const LOOM_MODULES: [(&str, &str); 23] = [
     ("loom-scene.js", include_str!("../ui/loom-scene.js")),
     ("loom-gestures.js", include_str!("../ui/loom-gestures.js")),
 ];
-/// Vendored render engine, pinned and hash-verified in `ui/vendor/VENDOR.md`.
-pub(crate) const THREE_JS: &str = include_str!("../ui/vendor/three.min.js");
 pub(crate) const LOOM_LOADING_CSS: &str = include_str!("../ui/loom-loading.css");
 pub(crate) const LOOM_SHELL_CSS: &str = include_str!("../ui/loom-shell.css");
 
@@ -155,7 +154,7 @@ where
             "/assets/loom.css" => HttpResponse::css(LOOM_CSS),
             "/assets/loom.js" => HttpResponse::javascript(LOOM_JS),
             "/assets/loom-core.js" => HttpResponse::javascript(LOOM_CORE_JS),
-            "/assets/three.min.js" => HttpResponse::javascript(THREE_JS),
+            "/assets/three.min.js" => HttpResponse::javascript(renderer_source()),
             "/assets/loom-loading.css" => HttpResponse::css(LOOM_LOADING_CSS),
             "/assets/loom-shell.css" => HttpResponse::css(LOOM_SHELL_CSS),
             "/api/info" => self.info(),
@@ -304,6 +303,7 @@ where
             Err(response) => return response,
         };
         let query = TemporalMemoryQuery {
+            entry_selection: None,
             about: about.to_string(),
             direction,
             axis,

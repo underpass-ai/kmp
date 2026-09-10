@@ -214,7 +214,14 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
     );
     assert_eq!(
         message_field_names(memory_file, "RecallProjectionSection"),
-        vec!["name", "core", "returned_on_page", "eligible", "total"]
+        vec![
+            "name",
+            "core",
+            "returned_on_page",
+            "eligible",
+            "total",
+            "remaining"
+        ]
     );
     assert_eq!(
         message_field_names(memory_file, "RecallTruncation"),
@@ -265,6 +272,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "budget",
             "axis",
             "interval",
+            "entry_selection",
         ]
     );
     assert_eq!(
@@ -279,6 +287,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "budget",
             "axis",
             "interval",
+            "entry_selection",
         ]
     );
     assert_eq!(
@@ -293,6 +302,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "budget",
             "axis",
             "interval",
+            "entry_selection",
         ]
     );
     assert_eq!(
@@ -307,6 +317,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "budget",
             "axis",
             "interval",
+            "entry_selection",
         ]
     );
     assert_eq!(
@@ -321,6 +332,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "budget",
             "axis",
             "interval",
+            "entry_selection",
         ]
     );
     assert_eq!(
@@ -335,6 +347,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "budget",
             "axis",
             "interval",
+            "entry_selection",
         ]
     );
     // The four temporal-move responses share one field set (including the
@@ -349,8 +362,17 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
         assert_eq!(
             message_field_names(memory_file, response),
             vec![
-                "summary", "temporal", "coverage", "entries", "proof", "warnings", "raw_refs",
-                "page", "quality",
+                "summary",
+                "temporal",
+                "coverage",
+                "entries",
+                "proof",
+                "warnings",
+                "raw_refs",
+                "page",
+                "quality",
+                "dependency_groups",
+                "dependency_entries",
             ],
             "temporal response {response} field set drifted",
         );

@@ -14,7 +14,12 @@ use tracing_subscriber::{EnvFilter, Layer};
 pub(crate) async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let _log_guard = init_tracing();
 
-    let server = match server_from_env().await {
+    let configured = server_from_env().await.and_then(|server| {
+        server
+            .with_passage_format_from_env()
+            .map_err(StartupFailure::after_the_backend_was_chosen)
+    });
+    let server = match configured {
         Ok(server) => server,
         Err(StartupFailure {
             message,

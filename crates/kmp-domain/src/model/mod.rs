@@ -4,6 +4,7 @@ pub mod bundle_relationship;
 pub mod kmp_bundle;
 pub mod kmp_stats;
 pub mod labels;
+mod proof_dependency_group;
 pub mod relate;
 mod relationship_path;
 pub mod temporal_memory;
@@ -17,6 +18,7 @@ pub use labels::{
     INTENDED_NEW_LABEL_METADATA_KEY, LabelResemblance, ResemblanceKind, label_resemblances,
     labels_by_entry, normalized_label_token,
 };
+pub use proof_dependency_group::ProofDependencyGroup;
 pub use relate::{
     CoordinateRelation, CoordinateRelationKind, DECLARED_FROM_RELATE_METHOD, DeclaredEdge,
     FactState, MAX_COORDINATE_RELATIONS, MAX_PROPOSALS_PER_FACT, ProposalSignal, ProposedLink,
@@ -24,6 +26,7 @@ pub use relate::{
 };
 pub use relationship_path::directed_relationship_path;
 pub use temporal_memory::{
-    TemporalEntry, TemporalMemoryTraversal, TemporalTraversalRequest, TemporalTraversalResult,
-    compare_temporal_instants, temporal_instant_nanos, temporal_instant_rfc3339,
+    TemporalEntry, TemporalEntrySelection, TemporalMemoryTraversal, TemporalTraversalRequest,
+    TemporalTraversalResult, compare_temporal_coordinates, compare_temporal_instants,
+    temporal_instant_nanos, temporal_instant_rfc3339,
 };

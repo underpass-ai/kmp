@@ -389,6 +389,31 @@ their source and relation types before making an identity claim.
 {"tool":"kmp_trace","save_as":"identity_path","arguments":{"about":"example:guide:alias-ownership","from":"${alias.generated_refs.0}","to":"${elena.generated_refs.0}","budget":{"max_bytes":30000}}}
 ```
 
+To recover the alias declaration together with its earlier identity source,
+select one entry and request its dependencies. The call keeps the selected
+history entry separate from supporting records; it does not equate the
+unresolved visitor with Elena. Complete every response page, then resolve
+the group members against `entries` and `proof.entries` and read their sources.
+The small fixture fits this budget; larger records require the returned actions.
+The neighborhood also includes Jon's earlier assignment, connected through
+`uses_background`. That contextual link does not identify Jon as Elena and
+does not help resolve the alias. Later visitor and replacement records remain
+outside the observed cut. A group can contain context that the answer does
+not need; inspect the relation types before deciding what each member proves.
+
+```json
+{"tool":"kmp_goto","save_as":"alias_dependencies","arguments":{"about":"example:guide:alias-ownership","at":{"ref":"${alias.generated_refs.0}"},"axis":"observed","limit":{"entries":1},"include":{"dependencies":true},"budget":{"max_bytes":100000}}}
+```
+
+If we already know the older directory entry, keep it as the selected memory
+and stand at the later clarification time. `refs` chooses entries; `at.time`
+chooses the question's inclusive cutoff. The later explicit alias relation
+can now supply proof. This does not turn the same-name visitor into Elena.
+
+```json
+{"tool":"kmp_goto","save_as":"directory_with_later_proof","arguments":{"about":"example:guide:alias-ownership","at":{"time":"2026-09-02T09:00:00Z"},"refs":["${elena.generated_refs.0}"],"axis":"observed","limit":{"entries":1},"include":{"dependencies":true},"budget":{"max_bytes":100000}}}
+```
+
 Follow the account's timeline with `near`, using the catalogue's exact
 account value. The two assignment memories should remain distinct. Trace
 from the new one to the old one to see the explicit replacement proof.

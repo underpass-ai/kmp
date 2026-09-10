@@ -233,6 +233,32 @@ impl TemporalAdmission {
         }
     }
 
+    /// Dependency traversal may use a declared validity interval only where
+    /// it overlaps this selection. Historical proof paths remain unchanged.
+    pub(super) fn admits_dependency_relation(
+        &self,
+        relationship: &kmp_domain::BundleRelationship,
+    ) -> bool {
+        let explanation = relationship.explanation();
+        if !self.admits_relation_clock(explanation, self.lifecycle_instant()) {
+            return false;
+        }
+        if self.axis() != TemporalAxis::Validity {
+            return true;
+        }
+        let start = match &self.selection {
+            TemporalSelection::AsOf { .. } => self.resolved_as_of.as_deref(),
+            TemporalSelection::Within { interval, .. } => interval.start(),
+            TemporalSelection::Frontier => None,
+        };
+        match (explanation.valid_until(), start) {
+            (Some(end), Some(start)) => {
+                compare_temporal_instants(end, start) == Some(Ordering::Greater)
+            }
+            _ => true,
+        }
+    }
+
     fn admits_relation_clock(
         &self,
         explanation: &RelationExplanation,
@@ -377,7 +403,7 @@ fn candidate_refs(item: &MemoryEvidence) -> Vec<String> {
     refs
 }
 
-fn coordinates_by_ref(bundle: &KmpBundle) -> BTreeMap<String, Vec<TemporalCoordinate>> {
+pub(super) fn coordinates_by_ref(bundle: &KmpBundle) -> BTreeMap<String, Vec<TemporalCoordinate>> {
     let mut coordinates = BTreeMap::<String, Vec<TemporalCoordinate>>::new();
     for relationship in bundle
         .relationships()

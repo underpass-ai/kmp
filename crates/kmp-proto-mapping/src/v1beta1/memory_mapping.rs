@@ -39,6 +39,9 @@ mod semantic_candidate_ranking;
 mod semantic_recall_tests;
 mod semantic_source;
 mod temporal_admission;
+mod temporal_dependencies;
+#[cfg(test)]
+mod temporal_dependency_tests;
 #[cfg(test)]
 mod temporal_goto_proof_tests;
 #[cfg(test)]

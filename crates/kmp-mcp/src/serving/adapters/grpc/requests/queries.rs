@@ -10,9 +10,10 @@ use crate::contract::validator::{optional_string, required_string, validate_requ
 use super::common::{answer_policy_from_object, memory_budget_from_arguments, object};
 use super::dimensions::dimension_selection_from_arguments;
 use super::temporal::{
-    as_of_from_arguments, inspect_include_from_arguments, interval_from_arguments,
-    page_from_arguments, temporal_axis_from_arguments, temporal_cursor_from_arguments,
-    temporal_include_from_arguments, temporal_limit_from_arguments, temporal_window_from_arguments,
+    as_of_from_arguments, entry_selection_from_arguments, inspect_include_from_arguments,
+    interval_from_arguments, page_from_arguments, temporal_axis_from_arguments,
+    temporal_cursor_from_arguments, temporal_include_from_arguments, temporal_limit_from_arguments,
+    temporal_window_from_arguments,
 };
 
 pub(crate) fn wake_request_from_arguments(arguments: &Value) -> Result<WakeRequest, String> {
@@ -63,6 +64,7 @@ pub(crate) fn temporal_move_request_from_arguments(
     };
 
     Ok(TemporalMoveRequest {
+        entry_selection: entry_selection_from_arguments(arguments)?,
         interval: interval_from_arguments(arguments)?,
         about: required_string(arguments, "about")?,
         cursor: arguments
@@ -83,6 +85,7 @@ pub(crate) fn temporal_near_request_from_arguments(
 ) -> Result<TemporalNearRequest, String> {
     validate_required_arguments(arguments, &["about"])?;
     Ok(TemporalNearRequest {
+        entry_selection: entry_selection_from_arguments(arguments)?,
         interval: interval_from_arguments(arguments)?,
         about: required_string(arguments, "about")?,
         around: Some(temporal_cursor_from_arguments(arguments, "around")?),

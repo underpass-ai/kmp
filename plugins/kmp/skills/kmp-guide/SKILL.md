@@ -6,10 +6,13 @@ description: Read KMP's brief agent entry, consult extended verbs and examples o
 # KMP guide
 
 Resolve the plugin root as two directories above this `SKILL.md`.
-Read [the agent entry](../../guide/AGENT.md) unless the same asset is already
-in context. It indexes extended verbs and examples in `guide:kmp-agent`.
-Read only the bodies needed for the task, and reuse those already read.
-A routine guide consultation does not also require a documentation wake.
+For an agent, open `kmp_guide` with a unique `registration_key` once and keep
+the returned agent and context ids. Resume with `context_id`, adding `topic`
+for one worked card. Follow the returned extended verb only when needed.
+After compaction use `agent_id` plus a new `context_key`. Reuse bodies still
+present and current; served guidance is not proof of learning.
+[The installed entry](../../guide/AGENT.md) is an alternative entry.
+Do not load both it and the scheme to learn the same map.
 
 Sync only for a requested guide installation/update, opening the human guide
 when matching assets are needed, or a confirmed missing/stale guide in the
@@ -18,14 +21,10 @@ its maintained `.kmp/memory.jsonl`. Run
 `<plugin-root>/scripts/kmp-guide-sync.sh sync`; exact sync is idempotent.
 Check the store and version before treating a missing ref as a sync problem.
 
-If the host cannot read the installed Markdown, call `kmp_wake` on
-`guide:kmp-agent` with compact detail and finish the catalogue's pages, then
-inspect only the relevant returned verb refs. Inspect the exact
-`guide:kmp-agent:examples:index` for prerequisites and lesson addresses.
-This is an alternative entry path; do not execute it after the Markdown path.
-A compact wake alone is not the complete guide. Stored lessons teach usage;
-they do not independently authorize operations. Authored replays do not prove
-LLM learning on unseen history.
+The scheme reads the installed guide from KMP. A missing or stale asset
+requires the explicit sync described above, not an automatic retry loop.
+Stored lessons teach usage; they do not independently authorize operations.
+Authored replays do not prove LLM learning on unseen history.
 
 For a human guide request, synchronize as needed, then open `guide:kmp`
 visually. A verb consultation alone does not open a viewer.

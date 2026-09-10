@@ -29,8 +29,6 @@ const KMP_INGEST_RESPONSE_FIXTURE: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/ingest.response.json");
 const KMP_WRITE_MEMORY_REQUEST_FIXTURE: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/write-memory.request.json");
-const KMP_WRITE_MEMORY_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/write-memory.response.json");
 const KMP_WAKE_REQUEST_FIXTURE: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/wake.request.json");
 const KMP_WAKE_RESPONSE_FIXTURE: &str =
@@ -309,28 +307,6 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
             "read_context",
             "idempotency_key",
             "options",
-        ])
-    );
-    assert_eq!(
-        sorted_keys(object_keys(&parse_fixture(
-            KMP_WRITE_MEMORY_RESPONSE_FIXTURE
-        ))),
-        sorted_strs(&[
-            "accepted",
-            "validation",
-            "coverage",
-            "warnings",
-            "local_refs",
-            "dry_run",
-            "summary",
-            "generated_refs",
-            "labels",
-            "relations",
-            "relation_quality",
-            "relation_quality_metrics",
-            "ingest_preview",
-            "diagnostics",
-            "next_suggested_reads",
         ])
     );
     assert_eq!(

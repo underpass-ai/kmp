@@ -63,39 +63,53 @@ def prepare(client, root: Path, lesson: Path, mode: str):
         else:
             raise ValueError('Guide inspection exceeded 100 pages')
         metrics['inspected_refs'].append(entry['id'])
+        return retained_object
 
     if mode == 'markdown':
         markdown = (root / 'plugins/kmp/guide/AGENT.md').read_text()
         allowed = set(re.findall(r'^\| .* \| `(guide:kmp-agent:[^`]+)` \|$', markdown, re.M))
         by_ref = {entry['id']: entry for entry in entries}
-        expected = {entry['id'] for entry in entries if entry['metadata'].get('guide_title') or entry['metadata'].get('example_title')}
-        if allowed != expected:
-            raise ValueError('Markdown index differs from canonical extended nodes')
+        if not allowed or allowed - by_ref.keys():
+            raise ValueError('Installed Markdown references are missing from the synchronized guide; check store and guide version')
         arguments = json.loads(re.findall(r'```json\n(.*?)\n```', markdown, re.S)[0])
         metrics['markdown_bytes'] = len(markdown.encode())
         metrics['markdown_sha256'] = hashlib.sha256(markdown.encode()).hexdigest()
         client.record({'preparation': 'read installed agent Markdown', 'text': markdown,
                        'markdown_sha256': metrics['markdown_sha256'], 'model_calls': 0})
-        seen = set()
+        seen = {}
 
         def consult(ref):
             if ref not in allowed:
-                raise ValueError('Guide reference is absent from the installed index')
+                raise ValueError(f'Guide reference {ref} is not reachable from the installed entry and selected maps; check the matching guide version')
+            if ref not in by_ref:
+                raise ValueError(f'Guide reference {ref} is absent from synchronized assets; sync the matching guide version')
             if ref in seen:
                 metrics['reused_guidance'] += 1
-                return
-            inspect(by_ref[ref], {**arguments, 'ref': ref})
-            seen.add(ref)
+                return seen[ref]
+            seen[ref] = inspect(by_ref[ref], {**arguments, 'ref': ref})
+            return seen[ref]
+
+        # The brief entry names maps, not every lesson. Read those maps through
+        # MCP before following the exact refs their verified bodies expose.
+        # Discoverability does not load all referenced lessons into context.
+        maps = [ref for ref in sorted(allowed) if ref in {
+            'guide:kmp-agent:examples:index', 'guide:kmp-agent:examples:by-capability'}]
+        for ref in maps:
+            body = consult(ref)['text']
+            allowed.update(re.findall(r'guide:kmp-agent:[A-Za-z0-9_:-]+', body))
 
         source = json.loads((root / 'plugins/kmp/guide/editorial.json').read_text())['abouts'][0]
         topic_texts = {(root / 'plugins/kmp/guide' / entry['text_file']).read_text()
                        if entry.get('text_file') else entry['text']
                        for entry in source['entries'] if entry['id'] in topics}
         consult(lesson_entry['id'])
-        # Read the topics this authored lesson uses, then reuse them.
-        for ref in sorted(allowed):
-            if by_ref[ref]['text'] in topic_texts:
-                consult(ref)
+        # Each selected prerequisite must be reachable, not merely present in
+        # the authoring bundle. Missing links cannot silently drop a topic.
+        topic_refs = [entry['id'] for entry in entries if entry['text'] in topic_texts]
+        if len(topic_refs) != len(topics):
+            raise ValueError('Selected guide prerequisites are missing or ambiguous')
+        for ref in sorted(topic_refs):
+            consult(ref)
         tool_refs = {entry['metadata']['tool_name']: entry['metadata']['guide_ref']
                      for entry in entries if entry['metadata'].get('tool_name')}
 

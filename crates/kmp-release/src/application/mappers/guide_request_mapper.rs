@@ -169,8 +169,18 @@ impl GuideRequestMapper {
         let compact = serde_json::to_vec(&logical).map_err(|error| {
             ReleaseError::invalid(format!("could not encode guide request: {error}"))
         })?;
-        let digest = format!("{:x}", Sha256::digest(compact));
+        let mut hash = Sha256::new();
+        hash.update(b"kmp.guide.asset-with-revision.v1\0");
+        hash.update(compact);
+        let digest = format!("{:x}", hash.finalize());
         let mut body = logical;
+        // The overview exposes the whole guide's revision without making an
+        // agent fetch every lesson merely to detect that any lesson changed.
+        if let Some(entries) = body["memory"]["entries"].as_array_mut() {
+            for entry in entries {
+                entry["metadata"]["guide_revision"] = Value::String(digest.clone());
+            }
+        }
         body["idempotency_key"] = Value::String(format!(
             "ingest:guide-sync:{}:{}:{}",
             source.guide_version,
@@ -255,6 +265,7 @@ impl GuideRequestMapper {
 
     fn tool_verb(name: &str) -> Result<&'static str, ReleaseError> {
         match name {
+            "kmp_guide" => Ok("verb:guide"),
             "kmp_ingest" | "kmp_write_memory" | "kmp_relabel" => Ok("verb:write"),
             "kmp_wake" => Ok("verb:wake"),
             "kmp_ask" => Ok("verb:ask"),

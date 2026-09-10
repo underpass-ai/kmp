@@ -16,6 +16,7 @@ CONTRACT = json.loads((PLUGIN / "capabilities.json").read_text(encoding="utf-8")
 # Memory and semantic viewer tools exposed by the package.
 # The view tools are read-only with respect to memory by construction.
 EXPECTED_TOOLS = {
+    "kmp_guide",
     "kmp_ingest",
     "kmp_write_memory",
     "kmp_wake",
@@ -65,10 +66,11 @@ native_skills = {
 
 if claude != ids:
     fail(f"Claude commands differ: contract={sorted(ids)}, files={sorted(claude)}")
-if native_skills != codex_skills | {"kmp-memory"}:
+agent_skills = {entry["codex"] for entry in CONTRACT["agent_workflows"]}
+if native_skills != codex_skills | agent_skills:
     fail(
         "native Codex skills differ: "
-        f"contract={sorted(codex_skills | {'kmp-memory'})}, files={sorted(native_skills)}"
+        f"contract={sorted(codex_skills | agent_skills)}, files={sorted(native_skills)}"
     )
 
 for entry in workflows:

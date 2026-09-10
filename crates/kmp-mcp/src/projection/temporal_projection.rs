@@ -7,7 +7,7 @@ use super::rendering::*;
 use crate::serving::tool_error::ToolError;
 
 pub(crate) fn temporal_from_response(response: TemporalMoveResponse) -> Value {
-    json!({
+    let mut value = json!({
         "summary": response.summary,
         "temporal": response
             .temporal
@@ -49,7 +49,29 @@ pub(crate) fn temporal_from_response(response: TemporalMoveResponse) -> Value {
         "proof": response.proof.as_ref().map(proof_json).unwrap_or_else(empty_proof_json),
         "quality": optional_quality_json(response.quality.as_ref()),
         "warnings": response.warnings
-    })
+    });
+    if !response.dependency_groups.is_empty() {
+        value["proof"]["groups"] = json!(
+            response
+                .dependency_groups
+                .iter()
+                .map(|group| json!({
+                    "seed_ref":group.seed_ref, "member_refs":group.member_refs,
+                    "unavailable_in_selection":group.unavailable_in_selection,
+                    "omitted_by_limit":group.omitted_by_limit,
+                    "max_hops":group.max_hops,"max_members":group.max_members
+                }))
+                .collect::<Vec<_>>()
+        );
+        value["proof"]["entries"] = json!(
+            response
+                .dependency_entries
+                .iter()
+                .map(temporal_entry_json)
+                .collect::<Vec<_>>()
+        );
+    }
+    value
 }
 
 pub(crate) fn enforce_temporal_output_budget(
@@ -71,6 +93,8 @@ mod tests {
     #[test]
     fn maps_temporal_response_to_kmp_json_names() {
         let response = TemporalMoveResponse {
+            dependency_groups: Vec::new(),
+            dependency_entries: Vec::new(),
             summary: "Returned 1 temporal entry.".to_string(),
             temporal: Some(TemporalState {
                 interval: None,

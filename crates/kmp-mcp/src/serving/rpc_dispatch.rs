@@ -49,19 +49,21 @@ impl KernelMcpServer {
                 self.apps_negotiated.store(apps, Ordering::SeqCst);
                 jsonrpc_result(
                     id,
-                    initialize_result_with_apps(
+                    self.passage_initialize(initialize_result_with_apps(
                         self.backend_name(),
                         self.grpc_tls_mode_name(),
                         apps,
                         self.bridges_languages(),
-                    ),
+                    )),
                 )
             }),
             Some("notifications/initialized") => None,
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    tools_list_result_with_apps(self.apps_negotiated.load(Ordering::SeqCst)),
+                    self.passage_tools(tools_list_result_with_apps(
+                        self.apps_negotiated.load(Ordering::SeqCst),
+                    )),
                 )
             }),
             Some("resources/list") if self.apps_negotiated.load(Ordering::SeqCst) => {
@@ -131,9 +133,13 @@ impl KernelMcpServer {
         {
             return jsonrpc_result(
                 id,
-                tool_error_result(&ToolError::unknown_tool(format!(
-                    "{name} is callable only by a negotiated MCP App"
-                ))),
+                tool_error_result(
+                    name,
+                    arguments,
+                    &ToolError::unknown_tool(format!(
+                        "{name} is callable only by a negotiated MCP App"
+                    )),
+                ),
             );
         }
 
@@ -150,9 +156,50 @@ impl KernelMcpServer {
                 &error.message,
                 start.elapsed(),
             );
-            return jsonrpc_result(id, tool_error_result(&error));
+            return jsonrpc_result(id, tool_error_result(name, arguments, &error));
         }
 
+        if name == "kmp_guide" {
+            return self.handle_kmp_guide(id, arguments, start).await;
+        }
+
+        let resolved = match self.resolve_read_arguments(name, arguments) {
+            Ok(resolved) => resolved,
+            Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
+        };
+        let arguments = resolved.as_ref().unwrap_or(arguments);
+        let guidance = match super::call_guidance::CallGuidance::prepare(self, arguments) {
+            Ok(guidance) => guidance,
+            Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
+        };
+        let memory_arguments = guidance
+            .as_ref()
+            .map(|g| g.memory_arguments(name, arguments));
+        let result = self
+            .dispatch_memory_call(
+                id,
+                name,
+                memory_arguments.as_ref().unwrap_or(arguments),
+                start,
+            )
+            .await;
+        let result = match guidance {
+            Some(guidance) => {
+                let result = self.shorten_read_actions(&guidance, result);
+                self.complete_work_guidance(name, arguments, &guidance, result)
+            }
+            None => result,
+        };
+        self.project_read_passages(name, result)
+    }
+
+    async fn dispatch_memory_call(
+        &self,
+        id: Value,
+        name: &str,
+        arguments: &Value,
+        start: Instant,
+    ) -> String {
         if name == "kmp_write_memory" {
             return self.handle_kmp_write_memory(id, arguments, start).await;
         }
@@ -182,7 +229,7 @@ impl KernelMcpServer {
                 &error.message,
                 start.elapsed(),
             );
-            return jsonrpc_result(id, tool_error_result(&error));
+            return jsonrpc_result(id, tool_error_result(name, arguments, &error));
         }
 
         // The view tools never reach the backend's write path — they hold a
@@ -213,7 +260,7 @@ impl KernelMcpServer {
                     &error.message,
                     start.elapsed(),
                 );
-                jsonrpc_result(id, tool_error_result(&error))
+                jsonrpc_result(id, tool_error_result(name, arguments, &error))
             }
         }
     }

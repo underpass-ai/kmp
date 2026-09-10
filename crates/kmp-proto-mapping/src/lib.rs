@@ -3,4 +3,5 @@
 //! any composition (gRPC server, embedded MCP backend) can speak the same
 //! wire shapes without linking transport infrastructure.
 
+pub mod context_projection;
 pub mod v1beta1;

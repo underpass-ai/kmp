@@ -4,6 +4,9 @@ Use this fictional Atlas permit to separate when a decision was signed, when
 the reviewer received it, when KMP recorded it and when it applied. The LLM
 interprets the sources; KMP preserves the chosen coordinates. A fact that
 applied before it was reported is not evidence that the reviewer knew it then.
+If a source says only “this state was observed today; its onset is unknown”,
+record its observation and omit `valid_from`. Do not turn today's observation
+into an invented start, or copy a later report's boundary into earlier knowledge.
 
 Read the installed guide/AGENT.md and its exact reference to this lesson in
 guide:kmp-agent. Consult time, writer, lifecycle and audit guidance when used.

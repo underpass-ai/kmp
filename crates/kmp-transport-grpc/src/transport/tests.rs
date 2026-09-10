@@ -38,6 +38,9 @@ use prost_types::Timestamp;
 use tokio::sync::Mutex;
 use tonic::Request;
 
+#[path = "temporal_dependency_tests.rs"]
+mod temporal_dependency_tests;
+
 use super::command_grpc_service_v1beta1::CommandGrpcServiceV1Beta1;
 use super::grpc_server::GrpcServer;
 use super::memory_grpc_service_v1beta1::MemoryGrpcServiceV1Beta1;
@@ -1784,6 +1787,7 @@ async fn memory_service_temporal_methods_use_domain_traversal() {
                 tokens: 0,
             }),
             include: Some(TemporalInclude {
+                dependencies: false,
                 evidence: false,
                 relations: true,
                 raw_refs: false,
@@ -1933,6 +1937,7 @@ async fn memory_service_temporal_raw_refs_return_typed_audit_refs() {
         ProtoDimensionSelection::default(),
     );
     request.include = Some(TemporalInclude {
+        dependencies: false,
         evidence: false,
         relations: false,
         raw_refs: true,
@@ -2360,6 +2365,7 @@ fn temporal_move_request(
     dimensions: ProtoDimensionSelection,
 ) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        entry_selection: None,
         interval: None,
         about: "question:830ce83f".to_string(),
         cursor,
@@ -2389,6 +2395,7 @@ fn goto_request(
 ) -> GotoRequest {
     let request = temporal_move_request(cursor, dimensions);
     GotoRequest {
+        entry_selection: request.entry_selection,
         interval: request.interval,
         about: request.about,
         cursor: request.cursor,
@@ -2407,6 +2414,7 @@ fn rewind_request(
 ) -> RewindRequest {
     let request = temporal_move_request(cursor, dimensions);
     RewindRequest {
+        entry_selection: request.entry_selection,
         interval: request.interval,
         about: request.about,
         cursor: request.cursor,
@@ -2428,6 +2436,7 @@ fn forward_request(
 
 fn forward_request_from_temporal(request: TemporalMoveRequest) -> ForwardRequest {
     ForwardRequest {
+        entry_selection: request.entry_selection,
         interval: request.interval,
         about: request.about,
         cursor: request.cursor,

@@ -1,5 +1,8 @@
 # Worked example: budgets, continuation and insufficient evidence
 
+The agent-context section also exercises an agent context's short continuation: one
+returned identifier retains the exact inspection and negotiated allowance.
+
 PACK-8 is a fictional review packet containing an export history and an
 unrelated warehouse report. An LLM writer interprets the five sources below;
 the kernel preserves its typed records and justified links. This authored
@@ -710,6 +713,56 @@ outstanding MCP page or validate a missing proof path.
 }
 ```
 
+## Continue through the agent context
+
+The earlier reads intentionally exercised complete calls without a context.
+Register once for this inspection of D1, already written above:
+
+```json
+{
+  "tool": "kmp_guide",
+  "save_as": "short_context",
+  "arguments": {"registration_key":"guide-budget-proof-short-reader"}
+}
+```
+
+```json
+{
+  "tool": "kmp_inspect",
+  "save_as": "short_first",
+  "expect_partial": true,
+  "arguments": {
+    "context_id":"${short_context.context_id}",
+    "purpose":"audit",
+    "about":"example:guide:budget-proof",
+    "ref":"${decision.generated_refs.0}",
+    "include":{"raw":true},
+    "budget":{"max_bytes":512}
+  }
+}
+```
+
+The returned `next_actions[0].arguments` contains only `continuation` when the
+short form fits. It already retains the context, D1 reference, raw inclusion and
+larger allowance. Execute it directly:
+
+```json
+{
+  "tool": "kmp_inspect",
+  "save_as": "short_next",
+  "expect_partial": true,
+  "arguments":"${short_first.next_actions.0.arguments}"
+}
+```
+
+If still partial, execute `short_next.next_actions[0]` and append the next page.
+Reusing `short_first`'s identifier repeats that same page, not the next one.
+Adding `budget`, `context_id` or another argument to the identifier is rejected:
+use the returned action unchanged, or start a new explicit selection. An expired
+identifier reports `CONTINUATION_UNAVAILABLE`; restart the original read and keep
+its earlier pages marked partial. A changed source still triggers the native
+cursor conflict. No identifier permits skipping HTTP grants or missing proof.
+
 ## Terminal semantic UNKNOWN
 
 The final independent question is “¿Quién autorizó PURGE-9?”. Render it in
@@ -734,6 +787,18 @@ count. Continue until `next_action` is null; `has_more=false` alone only says
 that expansion has finished. A fixed budget may leave the result partial.
 A cursor conflict returns `feedback[].action` for a fresh selection; never
 combine the old pages with the restarted selection.
+
+Read `projection.sections` after each call. Its `remaining` values count only
+eligible expansion after that page. Suppose `proof.evidence` reports core=5,
+eligible=24, returned_on_page=0 on the first page: remaining=19. If `proof.path`
+reports core=0, eligible=151, returned_on_page=4, remaining=147. These are
+illustrative counts, not fixed totals for PACK-8. On later pages the counts
+also subtract all earlier expansion, so do not subtract just the current page
+yourself. A shortened core still requires a restart even when some expansion
+has arrived. Zero remaining does not establish export completion or remove a
+detail/selection cap. In temporal or inspect results the corresponding counts
+are under `page.sections`; one remaining raw reference does not mean one
+remaining source passage.
 
 ```json
 {

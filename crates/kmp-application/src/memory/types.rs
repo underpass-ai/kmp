@@ -160,6 +160,8 @@ pub struct MemoryAcceptedCounts {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MemoryIngestOutcome {
+    pub replayed: bool,
+    pub clocks: Option<super::WriteClocks>,
     pub receipt_ref: Option<String>,
     pub about: String,
     pub memory_id: String,
@@ -217,6 +219,7 @@ pub struct AskMemoryQuery {
 pub struct TemporalMemoryQuery {
     pub about: String,
     pub direction: TemporalDirection,
+    pub entry_selection: Option<kmp_domain::TemporalEntrySelection>,
     pub axis: TemporalAxis,
     pub cursor: Option<TemporalCursor>,
     pub interval: Option<TemporalInterval>,
@@ -326,6 +329,9 @@ pub struct TemporalIncludeOptions {
     pub evidence: bool,
     pub relations: bool,
     pub raw_refs: bool,
+    /// Include bounded, evidenced memory dependencies with their stored bodies.
+    /// Implies evidence and relations; does not change temporal entry selection.
+    pub dependencies: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]

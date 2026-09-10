@@ -41,6 +41,10 @@
             "minLength": 1,
             "type": "string"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "dry_run": {
             "description": "Validate against the selected store without committing. References, labels and coordinates are checked by the kernel; the backend must be reachable. This reserves no future write.",
             "type": "boolean"
@@ -359,7 +363,7 @@
                       "type": "string"
                     },
                     "rel": {
-                      "description": "Relationship type. Unknown extension types are preserved but carry no writer spec; prefer the cataloged vocabulary. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                      "description": "Relationship type. Unknown extension types are preserved but carry no writer spec; prefer the cataloged vocabulary. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; source -> relation -> target / when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; approval -> authorizes -> permitted action; permission alone does not prove execution). verified_by (rich; evidential; claim or outcome -> verified_by -> actual verifying check; approval or an earlier failure is not verification). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement -> supersedes -> entire old memory; marks the whole target SUPERSEDED, so separate independent facts first). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; excluded value or exclusion record -> excluded_from -> total or set; the target is not the excluded item). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; corrected fact -> corrects -> earlier fact; explain the specific correction without superseding the whole target). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
                       "minLength": 1,
                       "type": "string"
                     },
@@ -434,6 +438,16 @@
               "observed_at"
             ],
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -472,6 +486,133 @@
                 },
                 "type": "object"
               },
+              "clocks": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "entries": {
+                        "description": "Memories covered by this command.",
+                        "type": "integer"
+                      },
+                      "ingested": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "observed": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "occurred": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "scope": {
+                        "description": "accepted_command: clocks of this historical write, including on replay; not current graph state or source fidelity.",
+                        "type": "string"
+                      },
+                      "valid_from": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "valid_until": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Compact canonical clock coverage. Null when unavailable; previews do not report saved clocks."
+              },
               "created_dimensions": {
                 "description": "Refs of label dimensions this ingest created, identified by about, key and value. Copy returned refs; do not construct them.",
                 "items": {
@@ -491,6 +632,13 @@
                 "description": "Accepted writer audit ref when the internal compiler attached receipt context; null for raw ingest or preview.",
                 "type": [
                   "string",
+                  "null"
+                ]
+              },
+              "replayed": {
+                "description": "Whether the kernel returned an already accepted command; null without a backend outcome.",
+                "type": [
+                  "boolean",
                   "null"
                 ]
               },
@@ -523,6 +671,18 @@
       "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
       "inputSchema": {
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "actor"
+            ]
+          },
+          {
+            "required": [
+              "context_id"
+            ]
+          }
+        ],
         "else": {
           "not": {
             "anyOf": [
@@ -592,8 +752,12 @@
             "type": "string"
           },
           "actor": {
-            "description": "Human, agent or component producing the write.",
+            "description": "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context.",
             "minLength": 1,
+            "type": "string"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "idempotency_key": {
@@ -620,11 +784,26 @@
               "additionalProperties": false,
               "properties": {
                 "connect_to": {
+                  "description": "Justified links: this containing memory is the source, connect_to.ref is the target. Read each as source -> rel -> target before submitting.",
                   "items": {
                     "additionalProperties": false,
+                    "if": {
+                      "properties": {
+                        "rel": {
+                          "enum": [
+                            "chosen_because",
+                            "authorizes",
+                            "confirms_selection"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "rel"
+                      ]
+                    },
                     "properties": {
                       "class": {
-                        "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                        "description": "Omit when rel allows exactly one class: KMP completes that class. Required for chosen_because, authorizes, confirms_selection. An explicit class is validated, never replaced. What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
                         "enum": [
                           "structural",
                           "causal",
@@ -650,12 +829,12 @@
                         "type": "string"
                       },
                       "ref": {
-                        "description": "@local-id in this packet, or an existing canonical ref. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
+                        "description": "Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
                         "minLength": 1,
                         "type": "string"
                       },
                       "rel": {
-                        "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                        "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; source -> relation -> target / when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; approval -> authorizes -> permitted action; permission alone does not prove execution). verified_by (rich; evidential; claim or outcome -> verified_by -> actual verifying check; approval or an earlier failure is not verification). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement -> supersedes -> entire old memory; marks the whole target SUPERSEDED, so separate independent facts first). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; excluded value or exclusion record -> excluded_from -> total or set; the target is not the excluded item). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; corrected fact -> corrects -> earlier fact; explain the specific correction without superseding the whole target). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
                         "enum": [
                           "follows",
                           "answers",
@@ -699,9 +878,13 @@
                     },
                     "required": [
                       "ref",
-                      "rel",
-                      "class"
+                      "rel"
                     ],
+                    "then": {
+                      "required": [
+                        "class"
+                      ]
+                    },
                     "type": "object"
                   },
                   "type": "array"
@@ -712,7 +895,7 @@
                   "type": "string"
                 },
                 "id": {
-                  "description": "Local name. @name in connect_to.ref addresses this record, including forward links. local_refs returns its canonical address.",
+                  "description": "Local name. Use this exact name or @name in connect_to.ref, including forward links. local_refs returns its canonical address.",
                   "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
                   "type": "string"
                 },
@@ -775,12 +958,12 @@
                   "type": "string"
                 },
                 "valid_from": {
-                  "description": "Inclusive start of the recorded state's validity.",
+                  "description": "Inclusive start of the recorded state's validity, only if known. Omit an unknown start; observation time is not a substitute.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "valid_until": {
-                  "description": "Exclusive end of the recorded state's validity.",
+                  "description": "Exclusive end of the recorded state's validity, only if known from this source. Do not backdate knowledge from a later report.",
                   "minLength": 1,
                   "type": "string"
                 }
@@ -796,7 +979,7 @@
             "type": "array"
           },
           "observed_at": {
-            "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
+            "description": "Required packet provenance and shared observation time, even if every record overrides it. Supply the actual RFC3339 observation with its UTC offset; not an assumed occurrence or validity start. Backfill allowed; more than five minutes ahead of the kernel clock is refused.",
             "minLength": 1,
             "type": "string"
           },
@@ -830,6 +1013,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "rank": {
             "minimum": 1,
@@ -977,19 +1170,18 @@
             "type": "string"
           },
           "valid_from": {
-            "description": "Inclusive start of the recorded state's validity.",
+            "description": "Inclusive start of the recorded state's validity, only if known. Omit an unknown start; observation time is not a substitute.",
             "minLength": 1,
             "type": "string"
           },
           "valid_until": {
-            "description": "Exclusive end of the recorded state's validity.",
+            "description": "Exclusive end of the recorded state's validity, only if known from this source. Do not backdate knowledge from a later report.",
             "minLength": 1,
             "type": "string"
           }
         },
         "required": [
           "about",
-          "actor",
           "observed_at"
         ],
         "then": {
@@ -1038,6 +1230,133 @@
           "accepted": {
             "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
             "type": "boolean"
+          },
+          "clocks": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "entries": {
+                    "description": "Memories covered by this command.",
+                    "type": "integer"
+                  },
+                  "ingested": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "observed": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "occurred": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "scope": {
+                    "description": "accepted_command: clocks of this historical write, including on replay; not current graph state or source fidelity.",
+                    "type": "string"
+                  },
+                  "valid_from": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "valid_until": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Compact canonical clock coverage. Null when unavailable; previews do not report saved clocks."
           },
           "coverage": {
             "additionalProperties": false,
@@ -1228,11 +1547,42 @@
             "type": "object"
           },
           "relations": {
-            "description": "Typed relation names compiled into the canonical ingest.",
+            "description": "Compiled source -> relation -> target triples, in canonical ingest order. @id resolves through local_refs; other endpoints remain canonical refs. Review direction and scope against the source: acceptance does not prove semantic fidelity.",
             "items": {
-              "type": "string"
+              "additionalProperties": false,
+              "properties": {
+                "from": {
+                  "description": "Source memory, the containing record in the request.",
+                  "type": "string"
+                },
+                "rel": {
+                  "description": "Compiled relation type.",
+                  "type": "string"
+                },
+                "to": {
+                  "description": "Target memory addressed by connect_to.ref.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "from",
+                "rel",
+                "to"
+              ],
+              "type": "object"
             },
             "type": "array"
+          },
+          "status": {
+            "description": "committed appended a command; replayed returned its earlier acceptance; validated is a preview; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure.",
+            "enum": [
+              "committed",
+              "replayed",
+              "validated",
+              "rejected",
+              "unconfirmed"
+            ],
+            "type": "string"
           },
           "summary": {
             "description": "Counts and scope of the semantic write the planner prepared.",
@@ -1280,6 +1630,24 @@
       "description": "Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to wake from.",
@@ -1350,6 +1718,15 @@
               }
             },
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
           },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
@@ -1487,15 +1864,22 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "role": {
             "description": "Optional caller role.",
             "minLength": 1,
             "type": "string"
           }
         },
-        "required": [
-          "about"
-        ],
         "type": "object"
       },
       "name": "kmp_wake",
@@ -1591,7 +1975,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned, eligible, and total counts for reconstructing the full proof.",
+                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -1909,6 +2293,25 @@
       "description": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "question"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to ask from.",
@@ -1993,6 +2396,15 @@
               }
             },
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
           },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
@@ -2125,16 +2537,22 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "question": {
             "description": "Natural-language question, in the kernel's search language: plain English, with every number, identifier and acronym the user wrote kept exactly. The kernel searches it as given and never translates it. It accepts any language — a question in the store's own language reaches the stored text directly — and a memory written in another language is reached through its English `summary_en`.",
             "minLength": 1,
             "type": "string"
           }
         },
-        "required": [
-          "about",
-          "question"
-        ],
         "type": "object"
       },
       "name": "kmp_ask",
@@ -2241,7 +2659,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned, eligible, and total counts for reconstructing the full proof.",
+                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -2377,6 +2795,24 @@
       "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "The current about: the read's root and the first of proof.abouts_selected.",
@@ -2430,6 +2866,15 @@
               }
             },
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
           },
           "dimensions": {
             "additionalProperties": false,
@@ -2556,11 +3001,18 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           }
         },
-        "required": [
-          "about"
-        ],
         "type": "object"
       },
       "name": "kmp_relate",
@@ -2728,6 +3180,25 @@
       "description": "Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "at"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
@@ -2802,6 +3273,15 @@
               }
             },
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
           },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
@@ -2919,6 +3399,10 @@
           "include": {
             "additionalProperties": false,
             "properties": {
+              "dependencies": {
+                "description": "Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group.",
+                "type": "boolean"
+              },
               "evidence": {
                 "type": "boolean"
               },
@@ -2980,6 +3464,26 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -2995,10 +3499,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "about",
-          "at"
-        ],
         "type": "object"
       },
       "name": "kmp_goto",
@@ -3128,6 +3628,10 @@
                 "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
+              "entries": {
+                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "type": "array"
+              },
               "evidence": {
                 "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
@@ -3139,6 +3643,43 @@
               "frontier_size": {
                 "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
+              },
+              "groups": {
+                "description": "With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_hops": {
+                      "description": "Maximum expansion hops from this seed.",
+                      "type": "integer"
+                    },
+                    "max_members": {
+                      "description": "Maximum members, including the seed.",
+                      "type": "integer"
+                    },
+                    "member_refs": {
+                      "description": "Seed and available dependency entries in deterministic discovery order.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "omitted_by_limit": {
+                      "description": "Distinct eligible frontier members not expanded because of hop or member limits.",
+                      "type": "integer"
+                    },
+                    "seed_ref": {
+                      "description": "The selected temporal entry.",
+                      "type": "string"
+                    },
+                    "unavailable_in_selection": {
+                      "description": "Distinct endpoints without an eligible body under this read; identities are not disclosed.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
               },
               "interval": {
                 "description": "Selected half-open [start,end) span, or null.",
@@ -3250,9 +3791,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -3286,6 +3838,25 @@
       "description": "Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "around"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
@@ -3360,6 +3931,15 @@
               }
             },
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
           },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
@@ -3477,6 +4057,10 @@
           "include": {
             "additionalProperties": false,
             "properties": {
+              "dependencies": {
+                "description": "Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group.",
+                "type": "boolean"
+              },
               "evidence": {
                 "type": "boolean"
               },
@@ -3538,6 +4122,26 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -3553,10 +4157,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "about",
-          "around"
-        ],
         "type": "object"
       },
       "name": "kmp_near",
@@ -3686,6 +4286,10 @@
                 "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
+              "entries": {
+                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "type": "array"
+              },
               "evidence": {
                 "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
@@ -3697,6 +4301,43 @@
               "frontier_size": {
                 "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
+              },
+              "groups": {
+                "description": "With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_hops": {
+                      "description": "Maximum expansion hops from this seed.",
+                      "type": "integer"
+                    },
+                    "max_members": {
+                      "description": "Maximum members, including the seed.",
+                      "type": "integer"
+                    },
+                    "member_refs": {
+                      "description": "Seed and available dependency entries in deterministic discovery order.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "omitted_by_limit": {
+                      "description": "Distinct eligible frontier members not expanded because of hop or member limits.",
+                      "type": "integer"
+                    },
+                    "seed_ref": {
+                      "description": "The selected temporal entry.",
+                      "type": "string"
+                    },
+                    "unavailable_in_selection": {
+                      "description": "Distinct endpoints without an eligible body under this read; identities are not disclosed.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
               },
               "interval": {
                 "description": "Selected half-open [start,end) span, or null.",
@@ -3808,9 +4449,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -3844,15 +4496,33 @@
       "description": "Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval.",
       "inputSchema": {
         "additionalProperties": false,
-        "anyOf": [
+        "oneOf": [
           {
+            "anyOf": [
+              {
+                "required": [
+                  "from"
+                ]
+              },
+              {
+                "required": [
+                  "interval"
+                ]
+              }
+            ],
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
             "required": [
-              "from"
+              "about"
             ]
           },
           {
+            "maxProperties": 1,
             "required": [
-              "interval"
+              "continuation"
             ]
           }
         ],
@@ -3909,6 +4579,15 @@
               }
             },
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
           },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
@@ -4047,6 +4726,10 @@
           "include": {
             "additionalProperties": false,
             "properties": {
+              "dependencies": {
+                "description": "Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group.",
+                "type": "boolean"
+              },
               "evidence": {
                 "type": "boolean"
               },
@@ -4108,6 +4791,26 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -4123,9 +4826,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "about"
-        ],
         "type": "object"
       },
       "name": "kmp_rewind",
@@ -4255,6 +4955,10 @@
                 "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
+              "entries": {
+                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "type": "array"
+              },
               "evidence": {
                 "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
@@ -4266,6 +4970,43 @@
               "frontier_size": {
                 "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
+              },
+              "groups": {
+                "description": "With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_hops": {
+                      "description": "Maximum expansion hops from this seed.",
+                      "type": "integer"
+                    },
+                    "max_members": {
+                      "description": "Maximum members, including the seed.",
+                      "type": "integer"
+                    },
+                    "member_refs": {
+                      "description": "Seed and available dependency entries in deterministic discovery order.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "omitted_by_limit": {
+                      "description": "Distinct eligible frontier members not expanded because of hop or member limits.",
+                      "type": "integer"
+                    },
+                    "seed_ref": {
+                      "description": "The selected temporal entry.",
+                      "type": "string"
+                    },
+                    "unavailable_in_selection": {
+                      "description": "Distinct endpoints without an eligible body under this read; identities are not disclosed.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
               },
               "interval": {
                 "description": "Selected half-open [start,end) span, or null.",
@@ -4377,9 +5118,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -4413,15 +5165,33 @@
       "description": "Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval.",
       "inputSchema": {
         "additionalProperties": false,
-        "anyOf": [
+        "oneOf": [
           {
+            "anyOf": [
+              {
+                "required": [
+                  "from"
+                ]
+              },
+              {
+                "required": [
+                  "interval"
+                ]
+              }
+            ],
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
             "required": [
-              "from"
+              "about"
             ]
           },
           {
+            "maxProperties": 1,
             "required": [
-              "interval"
+              "continuation"
             ]
           }
         ],
@@ -4478,6 +5248,15 @@
               }
             },
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
           },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
@@ -4616,6 +5395,10 @@
           "include": {
             "additionalProperties": false,
             "properties": {
+              "dependencies": {
+                "description": "Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group.",
+                "type": "boolean"
+              },
               "evidence": {
                 "type": "boolean"
               },
@@ -4677,6 +5460,26 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -4692,9 +5495,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "about"
-        ],
         "type": "object"
       },
       "name": "kmp_forward",
@@ -4824,6 +5624,10 @@
                 "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
+              "entries": {
+                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "type": "array"
+              },
               "evidence": {
                 "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
@@ -4835,6 +5639,43 @@
               "frontier_size": {
                 "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
+              },
+              "groups": {
+                "description": "With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_hops": {
+                      "description": "Maximum expansion hops from this seed.",
+                      "type": "integer"
+                    },
+                    "max_members": {
+                      "description": "Maximum members, including the seed.",
+                      "type": "integer"
+                    },
+                    "member_refs": {
+                      "description": "Seed and available dependency entries in deterministic discovery order.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "omitted_by_limit": {
+                      "description": "Distinct eligible frontier members not expanded because of hop or member limits.",
+                      "type": "integer"
+                    },
+                    "seed_ref": {
+                      "description": "The selected temporal entry.",
+                      "type": "string"
+                    },
+                    "unavailable_in_selection": {
+                      "description": "Distinct endpoints without an eligible body under this read; identities are not disclosed.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
               },
               "interval": {
                 "description": "Selected half-open [start,end) span, or null.",
@@ -4946,9 +5787,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -4982,6 +5834,26 @@
       "description": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "from",
+              "to"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path.",
@@ -5026,6 +5898,15 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
+          },
           "from": {
             "description": "Source memory ref. In live gRPC mode this must resolve to a kernel node id.",
             "minLength": 1,
@@ -5052,6 +5933,16 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "role": {
             "description": "Optional caller role.",
             "minLength": 1,
@@ -5063,11 +5954,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "about",
-          "from",
-          "to"
-        ],
         "type": "object"
       },
       "name": "kmp_trace",
@@ -5171,6 +6057,25 @@
       "description": "Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "ref"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor that owns the inspected ref.",
@@ -5188,6 +6093,15 @@
               }
             },
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
+            "type": "string"
           },
           "include": {
             "additionalProperties": false,
@@ -5231,16 +6145,22 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "ref": {
             "description": "Memory ref to inspect. In live gRPC mode this must resolve to a kernel node id.",
             "minLength": 1,
             "type": "string"
           }
         },
-        "required": [
-          "about",
-          "ref"
-        ],
         "type": "object"
       },
       "name": "kmp_inspect",
@@ -5403,6 +6323,18 @@
       "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
       "inputSchema": {
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "actor"
+            ]
+          },
+          {
+            "required": [
+              "context_id"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "The about the memory belongs to.",
@@ -5410,7 +6342,7 @@
             "type": "string"
           },
           "actor": {
-            "description": "Human, agent, or component making the change.",
+            "description": "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context.",
             "minLength": 1,
             "type": "string"
           },
@@ -5427,6 +6359,10 @@
             },
             "description": "Labels to add as key-to-array values. Multiple values per key and the same value under different keys are valid. An exact membership already present is refused.",
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
           },
           "idempotency_key": {
             "description": "Optional stable idempotency key. Omit to generate one from the arguments.",
@@ -5460,6 +6396,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "ref": {
             "description": "The memory to relabel: an entry ref inside this about, as a read returned it, byte for byte. Never the about anchor, an evidence id or a dimension id.",
@@ -5498,7 +6444,6 @@
         "required": [
           "about",
           "ref",
-          "actor",
           "observed_at",
           "why"
         ],
@@ -5585,10 +6530,24 @@
             "minLength": 1,
             "type": "string"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "expected_revision": {
             "description": "When changing an existing view to another about, the view_revision this open was prepared against. A stale open conflicts instead of discarding a newer camera state.",
             "minimum": 1,
             "type": "integer"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "view_id": {
             "description": "Which view to open. Omit for the one window a local viewer shows.",
@@ -5678,6 +6637,10 @@
           "actor": {
             "description": "Who is moving the view, for provenance. Defaults to `agent`.",
             "minLength": 1,
+            "type": "string"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "expected_revision": {
@@ -5830,6 +6793,16 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "search": {
             "description": "Query to highlight, or null to clear.",
             "type": [
@@ -5955,6 +6928,20 @@
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "view_id": {
             "description": "Which view to read. Omit for the default one.",
             "minLength": 1,
@@ -6024,6 +7011,153 @@
           "viewer_available": {
             "description": "Whether this MCP process mounted a ChronoLoom browser for the semantic view.",
             "type": "boolean"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "description": "Stable identity, used with context_key to start a fresh context after compaction or a task change.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "context_id": {
+            "description": "Exact active context returned by KMP; enough to resume that agent.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "context_key": {
+            "description": "Unique logical context reset for this agent; reuse on retry.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "fold": {
+            "description": "Hide topic from the expanded scheme. Prior deliveries remain recorded.",
+            "type": "boolean"
+          },
+          "registration_key": {
+            "description": "Unique logical agent registration. Reuse only to retry that registration; a different agent needs another key.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "topic": {
+            "description": "Expand one small worked card; extended guidance remains linked.",
+            "enum": [
+              "wake",
+              "write",
+              "ask",
+              "time",
+              "audit",
+              "relate",
+              "view",
+              "guide"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "kmp_guide",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "description": "Stable opaque identity; preserve across contexts.",
+                "type": "string"
+              },
+              "name": {
+                "description": "Random persistent display name; not an authorization credential.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "type": "object"
+          },
+          "card": {
+            "description": "One requested canonical worked card; null for the map or a fold.",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "context_id": {
+            "description": "Exact token to resume this agent context.",
+            "type": "string"
+          },
+          "durable": {
+            "description": "Whether agent metadata survives a server restart.",
+            "type": "boolean"
+          },
+          "expanded": {
+            "description": "Topics opened in this context and revision, excluding folded ones.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "guide_changed": {
+            "description": "This context previously used another guide revision; rediscover required topics.",
+            "type": "boolean"
+          },
+          "guide_revision": {
+            "description": "Content revision used for this scheme and its delivery records.",
+            "type": "string"
+          },
+          "next_actions": {
+            "description": "Complete optional calls for the extended verb.",
+            "type": "array"
+          },
+          "scheme": {
+            "description": "Available topics; expanded lists the currently opened ones.",
+            "items": {
+              "properties": {
+                "purpose": {
+                  "type": "string"
+                },
+                "topic": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "served": {
+            "description": "Topic cards and exact guide/example refs delivered in this context and revision; not learned or retained.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "summary": {
+            "description": "Identity and next guide operation.",
+            "type": "string"
+          },
+          "used": {
+            "description": "Observed work calls in this context and revision, never a learning score.",
+            "type": "array"
           }
         },
         "type": "object"

@@ -42,6 +42,7 @@ pub struct VisualProjectionQuery {
 impl VisualProjectionQuery {
     pub fn temporal_query(&self) -> Result<TemporalMemoryQuery, ApplicationError> {
         Ok(TemporalMemoryQuery {
+            entry_selection: None,
             about: self.about.clone(),
             direction: TemporalDirection::Goto,
             axis: self.axis,
@@ -51,6 +52,7 @@ impl VisualProjectionQuery {
             window: TemporalWindow::new(0, 0),
             limit_entries: Some(MAX_VISUAL_SOURCE_ENTRIES),
             include: TemporalIncludeOptions {
+                dependencies: false,
                 evidence: false,
                 relations: true,
                 raw_refs: false,

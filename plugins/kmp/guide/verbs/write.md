@@ -15,17 +15,43 @@ put `source: ["S1"]` and `source: ["S2"]` on those respective memories. Shared
 not create alias memberships; declare each source-supported alias explicitly.
 A source label helps navigation but never replaces its concrete evidence text.
 
-Use `connect_to.ref: "@source"` to address local id `source`, even if it appears
-later. Local targets count as `current_request` context. Stored rich targets
+Use `connect_to.ref: "source"` or `"@source"` to address exact local id `source`,
+even if it appears later. No fuzzy matching or target creation occurs. An unknown
+local name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.
+Local targets count as `current_request` context. Stored rich targets
 still require an actual prior read declared in `read_context`; cross-about
 identity links retain the proposal rule. Do not claim to have inspected a new
 local target. Independent facts may be unlinked: do not invent a relation.
 
-Actor identifies the author; top-level observed_at is the packet's provenance
-observation time. Actual ingestion is recorded separately by the kernel. Each
+The containing memory is the source of each link; `connect_to.ref` is its
+target. Read the proposed triple aloud: approval **authorizes** action, outcome
+**verified_by** check, exclusion **excluded_from** total. A relation name alone
+does not describe its direction. See `guide:kmp-agent:advanced:relations` for
+endpoint examples and partial corrections. `supersedes` marks the **whole**
+target SUPERSEDED. If a report holds independent facts, isolate the relevant
+fact or use `corrects` with the precise correction; preserve the other facts.
+
+Omit `class` when `rel` has exactly one allowed class. For example,
+`{"ref":"check","rel":"verified_by","why":"H verifies the deployed version.","evidence":"H reports the expected version."}`
+compiles to `evidential`. An explicit class is checked, never overwritten.
+`authorizes` and `chosen_because` require a choice of `motivational` or `causal`;
+`confirms_selection` requires `evidential` or `motivational`. Decide from the
+source. The canonical receipt and relation-quality detail retain the resolved
+class. This completion changes neither proof requirements nor the relation's
+direction and does not infer whether it is true.
+
+With `context_id`, actor defaults to the persistent agent name; an explicit
+actor overrides it. Without context, actor is required. Actor identifies the author; top-level observed_at is the packet's provenance
+observation time, required even when every record overrides it. A missing root
+`observed_at` needs the actual packet observation with its UTC offset; KMP does
+not choose a date from the records or substitute its ingestion clock. Actual
+ingestion is recorded separately by the kernel. Each
 record may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP
 resolves all names and validates the entire packet before one canonical ingest.
 A rejected record writes none of the packet. The transaction covers one about.
+Omit unknown validity boundaries too. Observing an existing state does not
+establish when it began; a later report does not give an earlier writer knowledge
+of when it will end.
 
 `local_refs` maps your ids to canonical refs. A preview plans those refs;
 `accepted=true` confirms persistence. Retry the unchanged logical packet with
@@ -40,6 +66,11 @@ link, a rejected packet and temporal/ChronoLoom review. Accepted writes return a
 `diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.
 A lax write can carry `RELATION_CONTEXT_UNVERIFIED` with severity warning and
 an audit action. Acceptance does not establish an unverified causal claim.
+`relations` lists compact `{from, rel, to}` triples in canonical ingest order.
+Endpoints from this packet use `@id`, resolved by `local_refs`; stored endpoints
+keep their canonical refs. Read their direction and scope against the source.
+The acknowledgment exposes what was compiled; it cannot certify that an
+approval verifies execution or that a correction replaces an entire report.
 `coverage` counts declared memories, relations, evidence objects and per-memory
 label memberships after the shared-label union. `complete=true` applies only to
 the submitted packet. `source_coverage=not_assessed` means KMP cannot tell whether
@@ -90,8 +121,11 @@ For example, an unapproved request may be recorded as an observation of the
 request, without `updates_state` or `supersedes` on the current decision.
 A later approval needs its own evidence. `request` and `outcome` are not kinds.
 See the semantic-batch example for individual source labels and this distinction.
-`RELATION_CLASS_MISMATCH` identifies the link's class. Do not invent evidence
-or weaken a relation just to make validation pass.
+`RELATION_CLASS_REQUIRED` means this relation has more than one possible class;
+`RELATION_CLASS_MISMATCH` means the explicit choice is incompatible. Both identify
+the field and include `allowed_values`. Do not invent evidence or weaken a
+relation just to make validation pass. Missing class is different from null or
+an empty string; only omission requests deterministic completion.
 
 For `PRIOR_CONTEXT_REQUIRED`, KMP can supply a complete `kmp_inspect` action
 for the existing target. Execute the read, evaluate its evidence, then declare
@@ -218,6 +252,29 @@ refs, relation targets and search-summary refs. Relabel additions obey the same
 label grants. A local @id is resolved inside its packet; it does not name an
 external memory. A forbidden request must stop before any backend call. Do not
 remove source-supported labels or refs just to evade a permission error.
+
+### Read the outcome and stored clocks
+
+`status=committed` appended the logical command; `replayed` returns its earlier
+acceptance without another write. Both keep `accepted=true`. `validated` is a
+dry-run, and `rejected` is a validation refusal. `unconfirmed` cannot establish
+persistence: retain the same idempotency key when resolving a transport error.
+Do not turn an uncertain reply into a new logical write.
+
+`clocks.scope=accepted_command` summarizes the clocks actually in that command,
+including on replay. Each clock counts memories once across all label memberships:
+`entries`, `distinct_values`, and an RFC3339 `single_value` when there is only one.
+Zero occurred entries means no event time was recorded. One observed instant
+across nine memories is worth comparing with the nine sources; KMP cannot decide
+whether those sources were observed together. Missing occurrence is legitimate
+when its source does not supply one. Do not invent clocks to fill a count.
+
+Example: two memories with four label memberships can report two observations
+at one instant, one occurrence, and one valid_from. Inspect receipt.action only
+when the individual historical clocks or evidence are needed. Its receipt retains
+those clocks even after a later write, restart or bundle import. The current graph
+can have changed. Null clock coverage is unavailable, not zero; previews do not
+report saved clocks. Packet coverage still cannot assess source completeness.
 
 ### Calendar dates in search renderings
 

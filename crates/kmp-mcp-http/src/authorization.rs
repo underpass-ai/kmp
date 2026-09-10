@@ -44,6 +44,13 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
 
     match name {
         "kmp_ingest" => authorize_ingest_refs(identity, arguments)?,
+        "kmp_goto" | "kmp_near" | "kmp_forward" | "kmp_rewind" => {
+            if let Some(refs) = arguments.get("refs").and_then(Value::as_array) {
+                for reference in refs.iter().filter_map(Value::as_str) {
+                    authorize_ref(identity, Some(reference), None)?;
+                }
+            }
+        }
         "kmp_trace" => {
             authorize_ref(
                 identity,
@@ -248,9 +255,10 @@ fn authorize_write_connections(
             .flatten()
         {
             if let Some(reference) = connection.get("ref").and_then(Value::as_str) {
-                // The writer resolves @ids only inside this packet and rejects
-                // missing or ambiguous locals before any canonical mutation.
-                if !reference.starts_with('@') {
+                // @ids and names without a namespace are packet-local syntax.
+                // The writer resolves exact ids and rejects unknown locals;
+                // canonical targets still require their ordinary grant.
+                if !reference.starts_with('@') && reference.contains(':') {
                     authorize_ref(identity, Some(reference), about)?;
                 }
             }
@@ -436,6 +444,25 @@ mod tests {
     }
 
     #[test]
+    fn temporal_entry_focus_requires_reference_grants() {
+        let actor = identity(&[READ_SCOPE]);
+        for tool in ["kmp_goto", "kmp_near", "kmp_forward", "kmp_rewind"] {
+            assert!(
+                authorize(
+                    &actor,
+                    &call(
+                        tool,
+                        json!({"about":"project:kmp", "refs":["project:kmp:entry:one"]})
+                    )
+                )
+                .is_ok()
+            );
+            assert!(authorize(&actor, &call(tool, json!({"about":"project:kmp", "refs":["project:kmp:entry:one", "project:secret:entry:two"]}))).is_err());
+            assert!(authorize(&actor, &call(tool, json!({"about":"project:kmp"}))).is_ok());
+        }
+    }
+
+    #[test]
     fn current_writer_fields_cannot_bypass_reference_and_label_grants() {
         let actor = identity(&[WRITE_SCOPE]);
         for arguments in [
@@ -458,7 +485,7 @@ mod tests {
         let actor = identity(&[WRITE_SCOPE]);
         let allowed = json!({"about":"project:kmp","labels":{"process":["timeline:kmp"]},"memories":[
             {"id":"source","ref":"project:kmp:observation:one","labels":{"task":["timeline:kmp"]}},
-            {"id":"decision","connect_to":[{"ref":"@source"},{"ref":"project:kmp:decision:prior"}]}
+            {"id":"decision","connect_to":[{"ref":"@source"},{"ref":"source"},{"ref":"project:kmp:decision:prior"}]}
         ],"search_summaries":[{"ref":"project:kmp:observation:one","summary_en":"A route observation."}]});
         assert!(authorize(&actor, &call("kmp_write_memory", allowed)).is_ok());
         assert!(authorize(&actor, &call("kmp_relabel", json!({"about":"project:kmp","ref":"project:kmp:entry:one","add":{"task":["timeline:kmp"]}}))).is_ok());

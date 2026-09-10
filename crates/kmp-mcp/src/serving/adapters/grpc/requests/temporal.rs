@@ -106,10 +106,23 @@ pub(super) fn temporal_include_from_arguments(
         return Ok(None);
     };
     let raw_refs = optional_bool_field(include, "raw_refs", "include.raw_refs")?.unwrap_or(false);
+    let dependencies =
+        optional_bool_field(include, "dependencies", "include.dependencies")?.unwrap_or(false);
+    if dependencies
+        && ["evidence", "relations"]
+            .iter()
+            .any(|key| include.get(*key) == Some(&Value::Bool(false)))
+    {
+        return Err(
+            "include.dependencies requires evidence and relations; omit their false flags"
+                .to_string(),
+        );
+    }
     Ok(Some(TemporalInclude {
         evidence: optional_bool_field(include, "evidence", "include.evidence")?.unwrap_or(false),
         relations: optional_bool_field(include, "relations", "include.relations")?.unwrap_or(false),
         raw_refs,
+        dependencies,
     }))
 }
 
@@ -189,6 +202,22 @@ pub(super) fn interval_from_arguments(
         return Err("interval needs a `start`, an `end`, or both".to_string());
     }
     Ok(Some(TemporalInterval { start, end }))
+}
+
+/// Native flat refs map to a present, validated protocol selection.
+pub(super) fn entry_selection_from_arguments(
+    arguments: &Value,
+) -> Result<Option<kmp_proto::v1beta1::TemporalEntrySelection>, String> {
+    arguments
+        .get("refs")
+        .map(|refs| {
+            let refs: Vec<String> = serde_json::from_value(refs.clone())
+                .map_err(|_| "refs must be an array of memory references".to_string())?;
+            kmp_domain::TemporalEntrySelection::new(refs.clone())
+                .map_err(|error| error.to_string())?;
+            Ok(kmp_proto::v1beta1::TemporalEntrySelection { refs })
+        })
+        .transpose()
 }
 
 #[cfg(test)]

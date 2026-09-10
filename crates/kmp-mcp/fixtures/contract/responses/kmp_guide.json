@@ -1,0 +1,59 @@
+{
+  "content": [
+    {
+      "text": "KMP agent <AGENT_NAME>. Expand a topic with kmp_guide and this context_id; served records are not proof of understanding.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "agent": {
+      "id": "<AGENT_ID>",
+      "name": "<AGENT_NAME>"
+    },
+    "card": null,
+    "context_id": "<CONTEXT_ID>",
+    "durable": true,
+    "expanded": [],
+    "guide_changed": false,
+    "guide_revision": "<GUIDE_REVISION>",
+    "next_actions": [],
+    "scheme": [
+      {
+        "purpose": "Resume known work",
+        "topic": "wake"
+      },
+      {
+        "purpose": "Record separate facts with evidence and labels",
+        "topic": "write"
+      },
+      {
+        "purpose": "Retrieve semantic evidence or stop at UNKNOWN",
+        "topic": "ask"
+      },
+      {
+        "purpose": "Navigate history with the right clock",
+        "topic": "time"
+      },
+      {
+        "purpose": "Inspect a claim or trace its proof",
+        "topic": "audit"
+      },
+      {
+        "purpose": "Compare explicitly selected abouts",
+        "topic": "relate"
+      },
+      {
+        "purpose": "Frame memory in ChronoLoom",
+        "topic": "view"
+      },
+      {
+        "purpose": "Resume identity and expand or fold this scheme",
+        "topic": "guide"
+      }
+    ],
+    "served": [],
+    "summary": "KMP agent <AGENT_NAME>. Expand a topic with kmp_guide and this context_id; served records are not proof of understanding.",
+    "used": []
+  }
+}

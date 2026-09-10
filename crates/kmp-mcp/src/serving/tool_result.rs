@@ -53,7 +53,7 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
     })
 }
 
-pub(crate) fn tool_error_result(error: &ToolError) -> Value {
+pub(crate) fn tool_error_result(tool: &str, arguments: &Value, error: &ToolError) -> Value {
     let mut result = json!({
         "content": [
             {
@@ -69,8 +69,25 @@ pub(crate) fn tool_error_result(error: &ToolError) -> Value {
         },
         "isError": true
     });
+    if tool == "kmp_write_memory" {
+        result["structuredContent"]["status"] = json!(if error.code
+            == crate::serving::ToolErrorCode::InvalidArgument
+        {
+            "rejected"
+        } else {
+            // A transport/backend error can follow persistence. Do not
+            // promise that nothing was written; retry the same logical key.
+            "unconfirmed"
+        });
+    }
     if !error.feedback.is_empty() {
         result["structuredContent"]["feedback"] = json!(error.feedback);
+    }
+    if let Some(help) = super::tool_error_help::ToolErrorHelp::for_call(tool, arguments, error) {
+        // Text-only hosts must receive the same callable lessons. Do not copy
+        // guide bodies here or replace an existing repair/restart action.
+        result["content"][0]["text"] = json!(format!("{}\nUsage help: {}", error.message, help));
+        result["structuredContent"]["help"] = help;
     }
     result
 }
@@ -92,12 +109,24 @@ mod tests {
                 .contains("Austin")
         );
 
-        let error = tool_error_result(&ToolError::backend("no evidence"));
+        let error = tool_error_result("kmp_ask", &json!({}), &ToolError::backend("no evidence"));
         assert_eq!(error["isError"], true);
         assert_eq!(error["content"][0]["text"], "no evidence");
         assert_eq!(error["structuredContent"]["error"]["code"], "backend_error");
 
-        let missing = tool_error_result(&ToolError::not_found("node `question:missing` not found"));
+        let uncertain = tool_error_result(
+            "kmp_write_memory",
+            &json!({}),
+            &ToolError::backend("lost reply"),
+        );
+        assert_eq!(uncertain["structuredContent"]["status"], "unconfirmed");
+        assert!(uncertain["structuredContent"].get("accepted").is_none());
+
+        let missing = tool_error_result(
+            "kmp_inspect",
+            &json!({}),
+            &ToolError::not_found("node `question:missing` not found"),
+        );
         assert_eq!(missing["structuredContent"]["error"]["code"], "not_found");
     }
 }

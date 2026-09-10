@@ -118,7 +118,7 @@ impl KernelMcpServer {
                     &error.message,
                     start.elapsed(),
                 );
-                jsonrpc_result(id, tool_error_result(&error))
+                jsonrpc_result(id, tool_error_result(name, arguments, &error))
             }
         }
     }

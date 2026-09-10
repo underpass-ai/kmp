@@ -12,7 +12,7 @@
           "id": "overview",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "This is the agent-only operating contract shipped with the KMP plugin.",
+          "evidence": "The agent entry routes first-time users to the persistent guide scheme, with Markdown as an alternative entry and extended lessons on demand.",
           "text_file": "agent-entry.md"
         },
         {
@@ -27,7 +27,7 @@
           "id": "verb:wake",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The live Wake response preserves scope and returns complete continuation, core restoration and cursor recovery calls.",
+          "evidence": "The live Wake response preserves scope and returns complete continuation, core restoration and cursor recovery calls. Per-section remaining counts expose unread expansion without asserting sufficiency.",
           "text_file": "verbs/wake.md",
           "guide_title": "Resume known work"
         },
@@ -35,8 +35,8 @@
           "id": "verb:ask",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Complete Spanish/English month-name dates and ISO YYYY-MM-DD may preserve the same calendar day; other identifiers remain literal. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN. After the permitted selections, a genuinely semantic UNKNOWN is terminal. Do not inspect the root, sweep all abouts, change optional arguments or traverse the graph to bypass it. Reclassify only when the original goal actually asks for temporal state. Read the language and retrieved-proof topics when their warnings or provenance matter. For a partial read, execute projection.next_action with its complete arguments, preserving question, asked_as, dimensions and temporal selection. If core_text_shortened, its call restarts without page.cursor at a sufficient allowance; discard the earlier partial reconstruction. Otherwise append only expansion beyond each section core. Finish when next_action is null; detail or selection caps remain explicit. A stale cursor returns conflict and feedback[].action for a fresh read; never combine different selections. Named dates without a year preserve only month/day: 18 de agosto matches August 18 or a valid ISO date ending in -08-18. The lint neither supplies nor verifies an added year; keep it absent unless evidence supports it. A complete source date must retain its year. A missing partial date is reported as --08-18; repair the month/day, never pad the rendering with a bare 18.",
-          "evidence": "The live kmp_ask contract retrieves stored evidence and never generates a fallback answer.",
+          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Complete Spanish/English month-name dates and ISO YYYY-MM-DD may preserve the same calendar day; other identifiers remain literal. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN. After the permitted selections, a genuinely semantic UNKNOWN is terminal. Do not inspect the root, sweep all abouts, change optional arguments or traverse the graph to bypass it. Reclassify only when the original goal actually asks for temporal state. Read the language and retrieved-proof topics when their warnings or provenance matter. For a partial read, execute projection.next_action with its complete arguments, preserving question, asked_as, dimensions and temporal selection. If core_text_shortened, its call restarts without page.cursor at a sufficient allowance; discard the earlier partial reconstruction. Otherwise append only expansion beyond each section core. Finish when next_action is null; detail or selection caps remain explicit. A stale cursor returns conflict and feedback[].action for a fresh read; never combine different selections. Named dates without a year preserve only month/day: 18 de agosto matches August 18 or a valid ISO date ending in -08-18. The lint neither supplies nor verifies an added year; keep it absent unless evidence supports it. A complete source date must retain its year. A missing partial date is reported as --08-18; repair the month/day, never pad the rendering with a bare 18. projection.sections.*.remaining counts eligible expansion after this page, excluding repeated core and all prior pages. Use these per-section counts to identify unread passages or relations; zero does not establish semantic sufficiency or erase detail/selection caps.",
+          "evidence": "The live kmp_ask contract retrieves stored evidence and never generates a fallback answer. Remaining section counts survive typed projection and exclude the repeated core and every earlier page.",
           "guide_title": "Ask a semantic question"
         },
         {
@@ -51,7 +51,7 @@
           "id": "verb:time",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "Native field projection checks omitted fields, executable scoped expansion, unchanged proof and cursor rejection after hidden content changes across embedded and gRPC transports. The shared relation-clock fix from #599 also checks link timestamps independently of older endpoints before constructing proof and lifecycle. Direct native interval regressions cover both directions, start ties, exclusive ends, proof paging, earlier antecedents, later proof exclusion and unassessed expiry without an end. The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. Native wake/ask rejects explicitly later receipt evidence from earlier observed instants and exclusive interval ends while preserving event-time retrieval. Native response-page tests reconstruct entries and proof verbatim, reject a changed selection and execute the minimum-budget retry; completed packets offer executable temporal navigation. The limited-selection warning leaves continuation syntax to the transport; MCP actions do not reinterpret an opaque response cursor as a memory ref. Goto proof stops at its inclusive resolved cursor or an earlier exclusive interval end, respecting later relation and evidence arrival. Full-detail actions replay the original temporal selection and proof; they do not move to the selected entry instant.",
+          "evidence": "Native field projection checks omitted fields, executable scoped expansion, unchanged proof and cursor rejection after hidden content changes across embedded and gRPC transports. The shared relation-clock fix from #599 also checks link timestamps independently of older endpoints before constructing proof and lifecycle. Direct native interval regressions cover both directions, start ties, exclusive ends, proof paging, earlier antecedents, later proof exclusion and unassessed expiry without an end. The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. Native wake/ask rejects explicitly later receipt evidence from earlier observed instants and exclusive interval ends while preserving event-time retrieval. Native response-page tests reconstruct entries and proof verbatim, reject a changed selection and execute the minimum-budget retry; completed packets offer executable temporal navigation. The limited-selection warning leaves continuation syntax to the transport; MCP actions do not reinterpret an opaque response cursor as a memory ref. Goto proof stops at its inclusive resolved cursor or an earlier exclusive interval end, respecting later relation and evidence arrival. Native temporal dependency tests recover full related records and coordinates without changing history selection, preserve clock and label exclusions, reject changed dependency cursors, reconstruct paged proof with reduced entry fields, and exclude expired links on validity reads. Real gRPC service traversal and separate MCP wire tests cover all four temporal verbs. The alias-ownership example requests one alias entry with its bounded dependency group. The existing context composer now recognizes dependency records as typed text, ref definitions and span sources. Native shared-page and pure-composition tests reconstruct all stored values, retain literal group members and omit whole groups without leaking their source text. Explicit entry-ref selection keeps the question cutoff separate from the selected memory time, before history limits and without filtering dependency sources. Native boundary, scope, label, invalid-input and response-continuation tests and all-four-verb gRPC checks cover the new selection. The alias-ownership lesson selects an older directory entry at the later clarification time. Full-detail actions replay the original temporal selection and proof; they do not move to the selected entry instant.",
           "text_file": "verbs/time.md",
           "guide_title": "Navigate and zoom in time"
         },
@@ -67,7 +67,7 @@
           "id": "verb:write",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "Native writer validation returns field-localized repair feedback and exact supported read actions; semantic packets validate before commit. Accepted packets return declared coverage and an immutable command receipt recoverable through Inspect; source coverage remains unassessed and store errors preserve their categories. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. INVALID_TYPE distinguishes present JSON type errors with expected_type and received_type; EMPTY_MEMORIES distinguishes an empty array. Native tests verify atomic rejection and correction without coercion. Independent compiler failures are returned together per record before canonical ingest; native tests cover atomic memory and search-summary repair. Writer checks compare evidence clocks and consistent dimensional routes. HTTP authorization checks current packet labels, nested refs, relation targets and search summaries before the backend; native transport tests cover refusal and local references.",
+          "evidence": "Native writer validation returns field-localized repair feedback and exact supported read actions; semantic packets validate before commit. Accepted packets return declared coverage and an immutable command receipt recoverable through Inspect; source coverage remains unassessed and store errors preserve their categories. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. INVALID_TYPE distinguishes present JSON type errors with expected_type and received_type; EMPTY_MEMORIES distinguishes an empty array. Native tests verify atomic rejection and correction without coercion. Independent compiler failures are returned together per record before canonical ingest; native tests cover atomic memory and search-summary repair. Writer checks compare evidence clocks and consistent dimensional routes. HTTP authorization checks current packet labels, nested refs, relation targets and search summaries before the backend; native transport tests cover refusal and local references. Accepted-command status and per-entry clock coverage come from canonical ingest and its idempotent receipt, not a caller guess. The acknowledgment projects canonical from/rel/to triples with local ids; native tests compare preview, commit and replay with receipt endpoints, including stored targets. Exact local ids with or without @ resolve inside the packet. Native tests exercise deterministic single-class completion, explicit class preservation, ambiguous-class feedback, unknown local ids, atomic rejection and durable receipts after restart; packet observation remains explicit.",
           "text_file": "verbs/write.md",
           "guide_title": "Write evidence or change labels"
         },
@@ -75,7 +75,7 @@
           "id": "verb:view",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The live view contracts make the view shared, semantic, optimistic and read-only with respect to memory. Native embedded tests cover new and retained about layers, scope refusal and catalogue values found only in an additional about. HTTP and negotiated MCP App regressions preserve the declared equivalence and method; source clock, range, label and page exclusions remove it, and the scene requires both visible endpoints. ChronoLoom labels its inspector Current record and explains that its status and links can include updates outside the scene window. The DOM relation-click regression covers projected and off-window entries and a failed selection; the native SHIFT-6 visual review follows the later resolution from an earlier observed scene.",
+          "evidence": "The live view contracts make the view shared, semantic, optimistic and read-only with respect to memory. Native embedded tests cover new and retained about layers, scope refusal and catalogue values found only in an additional about. HTTP and negotiated MCP App regressions preserve the declared equivalence and method; source clock, range, label and page exclusions remove it, and the scene requires both visible endpoints. ChronoLoom labels its inspector Current record and explains that its status and links can include updates outside the scene window. The DOM relation-click regression covers projected and off-window entries and a failed selection; the native SHIFT-6 visual review follows the later resolution from an earlier observed scene. Native checks preserve the exact bundled renderer bytes in both viewer surfaces.",
           "text_file": "verbs/view.md",
           "guide_title": "Frame and share ChronoLoom"
         },
@@ -107,7 +107,7 @@
           "id": "advanced:relations",
           "kind": "constraint",
           "depth": "advanced",
-          "evidence": "The writer relation vocabulary distinguishes semantic meaning from fallback links and reports relation quality.",
+          "evidence": "The writer relation vocabulary distinguishes semantic meaning from fallback links and reports relation quality. Endpoint roles are explicit for permission, verification, exclusion, correction and replacement. The projection marks the entire supersedes target SUPERSEDED; corrects does not change that status. Exact local ids with or without @ resolve inside the packet. Native tests exercise deterministic single-class completion, explicit class preservation, ambiguous-class feedback, unknown local ids, atomic rejection and durable receipts after restart; packet observation remains explicit.",
           "text_file": "topics/relations.md",
           "guide_title": "Choose a relation and justify it"
         },
@@ -131,7 +131,7 @@
           "id": "advanced:budgets",
           "kind": "constraint",
           "depth": "advanced",
-          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads, kmp_inspect, kmp_trace and kmp_relate, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed. A shortened proof body retains its identity and provenance. Ask and Wake return an executable projection.next_action. When core_text_shortened is true, it restarts without page.cursor at a sufficient allowance to recover the full core; discard the partial reconstruction. Otherwise append only expansion beyond each section core. Continue until next_action is null: has_more=false alone describes expansion, not restored core. A stalled page declares minimum_progress_bytes and proposes that allowance plus 10000 bytes for useful expansion, so restoring the core does not force a one-item walk. If that allowance is unavailable, keep the result partial. Cursor conflicts include feedback[].action to restart the same arguments; do not combine old and new selections. budget.detail chooses eligible expansion before caps: excluded_by_detail is not lost pagination. budget.max_entries caps the selection before paging. budget.tokens is an advisory planning hint, not a filter of canonical structuredContent; defaults remain declared in each tool schema. selection_omitted includes evidence withheld by max_entries before response projection, even when page.has_more is false or compact detail hides the missing-source list. A completed page can still describe a capped selection; changing the cap starts a new selection. Inspect can avoid repeating a large stable object: retain it from the first page, then use page.repeat_object=false with the returned cursor. This can let the remaining evidence fit the original ceiling. required_bytes still describes the complete inspection with its full object. Execute Inspect next_actions until empty; when an expansion item cannot fit, the call offers at least page.minimum_progress_bytes, preferring a complete inspection up to the usual 10,000-byte allowance. If that allowance is unavailable, report the pending proof. A changed selection returns conflict with a fresh-read action, which restores the full object. Trace and Relate never shorten a fact, relation why or evidence to fit a page. For example, after a 512-byte request returns zero items, copy page.next_cursor and set budget.max_bytes to page.required_bytes; do not repeat the blocked page at 512 bytes. Their opaque cursors bind the complete selected content. Execute next_actions to retain every argument and any negotiated byte allowance. Changed content returns a conflict with a complete restart action; retain the old result only as an explicitly incomplete earlier read. Temporal pages report minimum_progress_bytes when the next indivisible item cannot fit, and next_actions provides a retry that admits an item. A response page can be complete while selection.has_more reports history outside the selected packet.",
+          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads, kmp_inspect, kmp_trace and kmp_relate, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed. A shortened proof body retains its identity and provenance. Ask and Wake return an executable projection.next_action. When core_text_shortened is true, it restarts without page.cursor at a sufficient allowance to recover the full core; discard the partial reconstruction. Otherwise append only expansion beyond each section core. Continue until next_action is null: has_more=false alone describes expansion, not restored core. A stalled page declares minimum_progress_bytes and proposes that allowance plus 10000 bytes for useful expansion, so restoring the core does not force a one-item walk. If that allowance is unavailable, keep the result partial. Cursor conflicts include feedback[].action to restart the same arguments; do not combine old and new selections. budget.detail chooses eligible expansion before caps: excluded_by_detail is not lost pagination. budget.max_entries caps the selection before paging. budget.tokens is an advisory planning hint, not a filter of canonical structuredContent; defaults remain declared in each tool schema. selection_omitted includes evidence withheld by max_entries before response projection, even when page.has_more is false or compact detail hides the missing-source list. A completed page can still describe a capped selection; changing the cap starts a new selection. Inspect can avoid repeating a large stable object: retain it from the first page, then use page.repeat_object=false with the returned cursor. This can let the remaining evidence fit the original ceiling. required_bytes still describes the complete inspection with its full object. Execute Inspect next_actions until empty; when an expansion item cannot fit, the call offers at least page.minimum_progress_bytes, preferring a complete inspection up to the usual 10,000-byte allowance. If that allowance is unavailable, report the pending proof. A changed selection returns conflict with a fresh-read action, which restores the full object. Trace and Relate never shorten a fact, relation why or evidence to fit a page. For example, after a 512-byte request returns zero items, copy page.next_cursor and set budget.max_bytes to page.required_bytes; do not repeat the blocked page at 512 bytes. Their opaque cursors bind the complete selected content. Execute next_actions to retain every argument and any negotiated byte allowance. Changed content returns a conflict with a complete restart action; retain the old result only as an explicitly incomplete earlier read. Temporal pages report minimum_progress_bytes when the next indivisible item cannot fit, and next_actions provides a retry that admits an item. A response page can be complete while selection.has_more reports history outside the selected packet. With context_id, KMP can replace a returned read action with {tool: the_same_verb, arguments: {continuation: returned_id}}. Copy that action unchanged: do not add context, cursor or budget. Metadata retains the exact context, purpose, selection, clock, scope and recommended allowance. One call reads one page. Repeating an id replays that page; use the new returned action to advance. Page completion and navigation to another temporal selection remain distinct. Handles survive reconnect to the same store but expire after 24 hours, with at most 16 per context and 256 per directory; an individual retained call is capped at 32 KiB. They are transport metadata, absent from memory evidence and exports, not authorization or a durable bookmark. Current HTTP permissions are checked on the full retained call. CONTINUATION_UNAVAILABLE means restart the original selection; changed evidence still yields the native cursor conflict. Without context, on storage failure, or when a handle would enlarge the action, the executable full call remains. Raw cursors stay in the response for explicit clients; do not combine that path with a continuation id. Native projection floors and minimum-progress allowances are computed before this optional action encoding; the encoded action never enlarges that packet, and recall used_bytes reports its transmitted structuredContent size. In hosts that opt into KMP_MCP_PASSAGES=shared, a returned text, why or evidence slot may be {\"passage\":\"p1\"}: read passages.p1 in that same response. The entire literal is preserved; keep each page together with its own passage table. p1 names display text, not an entity. A graph-reference slot may be {\"citation\":\"c1\"}; citations.c1 resolves the exact canonical ref of a record defined in the response. Definitions remain literal, as do refs to absent records. Cite the resolved canonical ref and retain source, support, authorship and clocks. Keep both tables with their response; never resolve a name against another page. Equal wording from independent sources remains independent evidence. Inline text remains when sharing cannot save bytes. Native selection, cursor and required_bytes/floors still describe the inline read; used_bytes measures the actual shared packet. Sharing completes no omitted page or proof group. Host composition may admit whole declared groups under a byte budget; omitted groups retain their original reads. Group boundaries and completeness are not inferred from text. Overlapping quotations without known source boundaries remain separate. For captured groups, kmp-mcp context project|expand [FILE|-] composes or restores JSON without opening memory. It resolves each input page against its own tables. A v2 composed slot can be {\"passage\":[\"p1\",\"p2\"]}: concatenate those literals in order with no added separator. The host may supply source spans only when it knows the returned source ref, exact text SHA-256 and UTF-8 bounds; KMP checks the entire quote. Writers need not calculate offsets. A source omitted by the budget is not loaded through a table: the retained quote stays whole and the omission keeps the source read. This validates text agreement, not attribution or proof completeness. Do not add absent evidence. The v2 decoder rejects other context versions.",
           "evidence": "The live read schemas and projections guarantee one stable response floor plus an explicit warning when a valid max_bytes ceiling cannot contain a smaller honest response.",
           "guide_title": "Choose a byte ceiling"
         },
@@ -195,7 +195,7 @@
           "kind": "instruction",
           "depth": "advanced",
           "text_file": "examples/alias-ownership.md",
-          "evidence": "Five fictional dated sources distinguish an explicit person alias, an unidentified visitor and a reassigned account. Native MCP replay checks same_entity_as versus supersedes, catalogue maintenance, temporal selection and proof without invoking a model.",
+          "evidence": "Five fictional dated sources distinguish an explicit person alias, an unidentified visitor and a reassigned account. Native MCP replay checks same_entity_as versus supersedes, catalogue maintenance, temporal selection and proof without invoking a model. Native temporal dependency tests recover full related records and coordinates without changing history selection, preserve clock and label exclusions, reject changed dependency cursors, reconstruct paged proof with reduced entry fields, and exclude expired links on validity reads. Real gRPC service traversal and separate MCP wire tests cover all four temporal verbs. The alias-ownership example requests one alias entry with its bounded dependency group.",
           "example_title": "Aliases, unresolved names and account assignment"
         },
         {
@@ -210,7 +210,7 @@
           "id": "advanced:errors",
           "kind": "instruction",
           "depth": "advanced",
-          "evidence": "Operating guidance moved from the reviewed memory skill; native lifecycle and tool error contracts remain authoritative.",
+          "evidence": "Native MCP refusals preserve their error code and feedback actions while offering executable verb and lesson reads selected from typed diagnostics. Backend and guide-read failures do not trigger recursive guide help.",
           "text_file": "topics/errors.md",
           "guide_title": "Diagnose missing tools and errors"
         },
@@ -268,7 +268,7 @@
           "depth": "advanced",
           "text_file": "examples/budget-proof.md",
           "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
-          "evidence": "Five fictional source records demonstrate actual temporal, trace and inspect continuations, a capped selection and two terminal semantic UNKNOWN reads."
+          "evidence": "Five fictional source records demonstrate actual temporal, trace and inspect continuations, a capped selection and two terminal semantic UNKNOWN reads. The explanation distinguishes remaining passages and relations, repeated core, earlier pages and semantic sufficiency."
         },
         {
           "id": "example:shared-resumption",
@@ -324,7 +324,71 @@
           "depth": "advanced",
           "text_file": "examples/semantic-batch.md",
           "example_title": "Atomic semantic packet with local proof links",
-          "evidence": "Two fictional R1/R2 sources exercise one-about atomic validation, forward local refs, all declared labels, independent clocks, exact retry and shared ChronoLoom proof inspection. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. The teaching review contrasts R1/R2 source clocks with the accepted packet, distinguishes a request from an executed change and explains separate lifecycles and consistent account labels."
+          "evidence": "Two fictional R1/R2 sources exercise one-about atomic validation, forward local refs, all declared labels, independent clocks, exact retry and shared ChronoLoom proof inspection. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. The teaching review contrasts R1/R2 source clocks with the accepted packet, distinguishes a request from an executed change and explains separate lifecycles and consistent account labels. Exact local ids with or without @ resolve inside the packet. Native tests exercise deterministic single-class completion, explicit class preservation, ambiguous-class feedback, unknown local ids, atomic rejection and durable receipts after restart; packet observation remains explicit."
+        },
+        {
+          "id": "card:wake",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/wake.md",
+          "evidence": "A short worked starting card for wake; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:write",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/write.md",
+          "evidence": "A short worked starting card for write; extended guidance remains available through its canonical verb reference. Exact local ids with or without @ resolve inside the packet. Native tests exercise deterministic single-class completion, explicit class preservation, ambiguous-class feedback, unknown local ids, atomic rejection and durable receipts after restart; packet observation remains explicit."
+        },
+        {
+          "id": "card:ask",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/ask.md",
+          "evidence": "A short worked starting card for ask; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:time",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/time.md",
+          "evidence": "A short worked starting card for time; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:audit",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/audit.md",
+          "evidence": "A short worked starting card for audit; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:relate",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/relate.md",
+          "evidence": "A short worked starting card for relate; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:view",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/view.md",
+          "evidence": "A short worked starting card for view; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:guide",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/guide.md",
+          "evidence": "A short worked starting card for guide; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "verb:guide",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "verbs/guide.md",
+          "evidence": "The MCP guide assigns persistent agent identities and contexts, distinguishes served guidance from understanding, and provides explicit reset and fold operations. Native context tests cover usage persistence, returned guide bodies, profile actor, idempotency, intact memory budgets, executable typed continuations and relation audit, temporal UNKNOWN and accepted writes despite usage metadata failure. The kmp-expert host skill preloads every canonical agent-guide entry and example from a revision-keyed local cache; its manifest records delivery ranges and body hashes without changing MCP served state or adding model inference to the kernel.",
+          "guide_title": "Manage agent identity and guidance"
         }
       ],
       "relations": [
@@ -591,6 +655,70 @@
           "class": "evidential",
           "why": "This case applies the writer contract to explicit sources and reads every existing relation target.",
           "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay. Coordinate ownership explains preservation of a redundant contains_entry declaration and refusal when its membership cannot be resolved; regression #576 exercises committed MCP and export/import."
+        },
+        {
+          "from": "card:wake",
+          "to": "verb:wake",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic wake returns an inspect action for verb:wake."
+        },
+        {
+          "from": "card:write",
+          "to": "verb:write",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic write returns an inspect action for verb:write."
+        },
+        {
+          "from": "card:ask",
+          "to": "verb:ask",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic ask returns an inspect action for verb:ask."
+        },
+        {
+          "from": "card:time",
+          "to": "verb:time",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic time returns an inspect action for verb:time."
+        },
+        {
+          "from": "card:audit",
+          "to": "verb:audit",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic audit returns an inspect action for verb:audit."
+        },
+        {
+          "from": "card:relate",
+          "to": "verb:relate",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic relate returns an inspect action for verb:relate."
+        },
+        {
+          "from": "card:view",
+          "to": "verb:view",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic view returns an inspect action for verb:view."
+        },
+        {
+          "from": "card:guide",
+          "to": "verb:guide",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic guide returns an inspect action for verb:guide."
         }
       ]
     },
@@ -652,7 +780,7 @@
           "id": "advanced:budgets",
           "kind": "concept",
           "depth": "advanced",
-          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Ask and Wake now return the complete call for continuing or restoring a shortened preview. A restoration starts a new read with enough bytes; its agent discards the partial reconstruction. It can also inspect the cited memory for its full text. Finishing expansion alone does not prove the preview is complete. An optional local semantic encoder can help the embedded engine find differently worded sources. Similarity is shown as retrieval evidence and never establishes an answer on its own; an unavailable encoder leaves ordinary retrieval available with a warning. Ask keeps cited memories first and returns additional evidence in retrieval order, including when it spans several pages. If a page cannot fit the next item, KMP says that it cannot advance: allow a larger response or keep the result explicitly partial. An agent that retained the first inspected object can request later pages with page.repeat_object=false. KMP sends its ref and the remaining proof, marks object_reused, and rejects the continuation if the object or selected evidence changed.",
+          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Ask and Wake now return the complete call for continuing or restoring a shortened preview. A restoration starts a new read with enough bytes; its agent discards the partial reconstruction. It can also inspect the cited memory for its full text. Finishing expansion alone does not prove the preview is complete. An optional local semantic encoder can help the embedded engine find differently worded sources. Similarity is shown as retrieval evidence and never establishes an answer on its own; an unavailable encoder leaves ordinary retrieval available with a warning. Ask keeps cited memories first and returns additional evidence in retrieval order, including when it spans several pages. If a page cannot fit the next item, KMP says that it cannot advance: allow a larger response or keep the result explicitly partial. An agent that retained the first inspected object can request later pages with page.repeat_object=false. KMP sends its ref and the remaining proof, marks object_reused, and rejects the continuation if the object or selected evidence changed. Registered agents can receive a short continuation identifier instead of copying a long call. It retains one exact read, including the next-page budget. Replay repeats that page; its next action advances. These bounded metadata records survive reconnect but are not durable memory or access permissions. Missing or expired identifiers require a fresh read; the complete action remains available when a short identifier cannot be retained. A host can opt into sharing repeated passages. The response then prints an identical passage once and refers to it from each original record. Source identity, authorship, times and support remain distinct even when wording is equal. The agent resolves short passage names and citation names using separate tables in that response, then cites the original memory or evidence ref. The original record definitions stay explicit; a short citation never combines source identities. This only changes presentation: it does not merge facts, certify a complete proof or silently discard qualifiers. Partly overlapping quotations remain separate when source boundaries are not known. A host can also compose captured read groups using kmp-mcp context project, and restore admitted groups with context expand. Neither command opens memory. If the host knows a quote’s exact source and boundaries, overlapping quotes may share ordered fragments. The reader joins those fragments without adding words or separators; source identities remain separate. An omitted source stays omitted, and its read remains listed. This saves representation space only when the complete encoding is smaller; it does not establish a complete proof.",
           "evidence": "The shipped read contracts preserve a stable response floor and make every byte-budget exception visible as a warning."
         },
         {

@@ -1662,6 +1662,7 @@ dependencies = [
 name = "kmp-mcp"
 version = "0.15.0"
 dependencies = [
+ "getrandom 0.2.17",
  "kmp-adapter-embedded",
  "kmp-application",
  "kmp-domain",
@@ -1673,6 +1674,7 @@ dependencies = [
  "prost 0.13.5",
  "prost-types 0.13.5",
  "reqwest 0.12.28",
+ "rusqlite",
  "serde",
  "serde_json",
  "sha2",
@@ -1699,6 +1701,7 @@ dependencies = [
  "reqwest 0.12.28",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tower 0.5.3",
  "tracing",
@@ -1821,6 +1824,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sha2",
+ "tempfile",
  "tiktoken-rs",
  "tokio",
  "tokio-rustls",
@@ -1931,6 +1935,7 @@ dependencies = [
 name = "kmp-viewer"
 version = "0.15.0"
 dependencies = [
+ "flate2",
  "getrandom 0.2.17",
  "kmp-application",
  "kmp-domain",

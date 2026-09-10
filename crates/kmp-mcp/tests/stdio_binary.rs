@@ -111,6 +111,13 @@ impl LiveMcp {
     }
 }
 
+fn expected_tool_count() -> usize {
+    kmp_mcp::kmp_mcp_tools_list_result()["tools"]
+        .as_array()
+        .expect("declared tools")
+        .len()
+}
+
 /// The product is the embedded kernel, so an unconfigured binary serves it.
 /// This used to exit 2 asking for a gRPC endpoint nobody had mentioned — the
 /// single-binary promise demanding a cluster.
@@ -142,8 +149,8 @@ fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configur
             .as_array()
             .expect("a tool list")
             .len(),
-        15,
-        "twelve memory tools and three view tools"
+        expected_tool_count(),
+        "the process exposes the declared surface"
     );
     let log_entries = std::fs::read_dir(data_dir.path().join("logs"))
         .expect("the implicit embedded backend creates its session journal")
@@ -210,8 +217,8 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
 
     let mut first = LiveMcp::start(&first_store, &data_home, &home);
     let mut second = LiveMcp::start(&second_store, &data_home, &home);
-    assert_eq!(first.tool_count(), 15);
-    assert_eq!(second.tool_count(), 15);
+    assert_eq!(first.tool_count(), expected_tool_count());
+    assert_eq!(second.tool_count(), expected_tool_count());
 
     let refused = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["uninstall", "--store"])
@@ -229,10 +236,14 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     assert!(refusal.contains("Nothing was removed"), "{refusal}");
     assert!(first_store.exists());
     assert!(second_store.exists());
-    assert_eq!(first.tool_count(), 15, "uninstall must not kill its owner");
+    assert_eq!(
+        first.tool_count(),
+        expected_tool_count(),
+        "uninstall must not kill its owner"
+    );
     assert_eq!(
         second.tool_count(),
-        15,
+        expected_tool_count(),
         "an unrelated host must stay fully usable"
     );
 
@@ -257,7 +268,7 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     assert!(report.contains("every other KMP store, engine and host was left alone"));
     assert!(!first_store.exists());
     assert!(second_store.exists());
-    assert_eq!(second.tool_count(), 15);
+    assert_eq!(second.tool_count(), expected_tool_count());
 
     let rescues = std::fs::read_dir(&workspace)
         .expect("workspace listing")

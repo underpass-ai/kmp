@@ -119,6 +119,7 @@ async fn prior_context_feedback_can_be_executed_then_the_write_repaired() {
     let feedback = &rejected["structuredContent"]["feedback"][0];
     assert_eq!(feedback["code"], "PRIOR_CONTEXT_REQUIRED", "{rejected}");
     assert_eq!(feedback["field"], "memories[0].connect_to[0].ref");
+    assert!(rejected["structuredContent"]["help"]["guide"].is_object());
     let action = &feedback["action"];
     assert_eq!(action["tool"], "kmp_inspect");
     assert_eq!(action["arguments"], json!({"about":ABOUT,"ref":target}));

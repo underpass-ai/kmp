@@ -47,6 +47,9 @@ pub struct AcceptedVersion {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UpdateContextOutcome {
     pub accepted_version: AcceptedVersion,
+    /// Determined at the idempotency check, never inferred from a caller retry.
+    pub replayed: bool,
+    pub replayed_receipt: Option<kmp_domain::StoredCommandReceipt>,
     pub warnings: Vec<String>,
 }
 
@@ -137,6 +140,8 @@ where
                 )));
             }
             return Ok(UpdateContextOutcome {
+                replayed: true,
+                replayed_receipt: outcome.receipt,
                 accepted_version: AcceptedVersion {
                     revision: outcome.revision,
                     content_hash: outcome.content_hash,
@@ -228,6 +233,8 @@ where
         }
 
         Ok(UpdateContextOutcome {
+            replayed: false,
+            replayed_receipt: None,
             accepted_version: AcceptedVersion {
                 revision: new_revision,
                 content_hash,

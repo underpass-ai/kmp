@@ -36,6 +36,8 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
         "required": ["about", cursor_key],
         "properties": {
             "about": string_schema("Memory anchor or root ref to traverse from."),
+            "refs": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"type":"string","minLength":1},
+                "description":"Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries."},
             "fields": {"type":"array", "uniqueItems":true,
                 "items":{"type":"string","enum":TemporalEntryField::ALL},
                 "description":"Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include."},
@@ -79,6 +81,7 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
                 "properties": {
                     "evidence": {"type": "boolean"},
                     "relations": {"type": "boolean"},
+                    "dependencies": {"type":"boolean", "description":"Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group."},
                     "raw_refs": {
                         "type": "boolean",
                         "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields."
@@ -116,6 +119,21 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
 }
 
 pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Value {
+    let mut proof = proof_output_schema(
+        "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
+    );
+    proof["properties"]["entries"] = described(
+        "array",
+        "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+    );
+    proof["properties"]["groups"] = json!({"type":"array", "description":"With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.", "items":output_object(json!({
+        "seed_ref":described("string", "The selected temporal entry."),
+        "member_refs":string_array("Seed and available dependency entries in deterministic discovery order."),
+        "unavailable_in_selection":described("integer", "Distinct endpoints without an eligible body under this read; identities are not disclosed."),
+        "omitted_by_limit":described("integer", "Distinct eligible frontier members not expanded because of hop or member limits."),
+        "max_hops":described("integer", "Maximum expansion hops from this seed."),
+        "max_members":described("integer", "Maximum members, including the seed.")
+    }))});
     let mut page = page_output_schema(
         "entry and proof expansion items",
         "Opaque cursor for page.cursor; execute the complete next_actions call.",
@@ -137,6 +155,8 @@ pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Val
             "fields":output_object(json!({"included":string_array("Fields returned on each entry; ref and kind always remain."), "omitted":string_array("Entry fields available through each returned detail_action; omitted fields are not empty values.")})),
             "scope":described("string", "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory."),
             "entries":described("integer", "Entries selected for this packet before response pagination."),
+            "requested_refs":string_array("Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time."),
+            "unmatched_ref_count":described("integer", "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion."),
             "matching_entries":described("integer", "Matching temporal entries reported by the kernel before its entry/window limit."),
             "has_more":described("boolean", "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.")
         })),
@@ -150,7 +170,7 @@ pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Val
         "entries": described("array", "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full selected-packet read with the original verb, cutoff, interval, scope, window and limits. Replay a shared action once, not once per entry."),
         "page": page,
         "raw_refs": described("array", "Typed raw audit refs for selected entries when include.raw_refs=true."),
-        "proof": proof_output_schema("Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty."),
+        "proof": proof,
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
         "warnings": warnings_output_schema()
     }))

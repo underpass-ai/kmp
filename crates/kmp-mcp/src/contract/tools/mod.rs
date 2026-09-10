@@ -4,6 +4,7 @@ pub(crate) mod app_visual_projection;
 pub(crate) mod ask;
 pub(crate) mod forward;
 pub(crate) mod goto;
+pub(crate) mod guide;
 pub(crate) mod ingest;
 pub(crate) mod inspect;
 pub(crate) mod near;

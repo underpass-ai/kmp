@@ -14,12 +14,42 @@
         "evidence": 1,
         "relations": 1
       },
+      "clocks": {
+        "entries": 3,
+        "ingested": {
+          "distinct_values": 1,
+          "entries": 3,
+          "single_value": "<stamped at call time>"
+        },
+        "observed": {
+          "distinct_values": 0,
+          "entries": 0,
+          "single_value": null
+        },
+        "occurred": {
+          "distinct_values": 3,
+          "entries": 3,
+          "single_value": null
+        },
+        "scope": "accepted_command",
+        "valid_from": {
+          "distinct_values": 2,
+          "entries": 2,
+          "single_value": null
+        },
+        "valid_until": {
+          "distinct_values": 1,
+          "entries": 1,
+          "single_value": "2026-04-12T18:00:00Z"
+        }
+      },
       "created_dimensions": [
         "label:v1:question%3Aparity:conversation:conversation%3Arachel"
       ],
       "memory_id": "memory:parity:ingest:1",
       "read_after_write_ready": true,
       "receipt_ref": null,
+      "replayed": false,
       "resembling_labels": []
     },
     "summary": "Ingested 3 entries, 1 relation, and 1 evidence item for question:parity.",

@@ -17,6 +17,25 @@ pub(crate) fn writer_relation_names() -> Vec<&'static str> {
         .map(|relation_type| relation_type.as_str())
         .collect()
 }
+
+pub(crate) fn writer_relations_requiring_class() -> Vec<&'static str> {
+    KnownMemoryRelationType::writer_relation_types()
+        .iter()
+        .filter_map(|relation| relation.writer_spec())
+        .filter(|spec| spec.allowed_classes().len() != 1)
+        .map(|spec| spec.relation_type().as_str())
+        .collect()
+}
+
+pub(crate) fn writer_class_schema() -> Value {
+    let mut schema = semantic_class_schema();
+    schema["description"] = json!(format!(
+        "Omit when rel allows exactly one class: KMP completes that class. Required for {}. An explicit class is validated, never replaced. {}",
+        writer_relations_requiring_class().join(", "),
+        schema["description"].as_str().unwrap_or_default()
+    ));
+    schema
+}
 /// The relation vocabulary, projected from the kernel's own writer spec so
 /// this documentation can never drift from what the kernel validates. The
 /// relation is where KMP carries the why; a model that only sees a bare enum
@@ -27,7 +46,7 @@ pub(crate) fn relation_vocabulary_description(header: &str) -> String {
         "{header} The relation carries the explanation: non-structural classes require why, \
          evidence and confidence. Prefer rich types — anemic types are an honest fallback for \
          when no richer semantic dependency can be proven, never a default. Vocabulary \
-         (quality; allowed classes; when to use):"
+         (quality; allowed classes; source -> relation -> target / when to use):"
     );
     for spec in KnownMemoryRelationType::writer_relation_types()
         .iter()

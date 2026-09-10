@@ -10,6 +10,7 @@ use kmp_proto_mapping::v1beta1::recall_projection::requested_byte_limit;
 const CURSOR_VERSION: &str = "kmpt1";
 const SECTIONS: &[&str] = &[
     "/entries",
+    "/proof/entries",
     "/proof/evidence",
     "/proof/path",
     "/proof/conflicts",
@@ -18,6 +19,7 @@ const SECTIONS: &[&str] = &[
     "/proof/missing",
     "/proof/matched_relations",
     "/proof/matched_terms",
+    "/proof/groups",
     "/raw_refs",
 ];
 
@@ -119,6 +121,12 @@ impl TemporalPage {
             "matching_entries":kernel_page["total"],
             "has_more":kernel_page["has_more"]
         });
+        if let Some(refs) = arguments.get("refs") {
+            value["selection"]["requested_refs"] = refs.clone();
+            let requested = refs.as_array().map_or(0, Vec::len) as u64;
+            value["selection"]["unmatched_ref_count"] =
+                json!(requested.saturating_sub(kernel_page["total"].as_u64().unwrap_or(0)));
+        }
         let mut bound = arguments.clone();
         let object = bound
             .as_object_mut()

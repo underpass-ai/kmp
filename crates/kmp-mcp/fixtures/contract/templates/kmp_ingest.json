@@ -14,12 +14,42 @@
         "evidence": "integer",
         "relations": "integer"
       },
+      "clocks": {
+        "entries": "integer",
+        "ingested": {
+          "distinct_values": "integer",
+          "entries": "integer",
+          "single_value": "string"
+        },
+        "observed": {
+          "distinct_values": "integer",
+          "entries": "integer",
+          "single_value": "null"
+        },
+        "occurred": {
+          "distinct_values": "integer",
+          "entries": "integer",
+          "single_value": "null"
+        },
+        "scope": "string",
+        "valid_from": {
+          "distinct_values": "integer",
+          "entries": "integer",
+          "single_value": "null"
+        },
+        "valid_until": {
+          "distinct_values": "integer",
+          "entries": "integer",
+          "single_value": "string"
+        }
+      },
       "created_dimensions": [
         "string"
       ],
       "memory_id": "string",
       "read_after_write_ready": "boolean",
       "receipt_ref": "null",
+      "replayed": "boolean",
       "resembling_labels": []
     },
     "summary": "string",

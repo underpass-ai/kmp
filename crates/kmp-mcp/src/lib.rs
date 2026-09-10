@@ -2,6 +2,7 @@ pub mod agent_policy;
 pub mod banner;
 pub mod clock;
 pub mod document;
+mod guidance;
 pub mod guide;
 pub mod lifecycle;
 pub mod plugin_notice;
@@ -43,6 +44,16 @@ pub use serving::GrpcKernelMcpBackend;
 pub use serving::KernelMcpServer;
 pub use serving::{EmbeddedKernelMcpBackend, RetryingEmbeddedKernelMcpBackend};
 pub use serving::{ToolError, ToolErrorCode};
+
+/// Shared tool-error envelope for transports that resolve a retained read before
+/// authorization. Callers must never dispatch a request that failed resolution.
+pub fn kmp_mcp_tool_error_result(
+    tool: &str,
+    arguments: &serde_json::Value,
+    error: &ToolError,
+) -> serde_json::Value {
+    serving::tool_result::tool_error_result(tool, arguments, error)
+}
 
 pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
     contract::tools_list_result()

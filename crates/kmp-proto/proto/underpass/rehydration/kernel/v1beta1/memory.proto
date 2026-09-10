@@ -155,6 +155,25 @@ message IngestedMemory {
   // written under LABEL_POLICY_WARN; each says why in a checkable sentence.
   repeated ResemblingLabel resembling_labels = 6;
   optional string receipt_ref = 7;
+  // True only when the kernel returned a prior accepted logical command.
+  bool replayed = 8;
+  WriteClocks clocks = 9;
+}
+
+message WriteClockCoverage {
+  uint32 entries = 1;
+  uint32 distinct_values = 2;
+  google.protobuf.Timestamp single_value = 3;
+}
+
+// Per-entry coverage in the accepted command, not current graph state.
+message WriteClocks {
+  uint32 entries = 1;
+  WriteClockCoverage occurred = 2;
+  WriteClockCoverage observed = 3;
+  WriteClockCoverage ingested = 4;
+  WriteClockCoverage valid_from = 5;
+  WriteClockCoverage valid_until = 6;
 }
 
 // A label a write named beside the existing label it resembles: `kind` is
@@ -350,6 +369,12 @@ message AnswerReason {
 
 // Shared temporal movement payload shape used by transport adapters. Public
 // RPCs use method-specific request messages so gRPC contracts stay explicit.
+// Optional entry focus. Does not filter dependency sources or change scope/time.
+// Present with empty/duplicate/blank refs is invalid; omission means all entries.
+message TemporalEntrySelection {
+  repeated string refs = 1;
+}
+
 message TemporalMoveRequest {
   string about = 1;
   TemporalCursor cursor = 2;
@@ -361,6 +386,7 @@ message TemporalMoveRequest {
   TemporalAxis axis = 8;
   // Half-open clock selection. Forward/Rewind may start without a cursor.
   TemporalInterval interval = 9;
+  TemporalEntrySelection entry_selection = 10;
 }
 
 message GotoRequest {
@@ -374,6 +400,7 @@ message GotoRequest {
   TemporalAxis axis = 8;
   // Half-open clock selection. Forward/Rewind may start without a cursor.
   TemporalInterval interval = 9;
+  TemporalEntrySelection entry_selection = 10;
 }
 
 message RewindRequest {
@@ -387,6 +414,7 @@ message RewindRequest {
   TemporalAxis axis = 8;
   // Half-open clock selection. Forward/Rewind may start without a cursor.
   TemporalInterval interval = 9;
+  TemporalEntrySelection entry_selection = 10;
 }
 
 message ForwardRequest {
@@ -400,6 +428,7 @@ message ForwardRequest {
   TemporalAxis axis = 8;
   // Half-open clock selection. Forward/Rewind may start without a cursor.
   TemporalInterval interval = 9;
+  TemporalEntrySelection entry_selection = 10;
 }
 
 // Shared temporal neighborhood payload shape used by transport adapters. Public
@@ -415,6 +444,7 @@ message TemporalNearRequest {
   TemporalAxis axis = 8;
   // Half-open clock selection. Forward/Rewind may start without a cursor.
   TemporalInterval interval = 9;
+  TemporalEntrySelection entry_selection = 10;
 }
 
 message NearRequest {
@@ -428,10 +458,23 @@ message NearRequest {
   TemporalAxis axis = 8;
   // Half-open clock selection. Forward/Rewind may start without a cursor.
   TemporalInterval interval = 9;
+  TemporalEntrySelection entry_selection = 10;
 }
 
 // Shared temporal response payload shape used by transport adapters. Public
 // RPCs use method-specific response messages.
+// Writer-declared memory neighborhood, not a proof of semantic sufficiency.
+// Members resolve to entries or dependency_entries in the complete selected packet.
+// Counts describe only the supplied scoped graph; unavailable identities are hidden.
+message ProofDependencyGroup {
+  string seed_ref = 1;
+  repeated string member_refs = 2;
+  uint32 unavailable_in_selection = 3;
+  uint32 omitted_by_limit = 4;
+  uint32 max_hops = 5;
+  uint32 max_members = 6;
+}
+
 message TemporalMoveResponse {
   string summary = 1;
   TemporalState temporal = 2;
@@ -442,6 +485,8 @@ message TemporalMoveResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message GotoResponse {
@@ -454,6 +499,8 @@ message GotoResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message NearResponse {
@@ -466,6 +513,8 @@ message NearResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message RewindResponse {
@@ -478,6 +527,8 @@ message RewindResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message ForwardResponse {
@@ -490,6 +541,8 @@ message ForwardResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message TemporalState {
@@ -981,6 +1034,9 @@ message RecallProjectionSection {
   uint64 returned_on_page = 3;
   uint64 eligible = 4;
   uint64 total = 5;
+  // Eligible expansion after this page; excludes repeated core and prior pages.
+  // Zero does not establish semantic sufficiency or include detail/cap omissions.
+  uint64 remaining = 6;
 }
 
 message RecallTruncation {
@@ -1085,6 +1141,8 @@ message TemporalInclude {
   bool evidence = 1;
   bool relations = 2;
   bool raw_refs = 3;
+  // Explicit bounded dependency expansion; implies evidence and relations.
+  bool dependencies = 4;
 }
 
 message InspectInclude {

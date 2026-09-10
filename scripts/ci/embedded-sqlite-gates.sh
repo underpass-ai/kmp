@@ -78,12 +78,13 @@ start_hosts() {
 }
 
 # The bundled binary alone is the product path: both hosts must get tools.
+expected_tools="$(python3 -c 'import json; print(len(json.load(open("distribution/mcpb/manifest.json"))["tools"]))')"
 start_hosts env
 for host in a b; do
   tools="$(count_tools "${WORK_DIR}/out-${host}.json")"
   echo "  bundled host ${host}: ${tools} tools"
-  if [[ "${tools}" -ne 15 ]]; then
-    echo "sqlite-gates: host ${host} got ${tools} tools, expected the fifteen-tool surface" >&2
+  if [[ "${tools}" -ne "${expected_tools}" ]]; then
+    echo "sqlite-gates: host ${host} got ${tools} tools, expected ${expected_tools} declared tools" >&2
     sed 's/^/    /' "${WORK_DIR}/err-${host}.log" | head -5 >&2
     exit 1
   fi

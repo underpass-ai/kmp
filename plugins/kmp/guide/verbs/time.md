@@ -120,6 +120,78 @@ Use this for selective browsing. Reading full detail afterward can cost more
 than requesting full entries initially; count all calls and expansions when
 comparing tokens. KMP does not summarize or truncate a selected text field.
 
+## Bring related sources into a temporal read
+
+When a selected memory needs another record to interpret it, request
+`include: {"dependencies": true}` on Goto, Near, Forward or Rewind. KMP follows
+writer-declared memory links with both `why` and `evidence`, in either
+direction, up to two hops and eight members including each selected seed.
+It returns the extra stored records in `proof.entries`, with full text and
+coordinates, the groups in `proof.groups`, and their sources and typed links
+in `proof.evidence` and `proof.path`. Evidence and relations are implied;
+do not explicitly disable them. Omitting the option keeps the usual read.
+
+For example, select one responsibility notice with Goto and `limit.entries: 1`.
+If it is linked to an earlier alias declaration, the declaration can appear
+in `proof.entries` without becoming another selected history entry. Read its
+source and relation type before interpreting the named person. `fields`
+reduces only the selected entries; it does not shorten these proof records.
+
+Complete all response pages before joining each group's `member_refs` to
+`entries` and `proof.entries`. `unavailable_in_selection` counts linked
+records without an eligible body, without revealing their identities;
+`omitted_by_limit` counts the visible frontier left by the hop/member limits.
+Both describe only the selected scoped graph. Zero counts do not establish
+that all facts needed to answer are present or that the writer's links are true.
+KMP does not infer identities, permissions or arithmetic from the group.
+
+Scope, label predicates and explicit clocks still apply. A filtered-out alias
+or one without the requested occurrence clock stays out. A relationship
+explicitly later than the proof boundary cannot expand the group. On the
+validity axis its declared interval must overlap the selection. Earlier
+dependencies can precede the cursor's history window, but not bypass explicit
+temporal admission. Near, Forward and Rewind need a finite interval end if
+later knowledge must be excluded. Never replace a dated read with Inspect's
+current record to fill the gap.
+
+See the alias and account-ownership example for a complete executable call.
+
+On a host using shared passages, dependency text can use the same response-local
+`passages` table as other proof. Resolve it before reading the text. Dependency
+record refs and group member refs remain canonical; repeated relation/support
+uses may resolve through `citations`. A host composing captured pages can bind
+known spans to a returned dependency record. Sharing does not fill a missing
+page, change the selected clock, merge sources or establish that a group answers.
+
+## Focus known memories while keeping the question time
+
+Use `refs: ["<copied memory ref>"]` on Goto, Near, Forward or Rewind when
+you already know which entries matter. This filters history entries before
+entry/window limits; it does not filter their dependency sources. Keep the
+question's cursor, clock, interval, scope and labels. The refs never bypass
+those restrictions. Copy exact refs from prior responses; do not use labels,
+response-page cursors or invented refs.
+
+For example, an assignment observed on September 8 may need an older alias
+declaration and a clarification received exactly at 10:00 on September 10.
+Call Goto with `at: {"time":"2026-09-10T10:00:00Z"}`, `axis: "observed"`,
+`refs: ["<assignment ref>"]` and `include: {"dependencies":true}`. The assignment
+stays selected while the admitted related records can supply its proof. A
+report received half a second later stays out. Using `at.ref` instead would
+move the proof cutoff to the assignment's earlier time.
+
+`selection.requested_refs` repeats the focus. `unmatched_ref_count` counts
+requested refs outside this query's matching history, before entry/window
+limits; it does not prove that they do not exist. `selection.has_more` means
+matching history remains, whereas `page.has_more` means this packet has more
+response items. Follow the returned actions, which retain `refs`. Changing
+the focus requires a fresh read. An empty or duplicate ref list is invalid;
+omit `refs` to select all matching entries. Results keep temporal order, not
+the caller's ref-list order.
+
+The alias-ownership example also selects an older directory entry at the
+later clarification time, retaining the explicit identity link as proof.
+
 ## Goto carries proof from its historical instant
 
 `kmp_goto` selects a state at its resolved `at` cursor. Its proof uses that

@@ -410,6 +410,7 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "idempotency_key": "parity:relabel:1"
             }),
         ),
+        ("kmp_guide", json!({"registration_key":"parity-guide"})),
     ]
 }
 
@@ -472,6 +473,13 @@ fn redact_inspect_digest(text: &str) -> Option<String> {
 fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
+            if fields.get("scope").and_then(Value::as_str) == Some("accepted_command")
+                && let Some(ingested) = fields.get_mut("ingested")
+                && ingested["single_value"].is_string()
+            {
+                // Keep counts and shape pinned, but not the current wall clock.
+                ingested["single_value"] = json!(REDACTED);
+            }
             // Recovery allowance includes the complete proof's ingestion-clock
             // bytes. Native action tests execute it; snapshot its shape, not
             // the fractional timestamp precision of this particular run.
@@ -665,7 +673,7 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
     let server = KernelMcpServer::with_embedded_backend(backend);
 
     // Negotiate MCP Apps, so the two app-only tools are callable and the
-    // surface under test is the full seventeen rather than the fifteen a
+    // surface under test is the full negotiated surface rather than the public one a
     // plain host sees.
     server
         .handle_json_line(
@@ -685,6 +693,18 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
     let mut full_answer = None;
     for (label, arguments) in calls() {
         let tool = label.split(':').next().expect("tool name");
+        if tool == "kmp_guide" {
+            // Guide is last so its installation cannot affect memory fixtures.
+            let requests: Vec<Value> = serde_json::from_str(include_str!(
+                "../../../plugins/kmp/guide/guide.requests.json"
+            ))
+            .expect("guide assets");
+            for arguments in requests {
+                let reply = server.handle_json_line(&json!({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kmp_ingest","arguments":arguments}}).to_string()).await.expect("sync");
+                let reply: Value = serde_json::from_str(&reply).expect("sync response");
+                assert_eq!(reply["result"]["isError"], false, "{reply}");
+            }
+        }
         let raw = server
             .handle_json_line(
                 &json!({
@@ -710,6 +730,22 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
 
         let file = format!("{}.json", label.replace(':', "-"));
         let mut result = response["result"].clone();
+        if tool == "kmp_guide" {
+            // Random identities and content revisions are tested across real
+            // restarts in persistent_guidance; pin their fields here.
+            let body = &result["structuredContent"];
+            let dynamic = [
+                (&body["agent"]["id"], "<AGENT_ID>"),
+                (&body["agent"]["name"], "<AGENT_NAME>"),
+                (&body["context_id"], "<CONTEXT_ID>"),
+                (&body["guide_revision"], "<GUIDE_REVISION>"),
+            ];
+            let mut text = result.to_string();
+            for (value, replacement) in dynamic {
+                text = text.replace(value.as_str().expect("identity string"), replacement);
+            }
+            result = serde_json::from_str(&text).expect("normalized guide");
+        }
         let mut template = result.clone();
         redact(&mut template);
         let template = shape(&template);
@@ -749,7 +785,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 18, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 19, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         assert!(

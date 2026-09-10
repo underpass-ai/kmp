@@ -18,6 +18,8 @@ default = ["sqlite"]
 sqlite = ["kmp-embedded/sqlite"]
 
 [dependencies]
+getrandom.workspace = true
+rusqlite = { version = "0.40.1", features = ["bundled"] }
 opentelemetry.workspace = true
 prost-types.workspace = true
 prost.workspace = true

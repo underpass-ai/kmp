@@ -23,6 +23,7 @@ Las rutas son relativas a la raíz del repositorio.
 | Entrada breve del agente | [guide/agent-entry.md](../../plugins/kmp/guide/agent-entry.md) | Regenerar el índice y comprobar su tamaño; no insertar el manual completo |
 | Explicación extendida o ejemplo | [editorial.json](../../plugins/kmp/guide/editorial.json) y sus `text_file` en `verbs/`, `topics/` o `examples/` | Referencia válida, prueba nativa y lectura selectiva |
 | Correspondencia entre herramienta y verbo | `tool_verb` en [GuideRequestMapper](../../crates/kmp-release/src/application/mappers/guide_request_mapper.rs) | Todo tool público debe resolver a un verbo indexado |
+| Ayuda ante un rechazo de uso | [tool_error_help.rs](../../crates/kmp-mcp/src/serving/tool_error_help.rs) y su envoltorio en `tool_result.rs` | Elegir por código/ruta tipados, conservar feedback y ejecutar las lecturas sugeridas |
 | Cómo se entra desde Codex o Claude | [skills](../../plugins/kmp/skills/), [adaptadores Claude](../../plugins/kmp/claude/commands/) y [capabilities.json](../../plugins/kmp/capabilities.json) | Paridad de capacidades y acceso a la misma entrada; evitar otra copia del manual |
 | Relato público del producto | Bloque `kmp:public-overview` de [plugins/kmp/README.md](../../plugins/kmp/README.md) | Sincronizar README de repositorio y crate; revisar guía humana |
 
@@ -40,10 +41,22 @@ la tarea requiere recorrer una historia; un ejemplo de Ask no cubre ese uso.
 
 Anotar las superficies afectadas con la tabla anterior. Si sólo cambia una
 explicación, el comportamiento del núcleo no necesita cambiar. Si se añade
-un tool, revisar también inventario, registro, mapping de guía, fixtures y
-el descubrimiento real en el host. Evitar repetir un recuento fijo en varios tests.
+un tool, revisar también inventario, registro, mapping de guía, fixtures,
+`distribution/mcpb/manifest.json` y el descubrimiento real en el host.
+El manifiesto enumera las herramientas del paquete que instala el host;
+comprobarlo con `bash scripts/ci/mcp-registry.sh`. Evitar repetir un recuento fijo en varios tests.
 
 ## 2. Colocar la explicación donde se consulta
+
+La escritura completa una clase omitida sólo si `writer_spec` del dominio tiene
+una única clase permitida. Al modificar ese vocabulario, revisar también las
+relaciones que exigen `class` en el schema y su feedback `allowed_values`; ambos
+se proyectan del dominio. Una clase explícita nunca se reemplaza. Los ids locales
+con o sin `@` resuelven sólo coincidencias exactas dentro del paquete; no convertir
+errores locales en consejos para enlazar otros abouts. Comprobar nombres futuros,
+desconocidos, refs canónicos, prueba, recibo y replay tras reinicio. Conservar la
+observación explícita del paquete: completar la clase no autoriza inferir relojes
+ni elegir el tipo de memoria a partir de la prosa.
 
 Mantener la entrada breve como mapa. El detalle de un verbo debe explicar
 cuándo usarlo, cuándo elegir otro, entrada mínima, resultado, errores o límites
@@ -122,6 +135,16 @@ entradas comparten una acción de paquete completo, ejecutarla una sola vez.
 Un cambio en contenido oculto también debe invalidar el cursor.
 La ampliación es una lectura nueva, no una promesa de snapshot. Medir tanto
 navegación selectiva como ampliación de todos los resultados.
+
+Al cambiar la selección por `refs`, comprobar que se aplica antes del límite de
+entradas/ventana, manteniendo ámbito, etiquetas y relojes. El cursor se resuelve
+contra la historia admitida; el foco no recorta las fuentes de dependencia.
+Conservar el corte de la pregunta aunque la memoria elegida sea anterior. Medir
+la igualdad del comportamiento sin `refs`, la recuperación de una prueba justo
+en el corte y la exclusión de la posterior. Distinguir refs no coincidentes,
+historia fuera del paquete y prueba pendiente de paginar; ninguno prueba ausencia
+global. Actualizar el protobuf canónico y el vendorizado, los dos adaptadores y
+el ejemplo ejecutable junto con el contrato MCP.
 
 La regla de no repetir es sobre la carga en contexto. Un archivo fuente y sus
 assets generados no son dos manuales que el agente deba leer. Las reglas comunes
@@ -202,6 +225,82 @@ léxica personal ausente en el servidor de prueba; comparar la misma configuraci
 de recuperación en ambos caminos. La comprobación nativa no mide aprendizaje
 LLM ni facturación del host. Estas instrucciones son documentación informativa.
 
+`projection.sections.*.remaining` cuenta la cola elegible después de la página,
+sin núcleo repetido ni expansiones de páginas anteriores. Calcularlo sobre esa
+cola, no como `eligible - core - returned_on_page`, que vuelve a contar lo ya
+leído. Serializarlo también en `RecallProjectionSection` y en ambos sentidos del
+mapping; los metadatos forman parte del presupuesto antes de seleccionar texto.
+Validar primera, intermedias y última página, núcleo acortado y exclusiones por
+detalle/capacidad. Cero no expresa suficiencia semántica. El reinicio del núcleo
+acortado tiene prioridad sobre el aviso de continuar páginas; conservar además
+los indicadores de exclusión y la acción ejecutable.
+La reserva de bytes usa el aviso más largo entre los que realmente se emiten;
+evitar un párrafo de planificación mayor que todos ellos, que puede desplazar
+evidencia y añadir páginas sin comunicar más información al agente.
+
+### Asesor del host
+
+La skill `kmp-expert` usa un subagente del host con una responsabilidad limitada:
+explicar el protocolo. Su helper reúne las entradas de `guide:kmp-agent` del
+asset canónico, incluidos todos los ejemplos, y conserva una copia por hash en
+la caché de la tarea. No añade un LLM al kernel ni otro catálogo de ejemplos.
+Al modificar la guía, regenerar el asset; el hash cambia y la próxima preparación
+usa el contenido nuevo. El manifiesto registra referencias, hashes y líneas para
+comprobar que se entregó todo sin truncamiento. Esa comprobación de entrega no
+demuestra aprendizaje ni evita el coste de cargar un contexto nuevo.
+
+El asesor tiene su propia identidad y contexto. La identidad persiste; el
+contenido del contexto lo conserva el host. Tras compactación se recarga la guía
+completa. La carga local no escribe las marcas `served` del MCP. Comparar la
+revisión del archivo con la del store antes de consultar. El agente de trabajo
+conserva la decisión sobre las fuentes y ejecuta las propuestas autorizadas.
+Verificar el flujo con consultas reales de un subagente y contabilizar ambos
+participantes. Esta evaluación es informativa, sin gates editoriales nuevos.
+
+### Descubrimiento progresivo y errores
+
+`kmp_guide` sirve el esquema y una ficha por consulta. Identidad y contextos
+viven en `agent-users.sqlite3` junto al store embedded; para gRPC son metadatos
+locales del cliente, separados por endpoint. No forman parte de la memoria,
+la evidencia, los bundles ni la autorización. Una conexión compartida no
+identifica al agente: el cliente conserva los ids devueltos.
+
+La clave de registro identifica un agente lógico y hace idempotente su alta.
+`context_id` basta para continuar; `agent_id` con una nueva `context_key`
+identifica un reinicio de contexto tras compactación. `served` registra entrega,
+no aprendizaje ni retención. `fold` cambia lo expandido y conserva esa entrega.
+Un cambio de revisión de guía abre una vista nueva de entregas sin borrar el
+historial. El cliente debe recuperar las fichas que necesite de nuevo.
+
+Las fichas breves viven en `guide/cards/`; los verbos extendidos en `verbs/`.
+El mapper estampa el digest del asset en cada nodo: cambiar contenido exige
+regenerar el conjunto. Al añadir un tema, actualizar esquema, schema, ficha,
+verbo y relación entre ambos; ejecutar las acciones de ampliación devueltas.
+Initialize y las skills entran por el esquema; el Markdown es la alternativa.
+No duplicar ambas cargas. Reutilizar el target de este checkout para iterar;
+no repetir suites ya aprobadas si no cambia el comportamiento que comprueban.
+
+
+La entrada generada muestra los grupos de verbos y dos mapas de ejemplos. Los
+temas y lecciones completos siguen en KMP. Consultar el verbo antes del primer
+uso si no está en contexto y abrir el ejemplo necesario; no cargar todos los
+cuerpos para completar el índice. El registro de una consulta anterior no prueba
+comprensión ni presencia en el contexto actual.
+
+La ayuda de rechazo se decide por nombre de herramienta, código y ruta del
+feedback, nunca analizando su mensaje. `help.guide` y `help.examples` contienen
+llamadas completas a nodos existentes. Conservar las acciones directas de
+reparación y reinicio, los códigos del backend y la ausencia de escrituras en
+un rechazo. La consulta de guía no reintenta ni sincroniza automáticamente. Los
+fallos de infraestructura y de lectura de la guía no generan un bucle de ayuda.
+UNKNOWN sigue siendo una respuesta semántica válida.
+
+Probar que los enlaces se ejecutan contra los assets generados, incluyendo las
+herramientas que comparten verbo. Medir la entrada y las lecturas posteriores:
+mover una lista a un nodo no elimina su coste cuando ese nodo se consulta. La
+misma ayuda aparece en texto para hosts que no muestran structuredContent;
+contar por separado esa representación y el sobre completo.
+
 ## 3. Regenerar con el motor correspondiente
 
 Desde la raíz del repo, usar un target separado si hay un binario congelado
@@ -237,6 +336,32 @@ KMP_BLESS_TOOL_SURFACE=1 cargo test --locked -p kmp-mcp --test tool_surface_pari
 ```
 
 ## 4. Revisar el uso y comprobar el comportamiento
+
+Si se modifica la expansión temporal con `include.dependencies`, revisar en
+conjunto los cuatro verbos (Goto, Near, Forward y Rewind), `TemporalInclude`
+y las respuestas protobuf canónicas y vendorizadas, los adaptadores gRPC,
+la selección de grupos y la proyección/paginación MCP. `entries` conserva la
+selección histórica; los registros de apoyo completos van en `proof.entries`
+y los miembros en `proof.groups`. No contar esos apoyos como nuevas
+coincidencias ni interpretar cobertura estructural como respuesta verificada.
+
+Las comprobaciones deben usar fuentes antiguas y recientes relacionadas y
+ejercitar reloj ausente, relación futura o caducada, predicado dimensional,
+límite de expansión, reducción de campos y reconstrucción de todas las páginas.
+Cambiar sólo un registro de apoyo debe invalidar una continuación anterior.
+Comprobar el servicio gRPC real con repositorios de prueba y, por separado,
+la transmisión/proyección MCP de sus campos; un servidor simulado por sí solo
+no verifica la selección. Actualizar `verbs/time.md`, el ejemplo
+`examples/alias-ownership.md` y su evidencia editorial, regenerar los assets y
+ejecutar ese ejemplo contra el binario nuevo. Esta pauta documenta cómo
+mantener la superficie; no añade un gate editorial al CI.
+
+Al añadir un lugar nuevo con texto de memoria, revisar también las rutas
+tipadas del compositor: pasajes, definiciones de referencias y fuentes de spans.
+`proof.entries` participa en los tres; los identificadores de miembros de
+`proof.groups` permanecen literales. Probar expansión exacta, paginación y
+omisión de grupos sin reintroducir una fuente por la tabla de pasajes. Mantener
+los metadatos y las acciones fuera de la sustitución de texto.
 
 Para un cambio de guía o routing, ejecutar:
 
@@ -347,3 +472,119 @@ step. Verify actual returned actions across restart, subsequent memory changes
 and export/import; previews and refusals must create neither a receipt nor memory.
 Coverage describes submitted declarations, never completeness against sources the
 writer did not submit. Do not add graph memories or another CI rule for receipts.
+
+### Contexto y recomendaciones del agente
+
+Los argumentos comunes context_id/purpose se agregan en el registro de tools.
+CallGuidance los resuelve y elimina antes de compilar, calcular idempotencia o
+llamar al backend. No son una autorización. El escritor y Relabel pueden tomar
+actor del perfil; un actor explícito prevalece. AgentDirectory guarda uso y
+entregas fuera del grafo. Una entrega no acredita aprendizaje.
+
+GuidanceRecommendation elige por campos tipados del resultado, conserva las
+acciones nativas y declara cuándo inicia otra selección. Un verbo nuevo necesita
+su ruta de ayuda, criterios de recomendación sólo si tiene una señal real, y
+comprobación de que la acción devuelta se ejecuta sin perder reloj o alcance.
+No crear reglas por palabras de mensajes de error ni puntuaciones de confianza
+sin fundamento. La tabla consultable está en verbs/guide.md.
+
+La ayuda de trabajo se serializa una vez en un bloque de texto kmp_guidance:
+structuredContent conserva su contrato y presupuesto. Medir ambos costes y
+comprobar que el host entrega el bloque adicional al modelo. Una aplicación que
+sólo conserva structuredContent oculta la ayuda. El fallo de metadatos después
+de una escritura aceptada debe conservar la aceptación y el recibo; el contador
+de uso nunca certifica una nueva escritura frente a un replay.
+
+### Ejemplos de inferencia
+
+Los archivos de api/examples/inference-prompts son ejemplos adaptables, no
+un segundo contrato del MCP. Un consumidor construye su petición desde
+inputSchema del tools/list vigente. No exigir igualdad de todo el schema
+entre un ejemplo estático y el motor: una capacidad opcional nueva no invalida
+por sí sola un ejemplo que no la usa. Revisar el comportamiento ilustrado al
+modificarlo; mantener las pruebas del contrato nativo y del vocabulario real.
+
+
+### Señales del resultado de escritura
+
+La decisión committed/replayed procede de update_context en el punto que
+comprueba idempotencia. No inferirla de un reintento del host ni de la identidad
+persistente del agente. El resumen de relojes procede de la memoria canónica del
+comando aceptado; guardar ese resumen en su recibo y recuperarlo en un replay,
+sin sustituirlo por los relojes de una traducción nueva. Contar memorias una vez,
+no pertenencias dimensionales. Convertir el instante interno mediante el mapping
+temporal existente antes de mostrárselo al agente.
+
+Un preview no guardó relojes y un error de transporte no demuestra rechazo sin
+persistencia. Mantener validated/rejected/unconfirmed distinguibles. Verificar
+reintento tras reinicio, escritura posterior e importación, así como los transportes
+embedded/gRPC. Medir el coste del recibo completo; preservar el acceso al detalle
+sin volver a copiar toda la evidencia ni crear memorias de telemetría.
+
+`relations` muestra triples `{from, rel, to}` derivados de las relaciones
+canónicas del plan. Los extremos locales se acortan a `@id`, resolubles mediante
+`local_refs`; los externos conservan el ref. No reconstruirlos desde el diagnóstico
+ni deduplicar por nombre de relación: dos enlaces del mismo tipo pueden tener
+distintos destinos. Comprobar preview, commit y replay contra el recibo real.
+
+Al modificar una relación, describir sus roles de origen y destino en
+`KnownMemoryRelationType::writer_spec`, revisar la ficha de escritura, el verbo
+y los ejemplos afectados, y regenerar los assets. Incluir un contraejemplo de
+dirección o alcance cuando evite ambigüedad. `supersedes` marca todo el destino
+SUPERSEDED; `corrects` no cambia su estado de ciclo de vida. No prometer que la
+aceptación o la categoría rich verifican el significado. Esta revisión editorial
+es informativa: no añadir un gate de frases o tamaño al CI.
+
+## Continuaciones retenidas en el contexto del agente
+
+Los nueve verbos de lectura admiten la alternativa `{continuation: id}` sola.
+El registro central conserva los requisitos de la llamada inicial en otra rama
+del schema; no debilitar sus `required`/alternativas al añadir esta entrada.
+`serving/read_continuations.rs` transforma únicamente acciones nativas devueltas,
+cuando el identificador no aumenta su tamaño. El directorio SQLite existente
+conserva sus argumentos completos como metadatos: 24 horas, 16 por contexto,
+256 por directorio y 32 KiB por llamada. No contiene páginas de evidencia ni
+forma parte del bundle. Fallos de retención conservan la acción completa.
+
+Resolver antes de autorizar en HTTP, bajo los permisos actuales, y ejecutar esa
+misma petición resuelta. La identidad de guía no sustituye la identidad del
+transporte. Verificar raw, abouts, ámbitos dimensionales, all_abouts y refs en
+el recorrido HTTP real. No ampliar permisos porque se conoce un identificador.
+
+Comprobar replay de una página, progreso al ejecutar su siguiente acción,
+reinicio del proceso, caducidad/cupo, cambios de evidencia y mezcla de argumentos.
+Conservar reloj, propósito, contexto, selección, cursor y aumento de presupuesto.
+Los suelos y mínimos de progreso nativos se calculan antes de abreviar; no
+agrandar el paquete al codificar y recalcular `projection.budget.used_bytes`.
+Medir el recorrido completo y la entrada extra del schema/guía, no sólo el ahorro
+de la petición siguiente. La llamada sin contexto sigue siendo explícita.
+El ejemplo `budget-proof` ejecuta ambos caminos. Son recomendaciones de
+mantenimiento y pruebas de comportamiento; no nuevos gates editoriales.
+
+### Proyección opcional de pasajes compartidos
+
+`KMP_MCP_PASSAGES=shared` activa la representación en el host; no cambia los
+argumentos de lectura. `serving/passage_projection.rs` adapta initialize,
+tools/list y las nueve respuestas de lectura después de sus presupuestos y
+recomendaciones. La biblioteca `kmp-proto-mapping::context_projection` conserva
+el códec reversible y la composición por grupos completos. Mantener tablas
+locales por respuesta, fuentes distintas aunque compartan texto y read actions
+intactas. Ver [contrato y límites](context-projection.md).
+
+Comprobar las dos configuraciones y sus schemas anunciados. Los archivos de guía
+se generan desde el contrato normal y enseñan también el modo opcional. El ahorro
+del tráfico MCP y el del contexto compuesto son mediciones distintas; sumar la
+instrucción y el schema adicionales del modo activado. No introducir una política
+de tokenizer en el kernel ni inferir límites de fuente para unir citas solapadas.
+
+La composición se ofrece por `kmp-mcp context project|expand [FILE|-]`, sin abrir
+un store ni ejecutar las lecturas declaradas. Al cambiar el contrato de contexto,
+actualizar su versión, decoder, CLI y ejemplo ejecutable; rechazar versiones no
+soportadas y conservar el binario congelado para leer artefactos anteriores.
+Expandir cada tabla nativa dentro de su propia página antes de reunir grupos.
+Los límites de citas los aporta el host: verificar ref, hash, UTF-8 y texto entero,
+sin atribuir veracidad a esa coincidencia. Al lector se le dan fragmentos ordenados
+que concatena sin separadores; no necesita calcular offsets. Comprobar fuente
+omitida por presupuesto, testimonios independientes y recuperación exacta de
+restricciones, conflictos y UNKNOWN. Medir también bindings, tablas y manifiestos;
+el ahorro del cuerpo de texto por sí solo no representa el contexto completo.

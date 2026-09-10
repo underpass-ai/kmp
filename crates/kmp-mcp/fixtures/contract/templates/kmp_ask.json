@@ -53,12 +53,14 @@
         "proof.evidence": {
           "core": "integer",
           "eligible": "integer",
+          "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
         },
         "proof.path": {
           "core": "integer",
           "eligible": "integer",
+          "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
         }

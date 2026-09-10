@@ -8,6 +8,35 @@
   "isError": false,
   "structuredContent": {
     "accepted": true,
+    "clocks": {
+      "entries": 1,
+      "ingested": {
+        "distinct_values": 1,
+        "entries": 1,
+        "single_value": "<stamped at call time>"
+      },
+      "observed": {
+        "distinct_values": 1,
+        "entries": 1,
+        "single_value": "2026-04-12T16:00:00Z"
+      },
+      "occurred": {
+        "distinct_values": 1,
+        "entries": 1,
+        "single_value": "2026-04-12T16:00:00Z"
+      },
+      "scope": "accepted_command",
+      "valid_from": {
+        "distinct_values": 0,
+        "entries": 0,
+        "single_value": null
+      },
+      "valid_until": {
+        "distinct_values": 0,
+        "entries": 0,
+        "single_value": null
+      }
+    },
     "coverage": {
       "complete": true,
       "evidence": 2,
@@ -60,8 +89,13 @@
       "ref": "receipt:v1:question%3Aparity:write%3Abb2b522031614fc2"
     },
     "relations": [
-      "uses_background"
+      {
+        "from": "@current",
+        "rel": "uses_background",
+        "to": "question:parity:claim:denver"
+      }
     ],
+    "status": "committed",
     "summary": "Ingested 1 entry, 1 relation, and 2 evidence items for question:parity.",
     "warnings": []
   }
