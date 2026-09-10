@@ -45,6 +45,7 @@ jobs:
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
+          cache-on-failure: true
           shared-key: plugin-validation
 
       - name: Check the plugin capability contract
@@ -110,6 +111,7 @@ jobs:
         if: steps.impact.outputs.windows == 'true'
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
+          cache-on-failure: true
           shared-key: plugin-validation
 
       - name: Build the launcher engine once

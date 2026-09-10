@@ -431,7 +431,6 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = response_json(response).await;
         assert_eq!(body["result"], kmp_mcp::kmp_mcp_tools_list_result());
-        assert_eq!(body["result"]["tools"].as_array().expect("tools").len(), 15);
     }
 
     #[tokio::test]

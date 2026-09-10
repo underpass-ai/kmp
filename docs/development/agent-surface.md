@@ -41,8 +41,10 @@ la tarea requiere recorrer una historia; un ejemplo de Ask no cubre ese uso.
 
 Anotar las superficies afectadas con la tabla anterior. Si sólo cambia una
 explicación, el comportamiento del núcleo no necesita cambiar. Si se añade
-un tool, revisar también inventario, registro, mapping de guía, fixtures y
-el descubrimiento real en el host. Evitar repetir un recuento fijo en varios tests.
+un tool, revisar también inventario, registro, mapping de guía, fixtures,
+`distribution/mcpb/manifest.json` y el descubrimiento real en el host.
+El manifiesto enumera las herramientas del paquete que instala el host;
+comprobarlo con `bash scripts/ci/mcp-registry.sh`. Evitar repetir un recuento fijo en varios tests.
 
 ## 2. Colocar la explicación donde se consulta
 
