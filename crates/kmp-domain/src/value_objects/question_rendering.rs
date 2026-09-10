@@ -1,5 +1,5 @@
 use crate::language::{
-    KERNEL_LANGUAGE, LanguageVocabulary, identifiers, informative_tokens, surface_tokens,
+    KERNEL_LANGUAGE, LanguageVocabulary, dropped_identifiers, informative_tokens,
 };
 
 use super::question_rendering_fault::QuestionRenderingFault;
@@ -47,11 +47,7 @@ impl QuestionRendering {
             faults.push(QuestionRenderingFault::Empty);
         }
 
-        let carried = surface_tokens(question);
-        let dropped = identifiers(asked_as)
-            .into_iter()
-            .filter(|identifier| !carried.contains(identifier))
-            .collect::<Vec<_>>();
+        let dropped = dropped_identifiers(asked_as, question);
         if !dropped.is_empty() {
             faults.push(QuestionRenderingFault::DropsIdentifiers(dropped));
         }
