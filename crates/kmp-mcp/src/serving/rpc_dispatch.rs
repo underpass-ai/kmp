@@ -161,6 +161,34 @@ impl KernelMcpServer {
             return self.handle_kmp_guide(id, arguments, start).await;
         }
 
+        let guidance = match super::call_guidance::CallGuidance::prepare(self, arguments) {
+            Ok(guidance) => guidance,
+            Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
+        };
+        let memory_arguments = guidance
+            .as_ref()
+            .map(|g| g.memory_arguments(name, arguments));
+        let result = self
+            .dispatch_memory_call(
+                id,
+                name,
+                memory_arguments.as_ref().unwrap_or(arguments),
+                start,
+            )
+            .await;
+        match guidance {
+            Some(guidance) => self.complete_work_guidance(name, arguments, &guidance, result),
+            None => result,
+        }
+    }
+
+    async fn dispatch_memory_call(
+        &self,
+        id: Value,
+        name: &str,
+        arguments: &Value,
+        start: Instant,
+    ) -> String {
         if name == "kmp_write_memory" {
             return self.handle_kmp_write_memory(id, arguments, start).await;
         }

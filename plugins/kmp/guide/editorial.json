@@ -387,7 +387,7 @@
           "kind": "instruction",
           "depth": "basic",
           "text_file": "verbs/guide.md",
-          "evidence": "The MCP guide assigns persistent agent identities and contexts, distinguishes served guidance from understanding, and provides explicit reset and fold operations.",
+          "evidence": "The MCP guide assigns persistent agent identities and contexts, distinguishes served guidance from understanding, and provides explicit reset and fold operations. Native context tests cover usage persistence, returned guide bodies, profile actor, idempotency, intact memory budgets, executable typed continuations and relation audit, temporal UNKNOWN and accepted writes despite usage metadata failure.",
           "guide_title": "Manage agent identity and guidance"
         }
       ],

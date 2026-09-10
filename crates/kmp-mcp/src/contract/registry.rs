@@ -40,6 +40,24 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
         tools.push(view_apply_intent::definition());
         tools.push(view_get_state::definition());
         tools.push(crate::contract::tools::guide::definition());
+        for tool in tools.iter_mut().filter(|t| t["name"] != "kmp_guide") {
+            tool["inputSchema"]["properties"]["context_id"] = json!({"type":"string","description":"Optional active context returned by kmp_guide; records use and enables concise guidance."});
+            tool["inputSchema"]["properties"]["purpose"] = json!({"type":"string","enum":["continue","audit","history","answer"],"description":"Optional recommendation purpose with context_id. Omitted: continue the selected packet."});
+            if matches!(
+                tool["name"].as_str(),
+                Some("kmp_write_memory" | "kmp_relabel")
+            ) {
+                tool["inputSchema"]["required"]
+                    .as_array_mut()
+                    .expect("required")
+                    .retain(|field| field != "actor");
+                tool["inputSchema"]["anyOf"] =
+                    json!([{"required":["actor"]},{"required":["context_id"]}]);
+                tool["inputSchema"]["properties"]["actor"]["description"] = json!(
+                    "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context."
+                );
+            }
+        }
         if apps {
             tools.push(app_visual_projection::definition());
             tools.push(app_view_undo::definition());

@@ -1,4 +1,4 @@
-use super::{AgentIdentity, AgentSession};
+use super::{AgentIdentity, AgentSession, AgentUse};
 
 #[derive(Debug)]
 pub(crate) struct AgentContext {
@@ -9,4 +9,5 @@ pub(crate) struct AgentContext {
     pub(crate) served: Vec<String>,
     pub(crate) guide_changed: bool,
     pub(crate) durable: bool,
+    pub(crate) used: Vec<AgentUse>,
 }

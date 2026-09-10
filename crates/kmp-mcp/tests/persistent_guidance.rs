@@ -77,14 +77,20 @@ async fn native_identity_survives_restart_and_guidance_does_not_enter_memory() {
         )
         .await;
         assert_eq!(folded["expanded"], json!([]));
-        assert_eq!(folded["served"], json!(["write"]));
+        assert_eq!(
+            folded["served"],
+            json!(["guide:kmp-agent:verb:write", "write"])
+        );
         assert_eq!(before, store.export_bundle().await.expect("after"));
         first
     };
     let restarted = KernelMcpServer::embedded(dir.path()).expect("restart");
     let resumed = success(&restarted, json!({"context_id":first["context_id"]})).await;
     assert_eq!(resumed["agent"], first["agent"]);
-    assert_eq!(resumed["served"], json!(["write"]));
+    assert_eq!(
+        resumed["served"],
+        json!(["guide:kmp-agent:verb:write", "write"])
+    );
     assert_eq!(resumed["expanded"], json!([]));
 }
 
@@ -201,4 +207,43 @@ async fn scheme_cards_link_to_live_verbs_and_their_json_examples_execute() {
             }
         }
     }
+}
+
+#[tokio::test]
+async fn observing_a_new_guide_body_starts_a_new_delivery_and_usage_view() {
+    let dir = tempfile::tempdir().expect("store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    sync(&server, None).await;
+    let agent = success(&server, json!({"registration_key":"revision-reader"})).await;
+    let prior = call(
+        &server,
+        "kmp_wake",
+        json!({"about":"guide:kmp-agent","context_id":agent["context_id"]}),
+    )
+    .await;
+    assert_eq!(prior["isError"], false);
+    sync(&server, Some("inspected-revision")).await;
+    let body = call(&server, "kmp_inspect", json!({"about":"guide:kmp-agent","ref":"guide:kmp-agent:verb:write","context_id":agent["context_id"]})).await;
+    assert_eq!(body["isError"], false, "{body}");
+    let context = success(&server, json!({"context_id":agent["context_id"]})).await;
+    assert_eq!(context["agent"], agent["agent"]);
+    assert_eq!(context["guide_revision"], "inspected-revision");
+    assert_eq!(context["served"], json!(["guide:kmp-agent:verb:write"]));
+    assert_eq!(
+        context["used"],
+        json!([{"tool":"kmp_inspect","attempts":1,"rejected":0,"unknown":0}])
+    );
+    let metadata =
+        rusqlite::Connection::open(dir.path().join("agent-users.sqlite3")).expect("metadata");
+    let retained: i64 = metadata
+        .query_row(
+            "SELECT attempts FROM uses WHERE context_id=?1 AND revision=?2 AND tool='kmp_wake'",
+            rusqlite::params![
+                agent["context_id"].as_str().expect("context"),
+                agent["guide_revision"].as_str().expect("revision")
+            ],
+            |row| row.get(0),
+        )
+        .expect("old usage");
+    assert_eq!(retained, 1);
 }
