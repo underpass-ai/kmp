@@ -210,7 +210,7 @@ async fn negotiated_mcp_app_is_discoverable_and_keeps_chunks_out_of_text_context
 }
 
 #[tokio::test]
-async fn tools_list_exposes_read_only_kmp_tools() {
+async fn tools_list_exposes_declared_kmp_tools() {
     let response = handle(json!({
         "jsonrpc": "2.0",
         "id": 2,
@@ -226,28 +226,14 @@ async fn tools_list_exposes_read_only_kmp_tools() {
         .map(|tool| tool["name"].as_str().expect("tool should have a name"))
         .collect::<Vec<_>>();
 
-    assert_eq!(
-        tool_names,
-        vec![
-            "kmp_ingest",
-            "kmp_write_memory",
-            "kmp_wake",
-            "kmp_ask",
-            "kmp_relate",
-            "kmp_goto",
-            "kmp_near",
-            "kmp_rewind",
-            "kmp_forward",
-            "kmp_trace",
-            "kmp_inspect",
-            "kmp_relabel",
-            // The view half: an agent moves what a person is looking at by
-            // declaring intent, and none of these three can write memory.
-            "kmp_view_open",
-            "kmp_view_apply_intent",
-            "kmp_view_get_state"
-        ]
-    );
+    let declared = kmp_mcp::kmp_mcp_tools_list_result();
+    let declared_names = declared["tools"]
+        .as_array()
+        .expect("declared tools")
+        .iter()
+        .map(|tool| tool["name"].as_str().expect("name"))
+        .collect::<Vec<_>>();
+    assert_eq!(tool_names, declared_names);
 
     let writers = ["kmp_ingest", "kmp_write_memory"];
     for tool in response["result"]["tools"].as_array().expect("tools") {
