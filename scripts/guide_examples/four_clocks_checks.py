@@ -60,7 +60,10 @@ def check(saved, client, authored):
             k: original[k] for k in ('ref', 'kind', 'coordinates')}
         assert 'text' not in reduced and 'metadata' not in reduced
     assert authored['coordinate_detail'] == browse['entries'][0]['detail_action']['arguments']
-    assert saved['coordinate_detail']['entries'] == [full['entries'][0]]
+    # The detail action repeats the original interval with full fields; it
+    # neither narrows to the clicked ref nor moves to that fact's timestamp.
+    for field in ('entries', 'temporal', 'proof', 'raw_refs'):
+        assert saved['coordinate_detail'][field] == full[field]
     assert entries('observed_start') == {refs['permit']}
     assert entries('observed_later') == {refs['signature'], refs['receipt']}
     assert entries('ingested_day4') == set(refs.values())

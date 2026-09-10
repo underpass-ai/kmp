@@ -135,18 +135,20 @@ Select just coordinates to browse the interval. Ref and kind remain; text and
 metadata are explicitly omitted. The proof remains selected by the same
 `include` policy, so this is not a claim that all source text leaves context.
 Execute the returned action to expand the first entry. It preserves document
-selection, clock and interval; do not invent another about or cursor.
+selection, clock and interval. Copy the returned tool as well as its arguments:
+here it is `kmp_forward`. Do not substitute another verb or invent a cursor.
 
 ```json
 {"tool":"kmp_forward","save_as":"coordinate_browse","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"},"fields":["coordinates"]}}
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"coordinate_detail","arguments":"${coordinate_browse.entries.0.detail_action.arguments}"}
+{"tool":"kmp_forward","save_as":"coordinate_detail","arguments":"${coordinate_browse.entries.0.detail_action.arguments}"}
 ```
 
-The full entry must match the corresponding full interval entry while the store
-is unchanged. Expansion is a fresh read; a later write can change its content.
+The expanded entries and proof must match the full interval while the store
+is unchanged. This action expands the selection, not just the first ref.
+Expansion is a fresh read; a later write can change its content.
 Count this expansion as well as the browse call when assessing context cost.
 
 ## Stand at D2 with each of the four clocks
