@@ -9,13 +9,14 @@
 //! model.
 //!
 //! The surface is deliberately small: a hand-rolled HTTP/1.1 GET server on a
-//! loopback address, a UI compiled into the binary with `include_str!`, and
-//! no dependency the embedded edition does not already carry — no HTTP
-//! framework, no bundler, no CDN, nothing fetched at runtime.
+//! loopback address and a UI compiled into the binary. The vendored renderer
+//! is compressed at build time and decoded once on first use; there is no
+//! HTTP framework, runtime bundler, CDN or asset download.
 
 mod http;
 mod mcp_app;
 mod query_params;
+mod renderer_asset;
 mod routes;
 mod time_format;
 pub mod view;

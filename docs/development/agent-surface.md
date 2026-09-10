@@ -225,6 +225,19 @@ léxica personal ausente en el servidor de prueba; comparar la misma configuraci
 de recuperación en ambos caminos. La comprobación nativa no mide aprendizaje
 LLM ni facturación del host. Estas instrucciones son documentación informativa.
 
+`projection.sections.*.remaining` cuenta la cola elegible después de la página,
+sin núcleo repetido ni expansiones de páginas anteriores. Calcularlo sobre esa
+cola, no como `eligible - core - returned_on_page`, que vuelve a contar lo ya
+leído. Serializarlo también en `RecallProjectionSection` y en ambos sentidos del
+mapping; los metadatos forman parte del presupuesto antes de seleccionar texto.
+Validar primera, intermedias y última página, núcleo acortado y exclusiones por
+detalle/capacidad. Cero no expresa suficiencia semántica. El reinicio del núcleo
+acortado tiene prioridad sobre el aviso de continuar páginas; conservar además
+los indicadores de exclusión y la acción ejecutable.
+La reserva de bytes usa el aviso más largo entre los que realmente se emiten;
+evitar un párrafo de planificación mayor que todos ellos, que puede desplazar
+evidencia y añadir páginas sin comunicar más información al agente.
+
 ### Asesor del host
 
 La skill `kmp-expert` usa un subagente del host con una responsabilidad limitada:

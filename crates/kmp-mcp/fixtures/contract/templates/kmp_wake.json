@@ -53,36 +53,42 @@
         "labels": {
           "core": "integer",
           "eligible": "integer",
+          "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
         },
         "proof.evidence": {
           "core": "integer",
           "eligible": "integer",
+          "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
         },
         "proof.path": {
           "core": "integer",
           "eligible": "integer",
+          "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
         },
         "wake.causal_spine": {
           "core": "integer",
           "eligible": "integer",
+          "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
         },
         "wake.current_state": {
           "core": "integer",
           "eligible": "integer",
+          "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
         },
         "wake.next_actions": {
           "core": "integer",
           "eligible": "integer",
+          "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
         }

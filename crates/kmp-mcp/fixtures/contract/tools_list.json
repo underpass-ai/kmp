@@ -1975,7 +1975,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned, eligible, and total counts for reconstructing the full proof.",
+                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -2659,7 +2659,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned, eligible, and total counts for reconstructing the full proof.",
+                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {

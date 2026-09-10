@@ -214,7 +214,14 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
     );
     assert_eq!(
         message_field_names(memory_file, "RecallProjectionSection"),
-        vec!["name", "core", "returned_on_page", "eligible", "total"]
+        vec![
+            "name",
+            "core",
+            "returned_on_page",
+            "eligible",
+            "total",
+            "remaining"
+        ]
     );
     assert_eq!(
         message_field_names(memory_file, "RecallTruncation"),

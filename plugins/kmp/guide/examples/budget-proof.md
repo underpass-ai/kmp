@@ -788,6 +788,18 @@ that expansion has finished. A fixed budget may leave the result partial.
 A cursor conflict returns `feedback[].action` for a fresh selection; never
 combine the old pages with the restarted selection.
 
+Read `projection.sections` after each call. Its `remaining` values count only
+eligible expansion after that page. Suppose `proof.evidence` reports core=5,
+eligible=24, returned_on_page=0 on the first page: remaining=19. If `proof.path`
+reports core=0, eligible=151, returned_on_page=4, remaining=147. These are
+illustrative counts, not fixed totals for PACK-8. On later pages the counts
+also subtract all earlier expansion, so do not subtract just the current page
+yourself. A shortened core still requires a restart even when some expansion
+has arrived. Zero remaining does not establish export completion or remove a
+detail/selection cap. In temporal or inspect results the corresponding counts
+are under `page.sections`; one remaining raw reference does not mean one
+remaining source passage.
+
 ```json
 {
   "tool": "kmp_wake",
