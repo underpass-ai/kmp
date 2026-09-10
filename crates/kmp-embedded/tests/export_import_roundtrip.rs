@@ -196,6 +196,7 @@ async fn export_import_preserves_wake_temporal_and_proof() {
         let goto = kernel
             .service()
             .temporal(TemporalMemoryQuery {
+                entry_selection: None,
                 about: ABOUT.to_string(),
                 direction: TemporalDirection::Goto,
                 axis: kmp_domain::TemporalAxis::Default,

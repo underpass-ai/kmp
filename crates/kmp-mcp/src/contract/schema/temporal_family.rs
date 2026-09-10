@@ -36,6 +36,8 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
         "required": ["about", cursor_key],
         "properties": {
             "about": string_schema("Memory anchor or root ref to traverse from."),
+            "refs": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"type":"string","minLength":1},
+                "description":"Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries."},
             "fields": {"type":"array", "uniqueItems":true,
                 "items":{"type":"string","enum":TemporalEntryField::ALL},
                 "description":"Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include."},
@@ -153,6 +155,8 @@ pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Val
             "fields":output_object(json!({"included":string_array("Fields returned on each entry; ref and kind always remain."), "omitted":string_array("Entry fields available through each returned detail_action; omitted fields are not empty values.")})),
             "scope":described("string", "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory."),
             "entries":described("integer", "Entries selected for this packet before response pagination."),
+            "requested_refs":string_array("Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time."),
+            "unmatched_ref_count":described("integer", "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion."),
             "matching_entries":described("integer", "Matching temporal entries reported by the kernel before its entry/window limit."),
             "has_more":described("boolean", "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.")
         })),

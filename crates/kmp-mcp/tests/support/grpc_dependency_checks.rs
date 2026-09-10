@@ -13,6 +13,7 @@ async fn all_four_temporal_tools_transport_dependency_records_and_groups() {
         ("kmp_forward", "from"),
     ] {
         let mut args = json!({"about":"question:temporal", "include":{"dependencies":true},
+            "refs":["claim:rachel-austin"],
             "budget":{"max_bytes":100000}});
         args[cursor] = json!({"time":"2026-04-12T15:03:00Z"});
         let result = call_tool(&server, 20, tool, args).await;
@@ -34,6 +35,15 @@ async fn all_four_temporal_tools_transport_dependency_records_and_groups() {
         );
     }
     assert!(recorded.moves().await.iter().all(|value| {
+        assert_eq!(
+            value
+                .request
+                .entry_selection
+                .as_ref()
+                .expect("entry focus")
+                .refs,
+            ["claim:rachel-austin"]
+        );
         value
             .request
             .include
@@ -42,6 +52,10 @@ async fn all_four_temporal_tools_transport_dependency_records_and_groups() {
             .dependencies
     }));
     assert!(recorded.nears().await.iter().all(|value| {
+        assert_eq!(
+            value.entry_selection.as_ref().expect("entry focus").refs,
+            ["claim:rachel-austin"]
+        );
         value
             .include
             .as_ref()

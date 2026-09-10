@@ -204,6 +204,22 @@ pub(super) fn interval_from_arguments(
     Ok(Some(TemporalInterval { start, end }))
 }
 
+/// Native flat refs map to a present, validated protocol selection.
+pub(super) fn entry_selection_from_arguments(
+    arguments: &Value,
+) -> Result<Option<kmp_proto::v1beta1::TemporalEntrySelection>, String> {
+    arguments
+        .get("refs")
+        .map(|refs| {
+            let refs: Vec<String> = serde_json::from_value(refs.clone())
+                .map_err(|_| "refs must be an array of memory references".to_string())?;
+            kmp_domain::TemporalEntrySelection::new(refs.clone())
+                .map_err(|error| error.to_string())?;
+            Ok(kmp_proto::v1beta1::TemporalEntrySelection { refs })
+        })
+        .transpose()
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;

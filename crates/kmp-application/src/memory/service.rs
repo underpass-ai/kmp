@@ -593,6 +593,7 @@ fn temporal_result(
     let source_bundle = filter_bundle_by_memory_dimensions(&context.bundle, &dimensions)?;
 
     let request = TemporalTraversalRequest::new(query.direction, query.cursor)
+        .with_entry_selection(query.entry_selection)
         .with_axis(query.axis)
         .with_dimensions(dimensions.clone())
         .with_requested_dimensions(query.dimensions.clone())
