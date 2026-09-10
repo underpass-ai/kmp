@@ -276,13 +276,20 @@ those clocks even after a later write, restart or bundle import. The current gra
 can have changed. Null clock coverage is unavailable, not zero; previews do not
 report saved clocks. Packet coverage still cannot assess source completeness.
 
-### Complete calendar dates in search renderings
+### Calendar dates in search renderings
 
 `El 17 de agosto de 2026 se abrió la ruta.` may use
 `The route opened on 2026-08-17.` as summary_en in strict mode. The lint compares
 complete Spanish or English month-name dates with ISO YYYY-MM-DD dates, including
 the month and valid Gregorian day. It leaves both stored strings unchanged.
 English `August 17, 2026` and `17 August 2026` are equivalent forms here.
+
+For `El parte llegó el 18 de agosto.`, use `The report arrived on August 18.`
+when the year is unknown. A full rendering such as `2026-08-18` preserves the
+known month/day too, but this lint neither supplies nor verifies its extra year:
+the writer must justify it from evidence. A complete source date must keep its
+year. A missing partial date is reported as `--08-18`; repair its month/day,
+not by adding a redundant bare `18`. Changed months or days still fail.
 
 Other formats, times, amounts, versions and acronyms remain literal. An amount
 of 17 EUR still needs its own 17; the day in a date does not preserve that amount.

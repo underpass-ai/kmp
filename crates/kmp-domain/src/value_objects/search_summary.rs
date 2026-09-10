@@ -60,7 +60,8 @@ impl SearchSummary {
     ///   Names written with an initial capital are deliberately not checked:
     ///   a document called *Plan de Lanzamiento* is faithfully rendered as
     ///   *launch plan*. Complete Spanish/English month-name dates and ISO dates
-    ///   compare by calendar day; other numbers remain literal.
+    ///   compare by calendar day; dates without a year compare only their known
+    ///   month/day. An added year is not validated; other numbers remain literal.
     pub fn lint(text: &str, summary: &str) -> Result<Self, Vec<SearchSummaryFault>> {
         let mut faults = Vec::new();
 
