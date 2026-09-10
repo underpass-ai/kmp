@@ -3474,6 +3474,16 @@
             ],
             "type": "string"
           },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -3527,7 +3537,7 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full selected-packet read with the original verb, cutoff, interval, scope, window and limits. Replay a shared action once, not once per entry.",
             "type": "array"
           },
           "next_actions": {
@@ -3781,9 +3791,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -4111,6 +4132,16 @@
             ],
             "type": "string"
           },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -4164,7 +4195,7 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full selected-packet read with the original verb, cutoff, interval, scope, window and limits. Replay a shared action once, not once per entry.",
             "type": "array"
           },
           "next_actions": {
@@ -4418,9 +4449,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -4759,6 +4801,16 @@
             ],
             "type": "string"
           },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -4812,7 +4864,7 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full selected-packet read with the original verb, cutoff, interval, scope, window and limits. Replay a shared action once, not once per entry.",
             "type": "array"
           },
           "next_actions": {
@@ -5066,9 +5118,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -5407,6 +5470,16 @@
             ],
             "type": "string"
           },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -5460,7 +5533,7 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full selected-packet read with the original verb, cutoff, interval, scope, window and limits. Replay a shared action once, not once per entry.",
             "type": "array"
           },
           "next_actions": {
@@ -5714,9 +5787,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
