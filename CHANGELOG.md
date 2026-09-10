@@ -9,6 +9,29 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-09-10
+
+### Added
+
+- Persistent agent identities and consultation contexts, with a concise initial scheme, focused verb cards, extended examples on demand and deterministic next-move recommendations. The optional protocol-adviser skill prepares the guide for a dedicated helper agent.
+- Short continuation handles execute bound read actions across restarts without reconstructing arguments. Temporal reads can select exact entry refs and include bounded related evidence, with explicit unavailable and limited dependency counts.
+- Opt-in shared passages and citation uses reduce repeated response text while preserving evidence and provenance. The context composer supports complete dependency groups and validated overlapping source spans.
+
+### Changed
+
+- Semantic writes accept exact local IDs with or without `@` and infer a relation class only when its vocabulary determines one unambiguously. Validation keeps ambiguous classes and missing local targets actionable.
+- Write acknowledgements distinguish committed commands, idempotent replays and previews; report accepted clock coverage; and expose canonical relation direction with local IDs.
+- Recall reports unread evidence and relations by section. Full-detail temporal actions preserve the original verb, cutoff, scope and proof selection.
+- ChronoLoom embeds its unchanged renderer compressed and caches the decoded source, reducing binary size while preserving the HTTP and MCP App resource.
+
+### Fixed
+
+- Preserve partial calendar dates without inventing missing years, and recognize equivalent complete calendar renderings.
+- Enforce HTTP grants on semantic packet labels, nested refs, relation targets and search-summary records.
+- Replay Markdown guide examples against the progressive MCP contract and preserve previously applied temporal-detail selection fixes.
+
+Native agent use checks and complete-evidence regressions support this increment. They do not establish a broad benchmark result. Guidance for separating execution from a later verification and the benefit of batched proof reads remain under investigation.
+
 ## [0.15.0] - 2026-09-09
 
 ### Changed
@@ -1608,7 +1631,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/underpass-ai/kmp/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/underpass-ai/kmp/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/underpass-ai/kmp/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/underpass-ai/kmp/compare/v0.12.2...v0.13.0
