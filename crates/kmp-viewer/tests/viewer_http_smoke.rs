@@ -310,8 +310,17 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     // The UI itself is served, and unknown paths and hosts are refused.
     let (status, _) = get(port, "/").await;
     assert_eq!(status, 200);
-    let (status, _) = get(port, "/assets/three.min.js").await;
-    assert_eq!(status, 200);
+    let renderer = raw_request(
+        port,
+        &format!(
+            "GET /assets/three.min.js HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {}\r\nConnection: close\r\n\r\n",
+            auth_cookie(port)
+        ),
+    )
+    .await;
+    let (headers, body) = renderer.split_once("\r\n\r\n").expect("HTTP response");
+    assert!(headers.starts_with("HTTP/1.1 200"));
+    assert_eq!(body, include_str!("../ui/vendor/three.min.js"));
     let (status, _) = get(port, "/assets/loom-core.js").await;
     assert_eq!(status, 200, "the pure-logic asset is served");
     let (status, _) = get(port, "/assets/loom.js").await;
