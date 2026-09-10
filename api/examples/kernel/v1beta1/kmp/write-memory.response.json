@@ -279,9 +279,21 @@
     "relation_total": 3
   },
   "relations": [
-    "chosen_because",
-    "updates_state",
-    "semantic_delta_from"
+    {
+      "from": "@current",
+      "rel": "chosen_because",
+      "to": "incident:mobile-login:observation:401-refresh-race"
+    },
+    {
+      "from": "@current",
+      "rel": "updates_state",
+      "to": "@semantic_delta"
+    },
+    {
+      "from": "@semantic_delta",
+      "rel": "semantic_delta_from",
+      "to": "incident:mobile-login:observation:401-refresh-race"
+    }
   ],
   "summary": "Prepared 2 entries, 3 relations, and 5 evidence items for incident:mobile-login.",
   "validation": {
@@ -298,5 +310,6 @@
     "evidence": 5,
     "label_memberships": 6,
     "preserved_memberships": 0
-  }
+  },
+  "status": "validated"
 }

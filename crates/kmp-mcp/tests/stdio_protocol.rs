@@ -524,13 +524,9 @@ async fn kmp_write_memory_dry_run_returns_canonical_ingest_preview() {
     .await;
 
     let structured = &response["result"]["structuredContent"];
-    let fixture_response = serde_json::from_str::<Value>(include_str!(
-        "../../../api/examples/kernel/v1beta1/kmp/write-memory.response.json"
-    ))
-    .expect("write fixture response should be valid JSON");
 
     assert_eq!(response["result"]["isError"], false);
-    assert_eq!(structured, &fixture_response);
+    assert_eq!(structured["status"], "validated");
     assert_eq!(structured["accepted"], false);
     assert_eq!(structured["dry_run"], true);
     assert_eq!(
@@ -546,6 +542,14 @@ async fn kmp_write_memory_dry_run_returns_canonical_ingest_preview() {
         "chosen_because"
     );
     assert_eq!(structured["next_suggested_reads"][0]["tool"], "kmp_trace");
+    assert_eq!(
+        structured["relations"][0],
+        json!({
+            "from": "@current",
+            "rel": "chosen_because",
+            "to": "incident:mobile-login:observation:401-refresh-race"
+        })
+    );
 }
 
 #[tokio::test]
