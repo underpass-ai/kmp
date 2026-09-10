@@ -33,6 +33,11 @@ impl GuidanceRecommendation {
                 json!({"reason_code":"operation_refused","reason":"Keep the original error and feedback; do not infer a repair from wording.","basis":{"error_code":body["error"]["code"]},"stop":true}),
             );
         }
+        if tool == "kmp_write_memory" && body["status"] == "needs_review" {
+            return Some(json!({"reason_code":"review_write_neighborhood",
+                "reason":"Nothing was written. Review the neighborhood, proposed directions and omissions; expand if needed. Resume the returned write only after reviewing, or correct the proposal.",
+                "basis":{"context_pointer":"/neighborhood","resume_pointer":"/next_actions/0"}, "review_required":true}));
+        }
         let partial = body.pointer("/page/has_more") == Some(&Value::Bool(true))
             || body.pointer("/projection/page/has_more") == Some(&Value::Bool(true))
             || body.pointer("/projection/core_text_shortened") == Some(&Value::Bool(true));

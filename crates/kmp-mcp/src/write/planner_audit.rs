@@ -58,7 +58,7 @@ pub(crate) mod tests {
         );
         assert_eq!(
             plan.relation_quality_metrics["relation_prior_context_required_count"],
-            json!(2)
+            json!(3)
         );
         assert_eq!(
             plan.relation_quality_metrics["relation_prior_context_coverage"],
@@ -261,19 +261,20 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn rejects_rich_relation_without_read_context_in_strict_mode() {
+    fn rich_relations_without_declared_reads_compile_for_kernel_neighborhood_review() {
         let mut request = sample_write_request();
         request
             .as_object_mut()
-            .expect("sample request should be an object")
+            .expect("object")
             .remove("read_context");
-
-        let error = build_write_plan(&request).expect_err("rich relation requires prior read");
-
-        assert_eq!(
-            error.message,
-            "strict kmp_write_memory rich relation `chosen_because` to `incident:mobile-login:observation:401-refresh-race` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback"
+        let plan =
+            build_write_plan(&request).expect("kernel provides review, including local targets");
+        assert!(
+            plan.relation_quality
+                .iter()
+                .all(|quality| quality["requires_prior_context"] == true)
         );
+        assert_eq!(plan.relation_quality[0]["prior_context_observed"], false);
     }
 
     #[test]

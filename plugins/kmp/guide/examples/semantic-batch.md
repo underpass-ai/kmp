@@ -94,7 +94,7 @@ weaken validation merely to accept the packet.
 }
 ```
 
-## Write both records and their proof in one call
+## Prepare, review and write both records with their proof
 
 `logs` (or `@logs`) resolves inside the same packet, despite appearing later. It is not
 an existing memory ref and needs no fabricated read_context. `chosen_because`
@@ -108,7 +108,7 @@ is invented. Sources and relation rationale remain separate.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "written",
+  "save_as": "written_review",
   "arguments": {
     "about": "example:guide:semantic-batch",
     "actor": "guide-writer",
@@ -161,6 +161,14 @@ is invented. Sources and relation rationale remain separate.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"written","arguments":"${written_review.next_actions.0.arguments}"}
 ```
 
 ```json

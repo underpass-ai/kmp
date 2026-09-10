@@ -20,6 +20,12 @@ validates the packet, not fidelity to the source. Check the stored clocks and
 evidence. On rejection no part of the batch is committed: read all feedback,
 repair from the source, and retry. Replay an accepted packet with its same key.
 
+Rich links return `status:needs_review`, `accepted:false`: nothing written.
+Review the stored/proposed neighborhood and link directions. Expand omissions
+when needed. Resume the returned write action, or correct the proposal. Local
+links and `strict:false` still require review; stale context refreshes it. This
+is your review, not a request for human approval. A short view is not full proof.
+
 Read returned `relations` as `from -> rel -> to` (`@id` uses `local_refs`).
 In `connect_to`, the containing memory is `from`; `ref` is `to`:
 

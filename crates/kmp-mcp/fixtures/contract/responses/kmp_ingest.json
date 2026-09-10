@@ -52,6 +52,7 @@
       "replayed": false,
       "resembling_labels": []
     },
+    "neighborhood": null,
     "summary": "Ingested 3 entries, 1 relation, and 1 evidence item for question:parity.",
     "warnings": []
   }

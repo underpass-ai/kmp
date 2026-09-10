@@ -581,7 +581,7 @@ is filled with a matching score as a substitute for the source.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "identity",
+  "save_as": "identity_review",
   "arguments": {
     "about": "example:guide:incident-support",
     "actor": "guide-writer",
@@ -641,6 +641,14 @@ is filled with a matching score as a substitute for the source.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"identity","arguments":"${identity_review.next_actions.0.arguments}"}
 ```
 
 ```json

@@ -14,7 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_write_memory",
-        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
         write_memory_schema(),
         write_memory_output_schema(),
     )
@@ -40,7 +40,7 @@ pub(crate) fn write_memory_schema() -> Value {
         "if":{"required":["rel"],"properties":{"rel":{"enum":writer_relations_requiring_class()}}},
         "then":{"required":["class"]},
         "properties":{
-            "ref":string_schema("Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal."),
+            "ref":string_schema("Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Rich links require the server neighborhood review, even with local targets or strict:false. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal."),
             "rel":{"type":"string","enum":writer_relation_names(),"description":relation_vocabulary_description("Choose the specific relation justified by the source.")},
             "class":writer_class_schema(),
             "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links."),
@@ -97,12 +97,13 @@ pub(crate) fn write_memory_schema() -> Value {
                 }}
             },
             "read_context":read_context_schema(),
+            "review_token":string_schema("Returned neighborhood token, bound to this exact packet and context. Prefer the returned continuation. Omit on a new or corrected proposal; stale tokens refresh context without writing."),
             "idempotency_key":string_schema("One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload."),
             "options":{
                 "type":"object","additionalProperties":false,
                 "properties":{
-                    "dry_run":{"type":"boolean","description":"Explicit preview against the selected store, without commit or reservation. Defaults to false: ordinary writes validate and commit in one call. Requires an available backend."},
-                    "strict":{"type":"boolean","description":"Defaults to true. Requires evidence, justified supported relations, prior context for stored rich targets, and valid search renderings; refuses resembling new labels unless confirmed."},
+                    "dry_run":{"type":"boolean","description":"Explicit preview against the selected store, without commit or reservation. Defaults to false: rich links still receive neighborhood review before a later commit. Requires an available backend."},
+                    "strict":{"type":"boolean","description":"Defaults to true. Requires evidence, justified supported relations, and valid search renderings; never bypasses neighborhood review; refuses resembling new labels unless confirmed."},
                     "labels_new":{"type":"array","items":{"type":"string"},"description":"Keys whose new values are intentional after consulting the catalogue. Every named key must occur in the packet; the kernel neither renames nor merges a label silently."},
                     "sequence":{"type":"integer","minimum":1,"description":"Optional first sequence, advanced per record. Omit for the next free sequence in each coordinate. Not used for search_summaries, which preserve stored coordinates."}
                 }
@@ -117,7 +118,7 @@ pub(crate) fn write_memory_schema() -> Value {
         "else":{
             "required":["search_summaries"],
             "properties":{"options":{"not":{"anyOf":[{"required":["sequence"]},{"required":["labels_new"]}]}}},
-            "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]},{"required":["read_context"]}]}
+            "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]},{"required":["read_context"]},{"required":["review_token"]}]}
         }
     })
 }
@@ -126,7 +127,7 @@ pub(crate) fn read_context_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
-        "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Strict validation checks that rich relation targets occur here; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
+        "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Neighborhood review is enforced separately; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
         "properties": {
             "inspected_refs": {
                 "type": "array",
@@ -204,8 +205,11 @@ fn write_memory_output_schema() -> Value {
                 })), {"type":"null"}]}
             }))
         }),
-        "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
-        "status": json!({"type":"string","enum":["committed","replayed","validated","rejected","unconfirmed"],"description":"committed appended a command; replayed returned its earlier acceptance; validated is a preview; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure."}),
+        "accepted": described("boolean", "True only when the canonical ingest was committed; false for a preview or pending context review."),
+        "status": json!({"type":"string","enum":["committed","replayed","validated","needs_review","rejected","unconfirmed"],"description":"committed appended a command; replayed returned its earlier acceptance; validated is a preview; needs_review has applied nothing and returns context to review; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure."}),
+        "neighborhood": described("object", "Bounded literal context: stored/proposed items, exact refs, clocks, reasons, omissions and token. Proximity does not prove a relation; expand partial context when needed."),
+        "next_actions": described("array", "For needs_review, the bound write continuation. Review first; resuming rechecks context. No human approval per write is required."),
+        "expand_context": described("array", "Explicit-about native reads to expand omitted surroundings. Complete their relevant pages."),
         "clocks": crate::contract::schema::write_clocks::write_clocks_schema(),
         "clock_defaults": output_object(json!({
             "observed_at": described("string", "ingested_at: omitted/null observation is resolved by the kernel. Previews describe a plan, never a committed timestamp."),

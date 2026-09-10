@@ -1,4 +1,6 @@
 //! Native semantic completion must preserve proof and atomic rejection.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_adapter_embedded::{EmbeddedKernelStore, verify_bundle};
 use kmp_domain::KnownMemoryRelationType;
 use kmp_mcp::KernelMcpServer;
@@ -17,7 +19,11 @@ async fn call(server: &KernelMcpServer, tool: &str, args: Value) -> Value {
         .handle_json_line(&request.to_string())
         .await
         .expect("reply");
-    serde_json::from_str::<Value>(&reply).expect("JSON")["result"].clone()
+    reviewed_writer::review_authored_write(
+        server,
+        serde_json::from_str::<Value>(&reply).expect("JSON")["result"].clone(),
+    )
+    .await
 }
 
 fn packet() -> Value {
@@ -125,19 +131,13 @@ async fn invalid_targets_classes_and_missing_proof_reject_the_whole_packet() {
         }
     }
     let mut missing = packet();
-    missing
-        .as_object_mut()
-        .expect("packet")
-        .remove("observed_at");
+    missing.as_object_mut().expect("packet").remove("actor");
     let reply = call(&server, "kmp_write_memory", missing).await;
     assert_eq!(
         reply["structuredContent"]["feedback"][0]["code"],
         "REQUIRED_FIELD"
     );
-    assert_eq!(
-        reply["structuredContent"]["feedback"][0]["field"],
-        "observed_at"
-    );
+    assert_eq!(reply["structuredContent"]["feedback"][0]["field"], "actor");
     assert_eq!(
         verify_bundle(&store.export_bundle().await.expect("bundle"))
             .expect("verify")

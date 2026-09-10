@@ -6,7 +6,7 @@ use super::plan::KernelWritePlan;
 
 /// Show the compiled direction without repeating canonical refs or proof text.
 /// This is a projection of accepted syntax, not a judgment of source fidelity.
-pub(super) fn relation_triples(plan: &KernelWritePlan) -> Vec<Value> {
+pub(crate) fn relation_triples(plan: &KernelWritePlan) -> Vec<Value> {
     let local_ids: BTreeMap<_, _> = plan
         .local_refs
         .iter()

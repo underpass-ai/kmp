@@ -1,6 +1,8 @@
 //! E3 acceptance: the embedded backend serves KMP tools in-process and
 //! memory survives across sessions (fresh-machine criterion analog).
 
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_adapter_embedded::SqliteQualityTelemetryReader;
 use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
@@ -2146,7 +2148,8 @@ async fn call(server: &KernelMcpServer, id: u64, name: &str, arguments: Value) -
         value.get("error").is_none(),
         "tool `{name}` must not error: {value}"
     );
-    value["result"]["structuredContent"].clone()
+    reviewed_writer::review_authored_write(server, value["result"]["structuredContent"].clone())
+        .await
 }
 
 #[tokio::test]

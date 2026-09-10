@@ -1,4 +1,6 @@
 //! The compact review must describe the actual graph, including forward refs.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_adapter_embedded::{EmbeddedKernelStore, verify_bundle};
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
@@ -18,7 +20,8 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
     let reply = server.handle_json_line(&line).await.expect("reply");
     let reply: Value = serde_json::from_str(&reply).expect("JSON");
     assert_eq!(reply["result"]["isError"], false, "{reply}");
-    reply["result"]["structuredContent"].clone()
+    reviewed_writer::review_authored_write(server, reply["result"]["structuredContent"].clone())
+        .await
 }
 
 fn packet() -> Value {

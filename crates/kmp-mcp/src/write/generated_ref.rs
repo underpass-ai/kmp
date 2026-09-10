@@ -26,6 +26,10 @@ pub(super) fn generated_entry_ref(
 
 pub(crate) fn stable_idempotency_key(arguments: &Map<String, Value>) -> String {
     let mut stable = Value::Object(arguments.clone());
+    stable
+        .as_object_mut()
+        .expect("object")
+        .remove("review_token");
     if let Some(options) = stable.get_mut("options").and_then(Value::as_object_mut) {
         options.remove("dry_run");
     }

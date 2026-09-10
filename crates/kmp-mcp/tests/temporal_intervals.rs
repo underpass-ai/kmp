@@ -1,4 +1,6 @@
 //! Native interval reads preserve their bounds and keep earlier proof without later knowledge.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
 
@@ -13,7 +15,8 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
         .expect("response");
     let value: Value = serde_json::from_str(&reply).expect("JSON");
     assert_eq!(value["result"]["isError"], false, "{value}");
-    value["result"]["structuredContent"].clone()
+    reviewed_writer::review_authored_write(server, value["result"]["structuredContent"].clone())
+        .await
 }
 
 async fn seed(server: &KernelMcpServer) -> Value {

@@ -120,6 +120,7 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
         default_observation_to_ingestion: false,
+        neighborhood_review: None,
         about: request.about,
         memory: MemoryData {
             dimensions: request

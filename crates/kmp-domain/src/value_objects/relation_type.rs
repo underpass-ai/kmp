@@ -111,6 +111,12 @@ impl MemoryRelationType {
     pub fn writer_spec(&self) -> Option<MemoryRelationSpec> {
         self.known.and_then(KnownMemoryRelationType::writer_spec)
     }
+
+    /// Context review is structural policy, independent of caller strictness.
+    pub fn requires_writer_review(&self) -> bool {
+        self.writer_spec()
+            .is_none_or(|spec| spec.quality() == MemoryRelationQuality::Rich)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

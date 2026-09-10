@@ -1,4 +1,6 @@
 //! Late relation evidence must not travel back into observed history.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
 
@@ -26,7 +28,7 @@ async fn call(server: &KernelMcpServer, name: &str, arguments: Value) -> Value {
         result["projection"]["page"]["has_more"], true,
         "complete proof required"
     );
-    result
+    reviewed_writer::review_authored_write(server, result).await
 }
 
 async fn write(

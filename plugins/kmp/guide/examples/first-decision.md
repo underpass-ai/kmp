@@ -64,7 +64,7 @@ why explains why D1 is linked to C1; evidence keeps the source that proves that 
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "decision",
+  "save_as": "decision_review",
   "arguments": {
     "about": "example:guide:first-decision",
     "actor": "guide-writer",
@@ -105,6 +105,14 @@ why explains why D1 is linked to C1; evidence keeps the source that proves that 
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"decision","arguments":"${decision_review.next_actions.0.arguments}"}
 ```
 
 ```json

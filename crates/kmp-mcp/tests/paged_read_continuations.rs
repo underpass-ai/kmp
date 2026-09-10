@@ -1,6 +1,8 @@
 //! Every retained read family reconstructs the same complete selected proof.
 #[path = "support/guidance_fixture.rs"]
 mod fixture;
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use fixture::*;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
@@ -21,6 +23,7 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
             "why":"S1's route opening motivates Tuesday delivery.",
             "evidence":"S2 explicitly selects Tuesday because the route opens then according to S1. ".repeat(20)}]}));
     let written = call(&server, "kmp_write_memory", write).await;
+    let written = reviewed_writer::review_authored_write(&server, written).await;
     assert_eq!(written["isError"], false, "{written}");
     let refs = &written["structuredContent"]["local_refs"];
     let interval = json!({"start":"2026-09-09T00:00:00Z","end":"2026-09-10T00:00:00Z"});

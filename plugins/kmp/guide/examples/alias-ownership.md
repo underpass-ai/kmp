@@ -166,7 +166,7 @@ not require a cross-about proposal. Across abouts the writer needs the
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "alias",
+  "save_as": "alias_review",
   "arguments": {
     "about": "example:guide:alias-ownership",
     "actor": "guide-writer",
@@ -215,6 +215,14 @@ not require a cross-about proposal. Across abouts the writer needs the
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"alias","arguments":"${alias_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -312,7 +320,7 @@ that name; it does not authorize `same_entity_as` or `person=elena-vega`.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "rui",
+  "save_as": "rui_review",
   "arguments": {
     "about": "example:guide:alias-ownership",
     "actor": "guide-writer",
@@ -358,6 +366,14 @@ that name; it does not authorize `same_entity_as` or `person=elena-vega`.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"rui","arguments":"${rui_review.next_actions.0.arguments}"}
 ```
 
 ```json

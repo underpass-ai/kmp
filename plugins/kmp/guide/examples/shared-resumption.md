@@ -118,7 +118,7 @@ and idempotency_key; it does not rephrase the source or create a new key.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "decision",
+  "save_as": "decision_review",
   "arguments": {
     "about": "example:guide:shared-resumption",
     "actor": "guide-writer",
@@ -166,6 +166,14 @@ and idempotency_key; it does not rephrase the source or create a new key.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"decision","arguments":"${decision_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -645,7 +653,7 @@ is at 10:10 UTC, after F1 was received.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "feedback",
+  "save_as": "feedback_review",
   "arguments": {
     "about": "example:guide:shared-resumption",
     "actor": "guide-reviewer",
@@ -702,6 +710,14 @@ is at 10:10 UTC, after F1 was received.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"feedback","arguments":"${feedback_review.next_actions.0.arguments}"}
 ```
 
 ```json

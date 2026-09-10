@@ -41,6 +41,9 @@ use tonic::Request;
 #[path = "temporal_dependency_tests.rs"]
 mod temporal_dependency_tests;
 
+#[path = "write_neighborhood_tests.rs"]
+mod write_neighborhood_tests;
+
 use super::command_grpc_service_v1beta1::CommandGrpcServiceV1Beta1;
 use super::grpc_server::GrpcServer;
 use super::memory_grpc_service_v1beta1::MemoryGrpcServiceV1Beta1;
@@ -2343,6 +2346,7 @@ fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
     IngestRequest {
         receipt_context_json: None,
         default_observation_to_ingestion: false,
+        neighborhood_review: None,
         about: "question:830ce83f".to_string(),
         memory: Some(Memory {
             dimensions: vec![MemoryDimension {

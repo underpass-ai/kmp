@@ -19,8 +19,9 @@ Use `connect_to.ref: "source"` or `"@source"` to address exact local id `source`
 even if it appears later. No fuzzy matching or target creation occurs. An unknown
 local name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.
 Local targets count as `current_request` context. Stored rich targets
-still require an actual prior read declared in `read_context`; cross-about
-identity links retain the proposal rule. Do not claim to have inspected a new
+receive server neighborhood review before commit; cross-about
+identity links retain the proposal rule. `read_context` is a caller-declared audit,
+not a substitute for the served neighborhood. Do not claim to have inspected a new
 local target. Independent facts may be unlinked: do not invent a relation.
 
 The containing memory is the source of each link; `connect_to.ref` is its
@@ -142,11 +143,41 @@ the field and include `allowed_values`. Do not invent evidence or weaken a
 relation just to make validation pass. Missing class is different from null or
 an empty string; only omission requests deterministic completion.
 
-For `PRIOR_CONTEXT_REQUIRED`, KMP can supply a complete `kmp_inspect` action
-for the existing target. Execute the read, evaluate its evidence, then declare
-the actual returned ref in `read_context` and resubmit the corrected packet.
-The action is a supported reading move, not proof that the relation is true.
-An absent action means no source-backed automatic correction is known.
+For `needs_review`, nothing has been written. Review `neighborhood` and the
+proposed `relations`; use each stored item's Inspect action to expand its text,
+links and proof. `stored` and `proposed` are distinct. Long text is omitted
+whole instead of clipped before a negation or condition. Unknown clocks remain
+unknown. `links.from` and `links.to` index stored items in this packet only.
+`partial`, `omitted` and `omitted_conflicts` disclose excluded items; the last
+counts omitted facts participating in explicit conflicts, not unique disputes.
+`expand_context` offers full-detail reads in the explicitly consulted abouts.
+Those reads may include broader context and pages; finish relevant pages.
+
+After reviewing, execute `next_actions[0]` to resume the unchanged packet, or
+correct it and submit again. With `context_id` the existing continuation store
+retains the packet; otherwise the action carries its full arguments and
+`review_token`. Do not add arguments to a continuation. Tokens bind the exact
+logical proposal and complete selected source material, including omissions.
+A changed proposal or relevant context returns a fresh review without writing.
+A race at commit is safely retryable under the same idempotency key. An accepted
+retry returns its original receipt even if memory has changed afterwards.
+
+The rule applies to rich relations in the kernel vocabulary (and unknown
+non-strict relations), including same-batch links and `strict:false`. Simple
+observations, structural links and honest `follows`/`answers`/`uses_background`
+links need no review round. A prior declaration of read refs cannot bypass it.
+This is the writer's review, not a new human approval step. A token records
+acknowledgement of delivered context, never understanding or semantic truth.
+
+Selection uses explicit endpoints, their direct links and shared key/value
+labels in the current about. Explicit conflict facts and constraints precede
+recent facts; old constraints retain their validity clocks rather than being
+silently declared current. Foreign scope is limited to explicitly proposed
+identity endpoints and their surroundings. It never scans all abouts. The
+initial target is five items in roughly 2 KiB before MCP action metadata;
+a large indivisible item may exceed that target. No model summarizes the text.
+Local reads, serialization, agent context and another interaction still cost.
+
 Planner refusals commit none of the packet; store failures still carry their
 backend error. A failed pre-read retains unavailable, not_found, conflict or
 backend_error; do not treat it as a malformed source packet. Malformed successful
@@ -232,7 +263,8 @@ the store and cannot be supplied, no relation is written, and a rendering
 that fails the lint is refused with every fault named. Each target must belong to the declared about; all renderings are validated
 before one commit. An exact retry is a no-op.
 
-Normal writes are one call: omit `options.dry_run` or set it to false.
+For normal writing omit `options.dry_run` or set it to false. Rich links first
+return `needs_review`; resume after reviewing. Independent observations stay one call.
 The relation guide documents explicit previews and validation before commit.
 
 Use one `idempotency_key` per logical write. Replaying the same accepted write
@@ -256,12 +288,14 @@ no event. The fixture backend reports `scope=fixture` and proves no live state.
 The returned `ingest_preview` is the proposed canonical packet. Previewing
 reserves neither labels nor sequences; a later commit is validated again against
 the then-current store. Do not repeat previews before every ordinary write:
-the normal write already validates and commits in one call. Raw `kmp_ingest`
+normal writing already validates and requests neighborhood review where required. Raw `kmp_ingest`
 with `dry_run=true` also reaches the kernel and leaves memory uncommitted.
 
 ## Restricted HTTP clients
 
-An HTTP bearer token may restrict abouts, label values and external refs. Those
+An HTTP bearer token may restrict abouts, label values and external refs. Rich-link
+review also requires `kmp:read` and an about grant for every external endpoint,
+including when resumed from a continuation. Those
 grants apply to shared and per-record labels, each array member, explicit entry
 refs, relation targets and search-summary refs. Relabel additions obey the same
 label grants. A local @id is resolved inside its packet; it does not name an
@@ -272,7 +306,7 @@ remove source-supported labels or refs just to evade a permission error.
 
 `status=committed` appended the logical command; `replayed` returns its earlier
 acceptance without another write. Both keep `accepted=true`. `validated` is a
-dry-run, and `rejected` is a validation refusal. `unconfirmed` cannot establish
+dry-run, `needs_review` is an unapplied context review, and `rejected` is a validation refusal. `unconfirmed` cannot establish
 persistence: retain the same idempotency key when resolving a transport error.
 Do not turn an uncertain reply into a new logical write.
 

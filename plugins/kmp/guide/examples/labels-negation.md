@@ -275,7 +275,7 @@ claims; sharing journal alone would not justify it.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "restated",
+  "save_as": "restated_review",
   "arguments": {
     "about": "example:guide:labels-negation",
     "actor": "guide-writer",
@@ -343,6 +343,14 @@ claims; sharing journal alone would not justify it.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"restated","arguments":"${restated_review.next_actions.0.arguments}"}
+```
+
 ```json
 {
   "tool": "kmp_inspect",
@@ -364,7 +372,7 @@ owner. Later receipt alone does not supersede S1 or S2.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "negative",
+  "save_as": "negative_review",
   "arguments": {
     "about": "example:guide:labels-negation",
     "actor": "guide-writer",
@@ -430,6 +438,14 @@ owner. Later receipt alone does not supersede S1 or S2.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"negative","arguments":"${negative_review.next_actions.0.arguments}"}
 ```
 
 ```json

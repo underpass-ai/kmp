@@ -14,6 +14,7 @@ async fn native_dependency_pages_share_returned_sources_and_keep_group_members_l
              "observed_at":"2026-09-02T10:00:00Z", "evidence":"S2 explicitly chooses the operation allowed by S1.",
              "connect_to":[{"ref":"permit","rel":"chosen_because","class":"motivational","why":"S1's local-only conditions motivate the plan.","evidence":source}]}
         ]})).await;
+    let written = reviewed_writer::review_authored_write(&server, written).await;
     assert_eq!(written["isError"], false, "{written}");
     let mut args = json!({"about":"project:shared-dependencies", "at":{"time":"2026-09-03T00:00:00Z"},
         "axis":"observed", "include":{"dependencies":true},"limit":{"entries":1},

@@ -69,7 +69,7 @@ referenced object. A recipient missing C1 needs that dependency first.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "preview",
+  "save_as": "preview_review",
   "arguments": {
     "about": "example:guide:canonical-ingest",
     "actor": "guide-writer",
@@ -115,6 +115,14 @@ referenced object. A recipient missing C1 needs that dependency first.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"preview","arguments":"${preview_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool":"kmp_inspect","save_as":"not_committed","expect_error":"not_found","arguments":{"about":"example:guide:canonical-ingest","ref":"${preview.generated_refs.0}"}}
 ```
@@ -139,11 +147,11 @@ must never erase a memory's existing clocks.
 Set only the preview execution flag dry_run to false. The semantic content is the returned packet, with no rewritten text, reconstructed ref or guessed clock. Replay with the same logical key; a repeated import must not add a second D1.
 
 ```json
-{"tool":"kmp_ingest","save_as":"ingested","arguments":{"about":"${preview.ingest_preview.about}","idempotency_key":"${preview.ingest_preview.idempotency_key}","label_policy":"${preview.ingest_preview.label_policy}","memory":"${preview.ingest_preview.memory}","provenance":"${preview.ingest_preview.provenance}","dry_run":false}}
+{"tool":"kmp_ingest","save_as":"ingested","arguments":{"about":"${preview.ingest_preview.about}","idempotency_key":"${preview.ingest_preview.idempotency_key}","label_policy":"${preview.ingest_preview.label_policy}","memory":"${preview.ingest_preview.memory}","provenance":"${preview.ingest_preview.provenance}","default_observation_to_ingestion":"${preview.ingest_preview.default_observation_to_ingestion}","dry_run":false}}
 ```
 
 ```json
-{"tool":"kmp_ingest","save_as":"ingest_retry","arguments":{"about":"${preview.ingest_preview.about}","idempotency_key":"${preview.ingest_preview.idempotency_key}","label_policy":"${preview.ingest_preview.label_policy}","memory":"${preview.ingest_preview.memory}","provenance":"${preview.ingest_preview.provenance}","dry_run":false}}
+{"tool":"kmp_ingest","save_as":"ingest_retry","arguments":{"about":"${preview.ingest_preview.about}","idempotency_key":"${preview.ingest_preview.idempotency_key}","label_policy":"${preview.ingest_preview.label_policy}","memory":"${preview.ingest_preview.memory}","provenance":"${preview.ingest_preview.provenance}","default_observation_to_ingestion":"${preview.ingest_preview.default_observation_to_ingestion}","dry_run":false}}
 ```
 
 ```json

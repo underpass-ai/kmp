@@ -2881,7 +2881,11 @@ fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_a
         "{refused}"
     );
 
-    let written = call(7, "kmp_write_memory", declare);
+    let pending = call(7, "kmp_write_memory", declare);
+    assert_eq!(pending["structuredContent"]["status"], "needs_review");
+    assert_eq!(pending["structuredContent"]["accepted"], false);
+    let action = &pending["structuredContent"]["next_actions"][0];
+    let written = call(71, "kmp_write_memory", action["arguments"].clone());
     assert_ne!(written["isError"], true, "{written}");
     assert_eq!(written["structuredContent"]["accepted"], true, "{written}");
     let action = &written["structuredContent"]["receipt"]["action"];

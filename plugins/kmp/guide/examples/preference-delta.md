@@ -66,7 +66,7 @@ The source states its reason, so chosen_because has motivational class. The deci
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "old_policy",
+  "save_as": "old_policy_review",
   "arguments": {
     "about": "example:guide:preference-delta",
     "actor": "guide-writer",
@@ -109,6 +109,14 @@ The source states its reason, so chosen_because has motivational class. The deci
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"old_policy","arguments":"${old_policy_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool":"kmp_inspect","save_as":"old_policy_read","arguments":{"about":"example:guide:preference-delta","ref":"${old_policy.generated_refs.0}","budget":{"max_bytes":22000}}}
 ```
@@ -129,7 +137,7 @@ decision to D1; P1 remains a preference.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "new_policy",
+  "save_as": "new_policy_review",
   "arguments": {
     "about": "example:guide:preference-delta",
     "actor": "guide-writer",
@@ -194,6 +202,14 @@ decision to D1; P1 remains a preference.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"new_policy","arguments":"${new_policy_review.next_actions.0.arguments}"}
 ```
 
 ```json

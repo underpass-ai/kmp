@@ -57,7 +57,21 @@ where
         &self,
         command: MemoryIngestCommand,
     ) -> Result<MemoryIngestOutcome, ApplicationError> {
-        let mut existing = self.existing_memory_refs(&command.about).await?;
+        let reviewing = super::write_neighborhood::requires_review(&command);
+        let read_guard = if reviewing {
+            Some(self.command_application.projection_read().await)
+        } else {
+            None
+        };
+        let mut bundles = self
+            .existing_memory_bundle(&command.about)
+            .await?
+            .into_iter()
+            .collect::<Vec<_>>();
+        let mut existing = bundles
+            .first()
+            .map(existing_refs_from_bundle)
+            .unwrap_or_default();
         // A relation that declares an equivalence across abouts must land
         // on a ref that exists somewhere; the translation refuses it unless
         // this read found it, and reads nothing for any other relation.
@@ -76,7 +90,22 @@ where
                 })
                 .await
             {
-                Ok(_) => {
+                Ok(detail) => {
+                    if reviewing {
+                        let owner =
+                            detail.node.properties.get("memory_about").ok_or_else(|| {
+                                ApplicationError::Validation(
+                                    "foreign endpoint lacks memory ownership".into(),
+                                )
+                            })?;
+                        if !bundles
+                            .iter()
+                            .any(|bundle| bundle.root_node_id().as_str() == owner)
+                            && let Some(bundle) = self.existing_memory_bundle(owner).await?
+                        {
+                            bundles.push(bundle);
+                        }
+                    }
                     existing.foreign.insert(target_ref);
                 }
                 Err(ApplicationError::NotFound(_)) => {}
@@ -84,6 +113,35 @@ where
             }
         }
         let (update_context, mut outcome) = translate_memory_ingest(&command, &existing)?;
+        let mut revisions = BTreeMap::new();
+        if reviewing
+            && self
+                .command_application
+                .accepted_outcome(&command.idempotency_key)
+                .await?
+                .is_none()
+        {
+            let neighborhood = super::write_neighborhood::build_neighborhood(&command, &bundles);
+            for about in &neighborhood.abouts {
+                revisions.insert(
+                    about.clone(),
+                    self.command_application.memory_revision(about).await?,
+                );
+            }
+            if command.neighborhood_review.as_deref() != Some(neighborhood.token.as_str()) {
+                outcome.neighborhood = Some(neighborhood);
+                outcome.receipt_ref = None;
+                outcome.clocks = None;
+                outcome.accepted = super::MemoryAcceptedCounts {
+                    entries: 0,
+                    relations: 0,
+                    evidence: 0,
+                };
+                outcome.created_dimensions.clear();
+                return Ok(outcome);
+            }
+        }
+        drop(read_guard);
         if command.dry_run {
             outcome.receipt_ref = None;
             // No ingestion clock was committed by a preview.
@@ -96,7 +154,7 @@ where
 
         let accepted = self
             .command_application
-            .update_context(update_context)
+            .update_context_after_read(update_context, &revisions)
             .await?;
         outcome.read_after_write_ready = true;
         outcome.replayed = accepted.replayed;
@@ -451,6 +509,18 @@ where
         &self,
         about: &str,
     ) -> Result<ExistingMemoryRefs, ApplicationError> {
+        Ok(self
+            .existing_memory_bundle(about)
+            .await?
+            .as_ref()
+            .map(existing_refs_from_bundle)
+            .unwrap_or_default())
+    }
+
+    async fn existing_memory_bundle(
+        &self,
+        about: &str,
+    ) -> Result<Option<KmpBundle>, ApplicationError> {
         match self
             .query_application
             .get_context(GetContextQuery {
@@ -466,8 +536,8 @@ where
             })
             .await
         {
-            Ok(result) => Ok(existing_refs_from_bundle(&result.bundle)),
-            Err(ApplicationError::NotFound(_)) => Ok(ExistingMemoryRefs::default()),
+            Ok(result) => Ok(Some(result.bundle)),
+            Err(ApplicationError::NotFound(_)) => Ok(None),
             Err(error) => Err(error),
         }
     }

@@ -1,10 +1,16 @@
 //! Entry focus preserves the question time and expands proof outside that focus.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
 
 async fn raw(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
     let reply = server.handle_json_line(&json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":tool,"arguments":arguments}}).to_string()).await.expect("response");
-    serde_json::from_str::<Value>(&reply).expect("json")["result"].clone()
+    reviewed_writer::review_authored_write(
+        server,
+        serde_json::from_str::<Value>(&reply).expect("json")["result"].clone(),
+    )
+    .await
 }
 async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
     let result = raw(server, tool, arguments).await;

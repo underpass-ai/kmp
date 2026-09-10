@@ -301,6 +301,33 @@ mover una lista a un nodo no elimina su coste cuando ese nodo se consulta. La
 misma ayuda aparece en texto para hosts que no muestran structuredContent;
 contar por separado esa representación y el sobre completo.
 
+### Contexto previo de escritura
+
+Al cambiar qué relaciones requieren revisión, mantener coherentes el predicado
+nativo `memory/write_neighborhood.rs`, el compilador, `needs_review` y la
+recomendación. `strict:false` y los enlaces locales no eluden la condición.
+La lectura se hace bajo la exclusión de escrituras del servicio de comandos;
+antes del commit se revalidan las revisiones de todos los abouts leídos, también
+los extremos extranjeros declarados. Esto se apoya en un único engine escritor
+por almacén. Conservar la comprobación de idempotencia antes de exigir un contexto
+nuevo a una operación ya aceptada. No conservar el bloqueo durante la revisión
+del agente: se libera al devolver la respuesta pendiente.
+
+El token incorpora la propuesta lógica y el material seleccionado completo,
+incluidas omisiones. Las continuaciones usan el directorio existente: resuelven
+antes de autorizar, mantienen el verbo y la identidad del lote, sobreviven a una
+reconexión dentro de su caducidad y nunca conceden permisos. Si no se puede
+retener el lote, devolver la acción completa. Un reconocimiento de entrega no
+es una prueba de comprensión ni de suficiencia semántica.
+
+Verificar contexto cambiado, reintento aceptado, misma tanda, ámbitos ajenos,
+restricción antigua, contradicciones, texto largo con negación final y costes
+del resultado MCP completo. Mostrar índices de enlaces como índices del paquete,
+no como refs. Conservar las omisiones y la expansión nativa. Actualizar ficha,
+verbo, entrada, instrucciones de sesión y ejemplos: cada ejemplo afectado debe
+mostrar explícitamente preparación y reanudación; el replay no debe confirmarlas
+a escondidas. No añadir gates editoriales al CI por estas recomendaciones.
+
 ## 3. Regenerar con el motor correspondiente
 
 Desde la raíz del repo, usar un target separado si hay un binario congelado

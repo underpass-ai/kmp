@@ -64,7 +64,7 @@ B1: LAT-3 build A measured 150 ms for the response under the R1 test conditions.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "slow",
+  "save_as": "slow_review",
   "arguments": {
     "about": "example:guide:workflow-proof",
     "actor": "guide-writer",
@@ -107,6 +107,14 @@ B1: LAT-3 build A measured 150 ms for the response under the R1 test conditions.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"slow","arguments":"${slow_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool":"kmp_inspect","save_as":"slow_read","arguments":{"about":"example:guide:workflow-proof","ref":"${slow.generated_refs.0}","budget":{"max_bytes":22000}}}
 ```
@@ -120,7 +128,7 @@ G1: LAT-3 build B measured 80 ms for the response under the same R1 test conditi
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "fast",
+  "save_as": "fast_review",
   "arguments": {
     "about": "example:guide:workflow-proof",
     "actor": "guide-writer",
@@ -161,6 +169,14 @@ G1: LAT-3 build B measured 80 ms for the response under the same R1 test conditi
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"fast","arguments":"${fast_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -218,7 +234,7 @@ Use matches_requirement/constraint for those named properties, not same_entity_a
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "candidate",
+  "save_as": "candidate_review",
   "arguments": {
     "about": "example:guide:workflow-proof",
     "actor": "guide-writer",
@@ -259,6 +275,14 @@ Use matches_requirement/constraint for those named properties, not same_entity_a
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"candidate","arguments":"${candidate_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -320,7 +344,7 @@ the claimed outcome, not to permission or to the earlier failure.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "approval",
+  "save_as": "approval_review",
   "arguments": {
     "about": "example:guide:workflow-proof",
     "actor": "guide-writer",
@@ -363,6 +387,14 @@ the claimed outcome, not to permission or to the earlier failure.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"approval","arguments":"${approval_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool":"kmp_inspect","save_as":"approval_read","arguments":{"about":"example:guide:workflow-proof","ref":"${approval.generated_refs.0}","budget":{"max_bytes":22000}}}
 ```
@@ -376,7 +408,7 @@ The execution source states a required dependency on A1, so depends_on is causal
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "execution",
+  "save_as": "execution_review",
   "arguments": {
     "about": "example:guide:workflow-proof",
     "actor": "guide-writer",
@@ -417,6 +449,14 @@ The execution source states a required dependency on A1, so depends_on is causal
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"execution","arguments":"${execution_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -474,7 +514,7 @@ The later received rule log proves S1 triggered AL1. A shared timestamp alone wo
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "sample",
+  "save_as": "sample_review",
   "arguments": {
     "about": "example:guide:workflow-proof",
     "actor": "guide-writer",
@@ -515,6 +555,14 @@ The later received rule log proves S1 triggered AL1. A shared timestamp alone wo
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"sample","arguments":"${sample_review.next_actions.0.arguments}"}
 ```
 
 ```json

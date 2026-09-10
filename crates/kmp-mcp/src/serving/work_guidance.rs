@@ -99,7 +99,11 @@ impl KernelMcpServer {
         let partial = body.pointer("/page/has_more") == Some(&Value::Bool(true))
             || body.pointer("/projection/page/has_more") == Some(&Value::Bool(true))
             || body.pointer("/projection/core_text_shortened") == Some(&Value::Bool(true));
+        let partial = partial || body.pointer("/neighborhood/partial") == Some(&Value::Bool(true));
         let mut signals = json!({"packet_partial":partial});
+        if body["status"] == "needs_review" {
+            signals["needs_review"] = json!(true);
+        }
         if let Some(selection) = body.get("selection") {
             signals["selection"] = selection.clone();
         }
