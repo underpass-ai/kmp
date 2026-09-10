@@ -7,6 +7,33 @@ use std::collections::BTreeSet;
 
 use super::fold_search_term;
 
+/// Identifier fidelity after folding complete named calendar dates to ISO.
+/// Keep this out of retrieval tokenization: stored words and search stay intact.
+pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
+    let normalized = |text: &str| {
+        super::date_tokens::canonical_dates(
+            text.split_whitespace()
+                .map(trim_edge_punctuation)
+                .map(fold_search_term)
+                .collect(),
+        )
+    };
+    // Decide whether a literal is an identifier before case folding (acronyms).
+    let literal_ids = identifiers(text);
+    let source = normalized(text);
+    let carried = normalized(rendering).into_iter().collect::<BTreeSet<_>>();
+    source
+        .into_iter()
+        .filter(|token| {
+            literal_ids.contains(token)
+                || token.bytes().any(|b| b.is_ascii_digit()) && is_identifier(token)
+        })
+        .filter(|identifier| !carried.contains(identifier))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect()
+}
+
 /// The identifiers a text carries, folded: the tokens a faithful rendering in
 /// another language keeps exactly as they are.
 pub fn identifiers(text: &str) -> BTreeSet<String> {

@@ -6,12 +6,17 @@
 //! stems on top of this; the write path lints on top of it. Both need the
 //! same reading, which is why it lives below either of them.
 
+mod date_tokens;
 mod entities;
 mod identifiers;
 mod language_vocabulary;
 mod search_tokens;
 
+#[cfg(test)]
+mod date_fidelity_tests;
+
 pub use entities::proper_names;
+pub(crate) use identifiers::dropped_identifiers;
 pub use identifiers::{identifiers, surface_tokens};
 pub use language_vocabulary::{KERNEL_LANGUAGE, LanguageVocabulary};
 pub use search_tokens::{fold_search_term, informative_tokens};
