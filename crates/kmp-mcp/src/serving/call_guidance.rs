@@ -61,6 +61,9 @@ impl CallGuidance {
     }
 
     pub(super) fn contextualize(&self, mut action: Value) -> Value {
+        if action["arguments"].get("continuation").is_some() {
+            return action;
+        }
         if let Some(arguments) = action.get_mut("arguments").and_then(Value::as_object_mut) {
             arguments.insert(
                 "context_id".into(),

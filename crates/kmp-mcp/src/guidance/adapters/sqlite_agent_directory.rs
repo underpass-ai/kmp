@@ -7,17 +7,18 @@ use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, 
 use super::random_agent_identity::RandomAgentIdentity;
 use crate::guidance::{
     AgentContext, AgentContextId, AgentDirectory, AgentId, AgentIdentity, AgentIdentitySource,
-    AgentOpen, AgentSession, AgentUse, GuidanceError, UseOutcome,
+    AgentOpen, AgentSession, AgentUse, GuidanceError, ReadContinuation, ReadContinuationId,
+    UseOutcome,
 };
 
 /// Transport metadata beside the store. It never enters recall or evidence.
 pub(crate) struct SqliteAgentDirectory {
-    connection: Mutex<Connection>,
+    pub(super) connection: Mutex<Connection>,
     identities: Arc<dyn AgentIdentitySource>,
     durable: bool,
 }
 
-fn storage(error: impl std::fmt::Display) -> GuidanceError {
+pub(super) fn storage(error: impl std::fmt::Display) -> GuidanceError {
     GuidanceError::Unavailable(format!("agent directory: {error}"))
 }
 
@@ -57,7 +58,7 @@ impl SqliteAgentDirectory {
         let version: u32 = connection
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .map_err(storage)?;
-        if version > 2 {
+        if version > 3 {
             return Err(storage(format!("unsupported schema version {version}")));
         }
         connection.execute_batch("PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
@@ -73,7 +74,11 @@ impl SqliteAgentDirectory {
                 context_id TEXT NOT NULL REFERENCES contexts(id), revision TEXT NOT NULL,
                 tool TEXT NOT NULL, attempts INTEGER NOT NULL, rejected INTEGER NOT NULL,
                 unknown INTEGER NOT NULL, PRIMARY KEY(context_id,revision,tool));
-            PRAGMA user_version=2;").map_err(storage)?;
+            CREATE TABLE IF NOT EXISTS read_continuations (
+                id TEXT PRIMARY KEY, context_id TEXT NOT NULL REFERENCES contexts(id),
+                tool TEXT NOT NULL, arguments TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                expires_at INTEGER NOT NULL, UNIQUE(context_id,fingerprint));
+            PRAGMA user_version=3;").map_err(storage)?;
         Ok(Self {
             connection: Mutex::new(connection),
             identities,
@@ -234,6 +239,21 @@ impl SqliteAgentDirectory {
 }
 
 impl AgentDirectory for SqliteAgentDirectory {
+    fn save_read(
+        &self,
+        session: &AgentSession,
+        call: &ReadContinuation,
+    ) -> Result<ReadContinuationId, GuidanceError> {
+        super::sqlite_read_continuations::save(self, session, call)
+    }
+
+    fn load_read(
+        &self,
+        id: &ReadContinuationId,
+    ) -> Result<Option<ReadContinuation>, GuidanceError> {
+        super::sqlite_read_continuations::load(self, id)
+    }
+
     fn context(&self, id: &AgentContextId) -> Result<AgentContext, GuidanceError> {
         let connection = self.connection.lock().map_err(storage)?;
         let (agent,revision) = connection.query_row("SELECT agent_id,revision FROM contexts WHERE id=?1", [id.as_str()], |row| Ok((row.get::<_,String>(0)?,row.get::<_,String>(1)?))).optional().map_err(storage)?.ok_or_else(|| GuidanceError::InvalidSession("context_id is not registered here; open kmp_guide and preserve its returned id".into()))?;

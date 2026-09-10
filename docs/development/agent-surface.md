@@ -482,3 +482,29 @@ dirección o alcance cuando evite ambigüedad. `supersedes` marca todo el destin
 SUPERSEDED; `corrects` no cambia su estado de ciclo de vida. No prometer que la
 aceptación o la categoría rich verifican el significado. Esta revisión editorial
 es informativa: no añadir un gate de frases o tamaño al CI.
+
+## Continuaciones retenidas en el contexto del agente
+
+Los nueve verbos de lectura admiten la alternativa `{continuation: id}` sola.
+El registro central conserva los requisitos de la llamada inicial en otra rama
+del schema; no debilitar sus `required`/alternativas al añadir esta entrada.
+`serving/read_continuations.rs` transforma únicamente acciones nativas devueltas,
+cuando el identificador no aumenta su tamaño. El directorio SQLite existente
+conserva sus argumentos completos como metadatos: 24 horas, 16 por contexto,
+256 por directorio y 32 KiB por llamada. No contiene páginas de evidencia ni
+forma parte del bundle. Fallos de retención conservan la acción completa.
+
+Resolver antes de autorizar en HTTP, bajo los permisos actuales, y ejecutar esa
+misma petición resuelta. La identidad de guía no sustituye la identidad del
+transporte. Verificar raw, abouts, ámbitos dimensionales, all_abouts y refs en
+el recorrido HTTP real. No ampliar permisos porque se conoce un identificador.
+
+Comprobar replay de una página, progreso al ejecutar su siguiente acción,
+reinicio del proceso, caducidad/cupo, cambios de evidencia y mezcla de argumentos.
+Conservar reloj, propósito, contexto, selección, cursor y aumento de presupuesto.
+Los suelos y mínimos de progreso nativos se calculan antes de abreviar; no
+agrandar el paquete al codificar y recalcular `projection.budget.used_bytes`.
+Medir el recorrido completo y la entrada extra del schema/guía, no sólo el ahorro
+de la petición siguiente. La llamada sin contexto sigue siendo explícita.
+El ejemplo `budget-proof` ejecuta ambos caminos. Son recomendaciones de
+mantenimiento y pruebas de comportamiento; no nuevos gates editoriales.

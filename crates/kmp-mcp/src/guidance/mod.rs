@@ -13,6 +13,8 @@ mod guidance_purpose;
 mod guide_request;
 mod guide_scheme;
 mod ports;
+mod read_continuation;
+mod read_continuation_id;
 mod use_outcome;
 
 pub(crate) use adapters::SqliteAgentDirectory;
@@ -28,4 +30,6 @@ pub(crate) use guidance_purpose::GuidancePurpose;
 pub(crate) use guide_request::GuideRequest;
 pub(crate) use guide_scheme::scheme;
 pub(crate) use ports::{AgentDirectory, AgentIdentitySource};
+pub(crate) use read_continuation::ReadContinuation;
+pub(crate) use read_continuation_id::ReadContinuationId;
 pub(crate) use use_outcome::UseOutcome;

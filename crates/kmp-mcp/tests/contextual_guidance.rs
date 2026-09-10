@@ -106,7 +106,29 @@ async fn invalid_context_cannot_write_and_optional_guidance_preserves_the_memory
     selection["context_id"] = agent["context_id"].clone();
     let contextual = call(&server, "kmp_wake", selection).await;
     assert_eq!(contextual["isError"], false, "{contextual}");
-    assert_eq!(bare["structuredContent"], contextual["structuredContent"]);
+    let action = &contextual["structuredContent"]["projection"]["next_action"];
+    let expanded = server.resolve_read_request(json!({"method":"tools/call","params":{"name":action["tool"],"arguments":action["arguments"]}})).expect("resolve");
+    let mut restored = contextual["structuredContent"].clone();
+    let mut arguments = expanded["params"]["arguments"].clone();
+    arguments
+        .as_object_mut()
+        .expect("arguments")
+        .remove("context_id");
+    arguments
+        .as_object_mut()
+        .expect("arguments")
+        .remove("purpose");
+    restored["projection"]["next_action"]["arguments"] = arguments;
+    restored["projection"]["budget"]["used_bytes"] =
+        bare["structuredContent"]["projection"]["budget"]["used_bytes"].clone();
+    assert_eq!(
+        bare["structuredContent"], restored,
+        "only action encoding and its byte count change"
+    );
+    assert_eq!(
+        contextual["structuredContent"]["projection"]["budget"]["used_bytes"],
+        contextual["structuredContent"].to_string().len()
+    );
     assert_eq!(bare["content"][0], contextual["content"][0]);
     guidance(&contextual);
 }

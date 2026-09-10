@@ -161,6 +161,11 @@ impl KernelMcpServer {
             return self.handle_kmp_guide(id, arguments, start).await;
         }
 
+        let resolved = match self.resolve_read_arguments(name, arguments) {
+            Ok(resolved) => resolved,
+            Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
+        };
+        let arguments = resolved.as_ref().unwrap_or(arguments);
         let guidance = match super::call_guidance::CallGuidance::prepare(self, arguments) {
             Ok(guidance) => guidance,
             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
@@ -177,7 +182,10 @@ impl KernelMcpServer {
             )
             .await;
         match guidance {
-            Some(guidance) => self.complete_work_guidance(name, arguments, &guidance, result),
+            Some(guidance) => {
+                let result = self.shorten_read_actions(&guidance, result);
+                self.complete_work_guidance(name, arguments, &guidance, result)
+            }
             None => result,
         }
     }
