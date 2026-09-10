@@ -326,13 +326,13 @@ impl KnownMemoryRelationType {
                 self,
                 MemoryRelationQuality::Rich,
                 MOTIVATIONAL_OR_CAUSAL_CLASSES,
-                "authorization relation identifies the decision that permitted an action",
+                "approval -> authorizes -> permitted action; permission alone does not prove execution",
             )),
             Self::VerifiedBy => Some(MemoryRelationSpec::new(
                 self,
                 MemoryRelationQuality::Rich,
                 EVIDENTIAL_CLASSES,
-                "verification relation identifies the evidence or check that verified a claim",
+                "claim or outcome -> verified_by -> actual verifying check; approval or an earlier failure is not verification",
             )),
             Self::SemanticDeltaFrom => Some(MemoryRelationSpec::new(
                 self,
@@ -350,7 +350,7 @@ impl KnownMemoryRelationType {
                 self,
                 MemoryRelationQuality::Rich,
                 EVIDENTIAL_CLASSES,
-                "replacement relation identifies the superseded memory and evidence",
+                "replacement -> supersedes -> entire old memory; marks the whole target SUPERSEDED, so separate independent facts first",
             )),
             Self::Contradicts => Some(MemoryRelationSpec::new(
                 self,
@@ -380,7 +380,7 @@ impl KnownMemoryRelationType {
                 self,
                 MemoryRelationQuality::Rich,
                 CONSTRAINT_CLASSES,
-                "operand relation marks a value as intentionally excluded",
+                "excluded value or exclusion record -> excluded_from -> total or set; the target is not the excluded item",
             )),
             Self::CheckedAgainst => Some(MemoryRelationSpec::new(
                 self,
@@ -416,7 +416,7 @@ impl KnownMemoryRelationType {
                 self,
                 MemoryRelationQuality::Rich,
                 EVIDENTIAL_CLASSES,
-                "operand relation marks a later value as correcting an earlier fact",
+                "corrected fact -> corrects -> earlier fact; explain the specific correction without superseding the whole target",
             )),
             Self::ComponentOf => Some(MemoryRelationSpec::new(
                 self,

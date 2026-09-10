@@ -6,6 +6,38 @@ a later reader should understand by traversing it**. Its `evidence` records
 **the concrete observation or source that supports that explanation**.
 `confidence` says how certain the writer is; it is not a relevance score.
 
+### Read the endpoints before choosing the relation
+
+In a writer packet, the memory containing `connect_to` is the source; `ref`
+names the target. Read it as **source -> relation -> target**, not as a loose
+association. Preview and accepted responses expose these triples with local
+`@id` endpoints so you can check the compiled direction without a full receipt.
+
+| Source -> relation -> target | Concrete example | Misleading use |
+| --- | --- | --- |
+| approval -> `authorizes` -> permitted action | Approval A permits planned deploy D: `@A -> authorizes -> @D`. | D authorizes A reverses permission. A does not prove D ran. |
+| claim/outcome -> `verified_by` -> actual check | Recovery R verified by successful health check H: `@R -> verified_by -> @H`. | An approval or earlier failure report does not verify recovery. |
+| excluded value/exclusion record -> `excluded_from` -> total/set | Void V is excluded from settlement T: `@V -> excluded_from -> @T`. | T points to V backwards; an original invoice is not the total. |
+| corrected fact -> `corrects` -> earlier fact | Corrected invoice amount C changes amount I: `@C -> corrects -> @I`. | A correction to one amount does not replace every fact in its source report. |
+| replacement -> `supersedes` -> entire old memory | Policy P2 replaces all of P1: `@P2 -> supersedes -> @P1`. | A partial change must not mark a multi-fact report wholly SUPERSEDED. |
+
+Suppose report G says “invoice J1 is 18 USD; J2 is cancelled; the fee is 6 USD”.
+Later C corrects **only J1** to 12 USD. Prefer separate memories for J1, J2 and
+the fee, then `@C -> corrects -> @J1`. If G already exists as one memory,
+`@C -> corrects -> G` can name the exact J1 correction in `why` and `evidence`
+while preserving the unrelated facts. `corrects` does not change G's lifecycle
+status; readers must still consider the correction. `@C -> supersedes -> G`
+would mark **all G** SUPERSEDED and is too broad. Do not overwrite G to hide it.
+
+For a fully replaced atomic fact, `supersedes` is appropriate when the source
+proves whole-target replacement. For a state transition use the source-supported
+state relation; an unknown onset stays unknown. Neither `observed_at` nor the
+mere order of reports establishes `valid_from` or `valid_until`.
+
+KMP validates endpoints, relation vocabulary and declared proof fields. It does
+not infer whether their story is true. `rich`, `accepted` and these visible
+triples are not a semantic audit. Compare both endpoints with the evidence.
+
 Those fields are deliberately separate:
 
 | Field | Durable meaning | Good test |

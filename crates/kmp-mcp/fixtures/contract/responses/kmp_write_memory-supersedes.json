@@ -86,9 +86,21 @@
       "ref": "receipt:v1:question%3Aparity:write%3A9f90874e51e083ef"
     },
     "relations": [
-      "supersedes",
-      "updates_state",
-      "semantic_delta_from"
+      {
+        "from": "@current",
+        "rel": "supersedes",
+        "to": "question:parity:claim:denver"
+      },
+      {
+        "from": "@current",
+        "rel": "updates_state",
+        "to": "@semantic_delta"
+      },
+      {
+        "from": "@semantic_delta",
+        "rel": "semantic_delta_from",
+        "to": "question:parity:claim:denver"
+      }
     ],
     "status": "committed",
     "summary": "Ingested 2 entries, 3 relations, and 5 evidence items for question:parity.",

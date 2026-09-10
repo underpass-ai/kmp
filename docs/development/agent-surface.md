@@ -454,3 +454,17 @@ persistencia. Mantener validated/rejected/unconfirmed distinguibles. Verificar
 reintento tras reinicio, escritura posterior e importación, así como los transportes
 embedded/gRPC. Medir el coste del recibo completo; preservar el acceso al detalle
 sin volver a copiar toda la evidencia ni crear memorias de telemetría.
+
+`relations` muestra triples `{from, rel, to}` derivados de las relaciones
+canónicas del plan. Los extremos locales se acortan a `@id`, resolubles mediante
+`local_refs`; los externos conservan el ref. No reconstruirlos desde el diagnóstico
+ni deduplicar por nombre de relación: dos enlaces del mismo tipo pueden tener
+distintos destinos. Comprobar preview, commit y replay contra el recibo real.
+
+Al modificar una relación, describir sus roles de origen y destino en
+`KnownMemoryRelationType::writer_spec`, revisar la ficha de escritura, el verbo
+y los ejemplos afectados, y regenerar los assets. Incluir un contraejemplo de
+dirección o alcance cuando evite ambigüedad. `supersedes` marca todo el destino
+SUPERSEDED; `corrects` no cambia su estado de ciclo de vida. No prometer que la
+aceptación o la categoría rich verifican el significado. Esta revisión editorial
+es informativa: no añadir un gate de frases o tamaño al CI.
