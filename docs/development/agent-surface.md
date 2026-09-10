@@ -524,3 +524,15 @@ se generan desde el contrato normal y enseñan también el modo opcional. El aho
 del tráfico MCP y el del contexto compuesto son mediciones distintas; sumar la
 instrucción y el schema adicionales del modo activado. No introducir una política
 de tokenizer en el kernel ni inferir límites de fuente para unir citas solapadas.
+
+La composición se ofrece por `kmp-mcp context project|expand [FILE|-]`, sin abrir
+un store ni ejecutar las lecturas declaradas. Al cambiar el contrato de contexto,
+actualizar su versión, decoder, CLI y ejemplo ejecutable; rechazar versiones no
+soportadas y conservar el binario congelado para leer artefactos anteriores.
+Expandir cada tabla nativa dentro de su propia página antes de reunir grupos.
+Los límites de citas los aporta el host: verificar ref, hash, UTF-8 y texto entero,
+sin atribuir veracidad a esa coincidencia. Al lector se le dan fragmentos ordenados
+que concatena sin separadores; no necesita calcular offsets. Comprobar fuente
+omitida por presupuesto, testimonios independientes y recuperación exacta de
+restricciones, conflictos y UNKNOWN. Medir también bindings, tablas y manifiestos;
+el ahorro del cuerpo de texto por sí solo no representa el contexto completo.
