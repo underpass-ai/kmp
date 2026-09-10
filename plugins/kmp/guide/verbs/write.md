@@ -41,12 +41,21 @@ class. This completion changes neither proof requirements nor the relation's
 direction and does not infer whether it is true.
 
 With `context_id`, actor defaults to the persistent agent name; an explicit
-actor overrides it. Without context, actor is required. Actor identifies the author; top-level observed_at is the packet's provenance
-observation time, required even when every record overrides it. A missing root
-`observed_at` needs the actual packet observation with its UTC offset; KMP does
-not choose a date from the records or substitute its ingestion clock. Actual
-ingestion is recorded separately by the kernel. Each
-record may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP
+actor overrides it. Without context, actor is required. Actor identifies the
+author. Omit `observed_at` or set it to null: KMP assigns the exact ingestion
+instant to this new observation and the packet's provenance. Supply an explicit
+observation time only when the source establishes it, with the actual UTC offset.
+KMP never chooses it from event dates or from a different record.
+
+Root observed/occurred/valid clocks are defaults inherited by records. Each
+record may override them. A record's `observed_at:null` clears the root default
+and uses ingestion; `occurred_at:null` clears the root event date and remains
+unknown. Without a root event date, omitted occurrence also stays unknown.
+Ingestion is assigned by the kernel; the semantic writer cannot supply it.
+Equal observed and occurred times are valid when the source supports both.
+Several records may share an observation time without sharing an occurrence.
+Updating `search_summaries` preserves the original coordinates, including unknown
+historical observation; only the new packet provenance receives a default date. KMP
 resolves all names and validates the entire packet before one canonical ingest.
 A rejected record writes none of the packet. The transaction covers one about.
 Omit unknown validity boundaries too. Observing an existing state does not
@@ -61,6 +70,12 @@ undeclared local targets are errors. See
 link, a rejected packet and temporal/ChronoLoom review. Accepted writes return a compact acknowledgment; recover the detailed receipt only when needed.
 
 ## Read the acknowledgment
+
+`clock_defaults`, when present, reports `observed_at:"ingested_at"`, the count
+of affected memories and whether packet provenance defaulted. It describes the
+plan; `clocks` and the canonical receipt carry actual accepted values. A preview
+does not reserve a timestamp. An unchanged replay returns the original clocks,
+including after restart or import, without creating another observation.
 
 `accepted=true` confirms the submitted packet was committed. Read `warnings`,
 `diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.

@@ -38,6 +38,10 @@ message IngestRequest {
   LabelPolicy label_policy = 6;
   // Optional writer diagnostics for an immutable command audit, not memory.
   optional string receipt_context_json = 7;
+  // Semantic writer policy: fill missing observation on newly ingested coordinates
+  // packet provenance and evidence time with the same kernel ingestion timestamp.
+  // Already ingested coordinates are preserved, including unknown observation.
+  bool default_observation_to_ingestion = 8;
 }
 
 enum LabelPolicy {

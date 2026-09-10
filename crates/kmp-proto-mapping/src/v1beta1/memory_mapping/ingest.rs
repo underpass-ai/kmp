@@ -37,6 +37,7 @@ pub fn ingest_command_from_proto(
 
     Ok(MemoryIngestCommand {
         receipt_context,
+        default_observation_to_ingestion: request.default_observation_to_ingestion,
         about: request.about,
         memory: MemoryData {
             dimensions: memory
@@ -190,8 +191,7 @@ pub(super) fn provenance_from_proto(value: MemoryProvenance) -> MemoryProvenance
     MemoryProvenanceData {
         source_kind: source_kind_name(value.source_kind()),
         source_agent: value.source_agent,
-        observed_at: proto_timestamp_to_sort_string(value.observed_at)
-            .unwrap_or_else(|| "unix:100000000000:000000000".to_string()),
+        observed_at: proto_timestamp_to_sort_string(value.observed_at),
         correlation_id: non_empty(value.correlation_id),
         causation_id: non_empty(value.causation_id),
     }

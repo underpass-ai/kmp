@@ -119,6 +119,7 @@ impl MemoryRecordApi for EmbeddedKernel {
 fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
+        default_observation_to_ingestion: false,
         about: request.about,
         memory: MemoryData {
             dimensions: request
@@ -192,7 +193,7 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
         provenance: request.provenance.map(|provenance| MemoryProvenanceData {
             source_kind: provenance.source_kind,
             source_agent: provenance.source_agent,
-            observed_at: provenance.observed_at,
+            observed_at: Some(provenance.observed_at),
             correlation_id: provenance.correlation_id,
             causation_id: provenance.causation_id,
         }),

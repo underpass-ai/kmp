@@ -35,6 +35,31 @@
       "description": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
       "inputSchema": {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "not": {
+                "properties": {
+                  "default_observation_to_ingestion": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "default_observation_to_ingestion"
+                ]
+              }
+            },
+            "then": {
+              "properties": {
+                "provenance": {
+                  "required": [
+                    "observed_at"
+                  ]
+                }
+              }
+            }
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref this memory should attach to.",
@@ -44,6 +69,11 @@
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
+          },
+          "default_observation_to_ingestion": {
+            "default": false,
+            "description": "Semantic-writer policy: fill missing observations on new coordinates, evidence and packet provenance using the exact kernel ingestion time. Preserve already ingested coordinates. Ordinary canonical ingest leaves unknown clocks unchanged.",
+            "type": "boolean"
           },
           "dry_run": {
             "description": "Validate against the selected store without committing. References, labels and coordinates are checked by the kernel; the backend must be reachable. This reserves no future write.",
@@ -413,7 +443,7 @@
                 "type": "string"
               },
               "observed_at": {
-                "description": "RFC3339 observation timestamp, in UTC.",
+                "description": "RFC3339 observation timestamp. Required unless default_observation_to_ingestion resolves its omission at commit.",
                 "minLength": 1,
                 "type": "string"
               },
@@ -434,8 +464,7 @@
             },
             "required": [
               "source_kind",
-              "source_agent",
-              "observed_at"
+              "source_agent"
             ],
             "type": "object"
           },
@@ -929,14 +958,18 @@
                   "type": "object"
                 },
                 "observed_at": {
-                  "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
-                  "minLength": 1,
-                  "type": "string"
+                  "description": "When this fact became known, with its true RFC3339 UTC offset. Omit for the packet observation; if neither is supplied, KMP uses the exact ingestion time. Null resets to ingestion time. Explicit backfill is preserved; more than five minutes ahead is refused.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "occurred_at": {
-                  "description": "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
-                  "minLength": 1,
-                  "type": "string"
+                  "description": "When the event occurred, if known. Records inherit the packet value when omitted; null explicitly keeps occurrence unknown. KMP never substitutes observation or ingestion for an unknown occurrence.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "rank": {
                   "minimum": 1,
@@ -979,14 +1012,18 @@
             "type": "array"
           },
           "observed_at": {
-            "description": "Required packet provenance and shared observation time, even if every record overrides it. Supply the actual RFC3339 observation with its UTC offset; not an assumed occurrence or validity start. Backfill allowed; more than five minutes ahead of the kernel clock is refused.",
-            "minLength": 1,
-            "type": "string"
+            "description": "Shared observation and packet provenance. Omit or null for the exact ingestion time. Preserve an explicit source-backed RFC3339 observation; records may override it. Unknown occurrence is never inferred.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "occurred_at": {
-            "description": "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
-            "minLength": 1,
-            "type": "string"
+            "description": "When the event occurred, if known. Records inherit the packet value when omitted; null explicitly keeps occurrence unknown. KMP never substitutes observation or ingestion for an unknown occurrence.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "options": {
             "additionalProperties": false,
@@ -1181,8 +1218,7 @@
           }
         },
         "required": [
-          "about",
-          "observed_at"
+          "about"
         ],
         "then": {
           "if": {
@@ -1230,6 +1266,24 @@
           "accepted": {
             "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
             "type": "boolean"
+          },
+          "clock_defaults": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Memories needing implicit observation, counted once across labels.",
+                "type": "integer"
+              },
+              "observed_at": {
+                "description": "ingested_at: omitted/null observation is resolved by the kernel. Previews describe a plan, never a committed timestamp.",
+                "type": "string"
+              },
+              "provenance": {
+                "description": "Packet provenance also defaults to this write's ingestion time; search-summary updates preserve original fact clocks.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
           },
           "clocks": {
             "anyOf": [

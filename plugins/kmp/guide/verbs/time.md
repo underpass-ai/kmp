@@ -215,13 +215,17 @@ A wider or open-ended interval does not admit proof later than the Goto cursor.
 Near, Forward and Rewind enumerate historical positions; their finite interval
 end bounds proof, while their cursor selects positions rather than an as-of state.
 
-## `observed_at` is the real clock, in UTC
+## Observation defaults to ingestion; occurrence may be unknown
 
-Every normal write carries `observed_at`: when this information was observed.
-It is distinct from `occurred_at` (when the event happened), ingestion time
-(when the kernel recorded it), and the validity interval (when it held).
+For a new semantic write, omit `observed_at` or use null when the source gives
+no separate observation time: KMP assigns exactly its ingestion timestamp.
+An explicit observation time is preserved. `occurred_at` is when the event
+happened; omitted/null stays unknown unless a record inherits a root event date.
+A record's explicit null clears that inheritance. KMP never fills event time
+from observation or ingestion. Validity describes when a state held and remains
+independent. Equal clocks, or a shared observation across a packet, are valid.
 Select the clock that answers the question; reads are not all ordered by observation.
-**Read the clock; do not compose a timestamp.** Local wall-clock time with a
+**For an explicit time, read the clock or source; do not compose a timestamp.** Local wall-clock time with a
 `Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry
 above the present — where `kmp_forward` from a correct "now" never finds
 it, and the delta comes back empty looking exactly like a quiet week.
@@ -231,6 +235,13 @@ refused at write time. For an incident that occurred yesterday but was first
 observed this morning, keep yesterday in `occurred_at` and this morning in
 `observed_at`. A backfill preserves a genuinely known earlier observation;
 it does not copy event time into the knowledge clock merely because it is earlier.
+
+The write response's `clock_defaults` describes which observations defaulted;
+`clocks` describes the accepted values. A preview has no accepted timestamp.
+Replay, restart and import preserve the original receipt's clocks. A new search
+summary preserves the original fact's clocks, including any unknown observation.
+
+Four small examples appear at the start of `guide:kmp-agent:example:four-clocks`.
 
 An observed recall excludes evidence whose explicit receipt time is after
 `as_of`, or at/after an interval's exclusive end, even if it supports an older

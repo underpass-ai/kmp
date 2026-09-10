@@ -53,17 +53,10 @@ pub(super) fn build_write_plan_with_local_refs(
     let intent = required_string(arguments, "intent")?;
     validate_intent(&intent)?;
     let actor = required_string(arguments, "actor")?;
-    let observed_at = required_string(arguments, "observed_at")?;
-    reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds()).map_err(
-        |error| {
-            WriteValidationError::new(error)
-                .at("observed_at")
-                .code("FUTURE_OBSERVATION")
-        },
-    )?;
+    let observed_at = observation_time(arguments)?;
     let clocks = WriterCoordinate {
         occurred_at: optional_string(arguments.get("occurred_at")),
-        observed_at: &observed_at,
+        observed_at: observed_at.as_deref(),
         valid_from: optional_string(arguments.get("valid_from")),
         valid_until: optional_string(arguments.get("valid_until")),
         rank: arguments
@@ -421,10 +414,11 @@ pub(super) fn build_write_plan_with_local_refs(
         }));
     }
 
-    let ingest_arguments = json!({
+    let mut ingest_arguments = json!({
         "about": about.clone(),
         "idempotency_key": idempotency_key.clone(),
         "dry_run": dry_run,
+        "default_observation_to_ingestion": true,
         "label_policy": if strict { "refuse" } else { "warn" },
         "memory": {
             "dimensions": dimensions,
@@ -445,6 +439,7 @@ pub(super) fn build_write_plan_with_local_refs(
     });
     let relation_quality_metrics = relation_quality_metrics(&relation_quality);
 
+    super::coordinates::omit_unknown_observations(&mut ingest_arguments);
     Ok(KernelWritePlan {
         operation: super::operation::WriteOperation::Memories,
         about,

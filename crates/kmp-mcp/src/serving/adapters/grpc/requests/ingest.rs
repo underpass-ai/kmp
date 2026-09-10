@@ -17,8 +17,14 @@ pub(crate) fn ingest_request_from_arguments(arguments: &Value) -> Result<IngestR
     let arguments = object(arguments, "tool arguments")?;
     let about = required_string_field(arguments, "about", "about")?;
     let memory = memory_from_object(required_object_field(arguments, "memory", "memory")?)?;
+    let default_observation_to_ingestion = optional_bool_field(
+        arguments,
+        "default_observation_to_ingestion",
+        "default_observation_to_ingestion",
+    )?
+    .unwrap_or(false);
     let provenance = optional_object_field(arguments, "provenance", "provenance")?
-        .map(provenance_from_object)
+        .map(|value| provenance_with_defaults(value, default_observation_to_ingestion))
         .transpose()?;
     let idempotency_key = required_string_field(arguments, "idempotency_key", "idempotency_key")?;
     let dry_run = optional_bool_field(arguments, "dry_run", "dry_run")?.unwrap_or(false);
@@ -38,6 +44,7 @@ pub(crate) fn ingest_request_from_arguments(arguments: &Value) -> Result<IngestR
 
     Ok(IngestRequest {
         receipt_context_json,
+        default_observation_to_ingestion,
         about,
         memory: Some(memory),
         provenance,
@@ -230,14 +237,25 @@ fn evidence_from_value(value: &Value) -> Result<MemoryEvidence, String> {
 pub(super) fn provenance_from_object(
     value: &Map<String, Value>,
 ) -> Result<MemoryProvenance, String> {
+    provenance_with_defaults(value, false)
+}
+
+fn provenance_with_defaults(
+    value: &Map<String, Value>,
+    allow_missing: bool,
+) -> Result<MemoryProvenance, String> {
     Ok(MemoryProvenance {
         source_kind: source_kind_from_field(value, "source_kind", "provenance.source_kind")?,
         source_agent: required_string_field(value, "source_agent", "provenance.source_agent")?,
-        observed_at: Some(required_timestamp_field(
-            value,
-            "observed_at",
-            "provenance.observed_at",
-        )?),
+        observed_at: if allow_missing {
+            optional_timestamp_field(value, "observed_at", "provenance.observed_at")?
+        } else {
+            Some(required_timestamp_field(
+                value,
+                "observed_at",
+                "provenance.observed_at",
+            )?)
+        },
         correlation_id: optional_string_field(
             value,
             "correlation_id",
@@ -351,5 +369,26 @@ mod tests {
         let memory = request.memory.expect("memory");
         assert!(memory.dimensions.is_empty());
         assert_eq!(memory.entries[0].id, "claim:rachel-denver");
+    }
+
+    #[test]
+    fn missing_observation_is_forwarded_as_a_policy_not_a_client_timestamp() {
+        let mut args = json!({"about":"project:clock", "idempotency_key":"clock",
+            "memory":{"entries":[{"id":"fact","kind":"observation","text":"A source fact.",
+                "coordinates":[{"dimension":"task","scope_id":"clock"}]}],"relations":[],"evidence":[],"dimensions":[]},
+            "provenance":{"source_kind":"agent","source_agent":"writer"}});
+        assert!(ingest_request_from_arguments(&args).is_err());
+        args["default_observation_to_ingestion"] = json!(true);
+        let request = ingest_request_from_arguments(&args).expect("policy");
+        assert!(request.default_observation_to_ingestion);
+        assert!(
+            request
+                .provenance
+                .expect("provenance")
+                .observed_at
+                .is_none()
+        );
+        args["default_observation_to_ingestion"] = json!("true");
+        assert!(ingest_request_from_arguments(&args).is_err());
     }
 }

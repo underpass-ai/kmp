@@ -41,7 +41,19 @@ pub fn translate_memory_ingest(
 ) -> Result<(UpdateContextCommand, MemoryIngestOutcome), ApplicationError> {
     validate_command(command)?;
     let ingested_at = kernel_ingested_at();
-    let memory = namespaced_memory(&command.about, &command.memory, existing, &ingested_at)?;
+    let resolved;
+    let accepted_command = if command.default_observation_to_ingestion {
+        resolved = super::observation_defaults::resolve(command, &ingested_at);
+        &resolved
+    } else {
+        command
+    };
+    let memory = namespaced_memory(
+        &command.about,
+        &accepted_command.memory,
+        existing,
+        &ingested_at,
+    )?;
     // A dimension declared here that the about did not hold yet is a label
     // this write creates; the writer reports it so vocabulary growth is
     // seen at the moment it happens rather than discovered later.
@@ -88,7 +100,7 @@ pub fn translate_memory_ingest(
         resembling_labels,
     };
 
-    if let Some(receipt) = super::receipt::receipt_change(command, &memory, &outcome)? {
+    if let Some(receipt) = super::receipt::receipt_change(accepted_command, &memory, &outcome)? {
         outcome.receipt_ref = Some(receipt.entity_id.clone());
         changes.push(receipt);
     }
@@ -166,7 +178,12 @@ fn validate_command(command: &MemoryIngestCommand) -> Result<(), ApplicationErro
             ))
         })?;
         require_non_empty(&provenance.source_agent, "provenance.source_agent")?;
-        require_non_empty(&provenance.observed_at, "provenance.observed_at")?;
+        if !command.default_observation_to_ingestion || provenance.observed_at.is_some() {
+            require_non_empty(
+                provenance.observed_at.as_deref().unwrap_or_default(),
+                "provenance.observed_at",
+            )?;
+        }
     }
 
     Ok(())
@@ -681,6 +698,9 @@ fn validate_positive_optional(value: Option<u32>, field: &str) -> Result<(), App
 fn logical_digest(command: &MemoryIngestCommand) -> String {
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
+    if command.default_observation_to_ingestion {
+        hasher.update(b"default_observation_to_ingestion\0");
+    }
     hasher.update(command.about.as_bytes());
     hasher.update([0]);
     let memory = serde_json::to_vec(&command.memory)
@@ -1262,6 +1282,7 @@ mod tests {
     fn sample_command() -> MemoryIngestCommand {
         MemoryIngestCommand {
             receipt_context: None,
+            default_observation_to_ingestion: false,
             about: "question:830ce83f".to_string(),
             memory: MemoryData {
                 dimensions: vec![MemoryDimensionData {

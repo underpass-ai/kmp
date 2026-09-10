@@ -1340,6 +1340,40 @@ async fn memory_service_ingest_uses_shallow_existing_ref_lookup() {
 }
 
 #[tokio::test]
+async fn memory_service_defaults_observation_only_when_requested() {
+    let service = memory_service(EmptyGraphNeighborhoodReader, EmptyNodeDetailReader);
+    let mut request = valid_memory_ingest_request(false);
+    request.provenance.as_mut().expect("provenance").observed_at = None;
+    request.memory.as_mut().expect("memory").entries[0].coordinates[0].occurred_at = None;
+    let rejected = service
+        .ingest(Request::new(request.clone()))
+        .await
+        .expect_err("canonical provenance still requires observation");
+    assert_eq!(rejected.code(), tonic::Code::InvalidArgument);
+    request.default_observation_to_ingestion = true;
+    let written = service
+        .ingest(Request::new(request))
+        .await
+        .expect("implicit observation")
+        .into_inner();
+    let clocks = written.memory.expect("memory").clocks.expect("clocks");
+    assert_eq!(clocks.observed, clocks.ingested);
+    assert_eq!(clocks.observed.expect("observed").entries, 1);
+    assert_eq!(clocks.occurred.expect("occurred").entries, 0);
+
+    let mut canonical = valid_memory_ingest_request(false);
+    canonical.idempotency_key = "canonical-clocks".into();
+    let written = service
+        .ingest(Request::new(canonical))
+        .await
+        .expect("canonical")
+        .into_inner();
+    let clocks = written.memory.expect("memory").clocks.expect("clocks");
+    assert_eq!(clocks.observed.expect("unknown observation").entries, 0);
+    assert_eq!(clocks.occurred.expect("known occurrence").entries, 1);
+}
+
+#[tokio::test]
 async fn memory_service_wake_and_ask_read_live_context() {
     let service = memory_service(SeededGraphNeighborhoodReader, SeededNodeDetailReader);
 
@@ -2308,6 +2342,7 @@ fn helper_mappers_cover_versions_errors_and_trim_logic() {
 fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
     IngestRequest {
         receipt_context_json: None,
+        default_observation_to_ingestion: false,
         about: "question:830ce83f".to_string(),
         memory: Some(Memory {
             dimensions: vec![MemoryDimension {

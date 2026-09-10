@@ -40,6 +40,7 @@ fn entry(id: &str, text: &str, occurred_at: &str, sequence: u32) -> MemoryEntryD
 fn corpus() -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
+        default_observation_to_ingestion: false,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -683,6 +684,7 @@ fn sub_second_corpus(
 ) -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
+        default_observation_to_ingestion: false,
         about: about.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -1309,7 +1311,7 @@ async fn a_relabelled_entry_stands_in_its_own_row_and_says_why() {
             provenance: Some(MemoryProvenanceData {
                 source_kind: "agent".to_string(),
                 source_agent: "agent:smoke".to_string(),
-                observed_at: "2026-07-04T10:00:00Z".to_string(),
+                observed_at: Some("2026-07-04T10:00:00Z".to_string()),
                 correlation_id: None,
                 causation_id: None,
             }),
