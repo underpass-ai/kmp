@@ -18,6 +18,7 @@ Usage:
   kmp-mcp plugin resolve-engine  Select the engine matching both host manifests
   kmp-mcp plugin notice          Report version drift without changing the machine
   kmp-mcp document <about>        Render one about as a Markdown document
+  kmp-mcp context project|expand  Compose captured memory packets or expand their text
   kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots
   kmp-mcp summaries pending       List the memories that owe an English search summary
   kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply]

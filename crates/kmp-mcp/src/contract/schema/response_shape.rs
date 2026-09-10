@@ -114,7 +114,7 @@ fn projection_output_schema() -> Value {
             }
         },
         "page": page,
-        "sections": described("object", "Per-section core, returned, eligible, and total counts for reconstructing the full proof."),
+        "sections": described("object", "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage."),
         "selection_omitted": described("integer", "Items excluded by budget.max_entries before paging."),
         "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes.")
     }))

@@ -1975,7 +1975,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned, eligible, and total counts for reconstructing the full proof.",
+                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -2659,7 +2659,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned, eligible, and total counts for reconstructing the full proof.",
+                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -3474,6 +3474,16 @@
             ],
             "type": "string"
           },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -3781,9 +3791,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -4111,6 +4132,16 @@
             ],
             "type": "string"
           },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -4418,9 +4449,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -4759,6 +4801,16 @@
             ],
             "type": "string"
           },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -5066,9 +5118,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"
@@ -5407,6 +5470,16 @@
             ],
             "type": "string"
           },
+          "refs": {
+            "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -5714,9 +5787,20 @@
                 "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
                 "type": "integer"
               },
+              "requested_refs": {
+                "description": "Present with refs: the explicit entry focus. Dependency records may have other refs within the same scope and time.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "scope": {
                 "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
                 "type": "string"
+              },
+              "unmatched_ref_count": {
+                "description": "Requested refs not matching this history selection; may be absent, out of scope/filter/clock/direction. Does not prove nonexistence. Independent of response-page completion.",
+                "type": "integer"
               }
             },
             "type": "object"

@@ -1034,6 +1034,9 @@ message RecallProjectionSection {
   uint64 returned_on_page = 3;
   uint64 eligible = 4;
   uint64 total = 5;
+  // Eligible expansion after this page; excludes repeated core and prior pages.
+  // Zero does not establish semantic sufficiency or include detail/cap omissions.
+  uint64 remaining = 6;
 }
 
 message RecallTruncation {

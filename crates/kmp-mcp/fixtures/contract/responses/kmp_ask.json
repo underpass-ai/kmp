@@ -34,7 +34,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9430
+        "used_bytes": 9423
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
@@ -69,12 +69,14 @@
         "proof.evidence": {
           "core": 5,
           "eligible": 5,
+          "remaining": 0,
           "returned_on_page": 0,
           "total": 5
         },
         "proof.path": {
           "core": 0,
           "eligible": 9,
+          "remaining": 6,
           "returned_on_page": 3,
           "total": 16
         }
@@ -244,7 +246,7 @@
       "truncated": true
     },
     "warnings": [
-      "pageable recall projection has more expansion items; follow the non-null projection.page.next_cursor with identical bound arguments"
+      "recall expansion pending; see projection.sections.*.remaining and execute projection.next_action"
     ]
   }
 }

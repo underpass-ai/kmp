@@ -24,6 +24,10 @@ def check(saved, client, authored):
             for path, counts in page['projection']['sections'].items():
                 skip = counts['core'] if path in collected else 0
                 collected.setdefault(path, []).extend(section(page, path)[skip:])
+                assert counts['remaining'] == counts['eligible'] - len(collected[path]), (tool, path)
+            accounting = page['projection']['page']
+            assert sum(c['remaining'] for c in page['projection']['sections'].values()) == (
+                accounting['total'] - accounting['offset'] - accounting['returned'])
             action = page['projection']['next_action']
             if action is None:
                 break
@@ -42,5 +46,5 @@ def check(saved, client, authored):
             assert values == section(whole, path), (tool, path)
         results[tool] = {'pages': pages, 'restarts': restarts,
                          'additional_native_calls': pages,  # full reference plus continuation calls
-                         'all_sections_equal': True}
+                         'all_sections_equal': True, 'remaining_counts_exact': True}
     return results
