@@ -115,6 +115,7 @@ fn read(
             traversal,
             source_bundle,
             include: TemporalIncludeOptions {
+                dependencies: false,
                 evidence: true,
                 relations,
                 raw_refs: false,

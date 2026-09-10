@@ -3399,6 +3399,10 @@
           "include": {
             "additionalProperties": false,
             "properties": {
+              "dependencies": {
+                "description": "Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group.",
+                "type": "boolean"
+              },
               "evidence": {
                 "type": "boolean"
               },
@@ -3614,6 +3618,10 @@
                 "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
+              "entries": {
+                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "type": "array"
+              },
               "evidence": {
                 "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
@@ -3625,6 +3633,43 @@
               "frontier_size": {
                 "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
+              },
+              "groups": {
+                "description": "With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_hops": {
+                      "description": "Maximum expansion hops from this seed.",
+                      "type": "integer"
+                    },
+                    "max_members": {
+                      "description": "Maximum members, including the seed.",
+                      "type": "integer"
+                    },
+                    "member_refs": {
+                      "description": "Seed and available dependency entries in deterministic discovery order.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "omitted_by_limit": {
+                      "description": "Distinct eligible frontier members not expanded because of hop or member limits.",
+                      "type": "integer"
+                    },
+                    "seed_ref": {
+                      "description": "The selected temporal entry.",
+                      "type": "string"
+                    },
+                    "unavailable_in_selection": {
+                      "description": "Distinct endpoints without an eligible body under this read; identities are not disclosed.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
               },
               "interval": {
                 "description": "Selected half-open [start,end) span, or null.",
@@ -3991,6 +4036,10 @@
           "include": {
             "additionalProperties": false,
             "properties": {
+              "dependencies": {
+                "description": "Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group.",
+                "type": "boolean"
+              },
               "evidence": {
                 "type": "boolean"
               },
@@ -4206,6 +4255,10 @@
                 "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
+              "entries": {
+                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "type": "array"
+              },
               "evidence": {
                 "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
@@ -4217,6 +4270,43 @@
               "frontier_size": {
                 "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
+              },
+              "groups": {
+                "description": "With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_hops": {
+                      "description": "Maximum expansion hops from this seed.",
+                      "type": "integer"
+                    },
+                    "max_members": {
+                      "description": "Maximum members, including the seed.",
+                      "type": "integer"
+                    },
+                    "member_refs": {
+                      "description": "Seed and available dependency entries in deterministic discovery order.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "omitted_by_limit": {
+                      "description": "Distinct eligible frontier members not expanded because of hop or member limits.",
+                      "type": "integer"
+                    },
+                    "seed_ref": {
+                      "description": "The selected temporal entry.",
+                      "type": "string"
+                    },
+                    "unavailable_in_selection": {
+                      "description": "Distinct endpoints without an eligible body under this read; identities are not disclosed.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
               },
               "interval": {
                 "description": "Selected half-open [start,end) span, or null.",
@@ -4594,6 +4684,10 @@
           "include": {
             "additionalProperties": false,
             "properties": {
+              "dependencies": {
+                "description": "Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group.",
+                "type": "boolean"
+              },
               "evidence": {
                 "type": "boolean"
               },
@@ -4809,6 +4903,10 @@
                 "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
+              "entries": {
+                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "type": "array"
+              },
               "evidence": {
                 "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
@@ -4820,6 +4918,43 @@
               "frontier_size": {
                 "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
+              },
+              "groups": {
+                "description": "With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_hops": {
+                      "description": "Maximum expansion hops from this seed.",
+                      "type": "integer"
+                    },
+                    "max_members": {
+                      "description": "Maximum members, including the seed.",
+                      "type": "integer"
+                    },
+                    "member_refs": {
+                      "description": "Seed and available dependency entries in deterministic discovery order.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "omitted_by_limit": {
+                      "description": "Distinct eligible frontier members not expanded because of hop or member limits.",
+                      "type": "integer"
+                    },
+                    "seed_ref": {
+                      "description": "The selected temporal entry.",
+                      "type": "string"
+                    },
+                    "unavailable_in_selection": {
+                      "description": "Distinct endpoints without an eligible body under this read; identities are not disclosed.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
               },
               "interval": {
                 "description": "Selected half-open [start,end) span, or null.",
@@ -5197,6 +5332,10 @@
           "include": {
             "additionalProperties": false,
             "properties": {
+              "dependencies": {
+                "description": "Include writer-declared memory dependencies and their actual stored bodies/proof, up to two hops and eight members per seed. Implies evidence and relations; do not set them false. Same abouts, filters and clock cutoff. proof.groups reports anonymous unavailable/limit counts, not semantic sufficiency. Complete all response pages before consuming a group.",
+                "type": "boolean"
+              },
               "evidence": {
                 "type": "boolean"
               },
@@ -5412,6 +5551,10 @@
                 "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
+              "entries": {
+                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "type": "array"
+              },
               "evidence": {
                 "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
@@ -5423,6 +5566,43 @@
               "frontier_size": {
                 "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
+              },
+              "groups": {
+                "description": "With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_hops": {
+                      "description": "Maximum expansion hops from this seed.",
+                      "type": "integer"
+                    },
+                    "max_members": {
+                      "description": "Maximum members, including the seed.",
+                      "type": "integer"
+                    },
+                    "member_refs": {
+                      "description": "Seed and available dependency entries in deterministic discovery order.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "omitted_by_limit": {
+                      "description": "Distinct eligible frontier members not expanded because of hop or member limits.",
+                      "type": "integer"
+                    },
+                    "seed_ref": {
+                      "description": "The selected temporal entry.",
+                      "type": "string"
+                    },
+                    "unavailable_in_selection": {
+                      "description": "Distinct endpoints without an eligible body under this read; identities are not disclosed.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
               },
               "interval": {
                 "description": "Selected half-open [start,end) span, or null.",

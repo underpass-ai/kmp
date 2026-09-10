@@ -5,6 +5,7 @@ mod request;
 
 pub use request::TemporalTraversalRequest;
 mod select;
+pub use select::compare_temporal_coordinates;
 
 pub use axis_key::{compare_temporal_instants, temporal_instant_nanos, temporal_instant_rfc3339};
 

@@ -350,7 +350,7 @@ pub(super) fn coordinates_by_ref(
     }
 
     for coordinates in coordinates.values_mut() {
-        coordinates.sort_by(compare_coordinates);
+        coordinates.sort_by(compare_temporal_coordinates);
     }
 
     coordinates
@@ -364,7 +364,11 @@ fn unique_ref_count<'a>(positions: impl IntoIterator<Item = &'a TemporalPosition
         .len()
 }
 
-fn compare_coordinates(left: &TemporalCoordinate, right: &TemporalCoordinate) -> Ordering {
+/// Stable record-coordinate order shared by history and dependency projections.
+pub fn compare_temporal_coordinates(
+    left: &TemporalCoordinate,
+    right: &TemporalCoordinate,
+) -> Ordering {
     primary_coordinate_key(left)
         .cmp(&primary_coordinate_key(right))
         .then_with(|| left.dimension().cmp(right.dimension()))

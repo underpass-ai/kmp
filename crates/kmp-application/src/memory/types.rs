@@ -328,6 +328,9 @@ pub struct TemporalIncludeOptions {
     pub evidence: bool,
     pub relations: bool,
     pub raw_refs: bool,
+    /// Include bounded, evidenced memory dependencies with their stored bodies.
+    /// Implies evidence and relations; does not change temporal entry selection.
+    pub dependencies: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]

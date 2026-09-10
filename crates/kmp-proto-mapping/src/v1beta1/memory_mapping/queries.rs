@@ -298,9 +298,10 @@ fn temporal_include_from_proto(
     value: TemporalInclude,
 ) -> ProtoMappingResult<TemporalIncludeOptions> {
     Ok(TemporalIncludeOptions {
-        evidence: value.evidence,
-        relations: value.relations,
+        evidence: value.evidence || value.dependencies,
+        relations: value.relations || value.dependencies,
         raw_refs: value.raw_refs,
+        dependencies: value.dependencies,
     })
 }
 
