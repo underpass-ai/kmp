@@ -129,13 +129,20 @@ fn authorize_write_scope_ids(
             if let Some(scope) = arguments.get("scope").and_then(Value::as_object) {
                 requested.extend(scope.values().filter_map(Value::as_str));
             }
+            requested.extend(label_values(arguments.get("labels")));
+            for memory in arguments
+                .get("memories")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+            {
+                requested.extend(label_values(memory.get("labels")));
+            }
         }
         // A label added is a scope id written; one taken off names a scope
         // the memory already stood in, which the read grant covers.
         "kmp_relabel" => {
-            if let Some(add) = arguments.get("add").and_then(Value::as_object) {
-                requested.extend(add.values().filter_map(Value::as_str));
-            }
+            requested.extend(label_values(arguments.get("add")));
         }
         _ => return Ok(()),
     }
@@ -147,6 +154,16 @@ fn authorize_write_scope_ids(
         )?;
     }
     Ok(())
+}
+
+fn label_values(labels: Option<&Value>) -> impl Iterator<Item = &str> {
+    labels
+        .and_then(Value::as_object)
+        .into_iter()
+        .flat_map(|map| map.values())
+        .filter_map(Value::as_array)
+        .flatten()
+        .filter_map(Value::as_str)
 }
 
 fn require_scope(
@@ -216,14 +233,40 @@ fn authorize_write_connections(
     arguments: &Value,
 ) -> Result<(), AuthorizationError> {
     let about = arguments.get("about").and_then(Value::as_str);
-    if let Some(connections) = arguments.get("connect_to").and_then(Value::as_array) {
-        for reference in connections
-            .iter()
-            .filter_map(|connection| connection.get("ref"))
-            .filter_map(Value::as_str)
+    for record in std::iter::once(arguments).chain(
+        arguments
+            .get("memories")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten(),
+    ) {
+        authorize_ref(identity, record.get("ref").and_then(Value::as_str), about)?;
+        for connection in record
+            .get("connect_to")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
         {
-            authorize_ref(identity, Some(reference), about)?;
+            if let Some(reference) = connection.get("ref").and_then(Value::as_str) {
+                // The writer resolves @ids only inside this packet and rejects
+                // missing or ambiguous locals before any canonical mutation.
+                if !reference.starts_with('@') {
+                    authorize_ref(identity, Some(reference), about)?;
+                }
+            }
         }
+    }
+    for rendering in arguments
+        .get("search_summaries")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        authorize_ref(
+            identity,
+            rendering.get("ref").and_then(Value::as_str),
+            about,
+        )?;
     }
     Ok(())
 }
@@ -390,6 +433,35 @@ mod tests {
             }),
         );
         assert!(authorize(&actor, &denied).is_err());
+    }
+
+    #[test]
+    fn current_writer_fields_cannot_bypass_reference_and_label_grants() {
+        let actor = identity(&[WRITE_SCOPE]);
+        for arguments in [
+            json!({"about":"project:kmp","labels":{"task":["timeline:kmp","timeline:other"]},"memories":[{"id":"one"}]}),
+            json!({"about":"project:kmp","memories":[{"id":"one","ref":"project:secret:entry:one"}]}),
+            json!({"about":"project:kmp","memories":[{"id":"one","labels":{"task":["timeline:other"]}}]}),
+            json!({"about":"project:kmp","memories":[{"id":"one","connect_to":[{"ref":"project:secret:entry:one"}]}]}),
+            json!({"about":"project:kmp","search_summaries":[{"ref":"project:secret:entry:one","summary_en":"A private event."}]}),
+        ] {
+            assert!(
+                authorize(&actor, &call("kmp_write_memory", arguments.clone())).is_err(),
+                "ungranted input passed: {arguments}"
+            );
+        }
+        assert!(authorize(&actor, &call("kmp_relabel", json!({"about":"project:kmp","ref":"project:kmp:entry:one","add":{"task":["timeline:other"]}}))).is_err());
+    }
+
+    #[test]
+    fn authorized_packet_keeps_local_links_and_all_granted_label_memberships() {
+        let actor = identity(&[WRITE_SCOPE]);
+        let allowed = json!({"about":"project:kmp","labels":{"process":["timeline:kmp"]},"memories":[
+            {"id":"source","ref":"project:kmp:observation:one","labels":{"task":["timeline:kmp"]}},
+            {"id":"decision","connect_to":[{"ref":"@source"},{"ref":"project:kmp:decision:prior"}]}
+        ],"search_summaries":[{"ref":"project:kmp:observation:one","summary_en":"A route observation."}]});
+        assert!(authorize(&actor, &call("kmp_write_memory", allowed)).is_ok());
+        assert!(authorize(&actor, &call("kmp_relabel", json!({"about":"project:kmp","ref":"project:kmp:entry:one","add":{"task":["timeline:kmp"]}}))).is_ok());
     }
 
     #[test]

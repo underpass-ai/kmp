@@ -210,3 +210,12 @@ reserves neither labels nor sequences; a later commit is validated again against
 the then-current store. Do not repeat previews before every ordinary write:
 the normal write already validates and commits in one call. Raw `kmp_ingest`
 with `dry_run=true` also reaches the kernel and leaves memory uncommitted.
+
+## Restricted HTTP clients
+
+An HTTP bearer token may restrict abouts, label values and external refs. Those
+grants apply to shared and per-record labels, each array member, explicit entry
+refs, relation targets and search-summary refs. Relabel additions obey the same
+label grants. A local @id is resolved inside its packet; it does not name an
+external memory. A forbidden request must stop before any backend call. Do not
+remove source-supported labels or refs just to evade a permission error.

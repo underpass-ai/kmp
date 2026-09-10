@@ -527,6 +527,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn semantic_packet_grants_are_checked_before_any_backend_call() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let packet = json!({"about":"project:kmp","actor":"writer","observed_at":"2026-09-10T00:00:00Z",
+            "idempotency_key":"http-packet-grants","labels":{"task":["timeline:other"]},
+            "memories":[{"id":"one","kind":"observation","summary":"The route opened.","evidence":"R1 records that the route opened."}]});
+        let response = app_with(Ok(identity(&[authorization::WRITE_SCOPE])), calls.clone())
+            .oneshot(request(
+                json!({"jsonrpc":"2.0","id":2,"method":"tools/call",
+                "params":{"name":"kmp_write_memory","arguments":packet}}),
+            ))
+            .await
+            .expect("response");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
     async fn foreign_ingest_refs_are_denied_before_backend_call() {
         let calls = Arc::new(AtomicUsize::new(0));
         let call = json!({

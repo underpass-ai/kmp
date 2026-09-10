@@ -89,6 +89,14 @@ OpenAI-compatible structured request example:
 api/examples/inference-prompts/kmp-write-memory.request.json
 ```
 
+This request is a worked snapshot for the shown task, not a second canonical
+MCP schema. When assembling a request for an installed version, obtain the
+writer inputSchema from its live tools/list response and adapt it to the
+inference provider. An example may use an explicit actor without opting into
+agent context. Maintain examples when their demonstrated behavior changes;
+CI does not require them to duplicate every optional capability of the live
+schema. Native MCP tests verify that actual contract.
+
 ## Tips
 
 - **Keep rationale and proof distinct**: `why` explains the specific semantic
