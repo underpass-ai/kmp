@@ -94,7 +94,7 @@ async fn strict_writer_carries_partial_dates_without_padding_or_rewriting_eviden
             assert!(
                 result["structuredContent"]["feedback"][0]["reason"]
                     .as_str()
-                    .unwrap()
+                    .expect("typed feedback reason")
                     .contains("--08-18")
             );
         }
