@@ -27,7 +27,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9375
+        "used_bytes": 9306
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
@@ -280,7 +280,7 @@
       "open_loops": []
     },
     "warnings": [
-      "recall has unread expansion; projection.sections.*.remaining counts what follows this page, excluding repeated core and earlier pages. Execute projection.next_action"
+      "recall expansion pending; see projection.sections.*.remaining and execute projection.next_action"
     ]
   }
 }

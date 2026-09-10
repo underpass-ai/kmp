@@ -709,7 +709,12 @@ fn attach_metadata(
     core_text_shortened: bool,
     planning: bool,
 ) {
-    const PLANNING_WARNING: &str = "pageable recall projection is partial; follow a non-null projection.page.next_cursor, combine continuation pages, or start a fresh recall with richer detail, larger max_entries, or larger max_bytes as indicated by truncation.omitted";
+    const RESTART: &str = "recall core prose was shortened; execute projection.next_action to restart and discard the partial reconstruction before reading more expansion";
+    const STALLED: &str = "recall expansion cannot advance at this byte budget; repeating the same cursor with unchanged budget.max_bytes returns no additional evidence";
+    const PARTIAL: &str = "recall expansion pending; see projection.sections.*.remaining and execute projection.next_action";
+    const DETAIL: &str = "recall detail excludes expansion items; start a fresh recall with a richer budget.detail to include them";
+    const CAPPED: &str = "recall selection was capped by budget.max_entries; start a fresh recall with a larger cap to include those items";
+    const FINAL: &str = "final continuation page; combine its expansion items with the stable core and earlier pages";
     let next_offset = offset.saturating_add(selected.len());
     let has_more = next_offset < eligible.len();
     let reported_offset = if planning { usize::MAX } else { offset };
@@ -820,20 +825,24 @@ fn attach_metadata(
             }
         });
         let warning = if planning {
-            PLANNING_WARNING
+            // Reserve the longest warning we actually emit, rather than a
+            // separate planning paragraph that displaces usable evidence.
+            [RESTART, STALLED, PARTIAL, DETAIL, CAPPED, FINAL]
+                .into_iter()
+                .max_by_key(|warning| warning.len())
+                .expect("recall warnings")
         } else if core_text_shortened {
-            "recall core prose was shortened; execute projection.next_action to restart and discard the partial reconstruction before reading more expansion"
+            RESTART
         } else if stalled {
-            "recall expansion cannot advance at this byte budget; repeating the same cursor \
-             with unchanged budget.max_bytes returns no additional evidence"
+            STALLED
         } else if has_more {
-            "recall has unread expansion; projection.sections.*.remaining counts what follows this page, excluding repeated core and earlier pages. Execute projection.next_action"
+            PARTIAL
         } else if excluded_by_detail > 0 {
-            "recall detail excludes expansion items; start a fresh recall with a richer budget.detail to include them"
+            DETAIL
         } else if plan.selection_omitted > 0 {
-            "recall selection was capped by budget.max_entries; start a fresh recall with a larger cap to include those items"
+            CAPPED
         } else {
-            "final continuation page; combine its expansion items with the stable core and earlier pages"
+            FINAL
         };
         append_warning(value, warning);
     } else if let Some(object) = value.as_object_mut() {
@@ -2271,10 +2280,21 @@ mod tests {
             assert_eq!(compact[field], balanced[field]);
             assert_eq!(balanced[field], full[field]);
         }
-        assert_eq!(compact["proof"]["evidence"], balanced["proof"]["evidence"]);
-        assert_eq!(balanced["proof"]["evidence"], full["proof"]["evidence"]);
-        assert_eq!(compact["proof"]["path"], balanced["proof"]["path"]);
-        assert_eq!(balanced["proof"]["path"], full["proof"]["path"]);
+        // The stable core is identical. Expansion can differ by detail and
+        // how many eligible items fit beside each tier's metadata.
+        for field in ["evidence", "path"] {
+            let name = format!("proof.{field}");
+            let core = compact["projection"]["sections"][&name]["core"]
+                .as_u64()
+                .expect("core count") as usize;
+            for output in [&balanced, &full] {
+                assert_eq!(output["projection"]["sections"][&name]["core"], core);
+                assert_eq!(
+                    &compact["proof"][field].as_array().expect("proof section")[..core],
+                    &output["proof"][field].as_array().expect("proof section")[..core]
+                );
+            }
+        }
         for output in [&compact, &balanced, &full] {
             assert!(
                 output["projection"]["page"]["returned"].as_u64() > Some(0),

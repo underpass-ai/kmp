@@ -231,6 +231,9 @@ Validar primera, intermedias y última página, núcleo acortado y exclusiones p
 detalle/capacidad. Cero no expresa suficiencia semántica. El reinicio del núcleo
 acortado tiene prioridad sobre el aviso de continuar páginas; conservar además
 los indicadores de exclusión y la acción ejecutable.
+La reserva de bytes usa el aviso más largo entre los que realmente se emiten;
+evitar un párrafo de planificación mayor que todos ellos, que puede desplazar
+evidencia y añadir páginas sin comunicar más información al agente.
 
 ### Asesor del host
 
