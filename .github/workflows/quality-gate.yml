@@ -214,6 +214,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Run clippy
         run: cargo clippy ${{ needs.impact.outputs.cargo_packages }} --all-targets --locked -- -D warnings
@@ -243,7 +245,10 @@ jobs:
       - name: Cache Rust build artifacts
         if: needs.impact.outputs.rust == 'true'
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
+      # Workspace objects must be rebuilt for coverage; dependency caches survive.
       - name: Reset coverage counters
         if: needs.impact.outputs.rust == 'true'
         run: cargo llvm-cov clean --workspace
@@ -280,6 +285,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Verify Docker
         run: docker version
@@ -316,6 +323,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Verify Docker
         run: docker version
@@ -352,6 +361,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Verify Docker
         run: docker version
@@ -388,6 +399,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Enforce embedded binary gates
         run: bash scripts/ci/embedded-binary-gates.sh
@@ -412,6 +425,7 @@ jobs:
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
+          cache-on-failure: true
           shared-key: sqlite-gates
 
       # The opt-in SQLite engine (ADR-018): conformance, crash recovery and
@@ -439,6 +453,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Verify Docker
         run: docker version
@@ -465,6 +481,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Verify Docker
         run: docker version
@@ -501,6 +519,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Verify Docker
         run: docker version
@@ -537,6 +557,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Verify Docker
         run: docker version
@@ -578,6 +600,8 @@ jobs:
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
 
       - name: Verify Docker
         run: docker version

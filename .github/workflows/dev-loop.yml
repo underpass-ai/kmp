@@ -70,6 +70,7 @@ jobs:
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
+          cache-on-failure: true
           shared-key: dev-lint
 
       - name: Check formatting
@@ -97,6 +98,7 @@ jobs:
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
+          cache-on-failure: true
           shared-key: dev-test
 
       - name: Run the tests of the crates under refactor
@@ -124,6 +126,7 @@ jobs:
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
+          cache-on-failure: true
           shared-key: dev-binary-arm64
 
       # The same invocation the release build uses, minus the target matrix:
