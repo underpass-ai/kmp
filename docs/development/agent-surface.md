@@ -116,7 +116,10 @@ respuesta grande aunque permitan avanzar con un límite menor por respuesta.
 Al cambiar `fields`, comprobar qué se proyecta: en los verbos temporales sólo
 las entradas; prueba y auditoría dependen de `include`. Conservar identidad,
 declarar campos omitidos y ejecutar las acciones de ampliación con el mismo
-alcance. Un cambio en contenido oculto también debe invalidar el cursor.
+alcance, verbo, cursor/corte, intervalo, ventana y límites. Comparar también la
+prueba: conservar sólo el nombre del reloj no conserva el instante. Si varias
+entradas comparten una acción de paquete completo, ejecutarla una sola vez.
+Un cambio en contenido oculto también debe invalidar el cursor.
 La ampliación es una lectura nueva, no una promesa de snapshot. Medir tanto
 navegación selectiva como ampliación de todos los resultados.
 
