@@ -12,6 +12,7 @@ use crate::serving::GrpcKernelMcpBackend;
 use crate::serving::adapters::fixture_backend::FixtureKernelMcpBackend;
 
 pub struct KernelMcpServer {
+    pub(super) shared_passages: bool,
     pub(super) backend: Arc<dyn KernelMcpToolBackend>,
     pub(super) agent_directory: std::sync::OnceLock<Arc<dyn crate::guidance::AgentDirectory>>,
     pub(super) agent_directory_path: Option<std::path::PathBuf>,
@@ -87,6 +88,7 @@ impl KernelMcpServer {
 
     pub fn with_shared_backend(backend: Arc<dyn KernelMcpToolBackend>) -> Self {
         Self {
+            shared_passages: false,
             backend,
             agent_directory: std::sync::OnceLock::new(),
             agent_directory_path: None,
@@ -255,6 +257,7 @@ impl KernelMcpServer {
                  `grpc` or `fixture`"
             )),
         }
+        .and_then(Self::with_passage_format_from_env)
     }
 
     pub fn from_optional_endpoint(endpoint: Option<String>) -> Self {
