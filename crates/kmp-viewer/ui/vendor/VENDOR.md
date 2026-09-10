@@ -6,6 +6,15 @@ Three.js replaces PixiJS because orbiting about planes requires a depth buffer,
 a perspective camera, ray casting and transparent surfaces in actual 3D.
 The flat camera uses the same geometry.
 
+The Rust build compresses this exact checked-in JavaScript into `OUT_DIR`.
+The binary embeds only that gzip payload and lazily decodes it once; loopback
+HTTP and the MCP App use the same cached original text. The first viewer use
+allocates a roughly 720 KB string. Later reads reuse it. HTTP payloads and the
+MCP resource are unchanged; this saves installed binary data, not wire tokens.
+Updating `three.min.js` automatically rebuilds the compressed payload, so no
+second generated asset needs maintaining. The native asset and HTTP tests
+compare the decoded/served bytes with the vendored source.
+
 | Artifact | Pin |
 | --- | --- |
 | Package | three 0.180.0 |
