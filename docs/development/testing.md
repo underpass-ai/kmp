@@ -46,6 +46,25 @@ bash scripts/ci/quality-gate.sh
 It is more expensive than the focused commands and should be used in
 proportion to the change.
 
+### Multi-passage retrieval regressions
+
+The judged Ask baseline from #467 remains a relevance control. Supplement it
+with `cargo test --locked -p kmp-testkit --test retrieval_proof_support -- --nocapture`
+when changing temporal proof selection or its projection. The self-contained
+source fixture is written through MCP; required passage judgments stay outside
+that write. A passage counts only when both its body and source evidence arrive,
+not when a group merely names its ref. `has_complete_support_at(k)` requires
+every judged passage within the cutoff; it does not establish a true answer.
+
+Controls compare optional dependencies at an identical byte ceiling, retain
+two scoped identities without inventing equivalence, preserve the boundary-time
+qualifier, and recover the same sources through bounded native continuations.
+Hard labels can hide both a source and its relation: zero structural omissions
+does not imply semantic sufficiency. The unfiltered control must still reach
+the source. The 5,000-byte page ceiling stresses reconstruction and is not a
+recommended reader policy. These are deterministic regressions, not an agent
+benchmark. No extra CI job or quality floor is added.
+
 ## Pull-request routing
 
 CI computes changed paths once with `scripts/ci/quality-gate-plan.py`. Rust

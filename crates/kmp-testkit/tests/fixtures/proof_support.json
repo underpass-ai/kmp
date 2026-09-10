@@ -1,0 +1,136 @@
+{
+  "about": "project:retrieval-support",
+  "actor": "diagnostic-fixture",
+  "observed_at": "2026-09-10T10:00:00Z",
+  "idempotency_key": "retrieval-support:fixture",
+  "labels": {
+    "project": [
+      "seed-routing"
+    ]
+  },
+  "memories": [
+    {
+      "id": "alias",
+      "kind": "observation",
+      "observed_at": "2026-09-01T09:00:00Z",
+      "summary": "Elena Vega uses Nora only in workshop Alba.",
+      "evidence": "S1 register: Elena Vega is called Nora in Alba; this statement is local to Alba.",
+      "labels": {
+        "source": [
+          "S1"
+        ],
+        "workshop": [
+          "Alba"
+        ]
+      }
+    },
+    {
+      "id": "role",
+      "kind": "constraint",
+      "observed_at": "2026-09-08T11:00:00Z",
+      "summary": "Nora in Alba is accountable for R19.",
+      "evidence": "S2 notice: Nora of the Alba register is accountable for R19.",
+      "labels": {
+        "source": [
+          "S2"
+        ],
+        "workshop": [
+          "Alba"
+        ],
+        "release": [
+          "R19"
+        ]
+      },
+      "connect_to": [
+        {
+          "ref": "alias",
+          "rel": "same_entity_as",
+          "class": "evidential",
+          "why": "The notice explicitly identifies the Nora registered in Alba.",
+          "evidence": "S2 explicitly names the Nora of S1 in Alba; S1 identifies Elena Vega.",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "distractor",
+      "kind": "observation",
+      "observed_at": "2026-09-10T09:59:00Z",
+      "summary": "A separate ledger archive was copied.",
+      "evidence": "S3 log: an unrelated ledger archive was copied; no R19 role is mentioned.",
+      "labels": {
+        "source": [
+          "S3"
+        ],
+        "topic": [
+          "ledger"
+        ]
+      }
+    },
+    {
+      "id": "boundary",
+      "kind": "constraint",
+      "observed_at": "2026-09-10T10:00:00Z",
+      "summary": "R19 accountability must retain the Alba qualifier.",
+      "evidence": "S4 clarification received exactly at10:00: the S2 assignment is limited to Alba.",
+      "labels": {
+        "source": [
+          "S4"
+        ],
+        "workshop": [
+          "Alba"
+        ],
+        "release": [
+          "R19"
+        ]
+      },
+      "connect_to": [
+        {
+          "ref": "role",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The clarification refers explicitly to the scoped role assignment.",
+          "evidence": "S4 cites the S2 assignment when requiring the Alba qualifier.",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "future",
+      "kind": "observation",
+      "observed_at": "2026-09-10T10:00:00.500Z",
+      "summary": "FUTURE: a later note discusses the clarification.",
+      "evidence": "S5 is first observed half a second after10:00 and cannot prove knowledge at10:00.",
+      "labels": {
+        "source": [
+          "S5"
+        ]
+      },
+      "connect_to": [
+        {
+          "ref": "boundary",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The later note discusses the earlier clarification.",
+          "evidence": "S5 explicitly discusses the S4 clarification.",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "other_alias",
+      "kind": "observation",
+      "observed_at": "2026-09-01T09:00:00Z",
+      "summary": "In workshop Boreal, Nora is Lucía Ramos.",
+      "evidence": "S6 Boreal register: Lucía Ramos uses Nora in Boreal; this does not identify Nora in Alba.",
+      "labels": {
+        "source": [
+          "S6"
+        ],
+        "workshop": [
+          "Boreal"
+        ]
+      }
+    }
+  ]
+}

@@ -22,6 +22,16 @@ pub struct RetrievalOutcome {
 }
 
 impl RetrievalOutcome {
+    /// Whether every required passage reached the reader within the cutoff.
+    /// This is evidence coverage, not a judgment that an answer is true.
+    pub fn has_complete_support_at(&self, k: usize) -> bool {
+        !self.judged.is_empty()
+            && self
+                .judged
+                .iter()
+                .all(|required| self.retrieved.iter().take(k).any(|item| item == required))
+    }
+
     /// The share of judged refs that appear in the first `k` returned.
     pub fn recall_at(&self, k: usize) -> f64 {
         if self.judged.is_empty() {
@@ -174,6 +184,19 @@ mod tests {
         let half = outcome(&["a", "b"], &["a", "x"], &[], false);
 
         assert_eq!(half.recall_at(5), 0.5);
+    }
+
+    #[test]
+    fn complete_support_needs_every_distinct_passage_inside_the_cutoff() {
+        let partial = outcome(
+            &["claim", "alias"],
+            &["claim", "claim", "alias"],
+            &[],
+            false,
+        );
+        assert!(!partial.has_complete_support_at(2));
+        assert!(partial.has_complete_support_at(3));
+        assert!(!outcome(&[], &[], &[], false).has_complete_support_at(10));
     }
 
     #[test]
