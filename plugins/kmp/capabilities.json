@@ -25,6 +25,13 @@
       "implementation": "skills/kmp-memory/SKILL.md",
       "codex": "kmp-memory",
       "claude": "kmp-memory"
+    },
+    {
+      "id": "expert",
+      "owner": "host-subagent",
+      "implementation": "skills/kmp-expert/SKILL.md",
+      "codex": "kmp-expert",
+      "claude": "kmp-expert"
     }
   ],
   "human_workflows": [

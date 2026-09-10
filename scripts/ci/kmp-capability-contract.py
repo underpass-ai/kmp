@@ -66,10 +66,11 @@ native_skills = {
 
 if claude != ids:
     fail(f"Claude commands differ: contract={sorted(ids)}, files={sorted(claude)}")
-if native_skills != codex_skills | {"kmp-memory"}:
+agent_skills = {entry["codex"] for entry in CONTRACT["agent_workflows"]}
+if native_skills != codex_skills | agent_skills:
     fail(
         "native Codex skills differ: "
-        f"contract={sorted(codex_skills | {'kmp-memory'})}, files={sorted(native_skills)}"
+        f"contract={sorted(codex_skills | agent_skills)}, files={sorted(native_skills)}"
     )
 
 for entry in workflows:

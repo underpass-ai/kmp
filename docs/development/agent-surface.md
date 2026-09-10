@@ -195,6 +195,25 @@ léxica personal ausente en el servidor de prueba; comparar la misma configuraci
 de recuperación en ambos caminos. La comprobación nativa no mide aprendizaje
 LLM ni facturación del host. Estas instrucciones son documentación informativa.
 
+### Asesor del host
+
+La skill `kmp-expert` usa un subagente del host con una responsabilidad limitada:
+explicar el protocolo. Su helper reúne las entradas de `guide:kmp-agent` del
+asset canónico, incluidos todos los ejemplos, y conserva una copia por hash en
+la caché de la tarea. No añade un LLM al kernel ni otro catálogo de ejemplos.
+Al modificar la guía, regenerar el asset; el hash cambia y la próxima preparación
+usa el contenido nuevo. El manifiesto registra referencias, hashes y líneas para
+comprobar que se entregó todo sin truncamiento. Esa comprobación de entrega no
+demuestra aprendizaje ni evita el coste de cargar un contexto nuevo.
+
+El asesor tiene su propia identidad y contexto. La identidad persiste; el
+contenido del contexto lo conserva el host. Tras compactación se recarga la guía
+completa. La carga local no escribe las marcas `served` del MCP. Comparar la
+revisión del archivo con la del store antes de consultar. El agente de trabajo
+conserva la decisión sobre las fuentes y ejecuta las propuestas autorizadas.
+Verificar el flujo con consultas reales de un subagente y contabilizar ambos
+participantes. Esta evaluación es informativa, sin gates editoriales nuevos.
+
 ### Descubrimiento progresivo y errores
 
 `kmp_guide` sirve el esquema y una ficha por consulta. Identidad y contextos
