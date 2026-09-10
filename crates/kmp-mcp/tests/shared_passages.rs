@@ -1,4 +1,6 @@
 //! Opt-in display sharing cannot alter native evidence, paging or authorization.
+#[path = "support/shared_dependency_checks.rs"]
+mod dependency_checks;
 #[path = "support/guidance_fixture.rs"]
 mod fixture;
 use fixture::*;
