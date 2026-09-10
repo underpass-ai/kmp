@@ -106,10 +106,23 @@ pub(super) fn temporal_include_from_arguments(
         return Ok(None);
     };
     let raw_refs = optional_bool_field(include, "raw_refs", "include.raw_refs")?.unwrap_or(false);
+    let dependencies =
+        optional_bool_field(include, "dependencies", "include.dependencies")?.unwrap_or(false);
+    if dependencies
+        && ["evidence", "relations"]
+            .iter()
+            .any(|key| include.get(*key) == Some(&Value::Bool(false)))
+    {
+        return Err(
+            "include.dependencies requires evidence and relations; omit their false flags"
+                .to_string(),
+        );
+    }
     Ok(Some(TemporalInclude {
         evidence: optional_bool_field(include, "evidence", "include.evidence")?.unwrap_or(false),
         relations: optional_bool_field(include, "relations", "include.relations")?.unwrap_or(false),
         raw_refs,
+        dependencies,
     }))
 }
 

@@ -10,6 +10,7 @@ use kmp_proto_mapping::v1beta1::recall_projection::requested_byte_limit;
 const CURSOR_VERSION: &str = "kmpt1";
 const SECTIONS: &[&str] = &[
     "/entries",
+    "/proof/entries",
     "/proof/evidence",
     "/proof/path",
     "/proof/conflicts",
@@ -18,6 +19,7 @@ const SECTIONS: &[&str] = &[
     "/proof/missing",
     "/proof/matched_relations",
     "/proof/matched_terms",
+    "/proof/groups",
     "/raw_refs",
 ];
 

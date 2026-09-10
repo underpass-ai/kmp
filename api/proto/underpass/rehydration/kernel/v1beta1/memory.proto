@@ -451,6 +451,18 @@ message NearRequest {
 
 // Shared temporal response payload shape used by transport adapters. Public
 // RPCs use method-specific response messages.
+// Writer-declared memory neighborhood, not a proof of semantic sufficiency.
+// Members resolve to entries or dependency_entries in the complete selected packet.
+// Counts describe only the supplied scoped graph; unavailable identities are hidden.
+message ProofDependencyGroup {
+  string seed_ref = 1;
+  repeated string member_refs = 2;
+  uint32 unavailable_in_selection = 3;
+  uint32 omitted_by_limit = 4;
+  uint32 max_hops = 5;
+  uint32 max_members = 6;
+}
+
 message TemporalMoveResponse {
   string summary = 1;
   TemporalState temporal = 2;
@@ -461,6 +473,8 @@ message TemporalMoveResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message GotoResponse {
@@ -473,6 +487,8 @@ message GotoResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message NearResponse {
@@ -485,6 +501,8 @@ message NearResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message RewindResponse {
@@ -497,6 +515,8 @@ message RewindResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message ForwardResponse {
@@ -509,6 +529,8 @@ message ForwardResponse {
   repeated RawMemoryRef raw_refs = 7;
   PageInfo page = 8;
   ResponseQuality quality = 9;
+  repeated ProofDependencyGroup dependency_groups = 10;
+  repeated TemporalEntry dependency_entries = 11;
 }
 
 message TemporalState {
@@ -1104,6 +1126,8 @@ message TemporalInclude {
   bool evidence = 1;
   bool relations = 2;
   bool raw_refs = 3;
+  // Explicit bounded dependency expansion; implies evidence and relations.
+  bool dependencies = 4;
 }
 
 message InspectInclude {

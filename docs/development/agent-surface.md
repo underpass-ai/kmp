@@ -311,6 +311,25 @@ KMP_BLESS_TOOL_SURFACE=1 cargo test --locked -p kmp-mcp --test tool_surface_pari
 
 ## 4. Revisar el uso y comprobar el comportamiento
 
+Si se modifica la expansión temporal con `include.dependencies`, revisar en
+conjunto los cuatro verbos (Goto, Near, Forward y Rewind), `TemporalInclude`
+y las respuestas protobuf canónicas y vendorizadas, los adaptadores gRPC,
+la selección de grupos y la proyección/paginación MCP. `entries` conserva la
+selección histórica; los registros de apoyo completos van en `proof.entries`
+y los miembros en `proof.groups`. No contar esos apoyos como nuevas
+coincidencias ni interpretar cobertura estructural como respuesta verificada.
+
+Las comprobaciones deben usar fuentes antiguas y recientes relacionadas y
+ejercitar reloj ausente, relación futura o caducada, predicado dimensional,
+límite de expansión, reducción de campos y reconstrucción de todas las páginas.
+Cambiar sólo un registro de apoyo debe invalidar una continuación anterior.
+Comprobar el servicio gRPC real con repositorios de prueba y, por separado,
+la transmisión/proyección MCP de sus campos; un servidor simulado por sí solo
+no verifica la selección. Actualizar `verbs/time.md`, el ejemplo
+`examples/alias-ownership.md` y su evidencia editorial, regenerar los assets y
+ejecutar ese ejemplo contra el binario nuevo. Esta pauta documenta cómo
+mantener la superficie; no añade un gate editorial al CI.
+
 Para un cambio de guía o routing, ejecutar:
 
 ```bash

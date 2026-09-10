@@ -747,18 +747,24 @@ pub fn temporal_response_from_result(
         .iter()
         .map(|entry| entry.r#ref.clone())
         .collect::<BTreeSet<_>>();
+    let (dependency_groups, mut proof_refs, dependency_entries) = if result.include.dependencies {
+        super::temporal_dependencies::select(&result.source_bundle, &admission, &entries)
+    } else {
+        (Vec::new(), BTreeSet::new(), Vec::new())
+    };
+    proof_refs.extend(selected_refs.iter().cloned());
     // Lifecycle is part of temporal truth even when the caller does not ask
     // for the full relation path. Keep the selected entries' supersession
     // edges long enough to populate proof.superseded, then honor `include`
     // for the visible path itself.
     let selected_relationships = temporal_relations_from_bundle(&proof_bundle, &selected_refs);
-    let relationships = if result.include.relations {
-        selected_relationships.clone()
+    let relationships = if result.include.relations || result.include.dependencies {
+        temporal_relations_from_bundle(&proof_bundle, &proof_refs)
     } else {
         Vec::new()
     };
-    let evidence = if result.include.evidence {
-        temporal_evidence_from_bundle(&proof_bundle, &selected_refs)
+    let evidence = if result.include.evidence || result.include.dependencies {
+        temporal_evidence_from_bundle(&proof_bundle, &proof_refs)
             .into_iter()
             .filter(|item| admission.admits(item))
             .collect()
@@ -773,6 +779,9 @@ pub fn temporal_response_from_result(
     };
     let page = traversal.page();
     let mut warnings = Vec::new();
+    if result.include.dependencies {
+        warnings.push("dependency groups cover evidenced links in the selected scoped graph, up to two hops and eight members per seed; complete every response page before using them. Coverage is structural, not semantic sufficiency".to_string());
+    }
     let expiry_unassessed = !goto_as_of
         && traversal
             .interval()
@@ -892,6 +901,8 @@ pub fn temporal_response_from_result(
         }),
         entries,
         proof: Some(temporal_proof),
+        dependency_groups,
+        dependency_entries,
         warnings,
         raw_refs,
         page: Some(PageInfo {
@@ -1454,6 +1465,7 @@ mod temporal_lifecycle_tests {
                 traversal,
                 source_bundle: bundle,
                 include: TemporalIncludeOptions {
+                    dependencies: false,
                     evidence: false,
                     relations: false,
                     raw_refs: false,
@@ -1592,6 +1604,7 @@ mod temporal_lifecycle_tests {
             traversal,
             source_bundle: bundle,
             include: TemporalIncludeOptions {
+                dependencies: false,
                 evidence: false,
                 relations: false,
                 raw_refs: false,
@@ -1673,6 +1686,7 @@ mod temporal_lifecycle_tests {
             traversal,
             source_bundle: bundle,
             include: TemporalIncludeOptions {
+                dependencies: false,
                 evidence: false,
                 relations: false,
                 raw_refs: false,
@@ -1741,6 +1755,7 @@ mod temporal_lifecycle_tests {
             traversal,
             source_bundle: bundle,
             include: TemporalIncludeOptions {
+                dependencies: false,
                 evidence: false,
                 relations: false,
                 raw_refs: false,
@@ -1808,6 +1823,7 @@ mod temporal_lifecycle_tests {
             traversal,
             source_bundle: bundle,
             include: TemporalIncludeOptions {
+                dependencies: false,
                 evidence: false,
                 relations: false,
                 raw_refs: false,

@@ -79,6 +79,8 @@ pub(super) fn temporal_response_from_goto(response: GotoResponse) -> TemporalMov
         raw_refs: response.raw_refs,
         page: response.page,
         quality: response.quality,
+        dependency_groups: response.dependency_groups,
+        dependency_entries: response.dependency_entries,
     }
 }
 
@@ -93,6 +95,8 @@ pub(super) fn temporal_response_from_near(response: NearResponse) -> TemporalMov
         raw_refs: response.raw_refs,
         page: response.page,
         quality: response.quality,
+        dependency_groups: response.dependency_groups,
+        dependency_entries: response.dependency_entries,
     }
 }
 
@@ -107,6 +111,8 @@ pub(super) fn temporal_response_from_rewind(response: RewindResponse) -> Tempora
         raw_refs: response.raw_refs,
         page: response.page,
         quality: response.quality,
+        dependency_groups: response.dependency_groups,
+        dependency_entries: response.dependency_entries,
     }
 }
 
@@ -121,5 +127,7 @@ pub(super) fn temporal_response_from_forward(response: ForwardResponse) -> Tempo
         raw_refs: response.raw_refs,
         page: response.page,
         quality: response.quality,
+        dependency_groups: response.dependency_groups,
+        dependency_entries: response.dependency_entries,
     }
 }

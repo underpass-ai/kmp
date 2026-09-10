@@ -23,6 +23,9 @@ use tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::{Certificate, Identity, ServerTlsConfig};
 use tonic::{Request, Response, Status};
 
+#[path = "support/grpc_dependency_checks.rs"]
+mod dependency_checks;
+
 #[tokio::test]
 async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     let recorded = RecordedMemoryRequests::default();
@@ -791,7 +794,11 @@ impl KernelMemoryService for FakeMemoryService {
         self.recorded.nears.lock().await.push(request.clone());
 
         Ok(Response::new(near_response_from_temporal(
-            temporal_response(TemporalDirection::Near, request.around),
+            temporal_response(
+                TemporalDirection::Near,
+                request.around,
+                request.include.is_some_and(|value| value.dependencies),
+            ),
         )))
     }
 
@@ -939,7 +946,11 @@ impl FakeMemoryService {
             request: request.clone(),
         });
 
-        Ok(temporal_response(direction, request.cursor))
+        Ok(temporal_response(
+            direction,
+            request.cursor,
+            request.include.is_some_and(|value| value.dependencies),
+        ))
     }
 }
 
@@ -1001,6 +1012,8 @@ fn temporal_near_request_from_near(request: NearRequest) -> TemporalNearRequest 
 
 fn goto_response_from_temporal(response: TemporalMoveResponse) -> GotoResponse {
     GotoResponse {
+        dependency_groups: response.dependency_groups,
+        dependency_entries: response.dependency_entries,
         summary: response.summary,
         temporal: response.temporal,
         coverage: response.coverage,
@@ -1015,6 +1028,8 @@ fn goto_response_from_temporal(response: TemporalMoveResponse) -> GotoResponse {
 
 fn near_response_from_temporal(response: TemporalMoveResponse) -> NearResponse {
     NearResponse {
+        dependency_groups: response.dependency_groups,
+        dependency_entries: response.dependency_entries,
         summary: response.summary,
         temporal: response.temporal,
         coverage: response.coverage,
@@ -1029,6 +1044,8 @@ fn near_response_from_temporal(response: TemporalMoveResponse) -> NearResponse {
 
 fn rewind_response_from_temporal(response: TemporalMoveResponse) -> RewindResponse {
     RewindResponse {
+        dependency_groups: response.dependency_groups,
+        dependency_entries: response.dependency_entries,
         summary: response.summary,
         temporal: response.temporal,
         coverage: response.coverage,
@@ -1043,6 +1060,8 @@ fn rewind_response_from_temporal(response: TemporalMoveResponse) -> RewindRespon
 
 fn forward_response_from_temporal(response: TemporalMoveResponse) -> ForwardResponse {
     ForwardResponse {
+        dependency_groups: response.dependency_groups,
+        dependency_entries: response.dependency_entries,
         summary: response.summary,
         temporal: response.temporal,
         coverage: response.coverage,
@@ -1058,8 +1077,31 @@ fn forward_response_from_temporal(response: TemporalMoveResponse) -> ForwardResp
 fn temporal_response(
     direction: TemporalDirection,
     requested: Option<TemporalCursor>,
+    dependencies: bool,
 ) -> TemporalMoveResponse {
     TemporalMoveResponse {
+        dependency_groups: if dependencies {
+            vec![kmp_proto::v1beta1::ProofDependencyGroup {
+                seed_ref: "claim:rachel-austin".into(),
+                member_refs: vec!["claim:rachel-austin".into(), "claim:rachel-denver".into()],
+                max_hops: 2,
+                max_members: 8,
+                ..Default::default()
+            }]
+        } else {
+            Vec::new()
+        },
+        dependency_entries: if dependencies {
+            vec![TemporalEntry {
+                r#ref: "claim:rachel-denver".into(),
+                kind: "claim".into(),
+                text: "Rachel said she was moving to Denver.".into(),
+                coordinates: vec![coordinate(1)],
+                metadata: Default::default(),
+            }]
+        } else {
+            Vec::new()
+        },
         summary: "Returned typed temporal entries.".to_string(),
         temporal: Some(TemporalState {
             interval: None,

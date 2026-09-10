@@ -26,6 +26,17 @@ def check(saved, client, authored):
     assert labels[('account', '@oak')] == 2
     assert {entry['ref'] for entry in saved['name_at_alias']['entries']} == {refs['elena'], refs['alias']}
     assert {entry['ref'] for entry in saved['name_slice']['entries']} == {refs['elena'], refs['alias'], refs['visitor']}
+    related = saved['alias_dependencies']
+    assert [entry['ref'] for entry in related['entries']] == [refs['alias']]
+    group = related['proof']['groups'][0]
+    assert set(group['member_refs']) == {refs['alias'], refs['elena'], refs['jon']}
+    assert refs['visitor'] not in group['member_refs'] and refs['rui'] not in group['member_refs']
+    assert group['omitted_by_limit'] == 0
+    assert any(edge['from'] == refs['jon'] and edge['to'] == refs['elena'] and edge['rel'] == 'uses_background'
+               for edge in related['proof']['path'])
+    assert any(entry['ref'] == refs['elena'] and entry['text'] == authored['elena']['memories'][0]['summary']
+               and entry['coordinates'] for entry in related['proof']['entries'])
+    assert any(item['text'] == authored['elena']['memories'][0]['evidence'] for item in related['proof']['evidence'])
     assert {entry['ref'] for entry in saved['account_history']['entries']} == {refs['jon'], refs['rui']}
     for name, source, target, relation in [('identity_path', 'alias', 'elena', 'same_entity_as'),
                                           ('assignment_path', 'rui', 'jon', 'supersedes')]:
