@@ -98,6 +98,14 @@ The composer compares this representation with exact-only sharing and uses the
 smaller byte representation. Short quotes often stay inline because the tables
 and bindings cost more than the repeated words.
 
+Dependency records returned by temporal `include.dependencies` are source
+definitions too: `/proof/entries/*/text` participates in exact sharing and
+checked source spans. Their canonical refs can shorten repeated relation and
+support uses when the definition is present. `proof.groups.seed_ref` and
+`member_refs` stay literal; group counts, clocks, sources and metadata remain
+unchanged. Keep the complete native page sequence in its `ContextGroup`.
+Composing a packet that is still partial does not complete its proof.
+
 If budget admission omits the source group, its full text cannot reappear through
 the passage table. The retained quote stays whole and can still use ordinary
 exact sharing. Its source binding remains declared and the omission manifest

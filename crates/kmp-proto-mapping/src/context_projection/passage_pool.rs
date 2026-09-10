@@ -126,6 +126,7 @@ fn visit(packets: &mut Value, f: &mut impl FnMut(&mut Value)) {
 
 const ARRAYS: &[(&str, &[&str])] = &[
     ("/entries", &["text"]),
+    ("/proof/entries", &["text"]),
     ("/evidence", &["text"]),
     ("/proof/evidence", &["text"]),
     ("/proof/path", &["why", "evidence"]),

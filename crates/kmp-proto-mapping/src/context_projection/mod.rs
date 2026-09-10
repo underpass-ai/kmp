@@ -13,6 +13,9 @@ mod source_span;
 mod source_text;
 mod span_projection;
 
+#[cfg(test)]
+mod dependency_tests;
+
 pub use context_group::ContextGroup;
 pub use projection_request::ProjectionRequest;
 use serde_json::{Value, json};

@@ -10,6 +10,7 @@ pub(super) fn share(packets: &mut Value) -> BTreeMap<String, String> {
         }
         for (path, key) in [
             ("/entries", "ref"),
+            ("/proof/entries", "ref"),
             ("/facts", "ref"),
             ("/evidence", "id"),
             ("/proof/evidence", "id"),

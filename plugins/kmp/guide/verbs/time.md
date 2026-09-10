@@ -152,6 +152,13 @@ current record to fill the gap.
 
 See the alias and account-ownership example for a complete executable call.
 
+On a host using shared passages, dependency text can use the same response-local
+`passages` table as other proof. Resolve it before reading the text. Dependency
+record refs and group member refs remain canonical; repeated relation/support
+uses may resolve through `citations`. A host composing captured pages can bind
+known spans to a returned dependency record. Sharing does not fill a missing
+page, change the selected clock, merge sources or establish that a group answers.
+
 ## Goto carries proof from its historical instant
 
 `kmp_goto` selects a state at its resolved `at` cursor. Its proof uses that

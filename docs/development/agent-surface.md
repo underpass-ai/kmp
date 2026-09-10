@@ -330,6 +330,13 @@ no verifica la selección. Actualizar `verbs/time.md`, el ejemplo
 ejecutar ese ejemplo contra el binario nuevo. Esta pauta documenta cómo
 mantener la superficie; no añade un gate editorial al CI.
 
+Al añadir un lugar nuevo con texto de memoria, revisar también las rutas
+tipadas del compositor: pasajes, definiciones de referencias y fuentes de spans.
+`proof.entries` participa en los tres; los identificadores de miembros de
+`proof.groups` permanecen literales. Probar expansión exacta, paginación y
+omisión de grupos sin reintroducir una fuente por la tabla de pasajes. Mantener
+los metadatos y las acciones fuera de la sustitución de texto.
+
 Para un cambio de guía o routing, ejecutar:
 
 ```bash
