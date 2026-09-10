@@ -23,9 +23,10 @@ from guide_reads import prepare
 from dimensional_memberships_checks import check as check_dimensions
 from semantic_batch_checks import check as check_batch
 from capability_checks import check as check_capability
+from event_separation_checks import check as check_event_separation
 
 ROOT = Path(__file__).resolve().parents[2]
-LESSONS = {'semantic-batch': check_batch, 'dimensional-memberships': check_dimensions, 'decision-history': check_history, 'alias-ownership': check_alias,
+LESSONS = {'event-separation': check_event_separation, 'semantic-batch': check_batch, 'dimensional-memberships': check_dimensions, 'decision-history': check_history, 'alias-ownership': check_alias,
            'distributed-incident': check_incident, 'four-clocks': check_clocks,
            'quantities': check_quantities, 'late-conflict': check_late_conflict,
            'labels-negation': check_labels_negation, 'budget-proof': check_budget_proof,

@@ -18,8 +18,8 @@ A source label helps navigation but never replaces its concrete evidence text.
 Use `connect_to.ref: "source"` or `"@source"` to address exact local id `source`,
 even if it appears later. No fuzzy matching or target creation occurs. An unknown
 local name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.
-Local targets count as `current_request` context. Stored rich targets
-receive server neighborhood review before commit; cross-about
+Local targets count as `current_request` context. Rich links, including local
+links, receive server neighborhood review before commit; cross-about
 identity links retain the proposal rule. `read_context` is a caller-declared audit,
 not a substitute for the served neighborhood. Do not claim to have inspected a new
 local target. Independent facts may be unlinked: do not invent a relation.
@@ -55,6 +55,11 @@ unknown. Without a root event date, omitted occurrence also stays unknown.
 Ingestion is assigned by the kernel; the semantic writer cannot supply it.
 Equal observed and occurred times are valid when the source supports both.
 Several records may share an observation time without sharing an occurrence.
+If one report says an action ran at 11:00 and its check passed at 11:05, keep
+the action and check in separate records with event-specific summaries and
+evidence fragments. Do not put the later verified result into the earlier
+action text. A relation does not move the check backward in time. See
+`guide:kmp-agent:example:event-separation` for the native cutoff and viewer example.
 Updating `search_summaries` preserves the original coordinates, including unknown
 historical observation; only the new packet provenance receives a default date. KMP
 resolves all names and validates the entire packet before one canonical ingest.

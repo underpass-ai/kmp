@@ -7,6 +7,9 @@ Clocks: omit `observed_at` to use KMP's exact `ingested_at`. Supply it only
 when the source establishes another observation time. Unknown `occurred_at`:
 omit it or use null; KMP never copies observation into occurrence. Root clocks
 are defaults for records; a record's null clears that default.
+One report can describe several events: separate execution from a later check;
+keep the later result out of the earlier summary. Example:
+`guide:kmp-agent:example:event-separation`.
 
 Source R1: “On 2026-09-01 at 09:00 UTC, we observed the cache fail.”
 One `kmp_write_memory` example:

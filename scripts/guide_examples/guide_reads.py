@@ -19,7 +19,7 @@ def prepare(client, root: Path, lesson: Path, mode: str):
         topics.add('verb:write')
     if lesson.stem in {'decision-history', 'alias-ownership'}:
         topics.update({'advanced:lifecycle', 'advanced:summary'})
-    elif lesson.stem in {'four-clocks', 'quantities', 'late-conflict', 'preference-delta'}:
+    elif lesson.stem in {'four-clocks', 'quantities', 'late-conflict', 'preference-delta', 'event-separation'}:
         topics.add('advanced:lifecycle')
     elif lesson.stem == 'labels-negation':
         topics.update({'advanced:language', 'advanced:summary', 'advanced:lifecycle'})
