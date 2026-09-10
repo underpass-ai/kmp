@@ -12,7 +12,7 @@ use super::validation_error::WriteValidationError;
 
 use serde_json::{Value, json};
 
-use super::coordinates::reject_a_time_that_has_not_happened;
+use super::coordinates::observation_time;
 use super::existing_entry::ExistingEntry;
 use super::generated_ref::stable_idempotency_key;
 use super::plan::KernelWritePlan;
@@ -31,8 +31,7 @@ pub(crate) fn build_summary_plan(
         .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
     let about = required_string(arguments, "about")?;
     let actor = required_string(arguments, "actor")?;
-    let observed_at = required_string(arguments, "observed_at")?;
-    reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds())?;
+    let observed_at = observation_time(arguments)?;
     let current = required_object(arguments, "current")?;
     let summary = required_map_string(current, "summary_en", "summary_en")?;
     for field in ["summary", "kind", "evidence"] {
@@ -81,10 +80,11 @@ pub(crate) fn build_summary_plan(
         .map(ToString::to_string)
         .unwrap_or_else(|| stable_idempotency_key(arguments));
 
-    let ingest_arguments = json!({
+    let mut ingest_arguments = json!({
         "about": about.clone(),
         "idempotency_key": idempotency_key.clone(),
         "dry_run": dry_run,
+        "default_observation_to_ingestion": true,
         "memory": {
             "dimensions": [],
             "entries": [{
@@ -114,6 +114,7 @@ pub(crate) fn build_summary_plan(
         "attached summary_en to `{}`; its text, kind and coordinates are the stored ones",
         existing.reference
     ));
+    super::coordinates::omit_unknown_observations(&mut ingest_arguments);
     Ok(KernelWritePlan {
         operation: super::operation::WriteOperation::SearchSummaries,
         about,

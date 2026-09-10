@@ -109,7 +109,7 @@ pub fn translate_memory_relabel(
             .collect::<Vec<_>>(),
         "why": command.why.trim(),
         "actor": provenance.map(|provenance| provenance.source_agent.as_str()),
-        "observed_at": provenance.map(|provenance| provenance.observed_at.as_str()),
+        "observed_at": provenance.and_then(|provenance| provenance.observed_at.as_deref()),
     });
     let mut scopes = additions
         .coordinates
@@ -188,7 +188,10 @@ fn validate_command(command: &MemoryRelabelCommand) -> Result<(), ApplicationErr
             ))
         })?;
         require_non_empty(&provenance.source_agent, "provenance.source_agent")?;
-        require_non_empty(&provenance.observed_at, "provenance.observed_at")?;
+        require_non_empty(
+            provenance.observed_at.as_deref().unwrap_or_default(),
+            "provenance.observed_at",
+        )?;
     }
     Ok(())
 }
@@ -591,7 +594,7 @@ mod tests {
             provenance: Some(MemoryProvenanceData {
                 source_kind: "agent".to_string(),
                 source_agent: "claude".to_string(),
-                observed_at: "2026-09-05T12:00:00Z".to_string(),
+                observed_at: Some("2026-09-05T12:00:00Z".to_string()),
                 correlation_id: None,
                 causation_id: None,
             }),

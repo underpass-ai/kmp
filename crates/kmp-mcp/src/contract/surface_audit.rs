@@ -261,6 +261,7 @@ mod tests {
             memory_keys("kmp_ingest"),
             expected(&[
                 "about",
+                "default_observation_to_ingestion",
                 "dry_run",
                 "idempotency_key",
                 "label_policy",

@@ -26,6 +26,9 @@ pub(crate) fn write_dry_run_result(
         "diagnostics": plan.diagnostics,
         "next_suggested_reads": plan.next_suggested_reads
     });
+    if let Some(defaults) = super::receipt::observation_defaults(plan) {
+        result["clock_defaults"] = defaults;
+    }
     if !plan.local_refs.is_empty() {
         result["local_refs"] = json!(plan.local_refs);
     }
@@ -77,6 +80,9 @@ pub(crate) fn write_commit_result(
             "reason": format!("{suspect} accepted relations lack verified prior context; review their sources before relying on them."),
             "action": result.pointer("/receipt/action").cloned().unwrap_or(Value::Null)
         }]);
+    }
+    if let Some(defaults) = super::receipt::observation_defaults(plan) {
+        result["clock_defaults"] = defaults;
     }
     if !plan.local_refs.is_empty() {
         result["local_refs"] = json!(plan.local_refs);

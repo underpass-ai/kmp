@@ -3,6 +3,11 @@ Pass your `context_id`; KMP supplies your persistent agent name as actor.
 Without a context, supply actor explicitly as in this standalone example. A label can hold several values; reuse a known
 key/value before inventing another. A shared account is not a person's alias.
 
+Clocks: omit `observed_at` to use KMP's exact `ingested_at`. Supply it only
+when the source establishes another observation time. Unknown `occurred_at`:
+omit it or use null; KMP never copies observation into occurrence. Root clocks
+are defaults for records; a record's null clears that default.
+
 Source R1: “On 2026-09-01 at 09:00 UTC, we observed the cache fail.”
 One `kmp_write_memory` example:
 

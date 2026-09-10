@@ -18,8 +18,10 @@ pub(crate) fn definition() -> Value {
             "type": "object",
             "additionalProperties": false,
             "required": ["about", "memory", "idempotency_key"],
+            "allOf":[{"if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},"then":{"properties":{"provenance":{"required":["observed_at"]}}}}],
             "properties": {
                 "about": string_schema("Memory anchor or root ref this memory should attach to."),
+                "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, evidence and packet provenance using the exact kernel ingestion time. Preserve already ingested coordinates. Ordinary canonical ingest leaves unknown clocks unchanged."}),
                 "memory": {
                     "type": "object",
                     "additionalProperties": true,
@@ -125,14 +127,14 @@ pub(crate) fn definition() -> Value {
                 "provenance": {
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["source_kind", "source_agent", "observed_at"],
+                    "required": ["source_kind", "source_agent"],
                     "properties": {
                         "source_kind": {
                             "type": "string",
                             "enum": ["human", "agent", "projection", "derived"]
                         },
                         "source_agent": string_schema("Agent or component that observed the memory."),
-                        "observed_at": string_schema("RFC3339 observation timestamp, in UTC."),
+                        "observed_at": string_schema("RFC3339 observation timestamp. Required unless default_observation_to_ingestion resolves its omission at commit."),
                         "correlation_id": string_schema("Optional correlation id."),
                         "causation_id": string_schema("Optional causation id.")
                     }

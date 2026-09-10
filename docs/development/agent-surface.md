@@ -507,6 +507,23 @@ modificarlo; mantener las pruebas del contrato nativo y del vocabulario real.
 
 ### Señales del resultado de escritura
 
+El valor por defecto de observación se resuelve en `kmp-application/memory`,
+usando el mismo instante que asigna la ingestión. El compilador semántico activa
+`default_observation_to_ingestion` en el comando canónico; el adaptador gRPC
+transmite esa política. No calcular la fecha en MCP antes del digest: el mismo
+reintento tendría otro contenido. El digest usa el comando sin resolver y el
+recibo guarda la memoria y procedencia resueltas. La ingestión canónica sin esa
+política conserva los tiempos ausentes. Las coordenadas ya ingeridas de una
+actualización de resumen se conservan, incluida una observación desconocida.
+
+Al cambiar los valores por defecto, revisar schema de raíz y de registro,
+herencia y null explícito, compiladores normal/batch/resumen, protobuf en ambas
+copias, mapping y aplicación. Mantener `clock_defaults` (plan) separado de
+`clocks` (resultado aceptado), y comprobar preview, rechazo atómico, reintento,
+reinicio e importación. Actualizar fichas write/time, verbos extendidos y ejemplo
+four-clocks; explicar el contrato humano en el nodo advanced:clocks. Esta lista
+es una pauta de mantenimiento, no un validador editorial del CI.
+
 La decisión committed/replayed procede de update_context en el punto que
 comprueba idempotencia. No inferirla de un reintento del host ni de la identidad
 persistente del agente. El resumen de relojes procede de la memoria canónica del

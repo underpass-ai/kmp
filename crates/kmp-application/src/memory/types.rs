@@ -23,6 +23,8 @@ pub struct MemoryIngestCommand {
     pub label_policy: LabelPolicy,
     /// Writer diagnostics attached to the accepted command, never semantic memory.
     pub receipt_context: Option<serde_json::Value>,
+    /// Resolve missing observation only for this semantic write, at ingestion.
+    pub default_observation_to_ingestion: bool,
 }
 
 /// What an ingest does with a dimension that resembles a label the about
@@ -146,7 +148,7 @@ pub struct MemoryEvidenceData {
 pub struct MemoryProvenanceData {
     pub source_kind: String,
     pub source_agent: String,
-    pub observed_at: String,
+    pub observed_at: Option<String>,
     pub correlation_id: Option<String>,
     pub causation_id: Option<String>,
 }

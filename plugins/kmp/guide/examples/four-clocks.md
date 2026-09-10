@@ -1,5 +1,25 @@
 # Worked example: four clocks and zoom to the proof
 
+## Small clock choices
+
+These are the clock fields for a source-backed `kmp_write_memory` packet or
+record, not complete tool calls. Keep its summary, evidence and labels too.
+
+| Source | Clock fields | Stored result |
+| --- | --- | --- |
+| "The cache failed"; no event or observation time | Omit both, or `"observed_at":null,"occurred_at":null` | Observation equals KMP ingestion; occurrence remains unknown. |
+| "The cache failed on September 1 at 09:00 UTC"; no separate observation | `"occurred_at":"2026-09-01T09:00:00Z"` | The known event date is preserved; observation equals ingestion. |
+| "On September 2 at 10:00 UTC I learned about the September 1, 09:00 UTC failure" | `"observed_at":"2026-09-02T10:00:00Z","occurred_at":"2026-09-01T09:00:00Z"` | Both explicit source dates are preserved. |
+| "At 09:00 UTC on September 1 we saw the cache fail" | `"observed_at":"2026-09-01T09:00:00Z","occurred_at":"2026-09-01T09:00:00Z"` | Observation and occurrence may coincide. |
+
+Root clocks apply to records that omit them. A record's explicit timestamp
+overrides the root; `observed_at:null` resets to ingestion and `occurred_at:null`
+clears an inherited event date. A shared observation timestamp across records
+is valid and does not establish simultaneous events. Preview returns planned
+defaults, commit returns actual clocks, and replay retains those accepted clocks.
+
+## Four distinct clocks and navigation
+
 Use this fictional Atlas permit to separate when a decision was signed, when
 the reviewer received it, when KMP recorded it and when it applied. The LLM
 interprets the sources; KMP preserves the chosen coordinates. A fact that

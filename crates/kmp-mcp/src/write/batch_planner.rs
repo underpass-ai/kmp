@@ -24,19 +24,7 @@ pub(crate) fn build_batch_plan(
     let about = required_string(object, "about")?;
     kmp_application::validate_ref_token("about", &about)?;
     required_string(object, "actor")?;
-    let observed_at = required_string(object, "observed_at").map_err(|_| {
-        WriteValidationError::new("top-level observed_at is required for packet provenance and shared observation time, even when records override it; supply the actual observation time with its UTC offset, not an assumed occurrence or validity start")
-            .at("observed_at").code("REQUIRED_FIELD")
-    })?;
-    super::coordinates::reject_a_time_that_has_not_happened(
-        &observed_at,
-        crate::clock::now_seconds(),
-    )
-    .map_err(|error| {
-        WriteValidationError::new(error)
-            .at("observed_at")
-            .code("FUTURE_OBSERVATION")
-    })?;
+    super::coordinates::observation_time(object)?;
     for field in ["current", "intent", "semantic_delta", "connect_to", "scope"] {
         if object.contains_key(field) {
             return Err(WriteValidationError::new(format!(
@@ -270,7 +258,9 @@ pub(crate) fn build_batch_plan(
     }
     // Provenance carries observation of the whole packet; each entry retains
     // its own observed/occurred/valid clocks. Ingestion is assigned by the kernel.
-    all.ingest_arguments["provenance"]["observed_at"] = object["observed_at"].clone();
+    all.ingest_arguments["provenance"]["observed_at"] =
+        object.get("observed_at").cloned().unwrap_or(Value::Null);
+    super::coordinates::omit_unknown_observations(&mut all.ingest_arguments);
     all.local_refs = refs;
     all.relation_quality_metrics = relation_quality_metrics(&all.relation_quality);
     Ok(all)

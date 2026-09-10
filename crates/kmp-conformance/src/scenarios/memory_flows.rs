@@ -56,6 +56,7 @@ fn entry(id: &str, text: &str, occurred_at: &str, sequence: u32) -> MemoryEntryD
 fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
+        default_observation_to_ingestion: false,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {

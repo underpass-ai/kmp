@@ -29,7 +29,13 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
     let evidence = optional_array(memory.get("evidence"), "memory.evidence")?;
     let provenance = arguments.get("provenance").and_then(Value::as_object);
     if let Some(provenance) = provenance {
-        validate_provenance(provenance)?;
+        validate_provenance(
+            provenance,
+            arguments
+                .get("default_observation_to_ingestion")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
+        )?;
     }
     let mut dimension_kinds: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
     let mut changes = Vec::new();
