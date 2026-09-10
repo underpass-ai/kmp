@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:f61b224d3a78e8926ec8",
+    "idempotency_key": "ingest:guide-sync:1:agent:acc0da4082e0c57eb586",
     "memory": {
       "dimensions": [
         {
@@ -51,7 +51,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -82,7 +82,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Choose and continue a memory route",
             "guide_version": "1",
             "source": "editorial"
@@ -114,7 +114,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Resume known work",
             "guide_version": "1",
             "source": "editorial"
@@ -146,12 +146,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Ask a semantic question",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Complete Spanish/English month-name dates and ISO YYYY-MM-DD may preserve the same calendar day; other identifiers remain literal. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN. After the permitted selections, a genuinely semantic UNKNOWN is terminal. Do not inspect the root, sweep all abouts, change optional arguments or traverse the graph to bypass it. Reclassify only when the original goal actually asks for temporal state. Read the language and retrieved-proof topics when their warnings or provenance matter. For a partial read, execute projection.next_action with its complete arguments, preserving question, asked_as, dimensions and temporal selection. If core_text_shortened, its call restarts without page.cursor at a sufficient allowance; discard the earlier partial reconstruction. Otherwise append only expansion beyond each section core. Finish when next_action is null; detail or selection caps remain explicit. A stale cursor returns conflict and feedback[].action for a fresh read; never combine different selections. Named dates without a year preserve only month/day: 18 de agosto matches August 18 or a valid ISO date ending in -08-18. The lint neither supplies nor verifies an added year; keep it absent unless evidence supports it. A complete source date must retain its year. A missing partial date is reported as --08-18; repair the month/day, never pad the rendering with a bare 18. projection.sections.*.remaining counts eligible expansion after this page, excluding repeated core and all prior pages. Use these per-section counts to identify unread passages or relations; zero does not establish semantic sufficiency or erase detail/selection caps."
+          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Complete Spanish/English month-name dates and ISO YYYY-MM-DD may preserve the same calendar day; other identifiers remain literal. A terminal English possessive keeps its whole identifier: O2, O2's and O2’s match for fidelity; O3 or O20 do not. Stored words are unchanged. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN. After the permitted selections, a genuinely semantic UNKNOWN is terminal. Do not inspect the root, sweep all abouts, change optional arguments or traverse the graph to bypass it. Reclassify only when the original goal actually asks for temporal state. Read the language and retrieved-proof topics when their warnings or provenance matter. For a partial read, execute projection.next_action with its complete arguments, preserving question, asked_as, dimensions and temporal selection. If core_text_shortened, its call restarts without page.cursor at a sufficient allowance; discard the earlier partial reconstruction. Otherwise append only expansion beyond each section core. Finish when next_action is null; detail or selection caps remain explicit. A stale cursor returns conflict and feedback[].action for a fresh read; never combine different selections. Named dates without a year preserve only month/day: 18 de agosto matches August 18 or a valid ISO date ending in -08-18. The lint neither supplies nor verifies an added year; keep it absent unless evidence supports it. A complete source date must retain its year. A missing partial date is reported as --08-18; repair the month/day, never pad the rendering with a bare 18. projection.sections.*.remaining counts eligible expansion after this page, excluding repeated core and all prior pages. Use these per-section counts to identify unread passages or relations; zero does not establish semantic sufficiency or erase detail/selection caps."
         },
         {
           "coordinates": [
@@ -178,7 +178,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Compare memories across abouts",
             "guide_version": "1",
             "source": "editorial"
@@ -210,7 +210,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Navigate and zoom in time",
             "guide_version": "1",
             "source": "editorial"
@@ -242,7 +242,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Inspect evidence and trace a connection",
             "guide_version": "1",
             "source": "editorial"
@@ -274,7 +274,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Write evidence or change labels",
             "guide_version": "1",
             "source": "editorial"
@@ -306,7 +306,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Frame and share ChronoLoom",
             "guide_version": "1",
             "source": "editorial"
@@ -338,7 +338,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Synchronize guide assets",
             "guide_version": "1",
             "source": "editorial"
@@ -370,7 +370,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Install an optional lexical bridge",
             "guide_version": "1",
             "source": "editorial"
@@ -402,7 +402,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Cross abouts, labels and selectors",
             "guide_version": "1",
             "source": "editorial"
@@ -434,7 +434,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Choose a relation and justify it",
             "guide_version": "1",
             "source": "editorial"
@@ -466,7 +466,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Retry one logical write",
             "guide_version": "1",
             "source": "editorial"
@@ -498,7 +498,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Complete a bounded read",
             "guide_version": "1",
             "source": "editorial"
@@ -530,7 +530,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Choose a byte ceiling",
             "guide_version": "1",
             "source": "editorial"
@@ -562,7 +562,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Replace, contradict or expire",
             "guide_version": "1",
             "source": "editorial"
@@ -594,7 +594,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Interpret retrieved proof",
             "guide_version": "1",
             "source": "editorial"
@@ -626,7 +626,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Search language and literal evidence",
             "guide_version": "1",
             "source": "editorial"
@@ -658,12 +658,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Write or repair search summaries",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as memories[].summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach one or more with kmp_write_memory, search_summaries containing ref and summary_en only, and the stored text stays exactly as it was. The lint preserves literal identifiers: render UE as UE (EU), and retain times such as 09:00 and UTC. Complete Spanish/English month-name dates and ISO YYYY-MM-DD compare by calendar day: 17 de agosto de 2026 equals August 17, 2026 or 2026-08-17. Invalid or other date formats stay literal; amounts outside a date still need their own numbers. This never changes stored text or proves semantic fidelity. The writer returns independent record failures together; repair every feedback item and resend the whole packet. Further failures in a record may appear after its first error is fixed. Named dates without a year preserve only month/day: 18 de agosto matches August 18 or a valid ISO date ending in -08-18. The lint neither supplies nor verifies an added year; keep it absent unless evidence supports it. A complete source date must retain its year. A missing partial date is reported as --08-18; repair the month/day, never pad the rendering with a bare 18."
+          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as memories[].summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach one or more with kmp_write_memory, search_summaries containing ref and summary_en only, and the stored text stays exactly as it was. The lint preserves literal identifiers: render UE as UE (EU), and retain times such as 09:00 and UTC. Complete Spanish/English month-name dates and ISO YYYY-MM-DD compare by calendar day: 17 de agosto de 2026 equals August 17, 2026 or 2026-08-17. Invalid or other date formats stay literal; amounts outside a date still need their own numbers. A terminal English possessive keeps its whole identifier: O2, O2's and O2’s match for fidelity; O3 or O20 do not. This never changes stored text or proves semantic fidelity. The writer returns independent record failures together; repair every feedback item and resend the whole packet. Further failures in a record may appear after its first error is fixed. Named dates without a year preserve only month/day: 18 de agosto matches August 18 or a valid ISO date ending in -08-18. The lint neither supplies nor verifies an added year; keep it absent unless evidence supports it. A complete source date must retain its year. A missing partial date is reported as --08-18; repair the month/day, never pad the rendering with a bare 18."
         },
         {
           "coordinates": [
@@ -691,7 +691,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Start here: one decision and its stated reason",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -723,7 +723,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Decision history and past validity",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -754,7 +754,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -786,7 +786,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Aliases, unresolved names and account assignment",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -817,7 +817,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Repository bundles and snapshots",
             "guide_version": "1",
             "source": "editorial"
@@ -849,7 +849,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Diagnose missing tools and errors",
             "guide_version": "1",
             "source": "editorial"
@@ -882,7 +882,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Distributed incident, proposed identity and late reports",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -914,7 +914,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Four clocks, interval boundaries and zoom to proof",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -946,7 +946,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Quantities, corrections, duplicates and exclusions",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -978,7 +978,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Conflicting assignments and evidence received late",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1010,7 +1010,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Multiple aliases, distinct facets and late memberships",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1042,7 +1042,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Labels, synonyms and negation under explicit conditions",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1074,7 +1074,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1106,7 +1106,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Fresh-session handoff and shared-view revision conflicts",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1138,7 +1138,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Preference and explicit policy delta",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1170,7 +1170,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Authorization, dependency and measured constraints",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1202,7 +1202,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Structure, membership and included contributions",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1234,7 +1234,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Validated canonical ingest and exact retry",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1265,7 +1265,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Find a concrete example for a tool, kind or relation",
             "guide_version": "1",
             "source": "editorial"
@@ -1298,7 +1298,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Atomic semantic packet with local proof links",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1329,7 +1329,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1360,7 +1360,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1391,7 +1391,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1422,7 +1422,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1453,7 +1453,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1484,7 +1484,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1515,7 +1515,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1546,7 +1546,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1577,7 +1577,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_title": "Manage agent identity and guidance",
             "guide_version": "1",
             "source": "editorial"
@@ -1610,7 +1610,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:ask",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ask"
@@ -1643,7 +1643,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_forward"
@@ -1676,7 +1676,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_goto"
@@ -1709,7 +1709,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:guide",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_guide"
@@ -1742,7 +1742,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ingest"
@@ -1775,7 +1775,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_inspect"
@@ -1808,7 +1808,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_near"
@@ -1841,7 +1841,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relabel"
@@ -1874,7 +1874,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:relate",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relate"
@@ -1907,7 +1907,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_rewind"
@@ -1940,7 +1940,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_trace"
@@ -1973,7 +1973,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_apply_intent"
@@ -2006,7 +2006,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_get_state"
@@ -2039,7 +2039,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_open"
@@ -2072,7 +2072,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:wake",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_wake"
@@ -2105,7 +2105,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "f61b224d3a78e8926ec8751724bbf11bdf88afab64e5e666cf0c1ac8ba315ee5",
+            "guide_revision": "acc0da4082e0c57eb5863bc090c468d963a17d18fa75711d1da03c65826ce89b",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_write_memory"
