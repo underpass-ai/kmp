@@ -7,6 +7,11 @@ mod service;
 mod types;
 mod visual_label;
 mod visual_projection;
+mod write_clock_coverage;
+mod write_clocks;
+
+pub use write_clock_coverage::WriteClockCoverage;
+pub use write_clocks::WriteClocks;
 
 pub use ingest::{ExistingMemoryRefs, crosses_abouts, translate_memory_ingest};
 pub use ref_boundary::{

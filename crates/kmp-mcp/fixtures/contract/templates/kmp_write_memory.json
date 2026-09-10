@@ -8,6 +8,35 @@
   "isError": "boolean",
   "structuredContent": {
     "accepted": "boolean",
+    "clocks": {
+      "entries": "integer",
+      "ingested": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "string"
+      },
+      "observed": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "string"
+      },
+      "occurred": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "string"
+      },
+      "scope": "string",
+      "valid_from": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "null"
+      },
+      "valid_until": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "null"
+      }
+    },
     "coverage": {
       "complete": "boolean",
       "evidence": "integer",
@@ -62,6 +91,7 @@
     "relations": [
       "string"
     ],
+    "status": "string",
     "summary": "string",
     "warnings": []
   }

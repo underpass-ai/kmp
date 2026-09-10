@@ -39,6 +39,7 @@ pub(super) fn receipt_change(
             "provenance": command.provenance,
             "writer": context,
             "accepted": outcome.accepted,
+            "clocks": outcome.clocks,
             "warnings": outcome.warnings,
             "created_dimensions": outcome.created_dimensions,
             "resembling_labels": outcome.resembling_labels

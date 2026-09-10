@@ -69,6 +69,17 @@ pub(crate) fn tool_error_result(tool: &str, arguments: &Value, error: &ToolError
         },
         "isError": true
     });
+    if tool == "kmp_write_memory" {
+        result["structuredContent"]["status"] = json!(if error.code
+            == crate::serving::ToolErrorCode::InvalidArgument
+        {
+            "rejected"
+        } else {
+            // A transport/backend error can follow persistence. Do not
+            // promise that nothing was written; retry the same logical key.
+            "unconfirmed"
+        });
+    }
     if !error.feedback.is_empty() {
         result["structuredContent"]["feedback"] = json!(error.feedback);
     }
@@ -102,6 +113,14 @@ mod tests {
         assert_eq!(error["isError"], true);
         assert_eq!(error["content"][0]["text"], "no evidence");
         assert_eq!(error["structuredContent"]["error"]["code"], "backend_error");
+
+        let uncertain = tool_error_result(
+            "kmp_write_memory",
+            &json!({}),
+            &ToolError::backend("lost reply"),
+        );
+        assert_eq!(uncertain["structuredContent"]["status"], "unconfirmed");
+        assert!(uncertain["structuredContent"].get("accepted").is_none());
 
         let missing = tool_error_result(
             "kmp_inspect",

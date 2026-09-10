@@ -11,6 +11,7 @@ pub(crate) fn write_dry_run_result(
 ) -> Value {
     let mut result = json!({
         "accepted": false,
+        "status": "validated",
         "dry_run": true,
         "coverage": super::coverage::write_coverage(plan),
         "validation": {"scope": if backend == "fixture" { "fixture" } else { "current_store" }},
@@ -44,6 +45,12 @@ pub(crate) fn write_commit_result(
         .unwrap_or_else(|| json!([]));
     let mut result = json!({
         "accepted": true,
+        "status": match ingest_result["memory"]["replayed"].as_bool() {
+            Some(true) => "replayed",
+            Some(false) => "committed",
+            None => "unconfirmed"
+        },
+        "clocks": ingest_result["memory"]["clocks"],
         "dry_run": false,
         "coverage": super::coverage::write_coverage(plan),
         "summary": ingest_result["summary"],

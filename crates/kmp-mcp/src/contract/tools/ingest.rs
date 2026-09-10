@@ -166,6 +166,8 @@ fn ingest_output_schema() -> Value {
             })),
             "receipt_ref": nullable_described("string", "Accepted writer audit ref when the internal compiler attached receipt context; null for raw ingest or preview."),
             "read_after_write_ready": described("boolean", "Whether a read issued now is guaranteed to observe this write."),
+            "replayed": nullable_described("boolean", "Whether the kernel returned an already accepted command; null without a backend outcome."),
+            "clocks": crate::contract::schema::write_clocks::write_clocks_schema(),
             "created_dimensions": string_array("Refs of label dimensions this ingest created, identified by about, key and value. Copy returned refs; do not construct them."),
             "resembling_labels": described("array", "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently`) and `why`.")
         })),

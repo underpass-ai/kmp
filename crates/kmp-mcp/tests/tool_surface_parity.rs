@@ -473,6 +473,13 @@ fn redact_inspect_digest(text: &str) -> Option<String> {
 fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
+            if fields.get("scope").and_then(Value::as_str) == Some("accepted_command")
+                && let Some(ingested) = fields.get_mut("ingested")
+                && ingested["single_value"].is_string()
+            {
+                // Keep counts and shape pinned, but not the current wall clock.
+                ingested["single_value"] = json!(REDACTED);
+            }
             // Recovery allowance includes the complete proof's ingestion-clock
             // bytes. Native action tests execute it; snapshot its shape, not
             // the fractional timestamp precision of this particular run.

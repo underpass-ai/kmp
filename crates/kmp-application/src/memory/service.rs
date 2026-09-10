@@ -86,6 +86,8 @@ where
         let (update_context, mut outcome) = translate_memory_ingest(&command, &existing)?;
         if command.dry_run {
             outcome.receipt_ref = None;
+            // No ingestion clock was committed by a preview.
+            outcome.clocks = None;
             outcome
                 .warnings
                 .push("dry_run=true; validated memory without writing to the kernel".to_string());
@@ -97,6 +99,16 @@ where
             .update_context(update_context)
             .await?;
         outcome.read_after_write_ready = true;
+        outcome.replayed = accepted.replayed;
+        if accepted.replayed {
+            // The new translation has a new ingestion time. Only the accepted
+            // receipt can describe the clocks of the original logical write.
+            outcome.clocks = accepted.replayed_receipt.and_then(|receipt| {
+                serde_json::from_str::<serde_json::Value>(&receipt.payload_json)
+                    .ok()
+                    .and_then(|body| serde_json::from_value(body["clocks"].clone()).ok())
+            });
+        }
         outcome.warnings.extend(accepted.warnings);
         Ok(outcome)
     }
