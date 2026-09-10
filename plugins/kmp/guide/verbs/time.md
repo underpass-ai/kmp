@@ -90,7 +90,7 @@ budget and `next_actions` supplies a retry that admits an item. If the allowance
 cannot increase, report the exact pending action and partial coverage. Do not
 repeat an empty page at the unchanged budget.
 
-## Choose entry fields, then expand a selected memory
+## Choose entry fields, then read full detail
 
 On Goto, Near, Forward and Rewind, `fields` chooses complete entry fields:
 `ref`, `kind`, `text`, `coordinates` and `metadata`. Omit it for all fields;
@@ -100,10 +100,14 @@ types and clocks before reading their full bodies.
 
 `selection.fields.included` and `.omitted` declare the choice. An omitted field
 is not an empty value or missing source. Each reduced entry carries a complete
-`detail_action`: execute its `kmp_goto` call to expand that ref with the original
-about scope, labels, clock and interval. Its pages and byte negotiation work as
-usual. This is a fresh read, not a stored snapshot; later writes can change it.
-If the entry no longer matches, do not silently remove filters to recover it.
+`detail_action`: execute that native call once to read the full selected packet.
+It preserves the original verb, cursor/cutoff, clock, interval, scope, labels,
+window, limits and proof options. Entries from the same packet share this action;
+do not repeat it for each ref. A ref-based Goto could replace the question's
+cutoff with that entry's earlier time, so it is not a detail replay.
+The full packet may be larger and need several pages. This is a fresh read,
+not a stored snapshot; later writes can change it. If an entry no longer matches,
+do not silently remove filters to recover it.
 
 Fields affect `entries` only. `include.evidence`, `include.relations` and
 `include.raw_refs` separately select proof and raw audit data, which can carry
@@ -112,7 +116,7 @@ sections or establish that omitted evidence was read. Keep proof when the task
 requires it. Whole selected content, including hidden entry fields, still binds
 a page cursor; changed content or a changed `fields` choice requires a fresh read.
 
-Use this for selective browsing. Expanding every entry afterward can cost more
+Use this for selective browsing. Reading full detail afterward can cost more
 than requesting full entries initially; count all calls and expansions when
 comparing tokens. KMP does not summarize or truncate a selected text field.
 
