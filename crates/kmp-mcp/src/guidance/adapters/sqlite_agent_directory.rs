@@ -7,7 +7,7 @@ use rusqlite::{Connection, OptionalExtension, Transaction, TransactionBehavior, 
 use super::random_agent_identity::RandomAgentIdentity;
 use crate::guidance::{
     AgentContext, AgentContextId, AgentDirectory, AgentId, AgentIdentity, AgentIdentitySource,
-    AgentOpen, AgentSession, GuidanceError,
+    AgentOpen, AgentSession, AgentUse, GuidanceError, UseOutcome,
 };
 
 /// Transport metadata beside the store. It never enters recall or evidence.
@@ -19,6 +19,11 @@ pub(crate) struct SqliteAgentDirectory {
 
 fn storage(error: impl std::fmt::Display) -> GuidanceError {
     GuidanceError::Unavailable(format!("agent directory: {error}"))
+}
+
+fn count(row: &rusqlite::Row<'_>, index: usize) -> rusqlite::Result<u64> {
+    let value: i64 = row.get(index)?;
+    u64::try_from(value).map_err(|_| rusqlite::Error::IntegralValueOutOfRange(index, value))
 }
 
 impl SqliteAgentDirectory {
@@ -52,7 +57,7 @@ impl SqliteAgentDirectory {
         let version: u32 = connection
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .map_err(storage)?;
-        if version > 1 {
+        if version > 2 {
             return Err(storage(format!("unsupported schema version {version}")));
         }
         connection.execute_batch("PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
@@ -64,7 +69,11 @@ impl SqliteAgentDirectory {
             CREATE TABLE IF NOT EXISTS deliveries (
                 context_id TEXT NOT NULL REFERENCES contexts(id), revision TEXT NOT NULL,
                 topic TEXT NOT NULL, count INTEGER NOT NULL, expanded INTEGER NOT NULL,
-                PRIMARY KEY(context_id, revision, topic)); PRAGMA user_version=1;").map_err(storage)?;
+                PRIMARY KEY(context_id, revision, topic)); CREATE TABLE IF NOT EXISTS uses (
+                context_id TEXT NOT NULL REFERENCES contexts(id), revision TEXT NOT NULL,
+                tool TEXT NOT NULL, attempts INTEGER NOT NULL, rejected INTEGER NOT NULL,
+                unknown INTEGER NOT NULL, PRIMARY KEY(context_id,revision,tool));
+            PRAGMA user_version=2;").map_err(storage)?;
         Ok(Self {
             connection: Mutex::new(connection),
             identities,
@@ -144,7 +153,7 @@ impl SqliteAgentDirectory {
 
     fn snapshot(
         &self,
-        tx: &Transaction<'_>,
+        tx: &Connection,
         session: &AgentSession,
         revision: &str,
     ) -> Result<AgentContext, GuidanceError> {
@@ -164,6 +173,19 @@ impl SqliteAgentDirectory {
             }
             served.push(topic);
         }
+        let mut query = tx.prepare("SELECT tool,attempts,rejected,unknown FROM uses WHERE context_id=?1 AND revision=?2 ORDER BY tool").map_err(storage)?;
+        let used = query
+            .query_map(params![session.context_id.as_str(), revision], |row| {
+                Ok(AgentUse {
+                    tool: row.get(0)?,
+                    attempts: count(row, 1)?,
+                    rejected: count(row, 2)?,
+                    unknown: count(row, 3)?,
+                })
+            })
+            .map_err(storage)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(storage)?;
         Ok(AgentContext {
             identity: AgentIdentity {
                 id: session.agent_id.clone(),
@@ -175,6 +197,7 @@ impl SqliteAgentDirectory {
             served,
             guide_changed: previous != revision,
             durable: self.durable,
+            used,
         })
     }
 
@@ -193,7 +216,10 @@ impl SqliteAgentDirectory {
             return Err(GuidanceError::StaleGuide);
         }
         if expand {
-            tx.execute("INSERT INTO deliveries(context_id,revision,topic,count,expanded) VALUES(?1,?2,?3,1,1) ON CONFLICT(context_id,revision,topic) DO UPDATE SET count=count+1, expanded=1", params![session.context_id.as_str(),revision,topic]).map_err(storage)?;
+            let in_scheme = crate::guidance::guide_scheme::TOPICS
+                .iter()
+                .any(|(key, _)| *key == topic);
+            tx.execute("INSERT INTO deliveries(context_id,revision,topic,count,expanded) VALUES(?1,?2,?3,1,?4) ON CONFLICT(context_id,revision,topic) DO UPDATE SET count=count+1, expanded=excluded.expanded", params![session.context_id.as_str(),revision,topic,in_scheme]).map_err(storage)?;
         } else {
             tx.execute(
                 "UPDATE deliveries SET expanded=0 WHERE context_id=?1 AND revision=?2 AND topic=?3",
@@ -208,6 +234,50 @@ impl SqliteAgentDirectory {
 }
 
 impl AgentDirectory for SqliteAgentDirectory {
+    fn context(&self, id: &AgentContextId) -> Result<AgentContext, GuidanceError> {
+        let connection = self.connection.lock().map_err(storage)?;
+        let (agent,revision) = connection.query_row("SELECT agent_id,revision FROM contexts WHERE id=?1", [id.as_str()], |row| Ok((row.get::<_,String>(0)?,row.get::<_,String>(1)?))).optional().map_err(storage)?.ok_or_else(|| GuidanceError::InvalidSession("context_id is not registered here; open kmp_guide and preserve its returned id".into()))?;
+        self.snapshot(
+            &connection,
+            &AgentSession {
+                agent_id: AgentId::parse(&agent)?,
+                context_id: id.clone(),
+            },
+            &revision,
+        )
+    }
+
+    fn record_use(
+        &self,
+        session: &AgentSession,
+        revision: &str,
+        tool: &str,
+        outcome: UseOutcome,
+    ) -> Result<AgentUse, GuidanceError> {
+        let mut connection = self.connection.lock().map_err(storage)?;
+        let tx = connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(storage)?;
+        let current: bool = tx
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM contexts WHERE id=?1 AND agent_id=?2 AND revision=?3)",
+                params![
+                    session.context_id.as_str(),
+                    session.agent_id.as_str(),
+                    revision
+                ],
+                |row| row.get(0),
+            )
+            .map_err(storage)?;
+        if !current {
+            return Err(GuidanceError::StaleGuide);
+        }
+        tx.execute("INSERT INTO uses(context_id,revision,tool,attempts,rejected,unknown) VALUES(?1,?2,?3,1,?4,?5) ON CONFLICT(context_id,revision,tool) DO UPDATE SET attempts=attempts+1,rejected=rejected+excluded.rejected,unknown=unknown+excluded.unknown",params![session.context_id.as_str(),revision,tool,matches!(outcome,UseOutcome::Rejected),matches!(outcome,UseOutcome::Unknown)]).map_err(storage)?;
+        let result = tx.query_row("SELECT tool,attempts,rejected,unknown FROM uses WHERE context_id=?1 AND revision=?2 AND tool=?3",params![session.context_id.as_str(),revision,tool],|row| Ok(AgentUse {tool:row.get(0)?,attempts:count(row,1)?,rejected:count(row,2)?,unknown:count(row,3)?})).map_err(storage)?;
+        tx.commit().map_err(storage)?;
+        Ok(result)
+    }
+
     fn open(&self, request: &AgentOpen, revision: &str) -> Result<AgentContext, GuidanceError> {
         let mut connection = self.connection.lock().map_err(storage)?;
         let tx = connection

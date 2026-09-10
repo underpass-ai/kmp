@@ -141,7 +141,16 @@ mod tests {
         assert!(writer_description.contains("Normal writes are one call"));
         assert!(writer_description.contains("validation failures write nothing"));
         assert!(writer_description.contains("explicitly requested preview"));
-        assert_eq!(tools[1]["inputSchema"]["required"][1], "actor");
+        assert!(
+            !tools[1]["inputSchema"]["required"]
+                .as_array()
+                .expect("required")
+                .contains(&json!("actor"))
+        );
+        assert_eq!(
+            tools[1]["inputSchema"]["anyOf"],
+            json!([{"required":["actor"]},{"required":["context_id"]}])
+        );
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
                 ["items"]["properties"]["rel"]["enum"][0],
@@ -188,7 +197,7 @@ mod tests {
         assert_eq!(tools[11]["name"], "kmp_relabel");
         assert_eq!(
             tools[11]["inputSchema"]["required"],
-            serde_json::json!(["about", "ref", "actor", "observed_at", "why"])
+            serde_json::json!(["about", "ref", "observed_at", "why"])
         );
         assert_eq!(tools[12]["name"], "kmp_view_open");
         assert_eq!(tools[5]["name"], "kmp_goto");
@@ -233,9 +242,17 @@ mod tests {
             .map(|tool| (tool["name"].as_str().expect("name"), tool))
             .collect::<std::collections::BTreeMap<_, _>>();
         let schema = |name: &str| &tools[name]["inputSchema"];
+        let memory_keys = |name: &str| {
+            let mut fields = keys(schema(name));
+            // These are MCP interaction metadata. CallGuidance removes both
+            // before compilation or RPC; native continuation checks prove it.
+            assert!(fields.remove("context_id"), "{name} context metadata");
+            assert!(fields.remove("purpose"), "{name} recommendation metadata");
+            fields
+        };
 
         assert_eq!(
-            keys(schema("kmp_ingest")),
+            memory_keys("kmp_ingest"),
             expected(&[
                 "about",
                 "dry_run",
@@ -246,7 +263,7 @@ mod tests {
             ])
         );
         assert_eq!(
-            keys(schema("kmp_wake")),
+            memory_keys("kmp_wake"),
             expected(&[
                 "about",
                 "as_of",
@@ -261,7 +278,7 @@ mod tests {
             ])
         );
         assert_eq!(
-            keys(schema("kmp_ask")),
+            memory_keys("kmp_ask"),
             expected(&[
                 "about",
                 "answer_policy",
@@ -277,7 +294,7 @@ mod tests {
             ])
         );
         assert_eq!(
-            keys(schema("kmp_relate")),
+            memory_keys("kmp_relate"),
             expected(&["about", "axis", "budget", "dimensions", "interval", "page"])
         );
         for (name, cursor) in [
@@ -287,7 +304,7 @@ mod tests {
             ("kmp_forward", "from"),
         ] {
             assert_eq!(
-                keys(schema(name)),
+                memory_keys(name),
                 expected(&[
                     "about",
                     "axis",
@@ -310,11 +327,11 @@ mod tests {
             );
         }
         assert_eq!(
-            keys(schema("kmp_trace")),
+            memory_keys("kmp_trace"),
             expected(&["about", "budget", "from", "goal", "page", "role", "to"])
         );
         assert_eq!(
-            keys(schema("kmp_inspect")),
+            memory_keys("kmp_inspect"),
             expected(&["about", "budget", "include", "page", "ref"])
         );
 
@@ -358,7 +375,7 @@ mod tests {
         // validated helper contract and its output is pinned to canonical
         // Ingest by the writer compilation and four-path parity tests.
         assert_eq!(
-            keys(schema("kmp_write_memory")),
+            memory_keys("kmp_write_memory"),
             expected(&[
                 "about",
                 "actor",

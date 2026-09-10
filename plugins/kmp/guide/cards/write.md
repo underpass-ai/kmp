@@ -1,5 +1,6 @@
 Write separate facts, with source evidence and labels that make them navigable.
-Use your KMP agent name as actor. A label can hold several values; reuse a known
+Pass your `context_id`; KMP supplies your persistent agent name as actor.
+Without a context, supply actor explicitly as in this standalone example. A label can hold several values; reuse a known
 key/value before inventing another. A shared account is not a person's alias.
 
 Source R1: “On 2026-09-01 at 09:00 UTC, we observed the cache fail.”

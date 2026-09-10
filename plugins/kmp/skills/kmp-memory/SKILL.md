@@ -7,8 +7,9 @@ description: Operate KMP agent memory through the kmp MCP server — recover sto
 
 Start guidance once with `kmp_guide` and a unique `registration_key` for this
 logical agent. Keep its returned agent and context ids in the host task state.
-Resume with `context_id`; add `topic` to read one worked card and follow its
-extended guide when needed. Reuse current bodies already in context.
+Pass `context_id` with work calls. Before an unfamiliar verb, add `topic` to
+`kmp_guide` to read its worked card and follow the extended guide when needed.
+Read the optional `kmp_guidance` text block alongside the original result. Reuse current bodies already in context.
 After compaction use `agent_id` and a new `context_key`; the agent keeps its
 identity and random name. Served guidance does not prove understanding.
 

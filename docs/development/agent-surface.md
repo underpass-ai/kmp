@@ -384,3 +384,25 @@ step. Verify actual returned actions across restart, subsequent memory changes
 and export/import; previews and refusals must create neither a receipt nor memory.
 Coverage describes submitted declarations, never completeness against sources the
 writer did not submit. Do not add graph memories or another CI rule for receipts.
+
+### Contexto y recomendaciones del agente
+
+Los argumentos comunes context_id/purpose se agregan en el registro de tools.
+CallGuidance los resuelve y elimina antes de compilar, calcular idempotencia o
+llamar al backend. No son una autorización. El escritor y Relabel pueden tomar
+actor del perfil; un actor explícito prevalece. AgentDirectory guarda uso y
+entregas fuera del grafo. Una entrega no acredita aprendizaje.
+
+GuidanceRecommendation elige por campos tipados del resultado, conserva las
+acciones nativas y declara cuándo inicia otra selección. Un verbo nuevo necesita
+su ruta de ayuda, criterios de recomendación sólo si tiene una señal real, y
+comprobación de que la acción devuelta se ejecuta sin perder reloj o alcance.
+No crear reglas por palabras de mensajes de error ni puntuaciones de confianza
+sin fundamento. La tabla consultable está en verbs/guide.md.
+
+La ayuda de trabajo se serializa una vez en un bloque de texto kmp_guidance:
+structuredContent conserva su contrato y presupuesto. Medir ambos costes y
+comprobar que el host entrega el bloque adicional al modelo. Una aplicación que
+sólo conserva structuredContent oculta la ayuda. El fallo de metadatos después
+de una escritura aceptada debe conservar la aceptación y el recibo; el contador
+de uso nunca certifica una nueva escritura frente a un replay.

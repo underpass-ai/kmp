@@ -21,7 +21,8 @@ still require an actual prior read declared in `read_context`; cross-about
 identity links retain the proposal rule. Do not claim to have inspected a new
 local target. Independent facts may be unlinked: do not invent a relation.
 
-Actor identifies the author; top-level observed_at is the packet's provenance
+With `context_id`, actor defaults to the persistent agent name; an explicit
+actor overrides it. Without context, actor is required. Actor identifies the author; top-level observed_at is the packet's provenance
 observation time. Actual ingestion is recorded separately by the kernel. Each
 record may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP
 resolves all names and validates the entire packet before one canonical ingest.

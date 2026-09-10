@@ -25,7 +25,8 @@ pub(crate) fn definition() -> Value {
             "durable":{"type":"boolean","description":"Whether agent metadata survives a server restart."},
             "scheme":{"type":"array","description":"Available topics; expanded lists the currently opened ones.","items":{"type":"object","properties":{"topic":{"type":"string"},"purpose":{"type":"string"}}}},
             "expanded":{"type":"array","items":{"type":"string"},"description":"Topics opened in this context and revision, excluding folded ones."},
-            "served":{"type":"array","items":{"type":"string"},"description":"Topics delivered in this context and revision; does not mean learned or retained."},
+            "served":{"type":"array","items":{"type":"string"},"description":"Topic cards and exact guide/example refs delivered in this context and revision; not learned or retained."},
+            "used":{"type":"array","description":"Observed work calls in this context and revision, never a learning score."},
             "card":{"type":["object","null"],"description":"One requested canonical worked card; null for the map or a fold.","properties":{"ref":{"type":"string"},"text":{"type":"string"}}},
             "next_actions":{"type":"array","description":"Complete optional calls for the extended verb."}
         }}),

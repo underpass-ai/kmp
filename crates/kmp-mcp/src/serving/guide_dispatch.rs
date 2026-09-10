@@ -6,7 +6,7 @@ use crate::guidance::{AgentDirectory, GuidanceError, GuideRequest, SqliteAgentDi
 use serde_json::{Value, json};
 use std::time::Instant;
 
-fn guidance_error(error: &GuidanceError) -> ToolError {
+pub(super) fn guidance_error(error: &GuidanceError) -> ToolError {
     match error {
         GuidanceError::InvalidSession(message) => ToolError::invalid_argument(message),
         GuidanceError::StaleGuide => ToolError::conflict(error.to_string()),
@@ -15,6 +15,31 @@ fn guidance_error(error: &GuidanceError) -> ToolError {
 }
 
 impl KernelMcpServer {
+    pub(super) fn guidance_directory(
+        &self,
+        require_existing: bool,
+    ) -> Result<&dyn AgentDirectory, ToolError> {
+        if self.agent_directory.get().is_none() {
+            let directory = match &self.agent_directory_path {
+                Some(path) if !require_existing || path.is_file() => SqliteAgentDirectory::at(path),
+                None if !require_existing => SqliteAgentDirectory::volatile(),
+                _ => {
+                    return Err(ToolError::invalid_argument(
+                        "no agent context is registered here; open kmp_guide first",
+                    ));
+                }
+            }
+            .map_err(|e| guidance_error(&e))?;
+            // Cache only successful opens. A transient storage failure must be retryable.
+            let _ = self.agent_directory.set(std::sync::Arc::new(directory));
+        }
+        Ok(self
+            .agent_directory
+            .get()
+            .expect("initialized directory")
+            .as_ref())
+    }
+
     pub(super) async fn handle_kmp_guide(
         &self,
         id: Value,
@@ -95,14 +120,7 @@ impl KernelMcpServer {
         } else {
             None
         };
-        let directory = self
-            .agent_directory
-            .get_or_init(|| match &self.agent_directory_path {
-                Some(path) => SqliteAgentDirectory::at(path),
-                None => SqliteAgentDirectory::volatile(),
-            })
-            .as_ref()
-            .map_err(guidance_error)?;
+        let directory = self.guidance_directory(false)?;
         let mut context = directory
             .open(&opening, revision)
             .map_err(|e| guidance_error(&e))?;
@@ -116,7 +134,7 @@ impl KernelMcpServer {
             .map_err(|e| guidance_error(&e))?;
         }
         let next_actions = request.topic.as_ref().filter(|_| !request.fold).map(|topic| vec![json!({
-            "tool":"kmp_inspect","arguments":{"about":"guide:kmp-agent","ref":format!("guide:kmp-agent:verb:{topic}"),"include":{"details":false,"incoming":false,"outgoing":false,"raw":false}}
+            "tool":"kmp_inspect","arguments":{"context_id":context.session.context_id.as_str(),"about":"guide:kmp-agent","ref":format!("guide:kmp-agent:verb:{topic}"),"include":{"details":false,"incoming":false,"outgoing":false,"raw":false}}
         })]).unwrap_or_default();
         Ok(json!({
             "summary":format!("KMP agent {}. Expand a topic with kmp_guide and this context_id; served records are not proof of understanding.",context.identity.name),
@@ -124,6 +142,7 @@ impl KernelMcpServer {
             "context_id":context.session.context_id.as_str(),"guide_revision":context.guide_revision,
             "guide_changed":changed,"durable":context.durable,
             "scheme":crate::guidance::scheme(),"expanded":context.expanded,"served":context.served,
+            "used":context.used.iter().map(|item| json!({"tool":item.tool,"attempts":item.attempts,"rejected":item.rejected,"unknown":item.unknown})).collect::<Vec<_>>(),
             "card":card.map(|node| json!({"ref":node["ref"],"text":node["text"]})),
             "next_actions":next_actions,
         }))

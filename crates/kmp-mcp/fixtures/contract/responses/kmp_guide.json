@@ -53,6 +53,7 @@
       }
     ],
     "served": [],
-    "summary": "KMP agent <AGENT_NAME>. Expand a topic with kmp_guide and this context_id; served records are not proof of understanding."
+    "summary": "KMP agent <AGENT_NAME>. Expand a topic with kmp_guide and this context_id; served records are not proof of understanding.",
+    "used": []
   }
 }

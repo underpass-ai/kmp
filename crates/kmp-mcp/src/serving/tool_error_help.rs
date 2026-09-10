@@ -6,6 +6,10 @@ use super::{ToolError, ToolErrorCode};
 pub(crate) struct ToolErrorHelp;
 
 impl ToolErrorHelp {
+    pub(super) fn topic(tool: &str) -> Option<&'static str> {
+        Self::route(tool)?.0.strip_prefix("verb:")
+    }
+
     pub(crate) fn for_call(tool: &str, arguments: &Value, error: &ToolError) -> Option<Value> {
         // A failed guide read must not recommend itself. Infrastructure failures
         // are not fixed by changing source data or repeatedly reading this store.

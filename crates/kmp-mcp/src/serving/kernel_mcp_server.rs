@@ -13,9 +13,7 @@ use crate::serving::adapters::fixture_backend::FixtureKernelMcpBackend;
 
 pub struct KernelMcpServer {
     pub(super) backend: Arc<dyn KernelMcpToolBackend>,
-    pub(super) agent_directory: std::sync::OnceLock<
-        Result<crate::guidance::SqliteAgentDirectory, crate::guidance::GuidanceError>,
-    >,
+    pub(super) agent_directory: std::sync::OnceLock<Arc<dyn crate::guidance::AgentDirectory>>,
     pub(super) agent_directory_path: Option<std::path::PathBuf>,
     /// Shared store-use claim held until this MCP transport exits. Selective
     /// uninstall must acquire the exclusive counterpart before it can remove

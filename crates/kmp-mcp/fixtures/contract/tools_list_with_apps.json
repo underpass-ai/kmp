@@ -41,6 +41,10 @@
             "minLength": 1,
             "type": "string"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "dry_run": {
             "description": "Validate against the selected store without committing. References, labels and coordinates are checked by the kernel; the backend must be reachable. This reserves no future write.",
             "type": "boolean"
@@ -434,6 +438,16 @@
               "observed_at"
             ],
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -523,6 +537,18 @@
       "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
       "inputSchema": {
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "actor"
+            ]
+          },
+          {
+            "required": [
+              "context_id"
+            ]
+          }
+        ],
         "else": {
           "not": {
             "anyOf": [
@@ -592,8 +618,12 @@
             "type": "string"
           },
           "actor": {
-            "description": "Human, agent or component producing the write.",
+            "description": "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context.",
             "minLength": 1,
+            "type": "string"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "idempotency_key": {
@@ -831,6 +861,16 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "rank": {
             "minimum": 1,
             "type": "integer"
@@ -989,7 +1029,6 @@
         },
         "required": [
           "about",
-          "actor",
           "observed_at"
         ],
         "then": {
@@ -1351,6 +1390,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
             "minimum": 1,
@@ -1486,6 +1529,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "role": {
             "description": "Optional caller role.",
@@ -1994,6 +2047,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
             "minimum": 1,
@@ -2124,6 +2181,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "question": {
             "description": "Natural-language question, in the kernel's search language: plain English, with every number, identifier and acronym the user wrote kept exactly. The kernel searches it as given and never translates it. It accepts any language — a question in the store's own language reaches the stored text directly — and a memory written in another language is reached through its English `summary_en`.",
@@ -2431,6 +2498,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "dimensions": {
             "additionalProperties": false,
             "properties": {
@@ -2556,6 +2627,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -2803,6 +2884,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
             "minimum": 1,
@@ -2979,6 +3064,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "window": {
             "additionalProperties": false,
@@ -3361,6 +3456,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
             "minimum": 1,
@@ -3537,6 +3636,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "window": {
             "additionalProperties": false,
@@ -3910,6 +4019,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
             "minimum": 1,
@@ -4107,6 +4220,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "window": {
             "additionalProperties": false,
@@ -4479,6 +4602,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "depth": {
             "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
             "minimum": 1,
@@ -4676,6 +4803,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "window": {
             "additionalProperties": false,
@@ -5026,6 +5163,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "from": {
             "description": "Source memory ref. In live gRPC mode this must resolve to a kernel node id.",
             "minLength": 1,
@@ -5051,6 +5192,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "role": {
             "description": "Optional caller role.",
@@ -5189,6 +5340,10 @@
             },
             "type": "object"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "include": {
             "additionalProperties": false,
             "properties": {
@@ -5230,6 +5385,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "ref": {
             "description": "Memory ref to inspect. In live gRPC mode this must resolve to a kernel node id.",
@@ -5403,6 +5568,18 @@
       "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
       "inputSchema": {
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "actor"
+            ]
+          },
+          {
+            "required": [
+              "context_id"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "The about the memory belongs to.",
@@ -5410,7 +5587,7 @@
             "type": "string"
           },
           "actor": {
-            "description": "Human, agent, or component making the change.",
+            "description": "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context.",
             "minLength": 1,
             "type": "string"
           },
@@ -5427,6 +5604,10 @@
             },
             "description": "Labels to add as key-to-array values. Multiple values per key and the same value under different keys are valid. An exact membership already present is refused.",
             "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
           },
           "idempotency_key": {
             "description": "Optional stable idempotency key. Omit to generate one from the arguments.",
@@ -5460,6 +5641,16 @@
               }
             },
             "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "ref": {
             "description": "The memory to relabel: an entry ref inside this about, as a read returned it, byte for byte. Never the about anchor, an evidence id or a dimension id.",
@@ -5498,7 +5689,6 @@
         "required": [
           "about",
           "ref",
-          "actor",
           "observed_at",
           "why"
         ],
@@ -5585,10 +5775,24 @@
             "minLength": 1,
             "type": "string"
           },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
           "expected_revision": {
             "description": "When changing an existing view to another about, the view_revision this open was prepared against. A stale open conflicts instead of discarding a newer camera state.",
             "minimum": 1,
             "type": "integer"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
           },
           "view_id": {
             "description": "Which view to open. Omit for the one window a local viewer shows.",
@@ -5678,6 +5882,10 @@
           "actor": {
             "description": "Who is moving the view, for provenance. Defaults to `agent`.",
             "minLength": 1,
+            "type": "string"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "expected_revision": {
@@ -5830,6 +6038,16 @@
             },
             "type": "object"
           },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "search": {
             "description": "Query to highlight, or null to clear.",
             "type": [
@@ -5955,6 +6173,20 @@
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
           "view_id": {
             "description": "Which view to read. Omit for the default one.",
             "minLength": 1,
@@ -6158,7 +6390,7 @@
             "type": "array"
           },
           "served": {
-            "description": "Topics delivered in this context and revision; does not mean learned or retained.",
+            "description": "Topic cards and exact guide/example refs delivered in this context and revision; not learned or retained.",
             "items": {
               "type": "string"
             },
@@ -6167,6 +6399,10 @@
           "summary": {
             "description": "Identity and next guide operation.",
             "type": "string"
+          },
+          "used": {
+            "description": "Observed work calls in this context and revision, never a learning score.",
+            "type": "array"
           }
         },
         "type": "object"
