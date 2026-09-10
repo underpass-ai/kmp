@@ -203,27 +203,14 @@ jobs:
             '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
             | KMP_MCP_BACKEND=embedded KMP_MCP_DATA_DIR="${RUNNER_TEMP}/kmp-mcpb-smoke" \
               tmp/mcpb-smoke/server/kmp-mcp > tmp/mcpb-smoke/responses.jsonl
-          python3 - tmp/mcpb-smoke/responses.jsonl <<'PY'
+          python3 - tmp/mcpb-smoke/responses.jsonl tmp/mcpb-smoke/manifest.json <<'PY'
           import json, sys
           responses = {message.get("id"): message for message in map(json.loads, open(sys.argv[1]))}
           tools = responses.get(2, {}).get("result", {}).get("tools", [])
-          expected = {
-              "kmp_ingest",
-              "kmp_write_memory",
-              "kmp_wake",
-              "kmp_ask",
-              "kmp_relate",
-              "kmp_goto",
-              "kmp_near",
-              "kmp_rewind",
-              "kmp_forward",
-              "kmp_trace",
-              "kmp_inspect",
-              "kmp_relabel",
-              "kmp_view_open",
-              "kmp_view_apply_intent",
-              "kmp_view_get_state",
-          }
+          manifest = json.load(open(sys.argv[2]))
+          expected = {tool["name"] for tool in manifest["tools"]}
+          if not expected:
+              raise SystemExit("MCPB manifest declares no tools")
           found = {tool.get("name") for tool in tools}
           if found != expected:
               missing = sorted(expected - found)
@@ -231,7 +218,7 @@ jobs:
               raise SystemExit(
                   f"MCPB smoke tool mismatch: missing={missing}, unexpected={unexpected}"
               )
-          print("MCPB launcher started all twelve memory and three view tools")
+          print(f"MCPB launcher started all {len(expected)} manifest-declared tools")
           PY
 
       - name: Download the four candidate plugin packages
