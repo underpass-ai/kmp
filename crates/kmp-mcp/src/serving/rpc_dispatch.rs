@@ -49,19 +49,21 @@ impl KernelMcpServer {
                 self.apps_negotiated.store(apps, Ordering::SeqCst);
                 jsonrpc_result(
                     id,
-                    initialize_result_with_apps(
+                    self.passage_initialize(initialize_result_with_apps(
                         self.backend_name(),
                         self.grpc_tls_mode_name(),
                         apps,
                         self.bridges_languages(),
-                    ),
+                    )),
                 )
             }),
             Some("notifications/initialized") => None,
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    tools_list_result_with_apps(self.apps_negotiated.load(Ordering::SeqCst)),
+                    self.passage_tools(tools_list_result_with_apps(
+                        self.apps_negotiated.load(Ordering::SeqCst),
+                    )),
                 )
             }),
             Some("resources/list") if self.apps_negotiated.load(Ordering::SeqCst) => {
@@ -181,13 +183,14 @@ impl KernelMcpServer {
                 start,
             )
             .await;
-        match guidance {
+        let result = match guidance {
             Some(guidance) => {
                 let result = self.shorten_read_actions(&guidance, result);
                 self.complete_work_guidance(name, arguments, &guidance, result)
             }
             None => result,
-        }
+        };
+        self.project_read_passages(name, result)
     }
 
     async fn dispatch_memory_call(

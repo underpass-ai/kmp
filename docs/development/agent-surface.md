@@ -508,3 +508,19 @@ Medir el recorrido completo y la entrada extra del schema/guía, no sólo el aho
 de la petición siguiente. La llamada sin contexto sigue siendo explícita.
 El ejemplo `budget-proof` ejecuta ambos caminos. Son recomendaciones de
 mantenimiento y pruebas de comportamiento; no nuevos gates editoriales.
+
+### Proyección opcional de pasajes compartidos
+
+`KMP_MCP_PASSAGES=shared` activa la representación en el host; no cambia los
+argumentos de lectura. `serving/passage_projection.rs` adapta initialize,
+tools/list y las nueve respuestas de lectura después de sus presupuestos y
+recomendaciones. La biblioteca `kmp-proto-mapping::context_projection` conserva
+el códec reversible y la composición por grupos completos. Mantener tablas
+locales por respuesta, fuentes distintas aunque compartan texto y read actions
+intactas. Ver [contrato y límites](context-projection.md).
+
+Comprobar las dos configuraciones y sus schemas anunciados. Los archivos de guía
+se generan desde el contrato normal y enseñan también el modo opcional. El ahorro
+del tráfico MCP y el del contexto compuesto son mediciones distintas; sumar la
+instrucción y el schema adicionales del modo activado. No introducir una política
+de tokenizer en el kernel ni inferir límites de fuente para unir citas solapadas.

@@ -11,6 +11,7 @@ pub(crate) mod grpc_tls_mode;
 mod guide_dispatch;
 pub(crate) mod json_rpc;
 pub(crate) mod kernel_mcp_server;
+mod passage_projection;
 pub(crate) mod ports;
 pub(crate) mod projection_names;
 mod read_continuations;
