@@ -11,7 +11,7 @@ pub(crate) struct WriteValidationError {
     field: String,
     global: bool,
     action: Option<Value>,
-    allowed_values: Option<&'static [&'static str]>,
+    allowed_values: Option<Box<[String]>>,
     type_mismatch: Option<(JsonValueType, JsonValueType)>,
 }
 
@@ -59,8 +59,16 @@ impl WriteValidationError {
         self
     }
 
-    pub(crate) fn allowed_values(mut self, values: &'static [&'static str]) -> Self {
-        self.allowed_values = Some(values);
+    pub(crate) fn allowed_values(
+        mut self,
+        values: impl IntoIterator<Item = impl AsRef<str>>,
+    ) -> Self {
+        self.allowed_values = Some(
+            values
+                .into_iter()
+                .map(|value| value.as_ref().to_owned())
+                .collect(),
+        );
         self
     }
 

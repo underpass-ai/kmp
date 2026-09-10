@@ -24,7 +24,10 @@ pub(crate) fn build_batch_plan(
     let about = required_string(object, "about")?;
     kmp_application::validate_ref_token("about", &about)?;
     required_string(object, "actor")?;
-    let observed_at = required_string(object, "observed_at")?;
+    let observed_at = required_string(object, "observed_at").map_err(|_| {
+        WriteValidationError::new("top-level observed_at is required for packet provenance and shared observation time, even when records override it; supply the actual observation time with its UTC offset, not an assumed occurrence or validity start")
+            .at("observed_at").code("REQUIRED_FIELD")
+    })?;
     super::coordinates::reject_a_time_that_has_not_happened(
         &observed_at,
         crate::clock::now_seconds(),
@@ -212,11 +215,14 @@ pub(crate) fn build_batch_plan(
                 let target = link.get("ref").and_then(Value::as_str).ok_or_else(|| {
                     format!("memories[{index}].connect_to[{link_index}].ref is required")
                 })?;
-                if let Some(local) = target.strip_prefix('@') {
-                    let reference = refs.get(local).ok_or_else(|| WriteValidationError::new(format!(
-                    "memories[{index}].connect_to[{link_index}].ref names unknown local id `{local}`; declare it in memories or use an existing canonical ref"
-                )).at(format!("memories[{index}].connect_to[{link_index}].ref")).code("UNKNOWN_LOCAL_REF"))?;
+                let local = target.strip_prefix('@').unwrap_or(target);
+                if let Some(reference) = refs.get(local) {
                     link["ref"] = json!(reference);
+                } else if target.starts_with('@') || !target.contains(':') {
+                    return Err(WriteValidationError::new(format!(
+                        "unknown local id `{local}`; use an exact id declared in memories or a canonical ref returned by a read"
+                    )).at(format!("memories[{index}].connect_to[{link_index}].ref"))
+                      .code("UNKNOWN_LOCAL_REF").allowed_values(refs.keys()));
                 }
             }
             request.insert("connect_to".into(), links);

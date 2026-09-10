@@ -48,6 +48,16 @@ comprobarlo con `bash scripts/ci/mcp-registry.sh`. Evitar repetir un recuento fi
 
 ## 2. Colocar la explicación donde se consulta
 
+La escritura completa una clase omitida sólo si `writer_spec` del dominio tiene
+una única clase permitida. Al modificar ese vocabulario, revisar también las
+relaciones que exigen `class` en el schema y su feedback `allowed_values`; ambos
+se proyectan del dominio. Una clase explícita nunca se reemplaza. Los ids locales
+con o sin `@` resuelven sólo coincidencias exactas dentro del paquete; no convertir
+errores locales en consejos para enlazar otros abouts. Comprobar nombres futuros,
+desconocidos, refs canónicos, prueba, recibo y replay tras reinicio. Conservar la
+observación explícita del paquete: completar la clase no autoriza inferir relojes
+ni elegir el tipo de memoria a partir de la prosa.
+
 Mantener la entrada breve como mapa. El detalle de un verbo debe explicar
 cuándo usarlo, cuándo elegir otro, entrada mínima, resultado, errores o límites
 y siguiente movimiento. Las skills dirigen a esa entrada y reutilizan lo ya

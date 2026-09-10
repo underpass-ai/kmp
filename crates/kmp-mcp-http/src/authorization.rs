@@ -248,9 +248,10 @@ fn authorize_write_connections(
             .flatten()
         {
             if let Some(reference) = connection.get("ref").and_then(Value::as_str) {
-                // The writer resolves @ids only inside this packet and rejects
-                // missing or ambiguous locals before any canonical mutation.
-                if !reference.starts_with('@') {
+                // @ids and names without a namespace are packet-local syntax.
+                // The writer resolves exact ids and rejects unknown locals;
+                // canonical targets still require their ordinary grant.
+                if !reference.starts_with('@') && reference.contains(':') {
                     authorize_ref(identity, Some(reference), about)?;
                 }
             }
@@ -458,7 +459,7 @@ mod tests {
         let actor = identity(&[WRITE_SCOPE]);
         let allowed = json!({"about":"project:kmp","labels":{"process":["timeline:kmp"]},"memories":[
             {"id":"source","ref":"project:kmp:observation:one","labels":{"task":["timeline:kmp"]}},
-            {"id":"decision","connect_to":[{"ref":"@source"},{"ref":"project:kmp:decision:prior"}]}
+            {"id":"decision","connect_to":[{"ref":"@source"},{"ref":"source"},{"ref":"project:kmp:decision:prior"}]}
         ],"search_summaries":[{"ref":"project:kmp:observation:one","summary_en":"A route observation."}]});
         assert!(authorize(&actor, &call("kmp_write_memory", allowed)).is_ok());
         assert!(authorize(&actor, &call("kmp_relabel", json!({"about":"project:kmp","ref":"project:kmp:entry:one","add":{"task":["timeline:kmp"]}}))).is_ok());

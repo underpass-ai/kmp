@@ -255,8 +255,8 @@ pub(super) fn build_write_plan_with_local_refs(
         let relation_type = MemoryRelationType::new(rel_arg)
             .map_err(|error| format!("connect_to[{index}].rel is invalid: {error}"))?;
         let rel = relation_type.as_str();
-        let semantic_class =
-            required_map_string(link, "class", &format!("connect_to[{index}].class"))?;
+        let semantic_class = resolve_class(link, rel, strict)
+            .map_err(|error| error.within(&format!("connect_to[{index}]")))?;
         validate_semantic_class(semantic_class).map_err(|error| {
             WriteValidationError::new(error).at(format!("connect_to[{index}].class"))
         })?;

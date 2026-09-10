@@ -48,7 +48,7 @@ weaken validation merely to accept the packet.
         "occurred_at": "2026-09-01T09:45:00Z",
         "connect_to": [
           {
-            "ref": "@logs",
+            "ref": "logs",
             "rel": "chosen_because",
             "class": "causal",
             "why": "A retry addresses the refresh race recorded in R1.",
@@ -96,8 +96,9 @@ weaken validation merely to accept the packet.
 
 ## Write both records and their proof in one call
 
-`@logs` resolves inside the same packet, despite appearing later. It is not
-an existing memory ref and needs no fabricated read_context. Shared component
+`logs` (or `@logs`) resolves inside the same packet, despite appearing later. It is not
+an existing memory ref and needs no fabricated read_context. `chosen_because`
+has two possible classes, so this packet explicitly chooses `causal` from R2. Shared component
 membership applies to both records; only R1 has aliases. Each record gets its
 own source label: R1 on the logs and R2 on the decision. Putting both source
 values in top-level labels would attach both to every record; that would not
@@ -128,7 +129,7 @@ is invented. Sources and relation rationale remain separate.
         "occurred_at": "2026-09-01T09:45:00Z",
         "connect_to": [
           {
-            "ref": "@logs",
+            "ref": "logs",
             "rel": "chosen_because",
             "class": "causal",
             "why": "A retry addresses the refresh race recorded in R1.",
@@ -273,7 +274,7 @@ known occurred_at. Retrying the exact packet keeps refs and sequences.
         "occurred_at": "2026-09-01T09:45:00Z",
         "connect_to": [
           {
-            "ref": "@logs",
+            "ref": "logs",
             "rel": "chosen_because",
             "class": "causal",
             "why": "A retry addresses the refresh race recorded in R1.",
@@ -316,12 +317,13 @@ but KMP does not decide which meaning fits the source. Do not automatically
 replace every rejected kind with observation.
 
 The earlier `choice` inspection supplies actual prior context. `uses_background`
-records that R3 refers to R2; its why/evidence do not claim a change. A future
+records that R3 refers to R2; its why/evidence do not claim a change. Its class
+is omitted: `uses_background` permits only `evidential`, completed by KMP. A future
 approval would need its own source and justified lifecycle relation. Do not
 infer validity dates from this request's observation time.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"request","arguments":{"about":"example:guide:semantic-batch","actor":"guide-writer","observed_at":"2026-09-01T10:30:00Z","idempotency_key":"guide-semantic-batch:request","labels":{"component":["neb"]},"read_context":{"inspected_refs":["${choice.object.ref}"]},"memories":[{"id":"request","kind":"observation","summary":"R3: An operator requests removal of the R2 retry; the team has not approved a change.","evidence":"R3 at 10:30 UTC: remove the retry selected in R2? The team has not approved any change; R2 remains the selected behavior.","labels":{"source":["R3"]},"connect_to":[{"ref":"${choice.object.ref}","rel":"uses_background","class":"evidential","why":"R3 refers to the R2 retry decision as the context for the request, without changing it.","evidence":"R3 explicitly asks about the retry selected in R2 and says no change has been approved."}]}]}}
+{"tool":"kmp_write_memory","save_as":"request","arguments":{"about":"example:guide:semantic-batch","actor":"guide-writer","observed_at":"2026-09-01T10:30:00Z","idempotency_key":"guide-semantic-batch:request","labels":{"component":["neb"]},"read_context":{"inspected_refs":["${choice.object.ref}"]},"memories":[{"id":"request","kind":"observation","summary":"R3: An operator requests removal of the R2 retry; the team has not approved a change.","evidence":"R3 at 10:30 UTC: remove the retry selected in R2? The team has not approved any change; R2 remains the selected behavior.","labels":{"source":["R3"]},"connect_to":[{"ref":"${choice.object.ref}","rel":"uses_background","why":"R3 refers to the R2 retry decision as the context for the request, without changing it.","evidence":"R3 explicitly asks about the retry selected in R2 and says no change has been approved."}]}]}}
 ```
 
 ```json

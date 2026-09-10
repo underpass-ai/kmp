@@ -67,7 +67,7 @@
           "id": "verb:write",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "Native writer validation returns field-localized repair feedback and exact supported read actions; semantic packets validate before commit. Accepted packets return declared coverage and an immutable command receipt recoverable through Inspect; source coverage remains unassessed and store errors preserve their categories. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. INVALID_TYPE distinguishes present JSON type errors with expected_type and received_type; EMPTY_MEMORIES distinguishes an empty array. Native tests verify atomic rejection and correction without coercion. Independent compiler failures are returned together per record before canonical ingest; native tests cover atomic memory and search-summary repair. Writer checks compare evidence clocks and consistent dimensional routes. HTTP authorization checks current packet labels, nested refs, relation targets and search summaries before the backend; native transport tests cover refusal and local references. Accepted-command status and per-entry clock coverage come from canonical ingest and its idempotent receipt, not a caller guess. The acknowledgment projects canonical from/rel/to triples with local ids; native tests compare preview, commit and replay with receipt endpoints, including stored targets.",
+          "evidence": "Native writer validation returns field-localized repair feedback and exact supported read actions; semantic packets validate before commit. Accepted packets return declared coverage and an immutable command receipt recoverable through Inspect; source coverage remains unassessed and store errors preserve their categories. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. INVALID_TYPE distinguishes present JSON type errors with expected_type and received_type; EMPTY_MEMORIES distinguishes an empty array. Native tests verify atomic rejection and correction without coercion. Independent compiler failures are returned together per record before canonical ingest; native tests cover atomic memory and search-summary repair. Writer checks compare evidence clocks and consistent dimensional routes. HTTP authorization checks current packet labels, nested refs, relation targets and search summaries before the backend; native transport tests cover refusal and local references. Accepted-command status and per-entry clock coverage come from canonical ingest and its idempotent receipt, not a caller guess. The acknowledgment projects canonical from/rel/to triples with local ids; native tests compare preview, commit and replay with receipt endpoints, including stored targets. Exact local ids with or without @ resolve inside the packet. Native tests exercise deterministic single-class completion, explicit class preservation, ambiguous-class feedback, unknown local ids, atomic rejection and durable receipts after restart; packet observation remains explicit.",
           "text_file": "verbs/write.md",
           "guide_title": "Write evidence or change labels"
         },
@@ -107,7 +107,7 @@
           "id": "advanced:relations",
           "kind": "constraint",
           "depth": "advanced",
-          "evidence": "The writer relation vocabulary distinguishes semantic meaning from fallback links and reports relation quality. Endpoint roles are explicit for permission, verification, exclusion, correction and replacement. The projection marks the entire supersedes target SUPERSEDED; corrects does not change that status.",
+          "evidence": "The writer relation vocabulary distinguishes semantic meaning from fallback links and reports relation quality. Endpoint roles are explicit for permission, verification, exclusion, correction and replacement. The projection marks the entire supersedes target SUPERSEDED; corrects does not change that status. Exact local ids with or without @ resolve inside the packet. Native tests exercise deterministic single-class completion, explicit class preservation, ambiguous-class feedback, unknown local ids, atomic rejection and durable receipts after restart; packet observation remains explicit.",
           "text_file": "topics/relations.md",
           "guide_title": "Choose a relation and justify it"
         },
@@ -324,7 +324,7 @@
           "depth": "advanced",
           "text_file": "examples/semantic-batch.md",
           "example_title": "Atomic semantic packet with local proof links",
-          "evidence": "Two fictional R1/R2 sources exercise one-about atomic validation, forward local refs, all declared labels, independent clocks, exact retry and shared ChronoLoom proof inspection. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. The teaching review contrasts R1/R2 source clocks with the accepted packet, distinguishes a request from an executed change and explains separate lifecycles and consistent account labels."
+          "evidence": "Two fictional R1/R2 sources exercise one-about atomic validation, forward local refs, all declared labels, independent clocks, exact retry and shared ChronoLoom proof inspection. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. The teaching review contrasts R1/R2 source clocks with the accepted packet, distinguishes a request from an executed change and explains separate lifecycles and consistent account labels. Exact local ids with or without @ resolve inside the packet. Native tests exercise deterministic single-class completion, explicit class preservation, ambiguous-class feedback, unknown local ids, atomic rejection and durable receipts after restart; packet observation remains explicit."
         },
         {
           "id": "card:wake",
@@ -338,7 +338,7 @@
           "kind": "instruction",
           "depth": "basic",
           "text_file": "cards/write.md",
-          "evidence": "A short worked starting card for write; extended guidance remains available through its canonical verb reference."
+          "evidence": "A short worked starting card for write; extended guidance remains available through its canonical verb reference. Exact local ids with or without @ resolve inside the packet. Native tests exercise deterministic single-class completion, explicit class preservation, ambiguous-class feedback, unknown local ids, atomic rejection and durable receipts after restart; packet observation remains explicit."
         },
         {
           "id": "card:ask",

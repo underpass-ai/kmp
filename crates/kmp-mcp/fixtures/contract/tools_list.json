@@ -787,9 +787,23 @@
                   "description": "Justified links: this containing memory is the source, connect_to.ref is the target. Read each as source -> rel -> target before submitting.",
                   "items": {
                     "additionalProperties": false,
+                    "if": {
+                      "properties": {
+                        "rel": {
+                          "enum": [
+                            "chosen_because",
+                            "authorizes",
+                            "confirms_selection"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "rel"
+                      ]
+                    },
                     "properties": {
                       "class": {
-                        "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                        "description": "Omit when rel allows exactly one class: KMP completes that class. Required for chosen_because, authorizes, confirms_selection. An explicit class is validated, never replaced. What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
                         "enum": [
                           "structural",
                           "causal",
@@ -815,7 +829,7 @@
                         "type": "string"
                       },
                       "ref": {
-                        "description": "@local-id in this packet, or an existing canonical ref. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
+                        "description": "Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -864,9 +878,13 @@
                     },
                     "required": [
                       "ref",
-                      "rel",
-                      "class"
+                      "rel"
                     ],
+                    "then": {
+                      "required": [
+                        "class"
+                      ]
+                    },
                     "type": "object"
                   },
                   "type": "array"
@@ -877,7 +895,7 @@
                   "type": "string"
                 },
                 "id": {
-                  "description": "Local name. @name in connect_to.ref addresses this record, including forward links. local_refs returns its canonical address.",
+                  "description": "Local name. Use this exact name or @name in connect_to.ref, including forward links. local_refs returns its canonical address.",
                   "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
                   "type": "string"
                 },
@@ -961,7 +979,7 @@
             "type": "array"
           },
           "observed_at": {
-            "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
+            "description": "Required packet provenance and shared observation time, even if every record overrides it. Supply the actual RFC3339 observation with its UTC offset; not an assumed occurrence or validity start. Backfill allowed; more than five minutes ahead of the kernel clock is refused.",
             "minLength": 1,
             "type": "string"
           },
