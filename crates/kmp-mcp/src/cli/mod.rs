@@ -3,6 +3,7 @@ use kmp_mcp::lifecycle::LifecycleAction;
 pub(crate) mod serve;
 
 mod config;
+mod context_verb;
 mod document;
 mod guide_verb;
 mod lifecycle_verbs;
@@ -35,6 +36,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "snapshot" => return run_snapshot_command(args).await,
         "summaries" => return run_summaries_command(args).await,
         "config" => run_config_command(args),
+        "context" => context_verb::run(args),
         "guide" => return run_guide_command(args).await,
         "plugin" => return run_plugin_command(args).await,
         "setup" => return run_lifecycle_command(LifecycleAction::Setup, args).await,
@@ -96,6 +98,7 @@ fn is_cli_subcommand(command: &str) -> bool {
             | "doctor"
             | "config"
             | "document"
+            | "context"
             | "guide"
             | "plugin"
             | "setup"
@@ -137,6 +140,7 @@ fn subcommand_usage(command: &str) -> &'static str {
         "doctor" => "kmp-mcp doctor",
         "config" => "kmp-mcp config [memory-routing <on-request|always>]",
         "document" => "kmp-mcp document <about> [--out FILE]",
+        "context" => "kmp-mcp context project|expand [FILE|-]",
         "guide" => "kmp-mcp guide sync --plugin-root DIR [--dry-run]",
         "plugin" => "kmp-mcp plugin resolve-engine|notice --plugin-root DIR",
         "setup" => {
@@ -170,6 +174,11 @@ fn print_subcommand_help(command: &str) {
              table of its own. Without it `ask` matches within one language."
         );
     }
+    if command == "context" {
+        println!(
+            "\nProject {{groups:[{{id,packets,reads,spans?}}],max_bytes?}} to lossless context JSON.\nExpand reconstructs admitted groups. FILE defaults to stdin; stdout is JSON.\nPackets may carry native response-local tables. Spans name an explicit returned\nsource ref, its SHA-256 text fingerprint and a complete quote range in UTF-8 bytes.\nNo store, model, source fetch or read action is executed."
+        );
+    }
     if command == "export" {
         println!(
             "\n--about matches an opaque about exactly and may be repeated. Filtered bundles \
@@ -193,6 +202,7 @@ kmp-mcp guide sync --plugin-root DIR\n  \
 kmp-mcp plugin resolve-engine  Select the engine matching both host manifests\n  \
 kmp-mcp plugin notice          Report version drift without changing the machine\n  \
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
+kmp-mcp context project|expand  Compose captured memory packets or expand their text\n  \
 kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
 kmp-mcp summaries pending       List the memories that owe an English search summary\n  \
 kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply]\n  \

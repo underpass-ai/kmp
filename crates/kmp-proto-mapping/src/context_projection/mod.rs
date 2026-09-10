@@ -8,9 +8,15 @@
 mod citation_pool;
 mod context_group;
 mod passage_pool;
+mod projection_request;
+mod source_span;
+mod source_text;
+mod span_projection;
 
 pub use context_group::ContextGroup;
+pub use projection_request::ProjectionRequest;
 use serde_json::{Value, json};
+pub use source_span::SourceSpan;
 
 /// Compose complete caller-declared groups under a serialized UTF-8 byte limit.
 ///
@@ -19,6 +25,21 @@ use serde_json::{Value, json};
 /// with an explicit warning. The caller owns its tokenizer and prompt framing.
 /// Native page/selection omissions remain in the admitted packets unchanged.
 pub fn compose(groups: &[ContextGroup], max_bytes: usize) -> Result<Value, String> {
+    // Each native page owns its table. Expand independently before sharing a
+    // context-wide table; equal p1/c1 names in different calls are unrelated.
+    let groups = groups
+        .iter()
+        .cloned()
+        .map(|mut group| {
+            group.packets = group
+                .packets
+                .into_iter()
+                .map(expand_packet)
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(group)
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    let groups = groups.as_slice();
     validate(groups)?;
     let complete = render(groups, &vec![true; groups.len()]);
     if complete.to_string().len() <= max_bytes {
@@ -44,7 +65,7 @@ pub fn compose(groups: &[ContextGroup], max_bytes: usize) -> Result<Value, Strin
 /// Expand admitted groups byte-for-byte at every canonical prose slot.
 /// Structural metadata and relationships were never removed or merged.
 pub fn expand(projection: &Value) -> Result<Vec<ContextGroup>, String> {
-    if projection["contract"] != "kmp.context.passages.v1" {
+    if projection["contract"] != "kmp.context.passages.v2" {
         return Err("unsupported context projection contract".into());
     }
     let passages = serde_json::from_value(projection["passages"].clone())
@@ -131,11 +152,33 @@ fn render(groups: &[ContextGroup], admitted: &[bool]) -> Value {
             .flat_map(|(group, _)| group.packets.clone())
             .collect::<Vec<_>>()
     );
-    let passages = passage_pool::share(&mut all_packets);
+    let selected = groups
+        .iter()
+        .zip(admitted)
+        .filter_map(|(group, keep)| keep.then_some(group))
+        .collect::<Vec<_>>();
+    let spanned = selected
+        .iter()
+        .any(|group| !group.spans.is_empty())
+        .then(|| {
+            let mut candidate = all_packets.clone();
+            let passages = span_projection::share(&mut candidate, &selected);
+            (candidate, passages)
+        });
+    let mut passages = passage_pool::share(&mut all_packets);
+    if let Some((candidate, span_passages)) = spanned
+        && json!([&candidate, &span_passages]).to_string().len()
+            < json!([&all_packets, &passages]).to_string().len()
+    {
+        all_packets = candidate;
+        passages = span_passages;
+    }
     let citations = citation_pool::share(&mut all_packets);
     let mut packets = all_packets.as_array().expect("packet array").iter();
     let rendered = groups.iter().zip(admitted).filter(|(_,keep)| **keep).map(|(group,_)| {
-        json!({"id":group.id,"packets":packets.by_ref().take(group.packets.len()).cloned().collect::<Vec<_>>(),"reads":group.reads})
+        let mut value = json!({"id":group.id,"packets":packets.by_ref().take(group.packets.len()).cloned().collect::<Vec<_>>(),"reads":group.reads});
+        if !group.spans.is_empty() { value["spans"] = json!(group.spans); }
+        value
     }).collect::<Vec<_>>();
     let omitted = groups
         .iter()
@@ -143,7 +186,7 @@ fn render(groups: &[ContextGroup], admitted: &[bool]) -> Value {
         .filter(|(_, keep)| !**keep)
         .map(|(group, _)| json!({"id":group.id,"reason":"byte_budget","reads":group.reads}))
         .collect::<Vec<_>>();
-    json!({"contract":"kmp.context.passages.v1","groups":rendered,"passages":passages,"citations":citations,"omitted":omitted,"warnings":[]})
+    json!({"contract":"kmp.context.passages.v2","groups":rendered,"passages":passages,"citations":citations,"omitted":omitted,"warnings":[]})
 }
 
 fn validate(groups: &[ContextGroup]) -> Result<(), String> {
@@ -190,8 +233,11 @@ fn validate(groups: &[ContextGroup]) -> Result<(), String> {
             return Err("each proof group needs explicit original memory reads with about, not expiring continuations".into());
         }
     }
-    Ok(())
+    span_projection::validate(groups)
 }
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod span_tests;

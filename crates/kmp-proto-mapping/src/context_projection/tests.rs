@@ -3,6 +3,7 @@ use super::*;
 fn group(id: &str, source: &str, text: &str) -> ContextGroup {
     ContextGroup {
         id: id.into(),
+        spans: vec![],
         reads: vec![
             json!({"tool":"kmp_inspect","arguments":{"about":"project:proof","ref":id,"include":{"raw":true}}}),
         ],

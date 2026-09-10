@@ -1,3 +1,4 @@
+use super::SourceSpan;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -13,4 +14,6 @@ pub struct ContextGroup {
     pub id: String,
     pub packets: Vec<Value>,
     pub reads: Vec<Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spans: Vec<SourceSpan>,
 }
