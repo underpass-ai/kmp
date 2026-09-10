@@ -28,17 +28,19 @@ async fn recommendations_execute_native_pages_and_stop_at_temporal_unknown() {
         "{advice}"
     );
     let action = &advice["recommendation"]["action"];
+    let request = server.resolve_read_request(json!({"method":"tools/call","params":{"name":action["tool"],"arguments":action["arguments"]}})).expect("resolve bound continuation");
+    let bound = &request["params"];
     for field in ["context_id", "purpose", "about", "axis", "interval"] {
         assert_eq!(
-            action["arguments"][field], selection[field],
+            bound["arguments"][field], selection[field],
             "{field}: {advice}"
         );
     }
     assert_eq!(
-        action["arguments"]["dimensions"]["selectors"],
+        bound["arguments"]["dimensions"]["selectors"],
         selection["dimensions"]["selectors"]
     );
-    assert_eq!(action["arguments"]["dimensions"]["scope"], "current_about");
+    assert_eq!(bound["arguments"]["dimensions"]["scope"], "current_about");
     let continued = call(
         &server,
         action["tool"].as_str().expect("tool"),

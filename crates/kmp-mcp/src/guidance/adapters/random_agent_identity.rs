@@ -1,8 +1,13 @@
-use crate::guidance::{AgentContextId, AgentId, AgentIdentity, AgentIdentitySource, GuidanceError};
+use crate::guidance::{
+    AgentContextId, AgentId, AgentIdentity, AgentIdentitySource, GuidanceError, ReadContinuationId,
+};
 
 pub(super) struct RandomAgentIdentity;
 
 impl RandomAgentIdentity {
+    pub(super) fn read_continuation() -> Result<ReadContinuationId, GuidanceError> {
+        ReadContinuationId::parse(&format!("read_{}", Self::random_hex()?))
+    }
     fn random_hex() -> Result<String, GuidanceError> {
         let mut bytes = [0_u8; 16];
         getrandom::getrandom(&mut bytes).map_err(|error| {

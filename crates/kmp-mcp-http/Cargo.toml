@@ -23,6 +23,7 @@ url.workspace = true
 
 [dev-dependencies]
 base64.workspace = true
+tempfile = "3.26.0"
 tower = { version = "0.5.3", features = ["util"] }
 
 [lints]

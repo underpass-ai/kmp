@@ -1,8 +1,16 @@
 use crate::guidance::{
-    AgentContext, AgentContextId, AgentOpen, AgentSession, AgentUse, GuidanceError, UseOutcome,
+    AgentContext, AgentContextId, AgentOpen, AgentSession, AgentUse, GuidanceError,
+    ReadContinuation, ReadContinuationId, UseOutcome,
 };
 
 pub(crate) trait AgentDirectory: Send + Sync {
+    fn save_read(
+        &self,
+        session: &AgentSession,
+        call: &ReadContinuation,
+    ) -> Result<ReadContinuationId, GuidanceError>;
+    fn load_read(&self, id: &ReadContinuationId)
+    -> Result<Option<ReadContinuation>, GuidanceError>;
     /// Resume the last observed revision without reading or writing memory.
     fn context(&self, id: &AgentContextId) -> Result<AgentContext, GuidanceError>;
     fn record_use(

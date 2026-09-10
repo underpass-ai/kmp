@@ -43,6 +43,22 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
         for tool in tools.iter_mut().filter(|t| t["name"] != "kmp_guide") {
             tool["inputSchema"]["properties"]["context_id"] = json!({"type":"string","description":"Optional active context returned by kmp_guide; records use and enables concise guidance."});
             tool["inputSchema"]["properties"]["purpose"] = json!({"type":"string","enum":["continue","audit","history","answer"],"description":"Optional recommendation purpose with context_id. Omitted: continue the selected packet."});
+            if crate::guidance::ReadContinuation::supports(
+                tool["name"].as_str().unwrap_or_default(),
+            ) {
+                let schema = tool["inputSchema"].as_object_mut().expect("input schema");
+                schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":"Execute the returned action with this identifier alone. It retains context, purpose, selection, cursor and budget for one read. Replay repeats that page; follow its new action to advance. Unavailable: restart the original read."});
+                let mut initial = json!({"not":{"required":["continuation"]}});
+                for key in ["required", "anyOf", "oneOf", "allOf"] {
+                    if let Some(value) = schema.remove(key) {
+                        initial[key] = value;
+                    }
+                }
+                schema.insert(
+                    "oneOf".into(),
+                    json!([initial,{"required":["continuation"],"maxProperties":1}]),
+                );
+            }
             if matches!(
                 tool["name"].as_str(),
                 Some("kmp_write_memory" | "kmp_relabel")
