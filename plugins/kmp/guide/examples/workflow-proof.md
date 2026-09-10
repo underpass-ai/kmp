@@ -312,6 +312,10 @@ A planned step can be remembered as an observation of the plan. It is not a succ
 A1: Marta explicitly approves OP1 for RLS-3 staging only, conditional on checksum verification. A1 does not approve production.
 
 The approval is the source of authorizes and OP1 is its target. A1 permits a bounded action; the relation cannot enlarge that scope or prove execution.
+Read the triple as `approval -> authorizes -> operation`. Reversing it says
+the operation grants permission to its approval. A later execution can depend
+on that approval, but `verified_by` must point to a check that actually verifies
+the claimed outcome, not to permission or to the earlier failure.
 
 ```json
 {

@@ -32,8 +32,12 @@ pub(crate) fn write_memory_schema() -> Value {
     let occurred = string_schema(
         "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
     );
-    let valid_from = string_schema("Inclusive start of the recorded state's validity.");
-    let valid_until = string_schema("Exclusive end of the recorded state's validity.");
+    let valid_from = string_schema(
+        "Inclusive start of the recorded state's validity, only if known. Omit an unknown start; observation time is not a substitute.",
+    );
+    let valid_until = string_schema(
+        "Exclusive end of the recorded state's validity, only if known from this source. Do not backdate knowledge from a later report.",
+    );
     let rank = json!({"type":"integer","minimum":1});
     let memories = json!({
         "type":"array","minItems":1,
@@ -55,6 +59,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "valid_until":valid_until,
                 "rank":rank,
                 "connect_to":{
+                    "description":"Justified links: this containing memory is the source, connect_to.ref is the target. Read each as source -> rel -> target before submitting.",
                     "type":"array","items":{
                         "type":"object","additionalProperties":false,"required":["ref","rel","class"],
                         "properties":{
@@ -235,7 +240,18 @@ fn write_memory_output_schema() -> Value {
             "created": described("array", "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it."),
             "resembling": described("array", "After a committed non-strict write: the labels written that resemble one the about already held, each with `key`, `value`, `existing_key`, `existing_value`, `kind` and `why`. Under strict such a write is refused instead, naming both labels, unless `options.labels_new` insists.")
         })),
-        "relations": string_array("Typed relation names compiled into the canonical ingest."),
+        "relations": json!({
+            "type":"array",
+            "description":"Compiled source -> relation -> target triples, in canonical ingest order. @id resolves through local_refs; other endpoints remain canonical refs. Review direction and scope against the source: acceptance does not prove semantic fidelity.",
+            "items":{
+                "type":"object","additionalProperties":false,"required":["from","rel","to"],
+                "properties":{
+                    "from":described("string", "Source memory, the containing record in the request."),
+                    "rel":described("string", "Compiled relation type."),
+                    "to":described("string", "Target memory addressed by connect_to.ref.")
+                }
+            }
+        }),
         "relation_quality": described("array", "Preview per-relation validation. After commit, recover it with receipt.action."),
         "relation_quality_metrics": described("object", "Preview counts and prior-context coverage; stored in the receipt after commit."),
         "ingest_preview": described("object", "Canonical kmp_ingest arguments. Present only on dry-run."),

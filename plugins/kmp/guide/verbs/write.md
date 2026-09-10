@@ -21,12 +21,23 @@ still require an actual prior read declared in `read_context`; cross-about
 identity links retain the proposal rule. Do not claim to have inspected a new
 local target. Independent facts may be unlinked: do not invent a relation.
 
+The containing memory is the source of each link; `connect_to.ref` is its
+target. Read the proposed triple aloud: approval **authorizes** action, outcome
+**verified_by** check, exclusion **excluded_from** total. A relation name alone
+does not describe its direction. See `guide:kmp-agent:advanced:relations` for
+endpoint examples and partial corrections. `supersedes` marks the **whole**
+target SUPERSEDED. If a report holds independent facts, isolate the relevant
+fact or use `corrects` with the precise correction; preserve the other facts.
+
 With `context_id`, actor defaults to the persistent agent name; an explicit
 actor overrides it. Without context, actor is required. Actor identifies the author; top-level observed_at is the packet's provenance
 observation time. Actual ingestion is recorded separately by the kernel. Each
 record may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP
 resolves all names and validates the entire packet before one canonical ingest.
 A rejected record writes none of the packet. The transaction covers one about.
+Omit unknown validity boundaries too. Observing an existing state does not
+establish when it began; a later report does not give an earlier writer knowledge
+of when it will end.
 
 `local_refs` maps your ids to canonical refs. A preview plans those refs;
 `accepted=true` confirms persistence. Retry the unchanged logical packet with
@@ -41,6 +52,11 @@ link, a rejected packet and temporal/ChronoLoom review. Accepted writes return a
 `diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.
 A lax write can carry `RELATION_CONTEXT_UNVERIFIED` with severity warning and
 an audit action. Acceptance does not establish an unverified causal claim.
+`relations` lists compact `{from, rel, to}` triples in canonical ingest order.
+Endpoints from this packet use `@id`, resolved by `local_refs`; stored endpoints
+keep their canonical refs. Read their direction and scope against the source.
+The acknowledgment exposes what was compiled; it cannot certify that an
+approval verifies execution or that a correction replaces an entire report.
 `coverage` counts declared memories, relations, evidence objects and per-memory
 label memberships after the shared-label union. `complete=true` applies only to
 the submitted packet. `source_coverage=not_assessed` means KMP cannot tell whether

@@ -27,7 +27,7 @@ pub(crate) fn relation_vocabulary_description(header: &str) -> String {
         "{header} The relation carries the explanation: non-structural classes require why, \
          evidence and confidence. Prefer rich types — anemic types are an honest fallback for \
          when no richer semantic dependency can be proven, never a default. Vocabulary \
-         (quality; allowed classes; when to use):"
+         (quality; allowed classes; source -> relation -> target / when to use):"
     );
     for spec in KnownMemoryRelationType::writer_relation_types()
         .iter()

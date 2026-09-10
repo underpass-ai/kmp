@@ -30,6 +30,7 @@ mod relabel_planner_audit;
 pub(crate) mod relabel_results;
 pub(crate) mod relate_proposal;
 pub(crate) mod relation_quality;
+mod relation_view;
 pub(crate) mod relations;
 pub(crate) mod results;
 mod search_summary;

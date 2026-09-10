@@ -15,6 +15,18 @@ validates the packet, not fidelity to the source. Check the stored clocks and
 evidence. On rejection no part of the batch is committed: read all feedback,
 repair from the source, and retry. Replay an accepted packet with its same key.
 
+Read returned `relations` as `from -> rel -> to` (`@id` uses `local_refs`).
+In `connect_to`, the containing memory is `from`; `ref` is `to`:
+
+- approval -> `authorizes` -> permitted action (not proof it ran);
+- claim/outcome -> `verified_by` -> actual verifying check;
+- exclusion record -> `excluded_from` -> total/set;
+- corrected fact -> `corrects` -> earlier fact;
+- replacement -> `supersedes` -> **entire** old memory, marking it SUPERSEDED.
+
+For a partial correction, preserve unrelated facts; do not supersede their
+whole report. Omit unknown `valid_from`/`valid_until`; observation is not onset.
+
 For a decision, use its own source and connect it to the observation with the
 relation's own why and evidence. Separate facts with different validity. Never
 invent an onset, alias, permission or proof to satisfy the schema.

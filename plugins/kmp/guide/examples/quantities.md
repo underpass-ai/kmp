@@ -771,6 +771,9 @@ of omitted candidates, not another merchant charge. Its `excluded_from` edge
 points **from the exclusion record to the total**; `derived_from` and
 `chosen_because` point to the documents justifying the decision. Inspect this
 record to reach the duplicate, correction, void and currency source.
+Reading it backwards would say the total is excluded from an invoice. A later
+correction to one invoice uses `corrects` on that fact; it must not `supersedes`
+a report that also holds an unrelated cancellation or fee.
 
 ```json
 {

@@ -19,7 +19,7 @@ pub(crate) fn write_dry_run_result(
         "summary": write_summary(plan),
         "generated_refs": plan.generated_refs,
         "labels": { "written": plan.labels },
-        "relations": plan.relations,
+        "relations": super::relation_view::relation_triples(plan),
         "relation_quality": plan.relation_quality,
         "relation_quality_metrics": plan.relation_quality_metrics,
         "ingest_preview": plan.ingest_arguments,
@@ -58,7 +58,7 @@ pub(crate) fn write_commit_result(
         "warnings": ingest_result.get("warnings").cloned().unwrap_or_else(|| json!([])),
         "generated_refs": plan.generated_refs,
         "labels": { "written": plan.labels, "created": created, "resembling": resembling },
-        "relations": plan.relations,
+        "relations": super::relation_view::relation_triples(plan),
         "diagnostics": plan.diagnostics
     });
     if let Some(reference) = ingest_result

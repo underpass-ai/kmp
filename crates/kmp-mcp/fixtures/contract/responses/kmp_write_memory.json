@@ -89,7 +89,11 @@
       "ref": "receipt:v1:question%3Aparity:write%3Abb2b522031614fc2"
     },
     "relations": [
-      "uses_background"
+      {
+        "from": "@current",
+        "rel": "uses_background",
+        "to": "question:parity:claim:denver"
+      }
     ],
     "status": "committed",
     "summary": "Ingested 1 entry, 1 relation, and 2 evidence items for question:parity.",

@@ -89,7 +89,11 @@
       "ref": "string"
     },
     "relations": [
-      "string"
+      {
+        "from": "string",
+        "rel": "string",
+        "to": "string"
+      }
     ],
     "status": "string",
     "summary": "string",
