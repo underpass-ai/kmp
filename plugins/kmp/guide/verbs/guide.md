@@ -69,3 +69,16 @@ without explicit source ownership never invents an about. No recommendation
 executes itself, widens an UNKNOWN search, proves a relation true or authorizes
 a write. `signals` carries observable packet completeness and write coverage;
 coverage of a packet does not assess fidelity to its source.
+
+## Consult a protocol expert
+
+When the cards and examples leave a protocol question unresolved, the installed
+`kmp-expert` skill can prepare a separate host subagent with the complete agent
+guide and all examples. Its local cache is keyed by the shipped asset; the
+expert loads that content before consultations, checks the store's revision and
+keeps its own persistent identity. After context loss it must reload the guide.
+The working agent receives short explanations and concrete call proposals,
+checks them against its sources and executes them under existing authorization.
+This is host orchestration: KMP does not run a model. Local preload neither
+marks MCP lessons served nor proves understanding, and its context cost counts
+alongside the working agent's cost. See that skill for the preparation workflow.
