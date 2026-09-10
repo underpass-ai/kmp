@@ -113,7 +113,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "decision",
+  "save_as": "decision_review",
   "arguments": {
     "about": "example:guide:budget-proof",
     "actor": "guide-writer",
@@ -161,6 +161,14 @@ catalogue and refs instead of repeating this fresh-store assumption.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"decision","arguments":"${decision_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -243,7 +251,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "result",
+  "save_as": "result_review",
   "arguments": {
     "about": "example:guide:budget-proof",
     "actor": "guide-writer",
@@ -291,6 +299,14 @@ catalogue and refs instead of repeating this fresh-store assumption.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"result","arguments":"${result_review.next_actions.0.arguments}"}
 ```
 
 ```json

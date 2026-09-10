@@ -35,15 +35,15 @@ impl KernelMcpServer {
             || arguments.as_object().is_none_or(|args| args.len() != 1)
         {
             return Err(ToolError::invalid_argument(
-                "Use continuation alone on its returned read verb; other arguments start a different read.",
+                "Use continuation alone on its returned verb; other arguments start a different call.",
             ));
         }
         let id = ReadContinuationId::parse(value.as_str().ok_or_else(|| {
-            ToolError::invalid_argument("continuation must be a returned read identifier")
+            ToolError::invalid_argument("continuation must be a returned call identifier")
         })?)
         .map_err(|e| guidance_error(&e))?;
         let missing = || {
-            ToolError::conflict("This continuation expired, was evicted, or belongs to another store. Start the original read again; keep earlier pages explicitly partial.").with_feedback(json!({"code":"CONTINUATION_UNAVAILABLE","severity":"error","field":"continuation","reason":"Start the original read again; a handle is bounded transport state, not durable evidence.","action":null}))
+            ToolError::conflict("This continuation expired, was evicted, or belongs to another store. Submit the original call again; preserve its idempotency key and keep earlier read pages partial.").with_feedback(json!({"code":"CONTINUATION_UNAVAILABLE","severity":"error","field":"continuation","reason":"Start the original read again; a handle is bounded transport state, not durable evidence.","action":null}))
         };
         let directory = self.guidance_directory(true).map_err(|error| {
             if error.code == super::ToolErrorCode::InvalidArgument {
@@ -58,7 +58,7 @@ impl KernelMcpServer {
             .ok_or_else(missing)?;
         if call.tool != name {
             return Err(ToolError::invalid_argument(
-                "continuation belongs to a different read verb; copy the returned action",
+                "continuation belongs to a different verb; copy the returned action",
             ));
         }
         crate::contract::reject_unknown_arguments(name, &call.arguments)?;

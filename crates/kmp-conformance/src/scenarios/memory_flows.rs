@@ -57,6 +57,7 @@ fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
         default_observation_to_ingestion: false,
+        neighborhood_review: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {

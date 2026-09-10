@@ -243,6 +243,10 @@ where
             warnings,
         })
     }
+
+    pub(crate) async fn memory_revision(&self, about: &str) -> Result<u64, ApplicationError> {
+        Ok(self.event_store.current_revision(about, "memory").await?)
+    }
 }
 
 /// Deterministic SHA-256 hash of context changes for optimistic concurrency.

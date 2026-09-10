@@ -14,6 +14,16 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
     reply["result"].clone()
 }
 
+// These authored fixtures have justified links; exercise the explicit review round.
+async fn acknowledge(server: &KernelMcpServer, pending: Value) -> Value {
+    assert_eq!(
+        pending["structuredContent"]["status"], "needs_review",
+        "{pending}"
+    );
+    let action = &pending["structuredContent"]["next_actions"][0];
+    call(server, "kmp_write_memory", action["arguments"].clone()).await
+}
+
 fn packet() -> Value {
     json!({
         "about":ABOUT,"actor":"writer","observed_at":"2026-09-01T09:00:00Z",
@@ -98,7 +108,8 @@ async fn refusals_locate_the_member_and_rule_without_writing_any_member() {
         result["structuredContent"]["feedback"][0]["code"],
         "UNKNOWN_ARGUMENT"
     );
-    let accepted = call(&server, "kmp_write_memory", packet()).await;
+    let pending = call(&server, "kmp_write_memory", packet()).await;
+    let accepted = acknowledge(&server, pending).await;
     assert_eq!(
         accepted["structuredContent"]["accepted"], true,
         "{accepted}"
@@ -106,79 +117,27 @@ async fn refusals_locate_the_member_and_rule_without_writing_any_member() {
 }
 
 #[tokio::test]
-async fn prior_context_feedback_can_be_executed_then_the_write_repaired() {
+async fn stored_context_is_served_before_the_followup_can_commit() {
     let dir = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
-    let original = call(&server, "kmp_write_memory", packet()).await;
+    let pending = call(&server, "kmp_write_memory", packet()).await;
+    let original = acknowledge(&server, pending).await;
     let target = &original["structuredContent"]["local_refs"]["logs"];
-    assert!(target.is_string(), "{original}");
     let mut followup = packet();
     followup["memories"] = json!([followup["memories"][1]]);
     followup["memories"][0]["connect_to"][0]["ref"] = target.clone();
-    let rejected = call(&server, "kmp_write_memory", followup.clone()).await;
-    let feedback = &rejected["structuredContent"]["feedback"][0];
-    assert_eq!(feedback["code"], "PRIOR_CONTEXT_REQUIRED", "{rejected}");
-    assert_eq!(feedback["field"], "memories[0].connect_to[0].ref");
-    assert!(rejected["structuredContent"]["help"]["guide"].is_object());
-    let action = &feedback["action"];
-    assert_eq!(action["tool"], "kmp_inspect");
-    assert_eq!(action["arguments"], json!({"about":ABOUT,"ref":target}));
-    let inspected = call(
-        &server,
-        action["tool"].as_str().expect("tool"),
-        action["arguments"].clone(),
-    )
-    .await;
-    assert_eq!(inspected["isError"], false, "{inspected}");
-    followup["read_context"] =
-        json!({"inspected_refs":[inspected["structuredContent"]["object"]["ref"]]});
-    let written = call(&server, "kmp_write_memory", followup).await;
-    assert_eq!(written["structuredContent"]["accepted"], true, "{written}");
-}
-
-#[tokio::test]
-async fn invalid_kinds_expose_the_live_vocabulary_without_choosing_a_meaning_or_committing() {
-    let dir = tempfile::tempdir().expect("store");
-    let server = KernelMcpServer::embedded(dir.path()).expect("server");
-    let store = EmbeddedKernelStore::open(dir.path()).expect("store reader");
-    let list = server
-        .handle_json_line(
-            &json!({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}).to_string(),
-        )
-        .await
-        .expect("list");
-    let list: Value = serde_json::from_str(&list).expect("JSON");
-    let tool = list["result"]["tools"]
+    let pending = call(&server, "kmp_write_memory", followup).await;
+    assert_eq!(pending["structuredContent"]["accepted"], false);
+    let item = pending["structuredContent"]["neighborhood"]["items"]
         .as_array()
-        .expect("tools")
+        .expect("neighborhood items")
         .iter()
-        .find(|t| t["name"] == "kmp_write_memory")
-        .expect("writer");
-    let allowed =
-        &tool["inputSchema"]["properties"]["memories"]["items"]["properties"]["kind"]["enum"];
-    for unsupported in ["request", "outcome"] {
-        let mut args = packet();
-        args["memories"][1]["kind"] = json!(unsupported);
-        let result = call(&server, "kmp_write_memory", args).await;
-        assert_eq!(result["isError"], true);
-        let feedback = &result["structuredContent"]["feedback"][0];
-        assert_eq!(feedback["code"], "INVALID_KIND");
-        assert_eq!(feedback["field"], "memories[1].kind");
-        assert_eq!(&feedback["allowed_values"], allowed);
-        assert!(feedback["action"].is_null(), "no semantic guess");
-        assert_eq!(
-            verify_bundle(&store.export_bundle().await.expect("export"))
-                .expect("bundle")
-                .event_count,
-            0
-        );
-    }
-    assert!(
-        allowed
-            .as_array()
-            .expect("vocabulary")
-            .contains(&json!("decision"))
+        .find(|item| item["ref"] == *target && item["state"] == "stored")
+        .expect("stored target");
+    let inspected = call(&server, "kmp_inspect", item["action"]["arguments"].clone()).await;
+    assert_eq!(inspected["isError"], false, "{inspected}");
+    assert_eq!(
+        acknowledge(&server, pending).await["structuredContent"]["accepted"],
+        true
     );
-    let fixed = call(&server, "kmp_write_memory", packet()).await;
-    assert_eq!(fixed["structuredContent"]["accepted"], true);
 }

@@ -27,6 +27,7 @@ pub(crate) mod unhonored_projection;
 mod view_dispatch;
 pub(crate) mod view_tools;
 mod write_dispatch;
+mod write_review_result;
 
 pub use adapters::embedded_backend::EmbeddedKernelMcpBackend;
 pub use adapters::fixture_backend::FixtureKernelMcpBackend;

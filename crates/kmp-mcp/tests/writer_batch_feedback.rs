@@ -23,6 +23,16 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
     serde_json::from_str::<Value>(&reply).expect("JSON reply")["result"].clone()
 }
 
+// These authored fixtures have justified links; exercise the explicit review round.
+async fn acknowledge(server: &KernelMcpServer, pending: Value) -> Value {
+    assert_eq!(
+        pending["structuredContent"]["status"], "needs_review",
+        "{pending}"
+    );
+    let action = &pending["structuredContent"]["next_actions"][0];
+    call(server, "kmp_write_memory", action["arguments"].clone()).await
+}
+
 fn packet() -> Value {
     json!({
         "about":"project:batch-feedback", "actor":"writer",
@@ -75,7 +85,8 @@ async fn independent_record_errors_arrive_together_and_repair_remains_atomic() {
     assert_eq!(preview["structuredContent"]["dry_run"], true);
     assert_eq!(store.export_bundle().await.expect("still empty"), empty);
     args["options"]["dry_run"] = json!(false);
-    let accepted = call(&server, "kmp_write_memory", args).await;
+    let pending = call(&server, "kmp_write_memory", args).await;
+    let accepted = acknowledge(&server, pending).await;
     assert_eq!(
         accepted["structuredContent"]["accepted"], true,
         "{accepted}"
@@ -84,7 +95,7 @@ async fn independent_record_errors_arrive_together_and_repair_remains_atomic() {
 }
 
 #[tokio::test]
-async fn grouped_repairs_keep_executable_actions_and_local_reference_paths() {
+async fn grouped_refusals_then_context_review_preserve_local_reference_paths() {
     let dir = store_dir();
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
     let store = EmbeddedKernelStore::open(dir.path()).expect("reader");
@@ -99,7 +110,7 @@ async fn grouped_repairs_keep_executable_actions_and_local_reference_paths() {
     request["memories"] = json!([
         {"id":"missing","kind":"observation","summary":"The cache retry addresses the failed request.","evidence":"D1 records the retry rationale.",
             "connect_to":[{"ref":"@absent","rel":"chosen_because","class":"motivational","why":"The failed request motivates the retry.","evidence":"D1 cites R1."}]},
-        {"id":"unread","kind":"decision","summary":"The team chooses a cache retry.","evidence":"D1 records the retry decision.",
+        {"id":"unread","kind":"decision","summary":"The team chooses a cache retry.","evidence":"",
             "connect_to":[{"ref":target,"rel":"chosen_because","class":"motivational","why":"The failed request motivates the retry.","evidence":"D1 cites R1."}]}
     ]);
     let rejected = call(&server, "kmp_write_memory", request.clone()).await;
@@ -107,20 +118,15 @@ async fn grouped_repairs_keep_executable_actions_and_local_reference_paths() {
     assert_eq!(feedback.as_array().expect("feedback").len(), 2);
     assert_eq!(feedback[0]["code"], "UNKNOWN_LOCAL_REF");
     assert_eq!(feedback[0]["field"], "memories[0].connect_to[0].ref");
-    assert_eq!(feedback[1]["code"], "PRIOR_CONTEXT_REQUIRED");
-    assert_eq!(feedback[1]["field"], "memories[1].connect_to[0].ref");
+    assert_eq!(feedback[1]["code"], "MEMORY_EVIDENCE_REQUIRED");
+    assert_eq!(feedback[1]["field"], "memories[1].evidence");
     assert_eq!(store.export_bundle().await.expect("unchanged"), before);
-    let action = &feedback[1]["action"];
-    let inspected = call(
-        &server,
-        action["tool"].as_str().expect("executable action"),
-        action["arguments"].clone(),
-    )
-    .await;
-    assert_eq!(inspected["isError"], false, "{inspected}");
+    assert!(feedback[1]["action"].is_null());
+    request["memories"][1]["evidence"] = json!("D1 records the retry decision.");
     request["memories"][0]["connect_to"][0]["ref"] = target.clone();
     request["read_context"] = json!({"inspected_refs":[target]});
-    let repaired = call(&server, "kmp_write_memory", request).await;
+    let pending = call(&server, "kmp_write_memory", request).await;
+    let repaired = acknowledge(&server, pending).await;
     assert_eq!(
         repaired["structuredContent"]["accepted"], true,
         "{repaired}"

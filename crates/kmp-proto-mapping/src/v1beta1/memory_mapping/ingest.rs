@@ -38,6 +38,7 @@ pub fn ingest_command_from_proto(
     Ok(MemoryIngestCommand {
         receipt_context,
         default_observation_to_ingestion: request.default_observation_to_ingestion,
+        neighborhood_review: request.neighborhood_review,
         about: request.about,
         memory: MemoryData {
             dimensions: memory
@@ -69,6 +70,46 @@ pub fn ingest_command_from_proto(
 
 pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestResponse {
     IngestResponse {
+        neighborhood: outcome
+            .neighborhood
+            .map(|view| kmp_proto::v1beta1::WriteNeighborhood {
+                token: view.token,
+                eligible: view.eligible as u32,
+                omitted: view.omitted as u32,
+                omitted_conflicts: view.omitted_conflicts as u32,
+                abouts: view.abouts,
+                partial: view.partial,
+                links: view
+                    .links
+                    .into_iter()
+                    .map(|link| kmp_proto::v1beta1::NeighborhoodLink {
+                        from: link.from as u32,
+                        rel: link.rel,
+                        to: link.to as u32,
+                    })
+                    .collect(),
+                items: view
+                    .items
+                    .into_iter()
+                    .map(|item| kmp_proto::v1beta1::NeighborhoodItem {
+                        about: item.about,
+                        r#ref: item.reference,
+                        state: item.state,
+                        kind: item.kind,
+                        reason: item.reason,
+                        text: item.text,
+                        text_omitted: item.text_omitted,
+                        clocks: item
+                            .clocks
+                            .into_iter()
+                            .map(|(axis, values)| kmp_proto::v1beta1::NeighborhoodClock {
+                                axis,
+                                values,
+                            })
+                            .collect(),
+                    })
+                    .collect(),
+            }),
         summary: format!(
             "{} {} {}, {} {}, and {} {} for {}.",
             if !outcome.read_after_write_ready {

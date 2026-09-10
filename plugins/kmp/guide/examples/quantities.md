@@ -360,7 +360,7 @@ Now record the later documents with their actual later document clocks.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "hotel_final",
+  "save_as": "hotel_final_review",
   "arguments": {
     "about": "example:guide:quantities",
     "actor": "guide-writer",
@@ -420,6 +420,14 @@ Now record the later documents with their actual later document clocks.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"hotel_final","arguments":"${hotel_final_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool": "kmp_inspect", "save_as": "hotel_final_read", "arguments": {"about": "example:guide:quantities", "ref": "${hotel_final.generated_refs.0}", "budget": {"max_bytes": 40000}}}
 ```
@@ -427,7 +435,7 @@ Now record the later documents with their actual later document clocks.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "hotel_copy",
+  "save_as": "hotel_copy_review",
   "arguments": {
     "about": "example:guide:quantities",
     "actor": "guide-writer",
@@ -487,6 +495,14 @@ Now record the later documents with their actual later document clocks.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"hotel_copy","arguments":"${hotel_copy_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool": "kmp_inspect", "save_as": "hotel_copy_read", "arguments": {"about": "example:guide:quantities", "ref": "${hotel_copy.generated_refs.0}", "budget": {"max_bytes": 40000}}}
 ```
@@ -494,7 +510,7 @@ Now record the later documents with their actual later document clocks.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "void",
+  "save_as": "void_review",
   "arguments": {
     "about": "example:guide:quantities",
     "actor": "guide-writer",
@@ -549,6 +565,14 @@ Now record the later documents with their actual later document clocks.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"void","arguments":"${void_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool": "kmp_inspect", "save_as": "void_read", "arguments": {"about": "example:guide:quantities", "ref": "${void.generated_refs.0}", "budget": {"max_bytes": 40000}}}
 ```
@@ -556,7 +580,7 @@ Now record the later documents with their actual later document clocks.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "statement",
+  "save_as": "statement_review",
   "arguments": {
     "about": "example:guide:quantities",
     "actor": "guide-writer",
@@ -603,6 +627,14 @@ Now record the later documents with their actual later document clocks.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"statement","arguments":"${statement_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -683,7 +715,7 @@ EUR settlement subtotal, not a new primary receipt or a universal trip total.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "total",
+  "save_as": "total_review",
   "arguments": {
     "about": "example:guide:quantities",
     "actor": "guide-writer",
@@ -761,6 +793,14 @@ EUR settlement subtotal, not a new primary receipt or a universal trip total.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"total","arguments":"${total_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool": "kmp_inspect", "save_as": "total_read", "arguments": {"about": "example:guide:quantities", "ref": "${total.generated_refs.0}", "budget": {"max_bytes": 40000}}}
 ```
@@ -778,7 +818,7 @@ a report that also holds an unrelated cancellation or fee.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "exclusions",
+  "save_as": "exclusions_review",
   "arguments": {
     "about": "example:guide:quantities",
     "actor": "guide-writer",
@@ -878,6 +918,14 @@ a report that also holds an unrelated cancellation or fee.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"exclusions","arguments":"${exclusions_review.next_actions.0.arguments}"}
 ```
 
 ```json

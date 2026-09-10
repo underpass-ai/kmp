@@ -7,6 +7,17 @@ pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
     let accepted = memory.and_then(|memory| memory.accepted.as_ref());
 
     json!({
+        "neighborhood": response.neighborhood.as_ref().map(|view| json!({
+            "token": view.token, "eligible": view.eligible, "omitted": view.omitted,
+            "omitted_conflicts": view.omitted_conflicts, "abouts": view.abouts, "partial": view.partial,
+            "links": view.links.iter().map(|link| json!({"from":link.from,"rel":link.rel,"to":link.to})).collect::<Vec<_>>(),
+            "items": view.items.iter().map(|item| json!({
+                "about": item.about, "ref": item.r#ref, "state": item.state,
+                "kind": item.kind, "reason": item.reason, "text": item.text,
+                "text_omitted": item.text_omitted,
+                "clocks": item.clocks.iter().map(|clock| (clock.axis.clone(), json!(clock.values))).collect::<serde_json::Map<String, Value>>(),
+            })).collect::<Vec<_>>()
+        })),
         "summary": response.summary,
         "memory": {
             "about": memory.map(|memory| memory.about.as_str()).unwrap_or(""),

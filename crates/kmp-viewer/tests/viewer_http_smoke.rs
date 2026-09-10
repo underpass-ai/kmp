@@ -41,6 +41,7 @@ fn corpus() -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
         default_observation_to_ingestion: false,
+        neighborhood_review: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -685,6 +686,7 @@ fn sub_second_corpus(
     MemoryIngestCommand {
         receipt_context: None,
         default_observation_to_ingestion: false,
+        neighborhood_review: None,
         about: about.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {

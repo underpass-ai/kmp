@@ -25,6 +25,19 @@ pub(crate) fn build_batch_plan(
     kmp_application::validate_ref_token("about", &about)?;
     required_string(object, "actor")?;
     super::coordinates::observation_time(object)?;
+    if let Some(token) = object.get("review_token") {
+        let token = token.as_str().ok_or_else(|| {
+            WriteValidationError::wrong_type("review_token", JsonValueType::String, token)
+        })?;
+        if token.len() != 64 || !token.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err(WriteValidationError::new(
+                "review_token must be the returned 64-character neighborhood token",
+            )
+            .at("review_token")
+            .code("INVALID_REVIEW_TOKEN")
+            .into());
+        }
+    }
     for field in ["current", "intent", "semantic_delta", "connect_to", "scope"] {
         if object.contains_key(field) {
             return Err(WriteValidationError::new(format!(

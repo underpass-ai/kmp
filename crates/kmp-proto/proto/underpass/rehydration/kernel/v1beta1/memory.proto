@@ -42,6 +42,8 @@ message IngestRequest {
   // packet provenance and evidence time with the same kernel ingestion timestamp.
   // Already ingested coordinates are preserved, including unknown observation.
   bool default_observation_to_ingestion = 8;
+  // Absent: canonical ingest. Empty: request review. Token: acknowledge served context.
+  optional string neighborhood_review = 9;
 }
 
 enum LabelPolicy {
@@ -144,6 +146,41 @@ message IngestResponse {
   string summary = 1;
   IngestedMemory memory = 2;
   repeated string warnings = 3;
+  WriteNeighborhood neighborhood = 4;
+}
+
+message WriteNeighborhood {
+  string token = 1;
+  repeated NeighborhoodItem items = 2;
+  uint32 eligible = 3;
+  uint32 omitted = 4;
+  uint32 omitted_conflicts = 5;
+  repeated string abouts = 6;
+  bool partial = 7;
+  repeated NeighborhoodLink links = 8;
+}
+
+// Indices address stored items in this compact packet.
+message NeighborhoodLink {
+  uint32 from = 1;
+  string rel = 2;
+  uint32 to = 3;
+}
+
+message NeighborhoodItem {
+  string about = 1;
+  string ref = 2;
+  string state = 3;
+  string kind = 4;
+  string reason = 5;
+  optional string text = 6;
+  bool text_omitted = 7;
+  repeated NeighborhoodClock clocks = 8;
+}
+
+message NeighborhoodClock {
+  string axis = 1;
+  repeated string values = 2;
 }
 
 message IngestedMemory {

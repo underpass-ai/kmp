@@ -1,4 +1,6 @@
 //! A compact acknowledgment must point to durable, immutable accepted detail.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_adapter_embedded::{EmbeddedKernelStore, verify_bundle};
 use kmp_application::projection_mutations_for_context_event;
 use kmp_mcp::KernelMcpServer;
@@ -13,7 +15,7 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
     let result = server.handle_json_line(&line).await.expect("response");
     let result: Value = serde_json::from_str(&result).expect("JSON");
     assert!(result.get("error").is_none(), "{result}");
-    result["result"].clone()
+    reviewed_writer::review_authored_write(server, result["result"].clone()).await
 }
 
 async fn inspect_action(server: &KernelMcpServer, action: &Value) -> Value {

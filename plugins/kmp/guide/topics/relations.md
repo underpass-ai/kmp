@@ -10,7 +10,7 @@ a later reader should understand by traversing it**. Its `evidence` records
 
 In a writer packet, the memory containing `connect_to` is the source; `ref`
 names the target. Read it as **source -> relation -> target**, not as a loose
-association. Preview and accepted responses expose these triples with local
+association. Pending review, preview and accepted responses expose these triples with local
 `@id` endpoints so you can check the compiled direction without a full receipt.
 
 Inputs accept an exact local `id` or `@id`. When a relation allows just one
@@ -124,13 +124,14 @@ Before committing a rich relation:
   only to update an existing entry inside the same `about`; it must begin with
   that exact about plus `:`, so never reuse a foreign ref surfaced by a
   cross-about read;
-- inspect or traverse every existing target and name it in `read_context`;
+- review the server neighborhood before committing a rich link; expand relevant omissions and inspect or traverse endpoints when their proof is needed;
+- keep any `read_context` declaration honest; it cannot bypass review, including for local links;
 - choose the most specific relation supported by what you read;
 - make `why` mention the actual relationship between the two endpoints;
 - make `evidence` concrete and independent enough to audit;
-- call `kmp_write_memory` once with `options.dry_run=false` (or omit that
-  option) and a stable `idempotency_key`. The planner validates the complete
-  write before ingest, so an invalid request writes nothing.
+- submit `kmp_write_memory` with `options.dry_run=false` (or omit it) and a
+  stable `idempotency_key`; review the returned neighborhood, then resume its
+  bound action or correct the proposal. Validation and pending review write nothing.
 
 Set `options.dry_run=true` only when the user explicitly asks for a preview,
 when debugging the compiled ingest payload, or when a deliberate human review

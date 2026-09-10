@@ -215,7 +215,7 @@ reuse the catalogue. Do not add `supersedes`: neither source withdraws R1.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "second",
+  "save_as": "second_review",
   "arguments": {
     "about": "example:guide:late-conflict",
     "actor": "guide-writer",
@@ -268,6 +268,14 @@ reuse the catalogue. Do not add `supersedes`: neither source withdraws R1.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"second","arguments":"${second_review.next_actions.0.arguments}"}
+```
+
 ```json
 {
   "tool": "kmp_inspect",
@@ -285,7 +293,7 @@ reuse the catalogue. Do not add `supersedes`: neither source withdraws R1.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "pending",
+  "save_as": "pending_review",
   "arguments": {
     "about": "example:guide:late-conflict",
     "actor": "guide-writer",
@@ -345,6 +353,14 @@ reuse the catalogue. Do not add `supersedes`: neither source withdraws R1.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"pending","arguments":"${pending_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -551,7 +567,7 @@ specific replacement. Do not delete either old object or change its clocks.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "resolved",
+  "save_as": "resolved_review",
   "arguments": {
     "about": "example:guide:late-conflict",
     "actor": "guide-writer",
@@ -620,6 +636,14 @@ specific replacement. Do not delete either old object or change its clocks.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"resolved","arguments":"${resolved_review.next_actions.0.arguments}"}
 ```
 
 ```json

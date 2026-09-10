@@ -730,6 +730,15 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
 
         let file = format!("{}.json", label.replace(':', "-"));
         let mut result = response["result"].clone();
+        if result["structuredContent"]["status"] == "needs_review" {
+            // This authored fixture has justified links. Exercise its explicit
+            // review round before pinning acceptance and querying its effects.
+            assert_eq!(result["structuredContent"]["accepted"], false);
+            let action = &result["structuredContent"]["next_actions"][0];
+            let reply = server.handle_json_line(&json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":action["tool"],"arguments":action["arguments"]}}).to_string()).await.expect("review continuation");
+            result = serde_json::from_str::<Value>(&reply).expect("JSON")["result"].clone();
+            assert_eq!(result["structuredContent"]["accepted"], true, "{result}");
+        }
         if tool == "kmp_guide" {
             // Random identities and content revisions are tested across real
             // restarts in persistent_guidance; pin their fields here.

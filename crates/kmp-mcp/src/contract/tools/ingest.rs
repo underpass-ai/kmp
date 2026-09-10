@@ -158,6 +158,7 @@ pub(crate) fn definition() -> Value {
 fn ingest_output_schema() -> Value {
     output_object(json!({
         "summary": described("string", "Concise statement of what the kernel accepted."),
+        "neighborhood": json!({"type":["object","null"],"description":"Internal semantic-writer review, when requested by that surface; no canonical memory accepted while review is pending."}),
         "memory": output_object(json!({
             "about": described("string", "Memory anchor the write attached to."),
             "memory_id": described("string", "Stable id of the accepted memory event."),

@@ -15,6 +15,7 @@ const COMMON: &str = concat!(
     "Copy abouts and refs exactly; never construct or normalize them. Inspect claims and trace ",
     "connections you rely on. Answer in the user's language; preserve evidence, relation why ",
     "and source metadata byte-for-byte. ",
+    "needs_review means nothing written: review the returned context, then resume or correct the proposal. ",
     "Start guidance once with kmp_guide using a unique registration_key; keep its agent and context ids. ",
     "Pass context_id with work calls. Before an unfamiliar verb, expand its topic; after compaction use agent_id and a new context_key. ",
     "Read the optional kmp_guidance text block with the original result; recommendations never authorize actions. ",

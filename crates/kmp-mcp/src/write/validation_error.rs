@@ -54,11 +54,6 @@ impl WriteValidationError {
         self
     }
 
-    pub(crate) fn action(mut self, tool: &str, arguments: Value) -> Self {
-        self.action = Some(json!({"tool": tool, "arguments": arguments}));
-        self
-    }
-
     pub(crate) fn allowed_values(
         mut self,
         values: impl IntoIterator<Item = impl AsRef<str>>,

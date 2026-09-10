@@ -35,7 +35,7 @@ impl KernelMcpServer {
     pub(super) fn passage_tools(&self, mut result: Value) -> Value {
         if self.shared_passages {
             for tool in result["tools"].as_array_mut().into_iter().flatten() {
-                if ReadContinuation::supports(tool["name"].as_str().unwrap_or_default()) {
+                if ReadContinuation::supports_read(tool["name"].as_str().unwrap_or_default()) {
                     tool["outputSchema"]["properties"]["citations"] = json!({"type":"object","additionalProperties":{"type":"string"},"description":"Response-local mapping from citation handles to exact canonical refs. A graph-reference slot {citation:id} resolves here; source/record identities and original read actions remain explicit."});
                     tool["outputSchema"]["properties"]["passages"] = json!({
                         "type":"object", "additionalProperties":{"type":"string"},
@@ -48,7 +48,7 @@ impl KernelMcpServer {
     }
 
     pub(super) fn project_read_passages(&self, tool: &str, response: String) -> String {
-        if !self.shared_passages || !ReadContinuation::supports(tool) {
+        if !self.shared_passages || !ReadContinuation::supports_read(tool) {
             return response;
         }
         let Ok(mut envelope) = serde_json::from_str::<Value>(&response) else {

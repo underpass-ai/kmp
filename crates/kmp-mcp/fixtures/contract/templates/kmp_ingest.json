@@ -52,6 +52,7 @@
       "replayed": "boolean",
       "resembling_labels": []
     },
+    "neighborhood": "null",
     "summary": "string",
     "warnings": []
   }

@@ -25,6 +25,9 @@ pub struct MemoryIngestCommand {
     pub receipt_context: Option<serde_json::Value>,
     /// Resolve missing observation only for this semantic write, at ingestion.
     pub default_observation_to_ingestion: bool,
+    /// None: canonical ingest. Some(""): request semantic context review.
+    /// Some(token): acknowledge the exact previously served neighborhood.
+    pub neighborhood_review: Option<String>,
 }
 
 /// What an ingest does with a dimension that resembles a label the about
@@ -162,6 +165,7 @@ pub struct MemoryAcceptedCounts {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MemoryIngestOutcome {
+    pub neighborhood: Option<super::WriteNeighborhood>,
     pub replayed: bool,
     pub clocks: Option<super::WriteClocks>,
     pub receipt_ref: Option<String>,

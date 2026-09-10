@@ -113,7 +113,7 @@ and is not a substitute for doing them.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "sqlite",
+  "save_as": "sqlite_review",
   "arguments": {
     "about": "example:guide:decision-history",
     "actor": "guide-writer",
@@ -164,6 +164,14 @@ and is not a substitute for doing them.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"sqlite","arguments":"${sqlite_review.next_actions.0.arguments}"}
+```
+
 ## Record the explicit change without rewriting the past
 
 S3 now arrives. Recover the catalogue before writing; reuse its existing
@@ -177,7 +185,7 @@ separate evidence for changing the decision.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "shared",
+  "save_as": "shared_review",
   "arguments": {
     "about": "example:guide:decision-history",
     "actor": "guide-writer",
@@ -228,6 +236,14 @@ separate evidence for changing the decision.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"shared","arguments":"${shared_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool":"kmp_inspect","save_as":"shared_read","arguments":{"about":"example:guide:decision-history","ref":"${shared.generated_refs.0}","budget":{"max_bytes":30000}}}
 ```
@@ -239,7 +255,7 @@ separate evidence for changing the decision.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "postgres",
+  "save_as": "postgres_review",
   "arguments": {
     "about": "example:guide:decision-history",
     "actor": "guide-writer",
@@ -297,6 +313,14 @@ separate evidence for changing the decision.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"postgres","arguments":"${postgres_review.next_actions.0.arguments}"}
 ```
 
 ## Reconstruct the period, then audit the reasons

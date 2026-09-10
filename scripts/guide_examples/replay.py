@@ -102,7 +102,7 @@ def run(args):
                 guide_reads = prepare(client, ROOT, lesson, args.guide_mode)
                 calls = [json.loads(block) for block in re.findall(r'```json\n(.*?)\n```', lesson.read_text(), re.S)]
                 for call in calls:
-                    if args.lesson == 'quantities' and call['save_as'] == 'total':
+                    if args.lesson == 'quantities' and call['save_as'] == 'total_review':
                         saved['clock'] = quantity_clock()
                         record({'preparation': 'Read real UTC clock after inspecting settlement sources',
                                 'clock': saved['clock']})

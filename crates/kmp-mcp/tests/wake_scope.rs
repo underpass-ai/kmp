@@ -1,4 +1,6 @@
 //! Historical proof and about context must identify their different provenance.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
 
@@ -13,7 +15,7 @@ async fn request(server: &KernelMcpServer, tool: &str, arguments: Value) -> Valu
         .expect("reply");
     let reply: Value = serde_json::from_str(&line).expect("JSON");
     assert!(reply.get("error").is_none(), "{reply}");
-    reply["result"].clone()
+    reviewed_writer::review_authored_write(server, reply["result"].clone()).await
 }
 
 async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {

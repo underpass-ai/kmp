@@ -681,6 +681,7 @@ impl KernelMemoryService for FakeMemoryService {
         let memory_id = memory_id_from_idempotency_key(&request.idempotency_key);
 
         Ok(Response::new(IngestResponse {
+            neighborhood: None,
             summary: format!("Ingested memory for {}.", request.about),
             memory: Some(IngestedMemory {
                 replayed: true,

@@ -678,6 +678,13 @@
             },
             "type": "object"
           },
+          "neighborhood": {
+            "description": "Internal semantic-writer review, when requested by that surface; no canonical memory accepted while review is pending.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
           "summary": {
             "description": "Concise statement of what the kernel accepted.",
             "type": "string"
@@ -697,83 +704,143 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+      "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
       "inputSchema": {
         "additionalProperties": false,
-        "anyOf": [
+        "oneOf": [
           {
-            "required": [
-              "actor"
-            ]
-          },
-          {
-            "required": [
-              "context_id"
-            ]
-          }
-        ],
-        "else": {
-          "not": {
             "anyOf": [
               {
                 "required": [
-                  "labels"
+                  "actor"
                 ]
               },
               {
                 "required": [
-                  "occurred_at"
-                ]
-              },
-              {
-                "required": [
-                  "valid_from"
-                ]
-              },
-              {
-                "required": [
-                  "valid_until"
-                ]
-              },
-              {
-                "required": [
-                  "rank"
-                ]
-              },
-              {
-                "required": [
-                  "read_context"
+                  "context_id"
                 ]
               }
-            ]
-          },
-          "properties": {
-            "options": {
+            ],
+            "else": {
               "not": {
                 "anyOf": [
                   {
                     "required": [
-                      "sequence"
+                      "labels"
                     ]
                   },
                   {
                     "required": [
-                      "labels_new"
+                      "occurred_at"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "valid_from"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "valid_until"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "rank"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "read_context"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "review_token"
                     ]
                   }
                 ]
+              },
+              "properties": {
+                "options": {
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "sequence"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "labels_new"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "search_summaries"
+              ]
+            },
+            "if": {
+              "required": [
+                "memories"
+              ]
+            },
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about"
+            ],
+            "then": {
+              "if": {
+                "not": {
+                  "properties": {
+                    "options": {
+                      "properties": {
+                        "strict": {
+                          "const": false
+                        }
+                      },
+                      "required": [
+                        "strict"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "options"
+                  ]
+                }
+              },
+              "not": {
+                "required": [
+                  "search_summaries"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "memories": {
+                    "items": {
+                      "required": [
+                        "evidence"
+                      ]
+                    }
+                  }
+                }
               }
             }
           },
-          "required": [
-            "search_summaries"
-          ]
-        },
-        "if": {
-          "required": [
-            "memories"
-          ]
-        },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Exact about receiving this one transaction. Never inferred or changed by a default.",
@@ -787,6 +854,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "idempotency_key": {
@@ -858,7 +930,7 @@
                         "type": "string"
                       },
                       "ref": {
-                        "description": "Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
+                        "description": "Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Rich links require the server neighborhood review, even with local targets or strict:false. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -1029,7 +1101,7 @@
             "additionalProperties": false,
             "properties": {
               "dry_run": {
-                "description": "Explicit preview against the selected store, without commit or reservation. Defaults to false: ordinary writes validate and commit in one call. Requires an available backend.",
+                "description": "Explicit preview against the selected store, without commit or reservation. Defaults to false: rich links still receive neighborhood review before a later commit. Requires an available backend.",
                 "type": "boolean"
               },
               "labels_new": {
@@ -1045,7 +1117,7 @@
                 "type": "integer"
               },
               "strict": {
-                "description": "Defaults to true. Requires evidence, justified supported relations, prior context for stored rich targets, and valid search renderings; refuses resembling new labels unless confirmed.",
+                "description": "Defaults to true. Requires evidence, justified supported relations, and valid search renderings; never bypasses neighborhood review; refuses resembling new labels unless confirmed.",
                 "type": "boolean"
               }
             },
@@ -1067,7 +1139,7 @@
           },
           "read_context": {
             "additionalProperties": false,
-            "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Strict validation checks that rich relation targets occur here; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
+            "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Neighborhood review is enforced separately; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
             "properties": {
               "ask_refs": {
                 "items": {
@@ -1172,6 +1244,11 @@
             },
             "type": "object"
           },
+          "review_token": {
+            "description": "Returned neighborhood token, bound to this exact packet and context. Prefer the returned continuation. Omit on a new or corrected proposal; stale tokens refresh context without writing.",
+            "minLength": 1,
+            "type": "string"
+          },
           "search_summaries": {
             "description": "Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
             "items": {
@@ -1217,46 +1294,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "about"
-        ],
-        "then": {
-          "if": {
-            "not": {
-              "properties": {
-                "options": {
-                  "properties": {
-                    "strict": {
-                      "const": false
-                    }
-                  },
-                  "required": [
-                    "strict"
-                  ]
-                }
-              },
-              "required": [
-                "options"
-              ]
-            }
-          },
-          "not": {
-            "required": [
-              "search_summaries"
-            ]
-          },
-          "then": {
-            "properties": {
-              "memories": {
-                "items": {
-                  "required": [
-                    "evidence"
-                  ]
-                }
-              }
-            }
-          }
-        },
         "type": "object"
       },
       "name": "kmp_write_memory",
@@ -1264,7 +1301,7 @@
         "additionalProperties": false,
         "properties": {
           "accepted": {
-            "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
+            "description": "True only when the canonical ingest was committed; false for a preview or pending context review.",
             "type": "boolean"
           },
           "clock_defaults": {
@@ -1462,6 +1499,10 @@
             "description": "Whether this response is a validated preview that wrote nothing.",
             "type": "boolean"
           },
+          "expand_context": {
+            "description": "Explicit-about native reads to expand omitted surroundings. Complete their relevant pages.",
+            "type": "array"
+          },
           "feedback": {
             "description": "Validation signals. Codes and paths come from validation, not message parsing. A warning can accompany acceptance; never invent missing proof.",
             "items": {
@@ -1560,6 +1601,14 @@
             "description": "For a memories packet, local id to canonical memory ref. Preview refs are planned; accepted=true confirms persistence.",
             "type": "object"
           },
+          "neighborhood": {
+            "description": "Bounded literal context: stored/proposed items, exact refs, clocks, reasons, omissions and token. Proximity does not prove a relation; expand partial context when needed.",
+            "type": "object"
+          },
+          "next_actions": {
+            "description": "For needs_review, the bound write continuation. Review first; resuming rechecks context. No human approval per write is required.",
+            "type": "array"
+          },
           "next_suggested_reads": {
             "description": "Optional preview reading suggestions. Accepted writes need no routine verification; receipt.action retrieves audit detail on demand.",
             "type": "array"
@@ -1628,11 +1677,12 @@
             "type": "array"
           },
           "status": {
-            "description": "committed appended a command; replayed returned its earlier acceptance; validated is a preview; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure.",
+            "description": "committed appended a command; replayed returned its earlier acceptance; validated is a preview; needs_review has applied nothing and returns context to review; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure.",
             "enum": [
               "committed",
               "replayed",
               "validated",
+              "needs_review",
               "rejected",
               "unconfirmed"
             ],
@@ -1778,7 +1828,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -2456,7 +2506,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -2926,7 +2976,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -3333,7 +3383,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -3991,7 +4041,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -4639,7 +4689,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -5308,7 +5358,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -5957,7 +6007,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -6153,7 +6203,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },

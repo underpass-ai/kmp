@@ -1,6 +1,6 @@
 # KMP agent entry
 
-Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:57302c34ed54d6f2171a`.
+Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:11de7173b05964dbbb47`.
 
 KMP stores facts, evidence and relations through time. The agent writes and navigates; KMP does not generate answers.
 
@@ -8,7 +8,7 @@ Use it when the user, a skill, project instructions or explicit configuration re
 
 Recover known work with Wake. Read history with temporal verbs. Compare abouts with Relate. Ask retrieves semantic evidence or UNKNOWN. Inspect claims; Trace their connections.
 
-Write separate facts with evidence and useful labels. Distinguish event, observation, ingestion and validity. Rich relations need why and evidence. Never invent a date, identity or proof to pass validation.
+Write separate facts with evidence and useful labels. Distinguish event, observation, ingestion and validity. Rich relations need why and evidence. `needs_review` means nothing written: review the returned context, then resume or correct the proposal. Never invent a date, identity or proof to pass validation.
 
 Start once with `kmp_guide {"registration_key":"unique-task-and-agent-key"}`. Keep its agent and context ids. Pass `context_id` with work calls. Before an unfamiliar verb, use `context_id` plus `topic` for its worked card; follow the extended guide when needed. Reuse guidance while current and present. After compaction use `agent_id` plus a new `context_key`. Served does not mean understood. This Markdown index is the alternative entry, not another manual to load. Rejections offer `help.guide`, `help.examples` and direct `feedback[].action`.
 

@@ -4,6 +4,9 @@
 def check(saved, client, authored):
     expected = set()
     for name, args in authored.items():
+        if saved[name].get('status') == 'needs_review':
+            assert not saved[name]['accepted']
+            continue
         for index, current in enumerate(args.get('memories', [])):
             ref = saved[name]['local_refs'][current['id']]
             expected.add(ref)

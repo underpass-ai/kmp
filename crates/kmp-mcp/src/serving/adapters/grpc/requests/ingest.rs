@@ -43,6 +43,15 @@ pub(crate) fn ingest_request_from_arguments(arguments: &Value) -> Result<IngestR
             .map(|context| Value::Object(context.clone()).to_string());
 
     Ok(IngestRequest {
+        neighborhood_review: arguments
+            .get("neighborhood_review")
+            .map(|value| {
+                value
+                    .as_str()
+                    .map(str::to_owned)
+                    .ok_or_else(|| "neighborhood_review must be a string".to_owned())
+            })
+            .transpose()?,
         receipt_context_json,
         default_observation_to_ingestion,
         about,

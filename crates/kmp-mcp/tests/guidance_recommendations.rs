@@ -1,6 +1,8 @@
 //! Execute recommended routes against actual memory selections.
 #[path = "support/guidance_fixture.rs"]
 mod fixture;
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use fixture::*;
 use kmp_mcp::KernelMcpServer;
 use serde_json::json;
@@ -14,6 +16,7 @@ async fn recommendations_execute_native_pages_and_stop_at_temporal_unknown() {
     args["memories"] = json!((0..12).map(|i| json!({"id":format!("source-{i}"),"kind":"observation",
         "summary":format!("Route {i} opens on Tuesday."),"evidence":format!("Source {i} records the route opening on Tuesday. ").repeat(12)})).collect::<Vec<_>>());
     let written = call(&server, "kmp_write_memory", args).await;
+    let written = reviewed_writer::review_authored_write(&server, written).await;
     assert_eq!(written["isError"], false, "{written}");
     let selection = json!({"context_id":agent["context_id"],"purpose":"audit","about":ABOUT,
         "axis":"observed","interval":{"start":"2026-09-01T00:00:00Z","end":"2026-09-10T00:00:00Z"},
@@ -81,6 +84,7 @@ async fn a_declared_relation_yields_an_executable_audit_and_history_requires_a_c
         "connect_to":[{"ref":"@source","rel":"chosen_because","class":"causal",
             "why":"Delivery requires an open route.","evidence":"S2 explicitly cites the route opening in S1."}]}));
     let written = call(&server, "kmp_write_memory", args).await;
+    let written = reviewed_writer::review_authored_write(&server, written).await;
     assert_eq!(written["isError"], false, "{written}");
     let mut inspect = json!({"about":ABOUT,"context_id":agent["context_id"],"purpose":"audit",
         "ref":written["structuredContent"]["local_refs"]["decision"]});
@@ -128,6 +132,7 @@ async fn recall_audit_uses_the_canonical_claim_ref_from_both_evidence_shapes() {
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
     let agent = open(&server, "recall-auditor").await;
     let written = call(&server, "kmp_write_memory", packet(&agent["context_id"])).await;
+    let written = reviewed_writer::review_authored_write(&server, written).await;
     assert_eq!(written["isError"], false, "{written}");
     for tool in ["kmp_wake", "kmp_ask"] {
         let mut args = json!({"about":ABOUT,"context_id":agent["context_id"],"purpose":"audit"});

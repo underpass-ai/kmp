@@ -84,6 +84,7 @@ pub fn translate_memory_ingest(
 
     let mut changes = memory_changes(&memory)?;
     let mut outcome = MemoryIngestOutcome {
+        neighborhood: None,
         replayed: false,
         clocks: Some(super::WriteClocks::for_memory(&memory)),
         receipt_ref: None,
@@ -695,7 +696,7 @@ fn validate_positive_optional(value: Option<u32>, field: &str) -> Result<(), App
 /// re-created), so the same command translates differently after its own
 /// first apply. This digest is computed from what the caller *said*, which is
 /// the thing that must be equal for a replay to deserve a replayed answer.
-fn logical_digest(command: &MemoryIngestCommand) -> String {
+pub(super) fn logical_digest(command: &MemoryIngestCommand) -> String {
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     if command.default_observation_to_ingestion {
@@ -1283,6 +1284,7 @@ mod tests {
         MemoryIngestCommand {
             receipt_context: None,
             default_observation_to_ingestion: false,
+            neighborhood_review: None,
             about: "question:830ce83f".to_string(),
             memory: MemoryData {
                 dimensions: vec![MemoryDimensionData {
