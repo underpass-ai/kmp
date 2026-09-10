@@ -140,22 +140,26 @@ async fn handle_mcp(State(state): State<AppState>, headers: HeaderMap, body: Byt
     };
     // A short read identifier is transport state, never an authorization grant.
     // Resolve first, then authorize and dispatch the exact same bound request.
-    let request = match state.server.resolve_read_request(request.clone()) {
-        Ok(request) => request,
-        Err(error) => {
-            let result = kmp_mcp::kmp_mcp_tool_error_result(
-                request_tool(&request),
-                &request["params"]["arguments"],
-                &error,
-            );
-            let response = json!({"jsonrpc":"2.0","id":id,"result":result});
-            let response = if dialect == RequestDialect::Current {
-                add_current_response_metadata(response)
-            } else {
-                response
-            };
-            return json_response(StatusCode::OK, response);
+    let request = if request.pointer("/params/arguments/continuation").is_some() {
+        match state.server.resolve_read_request(request.clone()) {
+            Ok(request) => request,
+            Err(error) => {
+                let result = kmp_mcp::kmp_mcp_tool_error_result(
+                    request_tool(&request),
+                    &request["params"]["arguments"],
+                    &error,
+                );
+                let response = json!({"jsonrpc":"2.0","id":id,"result":result});
+                let response = if dialect == RequestDialect::Current {
+                    add_current_response_metadata(response)
+                } else {
+                    response
+                };
+                return json_response(StatusCode::OK, response);
+            }
         }
+    } else {
+        request
     };
     let tool = request_tool(&request);
     let about = request_about(&request);

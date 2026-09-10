@@ -1,4 +1,5 @@
 from recall_action_checks import check as check_recall_actions
+from short_continuation_checks import check as check_short_continuations
 
 """Audit actual partial pages without treating their success as completeness."""
 
@@ -124,6 +125,7 @@ def check(saved, client, authored):
     assert list(authored)[-2:] == ['unknown_english', 'unknown_original']
     assert sum(a.get('question') is not None for a in authored.values()) == 3
     saved['recall_action_walks'] = check_recall_actions(saved, client, authored)
+    saved['short_inspection_walk'] = check_short_continuations(saved, client, authored)
     for name in ('packet', 'export_proof', 'unrelated_source'):
         assert not saved[name + '_frame']['unhonored']
     saved['pending_checkpoints'] = {

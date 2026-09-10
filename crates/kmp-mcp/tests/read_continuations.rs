@@ -149,6 +149,17 @@ async fn handles_survive_restart_but_reject_changed_evidence_mixed_arguments_and
         expired["structuredContent"]["feedback"][0]["code"],
         "CONTINUATION_UNAVAILABLE"
     );
+    let other_dir = tempfile::tempdir().expect("other store");
+    let other = KernelMcpServer::embedded(other_dir.path()).expect("other server");
+    let unavailable = call(&other, "kmp_inspect", action["arguments"].clone()).await;
+    assert_eq!(
+        unavailable["structuredContent"]["feedback"][0]["code"],
+        "CONTINUATION_UNAVAILABLE"
+    );
+    assert!(
+        !unavailable.to_string().contains(ABOUT),
+        "do not disclose retained selection"
+    );
 }
 
 #[tokio::test]

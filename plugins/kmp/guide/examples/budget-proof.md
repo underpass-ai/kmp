@@ -1,5 +1,8 @@
 # Worked example: budgets, continuation and insufficient evidence
 
+The agent-context section also exercises an agent context's short continuation: one
+returned identifier retains the exact inspection and negotiated allowance.
+
 PACK-8 is a fictional review packet containing an export history and an
 unrelated warehouse report. An LLM writer interprets the five sources below;
 the kernel preserves its typed records and justified links. This authored
@@ -709,6 +712,56 @@ outstanding MCP page or validate a missing proof path.
   }
 }
 ```
+
+## Continue through the agent context
+
+The earlier reads intentionally exercised complete calls without a context.
+Register once for this inspection of D1, already written above:
+
+```json
+{
+  "tool": "kmp_guide",
+  "save_as": "short_context",
+  "arguments": {"registration_key":"guide-budget-proof-short-reader"}
+}
+```
+
+```json
+{
+  "tool": "kmp_inspect",
+  "save_as": "short_first",
+  "expect_partial": true,
+  "arguments": {
+    "context_id":"${short_context.context_id}",
+    "purpose":"audit",
+    "about":"example:guide:budget-proof",
+    "ref":"${decision.generated_refs.0}",
+    "include":{"raw":true},
+    "budget":{"max_bytes":512}
+  }
+}
+```
+
+The returned `next_actions[0].arguments` contains only `continuation` when the
+short form fits. It already retains the context, D1 reference, raw inclusion and
+larger allowance. Execute it directly:
+
+```json
+{
+  "tool": "kmp_inspect",
+  "save_as": "short_next",
+  "expect_partial": true,
+  "arguments":"${short_first.next_actions.0.arguments}"
+}
+```
+
+If still partial, execute `short_next.next_actions[0]` and append the next page.
+Reusing `short_first`'s identifier repeats that same page, not the next one.
+Adding `budget`, `context_id` or another argument to the identifier is rejected:
+use the returned action unchanged, or start a new explicit selection. An expired
+identifier reports `CONTINUATION_UNAVAILABLE`; restart the original read and keep
+its earlier pages marked partial. A changed source still triggers the native
+cursor conflict. No identifier permits skipping HTTP grants or missing proof.
 
 ## Terminal semantic UNKNOWN
 

@@ -44,9 +44,9 @@ one call:
 kmp_forward { about: "project:kmp", from: <the resume_cursor> }
 ```
 
-The kernel does not remember where each reader got to, deliberately: that
-would be state about the reader rather than about the work. The bookmark is
-yours to hold. `resume_cursor` is `null` when nothing in the packet carries a
+Memory evidence does not store a mutable reader position. Agent metadata can
+retain an exact continuation call; its identifier replays that call, without
+advancing on retry. Keep the bookmark for the work you intend to resume. `resume_cursor` is `null` when nothing in the packet carries a
 temporal coordinate.
 
 Wake also returns `labels`: the catalogue of the about — every label its

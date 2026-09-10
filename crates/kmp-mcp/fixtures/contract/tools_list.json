@@ -1630,6 +1630,24 @@
       "description": "Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to wake from.",
@@ -1703,6 +1721,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "depth": {
@@ -1857,9 +1880,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "about"
-        ],
         "type": "object"
       },
       "name": "kmp_wake",
@@ -2273,6 +2293,25 @@
       "description": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "question"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to ask from.",
@@ -2360,6 +2399,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "depth": {
@@ -2509,10 +2553,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "about",
-          "question"
-        ],
         "type": "object"
       },
       "name": "kmp_ask",
@@ -2755,6 +2795,24 @@
       "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "The current about: the read's root and the first of proof.abouts_selected.",
@@ -2811,6 +2869,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "dimensions": {
@@ -2950,9 +3013,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "about"
-        ],
         "type": "object"
       },
       "name": "kmp_relate",
@@ -3120,6 +3180,25 @@
       "description": "Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "at"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
@@ -3197,6 +3276,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "depth": {
@@ -3401,10 +3485,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "about",
-          "at"
-        ],
         "type": "object"
       },
       "name": "kmp_goto",
@@ -3692,6 +3772,25 @@
       "description": "Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "around"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
@@ -3769,6 +3868,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "depth": {
@@ -3973,10 +4077,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "about",
-          "around"
-        ],
         "type": "object"
       },
       "name": "kmp_near",
@@ -4264,15 +4364,33 @@
       "description": "Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval.",
       "inputSchema": {
         "additionalProperties": false,
-        "anyOf": [
+        "oneOf": [
           {
+            "anyOf": [
+              {
+                "required": [
+                  "from"
+                ]
+              },
+              {
+                "required": [
+                  "interval"
+                ]
+              }
+            ],
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
             "required": [
-              "from"
+              "about"
             ]
           },
           {
+            "maxProperties": 1,
             "required": [
-              "interval"
+              "continuation"
             ]
           }
         ],
@@ -4332,6 +4450,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "depth": {
@@ -4557,9 +4680,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "about"
-        ],
         "type": "object"
       },
       "name": "kmp_rewind",
@@ -4847,15 +4967,33 @@
       "description": "Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval.",
       "inputSchema": {
         "additionalProperties": false,
-        "anyOf": [
+        "oneOf": [
           {
+            "anyOf": [
+              {
+                "required": [
+                  "from"
+                ]
+              },
+              {
+                "required": [
+                  "interval"
+                ]
+              }
+            ],
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
             "required": [
-              "from"
+              "about"
             ]
           },
           {
+            "maxProperties": 1,
             "required": [
-              "interval"
+              "continuation"
             ]
           }
         ],
@@ -4915,6 +5053,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "depth": {
@@ -5140,9 +5283,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "about"
-        ],
         "type": "object"
       },
       "name": "kmp_forward",
@@ -5430,6 +5570,26 @@
       "description": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "from",
+              "to"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path.",
@@ -5476,6 +5636,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "from": {
@@ -5525,11 +5690,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "about",
-          "from",
-          "to"
-        ],
         "type": "object"
       },
       "name": "kmp_trace",
@@ -5633,6 +5793,25 @@
       "description": "Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
       "inputSchema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "continuation"
+              ]
+            },
+            "required": [
+              "about",
+              "ref"
+            ]
+          },
+          {
+            "maxProperties": 1,
+            "required": [
+              "continuation"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor that owns the inspected ref.",
@@ -5653,6 +5832,11 @@
           },
           "context_id": {
             "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "continuation": {
+            "description": "Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read.",
+            "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
           "include": {
@@ -5713,10 +5897,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "about",
-          "ref"
-        ],
         "type": "object"
       },
       "name": "kmp_inspect",

@@ -47,7 +47,7 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
                 tool["name"].as_str().unwrap_or_default(),
             ) {
                 let schema = tool["inputSchema"].as_object_mut().expect("input schema");
-                schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":"Execute the returned action with this identifier alone. It retains context, purpose, selection, cursor and budget for one read. Replay repeats that page; follow its new action to advance. Unavailable: restart the original read."});
+                schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":"Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read."});
                 let mut initial = json!({"not":{"required":["continuation"]}});
                 for key in ["required", "anyOf", "oneOf", "allOf"] {
                     if let Some(value) = schema.remove(key) {
