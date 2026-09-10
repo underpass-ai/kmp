@@ -387,7 +387,7 @@
           "kind": "instruction",
           "depth": "basic",
           "text_file": "verbs/guide.md",
-          "evidence": "The MCP guide assigns persistent agent identities and contexts, distinguishes served guidance from understanding, and provides explicit reset and fold operations. Native context tests cover usage persistence, returned guide bodies, profile actor, idempotency, intact memory budgets, executable typed continuations and relation audit, temporal UNKNOWN and accepted writes despite usage metadata failure.",
+          "evidence": "The MCP guide assigns persistent agent identities and contexts, distinguishes served guidance from understanding, and provides explicit reset and fold operations. Native context tests cover usage persistence, returned guide bodies, profile actor, idempotency, intact memory budgets, executable typed continuations and relation audit, temporal UNKNOWN and accepted writes despite usage metadata failure. The kmp-expert host skill preloads every canonical agent-guide entry and example from a revision-keyed local cache; its manifest records delivery ranges and body hashes without changing MCP served state or adding model inference to the kernel.",
           "guide_title": "Manage agent identity and guidance"
         }
       ],
