@@ -1,6 +1,6 @@
 # KMP agent entry
 
-Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:57e56564382027ab6e8a`.
+Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:2d44b0ac85c91eefdaac`.
 
 KMP is graph-temporal memory. An LLM writes typed facts with evidence and chooses how to navigate their relations through time. Recover known work with `kmp_wake`, enumerate history with the temporal verbs, compare abouts with `kmp_relate`, ask semantic questions with `kmp_ask`, and inspect or trace the proof you rely on. Write durable decisions, constraints and outcomes; catalogue them with labels that support later navigation.
 
@@ -10,12 +10,13 @@ Read the extended guidance for the verb or topic you need below. Reuse this entr
 
 Keep event, observation, ingestion and validity clocks distinct. For every rich relation, supply why the endpoints connect and the concrete evidence for that rationale. A semantic UNKNOWN is a valid outcome. An incomplete projection is not the whole history: preserve its continuation and complete relevant pages before concluding.
 
-## First use of a verb
+## Extended guidance
 
-Read its row with `kmp_inspect` if that guidance is absent from context. Reuse it afterwards. Exact refs in `guide:kmp-agent`:
+These are exact refs in `guide:kmp-agent`, used with `kmp_inspect`; they are not browser URLs. Read the relevant row, not the whole table's bodies.
 
 | Use / tools | Ref |
 | --- | --- |
+| Choose and continue a memory route | `guide:kmp-agent:gate:invocation` |
 | Resume known work: `kmp_wake` | `guide:kmp-agent:verb:wake` |
 | Ask a semantic question: `kmp_ask` | `guide:kmp-agent:verb:ask` |
 | Compare memories across abouts: `kmp_relate` | `guide:kmp-agent:verb:relate` |
@@ -23,25 +24,51 @@ Read its row with `kmp_inspect` if that guidance is absent from context. Reuse i
 | Inspect evidence and trace a connection: `kmp_inspect`, `kmp_trace` | `guide:kmp-agent:verb:audit` |
 | Write evidence or change labels: `kmp_ingest`, `kmp_relabel`, `kmp_write_memory` | `guide:kmp-agent:verb:write` |
 | Frame and share ChronoLoom: `kmp_view_apply_intent`, `kmp_view_get_state`, `kmp_view_open` | `guide:kmp-agent:verb:view` |
+| Synchronize guide assets | `guide:kmp-agent:verb:guide-sync` |
+| Install an optional lexical bridge | `guide:kmp-agent:verb:lexical-bridge` |
+| Cross abouts, labels and selectors | `guide:kmp-agent:advanced:scope` |
+| Choose a relation and justify it | `guide:kmp-agent:advanced:relations` |
+| Retry one logical write | `guide:kmp-agent:advanced:idempotency` |
+| Complete a bounded read | `guide:kmp-agent:advanced:pagination` |
+| Choose a byte ceiling | `guide:kmp-agent:advanced:budgets` |
+| Replace, contradict or expire | `guide:kmp-agent:advanced:lifecycle` |
+| Interpret retrieved proof | `guide:kmp-agent:advanced:reach` |
+| Search language and literal evidence | `guide:kmp-agent:advanced:language` |
+| Write or repair search summaries | `guide:kmp-agent:advanced:summary` |
+| Repository bundles and snapshots | `guide:kmp-agent:advanced:repository` |
+| Diagnose missing tools and errors | `guide:kmp-agent:advanced:errors` |
+| Find a concrete example for a tool, kind or relation | `guide:kmp-agent:examples:by-capability` |
 
-## Examples on demand
+## Worked examples
 
-Select a relevant lesson and its prerequisites from these maps; do not load every lesson.
-
-| Map | Ref |
+| Case | Ref |
 | --- | --- |
-| Cases and prerequisites | `guide:kmp-agent:examples:index` |
-| By tool, memory kind or relation | `guide:kmp-agent:examples:by-capability` |
+| Start here: one decision and its stated reason | `guide:kmp-agent:example:first-decision` |
+| Decision history and past validity | `guide:kmp-agent:example:decision-history` |
+| Aliases, unresolved names and account assignment | `guide:kmp-agent:example:alias-ownership` |
+| Distributed incident, proposed identity and late reports | `guide:kmp-agent:example:distributed-incident` |
+| Four clocks, interval boundaries and zoom to proof | `guide:kmp-agent:example:four-clocks` |
+| Quantities, corrections, duplicates and exclusions | `guide:kmp-agent:example:quantities` |
+| Conflicting assignments and evidence received late | `guide:kmp-agent:example:late-conflict` |
+| Multiple aliases, distinct facets and late memberships | `guide:kmp-agent:example:dimensional-memberships` |
+| Labels, synonyms and negation under explicit conditions | `guide:kmp-agent:example:labels-negation` |
+| Budgeted pages, incomplete proof and terminal UNKNOWN | `guide:kmp-agent:example:budget-proof` |
+| Fresh-session handoff and shared-view revision conflicts | `guide:kmp-agent:example:shared-resumption` |
+| Preference and explicit policy delta | `guide:kmp-agent:example:preference-delta` |
+| Authorization, dependency and measured constraints | `guide:kmp-agent:example:workflow-proof` |
+| Structure, membership and included contributions | `guide:kmp-agent:example:structure-parts` |
+| Validated canonical ingest and exact retry | `guide:kmp-agent:example:canonical-ingest` |
+| Atomic semantic packet with local proof links | `guide:kmp-agent:example:semantic-batch` |
 
 ## Read a selected node
 
-Example `kmp_inspect` call; change only `ref` for another row:
+For example, consult extended wake guidance with `kmp_inspect`:
 
 ```json
 {
   "about": "guide:kmp-agent",
   "budget": {
-    "max_bytes": 10000
+    "max_bytes": 40000
   },
   "include": {
     "details": false,
@@ -52,6 +79,6 @@ Example `kmp_inspect` call; change only `ref` for another row:
 }
 ```
 
-The lesson is in `object.text`; adjacent links stay unexpanded. Execute returned `next_actions` when partial. Missing ref: check store and guide version before syncing matching assets. The human guide is `guide:kmp` in ChronoLoom.
+For another row, replace only `ref` with its exact address. The stable object contains the lesson; adjacent guide links stay unexpanded. Follow any returned page cursor with the same bound arguments. This narrow documentation read does not replace inspection and tracing of actual work evidence. If a ref is missing, check the selected store and guide version, then sync matching assets when needed. Do not guess another ref. The human guide remains `guide:kmp` in ChronoLoom.
 
-Generated; edit the editorial source, not this file.
+Generated from the versioned editorial source and live tool mapping. Do not edit this file separately.

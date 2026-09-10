@@ -163,8 +163,8 @@ candidates; only justified relations declare that two memories concern the
 same entity or event.
 
 Write in the language of the work, and give the memory an English rendering
-for search: `memories[].summary_en`, plain English a reader would ask with, every
-number, identifier and acronym kept exactly as written (`v0.7.0`, `#469`,
+for search: `memories[].summary_en`, plain English a reader would ask with,
+identifiers, amounts and acronyms kept exactly as written (`v0.7.0`, `#469`,
 `kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is
 `memories[].summary`, byte for byte — so an English question reaches a memory
 written in Spanish, and jargon (`rollout slipped`) is found by the words
@@ -218,3 +218,16 @@ refs, relation targets and search-summary refs. Relabel additions obey the same
 label grants. A local @id is resolved inside its packet; it does not name an
 external memory. A forbidden request must stop before any backend call. Do not
 remove source-supported labels or refs just to evade a permission error.
+
+### Complete calendar dates in search renderings
+
+`El 17 de agosto de 2026 se abrió la ruta.` may use
+`The route opened on 2026-08-17.` as summary_en in strict mode. The lint compares
+complete Spanish or English month-name dates with ISO YYYY-MM-DD dates, including
+the month and valid Gregorian day. It leaves both stored strings unchanged.
+English `August 17, 2026` and `17 August 2026` are equivalent forms here.
+
+Other formats, times, amounts, versions and acronyms remain literal. An amount
+of 17 EUR still needs its own 17; the day in a date does not preserve that amount.
+This check does not prove the meaning of the rest of the summary. A changed or
+omitted recognized date is reported as its canonical ISO identifier.

@@ -1,5 +1,5 @@
 use crate::language::{
-    KERNEL_LANGUAGE, LanguageVocabulary, identifiers, informative_tokens, surface_tokens,
+    KERNEL_LANGUAGE, LanguageVocabulary, dropped_identifiers, informative_tokens,
 };
 
 use super::search_summary_fault::SearchSummaryFault;
@@ -59,7 +59,8 @@ impl SearchSummary {
     ///   compound one (`kmp-mcp`, `ref_boundary.rs`) or an acronym (`ADR`).
     ///   Names written with an initial capital are deliberately not checked:
     ///   a document called *Plan de Lanzamiento* is faithfully rendered as
-    ///   *launch plan*, and a number never is.
+    ///   *launch plan*. Complete Spanish/English month-name dates and ISO dates
+    ///   compare by calendar day; other numbers remain literal.
     pub fn lint(text: &str, summary: &str) -> Result<Self, Vec<SearchSummaryFault>> {
         let mut faults = Vec::new();
 
@@ -80,11 +81,7 @@ impl SearchSummary {
             faults.push(SearchSummaryFault::RepeatsText);
         }
 
-        let carried = surface_tokens(summary);
-        let dropped = identifiers(text)
-            .into_iter()
-            .filter(|identifier| !carried.contains(identifier))
-            .collect::<Vec<_>>();
+        let dropped = dropped_identifiers(text, summary);
         if !dropped.is_empty() {
             faults.push(SearchSummaryFault::DropsIdentifiers(dropped));
         }
