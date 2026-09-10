@@ -7,19 +7,24 @@ use std::collections::BTreeSet;
 
 use super::fold_search_term;
 
-/// Identifier fidelity after folding named calendar dates, retaining missing years.
+/// Identifier fidelity after folding dates and English possessives.
 /// Keep this out of retrieval tokenization: stored words and search stay intact.
 pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
     let normalized = |text: &str| {
         super::date_tokens::canonical_dates(
             text.split_whitespace()
-                .map(trim_edge_punctuation)
+                .map(fidelity_token)
                 .map(fold_search_term)
                 .collect(),
         )
     };
     // Decide whether a literal is an identifier before case folding (acronyms).
-    let literal_ids = identifiers(text);
+    let literal_ids = text
+        .split_whitespace()
+        .map(fidelity_token)
+        .filter(|token| is_identifier(token))
+        .map(fold_search_term)
+        .collect::<BTreeSet<_>>();
     let source = normalized(text);
     let carried = normalized(rendering).into_iter().collect::<BTreeSet<_>>();
     source
@@ -38,6 +43,17 @@ pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect()
+}
+
+/// A terminal possessive carries its whole identifier, never a substring.
+/// Only fidelity uses this view; public tokens and stored text stay unchanged.
+fn fidelity_token(token: &str) -> &str {
+    let token = trim_edge_punctuation(token);
+    ["'s", "’s", "'S", "’S"]
+        .into_iter()
+        .find_map(|suffix| token.strip_suffix(suffix))
+        .filter(|base| is_identifier(base))
+        .unwrap_or(token)
 }
 
 /// The identifiers a text carries, folded: the tokens a faithful rendering in
