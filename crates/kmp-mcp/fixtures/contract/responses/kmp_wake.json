@@ -27,7 +27,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9255
+        "used_bytes": 9375
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
@@ -60,36 +60,42 @@
         "labels": {
           "core": 0,
           "eligible": 2,
+          "remaining": 0,
           "returned_on_page": 2,
           "total": 2
         },
         "proof.evidence": {
           "core": 0,
           "eligible": 14,
+          "remaining": 14,
           "returned_on_page": 0,
           "total": 14
         },
         "proof.path": {
           "core": 0,
           "eligible": 17,
+          "remaining": 14,
           "returned_on_page": 3,
           "total": 39
         },
         "wake.causal_spine": {
           "core": 1,
           "eligible": 8,
+          "remaining": 0,
           "returned_on_page": 7,
           "total": 8
         },
         "wake.current_state": {
           "core": 1,
           "eligible": 5,
+          "remaining": 0,
           "returned_on_page": 4,
           "total": 5
         },
         "wake.next_actions": {
           "core": 1,
           "eligible": 1,
+          "remaining": 0,
           "returned_on_page": 0,
           "total": 1
         }
@@ -274,7 +280,7 @@
       "open_loops": []
     },
     "warnings": [
-      "pageable recall projection has more expansion items; follow the non-null projection.page.next_cursor with identical bound arguments"
+      "recall has unread expansion; projection.sections.*.remaining counts what follows this page, excluding repeated core and earlier pages. Execute projection.next_action"
     ]
   }
 }

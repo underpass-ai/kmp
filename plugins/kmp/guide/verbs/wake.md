@@ -72,3 +72,11 @@ caps still qualify coverage. If the allowance is unavailable, keep the result
 partial. A cursor conflict supplies `feedback[].action` to start a fresh read;
 never combine pages from different selections. The budget-proof lesson
 executes both restoration and continuation against its stored sources.
+
+`projection.sections` names what remains: `remaining` counts eligible expansion
+after this page, excluding repeated core and all earlier pages. For example,
+`proof.evidence.remaining: 2` and `proof.path.remaining: 0` mean two source
+passages are still unread although the selected relations have arrived. Follow
+the returned action to obtain them. Zero in every section finishes this packet's
+expansion; it does not prove the history complete or the evidence sufficient.
+Check `core_text_shortened`, `excluded_by_detail` and `selection_omitted` separately.

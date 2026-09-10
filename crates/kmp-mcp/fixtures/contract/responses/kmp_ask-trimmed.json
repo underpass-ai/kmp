@@ -66,12 +66,14 @@
         "proof.evidence": {
           "core": 5,
           "eligible": 5,
+          "remaining": 0,
           "returned_on_page": 0,
           "total": 5
         },
         "proof.path": {
           "core": 0,
           "eligible": 3,
+          "remaining": 2,
           "returned_on_page": 1,
           "total": 16
         }
@@ -212,7 +214,7 @@
       "truncated": true
     },
     "warnings": [
-      "pageable recall projection has more expansion items; follow the non-null projection.page.next_cursor with identical bound arguments"
+      "recall core prose was shortened; execute projection.next_action to restart and discard the partial reconstruction before reading more expansion"
     ]
   }
 }

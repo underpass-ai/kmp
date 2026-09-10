@@ -24,6 +24,9 @@ pub const DEFAULT_MAX_BYTES: usize = 10_000;
 #[path = "recall_action_tests.rs"]
 mod action_tests;
 #[cfg(test)]
+#[path = "recall_pending_tests.rs"]
+mod pending_tests;
+#[cfg(test)]
 #[path = "recall_projection_rank_tests.rs"]
 mod rank_tests;
 /// The head of the catalogue: the labels most entries stand in, the current
@@ -738,11 +741,16 @@ fn attach_metadata(
             .iter()
             .filter(|item| item.section == section)
             .count();
+        let remaining = eligible[next_offset.min(eligible.len())..]
+            .iter()
+            .filter(|item| item.section == section)
+            .count();
         sections.insert(
             section.name().to_string(),
             json!({
                 "core": core,
                 "returned_on_page": if planning { total } else { returned },
+                "remaining": if planning { total } else { remaining },
                 "eligible": eligible_total,
                 "total": total
             }),
@@ -813,17 +821,17 @@ fn attach_metadata(
         });
         let warning = if planning {
             PLANNING_WARNING
+        } else if core_text_shortened {
+            "recall core prose was shortened; execute projection.next_action to restart and discard the partial reconstruction before reading more expansion"
         } else if stalled {
             "recall expansion cannot advance at this byte budget; repeating the same cursor \
              with unchanged budget.max_bytes returns no additional evidence"
         } else if has_more {
-            "pageable recall projection has more expansion items; follow the non-null projection.page.next_cursor with identical bound arguments"
+            "recall has unread expansion; projection.sections.*.remaining counts what follows this page, excluding repeated core and earlier pages. Execute projection.next_action"
         } else if excluded_by_detail > 0 {
             "recall detail excludes expansion items; start a fresh recall with a richer budget.detail to include them"
         } else if plan.selection_omitted > 0 {
             "recall selection was capped by budget.max_entries; start a fresh recall with a larger cap to include those items"
-        } else if core_text_shortened {
-            "recall core prose was shortened; start a fresh recall with a larger budget.max_bytes to restore it before expansion"
         } else {
             "final continuation page; combine its expansion items with the stable core and earlier pages"
         };
@@ -1586,6 +1594,7 @@ fn projection_value(projection: &RecallProjection) -> Value {
             json!({
                 "core": section.core,
                 "returned_on_page": section.returned_on_page,
+                "remaining": section.remaining,
                 "eligible": section.eligible,
                 "total": section.total
             }),
@@ -1643,6 +1652,7 @@ fn projection_from_value(value: &Value) -> Option<RecallProjection> {
             name: name.clone(),
             core: u64_at(section, "/core"),
             returned_on_page: u64_at(section, "/returned_on_page"),
+            remaining: u64_at(section, "/remaining"),
             eligible: u64_at(section, "/eligible"),
             total: u64_at(section, "/total"),
         })
@@ -2127,8 +2137,16 @@ mod tests {
                 .as_array()
                 .expect("warnings")
                 .iter()
-                .any(|w| w.as_str().is_some_and(|w| w.contains("cannot advance")))
+                .any(|w| w
+                    .as_str()
+                    .is_some_and(|w| w.contains("discard the partial reconstruction")))
         );
+        assert_eq!(stalled["projection"]["core_text_shortened"], true);
+        let restoration = stalled["projection"]["next_action"]["arguments"].clone();
+        assert!(restoration.pointer("/page/cursor").is_none());
+        let restored = projected(packet.clone(), restoration);
+        assert_eq!(restored["projection"]["core_text_shortened"], false);
+        assert_eq!(restored["projection"]["page"]["offset"], 0);
 
         args["budget"]["max_bytes"] = json!(30_000);
         let resumed = projected(packet.clone(), args);
