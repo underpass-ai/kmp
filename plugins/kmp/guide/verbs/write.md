@@ -15,8 +15,10 @@ put `source: ["S1"]` and `source: ["S2"]` on those respective memories. Shared
 not create alias memberships; declare each source-supported alias explicitly.
 A source label helps navigation but never replaces its concrete evidence text.
 
-Use `connect_to.ref: "@source"` to address local id `source`, even if it appears
-later. Local targets count as `current_request` context. Stored rich targets
+Use `connect_to.ref: "source"` or `"@source"` to address exact local id `source`,
+even if it appears later. No fuzzy matching or target creation occurs. An unknown
+local name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.
+Local targets count as `current_request` context. Stored rich targets
 still require an actual prior read declared in `read_context`; cross-about
 identity links retain the proposal rule. Do not claim to have inspected a new
 local target. Independent facts may be unlinked: do not invent a relation.
@@ -29,9 +31,21 @@ endpoint examples and partial corrections. `supersedes` marks the **whole**
 target SUPERSEDED. If a report holds independent facts, isolate the relevant
 fact or use `corrects` with the precise correction; preserve the other facts.
 
+Omit `class` when `rel` has exactly one allowed class. For example,
+`{"ref":"check","rel":"verified_by","why":"H verifies the deployed version.","evidence":"H reports the expected version."}`
+compiles to `evidential`. An explicit class is checked, never overwritten.
+`authorizes` and `chosen_because` require a choice of `motivational` or `causal`;
+`confirms_selection` requires `evidential` or `motivational`. Decide from the
+source. The canonical receipt and relation-quality detail retain the resolved
+class. This completion changes neither proof requirements nor the relation's
+direction and does not infer whether it is true.
+
 With `context_id`, actor defaults to the persistent agent name; an explicit
 actor overrides it. Without context, actor is required. Actor identifies the author; top-level observed_at is the packet's provenance
-observation time. Actual ingestion is recorded separately by the kernel. Each
+observation time, required even when every record overrides it. A missing root
+`observed_at` needs the actual packet observation with its UTC offset; KMP does
+not choose a date from the records or substitute its ingestion clock. Actual
+ingestion is recorded separately by the kernel. Each
 record may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP
 resolves all names and validates the entire packet before one canonical ingest.
 A rejected record writes none of the packet. The transaction covers one about.
@@ -107,8 +121,11 @@ For example, an unapproved request may be recorded as an observation of the
 request, without `updates_state` or `supersedes` on the current decision.
 A later approval needs its own evidence. `request` and `outcome` are not kinds.
 See the semantic-batch example for individual source labels and this distinction.
-`RELATION_CLASS_MISMATCH` identifies the link's class. Do not invent evidence
-or weaken a relation just to make validation pass.
+`RELATION_CLASS_REQUIRED` means this relation has more than one possible class;
+`RELATION_CLASS_MISMATCH` means the explicit choice is incompatible. Both identify
+the field and include `allowed_values`. Do not invent evidence or weaken a
+relation just to make validation pass. Missing class is different from null or
+an empty string; only omission requests deterministic completion.
 
 For `PRIOR_CONTEXT_REQUIRED`, KMP can supply a complete `kmp_inspect` action
 for the existing target. Execute the read, evaluate its evidence, then declare

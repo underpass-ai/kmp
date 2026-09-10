@@ -152,7 +152,7 @@ pub fn kernel_operator_primary_refs(action: &Value) -> Vec<String> {
                     .flatten()
             })
             .filter_map(|link| link.get("ref").and_then(Value::as_str))
-            .filter(|reference| !reference.starts_with('@'))
+            .filter(|reference| !reference.starts_with('@') && reference.contains(':'))
             .map(ToString::to_string)
             .chain(
                 arguments
@@ -405,6 +405,7 @@ fn validate_write_memory_arguments(arguments: &Value) -> Result<(), String> {
                     return Err(format!("{context}.id repeats local id `{id}`"));
                 }
                 local_refs.push(format!("@{id}"));
+                local_refs.push(id.to_owned());
                 if let Some(reference) = validate_write_record(record, &context)? {
                     local_refs.push(reference);
                 }
@@ -718,19 +719,22 @@ fn validate_connect_to(
         exact_keys(
             link,
             &link_context,
-            &["ref", "rel", "class", "why", "evidence"],
-            &["confidence"],
+            &["ref", "rel"],
+            &["class", "why", "evidence", "confidence"],
         )?;
         let target_ref = required_non_empty_string(link, "ref", &link_context)?;
         let rel = required_non_empty_string(link, "rel", &link_context)?;
-        let class = required_non_empty_string(link, "class", &link_context)?;
-        let semantic_class = RelationSemanticClass::parse(class)
-            .map_err(|error| format!("{link_context}.class is invalid: {error}"))?;
         let relation_type = MemoryRelationType::new(rel)
             .map_err(|error| format!("{link_context}.rel is invalid: {error}"))?;
         let Some(spec) = relation_type.writer_spec() else {
             return Err(format!("{link_context}.rel is outside writer vocabulary"));
         };
+        let class = match (link.get("class"), spec.allowed_classes()) {
+            (None, [class]) => class.as_str(),
+            _ => required_non_empty_string(link, "class", &link_context)?,
+        };
+        let semantic_class = RelationSemanticClass::parse(class)
+            .map_err(|error| format!("{link_context}.class is invalid: {error}"))?;
         if !spec.allows_class(&semantic_class) {
             return Err(format!(
                 "{link_context}.class `{class}` is not allowed for relation `{rel}`"
@@ -1570,6 +1574,16 @@ mod tests {
             "arguments": valid_write_memory_arguments()
         });
 
+        assert_eq!(kernel_operator_action_contract_error(&action), None);
+    }
+
+    #[test]
+    fn action_contract_accepts_exact_local_target_and_unambiguous_class_omission() {
+        let mut arguments = valid_write_memory_arguments();
+        let local = &mut arguments["memories"][0]["connect_to"][1];
+        local["ref"] = json!("semantic_delta");
+        local.as_object_mut().expect("link").remove("class");
+        let action = json!({"type":"tool_call","tool":"kmp_write_memory","arguments":arguments});
         assert_eq!(kernel_operator_action_contract_error(&action), None);
     }
 

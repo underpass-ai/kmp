@@ -13,6 +13,12 @@ names the target. Read it as **source -> relation -> target**, not as a loose
 association. Preview and accepted responses expose these triples with local
 `@id` endpoints so you can check the compiled direction without a full receipt.
 
+Inputs accept an exact local `id` or `@id`. When a relation allows just one
+class, omit `class` and KMP completes it from the domain vocabulary. Multiple
+classes require your explicit choice; an incompatible explicit class is never
+replaced. For example `verified_by` completes `evidential`, while `authorizes`
+requires `motivational` or `causal`. Proof and direction remain your responsibility.
+
 | Source -> relation -> target | Concrete example | Misleading use |
 | --- | --- | --- |
 | approval -> `authorizes` -> permitted action | Approval A permits planned deploy D: `@A -> authorizes -> @D`. | D authorizes A reverses permission. A does not prove D ran. |

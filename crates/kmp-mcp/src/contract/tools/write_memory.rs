@@ -39,6 +39,19 @@ pub(crate) fn write_memory_schema() -> Value {
         "Exclusive end of the recorded state's validity, only if known from this source. Do not backdate knowledge from a later report.",
     );
     let rank = json!({"type":"integer","minimum":1});
+    let relation = json!({
+        "type":"object","additionalProperties":false,"required":["ref","rel"],
+        "if":{"required":["rel"],"properties":{"rel":{"enum":writer_relations_requiring_class()}}},
+        "then":{"required":["class"]},
+        "properties":{
+            "ref":string_schema("Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal."),
+            "rel":{"type":"string","enum":writer_relation_names(),"description":relation_vocabulary_description("Choose the specific relation justified by the source.")},
+            "class":writer_class_schema(),
+            "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links."),
+            "evidence":string_schema("The concrete observation or source supporting the relation rationale. Required for non-structural links."),
+            "confidence":{"type":"string","enum":["high","medium","low","unknown"]}
+        }
+    });
     let memories = json!({
         "type":"array","minItems":1,
         "description":"One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
@@ -46,7 +59,7 @@ pub(crate) fn write_memory_schema() -> Value {
             "type":"object","additionalProperties":false,
             "required":["id","kind","summary"],
             "properties":{
-                "id":{"type":"string","pattern":"^[A-Za-z][A-Za-z0-9_-]*$","description":"Local name. @name in connect_to.ref addresses this record, including forward links. local_refs returns its canonical address."},
+                "id":{"type":"string","pattern":"^[A-Za-z][A-Za-z0-9_-]*$","description":"Local name. Use this exact name or @name in connect_to.ref, including forward links. local_refs returns its canonical address."},
                 "ref":string_schema("Omit for a new memory. An explicit canonical ref updates that exact entry and must be a safe descendant of this about, not its anchor or an internal evidence/dimension object."),
                 "kind":{"type":"string","enum":WRITER_MEMORY_KINDS,"description":"What this memory records. No separate writer intent is needed."},
                 "summary":string_schema("Literal memory text, in the language of the work. Ask cites this text byte for byte."),
@@ -60,17 +73,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "rank":rank,
                 "connect_to":{
                     "description":"Justified links: this containing memory is the source, connect_to.ref is the target. Read each as source -> rel -> target before submitting.",
-                    "type":"array","items":{
-                        "type":"object","additionalProperties":false,"required":["ref","rel","class"],
-                        "properties":{
-                            "ref":string_schema("@local-id in this packet, or an existing canonical ref. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal."),
-                            "rel":{"type":"string","enum":writer_relation_names(),"description":relation_vocabulary_description("Choose the specific relation justified by the source.")},
-                            "class":semantic_class_schema(),
-                            "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links."),
-                            "evidence":string_schema("The concrete observation or source supporting the relation rationale. Required for non-structural links."),
-                            "confidence":{"type":"string","enum":["high","medium","low","unknown"]}
-                        }
-                    }
+                    "type":"array","items":relation
                 }
             }
         }
@@ -81,7 +84,7 @@ pub(crate) fn write_memory_schema() -> Value {
         "properties":{
             "about":string_schema("Exact about receiving this one transaction. Never inferred or changed by a default."),
             "actor":string_schema("Human, agent or component producing the write."),
-            "observed_at":observed,
+            "observed_at":string_schema("Required packet provenance and shared observation time, even if every record overrides it. Supply the actual RFC3339 observation with its UTC offset; not an assumed occurrence or validity start. Backfill allowed; more than five minutes ahead of the kernel clock is refused."),
             "occurred_at":occurred,
             "valid_from":valid_from,
             "valid_until":valid_until,

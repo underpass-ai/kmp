@@ -18,6 +18,11 @@ repair from the source, and retry. Replay an accepted packet with its same key.
 Read returned `relations` as `from -> rel -> to` (`@id` uses `local_refs`).
 In `connect_to`, the containing memory is `from`; `ref` is `to`:
 
+Use an exact local id, such as `"check"` or `"@check"`, for another record in
+the packet. Omit `class` when the relation allows one class (`verified_by`
+completes `evidential`). `authorizes`, `chosen_because` and `confirms_selection`
+need an explicit choice. A rejected class reports `allowed_values`.
+
 - approval -> `authorizes` -> permitted action (not proof it ran);
 - claim/outcome -> `verified_by` -> actual verifying check;
 - exclusion record -> `excluded_from` -> total/set;
