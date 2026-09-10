@@ -322,6 +322,7 @@ mod tests {
                     "interval",
                     "limit",
                     "page", // MCP response projection; the typed query remains unchanged.
+                    "refs", // Typed TemporalEntrySelection focuses entries, not proof sources.
                     "window",
                     cursor,
                 ]),
