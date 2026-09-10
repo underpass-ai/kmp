@@ -1,6 +1,9 @@
 //! Real service/application traversal; the repository fixture owns only source data.
 use super::*;
 
+#[path = "temporal_entry_selection_tests.rs"]
+mod entry_selection_tests;
+
 struct EvidencedTemporalReader;
 
 impl GraphNeighborhoodReader for EvidencedTemporalReader {

@@ -1,6 +1,6 @@
 use crate::{
     DimensionSelection, DomainError, TemporalAxis, TemporalCursor, TemporalDirection,
-    TemporalInterval, TemporalWindow,
+    TemporalEntrySelection, TemporalInterval, TemporalWindow,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,6 +13,7 @@ pub struct TemporalTraversalRequest {
     requested_dimensions: Option<DimensionSelection>,
     window: TemporalWindow,
     limit_entries: Option<usize>,
+    entry_selection: Option<TemporalEntrySelection>,
 }
 
 impl TemporalTraversalRequest {
@@ -26,12 +27,22 @@ impl TemporalTraversalRequest {
             requested_dimensions: None,
             window: TemporalWindow::default(),
             limit_entries: None,
+            entry_selection: None,
         }
     }
 
     pub fn with_dimensions(mut self, dimensions: DimensionSelection) -> Self {
         self.dimensions = dimensions;
         self
+    }
+
+    pub fn with_entry_selection(mut self, selection: Option<TemporalEntrySelection>) -> Self {
+        self.entry_selection = selection;
+        self
+    }
+
+    pub fn entry_selection(&self) -> Option<&TemporalEntrySelection> {
+        self.entry_selection.as_ref()
     }
 
     pub fn with_axis(mut self, axis: TemporalAxis) -> Self {

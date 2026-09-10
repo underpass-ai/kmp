@@ -219,6 +219,7 @@ pub struct AskMemoryQuery {
 pub struct TemporalMemoryQuery {
     pub about: String,
     pub direction: TemporalDirection,
+    pub entry_selection: Option<kmp_domain::TemporalEntrySelection>,
     pub axis: TemporalAxis,
     pub cursor: Option<TemporalCursor>,
     pub interval: Option<TemporalInterval>,

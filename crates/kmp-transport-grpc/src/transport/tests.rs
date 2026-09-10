@@ -2365,6 +2365,7 @@ fn temporal_move_request(
     dimensions: ProtoDimensionSelection,
 ) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        entry_selection: None,
         interval: None,
         about: "question:830ce83f".to_string(),
         cursor,
@@ -2394,6 +2395,7 @@ fn goto_request(
 ) -> GotoRequest {
     let request = temporal_move_request(cursor, dimensions);
     GotoRequest {
+        entry_selection: request.entry_selection,
         interval: request.interval,
         about: request.about,
         cursor: request.cursor,
@@ -2412,6 +2414,7 @@ fn rewind_request(
 ) -> RewindRequest {
     let request = temporal_move_request(cursor, dimensions);
     RewindRequest {
+        entry_selection: request.entry_selection,
         interval: request.interval,
         about: request.about,
         cursor: request.cursor,
@@ -2433,6 +2436,7 @@ fn forward_request(
 
 fn forward_request_from_temporal(request: TemporalMoveRequest) -> ForwardRequest {
     ForwardRequest {
+        entry_selection: request.entry_selection,
         interval: request.interval,
         about: request.about,
         cursor: request.cursor,

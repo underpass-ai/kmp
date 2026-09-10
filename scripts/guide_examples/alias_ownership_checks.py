@@ -37,6 +37,13 @@ def check(saved, client, authored):
     assert any(entry['ref'] == refs['elena'] and entry['text'] == authored['elena']['memories'][0]['summary']
                and entry['coordinates'] for entry in related['proof']['entries'])
     assert any(item['text'] == authored['elena']['memories'][0]['evidence'] for item in related['proof']['evidence'])
+    focused = saved['directory_with_later_proof']
+    assert [entry['ref'] for entry in focused['entries']] == [refs['elena']]
+    assert focused['selection']['requested_refs'] == [refs['elena']]
+    assert focused['selection']['unmatched_ref_count'] == 0
+    assert focused['proof']['as_of'] == '2026-09-02T09:00:00Z'
+    assert set(focused['proof']['groups'][0]['member_refs']) == {refs['elena'], refs['alias'], refs['jon']}
+    assert any(entry['ref'] == refs['alias'] for entry in focused['proof']['entries'])
     assert {entry['ref'] for entry in saved['account_history']['entries']} == {refs['jon'], refs['rui']}
     for name, source, target, relation in [('identity_path', 'alias', 'elena', 'same_entity_as'),
                                           ('assignment_path', 'rui', 'jon', 'supersedes')]:

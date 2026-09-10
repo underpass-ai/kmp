@@ -1,8 +1,10 @@
 mod axis_key;
+mod entry_selection;
 mod extract;
 mod position;
 mod request;
 
+pub use entry_selection::TemporalEntrySelection;
 pub use request::TemporalTraversalRequest;
 mod select;
 pub use select::compare_temporal_coordinates;

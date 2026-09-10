@@ -44,6 +44,13 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
 
     match name {
         "kmp_ingest" => authorize_ingest_refs(identity, arguments)?,
+        "kmp_goto" | "kmp_near" | "kmp_forward" | "kmp_rewind" => {
+            if let Some(refs) = arguments.get("refs").and_then(Value::as_array) {
+                for reference in refs.iter().filter_map(Value::as_str) {
+                    authorize_ref(identity, Some(reference), None)?;
+                }
+            }
+        }
         "kmp_trace" => {
             authorize_ref(
                 identity,
@@ -434,6 +441,25 @@ mod tests {
             }),
         );
         assert!(authorize(&actor, &denied).is_err());
+    }
+
+    #[test]
+    fn temporal_entry_focus_requires_reference_grants() {
+        let actor = identity(&[READ_SCOPE]);
+        for tool in ["kmp_goto", "kmp_near", "kmp_forward", "kmp_rewind"] {
+            assert!(
+                authorize(
+                    &actor,
+                    &call(
+                        tool,
+                        json!({"about":"project:kmp", "refs":["project:kmp:entry:one"]})
+                    )
+                )
+                .is_ok()
+            );
+            assert!(authorize(&actor, &call(tool, json!({"about":"project:kmp", "refs":["project:kmp:entry:one", "project:secret:entry:two"]}))).is_err());
+            assert!(authorize(&actor, &call(tool, json!({"about":"project:kmp"}))).is_ok());
+        }
     }
 
     #[test]

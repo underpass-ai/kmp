@@ -304,6 +304,7 @@ where
             Err(response) => return response,
         };
         let query = TemporalMemoryQuery {
+            entry_selection: None,
             about: about.to_string(),
             direction,
             axis,

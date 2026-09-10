@@ -405,6 +405,15 @@ not need; inspect the relation types before deciding what each member proves.
 {"tool":"kmp_goto","save_as":"alias_dependencies","arguments":{"about":"example:guide:alias-ownership","at":{"ref":"${alias.generated_refs.0}"},"axis":"observed","limit":{"entries":1},"include":{"dependencies":true},"budget":{"max_bytes":100000}}}
 ```
 
+If we already know the older directory entry, keep it as the selected memory
+and stand at the later clarification time. `refs` chooses entries; `at.time`
+chooses the question's inclusive cutoff. The later explicit alias relation
+can now supply proof. This does not turn the same-name visitor into Elena.
+
+```json
+{"tool":"kmp_goto","save_as":"directory_with_later_proof","arguments":{"about":"example:guide:alias-ownership","at":{"time":"2026-09-02T09:00:00Z"},"refs":["${elena.generated_refs.0}"],"axis":"observed","limit":{"entries":1},"include":{"dependencies":true},"budget":{"max_bytes":100000}}}
+```
+
 Follow the account's timeline with `near`, using the catalogue's exact
 account value. The two assignment memories should remain distinct. Trace
 from the new one to the old one to see the explicit replacement proof.

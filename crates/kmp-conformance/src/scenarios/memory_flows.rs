@@ -135,6 +135,7 @@ fn temporal_query(
     window: TemporalWindow,
 ) -> TemporalMemoryQuery {
     TemporalMemoryQuery {
+        entry_selection: None,
         about: ABOUT.to_string(),
         direction,
         axis: TemporalAxis::Default,

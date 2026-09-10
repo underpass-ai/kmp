@@ -159,6 +159,35 @@ uses may resolve through `citations`. A host composing captured pages can bind
 known spans to a returned dependency record. Sharing does not fill a missing
 page, change the selected clock, merge sources or establish that a group answers.
 
+## Focus known memories while keeping the question time
+
+Use `refs: ["<copied memory ref>"]` on Goto, Near, Forward or Rewind when
+you already know which entries matter. This filters history entries before
+entry/window limits; it does not filter their dependency sources. Keep the
+question's cursor, clock, interval, scope and labels. The refs never bypass
+those restrictions. Copy exact refs from prior responses; do not use labels,
+response-page cursors or invented refs.
+
+For example, an assignment observed on September 8 may need an older alias
+declaration and a clarification received exactly at 10:00 on September 10.
+Call Goto with `at: {"time":"2026-09-10T10:00:00Z"}`, `axis: "observed"`,
+`refs: ["<assignment ref>"]` and `include: {"dependencies":true}`. The assignment
+stays selected while the admitted related records can supply its proof. A
+report received half a second later stays out. Using `at.ref` instead would
+move the proof cutoff to the assignment's earlier time.
+
+`selection.requested_refs` repeats the focus. `unmatched_ref_count` counts
+requested refs outside this query's matching history, before entry/window
+limits; it does not prove that they do not exist. `selection.has_more` means
+matching history remains, whereas `page.has_more` means this packet has more
+response items. Follow the returned actions, which retain `refs`. Changing
+the focus requires a fresh read. An empty or duplicate ref list is invalid;
+omit `refs` to select all matching entries. Results keep temporal order, not
+the caller's ref-list order.
+
+The alias-ownership example also selects an older directory entry at the
+later clarification time, retaining the explicit identity link as proof.
+
 ## Goto carries proof from its historical instant
 
 `kmp_goto` selects a state at its resolved `at` cursor. Its proof uses that

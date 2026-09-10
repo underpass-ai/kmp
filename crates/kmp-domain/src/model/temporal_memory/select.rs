@@ -93,6 +93,7 @@ pub(super) fn select_positions(
         .collect::<Vec<_>>();
 
     let Some(cursor_axis_key) = cursor_axis_key else {
+        comparable.retain(|position| entry_selected(position, request));
         // A direct interval starts at the selected range itself. Do not invent
         // a time just before its start or lose memories tied at that boundary.
         let side = if request.direction() == TemporalDirection::Rewind {
@@ -121,6 +122,7 @@ pub(super) fn select_positions(
         let active = comparable
             .into_iter()
             .filter(|position| validity_contains(&position.coordinate, cursor_axis_key))
+            .filter(|position| entry_selected(position, request))
             .collect();
         return select_limited(
             active,
@@ -129,11 +131,20 @@ pub(super) fn select_positions(
         );
     }
 
-    let partitions = partition_positions(
+    let mut partitions = partition_positions(
         comparable,
         cursor_axis_key,
         cursor.and_then(|cursor| cursor.ref_id.as_deref()),
     );
+    // Resolve the original ref's ordered position before focusing entries.
+    // An unselected anchor still determines the sides; limits apply afterward.
+    for side in [
+        &mut partitions.before,
+        &mut partitions.exact,
+        &mut partitions.after,
+    ] {
+        side.retain(|position| entry_selected(position, request));
+    }
 
     match request.direction() {
         TemporalDirection::Goto => {
@@ -216,6 +227,12 @@ fn validity_contains(coordinate: &TemporalCoordinate, cursor_axis_key: &Temporal
         .valid_from()
         .is_none_or(|start| TemporalAxisKey::time(start) <= *cursor_axis_key);
     started && validity_not_ended(coordinate, cursor_axis_key)
+}
+
+fn entry_selected(position: &TemporalPosition, request: &TemporalTraversalRequest) -> bool {
+    request
+        .entry_selection()
+        .is_none_or(|selection| selection.admits(&position.ref_id))
 }
 
 fn validity_not_ended(coordinate: &TemporalCoordinate, cursor_axis_key: &TemporalAxisKey) -> bool {

@@ -133,6 +133,16 @@ alcance. Un cambio en contenido oculto también debe invalidar el cursor.
 La ampliación es una lectura nueva, no una promesa de snapshot. Medir tanto
 navegación selectiva como ampliación de todos los resultados.
 
+Al cambiar la selección por `refs`, comprobar que se aplica antes del límite de
+entradas/ventana, manteniendo ámbito, etiquetas y relojes. El cursor se resuelve
+contra la historia admitida; el foco no recorta las fuentes de dependencia.
+Conservar el corte de la pregunta aunque la memoria elegida sea anterior. Medir
+la igualdad del comportamiento sin `refs`, la recuperación de una prueba justo
+en el corte y la exclusión de la posterior. Distinguir refs no coincidentes,
+historia fuera del paquete y prueba pendiente de paginar; ninguno prueba ausencia
+global. Actualizar el protobuf canónico y el vendorizado, los dos adaptadores y
+el ejemplo ejecutable junto con el contrato MCP.
+
 La regla de no repetir es sobre la carga en contexto. Un archivo fuente y sus
 assets generados no son dos manuales que el agente deba leer. Las reglas comunes
 que ya llegan en initialize tampoco necesitan copiarse íntegramente en cada
