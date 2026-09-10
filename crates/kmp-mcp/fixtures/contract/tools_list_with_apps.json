@@ -486,6 +486,133 @@
                 },
                 "type": "object"
               },
+              "clocks": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "entries": {
+                        "description": "Memories covered by this command.",
+                        "type": "integer"
+                      },
+                      "ingested": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "observed": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "occurred": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "scope": {
+                        "description": "accepted_command: clocks of this historical write, including on replay; not current graph state or source fidelity.",
+                        "type": "string"
+                      },
+                      "valid_from": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "valid_until": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "distinct_values": {
+                            "description": "Distinct instants carried by those memories.",
+                            "type": "integer"
+                          },
+                          "entries": {
+                            "description": "Memories with this clock, counted once across their memberships.",
+                            "type": "integer"
+                          },
+                          "single_value": {
+                            "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Compact canonical clock coverage. Null when unavailable; previews do not report saved clocks."
+              },
               "created_dimensions": {
                 "description": "Refs of label dimensions this ingest created, identified by about, key and value. Copy returned refs; do not construct them.",
                 "items": {
@@ -505,6 +632,13 @@
                 "description": "Accepted writer audit ref when the internal compiler attached receipt context; null for raw ingest or preview.",
                 "type": [
                   "string",
+                  "null"
+                ]
+              },
+              "replayed": {
+                "description": "Whether the kernel returned an already accepted command; null without a backend outcome.",
+                "type": [
+                  "boolean",
                   "null"
                 ]
               },
@@ -1078,6 +1212,133 @@
             "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
             "type": "boolean"
           },
+          "clocks": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "entries": {
+                    "description": "Memories covered by this command.",
+                    "type": "integer"
+                  },
+                  "ingested": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "observed": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "occurred": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "scope": {
+                    "description": "accepted_command: clocks of this historical write, including on replay; not current graph state or source fidelity.",
+                    "type": "string"
+                  },
+                  "valid_from": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "valid_until": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Compact canonical clock coverage. Null when unavailable; previews do not report saved clocks."
+          },
           "coverage": {
             "additionalProperties": false,
             "properties": {
@@ -1272,6 +1533,17 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "status": {
+            "description": "committed appended a command; replayed returned its earlier acceptance; validated is a preview; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure.",
+            "enum": [
+              "committed",
+              "replayed",
+              "validated",
+              "rejected",
+              "unconfirmed"
+            ],
+            "type": "string"
           },
           "summary": {
             "description": "Counts and scope of the semantic write the planner prepared.",

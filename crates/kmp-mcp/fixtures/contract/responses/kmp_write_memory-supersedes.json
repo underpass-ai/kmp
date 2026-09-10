@@ -8,6 +8,35 @@
   "isError": false,
   "structuredContent": {
     "accepted": true,
+    "clocks": {
+      "entries": 2,
+      "ingested": {
+        "distinct_values": 1,
+        "entries": 2,
+        "single_value": "<stamped at call time>"
+      },
+      "observed": {
+        "distinct_values": 1,
+        "entries": 2,
+        "single_value": "2026-04-12T17:00:00Z"
+      },
+      "occurred": {
+        "distinct_values": 1,
+        "entries": 2,
+        "single_value": "2026-04-12T17:00:00Z"
+      },
+      "scope": "accepted_command",
+      "valid_from": {
+        "distinct_values": 0,
+        "entries": 0,
+        "single_value": null
+      },
+      "valid_until": {
+        "distinct_values": 0,
+        "entries": 0,
+        "single_value": null
+      }
+    },
     "coverage": {
       "complete": true,
       "evidence": 5,
@@ -61,6 +90,7 @@
       "updates_state",
       "semantic_delta_from"
     ],
+    "status": "committed",
     "summary": "Ingested 2 entries, 3 relations, and 5 evidence items for question:parity.",
     "warnings": []
   }

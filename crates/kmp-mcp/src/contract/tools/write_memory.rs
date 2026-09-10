@@ -201,6 +201,8 @@ fn write_memory_output_schema() -> Value {
             }))
         }),
         "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
+        "status": json!({"type":"string","enum":["committed","replayed","validated","rejected","unconfirmed"],"description":"committed appended a command; replayed returned its earlier acceptance; validated is a preview; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure."}),
+        "clocks": crate::contract::schema::write_clocks::write_clocks_schema(),
         "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
         "validation": output_object(json!({
             "scope": described("string", "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.")

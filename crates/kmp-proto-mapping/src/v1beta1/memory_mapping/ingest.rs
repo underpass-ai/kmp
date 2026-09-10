@@ -69,7 +69,14 @@ pub fn ingest_command_from_proto(
 pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestResponse {
     IngestResponse {
         summary: format!(
-            "Ingested {} {}, {} {}, and {} {} for {}.",
+            "{} {} {}, {} {}, and {} {} for {}.",
+            if !outcome.read_after_write_ready {
+                "Validated"
+            } else if outcome.replayed {
+                "Replayed"
+            } else {
+                "Ingested"
+            },
             outcome.accepted.entries,
             plural(outcome.accepted.entries, "entry", "entries"),
             outcome.accepted.relations,
@@ -80,6 +87,8 @@ pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestRespo
         ),
         memory: Some(IngestedMemory {
             receipt_ref: outcome.receipt_ref,
+            replayed: outcome.replayed,
+            clocks: outcome.clocks.map(write_clocks_to_proto),
             about: outcome.about,
             memory_id: outcome.memory_id,
             accepted: Some(AcceptedCounts {
@@ -185,5 +194,29 @@ pub(super) fn provenance_from_proto(value: MemoryProvenance) -> MemoryProvenance
             .unwrap_or_else(|| "unix:100000000000:000000000".to_string()),
         correlation_id: non_empty(value.correlation_id),
         causation_id: non_empty(value.causation_id),
+    }
+}
+
+fn write_clocks_to_proto(
+    value: kmp_application::memory::WriteClocks,
+) -> kmp_proto::v1beta1::WriteClocks {
+    use kmp_proto::v1beta1::WriteClocks;
+    WriteClocks {
+        entries: value.entries as u32,
+        occurred: Some(write_clock_to_proto(value.occurred)),
+        observed: Some(write_clock_to_proto(value.observed)),
+        ingested: Some(write_clock_to_proto(value.ingested)),
+        valid_from: Some(write_clock_to_proto(value.valid_from)),
+        valid_until: Some(write_clock_to_proto(value.valid_until)),
+    }
+}
+
+fn write_clock_to_proto(
+    value: kmp_application::memory::WriteClockCoverage,
+) -> kmp_proto::v1beta1::WriteClockCoverage {
+    kmp_proto::v1beta1::WriteClockCoverage {
+        entries: value.entries as u32,
+        distinct_values: value.distinct_values as u32,
+        single_value: super::scalars::timestamp_from_sort_or_rfc3339(value.single_value.as_deref()),
     }
 }

@@ -400,6 +400,15 @@ async fn grpc_backend_maps_kmp_ingest_to_kernel_memory_service() {
         true
     );
 
+    assert_eq!(
+        ingest["result"]["structuredContent"]["memory"]["replayed"],
+        true
+    );
+    assert_eq!(
+        ingest["result"]["structuredContent"]["memory"]["clocks"]["observed"],
+        json!({"entries":1,"distinct_values":1,"single_value":"1970-01-01T00:00:00Z"})
+    );
+
     let ingests = recorded.ingests().await;
     assert_eq!(ingests.len(), 1);
     let request = &ingests[0];
@@ -671,6 +680,19 @@ impl KernelMemoryService for FakeMemoryService {
         Ok(Response::new(IngestResponse {
             summary: format!("Ingested memory for {}.", request.about),
             memory: Some(IngestedMemory {
+                replayed: true,
+                clocks: Some(kmp_proto::v1beta1::WriteClocks {
+                    entries: 1,
+                    observed: Some(kmp_proto::v1beta1::WriteClockCoverage {
+                        entries: 1,
+                        distinct_values: 1,
+                        single_value: Some(prost_types::Timestamp {
+                            seconds: 0,
+                            nanos: 0,
+                        }),
+                    }),
+                    ..Default::default()
+                }),
                 receipt_ref: None,
                 about: request.about,
                 memory_id,

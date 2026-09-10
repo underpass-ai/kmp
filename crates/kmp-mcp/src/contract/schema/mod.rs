@@ -6,3 +6,4 @@ pub(crate) mod request_shape;
 pub(crate) mod response_shape;
 pub(crate) mod temporal_family;
 pub(crate) mod view_family;
+pub(crate) mod write_clocks;

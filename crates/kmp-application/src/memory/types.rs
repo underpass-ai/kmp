@@ -160,6 +160,8 @@ pub struct MemoryAcceptedCounts {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MemoryIngestOutcome {
+    pub replayed: bool,
+    pub clocks: Option<super::WriteClocks>,
     pub receipt_ref: Option<String>,
     pub about: String,
     pub memory_id: String,

@@ -220,6 +220,29 @@ label grants. A local @id is resolved inside its packet; it does not name an
 external memory. A forbidden request must stop before any backend call. Do not
 remove source-supported labels or refs just to evade a permission error.
 
+### Read the outcome and stored clocks
+
+`status=committed` appended the logical command; `replayed` returns its earlier
+acceptance without another write. Both keep `accepted=true`. `validated` is a
+dry-run, and `rejected` is a validation refusal. `unconfirmed` cannot establish
+persistence: retain the same idempotency key when resolving a transport error.
+Do not turn an uncertain reply into a new logical write.
+
+`clocks.scope=accepted_command` summarizes the clocks actually in that command,
+including on replay. Each clock counts memories once across all label memberships:
+`entries`, `distinct_values`, and an RFC3339 `single_value` when there is only one.
+Zero occurred entries means no event time was recorded. One observed instant
+across nine memories is worth comparing with the nine sources; KMP cannot decide
+whether those sources were observed together. Missing occurrence is legitimate
+when its source does not supply one. Do not invent clocks to fill a count.
+
+Example: two memories with four label memberships can report two observations
+at one instant, one occurrence, and one valid_from. Inspect receipt.action only
+when the individual historical clocks or evidence are needed. Its receipt retains
+those clocks even after a later write, restart or bundle import. The current graph
+can have changed. Null clock coverage is unavailable, not zero; previews do not
+report saved clocks. Packet coverage still cannot assess source completeness.
+
 ### Complete calendar dates in search renderings
 
 `El 17 de agosto de 2026 se abrió la ruta.` may use

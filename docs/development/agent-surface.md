@@ -437,3 +437,20 @@ inputSchema del tools/list vigente. No exigir igualdad de todo el schema
 entre un ejemplo estático y el motor: una capacidad opcional nueva no invalida
 por sí sola un ejemplo que no la usa. Revisar el comportamiento ilustrado al
 modificarlo; mantener las pruebas del contrato nativo y del vocabulario real.
+
+
+### Señales del resultado de escritura
+
+La decisión committed/replayed procede de update_context en el punto que
+comprueba idempotencia. No inferirla de un reintento del host ni de la identidad
+persistente del agente. El resumen de relojes procede de la memoria canónica del
+comando aceptado; guardar ese resumen en su recibo y recuperarlo en un replay,
+sin sustituirlo por los relojes de una traducción nueva. Contar memorias una vez,
+no pertenencias dimensionales. Convertir el instante interno mediante el mapping
+temporal existente antes de mostrárselo al agente.
+
+Un preview no guardó relojes y un error de transporte no demuestra rechazo sin
+persistencia. Mantener validated/rejected/unconfirmed distinguibles. Verificar
+reintento tras reinicio, escritura posterior e importación, así como los transportes
+embedded/gRPC. Medir el coste del recibo completo; preservar el acceso al detalle
+sin volver a copiar toda la evidencia ni crear memorias de telemetría.
