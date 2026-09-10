@@ -227,7 +227,7 @@
           "kind": "instruction",
           "depth": "advanced",
           "text_file": "examples/four-clocks.md",
-          "evidence": "Three fictional permit sources resolve to an actual UTC run calendar. The native replay preserves kernel ingestion, distinguishes four axes, rejects a forged ingestion field, checks interval and validity boundaries, and frames seven clock/zoom stages without invoking a model. Four small clock-field examples distinguish absent clocks, known occurrence, separate observation and coincident clocks; native writer clock tests cover these choices.",
+          "evidence": "Three fictional permit sources resolve to an actual UTC run calendar. The native replay preserves kernel ingestion, distinguishes four axes, rejects a forged ingestion field, checks interval and validity boundaries, and frames seven clock/zoom stages without invoking a model. Four small clock-field examples distinguish absent clocks, known occurrence, separate observation and coincident clocks; native writer clock tests cover these choices. Interval-only enumeration uses Forward/Rewind; Goto keeps its explicit position requirement.",
           "example_title": "Four clocks, interval boundaries and zoom to proof"
         },
         {
