@@ -142,6 +142,33 @@ async fn invalid_explicit_ref_sets_are_rejected_instead_of_reading_everything() 
         assert_eq!(raw(&server, "kmp_goto", args).await["isError"], true);
     }
 }
+
+#[tokio::test]
+async fn focused_detail_replay_keeps_later_admitted_proof_and_the_selected_ref() {
+    let dir = tempfile::tempdir().expect("store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("embedded");
+    let refs = seed(&server).await;
+    let mut args = query(refs["role"].clone());
+    let full = call(&server, "kmp_goto", args.clone()).await;
+    args["fields"] = json!([]);
+    let reduced = call(&server, "kmp_goto", args).await;
+    let action = &reduced["entries"][0]["detail_action"];
+    let detail = call(
+        &server,
+        action["tool"].as_str().expect("tool"),
+        action["arguments"].clone(),
+    )
+    .await;
+    assert_eq!(detail, full);
+    assert_eq!(detail["proof"]["as_of"], "2026-09-10T10:00:00Z");
+    assert!(
+        detail["proof"]["entries"]
+            .as_array()
+            .expect("dependencies")
+            .iter()
+            .any(|entry| entry["ref"] == refs["boundary"])
+    );
+}
 #[tokio::test]
 async fn reference_focus_is_retained_by_pages_and_binds_the_cursor() {
     let dir = tempfile::tempdir().expect("store");

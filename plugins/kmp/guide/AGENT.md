@@ -1,6 +1,6 @@
 # KMP agent entry
 
-Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:9297c3b9c8a95da516ce`.
+Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:f61b224d3a78e8926ec8`.
 
 KMP stores facts, evidence and relations through time. The agent writes and navigates; KMP does not generate answers.
 

@@ -167,7 +167,7 @@ pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Val
             "missing": string_array("Requested dimension scope ids not present in the result."),
             "dimensions": described("array", "Per-dimension returned counts and presence flags.")
         })),
-        "entries": described("array", "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval."),
+        "entries": described("array", "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full selected-packet read with the original verb, cutoff, interval, scope, window and limits. Replay a shared action once, not once per entry."),
         "page": page,
         "raw_refs": described("array", "Typed raw audit refs for selected entries when include.raw_refs=true."),
         "proof": proof,

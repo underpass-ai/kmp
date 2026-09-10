@@ -122,7 +122,9 @@ all start ties, exclude the end and preserve earlier explanatory proof. An
 open end explicitly leaves expiry unassessed.
 
 Temporal entry projection adds `fields`, explicit included/omitted fields and an
-executable scoped Goto action on each reduced entry. Identity always remains;
+executable action on each reduced entry that replays the full original temporal
+selection. Execute the shared action once; it retains the original verb, cutoff,
+scope, filters and limits. Identity always remains;
 proof and raw audit selection remain separate. A page cursor binds hidden
 content too. Expansions are fresh reads, not retained snapshots. This is selective
 retrieval, not a claim of lower total tokens when every body is expanded.
