@@ -5,6 +5,40 @@ use super::serdes::{AggregateRecord, decode, encode};
 use super::store::{EmbeddedKernelStore, aggregate_key};
 
 impl ContextEventStore for EmbeddedKernelStore {
+    fn commits_projections_atomically(&self) -> bool {
+        true
+    }
+
+    async fn append_projected(
+        &self,
+        event: ContextUpdatedEvent,
+        expected_revision: u64,
+        read_revisions: Vec<kmp_domain::ContextRevision>,
+        mutations: Vec<kmp_domain::ProjectionMutation>,
+    ) -> Result<u64, PortError> {
+        self.run(move |store| {
+            let mut tx = store.begin_write()?;
+            for revision in read_revisions {
+                let key = aggregate_key(&revision.root_node_id, &revision.role);
+                let current = match tx.get(Table::Aggregates, Key::Str(&key))? {
+                    Some(raw) => decode::<AggregateRecord>("aggregate head", &raw)?.revision,
+                    None => 0,
+                };
+                if current != revision.revision {
+                    return Err(PortError::Conflict(format!(
+                        "reviewed context {} changed: expected {}, current {current}",
+                        revision.root_node_id, revision.revision
+                    )));
+                }
+            }
+            let new_revision = append_in_transaction(tx.as_mut(), event, expected_revision)?;
+            super::projection_write::apply_mutations_in_transaction(tx.as_mut(), mutations)?;
+            tx.commit()?;
+            Ok(new_revision)
+        })
+        .await
+    }
+
     async fn append(
         &self,
         event: ContextUpdatedEvent,
@@ -13,49 +47,7 @@ impl ContextEventStore for EmbeddedKernelStore {
         self.run(move |store| {
             let mut tx = store.begin_write()?;
 
-            let key = aggregate_key(&event.root_node_id, &event.role);
-            let current = match tx.get(Table::Aggregates, Key::Str(&key))? {
-                Some(raw) => decode::<AggregateRecord>("aggregate head", &raw)?.revision,
-                None => 0,
-            };
-            if current != expected_revision {
-                return Err(PortError::Conflict(format!(
-                    "expected revision {expected_revision}, current is {current}"
-                )));
-            }
-            let new_revision = current + 1;
-
-            // Stamp the assigned revision on the stored event so replay
-            // derives projections with the same revision the aggregate
-            // recorded.
-            let mut event = event;
-            event.revision = new_revision;
-            let outcome = IdempotentOutcome::for_event(&event, new_revision)?;
-
-            let aggregate_bytes = encode(
-                "aggregate head",
-                &AggregateRecord {
-                    revision: new_revision,
-                    content_hash: event.content_hash.clone(),
-                },
-            )?;
-            tx.insert(Table::Aggregates, Key::Str(&key), &aggregate_bytes)?;
-
-            let next_sequence = tx
-                .last_u64(Table::EventLog)?
-                .map_or(1, |(sequence, _)| sequence + 1);
-            let event_bytes = encode("context event", &event)?;
-            tx.insert(Table::EventLog, Key::U64(next_sequence), &event_bytes)?;
-
-            if let Some(idempotency_key) = event.idempotency_key.as_deref() {
-                let outcome_bytes = encode("idempotency outcome", &outcome)?;
-                tx.insert(
-                    Table::Idempotency,
-                    Key::Str(idempotency_key),
-                    &outcome_bytes,
-                )?;
-            }
-
+            let new_revision = append_in_transaction(tx.as_mut(), event, expected_revision)?;
             tx.commit()?;
             Ok(new_revision)
         })
@@ -118,4 +110,55 @@ impl EmbeddedKernelStore {
             .map(|(_, raw)| decode("context event", &raw))
             .collect()
     }
+}
+
+fn append_in_transaction(
+    tx: &mut dyn super::engine::WriteTx,
+    event: ContextUpdatedEvent,
+    expected_revision: u64,
+) -> Result<u64, PortError> {
+    let key = aggregate_key(&event.root_node_id, &event.role);
+    let current = match tx.get(Table::Aggregates, Key::Str(&key))? {
+        Some(raw) => decode::<AggregateRecord>("aggregate head", &raw)?.revision,
+        None => 0,
+    };
+    if current != expected_revision {
+        return Err(PortError::Conflict(format!(
+            "expected revision {expected_revision}, current is {current}"
+        )));
+    }
+    let new_revision = current + 1;
+
+    // Stamp the assigned revision on the stored event so replay
+    // derives projections with the same revision the aggregate
+    // recorded.
+    let mut event = event;
+    event.revision = new_revision;
+    let outcome = IdempotentOutcome::for_event(&event, new_revision)?;
+
+    let aggregate_bytes = encode(
+        "aggregate head",
+        &AggregateRecord {
+            revision: new_revision,
+            content_hash: event.content_hash.clone(),
+        },
+    )?;
+    tx.insert(Table::Aggregates, Key::Str(&key), &aggregate_bytes)?;
+
+    let next_sequence = tx
+        .last_u64(Table::EventLog)?
+        .map_or(1, |(sequence, _)| sequence + 1);
+    let event_bytes = encode("context event", &event)?;
+    tx.insert(Table::EventLog, Key::U64(next_sequence), &event_bytes)?;
+
+    if let Some(idempotency_key) = event.idempotency_key.as_deref() {
+        let outcome_bytes = encode("idempotency outcome", &outcome)?;
+        tx.insert(
+            Table::Idempotency,
+            Key::Str(idempotency_key),
+            &outcome_bytes,
+        )?;
+    }
+
+    Ok(new_revision)
 }

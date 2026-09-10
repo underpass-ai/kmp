@@ -306,12 +306,17 @@ contar por separado esa representación y el sobre completo.
 Al cambiar qué relaciones requieren revisión, mantener coherentes el predicado
 nativo `memory/write_neighborhood.rs`, el compilador, `needs_review` y la
 recomendación. `strict:false` y los enlaces locales no eluden la condición.
-La lectura se hace bajo la exclusión de escrituras del servicio de comandos;
-antes del commit se revalidan las revisiones de todos los abouts leídos, también
-los extremos extranjeros declarados. Esto se apoya en un único engine escritor
-por almacén. Conservar la comprobación de idempotencia antes de exigir un contexto
-nuevo a una operación ya aceptada. No conservar el bloqueo durante la revisión
-del agente: se libera al devolver la respuesta pendiente.
+SQLite admite varias sesiones sobre el mismo almacén. Comparar las revisiones
+antes y después de leer cada about evita aceptar una vecindad mezclada. El commit
+SQLite vuelve a comprobar todos los abouts leídos, incluidos extremos extranjeros,
+y guarda evento, recibo y proyección en una transacción. El bloqueo local del
+servicio sólo ordena su instancia; no demuestra exclusión entre procesos.
+Los adaptadores de eventos y proyección separados conservan ese límite local:
+esta garantía entre motores corresponde al backend SQLite. Conservar la
+comprobación de idempotencia antes de exigir contexto nuevo a una operación ya
+aceptada. Ninguna transacción queda abierta mientras el agente revisa la respuesta.
+Las operaciones directas de mantenimiento/importación de puertos requieren un
+almacén sin escritores activos; no son escrituras coordinadas del servicio.
 
 El token incorpora la propuesta lógica y el material seleccionado completo,
 incluidas omisiones. Las continuaciones usan el directorio existente: resuelven

@@ -14,8 +14,8 @@ use crate::commands::{
 #[derive(Debug)]
 pub struct CommandApplicationService<E, W = NoopProjectionWriter> {
     update_context: Arc<UpdateContextUseCase<E, W>>,
-    // One active engine owns a store. Keep review reads out of the interval
-    // between event append and projection materialization in that engine.
+    // Local ordering for split-store adapters. SQLite additionally validates
+    // the read revisions and projects atomically across independent engines.
     projection_access: tokio::sync::RwLock<()>,
 }
 
@@ -69,7 +69,9 @@ where
                 }
             }
         }
-        self.update_context.execute(command).await
+        self.update_context
+            .execute_after_read(command, revisions)
+            .await
     }
 
     /// What an idempotency key was already accepted with, if anything.

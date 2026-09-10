@@ -70,6 +70,28 @@ impl IdempotentOutcome {
 /// Provides optimistic concurrency via `expected_revision` on append,
 /// and deduplication via idempotency key lookup.
 pub trait ContextEventStore {
+    /// Whether this store owns projections in the same transaction as events.
+    fn commits_projections_atomically(&self) -> bool {
+        false
+    }
+
+    /// Validate every read revision, append and project in one transaction.
+    /// A conflict commits nothing. Only called when the store advertises it;
+    /// split-store adapters keep their existing append/projection path.
+    fn append_projected(
+        &self,
+        _event: ContextUpdatedEvent,
+        _expected_revision: u64,
+        _read_revisions: Vec<crate::ContextRevision>,
+        _mutations: Vec<crate::ProjectionMutation>,
+    ) -> impl Future<Output = Result<u64, PortError>> + Send {
+        async {
+            Err(PortError::InvalidState(
+                "atomic context projection is unsupported".into(),
+            ))
+        }
+    }
+
     /// Append an event. Fails with `PortError::Conflict` if
     /// `expected_revision` does not match the current revision for this
     /// `(root_node_id, role)` aggregate.
@@ -104,6 +126,21 @@ impl<T> ContextEventStore for Arc<T>
 where
     T: ContextEventStore + Send + Sync + ?Sized,
 {
+    fn commits_projections_atomically(&self) -> bool {
+        self.as_ref().commits_projections_atomically()
+    }
+    async fn append_projected(
+        &self,
+        event: ContextUpdatedEvent,
+        expected_revision: u64,
+        read_revisions: Vec<crate::ContextRevision>,
+        mutations: Vec<crate::ProjectionMutation>,
+    ) -> Result<u64, PortError> {
+        self.as_ref()
+            .append_projected(event, expected_revision, read_revisions, mutations)
+            .await
+    }
+
     async fn append(
         &self,
         event: ContextUpdatedEvent,
