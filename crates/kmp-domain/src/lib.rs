@@ -17,6 +17,7 @@ pub use model::{
     compare_temporal_instants, directed_relationship_path, label_resemblances, labels_by_entry,
     normalized_label_token, relate, temporal_instant_nanos, temporal_instant_rfc3339,
 };
+pub use model::{TemporalReadWindow, temporal_clock_instant};
 pub use projection::{
     ContextPathNeighborhood, GraphNodeMaterializedData, GraphNodeMaterializedEvent,
     GraphRelationMaterializedData, GraphRelationMaterializedEvent, NodeDetailMaterializedData,

@@ -413,6 +413,10 @@ where
             validate_supplied_entry_ref(&request.about, "trace search ref", reference)
                 .map_err(ApplicationError::Validation)?;
         }
+        if let Some(kmp_domain::TemporalCursor::Ref(reference)) = request.temporal.cursor() {
+            validate_supplied_entry_ref(&request.about, "as_of.ref", reference)
+                .map_err(ApplicationError::Validation)?;
+        }
         self.query_application.trace_search(&request).await
     }
 

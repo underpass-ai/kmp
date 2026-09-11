@@ -637,3 +637,21 @@ que concatena sin separadores; no necesita calcular offsets. Comprobar fuente
 omitida por presupuesto, testimonios independientes y recuperación exacta de
 restricciones, conflictos y UNKNOWN. Medir también bindings, tablas y manifiestos;
 el ahorro del cuerpo de texto por sí solo no representa el contexto completo.
+
+### Trace con selección temporal
+
+`as_of`, `interval` o una lista `to` activan el recorrido acotado. Las coordenadas
+canónicas de `contains_entry` y las aristas se leen en la misma transacción;
+no usar el payload original del nodo después de relabel. El predicado temporal
+compartido vive en dominio; los adaptadores aplican el presupuesto antes de leer.
+Los índices por tipo evitan recorrer todo el fanout para localizar coordenadas.
+Comprobar consultas SQLite reales, no sólo cuántas filas devuelve el resultado.
+
+Al modificar esta superficie, conservar e incluir en el fingerprint el reloj,
+el corte resuelto, el estado de resolución, el trabajo de coordenadas y los
+índices de relaciones sin reloj. Probar corte inclusivo, intervalo semiabierto,
+ref sin reloj, presupuesto agotado durante admisión, arista posterior entre
+extremos antiguos y cambio concurrente de coordenadas. La página continúa el
+resultado seleccionado; no continúa la búsqueda ni promete un snapshot entre
+llamadas. Mantener la advertencia de que una ruta no determina verdad ni
+completitud de pruebas. Estas indicaciones son informativas, sin gate editorial.

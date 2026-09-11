@@ -32,9 +32,30 @@ the selected relation table. There is no hidden search continuation: a larger
 search allowance starts a new selection. Even an exact-size final storage page
 can leave exhaustion unknown when no allowance remains for another probe.
 
-This mode reads current same-about entries and rich links with why/evidence.
-It does not apply an as-of cut, discover destinations from a question, return
-several alternative paths to one target, or infer an AND/OR proof group.
-For “what was known yesterday?”, first use the temporal verbs with the correct
-clock. A recent link returned by this current-state trace cannot prove that
-historical claim.
+For “which declared paths were known at noon?”, keep the same call and add:
+
+```json
+{"as_of":{"time":"2026-09-10T12:00:00.500Z"},"axis":"observed"}
+```
+
+This fragment extends the complete call above. Suppose A, B and C were observed
+at 10:00, V at 13:00, and the A→V link was also first observed at 13:00. Only
+A→B→C is eligible at noon. Even if V had existed earlier, the 13:00 link would
+still be excluded. Occurred time answers when events happened, not when they
+became known. Use `interval` instead of `as_of` for a half-open span; never send
+both. `axis` without either is rejected.
+
+An `as_of.ref` resolves the earliest canonical coordinate of that returned entry
+on the selected clock. `search.resolved_as_of` reports it. Coordinate discovery
+shares the node and edge budget with path search. If the budget cannot resolve
+the cut, `temporal_selection_resolved:false` and the stop reason say so. A known
+source outside the cut returns `source_outside_selection`, not a missing ref.
+`coordinate_rows` is included in `scanned_edges`; label refs also count as nodes.
+
+A selected link without a usable clock remains explicitly unknown. Its index in
+`search.clock_unknown_edges` refers to the complete relation table after pages
+are joined. It is not evidence that the link already existed at the cut.
+
+This mode does not discover destinations from a question, return several
+alternative paths to one target, evaluate supersession, or infer an AND/OR proof
+group. Use temporal verbs to discover entries and Inspect for their full sources.

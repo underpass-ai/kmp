@@ -72,3 +72,5 @@ pub use visual_projection::{
 
 mod trace_search;
 pub use trace_search::{trace_search_request_from_proto, trace_search_response_from_result};
+#[cfg(test)]
+mod rfc3339_precision_tests;

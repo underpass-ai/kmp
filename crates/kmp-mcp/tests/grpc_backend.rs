@@ -135,6 +135,8 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "from": "node:root",
             "to": "node:target",
             "goal": "prove path",
+            "as_of": {"time":"2026-09-10T10:00:00.500Z"},
+            "axis":"observed",
             "budget": {
                 "tokens": 111
             }
@@ -151,6 +153,21 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
         "node:target"
     );
     assert_eq!(recorded.traces().await[0].goal, "prove path");
+    let recorded_trace = &recorded.traces().await[0];
+    assert_eq!(
+        recorded_trace.axis,
+        kmp_proto::v1beta1::TemporalAxis::Observed as i32
+    );
+    assert_eq!(
+        recorded_trace
+            .as_of
+            .as_ref()
+            .expect("cut")
+            .time
+            .expect("time")
+            .nanos,
+        500_000_000
+    );
 
     let inspect = call_tool(
         &server,

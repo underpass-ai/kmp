@@ -21,7 +21,21 @@ pub(super) fn read_page(
     let after = request
         .after()
         .map(|p| (p.neighbor.as_str(), p.relation.as_str()));
-    let rows = tx.scan_str3_page(table, request.node_id(), after, request.limit())?;
+    if request
+        .relation_type()
+        .is_some_and(|kind| request.after().is_some_and(|p| p.relation != kind))
+    {
+        return Err(PortError::InvalidState(
+            "adjacency position belongs to another relation type".into(),
+        ));
+    }
+    let rows = tx.scan_str3_page(
+        table,
+        request.node_id(),
+        after,
+        request.limit(),
+        request.relation_type(),
+    )?;
     let exhausted = rows.len() < request.limit() as usize;
     let next = if exhausted {
         None

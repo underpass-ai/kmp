@@ -149,6 +149,7 @@ pub(crate) trait ReadTx {
         first: &str,
         after: Option<(&str, &str)>,
         limit: u32,
+        relation_type: Option<&str>,
     ) -> Result<Vec<Str3Row>, PortError>;
 
     /// Every row of a `U64`-keyed table, ascending.

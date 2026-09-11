@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:0dcf879cd7afbda8a70a",
+    "idempotency_key": "ingest:guide-sync:1:agent:b3722fb5550abffbc4d6",
     "memory": {
       "dimensions": [
         {
@@ -51,7 +51,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -82,7 +82,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Choose and continue a memory route",
             "guide_version": "1",
             "source": "editorial"
@@ -114,7 +114,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Resume known work",
             "guide_version": "1",
             "source": "editorial"
@@ -146,7 +146,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Ask a semantic question",
             "guide_version": "1",
             "source": "editorial"
@@ -178,7 +178,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Compare memories across abouts",
             "guide_version": "1",
             "source": "editorial"
@@ -210,12 +210,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Navigate and zoom in time",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "## Route before retrieving: temporal intent wins\n\nClassify the request before choosing `kmp_ask`. `yesterday`, `today`, `since`,\n`before`, `after`, `during`, an explicit date or timestamp, and a release\nwindow are temporal intent. The same applies in the user's language — for\nexample `ayer`, `hoy`, `desde`, `antes`, `después` and `durante`. Temporal\nintent takes one of two shapes, and the shape decides the lane.\n\n**Enumerate a period.** \"What happened yesterday\", \"what changed since the\nrelease\", \"what is current\": the user wants what memory holds for a span,\nin order. Enter the temporal lane first; do not spend an Ask call and do not\npresent Ask as an exhaustive interval query.\n\n**Answer a semantic question that carries a date.** \"Why was the launch\npostponed in March\", \"what rule held during the incident\", \"what did we\nknow on the tenth\": the user wants an answer, and the date says where to\nstand. This is one `kmp_ask`, not a walk. Pass the same half-open UTC\ninterval as `interval` — `{ \"start\": \"…Z\", \"end\": \"…Z\" }`, either side may\nbe open — or the instant as `as_of` — `{ \"time\": \"…Z\" }`, or `{ \"ref\": \"…\" }`\nto stand where that entry happened. Name `axis` only when the question is\nabout a clock other than when it happened: `observed` for what was known,\n`ingested` for what had been written, `validity` for what held. The kernel\nadmits only what falls inside, weighs the question's words against the\nspan's own collection, reads supersession and expiry as they stood then —\nan entry replaced or expired *after* the instant is current for that\nquestion — and declares where it stood in `proof.interval`, `proof.as_of`\nand `proof.axis`. `UNKNOWN` within an interval is one of two things, and\n`proof.nearest_outside` tells them apart: when it names a ref, the memory\nexists outside the span, so widen the interval on purpose; when it is null,\nnothing bearing on the question was found anywhere in the neighbourhood.\n`kmp_wake` takes the same three arguments to bound a resume packet.\n\nTemporal intent does not require an explicit date. “What is current?”, “what\nchanged?”, “why now?”, release readiness, and recent decision history ask for\nstate across time. A version number alone is not enough to choose the lane:\nasking for a stable contract at that version may be semantic, while asking how\nthe project reached it or whether it is the current state is temporal.\n\nWhen current state or a release is temporal but the user gave no boundary,\nread the real clock and start with `kmp_rewind` from now using\n`limit: { entries: 1 }` to find the frontier. Use that ref or timestamp with\n`kmp_near` / `kmp_rewind`, and continue until the relevant decision window is\ncovered. Do not invent a date merely to fit the bounded-interval recipe.\n\nResolve relative dates in the user's timezone. If the timezone is genuinely\nunknown and changes the answer, ask for it. Convert a bounded calendar window\nto an explicit half-open UTC interval `[start, end)`. Pass it directly to\n`kmp_forward` for oldest first, or `kmp_rewind` for newest first. Omit `from`\non the first interval read. KMP includes every start-time tie and excludes\nthe end, without a separate boundary probe or client-side date filtering.\n\n```json\n{\"about\":\"project:release\",\"interval\":{\"start\":\"2026-09-01T00:00:00Z\",\"end\":\"2026-09-02T00:00:00Z\"},\"axis\":\"observed\",\"limit\":{\"entries\":10}}\n```\n\nExecute the returned `next_actions` with their complete arguments. They retain\nthe interval, clock and dimension selection across both proof pages and history\nmoves. `from` remains a strict cursor when supplied; interval continuations use\nreturned refs, never a sequence. Goto and Near can narrow their cursor/window\nwith the same interval but still require their initial cursor.\n\nEither bound may be open. On validity, a memory qualifies when its applicability\noverlaps the interval. On the other clocks, its recorded instant must fall\ninside. The selected entries obey `temporal.interval`; proof may retain earlier\nantecedents needed to explain them. Explicitly later proof is excluded at the\nfinite end. With no end, `proof.missing: [\"expiry_boundary\"]` says expiry has not\nbeen assessed: supply `interval.end` to ask what had expired before that instant.\nAn empty `proof.expired` alone does not establish that every returned state holds.\n\nIf a budget or selection cap prevents completion, report the exact pending\ncontinuation; never call a partial packet the whole period.\n\n## Complete the selected packet before navigating onward\n\n`page.has_more` means entry or proof items remain in this response selection.\nExecute `next_actions` exactly, appending each section using `page.sections`.\n`page.next_cursor` is opaque and belongs in `page.cursor`; it is never a memory\nref. A cursor binds the verb, arguments and complete selected content. Changing\na filter, clock, entry limit or stored proof rejects it; the error supplies a\nfresh read. Only `page.entries` and `budget.max_bytes` may vary while continuing.\n\nAfter the packet is complete, `selection.has_more` reports history outside it.\nThe returned actions then navigate that history; Near can offer earlier and\nlater calls. Top-level summary, coverage and quality describe the selected\npacket, while page counts describe the items carried by this response. Neither\nestablishes that all memory or the user's entire question has been covered.\n\nIf no complete next item fits, `page.minimum_progress_bytes` names the required\nbudget and `next_actions` supplies a retry that admits an item. If the allowance\ncannot increase, report the exact pending action and partial coverage. Do not\nrepeat an empty page at the unchanged budget.\n\n## Choose entry fields, then read full detail\n\nOn Goto, Near, Forward and Rewind, `fields` chooses complete entry fields:\n`ref`, `kind`, `text`, `coordinates` and `metadata`. Omit it for all fields;\n`[]` keeps only identity. `ref` and `kind` always remain. For example, add\n`\"fields\": [\"coordinates\"]` to the interval call above to browse references,\ntypes and clocks before reading their full bodies.\n\n`selection.fields.included` and `.omitted` declare the choice. An omitted field\nis not an empty value or missing source. Each reduced entry carries a complete\n`detail_action`: execute that native call once to read the full selected packet.\nIt preserves the original verb, cursor/cutoff, clock, interval, scope, labels,\nwindow, limits and proof options. Entries from the same packet share this action;\ndo not repeat it for each ref. A ref-based Goto could replace the question's\ncutoff with that entry's earlier time, so it is not a detail replay.\nThe full packet may be larger and need several pages. This is a fresh read,\nnot a stored snapshot; later writes can change it. If an entry no longer matches,\ndo not silently remove filters to recover it.\n\nFields affect `entries` only. `include.evidence`, `include.relations` and\n`include.raw_refs` separately select proof and raw audit data, which can carry\nthe same source text. Selecting fewer entry fields does not redact those\nsections or establish that omitted evidence was read. Keep proof when the task\nrequires it. Whole selected content, including hidden entry fields, still binds\na page cursor; changed content or a changed `fields` choice requires a fresh read.\n\nUse this for selective browsing. Reading full detail afterward can cost more\nthan requesting full entries initially; count all calls and expansions when\ncomparing tokens. KMP does not summarize or truncate a selected text field.\n\n## Bring related sources into a temporal read\n\nWhen a selected memory needs another record to interpret it, request\n`include: {\"dependencies\": true}` on Goto, Near, Forward or Rewind. KMP follows\nwriter-declared memory links with both `why` and `evidence`, in either\ndirection, up to two hops and eight members including each selected seed.\nIt returns the extra stored records in `proof.entries`, with full text and\ncoordinates, the groups in `proof.groups`, and their sources and typed links\nin `proof.evidence` and `proof.path`. Evidence and relations are implied;\ndo not explicitly disable them. Omitting the option keeps the usual read.\n\nFor example, select one responsibility notice with Goto and `limit.entries: 1`.\nIf it is linked to an earlier alias declaration, the declaration can appear\nin `proof.entries` without becoming another selected history entry. Read its\nsource and relation type before interpreting the named person. `fields`\nreduces only the selected entries; it does not shorten these proof records.\n\nComplete all response pages before joining each group's `member_refs` to\n`entries` and `proof.entries`. `unavailable_in_selection` counts linked\nrecords without an eligible body, without revealing their identities;\n`omitted_by_limit` counts the visible frontier left by the hop/member limits.\nBoth describe only the selected scoped graph. Zero counts do not establish\nthat all facts needed to answer are present or that the writer's links are true.\nKMP does not infer identities, permissions or arithmetic from the group.\n\nScope, label predicates and explicit clocks still apply. A filtered-out alias\nor one without the requested occurrence clock stays out. A relationship\nexplicitly later than the proof boundary cannot expand the group. On the\nvalidity axis its declared interval must overlap the selection. Earlier\ndependencies can precede the cursor's history window, but not bypass explicit\ntemporal admission. Near, Forward and Rewind need a finite interval end if\nlater knowledge must be excluded. Never replace a dated read with Inspect's\ncurrent record to fill the gap.\n\nSee the alias and account-ownership example for a complete executable call.\n\nOn a host using shared passages, dependency text can use the same response-local\n`passages` table as other proof. Resolve it before reading the text. Dependency\nrecord refs and group member refs remain canonical; repeated relation/support\nuses may resolve through `citations`. A host composing captured pages can bind\nknown spans to a returned dependency record. Sharing does not fill a missing\npage, change the selected clock, merge sources or establish that a group answers.\n\n## Focus known memories while keeping the question time\n\nUse `refs: [\"<copied memory ref>\"]` on Goto, Near, Forward or Rewind when\nyou already know which entries matter. This filters history entries before\nentry/window limits; it does not filter their dependency sources. Keep the\nquestion's cursor, clock, interval, scope and labels. The refs never bypass\nthose restrictions. Copy exact refs from prior responses; do not use labels,\nresponse-page cursors or invented refs.\n\nFor example, an assignment observed on September 8 may need an older alias\ndeclaration and a clarification received exactly at 10:00 on September 10.\nCall Goto with `at: {\"time\":\"2026-09-10T10:00:00Z\"}`, `axis: \"observed\"`,\n`refs: [\"<assignment ref>\"]` and `include: {\"dependencies\":true}`. The assignment\nstays selected while the admitted related records can supply its proof. A\nreport received half a second later stays out. Using `at.ref` instead would\nmove the proof cutoff to the assignment's earlier time.\n\n`selection.requested_refs` repeats the focus. `unmatched_ref_count` counts\nrequested refs outside this query's matching history, before entry/window\nlimits; it does not prove that they do not exist. `selection.has_more` means\nmatching history remains, whereas `page.has_more` means this packet has more\nresponse items. Follow the returned actions, which retain `refs`. Changing\nthe focus requires a fresh read. An empty or duplicate ref list is invalid;\nomit `refs` to select all matching entries. Results keep temporal order, not\nthe caller's ref-list order.\n\nThe alias-ownership example also selects an older directory entry at the\nlater clarification time, retaining the explicit identity link as proof.\n\n## Goto carries proof from its historical instant\n\n`kmp_goto` selects a state at its resolved `at` cursor. Its proof uses that\nsame inclusive instant and selected clock, declared in `proof.as_of` and\n`proof.axis`. A later replacement, relation or explicitly later observed\nreport cannot rewrite the earlier result. This also applies when `at.ref`\nresolves to an earlier memory. Hiding the relation path does not make a\nfuture replacement current in `proof.superseded`.\n\nFor example, CSV is recorded on September 1; JSON is approved on September 3\nand takes effect on September 5. Goto on `observed` before September 3 must\nnot report that approval as known. Goto on `validity` before September 5 must\nnot mark CSV replaced by JSON. Each boundary is inclusive: the approval is\nknown at its observation instant, and the replacement applies at its validity\nstart. Keep the original CSV observation; do not anticipate the later change\nby backdating knowledge of its end.\n\nAn explicit interval ending at or before the Goto cursor is the stricter,\nexclusive boundary: `proof.interval` declares that end instead of `proof.as_of`.\nA wider or open-ended interval does not admit proof later than the Goto cursor.\nNear, Forward and Rewind enumerate historical positions; their finite interval\nend bounds proof, while their cursor selects positions rather than an as-of state.\n\n## Observation defaults to ingestion; occurrence may be unknown\n\nFor a new semantic write, omit `observed_at` or use null when the source gives\nno separate observation time: KMP assigns exactly its ingestion timestamp.\nAn explicit observation time is preserved. `occurred_at` is when the event\nhappened; omitted/null stays unknown unless a record inherits a root event date.\nA record's explicit null clears that inheritance. KMP never fills event time\nfrom observation or ingestion. Validity describes when a state held and remains\nindependent. Equal clocks, or a shared observation across a packet, are valid.\nSelect the clock that answers the question; reads are not all ordered by observation.\n**For an explicit time, read the clock or source; do not compose a timestamp.** Local wall-clock time with a\n`Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry\nabove the present — where `kmp_forward` from a correct \"now\" never finds\nit, and the delta comes back empty looking exactly like a quiet week.\n\nAn observation stamp more than five minutes ahead of the kernel's clock is\nrefused at write time. For an incident that occurred yesterday but was first\nobserved this morning, keep yesterday in `occurred_at` and this morning in\n`observed_at`. A backfill preserves a genuinely known earlier observation;\nit does not copy event time into the knowledge clock merely because it is earlier.\n\nThe write response's `clock_defaults` describes which observations defaulted;\n`clocks` describes the accepted values. A preview has no accepted timestamp.\nReplay, restart and import preserve the original receipt's clocks. A new search\nsummary preserves the original fact's clocks, including any unknown observation.\n\nFour small examples appear at the start of `guide:kmp-agent:example:four-clocks`.\n\nAn observed recall excludes evidence whose explicit receipt time is after\n`as_of`, or at/after an interval's exclusive end, even if it supports an older\nentry. It does not invent dates for evidence without a timestamp. On the\noccurred axis, late evidence can still describe the earlier event; that does\nnot establish that the evidence was known at the event time.\n\nA relation has its own clocks, independently of its endpoints. In bounded\nWake, Ask and Relate reads, a link explicitly later on the selected clock\ncannot change the earlier proof or replacement state. For two memories from\n10:00 linked by a review first observed at 13:00, `axis: \"observed\"` with\n`as_of.time: \"2026-09-01T12:00:00Z\"` excludes that link. At 13:00 an `as_of`\nread includes it, while an interval ending at 13:00 still excludes it.\nEarlier antecedents remain available; a missing relation clock is not proof\nof later arrival and is not replaced by another clock. Inspect the relation\nbefore inferring when an undated link was known.\n\n## Select entries and choose returned lanes\n\nCoordinate filters choose returned lanes; label selectors evaluate the whole\nentry, including labels on lanes excluded from the result. Combining\n`include: [\"document\"]`, `scope_ids: [\"TEMP-4\"]` and a `record in [\"permit\"]`\nselector retains the matching document coordinate without returning the record\ncoordinate. A missing label in the returned lanes does not mean the entry\nlacks that label. Consult the wake catalogue before selecting.\n"
+          "text": "## Route before retrieving: temporal intent wins\n\nClassify the request before choosing `kmp_ask`. `yesterday`, `today`, `since`,\n`before`, `after`, `during`, an explicit date or timestamp, and a release\nwindow are temporal intent. The same applies in the user's language — for\nexample `ayer`, `hoy`, `desde`, `antes`, `después` and `durante`. Temporal\nintent takes one of two shapes, and the shape decides the lane.\n\n**Enumerate a period.** \"What happened yesterday\", \"what changed since the\nrelease\", \"what is current\": the user wants what memory holds for a span,\nin order. Enter the temporal lane first; do not spend an Ask call and do not\npresent Ask as an exhaustive interval query.\n\n**Answer a semantic question that carries a date.** \"Why was the launch\npostponed in March\", \"what rule held during the incident\", \"what did we\nknow on the tenth\": the user wants an answer, and the date says where to\nstand. This is one `kmp_ask`, not a walk. Pass the same half-open UTC\ninterval as `interval` — `{ \"start\": \"…Z\", \"end\": \"…Z\" }`, either side may\nbe open — or the instant as `as_of` — `{ \"time\": \"…Z\" }`, or `{ \"ref\": \"…\" }`\nto stand where that entry happened. Name `axis` only when the question is\nabout a clock other than when it happened: `observed` for what was known,\n`ingested` for what had been written, `validity` for what held. The kernel\nadmits only what falls inside, weighs the question's words against the\nspan's own collection, reads supersession and expiry as they stood then —\nan entry replaced or expired *after* the instant is current for that\nquestion — and declares where it stood in `proof.interval`, `proof.as_of`\nand `proof.axis`. `UNKNOWN` within an interval is one of two things, and\n`proof.nearest_outside` tells them apart: when it names a ref, the memory\nexists outside the span, so widen the interval on purpose; when it is null,\nnothing bearing on the question was found anywhere in the neighbourhood.\n`kmp_wake` takes the same three arguments to bound a resume packet.\n\nTemporal intent does not require an explicit date. “What is current?”, “what\nchanged?”, “why now?”, release readiness, and recent decision history ask for\nstate across time. A version number alone is not enough to choose the lane:\nasking for a stable contract at that version may be semantic, while asking how\nthe project reached it or whether it is the current state is temporal.\n\nWhen current state or a release is temporal but the user gave no boundary,\nread the real clock and start with `kmp_rewind` from now using\n`limit: { entries: 1 }` to find the frontier. Use that ref or timestamp with\n`kmp_near` / `kmp_rewind`, and continue until the relevant decision window is\ncovered. Do not invent a date merely to fit the bounded-interval recipe.\n\nResolve relative dates in the user's timezone. If the timezone is genuinely\nunknown and changes the answer, ask for it. Convert a bounded calendar window\nto an explicit half-open UTC interval `[start, end)`. Pass it directly to\n`kmp_forward` for oldest first, or `kmp_rewind` for newest first. Omit `from`\non the first interval read. KMP includes every start-time tie and excludes\nthe end, without a separate boundary probe or client-side date filtering.\n\n```json\n{\"about\":\"project:release\",\"interval\":{\"start\":\"2026-09-01T00:00:00Z\",\"end\":\"2026-09-02T00:00:00Z\"},\"axis\":\"observed\",\"limit\":{\"entries\":10}}\n```\n\nExecute the returned `next_actions` with their complete arguments. They retain\nthe interval, clock and dimension selection across both proof pages and history\nmoves. `from` remains a strict cursor when supplied; interval continuations use\nreturned refs, never a sequence. Goto and Near can narrow their cursor/window\nwith the same interval but still require their initial cursor.\n\nEither bound may be open. On validity, a memory qualifies when its applicability\noverlaps the interval. On the other clocks, its recorded instant must fall\ninside. The selected entries obey `temporal.interval`; proof may retain earlier\nantecedents needed to explain them. Explicitly later proof is excluded at the\nfinite end. With no end, `proof.missing: [\"expiry_boundary\"]` says expiry has not\nbeen assessed: supply `interval.end` to ask what had expired before that instant.\nAn empty `proof.expired` alone does not establish that every returned state holds.\n\nIf a budget or selection cap prevents completion, report the exact pending\ncontinuation; never call a partial packet the whole period.\n\n## Complete the selected packet before navigating onward\n\n`page.has_more` means entry or proof items remain in this response selection.\nExecute `next_actions` exactly, appending each section using `page.sections`.\n`page.next_cursor` is opaque and belongs in `page.cursor`; it is never a memory\nref. A cursor binds the verb, arguments and complete selected content. Changing\na filter, clock, entry limit or stored proof rejects it; the error supplies a\nfresh read. Only `page.entries` and `budget.max_bytes` may vary while continuing.\n\nAfter the packet is complete, `selection.has_more` reports history outside it.\nThe returned actions then navigate that history; Near can offer earlier and\nlater calls. Top-level summary, coverage and quality describe the selected\npacket, while page counts describe the items carried by this response. Neither\nestablishes that all memory or the user's entire question has been covered.\n\nIf no complete next item fits, `page.minimum_progress_bytes` names the required\nbudget and `next_actions` supplies a retry that admits an item. If the allowance\ncannot increase, report the exact pending action and partial coverage. Do not\nrepeat an empty page at the unchanged budget.\n\n## Choose entry fields, then read full detail\n\nOn Goto, Near, Forward and Rewind, `fields` chooses complete entry fields:\n`ref`, `kind`, `text`, `coordinates` and `metadata`. Omit it for all fields;\n`[]` keeps only identity. `ref` and `kind` always remain. For example, add\n`\"fields\": [\"coordinates\"]` to the interval call above to browse references,\ntypes and clocks before reading their full bodies.\n\n`selection.fields.included` and `.omitted` declare the choice. An omitted field\nis not an empty value or missing source. Each reduced entry carries a complete\n`detail_action`: execute that native call once to read the full selected packet.\nIt preserves the original verb, cursor/cutoff, clock, interval, scope, labels,\nwindow, limits and proof options. Entries from the same packet share this action;\ndo not repeat it for each ref. A ref-based Goto could replace the question's\ncutoff with that entry's earlier time, so it is not a detail replay.\nThe full packet may be larger and need several pages. This is a fresh read,\nnot a stored snapshot; later writes can change it. If an entry no longer matches,\ndo not silently remove filters to recover it.\n\nFields affect `entries` only. `include.evidence`, `include.relations` and\n`include.raw_refs` separately select proof and raw audit data, which can carry\nthe same source text. Selecting fewer entry fields does not redact those\nsections or establish that omitted evidence was read. Keep proof when the task\nrequires it. Whole selected content, including hidden entry fields, still binds\na page cursor; changed content or a changed `fields` choice requires a fresh read.\n\nUse this for selective browsing. Reading full detail afterward can cost more\nthan requesting full entries initially; count all calls and expansions when\ncomparing tokens. KMP does not summarize or truncate a selected text field.\n\n## Bring related sources into a temporal read\n\nWhen a selected memory needs another record to interpret it, request\n`include: {\"dependencies\": true}` on Goto, Near, Forward or Rewind. KMP follows\nwriter-declared memory links with both `why` and `evidence`, in either\ndirection, up to two hops and eight members including each selected seed.\nIt returns the extra stored records in `proof.entries`, with full text and\ncoordinates, the groups in `proof.groups`, and their sources and typed links\nin `proof.evidence` and `proof.path`. Evidence and relations are implied;\ndo not explicitly disable them. Omitting the option keeps the usual read.\n\nFor example, select one responsibility notice with Goto and `limit.entries: 1`.\nIf it is linked to an earlier alias declaration, the declaration can appear\nin `proof.entries` without becoming another selected history entry. Read its\nsource and relation type before interpreting the named person. `fields`\nreduces only the selected entries; it does not shorten these proof records.\n\nComplete all response pages before joining each group's `member_refs` to\n`entries` and `proof.entries`. `unavailable_in_selection` counts linked\nrecords without an eligible body, without revealing their identities;\n`omitted_by_limit` counts the visible frontier left by the hop/member limits.\nBoth describe only the selected scoped graph. Zero counts do not establish\nthat all facts needed to answer are present or that the writer's links are true.\nKMP does not infer identities, permissions or arithmetic from the group.\n\nScope, label predicates and explicit clocks still apply. A filtered-out alias\nor one without the requested occurrence clock stays out. A relationship\nexplicitly later than the proof boundary cannot expand the group. On the\nvalidity axis its declared interval must overlap the selection. Earlier\ndependencies can precede the cursor's history window, but not bypass explicit\ntemporal admission. Near, Forward and Rewind need a finite interval end if\nlater knowledge must be excluded. Never replace a dated read with Inspect's\ncurrent record to fill the gap.\n\nSee the alias and account-ownership example for a complete executable call.\n\nOn a host using shared passages, dependency text can use the same response-local\n`passages` table as other proof. Resolve it before reading the text. Dependency\nrecord refs and group member refs remain canonical; repeated relation/support\nuses may resolve through `citations`. A host composing captured pages can bind\nknown spans to a returned dependency record. Sharing does not fill a missing\npage, change the selected clock, merge sources or establish that a group answers.\n\n## Focus known memories while keeping the question time\n\nUse `refs: [\"<copied memory ref>\"]` on Goto, Near, Forward or Rewind when\nyou already know which entries matter. This filters history entries before\nentry/window limits; it does not filter their dependency sources. Keep the\nquestion's cursor, clock, interval, scope and labels. The refs never bypass\nthose restrictions. Copy exact refs from prior responses; do not use labels,\nresponse-page cursors or invented refs.\n\nFor example, an assignment observed on September 8 may need an older alias\ndeclaration and a clarification received exactly at 10:00 on September 10.\nCall Goto with `at: {\"time\":\"2026-09-10T10:00:00Z\"}`, `axis: \"observed\"`,\n`refs: [\"<assignment ref>\"]` and `include: {\"dependencies\":true}`. The assignment\nstays selected while the admitted related records can supply its proof. A\nreport received half a second later stays out. Using `at.ref` instead would\nmove the proof cutoff to the assignment's earlier time.\n\n`selection.requested_refs` repeats the focus. `unmatched_ref_count` counts\nrequested refs outside this query's matching history, before entry/window\nlimits; it does not prove that they do not exist. `selection.has_more` means\nmatching history remains, whereas `page.has_more` means this packet has more\nresponse items. Follow the returned actions, which retain `refs`. Changing\nthe focus requires a fresh read. An empty or duplicate ref list is invalid;\nomit `refs` to select all matching entries. Results keep temporal order, not\nthe caller's ref-list order.\n\nThe alias-ownership example also selects an older directory entry at the\nlater clarification time, retaining the explicit identity link as proof.\n\n## Goto carries proof from its historical instant\n\n`kmp_goto` selects a state at its resolved `at` cursor. Its proof uses that\nsame inclusive instant and selected clock, declared in `proof.as_of` and\n`proof.axis`. A later replacement, relation or explicitly later observed\nreport cannot rewrite the earlier result. This also applies when `at.ref`\nresolves to an earlier memory. Hiding the relation path does not make a\nfuture replacement current in `proof.superseded`.\n\nFor example, CSV is recorded on September 1; JSON is approved on September 3\nand takes effect on September 5. Goto on `observed` before September 3 must\nnot report that approval as known. Goto on `validity` before September 5 must\nnot mark CSV replaced by JSON. Each boundary is inclusive: the approval is\nknown at its observation instant, and the replacement applies at its validity\nstart. Keep the original CSV observation; do not anticipate the later change\nby backdating knowledge of its end.\n\nAn explicit interval ending at or before the Goto cursor is the stricter,\nexclusive boundary: `proof.interval` declares that end instead of `proof.as_of`.\nA wider or open-ended interval does not admit proof later than the Goto cursor.\nNear, Forward and Rewind enumerate historical positions; their finite interval\nend bounds proof, while their cursor selects positions rather than an as-of state.\n\n## Observation defaults to ingestion; occurrence may be unknown\n\nFor a new semantic write, omit `observed_at` or use null when the source gives\nno separate observation time: KMP assigns exactly its ingestion timestamp.\nAn explicit observation time is preserved. `occurred_at` is when the event\nhappened; omitted/null stays unknown unless a record inherits a root event date.\nA record's explicit null clears that inheritance. KMP never fills event time\nfrom observation or ingestion. Validity describes when a state held and remains\nindependent. Equal clocks, or a shared observation across a packet, are valid.\nSelect the clock that answers the question; reads are not all ordered by observation.\n**For an explicit time, read the clock or source; do not compose a timestamp.** Local wall-clock time with a\n`Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry\nabove the present — where `kmp_forward` from a correct \"now\" never finds\nit, and the delta comes back empty looking exactly like a quiet week.\n\nAn observation stamp more than five minutes ahead of the kernel's clock is\nrefused at write time. For an incident that occurred yesterday but was first\nobserved this morning, keep yesterday in `occurred_at` and this morning in\n`observed_at`. A backfill preserves a genuinely known earlier observation;\nit does not copy event time into the knowledge clock merely because it is earlier.\n\nThe write response's `clock_defaults` describes which observations defaulted;\n`clocks` describes the accepted values. A preview has no accepted timestamp.\nReplay, restart and import preserve the original receipt's clocks. A new search\nsummary preserves the original fact's clocks, including any unknown observation.\n\nFour small examples appear at the start of `guide:kmp-agent:example:four-clocks`.\n\nAn observed recall excludes evidence whose explicit receipt time is after\n`as_of`, or at/after an interval's exclusive end, even if it supports an older\nentry. It does not invent dates for evidence without a timestamp. On the\noccurred axis, late evidence can still describe the earlier event; that does\nnot establish that the evidence was known at the event time.\n\nA relation has its own clocks, independently of its endpoints. In bounded\nWake, Ask and Relate reads, a link explicitly later on the selected clock\ncannot change the earlier proof or replacement state. For two memories from\n10:00 linked by a review first observed at 13:00, `axis: \"observed\"` with\n`as_of.time: \"2026-09-01T12:00:00Z\"` excludes that link. At 13:00 an `as_of`\nread includes it, while an interval ending at 13:00 still excludes it.\nEarlier antecedents remain available; a missing relation clock is not proof\nof later arrival and is not replaced by another clock. Inspect the relation\nbefore inferring when an undated link was known.\n\n## Select entries and choose returned lanes\n\nCoordinate filters choose returned lanes; label selectors evaluate the whole\nentry, including labels on lanes excluded from the result. Combining\n`include: [\"document\"]`, `scope_ids: [\"TEMP-4\"]` and a `record in [\"permit\"]`\nselector retains the matching document coordinate without returning the record\ncoordinate. A missing label in the returned lanes does not mean the entry\nlacks that label. Consult the wake catalogue before selecting.\n\nRFC3339 clocks keep fractional seconds and accept explicit numeric UTC offsets. `2026-09-11T12:00:00.125+02:00` names the same instant as `2026-09-11T10:00:00.125Z`. An `as_of` cut includes an equal instant; an interval end excludes it. Do not round source clocks to whole seconds.\n"
         },
         {
           "coordinates": [
@@ -242,12 +242,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Inspect evidence and trace a connection",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte. Inspect uses the owning about. Trace can cross a declared, evidenced same_event_as or same_entity_as edge; naming a foreign endpoint alone creates no path. Inspect keeps the stored object stable and pages expandable evidence and links; budget guidance distinguishes the stable floor from omitted expansion. Use include.raw for audit records, not for routine lesson reading. After retaining the first inspect object, continue with page.cursor and page.repeat_object=false to receive only object.ref plus the remaining expansion. object_reused=true declares that reuse. Keep the original text, kind, metadata and source; do not replace them with the ref-only object. Execute Inspect next_actions to continue with the complete bound call. If no whole item fits, page.minimum_progress_bytes names a sufficient next-item allowance. The action offers at least that much and prefers the complete inspection up to the usual 10,000-byte budget, avoiding a one-item-per-call walk. page.required_bytes still sizes the complete inspection. A fixed budget means the result remains partial. A changed object or selected proof returns conflict and a complete restart in feedback; that fresh read returns the new full object even if prior pages reused it. Omit repeat_object to receive the full object on every page. Trace also pages whole relations under budget.max_bytes. If page.returned is zero and page.has_more is true, this is pending proof, not an absent path: retry the same page.next_cursor with budget.max_bytes at least page.required_bytes. Trace next_actions contain the exact continuation. A changed endpoint or selected proof, including a later edge, rejects the cursor with a complete fresh-read action in feedback. The cursor is not a persisted snapshot; restart instead of mixing old pages with new evidence. For a write receipt, execute the returned receipt.action: object.text is immutable accepted-command JSON containing canonical_memory, writer diagnostics and command revision/hash. It is not the current state of the memories. Receipt refs stay within their owning about and do not enter graph traversal. Bounded trace: use to as an array of up to eight entry refs, or provide search. All destinations share max_nodes/max_edges/max_depth. direction selects outgoing prerequisites or incoming dependants without reversing stored arrows. relations filters exact link types. This mode stays in one about and reads the current graph; it rejects historical arguments and does not traverse equivalences into another about. It returns one shortest discovered route per explicit target, not alternative routes to the same target or complete answer evidence. Join every trace page, then resolve each routes[].edge_indexes into that complete table in hop order. An empty route is a zero-hop destination equal to from. search.stop_reason distinguishes targets_reached, frontier_exhausted, node_budget, edge_budget and depth_budget. Counts include discarded endpoints and rows. A cutoff never proves no path; rerun with a deliberate larger search allowance as a new selection if needed. Transport next_actions only finish the selected relation table; they do not continue the graph search. Frontier exhaustion and leaves are relative to the selected about, direction and rich relation types. Use temporal verbs for historical evidence and inspect for entry/source bodies. See the bounded-trace example."
+          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte. Inspect uses the owning about. Trace can cross a declared, evidenced same_event_as or same_entity_as edge; naming a foreign endpoint alone creates no path. Inspect keeps the stored object stable and pages expandable evidence and links; budget guidance distinguishes the stable floor from omitted expansion. Use include.raw for audit records, not for routine lesson reading. After retaining the first inspect object, continue with page.cursor and page.repeat_object=false to receive only object.ref plus the remaining expansion. object_reused=true declares that reuse. Keep the original text, kind, metadata and source; do not replace them with the ref-only object. Execute Inspect next_actions to continue with the complete bound call. If no whole item fits, page.minimum_progress_bytes names a sufficient next-item allowance. The action offers at least that much and prefers the complete inspection up to the usual 10,000-byte budget, avoiding a one-item-per-call walk. page.required_bytes still sizes the complete inspection. A fixed budget means the result remains partial. A changed object or selected proof returns conflict and a complete restart in feedback; that fresh read returns the new full object even if prior pages reused it. Omit repeat_object to receive the full object on every page. Trace also pages whole relations under budget.max_bytes. If page.returned is zero and page.has_more is true, this is pending proof, not an absent path: retry the same page.next_cursor with budget.max_bytes at least page.required_bytes. Trace next_actions contain the exact continuation. A changed endpoint or selected proof, including a later edge, rejects the cursor with a complete fresh-read action in feedback. The cursor is not a persisted snapshot; restart instead of mixing old pages with new evidence. For a write receipt, execute the returned receipt.action: object.text is immutable accepted-command JSON containing canonical_memory, writer diagnostics and command revision/hash. It is not the current state of the memories. Receipt refs stay within their owning about and do not enter graph traversal. Bounded trace: use to as an array of up to eight entry refs, or provide search, as_of or interval. All destinations share max_nodes/max_edges/max_depth. direction selects outgoing prerequisites or incoming dependants without reversing stored arrows. relations filters exact link types. This mode stays in one about. Use as_of with a returned ref or time, or a half-open interval, and choose axis for occurred, observed, ingested or validity. An explicit clock never falls back to another. Canonical coordinates admit entries and relation clocks admit links. Default reads the current graph; no mode traverses equivalences into another about. It returns one shortest discovered route per explicit target, not alternative routes to the same target or complete answer evidence. Join every trace page, then resolve each routes[].edge_indexes into that complete table in hop order. An empty route is a zero-hop destination equal to from. search.stop_reason distinguishes targets_reached, frontier_exhausted, node_budget, edge_budget, depth_budget and source_outside_selection. Counts include discarded endpoints, dimensional labels and coordinate rows; coordinate_rows is part of scanned_edges. A ref cut resolves from the earliest coordinate on the chosen axis, within the same budget. If temporal_selection_resolved is false, stop_reason identifies the exhausted allowance: no instant was guessed. clock_unknown_edges identifies selected links with no usable clock; these do not prove historical presence. A cutoff never proves no path; rerun with a deliberate larger search allowance as a new selection if needed. Transport next_actions only finish the selected relation table; they do not continue the graph search. Frontier exhaustion and leaves are relative to the selected about, direction and rich relation types. Use temporal verbs to discover dated entries and inspect for entry/source bodies. Trace does not evaluate supersession or determine current truth from its path. See the bounded-trace example."
         },
         {
           "coordinates": [
@@ -274,7 +274,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Write evidence or change labels",
             "guide_version": "1",
             "source": "editorial"
@@ -306,7 +306,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Frame and share ChronoLoom",
             "guide_version": "1",
             "source": "editorial"
@@ -338,7 +338,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Synchronize guide assets",
             "guide_version": "1",
             "source": "editorial"
@@ -370,7 +370,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Install an optional lexical bridge",
             "guide_version": "1",
             "source": "editorial"
@@ -402,7 +402,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Cross abouts, labels and selectors",
             "guide_version": "1",
             "source": "editorial"
@@ -434,7 +434,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Choose a relation and justify it",
             "guide_version": "1",
             "source": "editorial"
@@ -466,7 +466,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Retry one logical write",
             "guide_version": "1",
             "source": "editorial"
@@ -498,7 +498,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Complete a bounded read",
             "guide_version": "1",
             "source": "editorial"
@@ -530,7 +530,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Choose a byte ceiling",
             "guide_version": "1",
             "source": "editorial"
@@ -562,7 +562,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Replace, contradict or expire",
             "guide_version": "1",
             "source": "editorial"
@@ -594,7 +594,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Interpret retrieved proof",
             "guide_version": "1",
             "source": "editorial"
@@ -626,7 +626,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Search language and literal evidence",
             "guide_version": "1",
             "source": "editorial"
@@ -658,7 +658,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Write or repair search summaries",
             "guide_version": "1",
             "source": "editorial"
@@ -691,7 +691,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Start here: one decision and its stated reason",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -723,7 +723,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Decision history and past validity",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -754,7 +754,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -786,7 +786,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Aliases, unresolved names and account assignment",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -817,7 +817,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Repository bundles and snapshots",
             "guide_version": "1",
             "source": "editorial"
@@ -849,7 +849,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Diagnose missing tools and errors",
             "guide_version": "1",
             "source": "editorial"
@@ -882,7 +882,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Distributed incident, proposed identity and late reports",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -914,7 +914,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Four clocks, interval boundaries and zoom to proof",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -946,7 +946,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Quantities, corrections, duplicates and exclusions",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -978,7 +978,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Conflicting assignments and evidence received late",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1010,7 +1010,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Multiple aliases, distinct facets and late memberships",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1042,7 +1042,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Labels, synonyms and negation under explicit conditions",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1074,7 +1074,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1106,7 +1106,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Fresh-session handoff and shared-view revision conflicts",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1138,7 +1138,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Preference and explicit policy delta",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1170,7 +1170,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Authorization, dependency and measured constraints",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1202,7 +1202,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Structure, membership and included contributions",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1234,7 +1234,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Validated canonical ingest and exact retry",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1265,7 +1265,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Find a concrete example for a tool, kind or relation",
             "guide_version": "1",
             "source": "editorial"
@@ -1298,7 +1298,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Atomic semantic packet with local proof links",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1329,7 +1329,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1360,7 +1360,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1391,7 +1391,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1422,7 +1422,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1453,7 +1453,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1484,7 +1484,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1515,7 +1515,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1546,7 +1546,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1577,7 +1577,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_title": "Manage agent identity and guidance",
             "guide_version": "1",
             "source": "editorial"
@@ -1610,7 +1610,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "One report, separate execution and verification events",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1642,11 +1642,11 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Trace several destinations under one work budget",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "# Several destinations, one search\n\nThe source register says: artifact A requires B; B requires C; a separate\nreport V verifies A. These facts and their relation-specific why/evidence\nare already stored. Obtain their exact entry refs from the write receipt or\na read. Below `ref-A`, `ref-C`, `ref-V` and `about` stand for those returned\nvalues, not refs to construct or send literally.\n\nCall `kmp_trace` with:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\",\"ref-V\"],\n \"search\":{\"max_nodes\":128,\"max_edges\":256,\"max_depth\":100,\n           \"direction\":\"outgoing\",\"relations\":[\"depends_on\",\"verified_by\"]}}\n```\n\nExpect two routes if the stored graph reaches both destinations. Each route\nindexes the complete `trace` relation table in hop order. Shared edges appear\nonce in that table. Follow `next_actions` until all pages are retained before\nresolving the zero-based `edge_indexes`. The route A→B→C preserves two declared\ndependency statements; the route A→V preserves the report's verification\nstatement. Neither tells you that those are all the sources a question needs.\nInspect the returned entry refs when the bodies or direct source evidence matter.\n\nFor “what depends on C?”, start from C with `direction:\"incoming\"` and\ndestinations A and B. The traversal goes C←B←A; the returned statements still\nsay A depends on B and B depends on C. Never reverse their meaning.\n\nIf `search.stop_reason` is `node_budget`, `edge_budget` or `depth_budget`,\nunreached destinations remain unknown. `page.has_more:false` only finishes\nthe selected relation table. There is no hidden search continuation: a larger\nsearch allowance starts a new selection. Even an exact-size final storage page\ncan leave exhaustion unknown when no allowance remains for another probe.\n\nThis mode reads current same-about entries and rich links with why/evidence.\nIt does not apply an as-of cut, discover destinations from a question, return\nseveral alternative paths to one target, or infer an AND/OR proof group.\nFor “what was known yesterday?”, first use the temporal verbs with the correct\nclock. A recent link returned by this current-state trace cannot prove that\nhistorical claim.\n"
+          "text": "# Several destinations, one search\n\nThe source register says: artifact A requires B; B requires C; a separate\nreport V verifies A. These facts and their relation-specific why/evidence\nare already stored. Obtain their exact entry refs from the write receipt or\na read. Below `ref-A`, `ref-C`, `ref-V` and `about` stand for those returned\nvalues, not refs to construct or send literally.\n\nCall `kmp_trace` with:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\",\"ref-V\"],\n \"search\":{\"max_nodes\":128,\"max_edges\":256,\"max_depth\":100,\n           \"direction\":\"outgoing\",\"relations\":[\"depends_on\",\"verified_by\"]}}\n```\n\nExpect two routes if the stored graph reaches both destinations. Each route\nindexes the complete `trace` relation table in hop order. Shared edges appear\nonce in that table. Follow `next_actions` until all pages are retained before\nresolving the zero-based `edge_indexes`. The route A→B→C preserves two declared\ndependency statements; the route A→V preserves the report's verification\nstatement. Neither tells you that those are all the sources a question needs.\nInspect the returned entry refs when the bodies or direct source evidence matter.\n\nFor “what depends on C?”, start from C with `direction:\"incoming\"` and\ndestinations A and B. The traversal goes C←B←A; the returned statements still\nsay A depends on B and B depends on C. Never reverse their meaning.\n\nIf `search.stop_reason` is `node_budget`, `edge_budget` or `depth_budget`,\nunreached destinations remain unknown. `page.has_more:false` only finishes\nthe selected relation table. There is no hidden search continuation: a larger\nsearch allowance starts a new selection. Even an exact-size final storage page\ncan leave exhaustion unknown when no allowance remains for another probe.\n\nFor “which declared paths were known at noon?”, keep the same call and add:\n\n```json\n{\"as_of\":{\"time\":\"2026-09-10T12:00:00.500Z\"},\"axis\":\"observed\"}\n```\n\nThis fragment extends the complete call above. Suppose A, B and C were observed\nat 10:00, V at 13:00, and the A→V link was also first observed at 13:00. Only\nA→B→C is eligible at noon. Even if V had existed earlier, the 13:00 link would\nstill be excluded. Occurred time answers when events happened, not when they\nbecame known. Use `interval` instead of `as_of` for a half-open span; never send\nboth. `axis` without either is rejected.\n\nAn `as_of.ref` resolves the earliest canonical coordinate of that returned entry\non the selected clock. `search.resolved_as_of` reports it. Coordinate discovery\nshares the node and edge budget with path search. If the budget cannot resolve\nthe cut, `temporal_selection_resolved:false` and the stop reason say so. A known\nsource outside the cut returns `source_outside_selection`, not a missing ref.\n`coordinate_rows` is included in `scanned_edges`; label refs also count as nodes.\n\nA selected link without a usable clock remains explicitly unknown. Its index in\n`search.clock_unknown_edges` refers to the complete relation table after pages\nare joined. It is not evidence that the link already existed at the cut.\n\nThis mode does not discover destinations from a question, return several\nalternative paths to one target, evaluate supersession, or infer an AND/OR proof\ngroup. Use temporal verbs to discover entries and Inspect for their full sources.\n"
         },
         {
           "coordinates": [
@@ -1674,7 +1674,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:ask",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ask"
@@ -1707,7 +1707,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_forward"
@@ -1740,7 +1740,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_goto"
@@ -1773,7 +1773,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:guide",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_guide"
@@ -1806,7 +1806,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ingest"
@@ -1839,7 +1839,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_inspect"
@@ -1872,7 +1872,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_near"
@@ -1905,7 +1905,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relabel"
@@ -1938,7 +1938,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:relate",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relate"
@@ -1971,7 +1971,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_rewind"
@@ -2004,12 +2004,12 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_trace. Trace declared links between memory refs. A to array or search object enables a bounded shared search through current same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search retains equivalence-aware tracing."
+          "text": "LIVE TOOL kmp_trace. Trace declared links between memory refs. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing."
         },
         {
           "coordinates": [
@@ -2037,7 +2037,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_apply_intent"
@@ -2070,7 +2070,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_get_state"
@@ -2103,7 +2103,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_open"
@@ -2136,7 +2136,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:wake",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_wake"
@@ -2169,7 +2169,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_revision": "b3722fb5550abffbc4d6f9231efbfcd1f197a712c423e868f15281babdd448bf",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_write_memory"
@@ -2253,7 +2253,7 @@
           "supports": [
             "guide:kmp-agent:verb:time"
           ],
-          "text": "Native field projection checks omitted fields, executable scoped expansion, unchanged proof and cursor rejection after hidden content changes across embedded and gRPC transports. The shared relation-clock fix from #599 also checks link timestamps independently of older endpoints before constructing proof and lifecycle. Direct native interval regressions cover both directions, start ties, exclusive ends, proof paging, earlier antecedents, later proof exclusion and unassessed expiry without an end. The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. Native wake/ask rejects explicitly later receipt evidence from earlier observed instants and exclusive interval ends while preserving event-time retrieval. Native response-page tests reconstruct entries and proof verbatim, reject a changed selection and execute the minimum-budget retry; completed packets offer executable temporal navigation. The limited-selection warning leaves continuation syntax to the transport; MCP actions do not reinterpret an opaque response cursor as a memory ref. Goto proof stops at its inclusive resolved cursor or an earlier exclusive interval end, respecting later relation and evidence arrival. Native temporal dependency tests recover full related records and coordinates without changing history selection, preserve clock and label exclusions, reject changed dependency cursors, reconstruct paged proof with reduced entry fields, and exclude expired links on validity reads. Real gRPC service traversal and separate MCP wire tests cover all four temporal verbs. The alias-ownership example requests one alias entry with its bounded dependency group. The existing context composer now recognizes dependency records as typed text, ref definitions and span sources. Native shared-page and pure-composition tests reconstruct all stored values, retain literal group members and omit whole groups without leaking their source text. Explicit entry-ref selection keeps the question cutoff separate from the selected memory time, before history limits and without filtering dependency sources. Native boundary, scope, label, invalid-input and response-continuation tests and all-four-verb gRPC checks cover the new selection. The alias-ownership lesson selects an older directory entry at the later clarification time. Full-detail actions replay the original temporal selection and proof; they do not move to the selected entry instant.",
+          "text": "Native field projection checks omitted fields, executable scoped expansion, unchanged proof and cursor rejection after hidden content changes across embedded and gRPC transports. The shared relation-clock fix from #599 also checks link timestamps independently of older endpoints before constructing proof and lifecycle. Direct native interval regressions cover both directions, start ties, exclusive ends, proof paging, earlier antecedents, later proof exclusion and unassessed expiry without an end. The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. Native wake/ask rejects explicitly later receipt evidence from earlier observed instants and exclusive interval ends while preserving event-time retrieval. Native response-page tests reconstruct entries and proof verbatim, reject a changed selection and execute the minimum-budget retry; completed packets offer executable temporal navigation. The limited-selection warning leaves continuation syntax to the transport; MCP actions do not reinterpret an opaque response cursor as a memory ref. Goto proof stops at its inclusive resolved cursor or an earlier exclusive interval end, respecting later relation and evidence arrival. Native temporal dependency tests recover full related records and coordinates without changing history selection, preserve clock and label exclusions, reject changed dependency cursors, reconstruct paged proof with reduced entry fields, and exclude expired links on validity reads. Real gRPC service traversal and separate MCP wire tests cover all four temporal verbs. The alias-ownership example requests one alias entry with its bounded dependency group. The existing context composer now recognizes dependency records as typed text, ref definitions and span sources. Native shared-page and pure-composition tests reconstruct all stored values, retain literal group members and omit whole groups without leaking their source text. Explicit entry-ref selection keeps the question cutoff separate from the selected memory time, before history limits and without filtering dependency sources. Native boundary, scope, label, invalid-input and response-continuation tests and all-four-verb gRPC checks cover the new selection. The alias-ownership lesson selects an older directory entry at the later clarification time. Full-detail actions replay the original temporal selection and proof; they do not move to the selected entry instant. RFC3339 readback preserves nanosecond fractions and normalizes numeric UTC offsets; native regression checks distinguish inclusive instants from exclusive interval ends within one second.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2266,7 +2266,7 @@
           "supports": [
             "guide:kmp-agent:verb:audit"
           ],
-          "text": "The live Inspect contract returns executable continuation, minimum-progress and stale-selection restart calls, preserving the about boundary, object reuse and canonical proof. Receipt inspection uses the existing accepted-command index without creating a graph memory. Bounded multi-target Trace exposes actual discovery work and preserves source-backed edge direction in one snapshot.",
+          "text": "The live Inspect contract returns executable continuation, minimum-progress and stale-selection restart calls, preserving the about boundary, object reuse and canonical proof. Receipt inspection uses the existing accepted-command index without creating a graph memory. Bounded multi-target Trace exposes actual discovery work and preserves source-backed edge direction in one snapshot. Temporal controls cover all four clocks, subsecond link arrival, canonical coordinate changes, inclusive instants, exclusive interval ends, unknown clocks, shared snapshot and pre-read node/edge budgets.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2838,7 +2838,7 @@
           "supports": [
             "guide:kmp-agent:example:bounded-trace"
           ],
-          "text": "The explicit dependency and verification example teaches shared work limits, retained arrows, deduplicated relation indexes and honest cutoffs; it makes no historical or answer-completeness claim.",
+          "text": "The dependency and verification example teaches shared work limits, retained arrows, deduplicated relation indexes, temporal admission and honest cutoffs; it makes no answer-completeness claim.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2981,7 +2981,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_trace"
           ],
-          "text": "Trace declared links between memory refs. A to array or search object enables a bounded shared search through current same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search retains equivalence-aware tracing.",
+          "text": "Trace declared links between memory refs. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -3564,7 +3564,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Trace declared links between memory refs. A to array or search object enables a bounded shared search through current same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search retains equivalence-aware tracing.",
+          "evidence": "Trace declared links between memory refs. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
           "sequence": 52,

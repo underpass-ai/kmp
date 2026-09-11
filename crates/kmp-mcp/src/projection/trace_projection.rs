@@ -19,7 +19,11 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
     if let Some(search) = response.search {
         value["search"] = json!({"stop_reason": search.stop_reason, "discovered_nodes": search.discovered_nodes,
             "scanned_edges": search.scanned_edges, "expanded_nodes": search.expanded_nodes,
-            "leaves": search.leaves, "unreached_targets": search.unreached_targets, "direction": search.direction});
+            "leaves": search.leaves, "unreached_targets": search.unreached_targets, "direction": search.direction,
+            "axis": temporal_axis_label(search.axis), "coordinate_rows": search.coordinate_rows,
+            "temporal_selection_resolved": search.temporal_selection_resolved,
+            "clock_unknown_edges": search.clock_unknown_edges,
+            "resolved_as_of": search.resolved_as_of.as_ref().map(|at| at.to_string())});
         value["routes"] = json!(
             response
                 .routes

@@ -1,7 +1,7 @@
 use crate::{DomainError, MemoryRelationType, RelationDirection, TraceSearchLimits};
 use std::collections::BTreeSet;
 
-/// Explicit destinations on the current graph. No historical or cross-about inference.
+/// Explicit destinations on one selected clock. No cross-about inference.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TraceSearchRequest {
     pub about: String,
@@ -10,11 +10,24 @@ pub struct TraceSearchRequest {
     pub direction: RelationDirection,
     pub relations: BTreeSet<String>,
     pub limits: TraceSearchLimits,
+    pub temporal: crate::TemporalSelection,
 }
 
 impl TraceSearchRequest {
     pub fn validate(&self) -> Result<(), DomainError> {
         self.limits.validate()?;
+        if let Some(cursor) = self.temporal.cursor() {
+            match cursor {
+                crate::TemporalCursor::Ref(reference) if !reference.trim().is_empty() => {}
+                crate::TemporalCursor::Time(at) if crate::temporal_instant_nanos(at).is_some() => {}
+                _ => {
+                    return Err(DomainError::InvalidState(
+                        "trace as_of requires a nonempty ref or a valid instant, never a sequence"
+                            .into(),
+                    ));
+                }
+            }
+        }
         if self.about.trim().is_empty()
             || self.from.trim().is_empty()
             || self.targets.is_empty()

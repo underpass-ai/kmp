@@ -5935,7 +5935,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Trace declared links between memory refs. A to array or search object enables a bounded shared search through current same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search retains equivalence-aware tracing.",
+      "description": "Trace declared links between memory refs. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
       "inputSchema": {
         "additionalProperties": false,
         "oneOf": [
@@ -5962,6 +5962,33 @@
           "about": {
             "description": "Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path.",
             "minLength": 1,
+            "type": "string"
+          },
+          "as_of": {
+            "additionalProperties": false,
+            "description": "Exactly one of time/ref; exclusive with interval. Only entries effective then on axis compete. Supersession and expiry are evaluated then: later changes do not invalidate the historical state.",
+            "properties": {
+              "ref": {
+                "description": "Memory ref whose instant on axis selects the historical state.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "time": {
+                "description": "ISO-8601 instant to stand at.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "axis": {
+            "description": "Clock for as_of/interval: occurred=event, observed=seen, ingested=written; validity=[valid_from,valid_until) overlaps the interval or contains the instant. Omitted: occurred, validity start, observed, ingested precedence, reported per entry. Explicit axis never substitutes another clock; applies only with as_of or interval.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
             "type": "string"
           },
           "budget": {
@@ -6021,6 +6048,23 @@
             "minLength": 1,
             "type": "string"
           },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) on axis, with at least one bound; exclusive with as_of. Only entries in the span compete, scored against its own collection. UNKNOWN reports the nearest outside match in proof.nearest_outside.",
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "page": {
             "additionalProperties": false,
             "properties": {
@@ -6054,7 +6098,7 @@
           },
           "search": {
             "additionalProperties": false,
-            "description": "Bounded native baseline on the current graph. Shared work limits; page/budget control transport separately. No historical cut or cross-about expansion in this mode.",
+            "description": "Bounded native traversal on the selected clock. Shared work limits; page/budget control transport separately. Temporal admission uses as_of/interval/axis; no cross-about expansion in this mode.",
             "properties": {
               "direction": {
                 "default": "outgoing",
@@ -6073,14 +6117,14 @@
               },
               "max_edges": {
                 "default": 2048,
-                "description": "Adjacency rows decoded, including filtered rows.",
+                "description": "Adjacency rows decoded, including coordinate and filtered rows.",
                 "maximum": 32768,
                 "minimum": 1,
                 "type": "integer"
               },
               "max_nodes": {
                 "default": 256,
-                "description": "Distinct discovered refs, including excluded endpoints; reserve before reading.",
+                "description": "Distinct discovered refs, including excluded endpoints and coordinate labels; reserve before reading.",
                 "maximum": 4096,
                 "minimum": 1,
                 "type": "integer"
@@ -6198,7 +6242,7 @@
             "type": "array"
           },
           "search": {
-            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted and node/edge/depth_budget. Includes work counters, direction and unreached_targets. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer.",
+            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth_budget and source_outside_selection. Includes work counters, direction and unreached_targets. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut.",
             "type": "object"
           },
           "summary": {

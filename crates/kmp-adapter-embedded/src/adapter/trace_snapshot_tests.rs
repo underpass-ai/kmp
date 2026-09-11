@@ -64,6 +64,7 @@ async fn ownership_and_all_route_explanations_share_one_snapshot_during_independ
         direction: RelationDirection::Outgoing,
         relations: Default::default(),
         limits: TraceSearchLimits::default(),
+        temporal: Default::default(),
     };
     let result = bounded_trace_search(&snapshot, &request).expect("fixture write or bounded read");
     assert_eq!(result.stop, TraceSearchStop::TargetsReached);
@@ -77,5 +78,75 @@ async fn ownership_and_all_route_explanations_share_one_snapshot_during_independ
     assert!(
         fresh.relations.is_empty(),
         "new ownership excludes the entire foreign path"
+    );
+}
+
+#[tokio::test]
+async fn coordinate_admission_and_proof_share_one_snapshot_during_retiming() {
+    use kmp_domain::{MemoryDimensionIdentity, TemporalAxis, TemporalCursor, TemporalSelection};
+    let dir = tempfile::tempdir().expect("directory");
+    let reader = EmbeddedKernelStore::open(dir.path()).expect("reader");
+    let writer = EmbeddedKernelStore::open(dir.path()).expect("writer");
+    let lane = MemoryDimensionIdentity::new("project:test", "work", "one")
+        .expect("label")
+        .node_id();
+    let coordinate = |id: &str, at: &str| {
+        ProjectionMutation::UpsertNodeRelation(Box::new(NodeRelationProjection {
+            source_node_id: lane.clone(),
+            target_node_id: id.into(),
+            relation_type: "contains_entry".into(),
+            explanation: RelationExplanation::new(RelationSemanticClass::Structural)
+                .with_dimension("work")
+                .with_scope_id(lane.clone())
+                .with_observed_at(at),
+        }))
+    };
+    writer
+        .apply_mutations(vec![
+            node("a", "project:test"),
+            node("b", "project:test"),
+            coordinate("a", "2026-09-11T09:00:00Z"),
+            coordinate("b", "2026-09-11T09:00:00Z"),
+            edge("a", "b", "old proof"),
+        ])
+        .await
+        .expect("initial");
+    let tx = reader.begin_read().expect("snapshot");
+    let snapshot = TraceSnapshot(tx.as_ref());
+    assert!(snapshot.node("a").expect("fix snapshot").is_some());
+    writer
+        .apply_mutations(vec![
+            coordinate("b", "2026-09-11T11:00:00Z"),
+            edge("a", "b", "new proof"),
+        ])
+        .await
+        .expect("later commit");
+    let request = TraceSearchRequest {
+        about: "project:test".into(),
+        from: "a".into(),
+        targets: ["b".into()].into(),
+        direction: RelationDirection::Outgoing,
+        relations: Default::default(),
+        limits: Default::default(),
+        temporal: TemporalSelection::as_of(
+            TemporalCursor::time("2026-09-11T10:00:00Z").expect("cut"),
+            TemporalAxis::Observed,
+        )
+        .expect("selection"),
+    };
+    let result = bounded_trace_search(&snapshot, &request).expect("old snapshot");
+    assert_eq!(result.stop, TraceSearchStop::TargetsReached);
+    assert_eq!(
+        result.relations[0].explanation.evidence(),
+        Some("old proof")
+    );
+    drop(tx);
+    assert!(
+        reader
+            .load_bounded_trace(&request)
+            .await
+            .expect("fresh snapshot")
+            .routes
+            .is_empty()
     );
 }

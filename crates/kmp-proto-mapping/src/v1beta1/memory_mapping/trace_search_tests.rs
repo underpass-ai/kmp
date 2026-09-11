@@ -28,6 +28,11 @@ fn result() -> TraceSearchResult {
         scanned_edges: 2,
         expanded_nodes: 2,
         leaves: 0,
+        coordinate_rows: 0,
+        clock_unknown_edges: vec![],
+        temporal_axis: Default::default(),
+        resolved_as_of: None,
+        temporal_selection_resolved: true,
     }
 }
 
@@ -90,4 +95,72 @@ fn proto_mode_selection_and_direction_are_explicit() {
         ..Default::default()
     });
     assert!(trace_search_request_from_proto(&request).is_err());
+}
+
+#[test]
+fn temporal_arguments_enable_bounded_mode_and_reject_ambiguous_selections() {
+    use kmp_proto::v1beta1::{TemporalAxis, TemporalCursor, TemporalInterval};
+    let at = "2026-09-11T10:00:00.500Z".parse().expect("timestamp");
+    let mut request = TraceRequest {
+        about: "a".into(),
+        from: "b".into(),
+        to: "c".into(),
+        as_of: Some(TemporalCursor {
+            time: Some(at),
+            ..Default::default()
+        }),
+        axis: TemporalAxis::Observed as i32,
+        ..Default::default()
+    };
+    let mapped = trace_search_request_from_proto(&request)
+        .expect("valid")
+        .expect("bounded");
+    assert_eq!(
+        mapped.temporal.axis(),
+        Some(kmp_domain::TemporalAxis::Observed)
+    );
+    request.interval = Some(TemporalInterval {
+        end: Some(at),
+        ..Default::default()
+    });
+    assert!(trace_search_request_from_proto(&request).is_err());
+    request.as_of = None;
+    request.interval = None;
+    assert!(
+        trace_search_request_from_proto(&request).is_err(),
+        "axis alone"
+    );
+    request.as_of = Some(TemporalCursor {
+        sequence: Some(1),
+        ..Default::default()
+    });
+    assert!(
+        trace_search_request_from_proto(&request).is_err(),
+        "relative sequence"
+    );
+}
+
+#[test]
+fn temporal_status_and_undated_edges_are_retained_and_bound_to_the_cursor() {
+    let mut selected = result();
+    selected.temporal_axis = kmp_domain::TemporalAxis::Observed;
+    selected.resolved_as_of = Some("2026-09-11T10:00:00.500Z".into());
+    selected.coordinate_rows = 3;
+    selected.clock_unknown_edges = vec![1];
+    let first = trace_search_response_from_result(
+        selected.clone(),
+        RelationDirection::Outgoing,
+        Default::default(),
+    );
+    let search = first.search.as_ref().expect("search");
+    assert_eq!(search.resolved_as_of.expect("instant").nanos, 500_000_000);
+    assert_eq!(search.clock_unknown_edges, [1]);
+    assert_eq!(search.coordinate_rows, 3);
+    selected.temporal_selection_resolved = false;
+    let changed = trace_search_response_from_result(
+        selected,
+        RelationDirection::Outgoing,
+        Default::default(),
+    );
+    assert_ne!(first.selection_fingerprint, changed.selection_fingerprint);
 }
