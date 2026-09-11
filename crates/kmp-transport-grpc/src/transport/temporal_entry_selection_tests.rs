@@ -33,7 +33,10 @@ async fn explicit_older_seed_preserves_newer_dependency_for_each_temporal_verb()
     assert_eq!(goto.entries[0].r#ref, "claim:rachel-denver");
     assert_eq!(goto.dependency_entries.len(), 1);
     assert_eq!(goto.dependency_entries[0].r#ref, "claim:rachel-austin");
-    let rewind = service
+    // Goto bounds proof at 106 and excludes a sequence-only membership.
+    // The other moves have frontier proof unless an interval end is supplied.
+    assert_eq!(goto.dependency_entries[0].coordinates.len(), 2);
+    let unbounded = service
         .rewind(Request::new(RewindRequest {
             about: request.about.clone(),
             cursor: cursor.clone(),
@@ -43,10 +46,40 @@ async fn explicit_older_seed_preserves_newer_dependency_for_each_temporal_verb()
             ..Default::default()
         }))
         .await
+        .expect("unbounded rewind")
+        .into_inner();
+    assert_eq!(unbounded.dependency_entries.len(), 1);
+    assert_eq!(unbounded.dependency_entries[0].coordinates.len(), 3);
+    let extra = &unbounded.dependency_entries[0].coordinates[2];
+    assert_eq!(extra.dimension, "benchmark_record");
+    assert_eq!(extra.sequence, Some(7));
+    assert!(
+        extra.occurred_at.is_none()
+            && extra.observed_at.is_none()
+            && extra.ingested_at.is_none()
+            && extra.valid_from.is_none()
+            && extra.valid_until.is_none()
+    );
+    let interval = Some(kmp_proto::v1beta1::TemporalInterval {
+        start: None,
+        end: Some(ts(107)),
+    });
+    let rewind = service
+        .rewind(Request::new(RewindRequest {
+            about: request.about.clone(),
+            cursor: cursor.clone(),
+            entry_selection: selection.clone(),
+            interval: interval.clone(),
+            include,
+            limit: request.limit,
+            ..Default::default()
+        }))
+        .await
         .expect("rewind")
         .into_inner();
     let forward = service
         .forward(Request::new(ForwardRequest {
+            interval: interval.clone(),
             about: request.about.clone(),
             cursor: Some(ProtoTemporalCursor {
                 time: Some(ts(99)),
@@ -62,6 +95,7 @@ async fn explicit_older_seed_preserves_newer_dependency_for_each_temporal_verb()
         .into_inner();
     let near = service
         .near(Request::new(NearRequest {
+            interval,
             about: request.about,
             around: cursor,
             entry_selection: selection,
