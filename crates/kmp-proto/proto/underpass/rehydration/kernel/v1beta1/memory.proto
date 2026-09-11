@@ -771,6 +771,72 @@ message TraceSearchOptions {
   TraceMaterialSelectionOptions select = 9;
   DimensionSelection dimensions = 10;
   DimensionSelection prefer_dimensions = 11;
+  TraceSeekOptions seek = 12;
+}
+
+// Find compatible evidence from a seed, without known destination refs.
+message TraceSeekOptions {
+  repeated TraceSeekRole roles = 1;
+  repeated string same_labels = 2;
+  repeated TraceWitnessGroup same_ref = 3;
+}
+message TraceWitnessGroup { repeated string roles = 1; }
+message TraceWitnessLabel { string key = 1; repeated string values = 2; }
+message TraceSeekRole {
+  string name = 1;
+  TraceRelationStep relation = 2;
+  repeated TraceRelationStep via = 3;
+  repeated TraceRelationStep after = 4;
+  repeated TraceWitnessLabel labels = 5;
+}
+message TraceEvidenceSelection {
+  string from = 1;
+  string status = 2;
+  bool declared_obligations_complete = 3;
+  repeated string roles = 4;
+  repeated string missing_roles = 5;
+  string stop_reason = 6;
+  uint32 discovered_nodes = 7;
+  uint32 scanned_edges = 8;
+  uint32 work_states = 9;
+  uint32 shared_states = 10;
+  uint32 incompatible_states = 11;
+  uint32 adjacency_pages = 12;
+  uint32 coordinate_pages = 13;
+  TemporalAxis axis = 14;
+  google.protobuf.Timestamp resolved_as_of = 15;
+  bool temporal_selection_resolved = 16;
+  repeated uint32 clock_unknown_edges = 17;
+  uint32 candidate_count = 18;
+  uint32 group_count = 19;
+}
+message TraceEvidenceBinding {
+  string key = 1;
+  repeated string roles = 2;
+  bool reference = 3;
+  repeated string values = 4;
+}
+message TraceMissingWitness {
+  string role = 1;
+  string ref = 2;
+  string key = 3;
+}
+message TraceEvidenceCandidate {
+  uint32 index = 1;
+  string role = 2;
+  repeated string nodes = 3;
+  repeated uint32 edge_indexes = 4;
+  string witness = 5;
+  repeated TraceEvidenceBinding bindings = 6;
+  repeated TraceMissingWitness missing = 7;
+  bool clock_unknown = 8;
+}
+message TraceEvidenceGroup {
+  uint32 index = 1;
+  repeated uint32 candidate_indexes = 2;
+  repeated TraceEvidenceBinding bindings = 3;
+  repeated TraceMissingWitness missing = 4;
+  bool clock_unknown = 5;
 }
 
 message TraceRoutingStats {
@@ -856,6 +922,9 @@ message TraceResponse {
   string selection_fingerprint = 6;
   TraceSearchSelection search = 7;
   repeated TraceRoute routes = 8;
+  TraceEvidenceSelection seek = 9;
+  repeated TraceEvidenceCandidate candidates = 10;
+  repeated TraceEvidenceGroup groups = 11;
 }
 
 // Relate: what memories of several abouts have to do with each other,

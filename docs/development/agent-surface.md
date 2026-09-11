@@ -775,3 +775,23 @@ Compare exact default BFS responses, late edges, misleading bridges, reconvergen
 mixed directions/clocks and depth/work cuts. Freeze the page quantum before
 measurement; document its tradeoffs without a new size or editorial CI gate.
 See [policy and controls](trace-page-exploration.md).
+
+### Seed-based joint evidence paths
+
+`search.seek` compiles native relations and witness constraints in proto mapping.
+Keep both protobuf copies, MCP parser/schema, embedded/gRPC dispatch, result
+projection, cursor fingerprint and three-section pagination together. No caller
+variables or destination gold refs. Every role has one main witness; via/after
+retain its position. Shared labels are joint intersections, same_ref is exact
+reference equality, and missing labels/clocks never become known by joining.
+Do not add private witness bindings to the solver merely for display: that would
+change ambiguity. Witness refs are projected from the validated seek request.
+
+Update the audit card, extended verb, evidence-seek lesson and typed error help;
+regenerate guide assets and review both tool catalog fixtures. Validate incoming
+arrows, deep/unlabelled bridges, incompatible/unknown groups, hidden-group cursor
+changes, all page sections, work cuts and old Trace. Context review is optional,
+separate from continuations and only offered at an equivalent explicit cut.
+Measure complete native calls against frozen controls; do not claim NLP or agent
+understanding from a deterministic compiler replay. These are maintenance
+instructions, not new editorial CI gates.

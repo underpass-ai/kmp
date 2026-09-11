@@ -375,6 +375,35 @@ where
             to = %request.to,
             "kernel memory grpc request"
         );
+        if let Some(query) = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)
+            .map_err(|status| map_proto_error("KernelMemoryService.Trace", &start, *status))?
+        {
+            let page = trace_query_from_proto(request.clone())
+                .map_err(|status| map_proto_error("KernelMemoryService.Trace", &start, *status))?
+                .page;
+            let result = self
+                .application
+                .evidence_paths(query.clone())
+                .await
+                .map_err(|error| {
+                    map_application_error_with_log("KernelMemoryService.Trace", &start, error)
+                })?;
+            let seek = request
+                .search
+                .as_ref()
+                .and_then(|s| s.seek.as_ref())
+                .expect("compiled seek");
+            let response = kmp_proto_mapping::v1beta1::evidence_seek_response_from_result(
+                result, &query, seek, page,
+            );
+            record_kmp_grpc_rpc(
+                "KernelMemoryService.Trace",
+                "success",
+                "none",
+                start.elapsed(),
+            );
+            return Ok(Response::new(response));
+        }
         if let Some(search) = kmp_proto_mapping::v1beta1::trace_search_request_from_proto(&request)
             .map_err(|status| map_proto_error("KernelMemoryService.Trace", &start, *status))?
         {

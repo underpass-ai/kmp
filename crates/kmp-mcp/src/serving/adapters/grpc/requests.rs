@@ -6,6 +6,7 @@ mod relabel;
 mod temporal;
 mod trace_material;
 mod trace_search;
+mod trace_seek;
 mod visual;
 
 pub(crate) use ingest::ingest_request_from_arguments;

@@ -925,6 +925,9 @@ impl KernelMemoryService for FakeMemoryService {
         self.recorded.traces.lock().await.push(request.clone());
 
         Ok(Response::new(TraceResponse {
+            seek: None,
+            candidates: vec![],
+            groups: vec![],
             search: None,
             routes: vec![],
             summary: format!("Trace from {} to {}.", request.from, request.to),

@@ -15,6 +15,11 @@ use std::collections::BTreeSet;
 pub fn trace_search_request_from_proto(
     request: &TraceRequest,
 ) -> ProtoMappingResult<Option<TraceSearchRequest>> {
+    if request.search.as_ref().is_some_and(|s| s.seek.is_some()) {
+        return Err(invalid_argument(
+            "seek requests must use the evidence path service",
+        ));
+    }
     if request.search.is_none()
         && request.targets.is_empty()
         && request.as_of.is_none()

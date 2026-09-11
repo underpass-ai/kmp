@@ -1101,6 +1101,9 @@ pub fn trace_response_from_result(
     TraceResponse {
         search: None,
         routes: Vec::new(),
+        seek: None,
+        candidates: Vec::new(),
+        groups: Vec::new(),
         summary,
         selection_fingerprint,
         trace: returned_trace,
