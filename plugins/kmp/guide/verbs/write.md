@@ -56,8 +56,9 @@ Ingestion is assigned by the kernel; the semantic writer cannot supply it.
 Equal observed and occurred times are valid when the source supports both.
 Several records may share an observation time without sharing an occurrence.
 Each `connect_to` declaration also gets its own observed and ingested clocks.
-Its observation comes from the packet, or exact ingestion if omitted; neither
-endpoint's per-record dates can backdate the link. Its occurrence and validity
+Its observation and the generated evidence support observation use the containing
+member's effective observation: root default, member override, or exact ingestion
+for null. The target's clocks do not date the declaration. Its occurrence and validity
 remain unknown. No extra writer arguments are needed. Separate execution and
 verification records still carry their own event times.
 If one report says an action ran at 11:00 and its check passed at 11:05, keep

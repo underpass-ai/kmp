@@ -18,6 +18,14 @@ clears an inherited event date. A shared observation timestamp across records
 is valid and does not establish simultaneous events. Preview returns planned
 defaults, commit returns actual clocks, and replay retains those accepted clocks.
 
+The effective observation of each semantic member also dates its generated
+evidence support and `connect_to` declarations. With a root observation of
+10:00 and a member override of 14:00, that member's proof is observed at 14:00.
+With `observed_at:null` on the member, its fact and generated proof use exact
+kernel ingestion, even if the root still says 10:00. The target's older dates
+do not backdate a new declaration. Relation occurrence and validity remain
+unknown; canonical ingest can date an association independently of source time.
+
 ## Four distinct clocks and navigation
 
 Use this fictional Atlas permit to separate when a decision was signed, when

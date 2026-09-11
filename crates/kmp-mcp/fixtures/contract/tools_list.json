@@ -72,7 +72,7 @@
           },
           "default_observation_to_ingestion": {
             "default": false,
-            "description": "Semantic-writer policy: fill missing observations on new coordinates, evidence and packet provenance using the exact kernel ingestion time. Preserve already ingested coordinates. Ordinary canonical ingest preserves unknown entry clocks. New semantic relations get their own declaration observation from packet provenance or ingestion.",
+            "description": "Semantic-writer policy: fill missing observations on new coordinates, source times, packet provenance and explicit proof clock objects using exact kernel ingestion. Preserve supplied observations and restored clocks. Absent relation/support clock objects inherit packet observation. Ordinary canonical ingest preserves unknown entry clocks.",
             "type": "boolean"
           },
           "dry_run": {
@@ -972,7 +972,7 @@
               "additionalProperties": false,
               "properties": {
                 "connect_to": {
-                  "description": "Justified links: containing memory -> rel -> target. Each declaration gets packet observation (or ingestion) and kernel ingestion; endpoint clocks do not date the link. Occurrence and validity remain unknown.",
+                  "description": "Justified links: containing memory -> rel -> target. Each declaration and its generated evidence use the containing member's effective observation (root default, member override, or exact ingestion for null). Target clocks do not date the link. Occurrence and validity remain unknown.",
                   "items": {
                     "additionalProperties": false,
                     "if": {

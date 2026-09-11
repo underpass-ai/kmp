@@ -21,7 +21,7 @@ pub(crate) fn definition() -> Value {
             "allOf":[{"if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},"then":{"properties":{"provenance":{"required":["observed_at"]}}}}],
             "properties": {
                 "about": string_schema("Memory anchor or root ref this memory should attach to."),
-                "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, evidence and packet provenance using the exact kernel ingestion time. Preserve already ingested coordinates. Ordinary canonical ingest preserves unknown entry clocks. New semantic relations get their own declaration observation from packet provenance or ingestion."}),
+                "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, source times, packet provenance and explicit proof clock objects using exact kernel ingestion. Preserve supplied observations and restored clocks. Absent relation/support clock objects inherit packet observation. Ordinary canonical ingest preserves unknown entry clocks."}),
                 "memory": {
                     "type": "object",
                     "additionalProperties": true,
