@@ -1,4 +1,6 @@
 //! Atomic packets, local proof links and distinct per-record memberships/clocks.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_adapter_embedded::{EmbeddedKernelStore, verify_bundle};
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
@@ -14,7 +16,7 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
         .expect("response");
     let response: Value = serde_json::from_str(&response).expect("JSON");
     assert!(response.get("error").is_none(), "{response}");
-    response["result"].clone()
+    reviewed_writer::review_authored_write(server, response["result"].clone()).await
 }
 
 async fn events(store: &EmbeddedKernelStore) -> u64 {

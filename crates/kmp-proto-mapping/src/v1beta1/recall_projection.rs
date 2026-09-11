@@ -1938,6 +1938,15 @@ fn memory_relation_value(relation: &MemoryRelation) -> Value {
             "caused_by_node_id",
             &explanation.caused_by_node_id,
         );
+        if let Some(clocks) = explanation.clocks.as_ref() {
+            let mut times = Map::new();
+            insert_timestamp(&mut times, "occurred_at", clocks.occurred_at);
+            insert_timestamp(&mut times, "observed_at", clocks.observed_at);
+            insert_timestamp(&mut times, "ingested_at", clocks.ingested_at);
+            insert_timestamp(&mut times, "valid_from", clocks.valid_from);
+            insert_timestamp(&mut times, "valid_until", clocks.valid_until);
+            value.insert("clocks".to_string(), Value::Object(times));
+        }
         if let Some(coordinate) = explanation.coordinate.as_ref() {
             value.insert(
                 "coordinate".to_string(),

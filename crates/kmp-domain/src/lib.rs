@@ -17,6 +17,11 @@ pub use model::{
     compare_temporal_instants, directed_relationship_path, label_resemblances, labels_by_entry,
     normalized_label_token, relate, temporal_instant_nanos, temporal_instant_rfc3339,
 };
+pub use model::{TemporalReadWindow, temporal_clock_instant};
+pub use model::{
+    TraceDimensionPolicy, TraceMaterialResult, TraceMaterialSelection, TraceProofRequirement,
+    TraceRoutingStats, select_trace_material,
+};
 pub use projection::{
     ContextPathNeighborhood, GraphNodeMaterializedData, GraphNodeMaterializedEvent,
     GraphRelationMaterializedData, GraphRelationMaterializedEvent, NodeDetailMaterializedData,
@@ -25,11 +30,14 @@ pub use projection::{
     ProjectionEventHandler, ProjectionHandlingRequest, ProjectionHandlingResult,
     ProjectionMutation, RelatedNodeExplanationData, RelatedNodeReference,
 };
+pub use repositories::{
+    AdjacencyPage, AdjacencyRequest, BoundedRelationReader, RelationDirection, RelationPosition,
+};
 pub use repositories::{COMMAND_RECEIPT_ENTITY_KIND, StoredCommandReceipt};
 pub use repositories::{
-    ContextEventChange, ContextEventStore, ContextUpdatedEvent, GraphNeighborhoodReader,
-    IdempotentOutcome, MemoryAboutIndexReader, NeighborhoodRequest, NodeDetailReader,
-    NodeRelationshipReader, NodeRelationships, PortError, ProcessedEventStore,
+    ContextEventChange, ContextEventStore, ContextRevision, ContextUpdatedEvent,
+    GraphNeighborhoodReader, IdempotentOutcome, MemoryAboutIndexReader, NeighborhoodRequest,
+    NodeDetailReader, NodeRelationshipReader, NodeRelationships, PortError, ProcessedEventStore,
     ProjectionCheckpointStore, ProjectionWriter, QualityMetricsObserver, QualityObservationContext,
     ReadSnapshotFuture, ReadSnapshotProvider, SnapshotSaveOptions, SnapshotStore, TokenEstimator,
 };
@@ -50,6 +58,17 @@ pub use value_objects::{
     QuestionRendering, QuestionRenderingFault, SearchSummary, SearchSummaryFault,
 };
 pub use value_objects::{RelationExplanation, RelationSemanticClass};
+
+pub use model::{
+    EvidenceMissingWitness, EvidencePathBinding, EvidencePathBindings, EvidencePathCandidate,
+    EvidencePathGroup, EvidencePathRequest, EvidencePathResult, EvidencePathRole,
+    EvidencePathStatus, search_evidence_paths,
+};
+pub use model::{
+    TraceRelationStep, TraceRoute, TraceSearchLimits, TraceSearchRequest, TraceSearchResult,
+    TraceSearchStop, bounded_trace_search,
+};
+pub use repositories::TraceSnapshotReader;
 
 #[cfg(test)]
 mod tests {

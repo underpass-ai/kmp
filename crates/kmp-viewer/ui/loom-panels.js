@@ -363,6 +363,7 @@ KMP_APP.panels = (() => {
       item.append(head);
       if (relation.why) item.append(el("p", "rel-why", relation.why));
       if (relation.evidence) item.append(el("p", "rel-evidence", `evidence: ${relation.evidence}`));
+      renderRelationClocks(item, relation);
       list.append(item);
     }
   }
@@ -371,6 +372,16 @@ KMP_APP.panels = (() => {
      a gradient thread from occurred to ingested making late observation and
      backfill visible. Absent clocks stay visibly absent. */
   function renderPrism(m) { KMP_APP.evidence.renderPrism(m); }
+
+  function renderRelationClocks(item, relation) {
+    const fields = [["Occurred", "occurred_at"], ["Observed", "observed_at"],
+      ["Ingested", "ingested_at"], ["Valid from", "valid_from"], ["Valid until", "valid_until"]];
+    const clocks = relation.clocks || relation;
+    const values = fields.filter(([, key]) => clocks[key])
+      .map(([label, key]) => `${label}: ${clocks[key]}`);
+    if (values.length) item.append(el("p", "muted relation-clocks", values.join(" · ")));
+    else if (relation.class !== "structural") item.append(el("p", "muted relation-clocks", "Relation clocks unknown"));
+  }
 
   /* ---------------- trace box ---------------- */
 
@@ -393,6 +404,7 @@ KMP_APP.panels = (() => {
       head.append(el("span", "mono muted", `${edge.source} → ${edge.target}`));
       item.append(head);
       if (edge.why) item.append(el("p", "rel-why", edge.why));
+      renderRelationClocks(item, edge);
       list.append(item);
     }
   }

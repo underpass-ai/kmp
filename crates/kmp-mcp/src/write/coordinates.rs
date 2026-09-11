@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 #[derive(Clone, Copy, Debug)]
 pub(super) struct WriterCoordinate<'a> {
     pub(super) occurred_at: Option<&'a str>,
-    pub(super) observed_at: &'a str,
+    pub(super) observed_at: Option<&'a str>,
     pub(super) valid_from: Option<&'a str>,
     pub(super) valid_until: Option<&'a str>,
     pub(super) rank: Option<u32>,
@@ -17,12 +17,14 @@ pub(super) fn coordinate(
 ) -> Value {
     let mut coordinate = json!({
         "dimension": dimension,
-        "scope_id": scope_id,
-        "observed_at": clocks.observed_at
+        "scope_id": scope_id
     });
     let fields = coordinate
         .as_object_mut()
         .expect("coordinate literal is a JSON object");
+    if let Some(observed_at) = clocks.observed_at {
+        fields.insert("observed_at".to_string(), json!(observed_at));
+    }
     if let Some(occurred_at) = clocks.occurred_at {
         fields.insert("occurred_at".to_string(), json!(occurred_at));
     }
@@ -39,6 +41,54 @@ pub(super) fn coordinate(
         fields.insert("sequence".to_string(), json!(sequence));
     }
     coordinate
+}
+
+pub(super) fn observation_time(
+    arguments: &serde_json::Map<String, Value>,
+) -> Result<Option<String>, super::validation_error::WriteValidationError> {
+    use super::validation_error::WriteValidationError;
+    let Some(value) = arguments
+        .get("observed_at")
+        .filter(|value| !value.is_null())
+    else {
+        return Ok(None);
+    };
+    let observed = value
+        .as_str()
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| {
+            WriteValidationError::new(
+                "observed_at must be an RFC3339 timestamp or null; omit it for ingestion time",
+            )
+            .at("observed_at")
+            .code("INVALID_OBSERVATION")
+        })?;
+    reject_a_time_that_has_not_happened(observed, crate::clock::now_seconds()).map_err(
+        |error| {
+            WriteValidationError::new(error)
+                .at("observed_at")
+                .code("FUTURE_OBSERVATION")
+        },
+    )?;
+    Ok(Some(observed.to_owned()))
+}
+
+/// Canonical timestamp fields use absence, not a null timestamp placeholder.
+pub(super) fn omit_unknown_observations(arguments: &mut Value) {
+    if arguments["provenance"]["observed_at"].is_null()
+        && let Some(provenance) = arguments["provenance"].as_object_mut()
+    {
+        provenance.remove("observed_at");
+    }
+    if let Some(evidence) = arguments["memory"]["evidence"].as_array_mut() {
+        for item in evidence {
+            if item["time"].is_null()
+                && let Some(item) = item.as_object_mut()
+            {
+                item.remove("time");
+            }
+        }
+    }
 }
 
 pub(super) fn shifted_coordinates(coordinates: &Value, offset: u32) -> Value {

@@ -6,14 +6,23 @@ use super::ingest_arguments::*;
 
 use kmp_application::validate_supplied_member_ref;
 
-pub(super) fn validate_provenance(provenance: &Map<String, Value>) -> Result<(), String> {
+pub(super) fn validate_provenance(
+    provenance: &Map<String, Value>,
+    allow_missing_observation: bool,
+) -> Result<(), String> {
     validate_source_kind(required_map_string(
         provenance,
         "source_kind",
         "provenance.source_kind",
     )?)?;
     let _source_agent = required_map_string(provenance, "source_agent", "provenance.source_agent")?;
-    let _observed_at = required_map_string(provenance, "observed_at", "provenance.observed_at")?;
+    if !allow_missing_observation
+        || provenance
+            .get("observed_at")
+            .is_some_and(|value| !value.is_null())
+    {
+        required_map_string(provenance, "observed_at", "provenance.observed_at")?;
+    }
     Ok(())
 }
 

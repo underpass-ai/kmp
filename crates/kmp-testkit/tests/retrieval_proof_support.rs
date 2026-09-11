@@ -24,13 +24,20 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
 }
 
 async fn seed(server: &KernelMcpServer) -> Value {
-    call(
+    let pending = call(
         server,
         "kmp_write_memory",
         serde_json::from_str(SOURCE).expect("source fixture"),
     )
-    .await["local_refs"]
-        .clone()
+    .await;
+    assert_eq!(pending["status"], "needs_review", "{pending}");
+    assert_eq!(pending["accepted"], false, "{pending}");
+    let next = &pending["next_actions"][0];
+    assert_eq!(next["tool"], "kmp_write_memory", "{pending}");
+    let committed = call(server, "kmp_write_memory", next["arguments"].clone()).await;
+    assert_eq!(committed["status"], "committed", "{committed}");
+    assert_eq!(committed["accepted"], true, "{committed}");
+    committed["local_refs"].clone()
 }
 
 /// Replay the declared source history, rather than attaching all its evidence
@@ -73,7 +80,13 @@ async fn seed_source_history(server: &KernelMcpServer) -> Value {
             memory["id"].as_str().expect("local id")
         ));
         packet["memories"] = json!([memory]);
-        let written = call(server, "kmp_write_memory", packet.clone()).await;
+        let mut written = call(server, "kmp_write_memory", packet.clone()).await;
+        if written["status"] == "needs_review" {
+            let next = &written["next_actions"][0];
+            assert_eq!(next["tool"], "kmp_write_memory");
+            written = call(server, "kmp_write_memory", next["arguments"].clone()).await;
+        }
+        assert_eq!(written["accepted"], true, "{written}");
         refs.extend(
             written["local_refs"]
                 .as_object()

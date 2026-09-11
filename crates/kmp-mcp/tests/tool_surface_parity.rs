@@ -459,11 +459,10 @@ const VOLATILE_KEYS: [&str; 5] = [
 ];
 const REDACTED: &str = "<stamped at call time>";
 
-/// Inspect `kmpi1` and recall `kmp1` cursors bind the accepted clocks. Their
-/// digests vary when evidence associations carry kernel ingestion. The version and the
-/// offset are contract and stay pinned; only the digest is dropped. A temporal
-/// `next_cursor` is an entry ref and is left alone.
-fn redact_read_digest(text: &str) -> Option<String> {
+/// Inspect (`kmpi1`) and recall (`kmp1`) cursor digests cover link ingestion
+/// clocks. Keep version and offset; omit only their per-run digest. Behavioral
+/// cursor tests still require exact reuse and reject changed evidence.
+fn redact_cursor_digest(text: &str) -> Option<String> {
     let (head, digest) = text.rsplit_once(':')?;
     let looks_like_a_digest =
         digest.len() == 64 && digest.bytes().all(|byte| byte.is_ascii_hexdigit());
@@ -497,7 +496,7 @@ fn redact(value: &mut Value) {
                 if VOLATILE_KEYS.contains(&key.as_str()) && !child.is_object() {
                     *child = json!(REDACTED);
                 } else if let Some(text) = child.as_str()
-                    && let Some(masked) = redact_read_digest(text)
+                    && let Some(masked) = redact_cursor_digest(text)
                 {
                     *child = json!(masked);
                 } else {
@@ -731,6 +730,15 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
 
         let file = format!("{}.json", label.replace(':', "-"));
         let mut result = response["result"].clone();
+        if result["structuredContent"]["status"] == "needs_review" {
+            // This authored fixture has justified links. Exercise its explicit
+            // review round before pinning acceptance and querying its effects.
+            assert_eq!(result["structuredContent"]["accepted"], false);
+            let action = &result["structuredContent"]["next_actions"][0];
+            let reply = server.handle_json_line(&json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":action["tool"],"arguments":action["arguments"]}}).to_string()).await.expect("review continuation");
+            result = serde_json::from_str::<Value>(&reply).expect("JSON")["result"].clone();
+            assert_eq!(result["structuredContent"]["accepted"], true, "{result}");
+        }
         if tool == "kmp_guide" {
             // Random identities and content revisions are tested across real
             // restarts in persistent_guidance; pin their fields here.

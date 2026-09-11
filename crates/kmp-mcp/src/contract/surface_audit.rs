@@ -135,20 +135,14 @@ mod tests {
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
-        let writer_description = tools[1]["description"]
-            .as_str()
-            .expect("writer description");
-        assert!(writer_description.contains("Normal writes are one call"));
-        assert!(writer_description.contains("validation failures write nothing"));
-        assert!(writer_description.contains("explicitly requested preview"));
         assert!(
-            !tools[1]["inputSchema"]["required"]
+            !tools[1]["inputSchema"]["oneOf"][0]["required"]
                 .as_array()
                 .expect("required")
                 .contains(&json!("actor"))
         );
         assert_eq!(
-            tools[1]["inputSchema"]["anyOf"],
+            tools[1]["inputSchema"]["oneOf"][0]["anyOf"],
             json!([{"required":["actor"]},{"required":["context_id"]}])
         );
         assert_eq!(
@@ -261,6 +255,7 @@ mod tests {
             memory_keys("kmp_ingest"),
             expected(&[
                 "about",
+                "default_observation_to_ingestion",
                 "dry_run",
                 "idempotency_key",
                 "label_policy",
@@ -335,7 +330,10 @@ mod tests {
         }
         assert_eq!(
             memory_keys("kmp_trace"),
-            expected(&["about", "budget", "from", "goal", "page", "role", "to"])
+            expected(&[
+                "about", "as_of", "axis", "budget", "from", "goal", "interval", "page", "role",
+                "search", "to",
+            ])
         );
         assert_eq!(
             memory_keys("kmp_inspect"),
@@ -394,6 +392,7 @@ mod tests {
                 "options",
                 "rank",
                 "read_context",
+                "review_token",
                 "search_summaries",
                 "source_kind",
                 "valid_from",

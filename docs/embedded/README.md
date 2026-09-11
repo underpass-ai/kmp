@@ -104,6 +104,13 @@ observations use `telemetry/quality.sqlite3` in WAL mode, so every local host
 keeps its Observability Pulse. These are local diagnostics, not remote
 telemetry; KMP does not upload memory to Underpass.
 
+The prompt-quality journal covers reads that render a model prompt. Temporal
+reads (`goto`, `near`, `forward`, `rewind`) and ChronoLoom projections read the
+structured bundle directly; they do not render and tokenize a discarded prompt
+to produce journal metrics. Their MCP response quality remains computed from
+the selected entries and proof. An absent prompt-quality observation is not a
+zero-quality read.
+
 ## Maintenance commands
 
 Run `kmp-mcp --help` for the live command contract.

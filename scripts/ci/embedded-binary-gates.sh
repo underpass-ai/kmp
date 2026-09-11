@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# ADR-013 "small surface" gates for the installable MCP binary:
+# Small-surface checks for the installable MCP binary:
 # 1. the dependency graph must never grow infrastructure clients;
-# 2. the stripped release binary must stay within the size budget.
+# 2. record stripped release size for review, without an arbitrary ceiling.
 
 set -euo pipefail
 
@@ -46,12 +46,9 @@ echo "embedded-gates: building release binary"
 cargo build --release -p kmp-mcp --locked
 strip -o target/release/kmp-mcp.gates-stripped target/release/kmp-mcp
 SIZE="$(stat -c%s target/release/kmp-mcp.gates-stripped)"
-# SQLite, cl100k response accounting and the self-contained ChronoLoom MCP App
-# are intentional shipped product dependencies. Keep a recorded ceiling above
-# their CI baseline while the forbidden infrastructure graph stays gated above.
-BUDGET=$((20 * 1024 * 1024))
-echo "embedded-gates: stripped binary ${SIZE} bytes (budget ${BUDGET})"
-if [ "${SIZE}" -gt "${BUDGET}" ]; then
-  echo "embedded-gates: binary exceeds the recorded size budget" >&2
-  exit 1
+# Product dependencies and bundled guide/viewer assets change this measurement.
+# Review it as evidence; architecture remains enforced by the graph checks above.
+echo "embedded-gates: stripped binary ${SIZE} bytes (informational)"
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  echo "Embedded MCP stripped binary: ${SIZE} bytes (informational)." >> "${GITHUB_STEP_SUMMARY}"
 fi

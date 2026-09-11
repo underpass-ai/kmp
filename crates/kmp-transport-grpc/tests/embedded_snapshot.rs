@@ -64,6 +64,8 @@ fn packet(version: usize) -> MemoryIngestCommand {
         provenance: None,
         idempotency_key: epoch,
         dry_run: false,
+        default_observation_to_ingestion: false,
+        neighborhood_review: None,
         label_policy: Default::default(),
         receipt_context: None,
     }

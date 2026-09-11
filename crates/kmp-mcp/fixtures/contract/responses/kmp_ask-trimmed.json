@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Retrieved 5 memory items for: Where is Rachel moving?",
+      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\nRetrieved 5 memory items for: Where is Rachel moving?",
       "type": "text"
     }
   ],
@@ -188,6 +188,10 @@
       "path": [
         {
           "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",

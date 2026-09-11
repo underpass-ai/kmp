@@ -1,5 +1,33 @@
 # Worked example: four clocks and zoom to the proof
 
+## Small clock choices
+
+These are the clock fields for a source-backed `kmp_write_memory` packet or
+record, not complete tool calls. Keep its summary, evidence and labels too.
+
+| Source | Clock fields | Stored result |
+| --- | --- | --- |
+| "The cache failed"; no event or observation time | Omit both, or `"observed_at":null,"occurred_at":null` | Observation equals KMP ingestion; occurrence remains unknown. |
+| "The cache failed on September 1 at 09:00 UTC"; no separate observation | `"occurred_at":"2026-09-01T09:00:00Z"` | The known event date is preserved; observation equals ingestion. |
+| "On September 2 at 10:00 UTC I learned about the September 1, 09:00 UTC failure" | `"observed_at":"2026-09-02T10:00:00Z","occurred_at":"2026-09-01T09:00:00Z"` | Both explicit source dates are preserved. |
+| "At 09:00 UTC on September 1 we saw the cache fail" | `"observed_at":"2026-09-01T09:00:00Z","occurred_at":"2026-09-01T09:00:00Z"` | Observation and occurrence may coincide. |
+
+Root clocks apply to records that omit them. A record's explicit timestamp
+overrides the root; `observed_at:null` resets to ingestion and `occurred_at:null`
+clears an inherited event date. A shared observation timestamp across records
+is valid and does not establish simultaneous events. Preview returns planned
+defaults, commit returns actual clocks, and replay retains those accepted clocks.
+
+The effective observation of each semantic member also dates its generated
+evidence support and `connect_to` declarations. With a root observation of
+10:00 and a member override of 14:00, that member's proof is observed at 14:00.
+With `observed_at:null` on the member, its fact and generated proof use exact
+kernel ingestion, even if the root still says 10:00. The target's older dates
+do not backdate a new declaration. Relation occurrence and validity remain
+unknown; canonical ingest can date an association independently of source time.
+
+## Four distinct clocks and navigation
+
 Use this fictional Atlas permit to separate when a decision was signed, when
 the reviewer received it, when KMP recorded it and when it applied. The LLM
 interprets the sources; KMP preserves the chosen coordinates. A fact that
@@ -89,7 +117,60 @@ check supports the permit document; its why explains that limited support and
 its evidence is the observed check. It does not prove permission before D2.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"signature","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:signature:v1","labels":{"document":["TEMP-4"],"record":["signature-check"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"memories":[{"id":"current","kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.","connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}]}]}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "signature_review",
+  "arguments": {
+    "about": "example:guide:four-clocks",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-clocks:signature:v1",
+    "labels": {
+      "document": [
+        "TEMP-4"
+      ],
+      "record": [
+        "signature-check"
+      ],
+      "agentic_process": [
+        "atlas-permit-review"
+      ]
+    },
+    "occurred_at": "${clock.checked}",
+    "observed_at": "${clock.check_observed}",
+    "read_context": {
+      "inspected_refs": [
+        "${permit.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "CHECK-4 verified the signature and printed validity dates of permit TEMP-4.",
+        "evidence": "S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.",
+        "connect_to": [
+          {
+            "ref": "${permit.generated_refs.0}",
+            "rel": "supports",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.",
+            "evidence": "S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"signature","arguments":"${signature_review.next_actions.0.arguments}"}
 ```
 
 ```json

@@ -47,3 +47,12 @@ test("MCP App clock focus reads recorded coordinates and trace frames every stor
   const trace=await api("/api/trace",{about:"a",from:"a:start",to:"a:end"});
   assert.deepEqual(plain(trace.nodes.map(node=>node.id)).sort(),["a:end","a:middle","a:start"]);
 });
+
+test("MCP App preserves independent relation clocks in the shared viewer shape",async()=>{
+  const clocks={observed_at:"2026-09-02T13:00:00.500Z",ingested_at:"2026-09-03T09:00:00Z"};
+  const {api}=bridge(()=>({trace:[{from:"a:check",to:"a:execution",rel:"supports",clocks}]}));
+  const trace=await api("/api/trace",{about:"a",from:"a:check",to:"a:execution"});
+  assert.equal(trace.edges[0].observed_at,clocks.observed_at);
+  assert.equal(trace.edges[0].ingested_at,clocks.ingested_at);
+  assert.equal(trace.edges[0].occurred_at,undefined);
+});

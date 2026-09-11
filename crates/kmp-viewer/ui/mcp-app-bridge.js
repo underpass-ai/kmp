@@ -115,7 +115,7 @@
     labels: [],
     properties: {},
   });
-  const edgeFromRelation = (edge) => ({ ...edge, source: edge.from, target: edge.to });
+  const edgeFromRelation = (edge) => ({ ...edge, ...(edge.clocks || {}), source: edge.from, target: edge.to });
 
   async function appApi(path, params, method) {
     await ready;

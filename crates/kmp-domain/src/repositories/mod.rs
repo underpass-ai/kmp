@@ -1,7 +1,19 @@
 pub mod context_event_store;
+pub mod context_revision;
+pub use context_revision::ContextRevision;
 pub mod stored_command_receipt;
 pub use stored_command_receipt::{COMMAND_RECEIPT_ENTITY_KIND, StoredCommandReceipt};
+pub mod adjacency_page;
+pub mod adjacency_request;
+pub mod bounded_relation_reader;
 pub mod graph_neighborhood_reader;
+pub mod relation_direction;
+pub mod relation_position;
+pub use adjacency_page::AdjacencyPage;
+pub use adjacency_request::AdjacencyRequest;
+pub use bounded_relation_reader::BoundedRelationReader;
+pub use relation_direction::RelationDirection;
+pub use relation_position::RelationPosition;
 pub mod memory_about_index_reader;
 pub mod neighborhood_request;
 pub mod node_detail_reader;
@@ -32,5 +44,7 @@ pub use snapshot_save_options::SnapshotSaveOptions;
 pub use snapshot_store::SnapshotStore;
 pub use token_estimator::TokenEstimator;
 
+mod trace_snapshot_reader;
+pub use trace_snapshot_reader::TraceSnapshotReader;
 pub mod read_snapshot_provider;
 pub use read_snapshot_provider::{ReadSnapshotFuture, ReadSnapshotProvider};

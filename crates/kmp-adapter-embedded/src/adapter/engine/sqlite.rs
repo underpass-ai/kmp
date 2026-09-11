@@ -235,6 +235,11 @@ fn create_tables(connection: &Connection) -> Result<(), PortError> {
         ddl.push_str(&table_ddl(table, true));
         ddl.push_str(";\n");
     }
+    for table in [Table::Relations, Table::RelationsByTarget] {
+        ddl.push_str(&format!(
+            "CREATE INDEX IF NOT EXISTS \"{table}_by_kind\" ON \"{table}\"(k1, k3, k2);\n"
+        ));
+    }
     connection.execute_batch(&ddl).map_err(|error| {
         PortError::Unavailable(format!("embedded store could not create tables: {error}"))
     })
@@ -283,8 +288,20 @@ fn validate_tables(connection: &Connection, store_file: &Path) -> Result<(), Por
             .map_err(|error| security_error(store_file, "schema validation", &error))?;
         let expected_name = table.to_string();
         let expected_ddl = table_ddl(table, false);
-        let valid =
-            objects.as_slice() == [("table".to_string(), expected_name, Some(expected_ddl))];
+        let mut expected = vec![("table".to_string(), expected_name, Some(expected_ddl))];
+        if matches!(table, Table::Relations | Table::RelationsByTarget) {
+            expected.insert(
+                0,
+                (
+                    "index".into(),
+                    format!("{table}_by_kind"),
+                    Some(format!(
+                        "CREATE INDEX \"{table}_by_kind\" ON \"{table}\"(k1, k3, k2)"
+                    )),
+                ),
+            );
+        }
+        let valid = objects == expected;
         if !valid {
             return Err(PortError::InvalidState(format!(
                 "embedded SQLite store `{}` has an unexpected schema for `{table}`; refusing \
@@ -445,6 +462,48 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
+    pub(super) fn scan_str3_page(
+        &self,
+        table: Table,
+        first: &str,
+        after: Option<(&str, &str)>,
+        limit: u32,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<Str3Row>, PortError> {
+        if table.key_shape() != KeyShape::Str3 {
+            return Err(scan_shape_mismatch(table, KeyShape::Str3));
+        }
+        let mut parameters = vec![rusqlite::types::Value::Text(first.to_string())];
+        if let Some(kind) = relation_type {
+            parameters.push(rusqlite::types::Value::Text(kind.to_string()));
+        }
+        if let Some((neighbor, relation)) = after {
+            parameters.push(rusqlite::types::Value::Text(neighbor.to_string()));
+            if relation_type.is_none() {
+                parameters.push(rusqlite::types::Value::Text(relation.to_string()));
+            }
+        }
+        parameters.push(rusqlite::types::Value::Integer(i64::from(limit)));
+        // The tuple predicate seeks in the primary key. OFFSET or a nullable
+        // OR predicate would repeatedly scan the adjacency already consumed.
+        let sql = adjacency_page_sql(table, after.is_some(), relation_type.is_some());
+        let mut statement = self.prepare(&sql)?;
+        let rows = statement
+            .query_map(rusqlite::params_from_iter(parameters), |row| {
+                Ok((
+                    (
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                    ),
+                    row.get::<_, Vec<u8>>(3)?,
+                ))
+            })
+            .map_err(|error| read_error(table, &error))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|error| read_error(table, &error))
+    }
+
     pub(super) fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         if table.key_shape() != KeyShape::U64 {
             return Err(scan_shape_mismatch(table, KeyShape::U64));
@@ -572,6 +631,17 @@ impl ReadTx for SqliteRead<'_> {
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
     }
+    fn scan_str3_page(
+        &self,
+        table: Table,
+        first: &str,
+        after: Option<(&str, &str)>,
+        limit: u32,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<Str3Row>, PortError> {
+        self.ops()
+            .scan_str3_page(table, first, after, limit, relation_type)
+    }
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         self.ops().scan_u64(table)
     }
@@ -606,6 +676,17 @@ impl ReadTx for SqliteWrite<'_> {
     }
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
+    }
+    fn scan_str3_page(
+        &self,
+        table: Table,
+        first: &str,
+        after: Option<(&str, &str)>,
+        limit: u32,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<Str3Row>, PortError> {
+        self.ops()
+            .scan_str3_page(table, first, after, limit, relation_type)
     }
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         self.ops().scan_u64(table)
@@ -655,6 +736,19 @@ fn security_error(store_file: &Path, control: &str, error: &rusqlite::Error) -> 
         "embedded store could not enforce SQLite {control} on `{}`: {error}",
         store_file.display()
     ))
+}
+
+fn adjacency_page_sql(table: Table, resume: bool, filtered: bool) -> String {
+    if filtered {
+        let after = if resume { " AND k2 > ?" } else { "" };
+        // A typed coordinate lookup must not scan unrelated fanout when
+        // SQLite's estimate favors the untyped primary key.
+        return format!(
+            "SELECT k1, k2, k3, v FROM \"{table}\" INDEXED BY \"{table}_by_kind\" WHERE k1 = ? AND k3 = ?{after} ORDER BY k2 LIMIT ?"
+        );
+    }
+    let after = if resume { " AND (k2, k3) > (?, ?)" } else { "" };
+    format!("SELECT k1, k2, k3, v FROM \"{table}\" WHERE k1 = ?{after} ORDER BY k2, k3 LIMIT ?")
 }
 
 fn read_error(table: Table, error: &rusqlite::Error) -> PortError {
@@ -786,3 +880,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "sqlite_adjacency_tests.rs"]
+mod adjacency_tests;

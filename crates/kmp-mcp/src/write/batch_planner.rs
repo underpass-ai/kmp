@@ -24,19 +24,20 @@ pub(crate) fn build_batch_plan(
     let about = required_string(object, "about")?;
     kmp_application::validate_ref_token("about", &about)?;
     required_string(object, "actor")?;
-    let observed_at = required_string(object, "observed_at").map_err(|_| {
-        WriteValidationError::new("top-level observed_at is required for packet provenance and shared observation time, even when records override it; supply the actual observation time with its UTC offset, not an assumed occurrence or validity start")
-            .at("observed_at").code("REQUIRED_FIELD")
-    })?;
-    super::coordinates::reject_a_time_that_has_not_happened(
-        &observed_at,
-        crate::clock::now_seconds(),
-    )
-    .map_err(|error| {
-        WriteValidationError::new(error)
-            .at("observed_at")
-            .code("FUTURE_OBSERVATION")
-    })?;
+    super::coordinates::observation_time(object)?;
+    if let Some(token) = object.get("review_token") {
+        let token = token.as_str().ok_or_else(|| {
+            WriteValidationError::wrong_type("review_token", JsonValueType::String, token)
+        })?;
+        if token.len() != 64 || !token.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err(WriteValidationError::new(
+                "review_token must be the returned 64-character neighborhood token",
+            )
+            .at("review_token")
+            .code("INVALID_REVIEW_TOKEN")
+            .into());
+        }
+    }
     for field in ["current", "intent", "semantic_delta", "connect_to", "scope"] {
         if object.contains_key(field) {
             return Err(WriteValidationError::new(format!(
@@ -232,7 +233,10 @@ pub(crate) fn build_batch_plan(
                 .map_err(|error| error.within(&format!("memories[{index}]")))
         })();
         match planned {
-            Ok(plan) => plans.push(plan),
+            Ok(mut plan) => {
+                preserve_proof_observation(&mut plan.ingest_arguments);
+                plans.push(plan);
+            }
             Err(error) => errors.push(error),
         }
     }
@@ -270,10 +274,36 @@ pub(crate) fn build_batch_plan(
     }
     // Provenance carries observation of the whole packet; each entry retains
     // its own observed/occurred/valid clocks. Ingestion is assigned by the kernel.
-    all.ingest_arguments["provenance"]["observed_at"] = object["observed_at"].clone();
+    all.ingest_arguments["provenance"]["observed_at"] =
+        object.get("observed_at").cloned().unwrap_or(Value::Null);
+    super::coordinates::omit_unknown_observations(&mut all.ingest_arguments);
     all.local_refs = refs;
     all.relation_quality_metrics = relation_quality_metrics(&all.relation_quality);
     Ok(all)
+}
+
+/// A member declares its proof at its effective observation. Preserve that
+/// provenance before merging; an empty clock object opts into the command's
+/// ingestion default without borrowing the packet or target's observation.
+fn preserve_proof_observation(arguments: &mut Value) {
+    let mut clocks = json!({});
+    if let Some(observed) = arguments.pointer("/provenance/observed_at") {
+        clocks["observed_at"] = observed.clone();
+    }
+    for relation in arguments["memory"]["relations"]
+        .as_array_mut()
+        .expect("compiled relations")
+    {
+        if relation["class"] != "structural" {
+            relation["clocks"] = clocks.clone();
+        }
+    }
+    for evidence in arguments["memory"]["evidence"]
+        .as_array_mut()
+        .expect("compiled evidence")
+    {
+        evidence["support_clocks"] = clocks.clone();
+    }
 }
 
 fn merged_labels(common: Option<&Value>, own: Option<&Value>) -> Result<Value, String> {

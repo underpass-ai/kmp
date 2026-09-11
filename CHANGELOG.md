@@ -9,6 +9,32 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-11
+
+### Added
+
+- Bounded Trace discovery for known destinations or evidence roles from a seed, with directed relation moves, alternative routes, dimensional preferences and explicit work limits. Contextual discovery finds intermediate sequences and preserves minimum-hop ties; joint groups can require the same event, anchor or witness without treating a path as semantic proof.
+- Compact neighborhood review before rich semantic links are committed, including links within a batch. Exact continuations preserve the proposal, and changed context requires another review. SQLite checks reviewed revisions and commits events, receipts and projections atomically across sessions.
+
+### Changed
+
+- Semantic writers may omit observation time. KMP assigns the exact ingestion instant; record overrides remain explicit, null clears the packet default, and unknown occurrence stays unknown. A member's generated relations and evidence support keep its effective observation.
+- Relations and evidence support associations retain their own declaration clocks, separately from endpoint event times and original source dates. Temporal proof excludes declarations learned after the selected observation cutoff.
+- Partial reads begin with `READ_INCOMPLETE`, including for unregistered agents. Completing the selected entries does not imply that every proof page has arrived.
+- Trace reports incompatible destination/seek options together. Guide cards and executable examples teach relation direction, event/check separation, clock defaults and contextual evidence discovery.
+
+### Fixed
+
+- Preserve member observation times when merging semantic batches, including null overrides, replay and restored historical clocks.
+- Keep embedded graph, source and body reads on one store snapshot; batch typed Inspect source reads and avoid rendering discarded temporal prompts.
+- Preserve RFC3339 precision and offsets and admit dimensional labels only on the selected clock. Late evidence associations no longer enter earlier proof merely because their sources are old.
+- Preserve possessive identifiers in faithful English renderings and repair the four-clock example's detail and expansion scope.
+- Restrict the development loop to draft pull requests or manual runs. Binary size remains visible without an arbitrary fixed failure ceiling.
+
+Native controls and small agent-use trials support this cut. Full route-body
+materialization, broader agent convergence and independent benchmark results
+remain pending; this release does not claim complete evidence for every question.
+
 ## [0.16.0] - 2026-09-10
 
 ### Added
@@ -1631,7 +1657,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/underpass-ai/kmp/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/underpass-ai/kmp/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/underpass-ai/kmp/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/underpass-ai/kmp/compare/v0.13.0...v0.14.0

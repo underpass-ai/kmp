@@ -3,6 +3,16 @@ Pass your `context_id`; KMP supplies your persistent agent name as actor.
 Without a context, supply actor explicitly as in this standalone example. A label can hold several values; reuse a known
 key/value before inventing another. A shared account is not a person's alias.
 
+Clocks: omit `observed_at` to use KMP's exact `ingested_at`. Supply it only
+when the source establishes another observation time. Unknown `occurred_at`:
+omit it or use null; KMP never copies observation into occurrence. Root clocks
+are defaults for records; a record's null clears that default. Each record's
+effective observation also dates its generated evidence and connect_to declarations;
+the target's dates do not date a new link.
+One report can describe several events: separate execution from a later check;
+keep the later result out of the earlier summary. Example:
+`guide:kmp-agent:example:event-separation`.
+
 Source R1: “On 2026-09-01 at 09:00 UTC, we observed the cache fail.”
 One `kmp_write_memory` example:
 
@@ -14,6 +24,12 @@ Expect `accepted:true`, generated refs and a receipt. Copy the refs. Acceptance
 validates the packet, not fidelity to the source. Check the stored clocks and
 evidence. On rejection no part of the batch is committed: read all feedback,
 repair from the source, and retry. Replay an accepted packet with its same key.
+
+Rich links return `status:needs_review`, `accepted:false`: nothing written.
+Review the stored/proposed neighborhood and link directions. Expand omissions
+when needed. Resume the returned write action, or correct the proposal. Local
+links and `strict:false` still require review; stale context refreshes it. This
+is your review, not a request for human approval. A short view is not full proof.
 
 Read returned `relations` as `from -> rel -> to` (`@id` uses `local_refs`).
 In `connect_to`, the containing memory is `from`; `ref` is `to`:

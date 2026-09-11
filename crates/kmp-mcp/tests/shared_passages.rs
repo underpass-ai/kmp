@@ -3,6 +3,8 @@
 mod dependency_checks;
 #[path = "support/guidance_fixture.rs"]
 mod fixture;
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use fixture::*;
 use kmp_mcp::KernelMcpServer;
 use kmp_proto_mapping::context_projection::expand_packet;
@@ -63,6 +65,7 @@ async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
     write["memories"][0]["evidence"]=json!("S1 records the route opening on Tuesday, subject to explicit permission; R8 is not included. ".repeat(30));
     write["memories"].as_array_mut().expect("mutable array").push(json!({"id":"decision","kind":"decision","observed_at":"2026-09-09T11:00:00Z","summary":"Schedule delivery on Tuesday.","evidence":"S2 schedules delivery to match S1 route opening. ".repeat(30),"connect_to":[{"ref":"source","rel":"chosen_because","class":"motivational","why":"The route opening motivates Tuesday delivery.","evidence":"S2 explicitly chooses Tuesday because S1 records the route opening. ".repeat(20)}]}));
     let receipt = call(&server, "kmp_write_memory", write.clone()).await;
+    let receipt = reviewed_writer::review_authored_write(&server, receipt).await;
     assert_eq!(receipt["isError"], false, "{receipt}");
     let refs = &receipt["structuredContent"]["local_refs"];
     let mut queries = vec![
@@ -110,6 +113,18 @@ async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
             server = server.with_shared_passages(true);
             let shared = call(&server, tool, args.clone()).await;
             assert_eq!(shared["isError"], false, "{tool}: {shared}");
+            assert_eq!(
+                inline["content"][0], shared["content"][0],
+                "primary read notice: {tool}"
+            );
+            assert_eq!(
+                shared["content"][0]["text"]
+                    .as_str()
+                    .expect("primary text")
+                    .starts_with("READ_INCOMPLETE:"),
+                guidance(&shared)["signals"]["packet_partial"] == true,
+                "notice and optional guidance agree: {tool}"
+            );
             let body = &shared["structuredContent"];
             assert!(body.to_string().len() <= inline["structuredContent"].to_string().len());
             encoded_pages += usize::from(body.get("passages").is_some());

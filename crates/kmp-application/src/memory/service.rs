@@ -57,7 +57,33 @@ where
         &self,
         command: MemoryIngestCommand,
     ) -> Result<MemoryIngestOutcome, ApplicationError> {
-        let mut existing = self.existing_memory_refs(&command.about).await?;
+        let reviewing = super::write_neighborhood::requires_review(&command);
+        let read_guard = if reviewing {
+            Some(self.command_application.projection_read().await)
+        } else {
+            None
+        };
+        // SQLite publishes events and projections together. Sampling each
+        // about before and after reading rejects a mixed-version neighborhood
+        // even when another process commits between the individual queries.
+        let mut revisions = BTreeMap::new();
+        if reviewing {
+            revisions.insert(
+                command.about.clone(),
+                self.command_application
+                    .memory_revision(&command.about)
+                    .await?,
+            );
+        }
+        let mut bundles = self
+            .existing_memory_bundle(&command.about)
+            .await?
+            .into_iter()
+            .collect::<Vec<_>>();
+        let mut existing = bundles
+            .first()
+            .map(existing_refs_from_bundle)
+            .unwrap_or_default();
         // A relation that declares an equivalence across abouts must land
         // on a ref that exists somewhere; the translation refuses it unless
         // this read found it, and reads nothing for any other relation.
@@ -76,7 +102,27 @@ where
                 })
                 .await
             {
-                Ok(_) => {
+                Ok(detail) => {
+                    if reviewing {
+                        let owner =
+                            detail.node.properties.get("memory_about").ok_or_else(|| {
+                                ApplicationError::Validation(
+                                    "foreign endpoint lacks memory ownership".into(),
+                                )
+                            })?;
+                        if !bundles
+                            .iter()
+                            .any(|bundle| bundle.root_node_id().as_str() == owner)
+                        {
+                            revisions.insert(
+                                owner.clone(),
+                                self.command_application.memory_revision(owner).await?,
+                            );
+                            if let Some(bundle) = self.existing_memory_bundle(owner).await? {
+                                bundles.push(bundle);
+                            }
+                        }
+                    }
                     existing.foreign.insert(target_ref);
                 }
                 Err(ApplicationError::NotFound(_)) => {}
@@ -84,6 +130,37 @@ where
             }
         }
         let (update_context, mut outcome) = translate_memory_ingest(&command, &existing)?;
+        if reviewing
+            && self
+                .command_application
+                .accepted_outcome(&command.idempotency_key)
+                .await?
+                .is_none()
+        {
+            let neighborhood = super::write_neighborhood::build_neighborhood(&command, &bundles);
+            for about in &neighborhood.abouts {
+                if revisions.get(about).copied()
+                    != Some(self.command_application.memory_revision(about).await?)
+                {
+                    return Err(ApplicationError::RetryableConflict(
+                        "write neighborhood changed during read; retry the same logical write to refresh it".into(),
+                    ));
+                }
+            }
+            if command.neighborhood_review.as_deref() != Some(neighborhood.token.as_str()) {
+                outcome.neighborhood = Some(neighborhood);
+                outcome.receipt_ref = None;
+                outcome.clocks = None;
+                outcome.accepted = super::MemoryAcceptedCounts {
+                    entries: 0,
+                    relations: 0,
+                    evidence: 0,
+                };
+                outcome.created_dimensions.clear();
+                return Ok(outcome);
+            }
+        }
+        drop(read_guard);
         if command.dry_run {
             outcome.receipt_ref = None;
             // No ingestion clock was committed by a preview.
@@ -96,7 +173,7 @@ where
 
         let accepted = self
             .command_application
-            .update_context(update_context)
+            .update_context_after_read(update_context, &revisions)
             .await?;
         outcome.read_after_write_ready = true;
         outcome.replayed = accepted.replayed;
@@ -284,24 +361,24 @@ where
         &self,
         query: &TemporalMemoryQuery,
     ) -> Result<TemporalRead, ApplicationError> {
-        let render_options = memory_render_options(
-            query.token_budget,
-            query.max_tier,
-            KmpMode::ReasonPreserving,
-            EndpointHint::Neighborhood,
-        );
         let dimensions = query.dimensions.resolve_current_about(&query.about);
-        let context = self
-            .memory_context(
-                &query.about,
-                "temporal-reader",
-                query.depth,
-                &dimensions,
-                &render_options,
+        let roots = self.memory_context_roots(&query.about, &dimensions).await?;
+        let scopes = requested_dimension_scopes(&query.about, &dimensions, &roots);
+        let mut bundles = Vec::with_capacity(roots.len());
+        for root in roots {
+            let request = kmp_domain::NeighborhoodRequest::new(
+                root,
+                crate::queries::clamp_native_graph_traversal_depth(query.depth),
             )
-            .await?;
+            .with_scopes(scopes.clone());
+            bundles.push(
+                self.query_application
+                    .read_context_bundle(&request, "temporal-reader")
+                    .await?,
+            );
+        }
         Ok(TemporalRead {
-            context,
+            bundle: super::merge_memory_bundles::merge(bundles)?,
             dimensions,
         })
     }
@@ -334,9 +411,9 @@ where
         // about's labels, and says which are empty in this range. Under
         // `scope_ids` the graph read itself is narrowed to those scopes, so
         // the catalogue is what that read reached.
-        let catalogue = VisualLabel::catalogue(&read.context.bundle);
+        let catalogue = VisualLabel::catalogue(&read.bundle);
         let declarations = if query.level_of_detail == super::VisualLevelOfDetail::Moment {
-            super::visual_projection::declared_equivalences(&read.context.bundle)
+            super::visual_projection::declared_equivalences(&read.bundle)
         } else {
             Vec::new()
         };
@@ -383,6 +460,42 @@ where
             )
             .await?;
         apply_dimension_selection(result, &dimensions, &render_options)
+    }
+
+    /// Library-level seed discovery. The MCP transport does not expose this
+    /// internal role policy until its progressive agent surface is designed.
+    pub async fn evidence_paths(
+        &self,
+        request: kmp_domain::EvidencePathRequest,
+    ) -> Result<kmp_domain::EvidencePathResult, ApplicationError> {
+        request
+            .validate()
+            .map_err(|e| ApplicationError::Validation(e.to_string()))?;
+        validate_supplied_entry_ref(&request.about, "evidence seed", &request.from)
+            .map_err(ApplicationError::Validation)?;
+        if let Some(kmp_domain::TemporalCursor::Ref(reference)) = request.temporal.cursor() {
+            validate_supplied_entry_ref(&request.about, "as_of.ref", reference)
+                .map_err(ApplicationError::Validation)?;
+        }
+        self.query_application.evidence_paths(&request).await
+    }
+
+    pub async fn trace_search(
+        &self,
+        request: kmp_domain::TraceSearchRequest,
+    ) -> Result<kmp_domain::TraceSearchResult, ApplicationError> {
+        request
+            .validate()
+            .map_err(|e| ApplicationError::Validation(e.to_string()))?;
+        for reference in std::iter::once(&request.from).chain(request.targets.iter()) {
+            validate_supplied_entry_ref(&request.about, "trace search ref", reference)
+                .map_err(ApplicationError::Validation)?;
+        }
+        if let Some(kmp_domain::TemporalCursor::Ref(reference)) = request.temporal.cursor() {
+            validate_supplied_entry_ref(&request.about, "as_of.ref", reference)
+                .map_err(ApplicationError::Validation)?;
+        }
+        self.query_application.trace_search(&request).await
     }
 
     pub async fn trace(
@@ -484,20 +597,27 @@ where
             .filter(|relationship| relationship.relationship_type == "supports")
             .map(|relationship| relationship.source_node_id.clone())
             .collect::<BTreeSet<_>>();
-        for evidence_ref in supporting_refs {
-            let evidence_detail = match self
+        // One source has no dispatches to amortize. Keep its existing direct
+        // operation; collect typed nodes and bodies together for larger sets.
+        let sources = if supporting_refs.len() == 1 {
+            let node_id = supporting_refs.into_iter().next().expect("one source");
+            vec![match self
                 .query_application
-                .get_node_detail(GetNodeDetailQuery {
-                    node_id: evidence_ref,
-                })
+                .get_node_detail(GetNodeDetailQuery { node_id })
                 .await
             {
-                Ok(detail) => detail,
-                // A stale edge must not make the inspected node disappear.
-                // It is not evidence unless its typed source still exists.
-                Err(ApplicationError::NotFound(_)) => continue,
+                Ok(detail) => Some(detail),
+                Err(ApplicationError::NotFound(_)) => None,
                 Err(error) => return Err(error),
-            };
+            }]
+        } else {
+            self.query_application
+                .get_node_details(supporting_refs.into_iter().collect())
+                .await?
+        };
+        // A stale edge is not evidence; a present typed source with no body
+        // retains the same fallback as the single-node operation.
+        for evidence_detail in sources.into_iter().flatten() {
             if !is_memory_evidence_kind(&evidence_detail.node.node_kind) {
                 continue;
             }
@@ -535,6 +655,18 @@ where
         &self,
         about: &str,
     ) -> Result<ExistingMemoryRefs, ApplicationError> {
+        Ok(self
+            .existing_memory_bundle(about)
+            .await?
+            .as_ref()
+            .map(existing_refs_from_bundle)
+            .unwrap_or_default())
+    }
+
+    async fn existing_memory_bundle(
+        &self,
+        about: &str,
+    ) -> Result<Option<KmpBundle>, ApplicationError> {
         match self
             .query_application
             .get_context(GetContextQuery {
@@ -550,8 +682,8 @@ where
             })
             .await
         {
-            Ok(result) => Ok(existing_refs_from_bundle(&result.bundle)),
-            Err(ApplicationError::NotFound(_)) => Ok(ExistingMemoryRefs::default()),
+            Ok(result) => Ok(Some(result.bundle)),
+            Err(ApplicationError::NotFound(_)) => Ok(None),
             Err(error) => Err(error),
         }
     }
@@ -660,7 +792,7 @@ where
 /// One temporal read before its filter: the context the graph returned and
 /// the selection resolved against the current about.
 struct TemporalRead {
-    context: GetContextResult,
+    bundle: KmpBundle,
     dimensions: DimensionSelection,
 }
 
@@ -669,11 +801,7 @@ fn temporal_result(
     query: TemporalMemoryQuery,
     read: TemporalRead,
 ) -> Result<TemporalMemoryResult, ApplicationError> {
-    let TemporalRead {
-        context,
-        dimensions,
-    } = read;
-    let quality = context.rendered.quality.clone();
+    let TemporalRead { bundle, dimensions } = read;
 
     let request = TemporalTraversalRequest::new(query.direction, query.cursor)
         .with_entry_selection(query.entry_selection)
@@ -694,18 +822,17 @@ fn temporal_result(
 
     // Apply temporal membership admission before entry predicates and lanes.
     // Proof can include older antecedents, but no labels beyond its upper cut.
-    let traversal = TemporalMemoryTraversal::traverse(&context.bundle, &request)?;
+    let traversal = TemporalMemoryTraversal::traverse(&bundle, &request)?;
     let source_bundle = filter_bundle_by_memory_dimensions_with_labels(
-        &context.bundle,
+        &bundle,
         &dimensions,
-        &traversal.proof_labels(&context.bundle)?,
+        &traversal.proof_labels(&bundle)?,
     )?;
 
     Ok(TemporalMemoryResult {
         traversal,
         source_bundle,
         include: query.include,
-        quality,
     })
 }
 
@@ -1020,70 +1147,12 @@ fn merge_context_results(
         return Ok(result);
     }
 
-    let mut node_ids = BTreeSet::from([result.bundle.root_node().node_id().to_string()]);
-    let mut neighbor_nodes = result.bundle.neighbor_nodes().to_vec();
-    for node in &neighbor_nodes {
-        node_ids.insert(node.node_id().to_string());
-    }
-
-    let mut relationships = result.bundle.relationships().to_vec();
-    let mut relationship_ids = relationships
-        .iter()
-        .map(relationship_key)
-        .collect::<BTreeSet<_>>();
-    let mut node_details = result.bundle.node_details().to_vec();
-    let mut detail_ids = node_details
-        .iter()
-        .map(|detail| detail.node_id().to_string())
-        .collect::<BTreeSet<_>>();
-
-    for other in results {
-        push_node(&mut neighbor_nodes, &mut node_ids, other.bundle.root_node());
-        for node in other.bundle.neighbor_nodes() {
-            push_node(&mut neighbor_nodes, &mut node_ids, node);
-        }
-        for relationship in other.bundle.relationships() {
-            if relationship_ids.insert(relationship_key(relationship)) {
-                relationships.push(relationship.clone());
-            }
-        }
-        for detail in other.bundle.node_details() {
-            if detail_ids.insert(detail.node_id().to_string()) {
-                node_details.push(detail.clone());
-            }
-        }
-    }
-
-    result.bundle = KmpBundle::new(
-        result.bundle.root_node_id().clone(),
-        result.bundle.role().clone(),
-        result.bundle.root_node().clone(),
-        neighbor_nodes,
-        relationships,
-        node_details,
-        result.bundle.metadata().clone(),
-    )
-    .map_err(ApplicationError::Domain)?;
+    let bundles = std::iter::once(result.bundle)
+        .chain(results.into_iter().map(|other| other.bundle))
+        .collect();
+    result.bundle = super::merge_memory_bundles::merge(bundles)?;
     result.rendered = render_graph_bundle_with_options(&result.bundle, render_options);
     Ok(result)
-}
-
-fn push_node(
-    neighbor_nodes: &mut Vec<BundleNode>,
-    node_ids: &mut BTreeSet<String>,
-    node: &BundleNode,
-) {
-    if node_ids.insert(node.node_id().to_string()) {
-        neighbor_nodes.push(node.clone());
-    }
-}
-
-fn relationship_key(relationship: &BundleRelationship) -> (String, String, String) {
-    (
-        relationship.source_node_id().to_string(),
-        relationship.target_node_id().to_string(),
-        relationship.relationship_type().to_string(),
-    )
 }
 
 #[cfg(test)]

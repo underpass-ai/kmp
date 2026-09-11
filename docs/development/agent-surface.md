@@ -318,6 +318,38 @@ mover una lista a un nodo no elimina su coste cuando ese nodo se consulta. La
 misma ayuda aparece en texto para hosts que no muestran structuredContent;
 contar por separado esa representación y el sobre completo.
 
+### Contexto previo de escritura
+
+Al cambiar qué relaciones requieren revisión, mantener coherentes el predicado
+nativo `memory/write_neighborhood.rs`, el compilador, `needs_review` y la
+recomendación. `strict:false` y los enlaces locales no eluden la condición.
+SQLite admite varias sesiones sobre el mismo almacén. Comparar las revisiones
+antes y después de leer cada about evita aceptar una vecindad mezclada. El commit
+SQLite vuelve a comprobar todos los abouts leídos, incluidos extremos extranjeros,
+y guarda evento, recibo y proyección en una transacción. El bloqueo local del
+servicio sólo ordena su instancia; no demuestra exclusión entre procesos.
+Los adaptadores de eventos y proyección separados conservan ese límite local:
+esta garantía entre motores corresponde al backend SQLite. Conservar la
+comprobación de idempotencia antes de exigir contexto nuevo a una operación ya
+aceptada. Ninguna transacción queda abierta mientras el agente revisa la respuesta.
+Las operaciones directas de mantenimiento/importación de puertos requieren un
+almacén sin escritores activos; no son escrituras coordinadas del servicio.
+
+El token incorpora la propuesta lógica y el material seleccionado completo,
+incluidas omisiones. Las continuaciones usan el directorio existente: resuelven
+antes de autorizar, mantienen el verbo y la identidad del lote, sobreviven a una
+reconexión dentro de su caducidad y nunca conceden permisos. Si no se puede
+retener el lote, devolver la acción completa. Un reconocimiento de entrega no
+es una prueba de comprensión ni de suficiencia semántica.
+
+Verificar contexto cambiado, reintento aceptado, misma tanda, ámbitos ajenos,
+restricción antigua, contradicciones, texto largo con negación final y costes
+del resultado MCP completo. Mostrar índices de enlaces como índices del paquete,
+no como refs. Conservar las omisiones y la expansión nativa. Actualizar ficha,
+verbo, entrada, instrucciones de sesión y ejemplos: cada ejemplo afectado debe
+mostrar explícitamente preparación y reanudación; el replay no debe confirmarlas
+a escondidas. No añadir gates editoriales al CI por estas recomendaciones.
+
 ## 3. Regenerar con el motor correspondiente
 
 Desde la raíz del repo, usar un target separado si hay un binario congelado
@@ -524,6 +556,23 @@ modificarlo; mantener las pruebas del contrato nativo y del vocabulario real.
 
 ### Señales del resultado de escritura
 
+El valor por defecto de observación se resuelve en `kmp-application/memory`,
+usando el mismo instante que asigna la ingestión. El compilador semántico activa
+`default_observation_to_ingestion` en el comando canónico; el adaptador gRPC
+transmite esa política. No calcular la fecha en MCP antes del digest: el mismo
+reintento tendría otro contenido. El digest usa el comando sin resolver y el
+recibo guarda la memoria y procedencia resueltas. La ingestión canónica sin esa
+política conserva los tiempos ausentes. Las coordenadas ya ingeridas de una
+actualización de resumen se conservan, incluida una observación desconocida.
+
+Al cambiar los valores por defecto, revisar schema de raíz y de registro,
+herencia y null explícito, compiladores normal/batch/resumen, protobuf en ambas
+copias, mapping y aplicación. Mantener `clock_defaults` (plan) separado de
+`clocks` (resultado aceptado), y comprobar preview, rechazo atómico, reintento,
+reinicio e importación. Actualizar fichas write/time, verbos extendidos y ejemplo
+four-clocks; explicar el contrato humano en el nodo advanced:clocks. Esta lista
+es una pauta de mantenimiento, no un validador editorial del CI.
+
 La decisión committed/replayed procede de update_context en el punto que
 comprueba idempotencia. No inferirla de un reintento del host ni de la identidad
 persistente del agente. El resumen de relojes procede de la memoria canónica del
@@ -606,15 +655,197 @@ omitida por presupuesto, testimonios independientes y recuperación exacta de
 restricciones, conflictos y UNKNOWN. Medir también bindings, tablas y manifiestos;
 el ahorro del cuerpo de texto por sí solo no representa el contexto completo.
 
+### Trace con selección temporal
+
+`as_of`, `interval` o una lista `to` activan el recorrido acotado. Las coordenadas
+canónicas de `contains_entry` y las aristas se leen en la misma transacción;
+no usar el payload original del nodo después de relabel. El predicado temporal
+compartido vive en dominio; los adaptadores aplican el presupuesto antes de leer.
+Los índices por tipo evitan recorrer todo el fanout para localizar coordenadas.
+Comprobar consultas SQLite reales, no sólo cuántas filas devuelve el resultado.
+
+Al modificar esta superficie, conservar e incluir en el fingerprint el reloj,
+el corte resuelto, el estado de resolución, el trabajo de coordenadas y los
+índices de relaciones sin reloj. Probar corte inclusivo, intervalo semiabierto,
+ref sin reloj, presupuesto agotado durante admisión, arista posterior entre
+extremos antiguos y cambio concurrente de coordenadas. La página continúa el
+resultado seleccionado; no continúa la búsqueda ni promete un snapshot entre
+llamadas. Mantener la advertencia de que una ruta no determina verdad ni
+completitud de pruebas. Estas indicaciones son informativas, sin gate editorial.
+
+
+### Relojes propios de las relaciones
+
+La declaración semántica se fecha en ingest, una vez por comando aceptado.
+`MemoryRelationClocks` separa esos relojes de la pertenencia dimensional;
+`connect_to` no exige más campos. En lotes semánticos, observación procede de la declaración del miembro: herencia
+del paquete, override propio o ingesta exacta para null. El compilador fija esa
+procedencia antes de unir planes; no inferirla de un extremo al ingerir. Ocurrencia y vigencia sólo
+se conservan cuando están declaradas explícitamente para esa relación.
+La restauración canónica conserva relojes históricos; el replay usa el recibo.
+No fechar aristas antiguas durante su proyección. Un UPSERT nuevo representa
+la declaración almacenada actual; esto no añade versiones históricas de aristas.
+
+Mantener juntos protobuf canónico y vendorizado, mapper de ingest, proyección de
+payload, respuestas MCP directas y compactas de recall, VisualRelation y
+ChronoLoom (HTTP y MCP App). Las relaciones semánticas muestran `clocks` sin
+necesitar una dimensión; los enlaces estructurales conservan su coordenada.
+No duplicar los relojes en ambos grupos de una relación semántica. Dos valores
+explícitos incompatibles se rechazan. `clocks.relations` del recibo cuenta
+cobertura de enlaces; los contadores de entradas conservan su significado.
+
+Verificar extremos antiguos con declaración tardía, corte inclusivo y extremo
+superior exclusivo, omisión, overrides de registro, restauración y replay tras
+reinicio. Los relojes de la declaración no garantizan verdad ni completitud.
+Una proyección visual selecciona entradas: sus enlaces muestran las fechas,
+pero no sustituyen una lectura temporal de prueba. Actualizar guía, tarjetas y
+fixture del contrato en el mismo cambio, sin gate editorial.
 
 ### Asociaciones de evidencia y sus relojes
 
 `memory.evidence[].time` conserva el instante de la fuente. `support_clocks`
-fecha la declaración de sus asociaciones: observación del paquete o ingesta
-si falta, e ingesta aceptada por KMP. No copiar fechas de los extremos ni retimar
+fecha la declaración de sus asociaciones: observación propia, del paquete o
+ingesta si falta, e ingesta aceptada por KMP. El lote semántico preserva la
+observación efectiva del miembro también aquí, incluido null que limpia la raíz.
+Con default_observation_to_ingestion, un objeto explícito de relojes sin observación
+ni ingesta restaurada recibe el instante de ingesta; un objeto ausente conserva
+la herencia canónica del paquete. Ver [diseño y controles](batch-proof-observation.md). No copiar fechas de los extremos ni retimar
 la fuente. Al cambiar este contrato, revisar el DTO canónico, ambos protobufs,
 traductor de ingest, proyección del evento y mappers de evidencia en recall,
 temporal e Inspect. La admisión temporal debe filtrar candidatos y soportes,
 no sólo esconder la arista en la respuesta. Probar fuente antigua/asociación
 posterior, cortes inclusivos/exclusivos, replay y restauración. Sin campos nuevos
 obligatorios para el escritor ni relojes inventados al reproyectar eventos antiguos.
+
+
+### Trace candidate routes
+
+Candidate discovery lives in domain (`bounded_trace_search` and
+`TraceCandidateFrontier`); storage admission stays in `TraceTemporalAdmission`
+and `TraceReadBudget`. Change both protobuf copies, proto request/result mapping,
+MCP request parser, trace projection and tool schema together. `follow` replaces
+global filters; `paths_per_target` changes the route quota, not proof truth.
+Preserve arrows and shared global indexes across pages. Count rejected cycle
+attempts in max_states, cache only completely expanded adjacency, and retain
+early routes at a later work cutoff. Test mixed direction, reconvergence, hubs,
+deep paths, temporal exclusions, quotas, zero hops and cursor reconstruction.
+See [candidate discovery design](trace-alternatives.md). Guidance and cost
+accounting remain documentation, with no new CI gate.
+
+
+### Trace material selection
+
+Native `select_trace_material` selects over the bounded candidate catalogue;
+`TraceMaterialSelection` validates explicit caller requirements. Change the two
+protobufs, request maps, route/clock reindexing, full-candidate cursor digest,
+MCP parser/schema/projection and optional expansion action together. The expansion
+belongs in `search.material.expand_candidates`, never mandatory `next_actions`.
+It must preserve all selection arguments except select and the old page cursor.
+
+Update the audit card, audit verb and bounded-trace example together, then
+regenerate the installed guides and surface fixtures. Verify AND/OR, shared
+material, zero benefit, infeasible requirements, hidden-candidate changes and
+pagination. Measure the entire response and any optional expansion separately;
+material nodes are not tokens. Keep calibration frozen for comparisons and
+retain failed runs. See [mathematical policy](trace-material-selection.md).
+These maintenance instructions add no editorial CI gate.
+
+
+### Trace dimensional routing
+
+Reuse DimensionSelection/LabelSelector/EntryLabels and their parser. Hard
+search.dimensions and soft search.prefer_dimensions are separate choices; do
+not silently turn the latter into admission. Trace reads memberships only on
+the selected clock inside the same bounded ReadTx. Keep scope current_about.
+
+Maintain both protobuf copies, request maps, queue scheduling, stats projection,
+material-selection reindexing and cursor binding together. Explain preference
+counts as observations, not truth. Unconfigured calls keep their prior output
+and BFS cost. Update audit card, extended verb and bounded-trace example, then
+regenerate. Validate a useful hint, a misleading hint with a bridge, temporal
+multivalue/negative selectors, hard exclusion, dense fanout, stale labels and
+full response costs. Do not tune the fixed 3:1 schedule on those controls.
+See [policy and known limits](trace-dimensional-routing.md). No editorial gate.
+
+### Resumable focused Trace exploration
+
+When changing discovery scheduling, keep the announced routing order, counters,
+extended audit guide and bounded-trace example consistent. A resumed expansion
+turn is not a new path state: S counts eligible extension attempts; N/E count
+actual references/rows. Report coordinate work and empty storage end probes.
+Share partial adjacency between alternatives in one ReadTx, retain per-path
+offsets, and give resumed queue entries fresh tickets so stale heap/FIFO entries
+cannot consume them twice. Leaf claims require full admitted adjacency exhaustion.
+Compare exact default BFS responses, late edges, misleading bridges, reconvergence,
+mixed directions/clocks and depth/work cuts. Freeze the page quantum before
+measurement; document its tradeoffs without a new size or editorial CI gate.
+See [policy and controls](trace-page-exploration.md).
+
+### Seed-based joint evidence paths
+
+`search.seek` compiles native relations and witness constraints in proto mapping.
+Keep both protobuf copies, MCP parser/schema, embedded/gRPC dispatch, result
+projection, cursor fingerprint and three-section pagination together. No caller
+variables or destination gold refs. Every role has one main witness; via/after
+retain its position. Shared labels are joint intersections, same_ref is exact
+reference equality, and missing labels/clocks never become known by joining.
+Do not add private witness bindings to the solver merely for display: that would
+change ambiguity. Witness refs are projected from the validated seek request.
+
+Update the audit card, extended verb, evidence-seek lesson and typed error help;
+regenerate guide assets and review both tool catalog fixtures. Validate incoming
+arrows, deep/unlabelled bridges, incompatible/unknown groups, hidden-group cursor
+changes, all page sections, work cuts and old Trace. Context review is optional,
+separate from continuations and only offered at an equivalent explicit cut.
+Measure complete native calls against frozen controls; do not claim NLP or agent
+understanding from a deterministic compiler replay. These are maintenance
+instructions, not new editorial CI gates.
+
+For contextual seek, keep `via:"context"`, typed `context`, `context_discovery`
+and `context_hops` consistent through the same boundaries. The witness offset
+comes from the candidate's actual prefix depth. Include discovery mode and
+prefix lengths in the fingerprint. Document minimum-hop selection and retained
+ties, temporal/ownership/proof admission, explicit obligation input and required
+semantic review. Verify unknown/future links, mixed directions, joint conflicts,
+cycles, deep chains, all pages and embedded/gRPC parity. A discovered contextual
+prefix does not entail a claim about the seed. Compression is a later optional
+reader projection; add no writer fields or editorial CI gate here.
+
+For relation endpoint equality, maintain TraceReferenceEndpoint in both protobufs,
+JSON same_ref members, zero-position contextual capture, candidate.anchor, binding
+endpoints and their whole-selection fingerprint together. Anchor means traversal
+start of the main relation, after via/context; it is the stored target when the
+move is incoming. Preserve role-string witness shorthand. Groups partition
+endpoints so one role can join an action and a person separately. Test different
+actions with the same witnesses/labels, convergence, fixed prefixes, unknowns,
+disjoint endpoint validation, paging and real gRPC. Update the reduced audit card,
+extended audit, human guide and evidence-seek example. Contextual compatibility
+remains a lead requiring original source review, not logical entailment.
+
+### Trace: mantener separados los modos
+
+Al cambiar opciones de Trace, asignarlas a destinos conocidos o a evidencia desde
+semilla. Mantener `oneOf`/campos permitidos en el esquema y el rechazo agrupado
+antes de interpretar cuerpos incompatibles; no añadir un selector redundante.
+Las definiciones compartidas permanecen únicas para conservar la validación
+recursiva de campos desconocidos. Verificar ambas familias válidas y la reparación
+de mezclas con `to`, opciones de destino y límites comunes.
+
+Actualizar tarjeta, verbo ampliado, guía humana y ejemplos en el mismo cambio.
+Contrastar misma acción frente a copia/publicación distintas y escribir el reloj
+explícito en ejemplos históricos. Comparar resultados válidos completos y medir
+esquema, tarjeta y rechazos, sin inferir comprensión de agentes del replay.
+[Diseño y aceptación](trace-search-modes.md); instrucciones informativas, sin CI
+editorial adicional.
+
+### Aviso principal de lectura incompleta
+
+`tool_result::packet_is_partial` deriva el estado de entrega de page.has_more,
+projection.page.has_more y projection.core_text_shortened. El primer texto de
+lecturas parciales y la ayuda opcional usan esa misma función. No confundir con
+selection.has_more, límites de búsqueda o la vecindad previa del escritor.
+Mantener el objeto estructurado y sus presupuestos intactos: el aviso pertenece
+al sobre, no a la fuente. Probar continuación real sin contexto, con contexto,
+UNKNOWN completo, núcleo abreviado y otra posición histórica tras página completa.
+Actualizar entrada, tarjeta temporal, verbo y ejemplo de presupuesto; medir el
+sobre completo además del cuerpo. [Diseño](read-progress.md), sin CI editorial.

@@ -37,6 +37,9 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
     authorize_about(identity, arguments)?;
     authorize_dimensions(identity, arguments)?;
     authorize_write_scope_ids(identity, name, arguments)?;
+    if name == "kmp_write_memory" {
+        authorize_write_review(identity, arguments)?;
+    }
 
     if requests_raw(name, arguments) {
         require_scope(identity, RAW_SCOPE)?;
@@ -110,6 +113,50 @@ fn canonical_tool_name(name: &str) -> &str {
             _ => name,
         })
         .unwrap_or(name)
+}
+
+/// Semantic review reads surrounding memory. Reuse the existing read/about
+/// grants before reaching the backend, also after resolving a continuation.
+fn authorize_write_review(
+    identity: &Identity,
+    arguments: &Value,
+) -> Result<(), AuthorizationError> {
+    let links = arguments["memories"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|entry| entry["connect_to"].as_array().into_iter().flatten())
+        .collect::<Vec<_>>();
+    let reviews = links.iter().any(|link| {
+        link["rel"].as_str().is_some_and(|rel| {
+            kmp_domain::MemoryRelationType::new(rel)
+                .is_ok_and(|relation| relation.requires_writer_review())
+        })
+    });
+    if !reviews {
+        return Ok(());
+    }
+    require_scope(identity, READ_SCOPE)?;
+    for link in links {
+        if let Some(reference) = link["ref"]
+            .as_str()
+            .filter(|reference| !reference.starts_with('@') && reference.contains(':'))
+        {
+            require_allowed(
+                identity.abouts.contains("*")
+                    || identity
+                        .abouts
+                        .iter()
+                        .any(|about| reference_belongs_to_about(reference, about)),
+                || {
+                    format!(
+                        "write neighborhood needs a read grant for the about owning `{reference}`"
+                    )
+                },
+            )?;
+        }
+    }
+    Ok(())
 }
 
 fn authorize_write_scope_ids(
@@ -377,6 +424,40 @@ mod tests {
 
     fn call(name: &str, arguments: Value) -> Value {
         json!({"method":"tools/call","params":{"name":name,"arguments":arguments}})
+    }
+
+    #[test]
+    fn rich_write_review_requires_read_scope_even_when_non_strict_or_resumed() {
+        let mut arguments = json!({"about":"project:kmp", "options":{"strict":false},
+            "memories":[{"id":"one","connect_to":[{"ref":"two","rel":"verified_by"}]}]});
+        let write_only = identity(&[WRITE_SCOPE]);
+        assert!(authorize(&write_only, &call("kmp_write_memory", arguments.clone())).is_err());
+        arguments["review_token"] = json!("a".repeat(64));
+        assert!(authorize(&write_only, &call("kmp_write_memory", arguments.clone())).is_err());
+        assert!(
+            authorize(
+                &identity(&[READ_SCOPE, WRITE_SCOPE]),
+                &call("kmp_write_memory", arguments.clone())
+            )
+            .is_ok()
+        );
+        arguments["memories"][0]["connect_to"] = json!([]);
+        assert!(authorize(&write_only, &call("kmp_write_memory", arguments)).is_ok());
+    }
+
+    #[test]
+    fn external_ref_grant_does_not_grant_the_foreign_neighborhood() {
+        let mut actor = identity(&[WRITE_SCOPE, READ_SCOPE]);
+        actor.ref_prefixes.insert("project:foreign:".into());
+        let request = call(
+            "kmp_write_memory",
+            json!({"about":"project:kmp", "memories":[{
+                "id":"one","connect_to":[{"ref":"project:foreign:entry:one","rel":"same_entity_as"}]
+            }]}),
+        );
+        assert!(authorize(&actor, &request).is_err());
+        actor.abouts.insert("project:foreign".into());
+        assert!(authorize(&actor, &request).is_ok());
     }
 
     #[test]

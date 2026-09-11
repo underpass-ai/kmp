@@ -13,8 +13,8 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_domain::{
-    KmpBundle, RelationExplanation, TemporalAxis, TemporalCoordinate, TemporalCursor,
-    TemporalSelection, compare_temporal_instants,
+    KmpBundle, TemporalAxis, TemporalCoordinate, TemporalCursor, TemporalSelection,
+    compare_temporal_instants,
 };
 use kmp_proto::v1beta1::{MemoryEvidence, NearestOutside, TemporalInterval as ProtoInterval};
 use prost_types::Timestamp;
@@ -98,12 +98,13 @@ impl TemporalAdmission {
             Some(TemporalCursor::Sequence(_)) | None => None,
         };
 
+        let window = kmp_domain::TemporalReadWindow::new(selection, resolved_as_of.as_deref());
         let admitted = coordinates
             .iter()
             .filter(|(_, coordinates)| {
-                coordinates.iter().any(|coordinate| {
-                    admits_coordinate(coordinate, axis, selection, resolved_as_of.as_deref())
-                })
+                coordinates
+                    .iter()
+                    .any(|coordinate| window.admits_coordinate(coordinate))
             })
             .map(|(entry_ref, _)| entry_ref.clone())
             .collect::<BTreeSet<_>>();
@@ -144,7 +145,10 @@ impl TemporalAdmission {
         };
         // Keep a key even when no association survives. Candidate.supports is
         // from the current payload and must not bypass the historical edges.
-        let boundary = admission.lifecycle_instant();
+        let window = kmp_domain::TemporalReadWindow::new(
+            &admission.selection,
+            admission.resolved_as_of.as_deref(),
+        );
         for edge in bundle
             .relationships()
             .iter()
@@ -152,7 +156,7 @@ impl TemporalAdmission {
         {
             let admitted = !admission.excludes(edge.source_node_id())
                 && !admission.excludes(edge.target_node_id())
-                && admission.admits_relation_clock(edge.explanation(), boundary);
+                && window.admits_relation_clock(edge.explanation());
             let targets = admission
                 .supported_by
                 .entry(edge.source_node_id().to_owned())
@@ -194,14 +198,8 @@ impl TemporalAdmission {
     }
 
     pub(super) fn admits_coordinate(&self, coordinate: &TemporalCoordinate) -> bool {
-        self.selection.axis().is_none_or(|axis| {
-            admits_coordinate(
-                coordinate,
-                axis,
-                &self.selection,
-                self.resolved_as_of.as_deref(),
-            )
-        })
+        kmp_domain::TemporalReadWindow::new(&self.selection, self.resolved_as_of.as_deref())
+            .admits_coordinate(coordinate)
     }
 
     /// Whether a node stands in time outside the selection: an entry with a
@@ -225,14 +223,15 @@ impl TemporalAdmission {
         if self.admitted.is_none() {
             return Cow::Borrowed(bundle);
         }
-        let boundary = self.lifecycle_instant();
+        let window =
+            kmp_domain::TemporalReadWindow::new(&self.selection, self.resolved_as_of.as_deref());
         let relationships = bundle
             .relationships()
             .iter()
             .filter(|relationship| {
                 !self.excludes(relationship.source_node_id())
                     && !self.excludes(relationship.target_node_id())
-                    && self.admits_relation_clock(relationship.explanation(), boundary)
+                    && window.admits_relation_clock(relationship.explanation())
             })
             .cloned()
             .collect();
@@ -258,52 +257,8 @@ impl TemporalAdmission {
         &self,
         relationship: &kmp_domain::BundleRelationship,
     ) -> bool {
-        let explanation = relationship.explanation();
-        if !self.admits_relation_clock(explanation, self.lifecycle_instant()) {
-            return false;
-        }
-        if self.axis() != TemporalAxis::Validity {
-            return true;
-        }
-        let start = match &self.selection {
-            TemporalSelection::AsOf { .. } => self.resolved_as_of.as_deref(),
-            TemporalSelection::Within { interval, .. } => interval.start(),
-            TemporalSelection::Frontier => None,
-        };
-        match (explanation.valid_until(), start) {
-            (Some(end), Some(start)) => {
-                compare_temporal_instants(end, start) == Some(Ordering::Greater)
-            }
-            _ => true,
-        }
-    }
-
-    fn admits_relation_clock(
-        &self,
-        explanation: &RelationExplanation,
-        boundary: Option<LifecycleInstant>,
-    ) -> bool {
-        let Some(boundary) = boundary else {
-            return true;
-        };
-        let at = match self.axis() {
-            TemporalAxis::Occurred => explanation.occurred_at(),
-            TemporalAxis::Observed => explanation.observed_at(),
-            TemporalAxis::Ingested => explanation.ingested_at(),
-            TemporalAxis::Validity => explanation.valid_from(),
-            TemporalAxis::Default => explanation
-                .occurred_at()
-                .or_else(|| explanation.valid_from())
-                .or_else(|| explanation.observed_at())
-                .or_else(|| explanation.ingested_at()),
-        };
-        // A missing clock does not prove that a link arrived later. Preserve
-        // it without substituting another clock or inventing its timestamp.
-        let Some(at) = timestamp_from_sort_or_rfc3339(at) else {
-            return true;
-        };
-        let instant = (at.seconds, at.nanos);
-        instant < boundary.at || (boundary.inclusive && instant == boundary.at)
+        kmp_domain::TemporalReadWindow::new(&self.selection, self.resolved_as_of.as_deref())
+            .admits_dependency_relation(relationship.explanation())
     }
 
     /// Whether the recall is bounded to a span — the one case an UNKNOWN can
@@ -464,35 +419,7 @@ pub(super) fn coordinates_by_ref(bundle: &KmpBundle) -> BTreeMap<String, Vec<Tem
 /// The instant one coordinate stands at on the clock read. An explicit clock
 /// never substitutes another; the compatible precedence resolves to the
 /// first clock the coordinate carries and says which.
-pub(super) fn clock_instant(
-    coordinate: &TemporalCoordinate,
-    axis: TemporalAxis,
-) -> Option<(&str, TemporalAxis)> {
-    match axis {
-        TemporalAxis::Occurred => coordinate.occurred_at().map(|at| (at, axis)),
-        TemporalAxis::Observed => coordinate.observed_at().map(|at| (at, axis)),
-        TemporalAxis::Ingested => coordinate.ingested_at().map(|at| (at, axis)),
-        TemporalAxis::Validity => coordinate.valid_from().map(|at| (at, axis)),
-        TemporalAxis::Default => coordinate
-            .occurred_at()
-            .map(|at| (at, TemporalAxis::Occurred))
-            .or_else(|| {
-                coordinate
-                    .valid_from()
-                    .map(|at| (at, TemporalAxis::Validity))
-            })
-            .or_else(|| {
-                coordinate
-                    .observed_at()
-                    .map(|at| (at, TemporalAxis::Observed))
-            })
-            .or_else(|| {
-                coordinate
-                    .ingested_at()
-                    .map(|at| (at, TemporalAxis::Ingested))
-            }),
-    }
-}
+pub(super) use kmp_domain::temporal_clock_instant as clock_instant;
 
 fn earliest_instant(
     coordinates: &[TemporalCoordinate],
@@ -506,53 +433,6 @@ fn earliest_instant(
             instant: instant.to_string(),
             clock,
         })
-}
-
-fn admits_coordinate(
-    coordinate: &TemporalCoordinate,
-    axis: TemporalAxis,
-    selection: &TemporalSelection,
-    resolved_as_of: Option<&str>,
-) -> bool {
-    match selection {
-        TemporalSelection::Frontier => true,
-        TemporalSelection::AsOf { .. } => {
-            let Some(at) = resolved_as_of else {
-                return false;
-            };
-            if axis == TemporalAxis::Validity {
-                // In force at the instant: started by then and not yet ended.
-                // An entry with no validity clock at all has nothing to say
-                // on this axis, and an explicit clock never substitutes.
-                if coordinate.valid_from().is_none() && coordinate.valid_until().is_none() {
-                    return false;
-                }
-                return coordinate.valid_from().is_none_or(|from| {
-                    matches!(
-                        compare_temporal_instants(from, at),
-                        Some(Ordering::Less | Ordering::Equal)
-                    )
-                }) && coordinate.valid_until().is_none_or(|until| {
-                    compare_temporal_instants(at, until) == Some(Ordering::Less)
-                });
-            }
-            clock_instant(coordinate, axis).is_some_and(|(instant, _)| {
-                matches!(
-                    compare_temporal_instants(instant, at),
-                    Some(Ordering::Less | Ordering::Equal)
-                )
-            })
-        }
-        TemporalSelection::Within { interval, .. } => {
-            if axis == TemporalAxis::Validity {
-                if coordinate.valid_from().is_none() && coordinate.valid_until().is_none() {
-                    return false;
-                }
-                return interval.overlaps(coordinate.valid_from(), coordinate.valid_until());
-            }
-            clock_instant(coordinate, axis).is_some_and(|(instant, _)| interval.contains(instant))
-        }
-    }
 }
 
 fn axis_name(axis: TemporalAxis) -> &'static str {

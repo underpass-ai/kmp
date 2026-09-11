@@ -30,7 +30,13 @@ impl ToolErrorHelp {
             }
         }
         if examples.is_empty() {
-            examples.push(default_example);
+            examples.push(
+                if tool == "kmp_trace" && arguments.pointer("/search/seek").is_some() {
+                    "example:evidence-seek"
+                } else {
+                    default_example
+                },
+            );
         }
         Some(json!({
             "guide": Self::read(verb),

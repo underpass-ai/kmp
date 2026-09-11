@@ -18,6 +18,23 @@ impl ReadSelectionFingerprint {
         digest.finish()
     }
 
+    pub(super) fn trace_search(response: &kmp_proto::v1beta1::TraceResponse) -> String {
+        let mut digest = Self(Sha256::new());
+        digest.bytes(b"kmp.trace.search.v1");
+        digest.bytes(response.summary.as_bytes());
+        digest.messages("trace", &response.trace);
+        digest.messages("routes", &response.routes);
+        if let Some(seek) = &response.seek {
+            digest.message(seek);
+            digest.messages("candidates", &response.candidates);
+            digest.messages("groups", &response.groups);
+        }
+        if let Some(search) = &response.search {
+            digest.message(search);
+        }
+        digest.finish()
+    }
+
     pub(super) fn relate(response: &RelateResponse) -> String {
         let mut digest = Self(Sha256::new());
         digest.bytes(b"kmp.relate.selection.v1");

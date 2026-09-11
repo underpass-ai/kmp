@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use kmp_application::RenderedContext;
 use kmp_domain::{
     BundleNodeDetail, BundleRelationship, KmpBundle, MemoryDimensionIdentity, MemoryRelationType,
-    RelationExplanation, TemporalCoordinate,
+    RelationExplanation, RelationSemanticClass, TemporalCoordinate,
 };
 use kmp_proto::v1beta1::{
     MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation,
@@ -620,6 +620,18 @@ pub(super) fn proto_relation_explanation(
     explanation: &RelationExplanation,
 ) -> Option<MemoryRelationExplanation> {
     let value = MemoryRelationExplanation {
+        clocks: {
+            let clocks = kmp_proto::v1beta1::RelationClocks {
+                occurred_at: timestamp_from_sort_or_rfc3339(explanation.occurred_at()),
+                observed_at: timestamp_from_sort_or_rfc3339(explanation.observed_at()),
+                ingested_at: timestamp_from_sort_or_rfc3339(explanation.ingested_at()),
+                valid_from: timestamp_from_sort_or_rfc3339(explanation.valid_from()),
+                valid_until: timestamp_from_sort_or_rfc3339(explanation.valid_until()),
+            };
+            (explanation.semantic_class() != &RelationSemanticClass::Structural
+                && clocks != Default::default())
+            .then_some(clocks)
+        },
         motivation: explanation.motivation().unwrap_or_default().to_string(),
         method: explanation.method().unwrap_or_default().to_string(),
         decision_id: explanation.decision_id().unwrap_or_default().to_string(),
@@ -630,13 +642,24 @@ pub(super) fn proto_relation_explanation(
         coordinate: TemporalCoordinate::from_relation_explanation(explanation)
             .ok()
             .flatten()
-            .map(|coordinate| proto_coordinate_from_domain(&coordinate)),
+            .map(|coordinate| {
+                let mut value = proto_coordinate_from_domain(&coordinate);
+                if explanation.semantic_class() != &RelationSemanticClass::Structural {
+                    value.occurred_at = None;
+                    value.observed_at = None;
+                    value.ingested_at = None;
+                    value.valid_from = None;
+                    value.valid_until = None;
+                }
+                value
+            }),
     };
     (!value.motivation.is_empty()
         || !value.method.is_empty()
         || !value.decision_id.is_empty()
         || !value.caused_by_node_id.is_empty()
-        || value.coordinate.is_some())
+        || value.coordinate.is_some()
+        || value.clocks.is_some())
     .then_some(value)
 }
 

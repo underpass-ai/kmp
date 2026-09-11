@@ -27,3 +27,25 @@ pub(super) fn receipt_action(about: &str, reference: &str) -> Value {
         }
     })
 }
+
+/// Describe planned defaults separately from actual accepted clock values.
+/// Absence means this packet needed no implicit observation.
+pub(super) fn observation_defaults(plan: &KernelWritePlan) -> Option<Value> {
+    let entries = plan.ingest_arguments["memory"]["entries"].as_array()?;
+    let defaulted = entries
+        .iter()
+        .filter(|entry| {
+            entry["coordinates"].as_array().is_some_and(|coordinates| {
+                coordinates
+                    .iter()
+                    .any(|c| c["observed_at"].is_null() && c["ingested_at"].is_null())
+            })
+        })
+        .count();
+    let provenance = plan.ingest_arguments["provenance"]["observed_at"].is_null();
+    (defaulted > 0 || provenance).then(|| {
+        json!({
+            "observed_at": "ingested_at", "entries": defaulted, "provenance": provenance
+        })
+    })
+}

@@ -16,8 +16,9 @@ pub(crate) enum RelationPageBudget {
 }
 
 impl RelationPageBudget {
-    fn sections(&self) -> &'static [&'static str] {
+    fn sections(&self, value: &Value) -> &'static [&'static str] {
         match self {
+            Self::Trace if value.get("seek").is_some() => &["trace", "candidates", "groups"],
             Self::Trace => &["trace"],
             Self::Relate => &["facts", "declared", "coordinate", "tensions", "proposed"],
         }
@@ -25,10 +26,14 @@ impl RelationPageBudget {
 
     pub(crate) fn apply(
         &self,
-        value: Value,
+        mut value: Value,
         arguments: &Value,
         fingerprint: &str,
     ) -> Result<Value, ToolError> {
+        if matches!(self, Self::Trace) {
+            super::trace_material_expansion::attach(&mut value, arguments);
+            super::evidence_seek::attach_review(&mut value, arguments);
+        }
         let limit = requested_byte_limit(arguments).map_err(ToolError::invalid_argument)?;
         let total = value["page"]["total"].as_u64().unwrap_or(0) as usize;
         let tool = match self {
@@ -37,7 +42,7 @@ impl RelationPageBudget {
         };
         let cursor = RelationCursor::read(tool, fingerprint, arguments, total)?;
         let available = self
-            .sections()
+            .sections(&value)
             .iter()
             .filter_map(|section| value[*section].as_array())
             .map(Vec::len)
@@ -116,7 +121,7 @@ impl RelationPageBudget {
                 )
             });
         let mut remaining = count;
-        for section in self.sections() {
+        for section in self.sections(original) {
             let items = value[*section]
                 .as_array_mut()
                 .expect("Trace/Relate mapper emits array sections");

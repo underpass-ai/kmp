@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Objective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
+      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\nObjective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
       "type": "text"
     }
   ],
@@ -27,7 +27,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9306
+        "used_bytes": 9591
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
@@ -127,6 +127,10 @@
       "path": [
         {
           "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
@@ -143,6 +147,10 @@
         },
         {
           "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
@@ -159,17 +167,21 @@
         },
         {
           "class": "evidential",
-          "confidence": "high",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T16:00:00Z"
+          },
+          "confidence": "medium",
           "evidence_refs": [
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
+            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
             "detail:question:parity:claim:denver",
-            "detail:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
+            "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
           ],
-          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
-          "rel": "supersedes",
+          "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
+          "rel": "uses_background",
           "sequence": 1,
           "to": "question:parity:claim:denver",
-          "why": "The corrected city replaces the first one while the first stays readable as history."
+          "why": "The decision was taken while reading this claim back."
         }
       ],
       "superseded": [

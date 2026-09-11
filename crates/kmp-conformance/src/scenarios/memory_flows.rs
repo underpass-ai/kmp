@@ -56,6 +56,8 @@ fn entry(id: &str, text: &str, occurred_at: &str, sequence: u32) -> MemoryEntryD
 fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
+        default_observation_to_ingestion: false,
+        neighborhood_review: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -85,6 +87,7 @@ fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
                 ),
             ],
             relations: vec![MemoryRelationData {
+                clocks: None,
                 source_ref: "question:conformance:claim:two".to_string(),
                 target_ref: "question:conformance:claim:one".to_string(),
                 rel: "supports".to_string(),

@@ -41,12 +41,22 @@ pub fn translate_memory_ingest(
 ) -> Result<(UpdateContextCommand, MemoryIngestOutcome), ApplicationError> {
     validate_command(command)?;
     let ingested_at = kernel_ingested_at();
+    let resolved;
+    let accepted_command = if command.default_observation_to_ingestion {
+        resolved = super::observation_defaults::resolve(command, &ingested_at);
+        &resolved
+    } else {
+        command
+    };
     let memory = namespaced_memory(
         &command.about,
-        &command.memory,
+        &accepted_command.memory,
         existing,
         &ingested_at,
-        command.provenance.as_ref().map(|p| p.observed_at.as_str()),
+        accepted_command
+            .provenance
+            .as_ref()
+            .and_then(|p| p.observed_at.as_deref()),
     )?;
     // A dimension declared here that the about did not hold yet is a label
     // this write creates; the writer reports it so vocabulary growth is
@@ -78,6 +88,7 @@ pub fn translate_memory_ingest(
 
     let mut changes = memory_changes(&memory)?;
     let mut outcome = MemoryIngestOutcome {
+        neighborhood: None,
         replayed: false,
         clocks: Some(super::WriteClocks::for_memory(&memory)),
         receipt_ref: None,
@@ -94,7 +105,7 @@ pub fn translate_memory_ingest(
         resembling_labels,
     };
 
-    if let Some(receipt) = super::receipt::receipt_change(command, &memory, &outcome)? {
+    if let Some(receipt) = super::receipt::receipt_change(accepted_command, &memory, &outcome)? {
         outcome.receipt_ref = Some(receipt.entity_id.clone());
         changes.push(receipt);
     }
@@ -172,7 +183,12 @@ fn validate_command(command: &MemoryIngestCommand) -> Result<(), ApplicationErro
             ))
         })?;
         require_non_empty(&provenance.source_agent, "provenance.source_agent")?;
-        require_non_empty(&provenance.observed_at, "provenance.observed_at")?;
+        if !command.default_observation_to_ingestion || provenance.observed_at.is_some() {
+            require_non_empty(
+                provenance.observed_at.as_deref().unwrap_or_default(),
+                "provenance.observed_at",
+            )?;
+        }
     }
 
     Ok(())
@@ -403,6 +419,29 @@ fn namespaced_memory(
             }
         }
         let mut relation = relation.clone();
+        if semantic_class != RelationSemanticClass::Structural {
+            relation.clocks = Some(super::resolve_relation_clocks::resolve_relation_clocks(
+                relation.clocks.as_ref(),
+                relation.coordinate.as_ref(),
+                observed_at,
+                ingested_at,
+            )?);
+        }
+        if semantic_class == RelationSemanticClass::Structural && relation.clocks.is_some() {
+            return Err(ApplicationError::Validation(
+                "structural relations carry their clocks in coordinate, not clocks".to_string(),
+            ));
+        }
+        if semantic_class != RelationSemanticClass::Structural
+            && let Some(coordinate) = coordinate.as_mut()
+        {
+            coordinate.occurred_at = None;
+            coordinate.observed_at = None;
+            coordinate.ingested_at = None;
+            coordinate.valid_from = None;
+            coordinate.valid_until = None;
+        }
+        relation.semantic_class = semantic_class.as_str().to_string();
         relation.source_ref = source_ref;
         relation.target_ref = target_ref;
         relation.decision_id = normalize_optional_member_ref(
@@ -692,9 +731,12 @@ fn validate_positive_optional(value: Option<u32>, field: &str) -> Result<(), App
 /// re-created), so the same command translates differently after its own
 /// first apply. This digest is computed from what the caller *said*, which is
 /// the thing that must be equal for a replay to deserve a replayed answer.
-fn logical_digest(command: &MemoryIngestCommand) -> String {
+pub(super) fn logical_digest(command: &MemoryIngestCommand) -> String {
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
+    if command.default_observation_to_ingestion {
+        hasher.update(b"default_observation_to_ingestion\0");
+    }
     hasher.update(command.about.as_bytes());
     hasher.update([0]);
     let memory = serde_json::to_vec(&command.memory)
@@ -1276,6 +1318,8 @@ mod tests {
     fn sample_command() -> MemoryIngestCommand {
         MemoryIngestCommand {
             receipt_context: None,
+            default_observation_to_ingestion: false,
+            neighborhood_review: None,
             about: "question:830ce83f".to_string(),
             memory: MemoryData {
                 dimensions: vec![MemoryDimensionData {
@@ -1303,6 +1347,7 @@ mod tests {
                     metadata: Default::default(),
                 }],
                 relations: vec![MemoryRelationData {
+                    clocks: None,
                     source_ref: "conversation:rachel-2026-04-12".to_string(),
                     target_ref: "question:830ce83f:claim:rachel-denver".to_string(),
                     rel: "contains_entry".to_string(),
@@ -1346,6 +1391,7 @@ mod tests {
 
     fn cross_about_relation(rel: &str, method: Option<&str>) -> MemoryRelationData {
         MemoryRelationData {
+            clocks: None,
             source_ref: "question:830ce83f:claim:rachel-denver".to_string(),
             target_ref: "incident:platform:outcome:freeze".to_string(),
             rel: rel.to_string(),

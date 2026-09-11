@@ -53,6 +53,15 @@ impl ReadSnapshotProvider<Reads, Reads> for Reads {
     }
 }
 impl GraphNeighborhoodReader for Reads {
+    async fn load_nodes_batch(
+        &self,
+        ids: Vec<String>,
+    ) -> Result<Vec<Option<NodeProjection>>, PortError> {
+        let result = self.store.load_nodes_batch(ids).await;
+        self.after_graph().await;
+        result
+    }
+
     async fn load_neighborhood(
         &self,
         root: &str,
@@ -189,6 +198,8 @@ pub fn command(count: usize, version: &str) -> MemoryIngestCommand {
         provenance: None,
         idempotency_key: format!("{count}-{version}"),
         dry_run: false,
+        default_observation_to_ingestion: false,
+        neighborhood_review: None,
         label_policy: Default::default(),
         receipt_context: None,
     }

@@ -6,7 +6,7 @@ def check(saved, authored, sessions):
     assert sessions[0]['pid'] != sessions[1]['pid'] and sessions[0]['exit_code'] == 0
     refs = {name: saved[name]['generated_refs'][0] for name in ('constraint', 'decision', 'handoff', 'feedback')}
     assert saved['decision_retry']['generated_refs'] == saved['decision']['generated_refs']
-    assert authored['decision_retry'] == authored['decision']
+    assert authored['decision_retry'] == {k: v for k, v in authored['decision'].items() if k != 'review_token'}
     assert saved['resume']['resume_cursor']['ref'] == refs['handoff']
     for name in ('constraint', 'decision', 'handoff'):
         read = saved['recovered_' + name]
@@ -60,7 +60,7 @@ def check(saved, authored, sessions):
     assert saved['final_memory']['projection']['selection_omitted'] == 0
     assert saved['view_state']['state'] == rebased
     return ['fresh reader process recovers persisted records through its own returned refs',
-            'same logical decision retry has identical arguments and one stored entry',
+            'same logical decision retry omits only the review token and keeps one stored entry',
             'constraint, decision, handoff turn and feedback preserve literal sources',
             'handoff and decision paths preserve relation direction, why and evidence',
             'human gesture changes clock, selection and revision without writing memory',

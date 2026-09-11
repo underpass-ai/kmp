@@ -12,6 +12,17 @@ not independent LLM learning. Each write is a separate logical operation with
 its own idempotency key. All timestamps are UTC; ingestion uses the actual
 runtime clock. No source below states a validity interval.
 
+Canonical semantic relations may carry `clocks` with `occurred_at`,
+`observed_at`, `ingested_at`, `valid_from` and `valid_until`, independently of a
+label. Normally omit that group: KMP dates a new declaration using packet
+observation (or ingestion) and its actual ingestion time. Preserve explicit
+historical ingestion only when restoring canonical data; an unknown historical
+observation stays unknown. Explicit coordinate clocks, when supplied, must agree
+with the independent clocks. Structural memberships keep their clocks in
+`coordinate`. For example, a link learned on September 4 between two September 2
+memories has observed_at September 4; neither endpoint dates its declaration.
+This is a stored declaration clock, not inference of when its meaning became true.
+
 ```json
 {"tool":"kmp_wake","save_as":"initial","expect_error":"not_found","arguments":{"about":"example:guide:canonical-ingest","budget":{"detail":"compact","max_bytes":20000}}}
 ```
@@ -69,7 +80,7 @@ referenced object. A recipient missing C1 needs that dependency first.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "preview",
+  "save_as": "preview_review",
   "arguments": {
     "about": "example:guide:canonical-ingest",
     "actor": "guide-writer",
@@ -115,6 +126,14 @@ referenced object. A recipient missing C1 needs that dependency first.
 }
 ```
 
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"preview","arguments":"${preview_review.next_actions.0.arguments}"}
+```
+
 ```json
 {"tool":"kmp_inspect","save_as":"not_committed","expect_error":"not_found","arguments":{"about":"example:guide:canonical-ingest","ref":"${preview.generated_refs.0}"}}
 ```
@@ -139,11 +158,11 @@ must never erase a memory's existing clocks.
 Set only the preview execution flag dry_run to false. The semantic content is the returned packet, with no rewritten text, reconstructed ref or guessed clock. Replay with the same logical key; a repeated import must not add a second D1.
 
 ```json
-{"tool":"kmp_ingest","save_as":"ingested","arguments":{"about":"${preview.ingest_preview.about}","idempotency_key":"${preview.ingest_preview.idempotency_key}","label_policy":"${preview.ingest_preview.label_policy}","memory":"${preview.ingest_preview.memory}","provenance":"${preview.ingest_preview.provenance}","dry_run":false}}
+{"tool":"kmp_ingest","save_as":"ingested","arguments":{"about":"${preview.ingest_preview.about}","idempotency_key":"${preview.ingest_preview.idempotency_key}","label_policy":"${preview.ingest_preview.label_policy}","memory":"${preview.ingest_preview.memory}","provenance":"${preview.ingest_preview.provenance}","default_observation_to_ingestion":"${preview.ingest_preview.default_observation_to_ingestion}","dry_run":false}}
 ```
 
 ```json
-{"tool":"kmp_ingest","save_as":"ingest_retry","arguments":{"about":"${preview.ingest_preview.about}","idempotency_key":"${preview.ingest_preview.idempotency_key}","label_policy":"${preview.ingest_preview.label_policy}","memory":"${preview.ingest_preview.memory}","provenance":"${preview.ingest_preview.provenance}","dry_run":false}}
+{"tool":"kmp_ingest","save_as":"ingest_retry","arguments":{"about":"${preview.ingest_preview.about}","idempotency_key":"${preview.ingest_preview.idempotency_key}","label_policy":"${preview.ingest_preview.label_policy}","memory":"${preview.ingest_preview.memory}","provenance":"${preview.ingest_preview.provenance}","default_observation_to_ingestion":"${preview.ingest_preview.default_observation_to_ingestion}","dry_run":false}}
 ```
 
 ```json

@@ -1,17 +1,51 @@
-Inspect a ref copied from a result:
-`kmp_inspect {"about":"project:sample","ref":"<returned ref>"}`.
-Expect the canonical object, evidence and typed incoming/outgoing links. Each
-rich link carries its own why and evidence. Mere adjacency does not prove a claim.
+Inspect a returned ref with `kmp_inspect {"about":"<about>","ref":"<ref>"}`.
+Copy actual abouts/refs from memory results; replace every placeholder below.
+Inspect returns the current object, evidence and typed links. A receipt instead
+contains the historical accepted command. For past state, use temporal verbs.
 
-Follow returned continuations with their complete arguments. If reusing the
-first object, use the supported object-reuse continuation; do not repeatedly
-load the same body. Inspect is a current object view, not a historical proof.
-Return to a temporal verb when the task asks what was known or held earlier.
+Choose ONE Trace mode:
 
-Trace a relied-on connection using the exact two refs and about. The linked
-audit contract gives the request shape. Finish all selected proof pages before
-saying there is no path. A write receipt is the immutable accepted command,
-not the current state of the memories it created.
+| Need | Arguments | Search options |
+| --- | --- | --- |
+| Connect known destinations | `from` + `to` | `follow` or `direction`/`relations`, dimensions, `paths_per_target`, `select` |
+| Discover evidence without destinations | `from` + `search.seek` | role relations/sense/via/after/labels; optional `same_labels`, `same_ref` |
 
-More: `guide:kmp-agent:example:budget-proof` and
-`guide:kmp-agent:example:decision-history`.
+Only `max_nodes`, `max_edges`, `max_depth`, `max_states` are shared search options.
+Never combine `seek` with destination options or `to`. A mixed-mode error names
+all conflicting fields to remove together; other validation can still fail.
+
+For evidence known by a given instant, set the observed clock explicitly:
+
+```json
+{"about":"<about>","from":"<seed-ref>",
+ "axis":"observed","as_of":{"time":"2026-09-10T12:00:00Z"},
+ "search":{"seek":[
+   {"name":"verification","rel":"verified_by","via":"context"},
+   {"name":"permission","rel":"authorizes","direction":"incoming","via":"context"}]}}
+```
+
+Choose the task's clock and cut; this example date is not a default. Omitted
+clock/cut reads the current graph. `as_of` is effectiveness at a cut, not exact
+timestamp equality. Use Goto for a purely temporal question; UNKNOWN from Ask
+does not diagnose its cause.
+
+Context discovers minimum-hop prefixes through justified links, preserving ties
+and stored arrows. Read `context_hops`, candidate `anchor` and `witness`, and
+joint `groups`. These are leads: `review_required` and
+`declared_obligations_complete:false` require source review. A neighbor's
+verification does not verify the seed; work cuts remain partial.
+
+A verified copy and an authorized publication are distinct actions: do not
+add anchor equality for that question. Only if the question requires the SAME
+action, add `same_ref:[[{"role":"verification","at":"anchor"},{"role":"permission","at":"anchor"}]]`.
+Anchor is the main relation's traversal start after context; incoming permission
+starts at its stored target action. Witness is the other endpoint. A role string
+in `same_ref` names its witness. `same_labels` intersects witness labels, never
+establishing identity. On incompatibility, review bindings and the question;
+do not remove a required equality just to obtain a group.
+
+Finish every returned continuation before resolving path indexes or claiming
+proof complete. Page completion is distinct from semantic sufficiency. Preserve
+source text, link why/evidence and clocks. For the worked cases expand
+`guide:kmp-agent:example:evidence-seek`. Known-destination alternatives, material
+selection and hard/soft dimensions are in `guide:kmp-agent:example:bounded-trace`.

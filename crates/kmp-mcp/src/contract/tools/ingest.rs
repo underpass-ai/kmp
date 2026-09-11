@@ -18,8 +18,10 @@ pub(crate) fn definition() -> Value {
             "type": "object",
             "additionalProperties": false,
             "required": ["about", "memory", "idempotency_key"],
+            "allOf":[{"if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},"then":{"properties":{"provenance":{"required":["observed_at"]}}}}],
             "properties": {
                 "about": string_schema("Memory anchor or root ref this memory should attach to."),
+                "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, source times, packet provenance and explicit proof clock objects using exact kernel ingestion. Preserve supplied observations and restored clocks. Absent relation/support clock objects inherit packet observation. Ordinary canonical ingest preserves unknown entry clocks."}),
                 "memory": {
                     "type": "object",
                     "additionalProperties": true,
@@ -97,7 +99,8 @@ pub(crate) fn definition() -> Value {
                                     "method": string_schema("Optional method by which the relation holds."),
                                     "decision_id": string_schema("Optional about-owned decision ref associated with the relation."),
                                     "caused_by_node_id": string_schema("Optional about-owned causal predecessor ref."),
-                                    "coordinate": temporal_coordinate_schema()
+                                    "coordinate": temporal_coordinate_schema(),
+                                    "clocks": relation_clocks_schema()
                                 }
                             }
                         },
@@ -131,14 +134,14 @@ pub(crate) fn definition() -> Value {
                 "provenance": {
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["source_kind", "source_agent", "observed_at"],
+                    "required": ["source_kind", "source_agent"],
                     "properties": {
                         "source_kind": {
                             "type": "string",
                             "enum": ["human", "agent", "projection", "derived"]
                         },
                         "source_agent": string_schema("Agent or component that observed the memory."),
-                        "observed_at": string_schema("RFC3339 observation timestamp, in UTC."),
+                        "observed_at": string_schema("RFC3339 observation timestamp. Required unless default_observation_to_ingestion resolves its omission at commit."),
                         "correlation_id": string_schema("Optional correlation id."),
                         "causation_id": string_schema("Optional causation id.")
                     }
@@ -162,6 +165,7 @@ pub(crate) fn definition() -> Value {
 fn ingest_output_schema() -> Value {
     output_object(json!({
         "summary": described("string", "Concise statement of what the kernel accepted."),
+        "neighborhood": json!({"type":["object","null"],"description":"Internal semantic-writer review, when requested by that surface; no canonical memory accepted while review is pending."}),
         "memory": output_object(json!({
             "about": described("string", "Memory anchor the write attached to."),
             "memory_id": described("string", "Stable id of the accepted memory event."),
@@ -179,4 +183,18 @@ fn ingest_output_schema() -> Value {
         })),
         "warnings": warnings_output_schema()
     }))
+}
+
+fn relation_clocks_schema() -> Value {
+    json!({
+                                        "type":"object", "additionalProperties":false,
+                                        "description":"Own clocks of a semantic relation, independent of endpoint coordinates. New declarations default observed_at from packet provenance, else ingestion; ingested_at is assigned by KMP. Preserve explicit ingestion only for canonical restoration. Occurrence and validity stay unknown unless supplied. Structural relations use coordinate instead. Conflicting clocks and coordinate instants are rejected.",
+                                        "properties": {
+                                            "occurred_at": string_schema("RFC3339 event time of the relationship itself, only when known."),
+                                            "observed_at": string_schema("RFC3339 observation of this declaration; never inherited from endpoints."),
+                                            "ingested_at": string_schema("Preserved RFC3339 ingestion for canonical restoration; normally omit."),
+                                            "valid_from": string_schema("Explicit RFC3339 validity start of this relationship."),
+                                            "valid_until": string_schema("Explicit RFC3339 exclusive validity end, after valid_from.")
+                                        }
+                                    } )
 }

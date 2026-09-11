@@ -40,6 +40,8 @@ fn entry(id: &str, text: &str, occurred_at: &str, sequence: u32) -> MemoryEntryD
 fn corpus() -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
+        default_observation_to_ingestion: false,
+        neighborhood_review: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -63,6 +65,7 @@ fn corpus() -> MemoryIngestCommand {
                 ),
             ],
             relations: vec![MemoryRelationData {
+                clocks: None,
                 source_ref: "project:viewer-smoke:decision:second".to_string(),
                 target_ref: "project:viewer-smoke:decision:first".to_string(),
                 rel: "follows".to_string(),
@@ -386,6 +389,7 @@ async fn moment_projection_keeps_the_writers_cross_about_equivalence() {
         .await
         .expect("source ingests");
     let declaration = MemoryRelationData {
+        clocks: None,
         source_ref: SOURCE.to_string(),
         target_ref: TARGET.to_string(),
         rel: "same_event_as".to_string(),
@@ -461,6 +465,27 @@ async fn moment_projection_keeps_the_writers_cross_about_equivalence() {
     );
     assert_eq!(edge["confidence"], "high");
     assert_eq!(edge["method"], "kmp_relate:identifier");
+    assert!(edge["clocks"]["observed_at"].is_string());
+    assert!(edge["clocks"]["ingested_at"].is_string());
+    assert!(edge["clocks"].get("occurred_at").is_none());
+    let (status, inspected) = get(
+        port,
+        &format!(
+            "/api/node?about={}&id={}",
+            urlencode(ABOUT),
+            urlencode(SOURCE)
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "{inspected}");
+    let own = inspected["outgoing"]
+        .as_array()
+        .expect("outgoing declarations")
+        .iter()
+        .find(|e| e["rel"] == "same_event_as")
+        .expect("stored equivalence");
+    assert_eq!(own["observed_at"], edge["clocks"]["observed_at"]);
+    assert_eq!(own["ingested_at"], edge["clocks"]["ingested_at"]);
 
     for narrowed in [
         query.replace("to=2026-07-03T00:00:00Z", "to=2026-07-02T10:00:00Z"),
@@ -684,6 +709,8 @@ fn sub_second_corpus(
 ) -> MemoryIngestCommand {
     MemoryIngestCommand {
         receipt_context: None,
+        default_observation_to_ingestion: false,
+        neighborhood_review: None,
         about: about.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -1310,7 +1337,7 @@ async fn a_relabelled_entry_stands_in_its_own_row_and_says_why() {
             provenance: Some(MemoryProvenanceData {
                 source_kind: "agent".to_string(),
                 source_agent: "agent:smoke".to_string(),
-                observed_at: "2026-07-04T10:00:00Z".to_string(),
+                observed_at: Some("2026-07-04T10:00:00Z".to_string()),
                 correlation_id: None,
                 causation_id: None,
             }),

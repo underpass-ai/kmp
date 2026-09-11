@@ -14,6 +14,20 @@ topics, and each extended verb at first use. Source interpretation happens
 before the later reading questions; do not add missing facts to satisfy a
 question. A checksum test does not authorize an unrelated deletion.
 
+## Read the completion signal before the summary
+
+Every partial successful read starts its first MCP text with `READ_INCOMPLETE`,
+even without an agent context. The summary may correctly report two entries
+while their projected proof still lacks seven relations: `selection.has_more`
+and `page.has_more` describe different limits. Follow the returned bound action.
+A shortened recall core remains incomplete even when expansion has no more pages.
+
+A completed packet can offer a new historical selection. That action is not
+missing proof for the current packet. The notice changes presentation only:
+source text, structuredContent and cursors remain intact. Its absence does not
+prove sufficient evidence or an exhaustive search. The replay below keeps its
+intentional partial results partial; a final LLM response is not enforced by KMP.
+
 ## Sources in receipt order
 
 The fictional events were each reported at their event time on September 1,
@@ -113,7 +127,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "decision",
+  "save_as": "decision_review",
   "arguments": {
     "about": "example:guide:budget-proof",
     "actor": "guide-writer",
@@ -161,6 +175,14 @@ catalogue and refs instead of repeating this fresh-store assumption.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"decision","arguments":"${decision_review.next_actions.0.arguments}"}
 ```
 
 ```json
@@ -243,7 +265,7 @@ catalogue and refs instead of repeating this fresh-store assumption.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "result",
+  "save_as": "result_review",
   "arguments": {
     "about": "example:guide:budget-proof",
     "actor": "guide-writer",
@@ -291,6 +313,14 @@ catalogue and refs instead of repeating this fresh-store assumption.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"result","arguments":"${result_review.next_actions.0.arguments}"}
 ```
 
 ```json

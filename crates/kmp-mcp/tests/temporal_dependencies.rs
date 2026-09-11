@@ -1,4 +1,6 @@
 //! Related sources remain complete, scoped and clock-bound across native pages.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
 
@@ -11,7 +13,11 @@ async fn raw(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
         )
         .await
         .expect("response");
-    serde_json::from_str::<Value>(&response).expect("JSON")["result"].clone()
+    reviewed_writer::review_authored_write(
+        server,
+        serde_json::from_str::<Value>(&response).expect("JSON")["result"].clone(),
+    )
+    .await
 }
 
 async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {

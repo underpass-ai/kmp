@@ -60,6 +60,14 @@ impl KernelMcpServer {
 
         let mut ingest_arguments = plan.ingest_arguments.clone();
         ingest_arguments["receipt_context"] = crate::write::receipt::receipt_context(&plan);
+        if arguments.get("memories").is_some() {
+            ingest_arguments["neighborhood_review"] = serde_json::json!(
+                arguments
+                    .get("review_token")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+            );
+        }
         match self
             .backend
             .call_tool("kmp_ingest", &ingest_arguments)
@@ -67,16 +75,27 @@ impl KernelMcpServer {
         {
             Ok(result) => {
                 let ingest_result = result.get("structuredContent").cloned().unwrap_or(result);
-                let result = tool_success_result(if plan.dry_run {
-                    write_dry_run_result(&plan, ingest_result, self.backend_name())
-                } else {
-                    write_commit_result(
-                        &plan,
-                        ingest_result,
-                        self.viewer_invitation(),
-                        self.orphaned_bundle_notice(),
-                    )
-                });
+                let result = tool_success_result(
+                    if let Some(neighborhood) = ingest_result
+                        .get("neighborhood")
+                        .filter(|value| value.is_object())
+                    {
+                        super::write_review_result::pending_review(
+                            arguments,
+                            &plan,
+                            neighborhood.clone(),
+                        )
+                    } else if plan.dry_run {
+                        write_dry_run_result(&plan, ingest_result, self.backend_name())
+                    } else {
+                        write_commit_result(
+                            &plan,
+                            ingest_result,
+                            self.viewer_invitation(),
+                            self.orphaned_bundle_notice(),
+                        )
+                    },
+                );
                 record_tool_success(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
@@ -120,6 +139,7 @@ impl KernelMcpServer {
             "valid_until",
             "rank",
             "read_context",
+            "review_token",
         ] {
             if object.contains_key(field) {
                 return Err(WriteValidationError::new(format!(

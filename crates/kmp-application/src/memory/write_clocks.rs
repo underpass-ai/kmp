@@ -3,6 +3,8 @@ use super::{MemoryData, WriteClockCoverage};
 /// Clocks in one canonical command, not the latest state of its memory refs.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct WriteClocks {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub relations: Option<super::WriteRelationClocks>,
     pub entries: usize,
     pub occurred: WriteClockCoverage,
     pub observed: WriteClockCoverage,
@@ -14,6 +16,7 @@ pub struct WriteClocks {
 impl WriteClocks {
     pub(super) fn for_memory(memory: &MemoryData) -> Self {
         Self {
+            relations: Some(super::WriteRelationClocks::for_memory(memory)),
             entries: memory.entries.len(),
             occurred: WriteClockCoverage::for_memory(memory, |c| c.occurred_at.as_deref()),
             observed: WriteClockCoverage::for_memory(memory, |c| c.observed_at.as_deref()),

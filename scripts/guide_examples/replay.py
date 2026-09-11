@@ -23,9 +23,10 @@ from guide_reads import prepare
 from dimensional_memberships_checks import check as check_dimensions
 from semantic_batch_checks import check as check_batch
 from capability_checks import check as check_capability
+from event_separation_checks import check as check_event_separation
 
 ROOT = Path(__file__).resolve().parents[2]
-LESSONS = {'semantic-batch': check_batch, 'dimensional-memberships': check_dimensions, 'decision-history': check_history, 'alias-ownership': check_alias,
+LESSONS = {'event-separation': check_event_separation, 'semantic-batch': check_batch, 'dimensional-memberships': check_dimensions, 'decision-history': check_history, 'alias-ownership': check_alias,
            'distributed-incident': check_incident, 'four-clocks': check_clocks,
            'quantities': check_quantities, 'late-conflict': check_late_conflict,
            'labels-negation': check_labels_negation, 'budget-proof': check_budget_proof,
@@ -102,7 +103,7 @@ def run(args):
                 guide_reads = prepare(client, ROOT, lesson, args.guide_mode)
                 calls = [json.loads(block) for block in re.findall(r'```json\n(.*?)\n```', lesson.read_text(), re.S)]
                 for call in calls:
-                    if args.lesson == 'quantities' and call['save_as'] == 'total':
+                    if args.lesson == 'quantities' and call['save_as'] == 'total_review':
                         saved['clock'] = quantity_clock()
                         record({'preparation': 'Read real UTC clock after inspecting settlement sources',
                                 'clock': saved['clock']})

@@ -1099,6 +1099,11 @@ pub fn trace_response_from_result(
     let summary = rendered_summary(&result.rendered);
     let selection_fingerprint = ReadSelectionFingerprint::trace(&summary, &trace, path.is_some());
     TraceResponse {
+        search: None,
+        routes: Vec::new(),
+        seek: None,
+        candidates: Vec::new(),
+        groups: Vec::new(),
         summary,
         selection_fingerprint,
         trace: returned_trace,
@@ -1389,10 +1394,9 @@ mod temporal_lifecycle_tests {
 
     use kmp_application::{TemporalIncludeOptions, TemporalMemoryResult};
     use kmp_domain::{
-        BundleMetadata, BundleNode, BundleQualityMetrics, BundleRelationship, CaseId, KmpBundle,
-        RelationExplanation, RelationSemanticClass, Role, TemporalAxis,
-        TemporalCursor as DomainCursor, TemporalDirection, TemporalMemoryTraversal,
-        TemporalTraversalRequest,
+        BundleMetadata, BundleNode, BundleRelationship, CaseId, KmpBundle, RelationExplanation,
+        RelationSemanticClass, Role, TemporalAxis, TemporalCursor as DomainCursor,
+        TemporalDirection, TemporalMemoryTraversal, TemporalTraversalRequest,
     };
     use kmp_proto::v1beta1::TemporalCursor;
 
@@ -1474,7 +1478,6 @@ mod temporal_lifecycle_tests {
                     relations: false,
                     raw_refs: false,
                 },
-                quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
             },
         )
     }
@@ -1613,7 +1616,6 @@ mod temporal_lifecycle_tests {
                 relations: false,
                 raw_refs: false,
             },
-            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
         };
 
         let response = temporal_response_from_result(
@@ -1695,7 +1697,6 @@ mod temporal_lifecycle_tests {
                 relations: false,
                 raw_refs: false,
             },
-            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
         };
 
         let response = temporal_response_from_result(
@@ -1764,7 +1765,6 @@ mod temporal_lifecycle_tests {
                 relations: false,
                 raw_refs: false,
             },
-            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
         };
 
         let response = temporal_response_from_result(
@@ -1832,7 +1832,6 @@ mod temporal_lifecycle_tests {
                 relations: false,
                 raw_refs: false,
             },
-            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
         };
 
         let response = temporal_response_from_result(

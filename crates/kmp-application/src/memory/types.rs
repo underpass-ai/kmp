@@ -23,6 +23,11 @@ pub struct MemoryIngestCommand {
     pub label_policy: LabelPolicy,
     /// Writer diagnostics attached to the accepted command, never semantic memory.
     pub receipt_context: Option<serde_json::Value>,
+    /// Resolve missing observation only for this semantic write, at ingestion.
+    pub default_observation_to_ingestion: bool,
+    /// None: canonical ingest. Some(""): request semantic context review.
+    /// Some(token): acknowledge the exact previously served neighborhood.
+    pub neighborhood_review: Option<String>,
 }
 
 /// What an ingest does with a dimension that resembles a label the about
@@ -102,6 +107,8 @@ pub struct MemoryCoordinateData {
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct MemoryRelationData {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clocks: Option<super::MemoryRelationClocks>,
     #[serde(rename = "from")]
     pub source_ref: String,
     #[serde(rename = "to")]
@@ -148,7 +155,7 @@ pub struct MemoryEvidenceData {
 pub struct MemoryProvenanceData {
     pub source_kind: String,
     pub source_agent: String,
-    pub observed_at: String,
+    pub observed_at: Option<String>,
     pub correlation_id: Option<String>,
     pub causation_id: Option<String>,
 }
@@ -162,6 +169,7 @@ pub struct MemoryAcceptedCounts {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MemoryIngestOutcome {
+    pub neighborhood: Option<super::WriteNeighborhood>,
     pub replayed: bool,
     pub clocks: Option<super::WriteClocks>,
     pub receipt_ref: Option<String>,
@@ -341,7 +349,6 @@ pub struct TemporalMemoryResult {
     pub traversal: kmp_domain::TemporalTraversalResult,
     pub source_bundle: kmp_domain::KmpBundle,
     pub include: TemporalIncludeOptions,
-    pub quality: kmp_domain::BundleQualityMetrics,
 }
 
 /// One label an entry stands in, as the pair a reader names it by: `key`

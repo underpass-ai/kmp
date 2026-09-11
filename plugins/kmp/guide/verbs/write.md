@@ -18,9 +18,10 @@ A source label helps navigation but never replaces its concrete evidence text.
 Use `connect_to.ref: "source"` or `"@source"` to address exact local id `source`,
 even if it appears later. No fuzzy matching or target creation occurs. An unknown
 local name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.
-Local targets count as `current_request` context. Stored rich targets
-still require an actual prior read declared in `read_context`; cross-about
-identity links retain the proposal rule. Do not claim to have inspected a new
+Local targets count as `current_request` context. Rich links, including local
+links, receive server neighborhood review before commit; cross-about
+identity links retain the proposal rule. `read_context` is a caller-declared audit,
+not a substitute for the served neighborhood. Do not claim to have inspected a new
 local target. Independent facts may be unlinked: do not invent a relation.
 
 The containing memory is the source of each link; `connect_to.ref` is its
@@ -41,12 +42,32 @@ class. This completion changes neither proof requirements nor the relation's
 direction and does not infer whether it is true.
 
 With `context_id`, actor defaults to the persistent agent name; an explicit
-actor overrides it. Without context, actor is required. Actor identifies the author; top-level observed_at is the packet's provenance
-observation time, required even when every record overrides it. A missing root
-`observed_at` needs the actual packet observation with its UTC offset; KMP does
-not choose a date from the records or substitute its ingestion clock. Actual
-ingestion is recorded separately by the kernel. Each
-record may override its observed/occurred/valid clocks; omitted occurrence remains unknown. KMP
+actor overrides it. Without context, actor is required. Actor identifies the
+author. Omit `observed_at` or set it to null: KMP assigns the exact ingestion
+instant to this new observation and the packet's provenance. Supply an explicit
+observation time only when the source establishes it, with the actual UTC offset.
+KMP never chooses it from event dates or from a different record.
+
+Root observed/occurred/valid clocks are defaults inherited by records. Each
+record may override them. A record's `observed_at:null` clears the root default
+and uses ingestion; `occurred_at:null` clears the root event date and remains
+unknown. Without a root event date, omitted occurrence also stays unknown.
+Ingestion is assigned by the kernel; the semantic writer cannot supply it.
+Equal observed and occurred times are valid when the source supports both.
+Several records may share an observation time without sharing an occurrence.
+Each `connect_to` declaration also gets its own observed and ingested clocks.
+Its observation and the generated evidence support observation use the containing
+member's effective observation: root default, member override, or exact ingestion
+for null. The target's clocks do not date the declaration. Its occurrence and validity
+remain unknown. No extra writer arguments are needed. Separate execution and
+verification records still carry their own event times.
+If one report says an action ran at 11:00 and its check passed at 11:05, keep
+the action and check in separate records with event-specific summaries and
+evidence fragments. Do not put the later verified result into the earlier
+action text. A relation does not move the check backward in time. See
+`guide:kmp-agent:example:event-separation` for the native cutoff and viewer example.
+Updating `search_summaries` preserves the original coordinates, including unknown
+historical observation; only the new packet provenance receives a default date. KMP
 resolves all names and validates the entire packet before one canonical ingest.
 A rejected record writes none of the packet. The transaction covers one about.
 Omit unknown validity boundaries too. Observing an existing state does not
@@ -61,6 +82,12 @@ undeclared local targets are errors. See
 link, a rejected packet and temporal/ChronoLoom review. Accepted writes return a compact acknowledgment; recover the detailed receipt only when needed.
 
 ## Read the acknowledgment
+
+`clock_defaults`, when present, reports `observed_at:"ingested_at"`, the count
+of affected memories and whether packet provenance defaulted. It describes the
+plan; `clocks` and the canonical receipt carry actual accepted values. A preview
+does not reserve a timestamp. An unchanged replay returns the original clocks,
+including after restart or import, without creating another observation.
 
 `accepted=true` confirms the submitted packet was committed. Read `warnings`,
 `diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.
@@ -127,11 +154,41 @@ the field and include `allowed_values`. Do not invent evidence or weaken a
 relation just to make validation pass. Missing class is different from null or
 an empty string; only omission requests deterministic completion.
 
-For `PRIOR_CONTEXT_REQUIRED`, KMP can supply a complete `kmp_inspect` action
-for the existing target. Execute the read, evaluate its evidence, then declare
-the actual returned ref in `read_context` and resubmit the corrected packet.
-The action is a supported reading move, not proof that the relation is true.
-An absent action means no source-backed automatic correction is known.
+For `needs_review`, nothing has been written. Review `neighborhood` and the
+proposed `relations`; use each stored item's Inspect action to expand its text,
+links and proof. `stored` and `proposed` are distinct. Long text is omitted
+whole instead of clipped before a negation or condition. Unknown clocks remain
+unknown. `links.from` and `links.to` index stored items in this packet only.
+`partial`, `omitted` and `omitted_conflicts` disclose excluded items; the last
+counts omitted facts participating in explicit conflicts, not unique disputes.
+`expand_context` offers full-detail reads in the explicitly consulted abouts.
+Those reads may include broader context and pages; finish relevant pages.
+
+After reviewing, execute `next_actions[0]` to resume the unchanged packet, or
+correct it and submit again. With `context_id` the existing continuation store
+retains the packet; otherwise the action carries its full arguments and
+`review_token`. Do not add arguments to a continuation. Tokens bind the exact
+logical proposal and complete selected source material, including omissions.
+A changed proposal or relevant context returns a fresh review without writing.
+A race at commit is safely retryable under the same idempotency key. An accepted
+retry returns its original receipt even if memory has changed afterwards.
+
+The rule applies to rich relations in the kernel vocabulary (and unknown
+non-strict relations), including same-batch links and `strict:false`. Simple
+observations, structural links and honest `follows`/`answers`/`uses_background`
+links need no review round. A prior declaration of read refs cannot bypass it.
+This is the writer's review, not a new human approval step. A token records
+acknowledgement of delivered context, never understanding or semantic truth.
+
+Selection uses explicit endpoints, their direct links and shared key/value
+labels in the current about. Explicit conflict facts and constraints precede
+recent facts; old constraints retain their validity clocks rather than being
+silently declared current. Foreign scope is limited to explicitly proposed
+identity endpoints and their surroundings. It never scans all abouts. The
+initial target is five items in roughly 2 KiB before MCP action metadata;
+a large indivisible item may exceed that target. No model summarizes the text.
+Local reads, serialization, agent context and another interaction still cost.
+
 Planner refusals commit none of the packet; store failures still carry their
 backend error. A failed pre-read retains unavailable, not_found, conflict or
 backend_error; do not treat it as a malformed source packet. Malformed successful
@@ -217,7 +274,8 @@ the store and cannot be supplied, no relation is written, and a rendering
 that fails the lint is refused with every fault named. Each target must belong to the declared about; all renderings are validated
 before one commit. An exact retry is a no-op.
 
-Normal writes are one call: omit `options.dry_run` or set it to false.
+For normal writing omit `options.dry_run` or set it to false. Rich links first
+return `needs_review`; resume after reviewing. Independent observations stay one call.
 The relation guide documents explicit previews and validation before commit.
 
 Use one `idempotency_key` per logical write. Replaying the same accepted write
@@ -241,12 +299,14 @@ no event. The fixture backend reports `scope=fixture` and proves no live state.
 The returned `ingest_preview` is the proposed canonical packet. Previewing
 reserves neither labels nor sequences; a later commit is validated again against
 the then-current store. Do not repeat previews before every ordinary write:
-the normal write already validates and commits in one call. Raw `kmp_ingest`
+normal writing already validates and requests neighborhood review where required. Raw `kmp_ingest`
 with `dry_run=true` also reaches the kernel and leaves memory uncommitted.
 
 ## Restricted HTTP clients
 
-An HTTP bearer token may restrict abouts, label values and external refs. Those
+An HTTP bearer token may restrict abouts, label values and external refs. Rich-link
+review also requires `kmp:read` and an about grant for every external endpoint,
+including when resumed from a continuation. Those
 grants apply to shared and per-record labels, each array member, explicit entry
 refs, relation targets and search-summary refs. Relabel additions obey the same
 label grants. A local @id is resolved inside its packet; it does not name an
@@ -257,13 +317,20 @@ remove source-supported labels or refs just to evade a permission error.
 
 `status=committed` appended the logical command; `replayed` returns its earlier
 acceptance without another write. Both keep `accepted=true`. `validated` is a
-dry-run, and `rejected` is a validation refusal. `unconfirmed` cannot establish
+dry-run, `needs_review` is an unapplied context review, and `rejected` is a validation refusal. `unconfirmed` cannot establish
 persistence: retain the same idempotency key when resolving a transport error.
 Do not turn an uncertain reply into a new logical write.
 
 `clocks.scope=accepted_command` summarizes the clocks actually in that command,
 including on replay. Each clock counts memories once across all label memberships:
 `entries`, `distinct_values`, and an RFC3339 `single_value` when there is only one.
+`clocks.relations` separately counts semantic links and how many carry each
+clock; structural label memberships are excluded. For one ordinary link,
+`relations=1, observed=1, ingested=1, occurred=0` is normal. Read responses expose
+its own dates in `relation.clocks`; they describe the stored declaration, not
+when its endpoints occurred or when the claim became true. An unchanged retry
+preserves these dates. Old undated links are not assigned dates on read.
+
 Zero occurred entries means no event time was recorded. One observed instant
 across nine memories is worth comparing with the nine sources; KMP cannot decide
 whether those sources were observed together. Missing occurrence is legitimate

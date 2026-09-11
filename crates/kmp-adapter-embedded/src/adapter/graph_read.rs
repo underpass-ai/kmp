@@ -139,6 +139,50 @@ fn shortest_outward_path(
 }
 
 impl GraphNeighborhoodReader for EmbeddedKernelStore {
+    async fn load_nodes_batch(
+        &self,
+        node_ids: Vec<String>,
+    ) -> Result<Vec<Option<NodeProjection>>, PortError> {
+        self.run(move |store| {
+            let tx = store.begin_read()?;
+            node_ids
+                .iter()
+                .map(|id| load_node(tx.as_ref(), id))
+                .collect()
+        })
+        .await
+    }
+
+    async fn load_bounded_trace(
+        &self,
+        request: &kmp_domain::TraceSearchRequest,
+    ) -> Result<kmp_domain::TraceSearchResult, PortError> {
+        let request = request.clone();
+        self.run(move |store| {
+            let tx = store.begin_read()?;
+            kmp_domain::bounded_trace_search(
+                &super::trace_snapshot::TraceSnapshot(tx.as_ref()),
+                &request,
+            )
+        })
+        .await
+    }
+
+    async fn load_evidence_paths(
+        &self,
+        request: &kmp_domain::EvidencePathRequest,
+    ) -> Result<kmp_domain::EvidencePathResult, PortError> {
+        let request = request.clone();
+        self.run(move |store| {
+            let tx = store.begin_read()?;
+            kmp_domain::search_evidence_paths(
+                &super::trace_snapshot::TraceSnapshot(tx.as_ref()),
+                &request,
+            )
+        })
+        .await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,

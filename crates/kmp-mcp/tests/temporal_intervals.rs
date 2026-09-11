@@ -1,4 +1,6 @@
 //! Native interval reads preserve their bounds and keep earlier proof without later knowledge.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
 
@@ -13,11 +15,12 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
         .expect("response");
     let value: Value = serde_json::from_str(&reply).expect("JSON");
     assert_eq!(value["result"]["isError"], false, "{value}");
-    value["result"]["structuredContent"].clone()
+    reviewed_writer::review_authored_write(server, value["result"]["structuredContent"].clone())
+        .await
 }
 
 async fn seed(server: &KernelMcpServer) -> Value {
-    call(server, "kmp_write_memory", json!({
+    let source = json!({
         "about":"project:interval", "actor":"test", "observed_at":"2026-09-01T14:00:00Z",
         "idempotency_key":"interval:source", "labels":{"project":["p"]},
         "memories":[
@@ -41,7 +44,37 @@ async fn seed(server: &KernelMcpServer) -> Value {
              "connect_to":[{"ref":"@decision","rel":"supersedes","class":"evidential",
                 "why":"S5 replaces the previous plan.","evidence":"S5 explicitly replaces S1.","confidence":"high"}]}
         ]
-    })).await
+    });
+    // These declarations were learned at distinct times. Backdating record
+    // coordinates in one 14:00 packet does not backdate that packet's links.
+    let mut refs = serde_json::Map::new();
+    for record in source["memories"].as_array().expect("source events") {
+        let mut record = record.clone();
+        if let Some(links) = record.get_mut("connect_to").and_then(Value::as_array_mut) {
+            for link in links {
+                let id = link["ref"]
+                    .as_str()
+                    .expect("prior local id")
+                    .trim_start_matches('@');
+                link["ref"] = refs[id].clone();
+            }
+        }
+        let mut packet = source.clone();
+        packet["idempotency_key"] = json!(format!(
+            "interval:source:{}",
+            record["id"].as_str().expect("id")
+        ));
+        packet["observed_at"] = record["observed_at"].clone();
+        packet["memories"] = json!([record]);
+        let written = call(server, "kmp_write_memory", packet).await;
+        refs.extend(
+            written["local_refs"]
+                .as_object()
+                .expect("accepted refs")
+                .clone(),
+        );
+    }
+    json!({"local_refs":refs})
 }
 
 fn query() -> Value {

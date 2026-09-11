@@ -20,7 +20,7 @@ pub(super) fn dimension_selection_from_arguments(
     .transpose()
 }
 
-fn dimension_selection_from_object(
+pub(super) fn dimension_selection_from_object(
     dimensions: &Map<String, Value>,
 ) -> Result<DimensionSelection, String> {
     let mode = match optional_string_field(dimensions, "mode", "dimensions.mode")?.as_deref() {

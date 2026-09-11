@@ -1,4 +1,6 @@
 //! Refusal -> targeted lesson -> source-backed correction, through native MCP.
+#[path = "support/reviewed_writer.rs"]
+mod reviewed_writer;
 use kmp_adapter_embedded::{EmbeddedKernelStore, verify_bundle};
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
@@ -10,7 +12,11 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
         .handle_json_line(&request.to_string())
         .await
         .expect("reply");
-    serde_json::from_str::<Value>(&reply).expect("JSON")["result"].clone()
+    reviewed_writer::review_authored_write(
+        server,
+        serde_json::from_str::<Value>(&reply).expect("JSON")["result"].clone(),
+    )
+    .await
 }
 
 async fn guide(server: &KernelMcpServer) {

@@ -26,6 +26,17 @@ impl ReadTx for SqliteSnapshotRead<'_> {
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
     }
+    fn scan_str3_page(
+        &self,
+        table: Table,
+        first: &str,
+        after: Option<(&str, &str)>,
+        limit: u32,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<Str3Row>, PortError> {
+        self.ops()
+            .scan_str3_page(table, first, after, limit, relation_type)
+    }
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         self.ops().scan_u64(table)
     }

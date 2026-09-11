@@ -1,6 +1,6 @@
 # Find a concrete example by capability
 
-Start with [one semantic packet](./semantic-batch.md) for local ids and an atomic write, or [one decision and its reason](./first-decision.md). It has two
+Start with [one semantic packet](./semantic-batch.md), exact ref `guide:kmp-agent:example:semantic-batch`, for local ids and an atomic write, or [one decision and its reason](./first-decision.md). It has two
 source lines and a direct write → inspect → retrieve → audit path. The other
 basic files group independent small cases so each relation has its own source,
 rationale and limit. Read the source and prerequisite writes before a selected
@@ -127,3 +127,6 @@ in a file would not prove any of those properties. Independent learning on
 new sources and reader questions remains a separate evaluation.
 
 The multivalue contract is demonstrated in [dimensional-memberships](./dimensional-memberships.md), exact ref `guide:kmp-agent:example:dimensional-memberships`: arrays, independent keys, selectors, late relabel and visual review.
+
+Execution and a later check from one report: `guide:kmp-agent:example:event-separation`.
+Compare fine occurred and observed cutoffs without moving the verification backward.

@@ -457,7 +457,7 @@ because an expense carries a `money` label.
 ```json
 {
   "tool": "kmp_write_memory",
-  "save_as": "bus",
+  "save_as": "bus_review",
   "arguments": {
     "about": "example:guide:structure-parts",
     "actor": "guide-writer",
@@ -516,6 +516,14 @@ because an expense carries a `money` label.
     ]
   }
 }
+```
+
+This returns `needs_review` without writing. Review the stored/proposed context
+and link directions against the sources above; expand relevant omissions.
+Resume this unchanged teaching proposal only after that review:
+
+```json
+{"tool":"kmp_write_memory","save_as":"bus","arguments":"${bus_review.next_actions.0.arguments}"}
 ```
 
 ```json

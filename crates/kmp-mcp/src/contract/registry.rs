@@ -43,22 +43,6 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
         for tool in tools.iter_mut().filter(|t| t["name"] != "kmp_guide") {
             tool["inputSchema"]["properties"]["context_id"] = json!({"type":"string","description":"Optional active context returned by kmp_guide; records use and enables concise guidance."});
             tool["inputSchema"]["properties"]["purpose"] = json!({"type":"string","enum":["continue","audit","history","answer"],"description":"Optional recommendation purpose with context_id. Omitted: continue the selected packet."});
-            if crate::guidance::ReadContinuation::supports(
-                tool["name"].as_str().unwrap_or_default(),
-            ) {
-                let schema = tool["inputSchema"].as_object_mut().expect("input schema");
-                schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":"Returned read handle. Use alone; preserves context, selection, cursor and budget. One page per call; retry repeats it. Follow the next action. Unavailable: restart original read."});
-                let mut initial = json!({"not":{"required":["continuation"]}});
-                for key in ["required", "anyOf", "oneOf", "allOf"] {
-                    if let Some(value) = schema.remove(key) {
-                        initial[key] = value;
-                    }
-                }
-                schema.insert(
-                    "oneOf".into(),
-                    json!([initial,{"required":["continuation"],"maxProperties":1}]),
-                );
-            }
             if matches!(
                 tool["name"].as_str(),
                 Some("kmp_write_memory" | "kmp_relabel")
@@ -71,6 +55,22 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
                     json!([{"required":["actor"]},{"required":["context_id"]}]);
                 tool["inputSchema"]["properties"]["actor"]["description"] = json!(
                     "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context."
+                );
+            }
+            if crate::guidance::ReadContinuation::supports(
+                tool["name"].as_str().unwrap_or_default(),
+            ) {
+                let schema = tool["inputSchema"].as_object_mut().expect("input schema");
+                schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":"Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again."});
+                let mut initial = json!({"not":{"required":["continuation"]}});
+                for key in ["required", "anyOf", "oneOf", "allOf", "if", "then", "else"] {
+                    if let Some(value) = schema.remove(key) {
+                        initial[key] = value;
+                    }
+                }
+                schema.insert(
+                    "oneOf".into(),
+                    json!([initial,{"required":["continuation"],"maxProperties":1}]),
                 );
             }
         }

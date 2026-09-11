@@ -143,6 +143,17 @@ pub(crate) trait ReadTx {
     /// query: all edges out of (or into) one node.
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError>;
 
+    /// Keyset page of an adjacency index. Reads at most limit values; never
+    /// loads the complete adjacency or probes an extra row to report its end.
+    fn scan_str3_page(
+        &self,
+        table: Table,
+        first: &str,
+        after: Option<(&str, &str)>,
+        limit: u32,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<Str3Row>, PortError>;
+
     /// Every row of a `U64`-keyed table, ascending.
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError>;
 

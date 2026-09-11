@@ -37,6 +37,8 @@ pub fn ingest_command_from_proto(
 
     Ok(MemoryIngestCommand {
         receipt_context,
+        default_observation_to_ingestion: request.default_observation_to_ingestion,
+        neighborhood_review: request.neighborhood_review,
         about: request.about,
         memory: MemoryData {
             dimensions: memory
@@ -68,6 +70,46 @@ pub fn ingest_command_from_proto(
 
 pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestResponse {
     IngestResponse {
+        neighborhood: outcome
+            .neighborhood
+            .map(|view| kmp_proto::v1beta1::WriteNeighborhood {
+                token: view.token,
+                eligible: view.eligible as u32,
+                omitted: view.omitted as u32,
+                omitted_conflicts: view.omitted_conflicts as u32,
+                abouts: view.abouts,
+                partial: view.partial,
+                links: view
+                    .links
+                    .into_iter()
+                    .map(|link| kmp_proto::v1beta1::NeighborhoodLink {
+                        from: link.from as u32,
+                        rel: link.rel,
+                        to: link.to as u32,
+                    })
+                    .collect(),
+                items: view
+                    .items
+                    .into_iter()
+                    .map(|item| kmp_proto::v1beta1::NeighborhoodItem {
+                        about: item.about,
+                        r#ref: item.reference,
+                        state: item.state,
+                        kind: item.kind,
+                        reason: item.reason,
+                        text: item.text,
+                        text_omitted: item.text_omitted,
+                        clocks: item
+                            .clocks
+                            .into_iter()
+                            .map(|(axis, values)| kmp_proto::v1beta1::NeighborhoodClock {
+                                axis,
+                                values,
+                            })
+                            .collect(),
+                    })
+                    .collect(),
+            }),
         summary: format!(
             "{} {} {}, {} {}, and {} {} for {}.",
             if !outcome.read_after_write_ready {
@@ -159,6 +201,15 @@ fn relation_from_proto(value: MemoryRelation) -> MemoryRelationData {
     let explanation = value.explanation.unwrap_or_default();
 
     MemoryRelationData {
+        clocks: explanation
+            .clocks
+            .map(|clocks| kmp_application::memory::MemoryRelationClocks {
+                occurred_at: proto_timestamp_to_sort_string(clocks.occurred_at),
+                observed_at: proto_timestamp_to_sort_string(clocks.observed_at),
+                ingested_at: proto_timestamp_to_sort_string(clocks.ingested_at),
+                valid_from: proto_timestamp_to_sort_string(clocks.valid_from),
+                valid_until: proto_timestamp_to_sort_string(clocks.valid_until),
+            }),
         source_ref: value.source_ref,
         target_ref: value.target_ref,
         rel: value.rel,
@@ -196,8 +247,7 @@ pub(super) fn provenance_from_proto(value: MemoryProvenance) -> MemoryProvenance
     MemoryProvenanceData {
         source_kind: source_kind_name(value.source_kind()),
         source_agent: value.source_agent,
-        observed_at: proto_timestamp_to_sort_string(value.observed_at)
-            .unwrap_or_else(|| "unix:100000000000:000000000".to_string()),
+        observed_at: proto_timestamp_to_sort_string(value.observed_at),
         correlation_id: non_empty(value.correlation_id),
         causation_id: non_empty(value.causation_id),
     }
@@ -208,6 +258,16 @@ fn write_clocks_to_proto(
 ) -> kmp_proto::v1beta1::WriteClocks {
     use kmp_proto::v1beta1::WriteClocks;
     WriteClocks {
+        relations: value
+            .relations
+            .map(|c| kmp_proto::v1beta1::RelationClockCoverage {
+                relations: c.relations as u32,
+                occurred: c.occurred as u32,
+                observed: c.observed as u32,
+                ingested: c.ingested as u32,
+                valid_from: c.valid_from as u32,
+                valid_until: c.valid_until as u32,
+            }),
         entries: value.entries as u32,
         occurred: Some(write_clock_to_proto(value.occurred)),
         observed: Some(write_clock_to_proto(value.observed)),

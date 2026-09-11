@@ -116,16 +116,9 @@ pub(super) fn relation_quality_diagnostic(
         input.read_context.sources_for(input.to)
     };
     let prior_context_observed = !prior_context_sources.is_empty();
-    if input.strict
-        && spec.quality == MemoryRelationQuality::Rich
-        && !target_is_local
-        && !prior_context_observed
-    {
-        return Err(WriteValidationError::new(format!(
-            "strict kmp_write_memory rich relation `{}` to `{}` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback",
-            input.rel, input.to
-        )).at("ref").code("PRIOR_CONTEXT_REQUIRED").action("kmp_inspect", json!({"about": input.about, "ref": input.to})));
-    }
+    // Caller-declared reads remain audit metadata. The kernel now serves and
+    // checks its own neighborhood before a rich relation can commit, including
+    // local endpoints and strict:false. Declaring a ref cannot bypass it.
 
     let quality = if !input.strict
         && spec.quality == MemoryRelationQuality::Rich
@@ -135,7 +128,7 @@ pub(super) fn relation_quality_diagnostic(
     } else {
         spec.quality
     };
-    let requires_prior_context = spec.quality == MemoryRelationQuality::Rich && !target_is_local;
+    let requires_prior_context = spec.quality == MemoryRelationQuality::Rich;
 
     Ok(json!({
         "crosses_about": target_is_foreign,

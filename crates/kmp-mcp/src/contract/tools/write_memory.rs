@@ -14,7 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_write_memory",
-        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
         write_memory_schema(),
         write_memory_output_schema(),
     )
@@ -26,12 +26,8 @@ pub(crate) fn write_memory_schema() -> Value {
         "additionalProperties": {"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","minLength":1}},
         "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary."
     });
-    let observed = string_schema(
-        "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
-    );
-    let occurred = string_schema(
-        "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
-    );
+    let observed = json!({"type":["string","null"],"description":"When this fact became known, with its true RFC3339 UTC offset. Omit for the packet observation; if neither is supplied, KMP uses the exact ingestion time. Null resets to ingestion time. Explicit backfill is preserved; more than five minutes ahead is refused."});
+    let occurred = json!({"type":["string","null"],"description":"When the event occurred, if known. Records inherit the packet value when omitted; null explicitly keeps occurrence unknown. KMP never substitutes observation or ingestion for an unknown occurrence."});
     let valid_from = string_schema(
         "Inclusive start of the recorded state's validity, only if known. Omit an unknown start; observation time is not a substitute.",
     );
@@ -44,7 +40,7 @@ pub(crate) fn write_memory_schema() -> Value {
         "if":{"required":["rel"],"properties":{"rel":{"enum":writer_relations_requiring_class()}}},
         "then":{"required":["class"]},
         "properties":{
-            "ref":string_schema("Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal."),
+            "ref":string_schema("Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Rich links require the server neighborhood review, even with local targets or strict:false. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal."),
             "rel":{"type":"string","enum":writer_relation_names(),"description":relation_vocabulary_description("Choose the specific relation justified by the source.")},
             "class":writer_class_schema(),
             "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links."),
@@ -72,7 +68,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "valid_until":valid_until,
                 "rank":rank,
                 "connect_to":{
-                    "description":"Justified links: this containing memory is the source, connect_to.ref is the target. Read each as source -> rel -> target before submitting.",
+                    "description":"Justified links: containing memory -> rel -> target. Each declaration and its generated evidence use the containing member's effective observation (root default, member override, or exact ingestion for null). Target clocks do not date the link. Occurrence and validity remain unknown.",
                     "type":"array","items":relation
                 }
             }
@@ -80,11 +76,11 @@ pub(crate) fn write_memory_schema() -> Value {
     });
     json!({
         "type":"object", "additionalProperties":false,
-        "required":["about","actor","observed_at"],
+        "required":["about","actor"],
         "properties":{
             "about":string_schema("Exact about receiving this one transaction. Never inferred or changed by a default."),
             "actor":string_schema("Human, agent or component producing the write."),
-            "observed_at":string_schema("Required packet provenance and shared observation time, even if every record overrides it. Supply the actual RFC3339 observation with its UTC offset; not an assumed occurrence or validity start. Backfill allowed; more than five minutes ahead of the kernel clock is refused."),
+            "observed_at":json!({"type":["string","null"],"description":"Shared observation and packet provenance. Omit or null for the exact ingestion time. Preserve an explicit source-backed RFC3339 observation; records may override it. Unknown occurrence is never inferred."}),
             "occurred_at":occurred,
             "valid_from":valid_from,
             "valid_until":valid_until,
@@ -101,12 +97,13 @@ pub(crate) fn write_memory_schema() -> Value {
                 }}
             },
             "read_context":read_context_schema(),
+            "review_token":string_schema("Returned neighborhood token, bound to this exact packet and context. Prefer the returned continuation. Omit on a new or corrected proposal; stale tokens refresh context without writing."),
             "idempotency_key":string_schema("One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload."),
             "options":{
                 "type":"object","additionalProperties":false,
                 "properties":{
-                    "dry_run":{"type":"boolean","description":"Explicit preview against the selected store, without commit or reservation. Defaults to false: ordinary writes validate and commit in one call. Requires an available backend."},
-                    "strict":{"type":"boolean","description":"Defaults to true. Requires evidence, justified supported relations, prior context for stored rich targets, and valid search renderings; refuses resembling new labels unless confirmed."},
+                    "dry_run":{"type":"boolean","description":"Explicit preview against the selected store, without commit or reservation. Defaults to false: rich links still receive neighborhood review before a later commit. Requires an available backend."},
+                    "strict":{"type":"boolean","description":"Defaults to true. Requires evidence, justified supported relations, and valid search renderings; never bypasses neighborhood review; refuses resembling new labels unless confirmed."},
                     "labels_new":{"type":"array","items":{"type":"string"},"description":"Keys whose new values are intentional after consulting the catalogue. Every named key must occur in the packet; the kernel neither renames nor merges a label silently."},
                     "sequence":{"type":"integer","minimum":1,"description":"Optional first sequence, advanced per record. Omit for the next free sequence in each coordinate. Not used for search_summaries, which preserve stored coordinates."}
                 }
@@ -121,7 +118,7 @@ pub(crate) fn write_memory_schema() -> Value {
         "else":{
             "required":["search_summaries"],
             "properties":{"options":{"not":{"anyOf":[{"required":["sequence"]},{"required":["labels_new"]}]}}},
-            "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]},{"required":["read_context"]}]}
+            "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]},{"required":["read_context"]},{"required":["review_token"]}]}
         }
     })
 }
@@ -130,7 +127,7 @@ pub(crate) fn read_context_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
-        "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Strict validation checks that rich relation targets occur here; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
+        "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Neighborhood review is enforced separately; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
         "properties": {
             "inspected_refs": {
                 "type": "array",
@@ -208,9 +205,17 @@ fn write_memory_output_schema() -> Value {
                 })), {"type":"null"}]}
             }))
         }),
-        "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
-        "status": json!({"type":"string","enum":["committed","replayed","validated","rejected","unconfirmed"],"description":"committed appended a command; replayed returned its earlier acceptance; validated is a preview; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure."}),
+        "accepted": described("boolean", "True only when the canonical ingest was committed; false for a preview or pending context review."),
+        "status": json!({"type":"string","enum":["committed","replayed","validated","needs_review","rejected","unconfirmed"],"description":"committed appended a command; replayed returned its earlier acceptance; validated is a preview; needs_review has applied nothing and returns context to review; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure."}),
+        "neighborhood": described("object", "Bounded literal context: stored/proposed items, exact refs, clocks, reasons, omissions and token. Proximity does not prove a relation; expand partial context when needed."),
+        "next_actions": described("array", "For needs_review, the bound write continuation. Review first; resuming rechecks context. No human approval per write is required."),
+        "expand_context": described("array", "Explicit-about native reads to expand omitted surroundings. Complete their relevant pages."),
         "clocks": crate::contract::schema::write_clocks::write_clocks_schema(),
+        "clock_defaults": output_object(json!({
+            "observed_at": described("string", "ingested_at: omitted/null observation is resolved by the kernel. Previews describe a plan, never a committed timestamp."),
+            "entries": described("integer", "Memories needing implicit observation, counted once across labels."),
+            "provenance": described("boolean", "Packet provenance also defaults to this write's ingestion time; search-summary updates preserve original fact clocks.")
+        })),
         "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
         "validation": output_object(json!({
             "scope": described("string", "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.")

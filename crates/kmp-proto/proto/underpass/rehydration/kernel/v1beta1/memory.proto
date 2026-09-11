@@ -38,6 +38,12 @@ message IngestRequest {
   LabelPolicy label_policy = 6;
   // Optional writer diagnostics for an immutable command audit, not memory.
   optional string receipt_context_json = 7;
+  // Semantic writer policy: fill missing observation on newly ingested coordinates
+  // packet provenance and evidence time with the same kernel ingestion timestamp.
+  // Already ingested coordinates are preserved, including unknown observation.
+  bool default_observation_to_ingestion = 8;
+  // Absent: canonical ingest. Empty: request review. Token: acknowledge served context.
+  optional string neighborhood_review = 9;
 }
 
 enum LabelPolicy {
@@ -117,6 +123,16 @@ message MemoryRelationExplanation {
   string decision_id = 3;
   string caused_by_node_id = 4;
   TemporalCoordinate coordinate = 5;
+  // Relation clocks do not require a dimensional membership.
+  RelationClocks clocks = 6;
+}
+
+message RelationClocks {
+  google.protobuf.Timestamp occurred_at = 1;
+  google.protobuf.Timestamp observed_at = 2;
+  google.protobuf.Timestamp ingested_at = 3;
+  google.protobuf.Timestamp valid_from = 4;
+  google.protobuf.Timestamp valid_until = 5;
 }
 
 // Own declaration clocks of evidence supports; not the source timestamp.
@@ -147,6 +163,41 @@ message IngestResponse {
   string summary = 1;
   IngestedMemory memory = 2;
   repeated string warnings = 3;
+  WriteNeighborhood neighborhood = 4;
+}
+
+message WriteNeighborhood {
+  string token = 1;
+  repeated NeighborhoodItem items = 2;
+  uint32 eligible = 3;
+  uint32 omitted = 4;
+  uint32 omitted_conflicts = 5;
+  repeated string abouts = 6;
+  bool partial = 7;
+  repeated NeighborhoodLink links = 8;
+}
+
+// Indices address stored items in this compact packet.
+message NeighborhoodLink {
+  uint32 from = 1;
+  string rel = 2;
+  uint32 to = 3;
+}
+
+message NeighborhoodItem {
+  string about = 1;
+  string ref = 2;
+  string state = 3;
+  string kind = 4;
+  string reason = 5;
+  optional string text = 6;
+  bool text_omitted = 7;
+  repeated NeighborhoodClock clocks = 8;
+}
+
+message NeighborhoodClock {
+  string axis = 1;
+  repeated string values = 2;
 }
 
 message IngestedMemory {
@@ -181,6 +232,17 @@ message WriteClocks {
   WriteClockCoverage ingested = 4;
   WriteClockCoverage valid_from = 5;
   WriteClockCoverage valid_until = 6;
+  RelationClockCoverage relations = 7;
+}
+
+// Supplied semantic relations, independent of entry clock coverage.
+message RelationClockCoverage {
+  uint32 relations = 1;
+  uint32 occurred = 2;
+  uint32 observed = 3;
+  uint32 ingested = 4;
+  uint32 valid_from = 5;
+  uint32 valid_until = 6;
 }
 
 // A label a write named beside the existing label it resembles: `kind` is
@@ -689,6 +751,174 @@ message TraceRequest {
   MemoryBudget budget = 4;
   PageRequest page = 5;
   string about = 6;
+  // Bounded mode: destinations share a search. Empty retains the single `to`.
+  repeated string targets = 7;
+  TraceSearchOptions search = 8;
+  TemporalCursor as_of = 9;
+  TemporalInterval interval = 10;
+  TemporalAxis axis = 11;
+}
+
+message TraceSearchOptions {
+  uint32 max_nodes = 1;
+  uint32 max_edges = 2;
+  uint32 max_depth = 3;
+  string direction = 4;
+  repeated string relations = 5;
+  uint32 paths_per_target = 6;
+  uint32 max_states = 7;
+  repeated TraceRelationStep follow = 8;
+  TraceMaterialSelectionOptions select = 9;
+  DimensionSelection dimensions = 10;
+  DimensionSelection prefer_dimensions = 11;
+  TraceSeekOptions seek = 12;
+}
+
+// Find compatible evidence from a seed, without known destination refs.
+message TraceSeekOptions {
+  repeated TraceSeekRole roles = 1;
+  repeated string same_labels = 2;
+  repeated TraceWitnessGroup same_ref = 3;
+}
+message TraceReferenceEndpoint {
+  string role = 1;
+  bool anchor = 2; // Traversal start of the main relation; false is its witness.
+}
+message TraceWitnessGroup { repeated TraceReferenceEndpoint endpoints = 1; }
+message TraceWitnessLabel { string key = 1; repeated string values = 2; }
+message TraceSeekRole {
+  string name = 1;
+  TraceRelationStep relation = 2;
+  repeated TraceRelationStep via = 3;
+  repeated TraceRelationStep after = 4;
+  repeated TraceWitnessLabel labels = 5;
+  bool context = 6; // Discover minimum-hop contextual prefixes; requires review.
+}
+message TraceEvidenceSelection {
+  string from = 1;
+  string status = 2;
+  bool declared_obligations_complete = 3;
+  repeated string roles = 4;
+  repeated string missing_roles = 5;
+  string stop_reason = 6;
+  uint32 discovered_nodes = 7;
+  uint32 scanned_edges = 8;
+  uint32 work_states = 9;
+  uint32 shared_states = 10;
+  uint32 incompatible_states = 11;
+  uint32 adjacency_pages = 12;
+  uint32 coordinate_pages = 13;
+  TemporalAxis axis = 14;
+  google.protobuf.Timestamp resolved_as_of = 15;
+  bool temporal_selection_resolved = 16;
+  repeated uint32 clock_unknown_edges = 17;
+  uint32 candidate_count = 18;
+  uint32 group_count = 19;
+  bool context_discovery = 20;
+}
+message TraceEvidenceBinding {
+  string key = 1;
+  repeated string roles = 2;
+  bool reference = 3;
+  repeated string values = 4;
+  repeated TraceReferenceEndpoint endpoints = 5;
+}
+message TraceMissingWitness {
+  string role = 1;
+  string ref = 2;
+  string key = 3;
+}
+message TraceEvidenceCandidate {
+  uint32 index = 1;
+  string role = 2;
+  repeated string nodes = 3;
+  repeated uint32 edge_indexes = 4;
+  string witness = 5;
+  repeated TraceEvidenceBinding bindings = 6;
+  repeated TraceMissingWitness missing = 7;
+  bool clock_unknown = 8;
+  uint32 context_hops = 9;
+  string anchor = 10; // Main relation traversal start, after via/context.
+}
+message TraceEvidenceGroup {
+  uint32 index = 1;
+  repeated uint32 candidate_indexes = 2;
+  repeated TraceEvidenceBinding bindings = 3;
+  repeated TraceMissingWitness missing = 4;
+  bool clock_unknown = 5;
+}
+
+message TraceRoutingStats {
+  bool focused = 1;
+  uint32 evaluated_entries = 2;
+  uint32 preferred_entries = 3;
+  uint32 dimensional_rejections = 4;
+  uint32 priority_pops = 5;
+  uint32 exploration_pops = 6;
+  repeated uint32 preferred_route_entries = 7;
+  uint32 adjacency_pages = 8;
+  uint32 coordinate_pages = 9;
+  uint32 resumed_states = 10;
+}
+
+message TraceMaterialSelectionOptions {
+  uint32 max_material_nodes = 1;
+  uint32 max_paths = 2;
+  repeated TraceProofRequirement groups = 3;
+}
+
+message TraceProofRequirement {
+  repeated TraceProofAlternative alternatives = 1;
+  uint32 weight = 2;
+}
+
+message TraceProofAlternative {
+  repeated string refs = 1;
+}
+
+message TraceMaterialSelectionResult {
+  uint32 candidate_count = 1;
+  repeated uint32 selected_candidates = 2;
+  uint32 material_nodes = 3;
+  uint32 benefit = 4;
+  repeated uint32 covered_groups = 5;
+  repeated uint32 incomplete_groups = 6;
+  uint32 evaluated = 7;
+  uint32 pruned_by_width = 8;
+  string candidate_fingerprint = 9;
+}
+
+message TraceRelationStep {
+  string rel = 1;
+  string direction = 2;
+}
+
+message TraceRoute {
+  string target = 1;
+  // Zero-based positions in the COMPLETE trace table, before transport paging.
+  repeated uint32 edge_indexes = 2;
+}
+
+message TraceSearchSelection {
+  string stop_reason = 1;
+  uint32 discovered_nodes = 2;
+  uint32 scanned_edges = 3;
+  uint32 expanded_nodes = 4;
+  uint32 leaves = 5;
+  repeated string unreached_targets = 6;
+  string direction = 7;
+  TemporalAxis axis = 8;
+  google.protobuf.Timestamp resolved_as_of = 9;
+  bool temporal_selection_resolved = 10;
+  uint32 coordinate_rows = 11;
+  repeated uint32 clock_unknown_edges = 12;
+  string from = 13;
+  repeated TraceRelationStep follow = 14;
+  uint32 paths_per_target = 15;
+  uint32 considered_states = 16;
+  repeated string incomplete_targets = 17;
+  TraceMaterialSelectionResult material = 18;
+  TraceRoutingStats routing = 19;
 }
 
 message TraceResponse {
@@ -699,6 +929,11 @@ message TraceResponse {
   ResponseQuality quality = 5;
   // Digest of the complete selected proof, before positional pagination.
   string selection_fingerprint = 6;
+  TraceSearchSelection search = 7;
+  repeated TraceRoute routes = 8;
+  TraceEvidenceSelection seek = 9;
+  repeated TraceEvidenceCandidate candidates = 10;
+  repeated TraceEvidenceGroup groups = 11;
 }
 
 // Relate: what memories of several abouts have to do with each other,

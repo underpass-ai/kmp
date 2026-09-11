@@ -241,13 +241,21 @@ A wider or open-ended interval does not admit proof later than the Goto cursor.
 Near, Forward and Rewind enumerate historical positions; their finite interval
 end bounds proof, while their cursor selects positions rather than an as-of state.
 
-## `observed_at` is the real clock, in UTC
+## Observation defaults to ingestion; occurrence may be unknown
 
-Every normal write carries `observed_at`: when this information was observed.
-It is distinct from `occurred_at` (when the event happened), ingestion time
-(when the kernel recorded it), and the validity interval (when it held).
-Select the clock that answers the question; reads are not all ordered by observation.
-**Read the clock; do not compose a timestamp.** Local wall-clock time with a
+For a new semantic write, omit `observed_at` or use null when the source gives
+no separate observation time: KMP assigns exactly its ingestion timestamp.
+An explicit observation time is preserved. `occurred_at` is when the event
+happened; omitted/null stays unknown unless a record inherits a root event date.
+A record's explicit null clears that inheritance. KMP never fills event time
+from observation or ingestion. Validity describes when a state held and remains
+independent. Equal clocks, or a shared observation across a packet, are valid.
+A semantic member declares its fact, links and evidence support together at its
+effective observation. A member override or null applies to that generated proof
+as well. Canonical ingest can declare a later association to an older source
+without changing source time. Select the clock that answers the question; reads
+are not all ordered by observation.
+**For an explicit time, read the clock or source; do not compose a timestamp.** Local wall-clock time with a
 `Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry
 above the present — where `kmp_forward` from a correct "now" never finds
 it, and the delta comes back empty looking exactly like a quiet week.
@@ -257,6 +265,13 @@ refused at write time. For an incident that occurred yesterday but was first
 observed this morning, keep yesterday in `occurred_at` and this morning in
 `observed_at`. A backfill preserves a genuinely known earlier observation;
 it does not copy event time into the knowledge clock merely because it is earlier.
+
+The write response's `clock_defaults` describes which observations defaulted;
+`clocks` describes the accepted values. A preview has no accepted timestamp.
+Replay, restart and import preserve the original receipt's clocks. A new search
+summary preserves the original fact's clocks, including any unknown observation.
+
+Four small examples appear at the start of `guide:kmp-agent:example:four-clocks`.
 
 An observed recall excludes evidence whose explicit receipt time is after
 `as_of`, or at/after an interval's exclusive end, even if it supports an older
@@ -284,3 +299,14 @@ coordinate. A missing label in the returned lanes does not mean the entry
 lacks that label. Consult the wake catalogue before selecting.
 
 RFC3339 clocks keep fractional seconds and accept explicit numeric UTC offsets. `2026-09-11T12:00:00.125+02:00` names the same instant as `2026-09-11T10:00:00.125Z`. An `as_of` cut includes an equal instant; an interval end excludes it. Do not round source clocks to whole seconds.
+
+## Selected entries versus delivered proof
+
+The leading `READ_INCOMPLETE` notice is unconditional: no registered context or
+guide read is needed. It reflects page.has_more, not selection.has_more. Two
+selected entries can be fully returned while seven proof.path relations still
+remain; finish the native next_actions read before relying on the whole packet.
+After page completion, next_actions may offer a different historical position.
+Do not treat that new selection as unfinished proof, or page completion as proof
+of semantic sufficiency. The structured summary still counts selected entries;
+its wording alone does not establish delivery completion.

@@ -116,6 +116,15 @@ where
         &self,
         command: UpdateContextCommand,
     ) -> Result<UpdateContextOutcome, ApplicationError> {
+        self.execute_after_read(command, &std::collections::BTreeMap::new())
+            .await
+    }
+
+    pub(crate) async fn execute_after_read(
+        &self,
+        command: UpdateContextCommand,
+        read_revisions: &std::collections::BTreeMap<String, u64>,
+    ) -> Result<UpdateContextOutcome, ApplicationError> {
         let case_id = CaseId::new(&command.root_node_id)?;
         let role = Role::new(&command.role)?;
 
@@ -211,22 +220,38 @@ where
             occurred_at: SystemTime::now(),
         };
 
-        // Append with optimistic concurrency
-        let new_revision = self
-            .event_store
-            .append(event, current_revision)
-            .await
-            .map_err(|error| match error {
-                // The revision was read above and changed before append. No
-                // part of this event was committed, so replaying the same
-                // logical command under its existing idempotency key is safe.
-                PortError::Conflict(message) => ApplicationError::RetryableConflict(message),
-                other => ApplicationError::Ports(other),
-            })?;
+        let mut projection_mutations =
+            memory_projection_mutations(&command, current_revision + 1, &content_hash)?;
+        let atomic = self.event_store.commits_projections_atomically();
+        let appended = if atomic {
+            let revisions = read_revisions
+                .iter()
+                .map(|(about, revision)| kmp_domain::ContextRevision {
+                    root_node_id: about.clone(),
+                    role: "memory".into(),
+                    revision: *revision,
+                })
+                .collect();
+            self.event_store
+                .append_projected(
+                    event,
+                    current_revision,
+                    revisions,
+                    std::mem::take(&mut projection_mutations),
+                )
+                .await
+        } else {
+            self.event_store.append(event, current_revision).await
+        };
+        let new_revision = appended.map_err(|error| match error {
+            // The revision was read above and changed before append. No
+            // part of this event was committed, so replaying the same
+            // logical command under its existing idempotency key is safe.
+            PortError::Conflict(message) => ApplicationError::RetryableConflict(message),
+            other => ApplicationError::Ports(other),
+        })?;
 
-        let projection_mutations =
-            memory_projection_mutations(&command, new_revision, &content_hash)?;
-        if !projection_mutations.is_empty() {
+        if !atomic && !projection_mutations.is_empty() {
             self.projection_writer
                 .apply_mutations(projection_mutations)
                 .await?;
@@ -242,6 +267,10 @@ where
             },
             warnings,
         })
+    }
+
+    pub(crate) async fn memory_revision(&self, about: &str) -> Result<u64, ApplicationError> {
+        Ok(self.event_store.current_revision(about, "memory").await?)
     }
 }
 

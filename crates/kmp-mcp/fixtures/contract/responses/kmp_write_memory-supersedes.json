@@ -25,6 +25,14 @@
         "entries": 2,
         "single_value": "2026-04-12T17:00:00Z"
       },
+      "relations": {
+        "ingested": 3,
+        "observed": 3,
+        "occurred": 0,
+        "relations": 3,
+        "valid_from": 0,
+        "valid_until": 0
+      },
       "scope": "accepted_command",
       "valid_from": {
         "distinct_values": 0,
