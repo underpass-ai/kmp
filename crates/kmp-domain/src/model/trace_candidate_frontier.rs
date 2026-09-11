@@ -1,14 +1,14 @@
-use super::trace_path_state::TracePathState;
+use super::{trace_path_state::TracePathState, trace_pending_states::TracePendingStates};
 use crate::{
     NodeRelationProjection, TraceRoute, TraceSearchRequest, TraceSearchResult, TraceSearchStop,
 };
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Parent-linked BFS states. Adjacency admission and storage remain outside it.
 pub(super) struct TraceCandidateFrontier<'a> {
     request: &'a TraceSearchRequest,
     states: Vec<TracePathState>,
-    queue: VecDeque<usize>,
+    queue: TracePendingStates,
     visited: BTreeSet<String>,
     found: BTreeMap<String, Vec<usize>>,
     edges: Vec<NodeRelationProjection>,
@@ -18,11 +18,11 @@ pub(super) struct TraceCandidateFrontier<'a> {
 }
 
 impl<'a> TraceCandidateFrontier<'a> {
-    pub fn new(request: &'a TraceSearchRequest, root_admitted: bool) -> Self {
+    pub fn new(request: &'a TraceSearchRequest, root_admitted: bool, preferred: bool) -> Self {
         let mut frontier = Self {
             request,
             states: vec![],
-            queue: VecDeque::new(),
+            queue: TracePendingStates::new(request.dimensions.preferred.is_some()),
             visited: BTreeSet::new(),
             found: BTreeMap::new(),
             edges: vec![],
@@ -34,10 +34,11 @@ impl<'a> TraceCandidateFrontier<'a> {
             frontier.states.push(TracePathState {
                 node: request.from.clone(),
                 depth: 0,
+                preferred_nodes: u32::from(preferred),
                 parent: None,
                 edge: None,
             });
-            frontier.queue.push_back(0);
+            frontier.queue.push(0, 0, preferred);
             frontier.visited.insert(request.from.clone());
             frontier.considered = 1;
             frontier.record_target(0);
@@ -46,14 +47,20 @@ impl<'a> TraceCandidateFrontier<'a> {
     }
 
     pub fn pop(&mut self) -> Option<(usize, String, u32)> {
-        self.queue.pop_front().map(|index| {
+        self.queue.pop().map(|index| {
             let state = &self.states[index];
             (index, state.node.clone(), state.depth)
         })
     }
 
     /// Counts attempts before cycle/visited checks, bounding unsuccessful work too.
-    pub fn extend(&mut self, parent: usize, neighbor: &str, edge: &NodeRelationProjection) -> bool {
+    pub fn extend(
+        &mut self,
+        parent: usize,
+        neighbor: &str,
+        edge: &NodeRelationProjection,
+        preferred: bool,
+    ) -> bool {
         if self.considered == self.request.limits.states {
             self.stop = Some(TraceSearchStop::StateBudget);
             return false;
@@ -85,10 +92,11 @@ impl<'a> TraceCandidateFrontier<'a> {
         self.states.push(TracePathState {
             node: neighbor.into(),
             depth: self.states[parent].depth + 1,
+            preferred_nodes: self.states[parent].preferred_nodes + u32::from(preferred),
             parent: Some(parent),
             edge: Some(edge_index),
         });
-        self.queue.push_back(index);
+        self.queue.push(index, self.states[index].depth, preferred);
         self.record_target(index);
         self.stop.is_none()
     }
@@ -122,6 +130,10 @@ impl<'a> TraceCandidateFrontier<'a> {
 
     pub fn finish(&self, result: &mut TraceSearchResult) {
         result.considered_states = self.considered;
+        if let Some(routing) = result.routing.as_mut() {
+            routing.priority_pops = self.queue.priority_pops;
+            routing.exploration_pops = self.queue.exploration_pops;
+        }
         result.unreached = self
             .request
             .targets
@@ -139,6 +151,11 @@ impl<'a> TraceCandidateFrontier<'a> {
         let mut selected = BTreeMap::new();
         for (target, states) in &self.found {
             for &last in states {
+                if let Some(routing) = result.routing.as_mut() {
+                    routing
+                        .preferred_route_entries
+                        .push(self.states[last].preferred_nodes);
+                }
                 let mut path = Vec::new();
                 let mut cursor = &self.states[last];
                 while let (Some(parent), Some(edge)) = (cursor.parent, cursor.edge) {

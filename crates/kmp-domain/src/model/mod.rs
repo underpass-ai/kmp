@@ -65,3 +65,9 @@ pub use select_trace_material::select_trace_material;
 pub use trace_material_result::TraceMaterialResult;
 pub use trace_material_selection::TraceMaterialSelection;
 pub use trace_proof_requirement::TraceProofRequirement;
+
+mod trace_dimension_policy;
+mod trace_pending_states;
+mod trace_routing_stats;
+pub use trace_dimension_policy::TraceDimensionPolicy;
+pub use trace_routing_stats::TraceRoutingStats;

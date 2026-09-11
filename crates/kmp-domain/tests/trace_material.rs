@@ -9,6 +9,7 @@ fn strings(items: &[&str]) -> BTreeSet<String> {
 }
 fn candidates(paths: &[&[&str]]) -> TraceSearchResult {
     let mut r = TraceSearchResult {
+        routing: None,
         material: None,
         from: "s".into(),
         follow: vec![],

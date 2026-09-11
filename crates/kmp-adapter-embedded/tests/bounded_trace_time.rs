@@ -71,6 +71,7 @@ fn query(axis: TemporalAxis) -> TraceSearchRequest {
         from: "a".into(),
         targets: ["b".into()].into(),
         direction: RelationDirection::Outgoing,
+        dimensions: Default::default(),
         select: None,
         follow: vec![],
         paths_per_target: 1,

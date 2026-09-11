@@ -5,6 +5,7 @@ use kmp_domain::{
 
 fn result() -> TraceSearchResult {
     TraceSearchResult {
+        routing: None,
         material: None,
         from: "a".into(),
         follow: vec![],
@@ -228,5 +229,46 @@ fn alternative_contract_preserves_policy_and_rejects_ambiguous_moves() {
     let options = request.search.as_mut().expect("options");
     options.paths_per_target = 2;
     options.follow.push(options.follow[0].clone());
+    assert!(trace_search_request_from_proto(&request).is_err());
+}
+
+#[test]
+fn dimensional_policies_map_separately_and_reject_cross_about_focus() {
+    use kmp_proto::v1beta1::{
+        DimensionScopeMode, DimensionSelection, LabelSelector, LabelSelectorOperator,
+        TraceSearchOptions,
+    };
+    let filter = DimensionSelection {
+        selectors: vec![LabelSelector {
+            key: "env".into(),
+            op: LabelSelectorOperator::In as i32,
+            values: vec!["prod".into()],
+        }],
+        ..Default::default()
+    };
+    let mut request = TraceRequest {
+        about: "p".into(),
+        from: "s".into(),
+        to: "t".into(),
+        search: Some(TraceSearchOptions {
+            dimensions: Some(filter.clone()),
+            prefer_dimensions: Some(filter),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let native = trace_search_request_from_proto(&request)
+        .expect("map")
+        .expect("bounded");
+    assert!(native.dimensions.required.is_some());
+    assert!(native.dimensions.preferred.is_some());
+    request
+        .search
+        .as_mut()
+        .expect("options")
+        .prefer_dimensions
+        .as_mut()
+        .expect("focus")
+        .scope = DimensionScopeMode::AllAbouts as i32;
     assert!(trace_search_request_from_proto(&request).is_err());
 }

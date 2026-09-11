@@ -49,6 +49,16 @@ pub fn trace_search_request_from_proto(
         } else {
             request.targets.iter().cloned().collect()
         },
+        dimensions: kmp_domain::TraceDimensionPolicy {
+            required: options
+                .dimensions
+                .map(|v| super::dimensions::domain_dimension_selection(Some(v)))
+                .transpose()?,
+            preferred: options
+                .prefer_dimensions
+                .map(|v| super::dimensions::domain_dimension_selection(Some(v)))
+                .transpose()?,
+        },
         select: options
             .select
             .map(super::trace_material::request)
@@ -130,7 +140,8 @@ pub fn trace_search_response_from_result(
         trace: result.relations.iter().map(|edge| memory_relation_from_bundle_relationship(&BundleRelationship::from_projection(edge))).collect(),
         routes: result.routes.into_iter().map(|r| TraceRoute { target: r.target, edge_indexes: r.edge_indexes }).collect(),
         search: Some(TraceSearchSelection {
-            material: None,
+            routing: result.routing.map(|s| kmp_proto::v1beta1::TraceRoutingStats { focused: s.focused, evaluated_entries: s.evaluated_entries, preferred_entries: s.preferred_entries, dimensional_rejections: s.dimensional_rejections, priority_pops: s.priority_pops, exploration_pops: s.exploration_pops, preferred_route_entries: s.preferred_route_entries }),
+        material: None,
             from: result.from, paths_per_target: result.paths_per_target,
             considered_states: result.considered_states, incomplete_targets: result.incomplete_targets,
             follow: result.follow.iter().map(|s| kmp_proto::v1beta1::TraceRelationStep {

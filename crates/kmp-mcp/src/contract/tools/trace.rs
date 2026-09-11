@@ -31,6 +31,8 @@ pub(crate) fn definition() -> Value {
                         "max_edges":{"type":"integer","minimum":1,"maximum":32768,"default":2048,"description":"Adjacency rows decoded, including coordinate and filtered rows."},
                         "max_depth":{"type":"integer","minimum":1,"maximum":1024,"default":128},
                         "select": material_selection_schema(),
+                        "dimensions": trace_dimensions_schema(false),
+                        "prefer_dimensions": trace_dimensions_schema(true),
                         "paths_per_target":{"type":"integer","minimum":1,"maximum":8,"default":1,"description":"Up to this many simple candidate paths per target. Quotas and work limits can omit a better joint proof."},
                         "max_states":{"type":"integer","minimum":1,"maximum":32768,"default":4096,"description":"Root plus eligible path extensions attempted, including cycle and visited-node rejections."},
                         "follow":{"type":"array","minItems":1,"maxItems":16,"uniqueItems":true,"description":"Allowed moves instead of direction/relations. Unordered; does not require a sequence of types.","items":{"type":"object","additionalProperties":false,"required":["rel","direction"],"properties":{"rel":{"type":"string","minLength":1},"direction":{"type":"string","enum":["outgoing","incoming"]}}}},
@@ -54,7 +56,7 @@ fn trace_output_schema() -> Value {
     output_object(json!({
         "summary": described("string", "Concise statement of the path selection."),
         "trace": described("array", "Typed relation table. In bounded mode, routes index this complete table after all pages are joined; empty at a work cutoff does not prove no path."),
-        "search": json!({"type":"object","description":"Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth/state_budget and source_outside_selection. Optional material reports candidate count, selected original indexes, material nodes, covered/incomplete group indexes, benefit and selection work. Group indexes follow supplied groups; without groups they follow sorted target refs. expand_candidates is an optional full call starting a new selection without select, not a page continuation. Zero selected paths can mean no group fit, even with candidates available. Includes work counters, source from, direction (per_relation when follow is used), follow moves and paths_per_target. unreached_targets have no route; incomplete_targets have fewer than their quota. targets_reached means quotas obtained; the source needs only its zero-hop route. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut."}),
+        "search": json!({"type":"object","description":"Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth/state_budget and source_outside_selection. Optional routing reports dimensional checks/rejections, priority/FIFO pops and preferred_route_entries aligned with returned routes (including source). dimension_focus_v1 changes order, never drops a state by score; no shortest-path guarantee. A dense adjacency may exhaust N/E before queued preferred states expand. Optional material reports candidate count, selected original indexes, material nodes, covered/incomplete group indexes, benefit and selection work. Group indexes follow supplied groups; without groups they follow sorted target refs. expand_candidates is an optional full call starting a new selection without select, not a page continuation. Zero selected paths can mean no group fit, even with candidates available. Includes work counters, source from, direction (per_relation when follow is used), follow moves and paths_per_target. unreached_targets have no route; incomplete_targets have fewer than their quota. targets_reached means quotas obtained; the source needs only its zero-hop route. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut."}),
         "routes": described("array", "Present in bounded mode. Each candidate has a target and zero-based edge_indexes into the complete trace table, in traversal hop order. Join every page first. Start at search.from and match each stored endpoint to reconstruct traversal direction. An empty index list is a zero-hop route to from. With search.select, only selected candidate paths and their complete relations are returned."),
         "page": relation_page_output_schema("trace relations", "Opaque trace cursor; repeat it as page.cursor with selection arguments unchanged. budget.max_bytes and page.entries may vary; changed selected content or arguments return a conflict with a complete restart action."),
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
@@ -75,4 +77,27 @@ fn material_selection_schema() -> Value {
                 "alternatives":{"type":"array","minItems":1,"maxItems":8,"items":{"type":"array","minItems":1,"maxItems":8,"uniqueItems":true,"items":{"type":"string","minLength":1}}}
             }}}
     }})
+}
+
+fn trace_dimensions_schema(preferred: bool) -> Value {
+    let mut schema = dimensions_schema();
+    schema["properties"]["scope"] = json!({"type":"string","enum":["current_about"]});
+    schema["properties"]
+        .as_object_mut()
+        .expect("properties")
+        .remove("abouts");
+    for key in ["include", "exclude", "scope_ids"] {
+        schema["properties"][key]["maxItems"] = json!(64);
+    }
+    schema["properties"]["selectors"]["maxItems"] = json!(16);
+    schema["properties"]["selectors"]["items"]["properties"]["values"]["maxItems"] = json!(64);
+    schema["properties"]["selectors"]["description"] = json!(
+        "Conjoined predicates on the complete set of coordinates admitted on the selected clock. Absence refers to that set, not proof that no other membership exists."
+    );
+    schema["description"] = json!(if preferred {
+        "Soft order, not exclusion: three pops maximize (matches, -depth, -discovery index), then one FIFO pop. Requires a kind, scope value or selector. May reach a longer route first; no shortest-path guarantee. Coordinates share N/E. Finite limits can still omit nonpreferred bridges."
+    } else {
+        "Hard filter on source and every traversed entry, using only coordinates admitted on the selected clock. It can remove a necessary bridge; use prefer_dimensions for a preference. Reuses native only/except/scopes/selectors. Coordinate work shares N/E."
+    });
+    schema
 }

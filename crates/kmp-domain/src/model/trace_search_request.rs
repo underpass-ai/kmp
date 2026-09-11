@@ -11,6 +11,7 @@ pub struct TraceSearchRequest {
     pub relations: BTreeSet<String>,
     pub follow: Vec<crate::TraceRelationStep>,
     pub paths_per_target: u32,
+    pub dimensions: crate::TraceDimensionPolicy,
     pub select: Option<crate::TraceMaterialSelection>,
     pub limits: TraceSearchLimits,
     pub temporal: crate::TemporalSelection,
@@ -19,6 +20,7 @@ pub struct TraceSearchRequest {
 impl TraceSearchRequest {
     pub fn validate(&self) -> Result<(), DomainError> {
         self.limits.validate()?;
+        self.dimensions.validate()?;
         if let Some(policy) = &self.select {
             policy.validate(&self.targets)?;
         }

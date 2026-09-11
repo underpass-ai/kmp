@@ -34,6 +34,7 @@ pub fn bounded_trace_search(
         moves.push((request.direction, None));
     }
     let mut result = TraceSearchResult {
+        routing: None,
         material: None,
         from: request.from.clone(),
         follow: request.follow.clone(),
@@ -58,7 +59,8 @@ pub fn bounded_trace_search(
         resolved_as_of: admission.resolved_as_of.clone(),
         temporal_selection_resolved: resolved,
     };
-    let mut frontier = TraceCandidateFrontier::new(request, root_admitted);
+    let mut frontier =
+        TraceCandidateFrontier::new(request, root_admitted, admission.preferred(&request.from));
     let mut cache = BTreeMap::<String, Vec<NodeRelationProjection>>::new();
     let mut depth_cut = false;
     'search: while admission.budget.stop.is_none() && frontier.stop.is_none() {
@@ -75,7 +77,12 @@ pub fn bounded_trace_search(
         }
         if let Some(edges) = cache.get(&node) {
             for edge in edges {
-                if !frontier.extend(state, neighbor(edge, &node), edge) {
+                if !frontier.extend(
+                    state,
+                    neighbor(edge, &node),
+                    edge,
+                    admission.preferred(neighbor(edge, &node)),
+                ) {
                     break 'search;
                 }
             }
@@ -119,7 +126,7 @@ pub fn bounded_trace_search(
                         continue;
                     }
                     has_eligible = true;
-                    if !frontier.extend(state, next, &edge) {
+                    if !frontier.extend(state, next, &edge, admission.preferred(next)) {
                         break 'search;
                     }
                     if request.paths_per_target > 1 {
@@ -144,6 +151,9 @@ pub fn bounded_trace_search(
     result.coordinate_rows = admission.budget.coordinate_rows;
     if let Some(stop) = frontier.stop.or(admission.budget.stop) {
         result.stop = stop;
+    }
+    if request.dimensions.is_active() {
+        result.routing = Some(admission.routing.clone());
     }
     frontier.finish(&mut result);
     if !request.temporal.is_frontier() {

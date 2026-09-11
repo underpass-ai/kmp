@@ -6225,6 +6225,93 @@
             "additionalProperties": false,
             "description": "Bounded native traversal on the selected clock. Shared work limits; page/budget control transport separately. Temporal admission uses as_of/interval/axis; no cross-about expansion in this mode.",
             "properties": {
+              "dimensions": {
+                "additionalProperties": false,
+                "description": "Hard filter on source and every traversed entry, using only coordinates admitted on the selected clock. It can remove a necessary bridge; use prefer_dimensions for a preference. Reuses native only/except/scopes/selectors. Coordinate work shares N/E.",
+                "properties": {
+                  "exclude": {
+                    "items": {
+                      "description": "Dimension kind to exclude.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array"
+                  },
+                  "include": {
+                    "items": {
+                      "description": "Dimension kind to include.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array"
+                  },
+                  "mode": {
+                    "enum": [
+                      "all",
+                      "only",
+                      "except"
+                    ],
+                    "type": "string"
+                  },
+                  "scope": {
+                    "enum": [
+                      "current_about"
+                    ],
+                    "type": "string"
+                  },
+                  "scope_ids": {
+                    "items": {
+                      "description": "Bare label value or complete label ref returned by KMP.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array"
+                  },
+                  "selectors": {
+                    "description": "Conjoined predicates on the complete set of coordinates admitted on the selected clock. Absence refers to that set, not proof that no other membership exists.",
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "op": {
+                          "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
+                          "enum": [
+                            "in",
+                            "notin",
+                            "exists",
+                            "notexists"
+                          ],
+                          "type": "string"
+                        },
+                        "values": {
+                          "items": {
+                            "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "maxItems": 64,
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "op"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 16,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
               "direction": {
                 "default": "outgoing",
                 "description": "Traversal direction; stored source/target and meaning are preserved.",
@@ -6295,6 +6382,93 @@
                 "maximum": 8,
                 "minimum": 1,
                 "type": "integer"
+              },
+              "prefer_dimensions": {
+                "additionalProperties": false,
+                "description": "Soft order, not exclusion: three pops maximize (matches, -depth, -discovery index), then one FIFO pop. Requires a kind, scope value or selector. May reach a longer route first; no shortest-path guarantee. Coordinates share N/E. Finite limits can still omit nonpreferred bridges.",
+                "properties": {
+                  "exclude": {
+                    "items": {
+                      "description": "Dimension kind to exclude.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array"
+                  },
+                  "include": {
+                    "items": {
+                      "description": "Dimension kind to include.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array"
+                  },
+                  "mode": {
+                    "enum": [
+                      "all",
+                      "only",
+                      "except"
+                    ],
+                    "type": "string"
+                  },
+                  "scope": {
+                    "enum": [
+                      "current_about"
+                    ],
+                    "type": "string"
+                  },
+                  "scope_ids": {
+                    "items": {
+                      "description": "Bare label value or complete label ref returned by KMP.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 64,
+                    "type": "array"
+                  },
+                  "selectors": {
+                    "description": "Conjoined predicates on the complete set of coordinates admitted on the selected clock. Absence refers to that set, not proof that no other membership exists.",
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "key": {
+                          "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "op": {
+                          "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
+                          "enum": [
+                            "in",
+                            "notin",
+                            "exists",
+                            "notexists"
+                          ],
+                          "type": "string"
+                        },
+                        "values": {
+                          "items": {
+                            "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "maxItems": 64,
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "op"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 16,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
               },
               "relations": {
                 "description": "Exact relation types to follow. Omitted/empty admits every non-structural link with stored why and evidence.",
@@ -6466,7 +6640,7 @@
             "type": "array"
           },
           "search": {
-            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth/state_budget and source_outside_selection. Optional material reports candidate count, selected original indexes, material nodes, covered/incomplete group indexes, benefit and selection work. Group indexes follow supplied groups; without groups they follow sorted target refs. expand_candidates is an optional full call starting a new selection without select, not a page continuation. Zero selected paths can mean no group fit, even with candidates available. Includes work counters, source from, direction (per_relation when follow is used), follow moves and paths_per_target. unreached_targets have no route; incomplete_targets have fewer than their quota. targets_reached means quotas obtained; the source needs only its zero-hop route. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut.",
+            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth/state_budget and source_outside_selection. Optional routing reports dimensional checks/rejections, priority/FIFO pops and preferred_route_entries aligned with returned routes (including source). dimension_focus_v1 changes order, never drops a state by score; no shortest-path guarantee. A dense adjacency may exhaust N/E before queued preferred states expand. Optional material reports candidate count, selected original indexes, material nodes, covered/incomplete group indexes, benefit and selection work. Group indexes follow supplied groups; without groups they follow sorted target refs. expand_candidates is an optional full call starting a new selection without select, not a page continuation. Zero selected paths can mean no group fit, even with candidates available. Includes work counters, source from, direction (per_relation when follow is used), follow moves and paths_per_target. unreached_targets have no route; incomplete_targets have fewer than their quota. targets_reached means quotas obtained; the source needs only its zero-hop route. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut.",
             "type": "object"
           },
           "summary": {

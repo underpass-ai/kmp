@@ -727,3 +727,20 @@ pagination. Measure the entire response and any optional expansion separately;
 material nodes are not tokens. Keep calibration frozen for comparisons and
 retain failed runs. See [mathematical policy](trace-material-selection.md).
 These maintenance instructions add no editorial CI gate.
+
+
+### Trace dimensional routing
+
+Reuse DimensionSelection/LabelSelector/EntryLabels and their parser. Hard
+search.dimensions and soft search.prefer_dimensions are separate choices; do
+not silently turn the latter into admission. Trace reads memberships only on
+the selected clock inside the same bounded ReadTx. Keep scope current_about.
+
+Maintain both protobuf copies, request maps, queue scheduling, stats projection,
+material-selection reindexing and cursor binding together. Explain preference
+counts as observations, not truth. Unconfigured calls keep their prior output
+and BFS cost. Update audit card, extended verb and bounded-trace example, then
+regenerate. Validate a useful hint, a misleading hint with a bridge, temporal
+multivalue/negative selectors, hard exclusion, dense fanout, stale labels and
+full response costs. Do not tune the fixed 3:1 schedule on those controls.
+See [policy and known limits](trace-dimensional-routing.md). No editorial gate.
