@@ -1,8 +1,22 @@
 use kmp_domain::{NodeDetailProjection, NodeDetailReader, PortError};
 
-use super::engine::{Key, Table};
+use super::engine::{Key, ReadTx, Table};
 use super::serdes::{DetailRecord, decode};
 use super::store::EmbeddedKernelStore;
+
+pub(super) fn read_batch(
+    tx: &dyn ReadTx,
+    node_ids: &[String],
+) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
+    node_ids
+        .iter()
+        .map(|id| {
+            tx.get(Table::Details, Key::Str(id))?
+                .map(|raw| decode::<DetailRecord>("node detail", &raw).map(Into::into))
+                .transpose()
+        })
+        .collect()
+}
 
 impl NodeDetailReader for EmbeddedKernelStore {
     async fn load_node_detail(
@@ -26,14 +40,7 @@ impl NodeDetailReader for EmbeddedKernelStore {
     ) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let mut results = Vec::with_capacity(node_ids.len());
-            for node_id in &node_ids {
-                results.push(match tx.get(Table::Details, Key::Str(node_id))? {
-                    Some(raw) => Some(decode::<DetailRecord>("node detail", &raw)?.into()),
-                    None => None,
-                });
-            }
-            Ok(results)
+            read_batch(tx.as_ref(), &node_ids)
         })
         .await
     }

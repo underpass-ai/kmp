@@ -31,6 +31,10 @@ impl<'a> TemporalReadWindow<'a> {
         }
     }
 
+    pub(crate) fn is_frontier(&self) -> bool {
+        self.selection.is_frontier()
+    }
+
     pub fn admits_coordinate(&self, coordinate: &TemporalCoordinate) -> bool {
         let axis = self.selection.axis().unwrap_or_default();
         match self.selection {

@@ -4,6 +4,7 @@ use crate::{NodeRelationProjection, TraceSearchStop};
 /// Native discovery and joint compatibility over one reader snapshot.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvidencePathResult {
+    pub proof: Option<crate::TraceProofResult>,
     pub from: String,
     pub context_discovery: bool,
     pub relations: Vec<NodeRelationProjection>,

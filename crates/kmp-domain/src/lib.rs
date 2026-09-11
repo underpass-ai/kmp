@@ -149,3 +149,5 @@ mod tests {
         );
     }
 }
+
+pub use model::{TraceProofObject, TraceProofResult};

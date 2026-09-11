@@ -58,6 +58,7 @@ async fn ownership_and_all_route_explanations_share_one_snapshot_during_independ
         .await
         .expect("fixture write or bounded read");
     let request = TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: "a".into(),
         targets: ["c".into()].into(),
@@ -126,6 +127,7 @@ async fn coordinate_admission_and_proof_share_one_snapshot_during_retiming() {
         .await
         .expect("later commit");
     let request = TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: "a".into(),
         targets: ["b".into()].into(),
@@ -191,6 +193,7 @@ async fn focused_resumed_pages_keep_ownership_and_evidence_in_the_original_snaps
         .await
         .expect("independent commit");
     let request = TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: "a".into(),
         targets: ["t".into()].into(),

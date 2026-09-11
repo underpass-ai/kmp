@@ -31,6 +31,7 @@ fn edge(a: &str, b: &str, rel: &str) -> ProjectionMutation {
 }
 fn query(targets: &[&str]) -> TraceSearchRequest {
     TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: "s".into(),
         targets: targets.iter().map(|s| (*s).into()).collect(),

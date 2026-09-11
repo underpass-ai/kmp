@@ -4,6 +4,8 @@ use std::collections::BTreeSet;
 /// Explicit destinations on one selected clock. No cross-about inference.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TraceSearchRequest {
+    /// Materialize declared proof from the same bounded snapshot.
+    pub proof: bool,
     pub about: String,
     pub from: String,
     pub targets: BTreeSet<String>,
