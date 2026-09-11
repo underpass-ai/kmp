@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Found live kernel node `question:parity:claim:denver`.",
+      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\nFound live kernel node `question:parity:claim:denver`.",
       "type": "text"
     }
   ],

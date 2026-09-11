@@ -26,6 +26,12 @@ async fn recommendations_execute_native_pages_and_stop_at_temporal_unknown() {
     assert_eq!(page["isError"], false, "{page}");
     let advice = guidance(&page);
     assert_eq!(advice["signals"]["packet_partial"], true, "{page}");
+    assert!(
+        page["content"][0]["text"]
+            .as_str()
+            .expect("primary text")
+            .starts_with("READ_INCOMPLETE:")
+    );
     assert_eq!(
         advice["recommendation"]["reason_code"], "finish_selected_packet",
         "{advice}"
@@ -63,6 +69,12 @@ async fn recommendations_execute_native_pages_and_stop_at_temporal_unknown() {
         "question":"When does the route open?","axis":"observed","interval":{"end":"2026-09-01T00:00:00Z"}})).await;
     assert_eq!(unknown["isError"], false, "{unknown}");
     assert_eq!(unknown["structuredContent"]["answer"], "UNKNOWN");
+    assert!(
+        !unknown["content"][0]["text"]
+            .as_str()
+            .expect("primary text")
+            .starts_with("READ_INCOMPLETE:")
+    );
     let advice = guidance(&unknown);
     assert_eq!(
         advice["recommendation"]["reason_code"], "unknown_in_selection",

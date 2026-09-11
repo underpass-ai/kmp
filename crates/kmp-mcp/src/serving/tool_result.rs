@@ -8,11 +8,19 @@ use serde_json::{Value, json};
 
 use crate::serving::ToolError;
 
+/// Pending delivery inside this selected packet, not history outside it or
+/// semantic completeness. Shared with optional guidance so both surfaces agree.
+pub(crate) fn packet_is_partial(body: &Value) -> bool {
+    body.pointer("/page/has_more") == Some(&Value::Bool(true))
+        || body.pointer("/projection/page/has_more") == Some(&Value::Bool(true))
+        || body.pointer("/projection/core_text_shortened") == Some(&Value::Bool(true))
+}
+
 pub(crate) fn tool_success_result(structured_content: Value) -> Value {
     // `structuredContent` is the canonical response. Repeating the entire
     // pretty-printed JSON in the text block doubled every tool result and was
     // enough to overflow hosts even after the structured packet was budgeted.
-    let text = structured_content
+    let mut text = structured_content
         .get("summary")
         .and_then(Value::as_str)
         .or_else(|| structured_content.get("answer").and_then(Value::as_str))
@@ -21,6 +29,9 @@ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
             serde_json::to_string(&structured_content)
                 .expect("fixture JSON should serialize as compact text")
         });
+    if packet_is_partial(&structured_content) {
+        text.insert_str(0, "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\n");
+    }
     json!({
         "content": [
             {
@@ -32,6 +43,10 @@ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
         "isError": false
     })
 }
+
+#[cfg(test)]
+#[path = "tool_result_read_tests.rs"]
+mod read_tests;
 
 /// UI data remains in `structuredContent`, which MCP Apps delivers to the
 /// sandbox without copying it into model context. The text fallback stays a

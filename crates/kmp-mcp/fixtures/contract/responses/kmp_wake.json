@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Objective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
+      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\nObjective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
       "type": "text"
     }
   ],

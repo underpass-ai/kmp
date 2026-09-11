@@ -832,3 +832,15 @@ explícito en ejemplos históricos. Comparar resultados válidos completos y med
 esquema, tarjeta y rechazos, sin inferir comprensión de agentes del replay.
 [Diseño y aceptación](trace-search-modes.md); instrucciones informativas, sin CI
 editorial adicional.
+
+### Aviso principal de lectura incompleta
+
+`tool_result::packet_is_partial` deriva el estado de entrega de page.has_more,
+projection.page.has_more y projection.core_text_shortened. El primer texto de
+lecturas parciales y la ayuda opcional usan esa misma función. No confundir con
+selection.has_more, límites de búsqueda o la vecindad previa del escritor.
+Mantener el objeto estructurado y sus presupuestos intactos: el aviso pertenece
+al sobre, no a la fuente. Probar continuación real sin contexto, con contexto,
+UNKNOWN completo, núcleo abreviado y otra posición histórica tras página completa.
+Actualizar entrada, tarjeta temporal, verbo y ejemplo de presupuesto; medir el
+sobre completo además del cuerpo. [Diseño](read-progress.md), sin CI editorial.

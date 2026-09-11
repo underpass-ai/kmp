@@ -8,6 +8,8 @@ Write separate facts with evidence and useful labels. Distinguish event, observa
 
 Start once with `kmp_guide {"registration_key":"unique-task-and-agent-key"}`. Keep its agent and context ids. Pass `context_id` with work calls. Before an unfamiliar verb, use `context_id` plus `topic` for its worked card; follow the extended guide when needed. Reuse guidance while current and present. After compaction use `agent_id` plus a new `context_key`. Served does not mean understood. This Markdown index is the alternative entry, not another manual to load. Rejections offer `help.guide`, `help.examples` and direct `feedback[].action`.
 
+A leading `READ_INCOMPLETE` marks an unfinished selected packet, even when all selected entries are present. It also covers a shortened recall core.
+
 Copy each returned continuation unchanged; `continuation` is used alone. Finish relevant pages. Partial results are incomplete. UNKNOWN can be the correct final result.
 
 With context, a `kmp_guidance` text block offers help, signals and one optional next call. Copy its arguments; `purpose` can request audit, history or answer. A recommendation is not evidence or permission. Keep the original result.

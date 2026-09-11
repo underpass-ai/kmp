@@ -17,6 +17,14 @@ adding fields; it supplies the sequence, ref and interval forms.
 `next_actions` distinguish finishing a page from moving beyond the selection.
 Finish pending proof before following the next historical position.
 
+`READ_INCOMPLETE` leads the result when selected proof is still being delivered.
+For example, `selection.has_more:false` with two entries can coexist with
+`page.has_more:true` and seven relations pending. Execute the returned read action;
+the two entries alone do not complete that packet. Conversely, a complete page
+may offer a new history position because `selection.has_more:true`. That is a
+new selection, not a continuation of missing proof. Neither establishes that
+the evidence is sufficient for the question.
+
 An empty selected interval says nothing about another clock or interval. Labels
 and related memories can guide a declared zoom; do not silently widen scope.
 

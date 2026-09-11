@@ -113,6 +113,18 @@ async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
             server = server.with_shared_passages(true);
             let shared = call(&server, tool, args.clone()).await;
             assert_eq!(shared["isError"], false, "{tool}: {shared}");
+            assert_eq!(
+                inline["content"][0], shared["content"][0],
+                "primary read notice: {tool}"
+            );
+            assert_eq!(
+                shared["content"][0]["text"]
+                    .as_str()
+                    .expect("primary text")
+                    .starts_with("READ_INCOMPLETE:"),
+                guidance(&shared)["signals"]["packet_partial"] == true,
+                "notice and optional guidance agree: {tool}"
+            );
             let body = &shared["structuredContent"];
             assert!(body.to_string().len() <= inline["structuredContent"].to_string().len());
             encoded_pages += usize::from(body.get("passages").is_some());
