@@ -123,6 +123,16 @@ message MemoryRelationExplanation {
   string decision_id = 3;
   string caused_by_node_id = 4;
   TemporalCoordinate coordinate = 5;
+  // Relation clocks do not require a dimensional membership.
+  RelationClocks clocks = 6;
+}
+
+message RelationClocks {
+  google.protobuf.Timestamp occurred_at = 1;
+  google.protobuf.Timestamp observed_at = 2;
+  google.protobuf.Timestamp ingested_at = 3;
+  google.protobuf.Timestamp valid_from = 4;
+  google.protobuf.Timestamp valid_until = 5;
 }
 
 message MemoryEvidence {
@@ -215,6 +225,17 @@ message WriteClocks {
   WriteClockCoverage ingested = 4;
   WriteClockCoverage valid_from = 5;
   WriteClockCoverage valid_until = 6;
+  RelationClockCoverage relations = 7;
+}
+
+// Supplied semantic relations, independent of entry clock coverage.
+message RelationClockCoverage {
+  uint32 relations = 1;
+  uint32 occurred = 2;
+  uint32 observed = 3;
+  uint32 ingested = 4;
+  uint32 valid_from = 5;
+  uint32 valid_until = 6;
 }
 
 // A label a write named beside the existing label it resembles: `kind` is

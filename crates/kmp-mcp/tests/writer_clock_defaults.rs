@@ -69,9 +69,19 @@ async fn omitted_observation_matches_ingestion_and_survives_replay_and_restart()
     assert_eq!(clocks["observed"]["entries"], 2);
     assert_eq!(clocks["observed"]["distinct_values"], 1);
     assert_eq!(clocks["occurred"]["entries"], 0);
+    assert_eq!(
+        clocks["relations"],
+        json!({"relations":1,"occurred":0,"observed":1,
+        "ingested":1,"valid_from":0,"valid_until":0})
+    );
     let original = receipt(&server, &written).await;
     let at = &original["canonical_memory"]["entries"][0]["coordinates"][0]["ingested_at"];
     assert_eq!(&original["provenance"]["observed_at"], at);
+    let link = &original["canonical_memory"]["relations"][0];
+    assert_eq!(&link["clocks"]["observed_at"], at);
+    assert_eq!(&link["clocks"]["ingested_at"], at);
+    assert!(link["clocks"].get("occurred_at").is_none());
+    assert!(link.get("coordinate").is_none());
     for entry in original["canonical_memory"]["entries"]
         .as_array()
         .expect("entries")
@@ -148,6 +158,9 @@ async fn record_clocks_do_not_supply_packet_provenance_and_equal_clocks_are_vali
     assert_eq!(second["observed_at"], stored["provenance"]["observed_at"]);
     assert_eq!(second["observed_at"], second["ingested_at"]);
     assert!(second.get("occurred_at").is_none());
+    let link = &stored["canonical_memory"]["relations"][0]["clocks"];
+    assert_eq!(link["observed_at"], stored["provenance"]["observed_at"]);
+    assert_ne!(link["observed_at"], first["observed_at"]);
 }
 
 #[tokio::test]
@@ -190,6 +203,10 @@ async fn explicit_packet_clocks_and_record_null_overrides_are_distinct() {
     assert_eq!(clocks["occurred"]["single_value"], "2026-09-01T09:00:00Z");
     let detail = receipt(&server, &written).await;
     let entries = &detail["canonical_memory"]["entries"];
+    let link = &detail["canonical_memory"]["relations"][0]["clocks"];
+    assert_eq!(link["observed_at"], detail["provenance"]["observed_at"]);
+    assert!(link.get("occurred_at").is_none());
+    assert!(link.get("valid_from").is_none());
     assert_eq!(
         entries[0]["coordinates"][0]["observed_at"],
         detail["provenance"]["observed_at"]

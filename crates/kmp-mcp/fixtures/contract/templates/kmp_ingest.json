@@ -31,6 +31,14 @@
           "entries": "integer",
           "single_value": "null"
         },
+        "relations": {
+          "ingested": "integer",
+          "observed": "integer",
+          "occurred": "integer",
+          "relations": "integer",
+          "valid_from": "integer",
+          "valid_until": "integer"
+        },
         "scope": "string",
         "valid_from": {
           "distinct_values": "integer",

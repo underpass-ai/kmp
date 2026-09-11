@@ -86,6 +86,14 @@ pub struct EdgeView {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub occurred_at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub observed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ingested_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub valid_from: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub valid_until: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sequence: Option<u32>,
 }
 
@@ -107,6 +115,10 @@ impl EdgeView {
             dimension: explanation.dimension().map(ToString::to_string),
             scope_id: explanation.scope_id().map(ToString::to_string),
             occurred_at: explanation.occurred_at().map(readable_time),
+            observed_at: explanation.observed_at().map(readable_time),
+            ingested_at: explanation.ingested_at().map(readable_time),
+            valid_from: explanation.valid_from().map(readable_time),
+            valid_until: explanation.valid_until().map(readable_time),
             sequence: explanation.sequence(),
         }
     }
@@ -265,6 +277,15 @@ pub fn visual_projection_view(mut result: VisualProjectionResult) -> VisualProje
     }
     for label in &mut result.labels {
         label.last_observed_at = label.last_observed_at.as_deref().map(readable_time);
+    }
+    for relation in &mut result.relations {
+        if let Some(clocks) = &mut relation.clocks {
+            clocks.occurred_at = clocks.occurred_at.as_deref().map(readable_time);
+            clocks.observed_at = clocks.observed_at.as_deref().map(readable_time);
+            clocks.ingested_at = clocks.ingested_at.as_deref().map(readable_time);
+            clocks.valid_from = clocks.valid_from.as_deref().map(readable_time);
+            clocks.valid_until = clocks.valid_until.as_deref().map(readable_time);
+        }
     }
     for entry in &mut result.entries {
         for coordinate in &mut entry.coordinates {

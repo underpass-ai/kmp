@@ -55,6 +55,11 @@ unknown. Without a root event date, omitted occurrence also stays unknown.
 Ingestion is assigned by the kernel; the semantic writer cannot supply it.
 Equal observed and occurred times are valid when the source supports both.
 Several records may share an observation time without sharing an occurrence.
+Each `connect_to` declaration also gets its own observed and ingested clocks.
+Its observation comes from the packet, or exact ingestion if omitted; neither
+endpoint's per-record dates can backdate the link. Its occurrence and validity
+remain unknown. No extra writer arguments are needed. Separate execution and
+verification records still carry their own event times.
 If one report says an action ran at 11:00 and its check passed at 11:05, keep
 the action and check in separate records with event-specific summaries and
 evidence fragments. Do not put the later verified result into the earlier
@@ -318,6 +323,13 @@ Do not turn an uncertain reply into a new logical write.
 `clocks.scope=accepted_command` summarizes the clocks actually in that command,
 including on replay. Each clock counts memories once across all label memberships:
 `entries`, `distinct_values`, and an RFC3339 `single_value` when there is only one.
+`clocks.relations` separately counts semantic links and how many carry each
+clock; structural label memberships are excluded. For one ordinary link,
+`relations=1, observed=1, ingested=1, occurred=0` is normal. Read responses expose
+its own dates in `relation.clocks`; they describe the stored declaration, not
+when its endpoints occurred or when the claim became true. An unchanged retry
+preserves these dates. Old undated links are not assigned dates on read.
+
 Zero occurred entries means no event time was recorded. One observed instant
 across nine memories is worth comparing with the nine sources; KMP cannot decide
 whether those sources were observed together. Missing occurrence is legitimate

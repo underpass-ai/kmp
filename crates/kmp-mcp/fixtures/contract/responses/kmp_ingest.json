@@ -31,6 +31,14 @@
           "entries": 3,
           "single_value": null
         },
+        "relations": {
+          "ingested": 1,
+          "observed": 1,
+          "occurred": 0,
+          "relations": 1,
+          "valid_from": 0,
+          "valid_until": 0
+        },
         "scope": "accepted_command",
         "valid_from": {
           "distinct_values": 2,

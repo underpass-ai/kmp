@@ -336,6 +336,15 @@ pub(super) fn memory_relation_json(relation: &MemoryRelation) -> Value {
         object.insert("sequence".to_string(), json!(sequence));
     }
     if let Some(explanation) = relation.explanation.as_ref() {
+        if let Some(clocks) = &explanation.clocks {
+            let mut values = Map::new();
+            insert_optional_timestamp(&mut values, "occurred_at", clocks.occurred_at);
+            insert_optional_timestamp(&mut values, "observed_at", clocks.observed_at);
+            insert_optional_timestamp(&mut values, "ingested_at", clocks.ingested_at);
+            insert_optional_timestamp(&mut values, "valid_from", clocks.valid_from);
+            insert_optional_timestamp(&mut values, "valid_until", clocks.valid_until);
+            object.insert("clocks".into(), Value::Object(values));
+        }
         insert_optional_string(&mut object, "motivation", &explanation.motivation);
         insert_optional_string(&mut object, "method", &explanation.method);
         insert_optional_string(&mut object, "decision_id", &explanation.decision_id);

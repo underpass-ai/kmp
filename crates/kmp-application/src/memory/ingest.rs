@@ -53,6 +53,10 @@ pub fn translate_memory_ingest(
         &accepted_command.memory,
         existing,
         &ingested_at,
+        accepted_command
+            .provenance
+            .as_ref()
+            .and_then(|p| p.observed_at.as_deref()),
     )?;
     // A dimension declared here that the about did not hold yet is a label
     // this write creates; the writer reports it so vocabulary growth is
@@ -195,6 +199,7 @@ fn namespaced_memory(
     memory: &MemoryData,
     existing: &ExistingMemoryRefs,
     ingested_at: &str,
+    observed_at: Option<&str>,
 ) -> Result<MemoryData, ApplicationError> {
     if memory.dimensions.is_empty() && existing.dimensions.is_empty() {
         return Err(ApplicationError::Validation(
@@ -414,6 +419,29 @@ fn namespaced_memory(
             }
         }
         let mut relation = relation.clone();
+        if semantic_class != RelationSemanticClass::Structural {
+            relation.clocks = Some(super::resolve_relation_clocks::resolve_relation_clocks(
+                relation.clocks.as_ref(),
+                relation.coordinate.as_ref(),
+                observed_at,
+                ingested_at,
+            )?);
+        }
+        if semantic_class == RelationSemanticClass::Structural && relation.clocks.is_some() {
+            return Err(ApplicationError::Validation(
+                "structural relations carry their clocks in coordinate, not clocks".to_string(),
+            ));
+        }
+        if semantic_class != RelationSemanticClass::Structural
+            && let Some(coordinate) = coordinate.as_mut()
+        {
+            coordinate.occurred_at = None;
+            coordinate.observed_at = None;
+            coordinate.ingested_at = None;
+            coordinate.valid_from = None;
+            coordinate.valid_until = None;
+        }
+        relation.semantic_class = semantic_class.as_str().to_string();
         relation.source_ref = source_ref;
         relation.target_ref = target_ref;
         relation.decision_id = normalize_optional_member_ref(
@@ -1312,6 +1340,7 @@ mod tests {
                     metadata: Default::default(),
                 }],
                 relations: vec![MemoryRelationData {
+                    clocks: None,
                     source_ref: "conversation:rachel-2026-04-12".to_string(),
                     target_ref: "question:830ce83f:claim:rachel-denver".to_string(),
                     rel: "contains_entry".to_string(),
@@ -1354,6 +1383,7 @@ mod tests {
 
     fn cross_about_relation(rel: &str, method: Option<&str>) -> MemoryRelationData {
         MemoryRelationData {
+            clocks: None,
             source_ref: "question:830ce83f:claim:rachel-denver".to_string(),
             target_ref: "incident:platform:outcome:freeze".to_string(),
             rel: rel.to_string(),

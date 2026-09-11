@@ -214,10 +214,21 @@ fn proto_relation(value: VisualRelation) -> MemoryRelation {
         evidence: value.evidence.unwrap_or_default(),
         confidence: proto_confidence(value.confidence.as_deref()) as i32,
         sequence: None,
-        explanation: value.method.map(|method| MemoryRelationExplanation {
-            method,
-            ..Default::default()
-        }),
+        explanation: if value.method.is_some() || value.clocks.is_some() {
+            Some(MemoryRelationExplanation {
+                method: value.method.unwrap_or_default(),
+                clocks: value.clocks.map(|c| kmp_proto::v1beta1::RelationClocks {
+                    occurred_at: timestamp_from_sort_or_rfc3339(c.occurred_at.as_deref()),
+                    observed_at: timestamp_from_sort_or_rfc3339(c.observed_at.as_deref()),
+                    ingested_at: timestamp_from_sort_or_rfc3339(c.ingested_at.as_deref()),
+                    valid_from: timestamp_from_sort_or_rfc3339(c.valid_from.as_deref()),
+                    valid_until: timestamp_from_sort_or_rfc3339(c.valid_until.as_deref()),
+                }),
+                ..Default::default()
+            })
+        } else {
+            None
+        },
         evidence_refs: Vec::new(),
     }
 }

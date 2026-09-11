@@ -342,6 +342,10 @@
         },
         {
           "class": "evidential",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T16:00:00Z"
+          },
           "confidence": "medium",
           "evidence_refs": [
             "detail:evidence:question:parity:denver",
@@ -361,6 +365,10 @@
         },
         {
           "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:denver",
@@ -378,6 +386,10 @@
         },
         {
           "class": "evidential",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:denver",
@@ -547,6 +559,10 @@
         },
         {
           "class": "evidential",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T15:00:00Z"
+          },
           "confidence": "high",
           "evidence": "Both statements came from the same conversation.",
           "evidence_refs": [

@@ -11,6 +11,11 @@ X3 as provenance. Do not put “already recoverable” into the 11:00 execution.
 Both records may share observed_at=12:00. Neither needs an invented validity date.
 The verified_by link points from the execution outcome to the check; its rationale
 qualifies what that later check proves. It does not make the check occur at 11:00.
+The link is declared with observation 12:00 and the kernel's actual ingestion.
+Its own occurrence and validity remain absent: do not copy 11:00 or 11:05 into
+it. On observed reads before noon it is excluded. On occurred reads its own
+clock is unknown; the endpoint selection must still exclude the later check.
+ChronoLoom's relation detail shows these dates separately from the nodes.
 
 Use an isolated teaching store. The ${...} notation copies the exact returned
 value, never a reconstructed ref. Send only each call's arguments.

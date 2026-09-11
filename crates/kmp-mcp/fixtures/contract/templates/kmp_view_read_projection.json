@@ -96,6 +96,10 @@
     "relations": [
       {
         "class": "string",
+        "clocks": {
+          "ingested_at": "string",
+          "observed_at": "string"
+        },
         "confidence": "string",
         "evidence": "string",
         "from": "string",

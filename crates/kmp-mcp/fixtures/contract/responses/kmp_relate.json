@@ -11,6 +11,10 @@
     "declared": [
       {
         "class": "evidential",
+        "clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T16:00:00Z"
+        },
         "confidence": "medium",
         "evidence": "The claim is the store's only prior entry.",
         "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
@@ -21,6 +25,10 @@
       },
       {
         "class": "causal",
+        "clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T17:00:00Z"
+        },
         "confidence": "high",
         "evidence": "Both statements are hers, minutes apart.",
         "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
@@ -31,6 +39,10 @@
       },
       {
         "class": "evidential",
+        "clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T17:00:00Z"
+        },
         "confidence": "high",
         "evidence": "She named Boulder after naming Denver.",
         "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
@@ -41,6 +53,10 @@
       },
       {
         "class": "causal",
+        "clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T17:00:00Z"
+        },
         "confidence": "high",
         "evidence": "Both statements are hers, minutes apart.",
         "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
@@ -51,6 +67,10 @@
       },
       {
         "class": "evidential",
+        "clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T15:00:00Z"
+        },
         "confidence": "high",
         "evidence": "Both statements came from the same conversation.",
         "from": "question:parity:claim:denver-detail",
