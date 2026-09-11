@@ -709,3 +709,21 @@ early routes at a later work cutoff. Test mixed direction, reconvergence, hubs,
 deep paths, temporal exclusions, quotas, zero hops and cursor reconstruction.
 See [candidate discovery design](trace-alternatives.md). Guidance and cost
 accounting remain documentation, with no new CI gate.
+
+
+### Trace material selection
+
+Native `select_trace_material` selects over the bounded candidate catalogue;
+`TraceMaterialSelection` validates explicit caller requirements. Change the two
+protobufs, request maps, route/clock reindexing, full-candidate cursor digest,
+MCP parser/schema/projection and optional expansion action together. The expansion
+belongs in `search.material.expand_candidates`, never mandatory `next_actions`.
+It must preserve all selection arguments except select and the old page cursor.
+
+Update the audit card, audit verb and bounded-trace example together, then
+regenerate the installed guides and surface fixtures. Verify AND/OR, shared
+material, zero benefit, infeasible requirements, hidden-candidate changes and
+pagination. Measure the entire response and any optional expansion separately;
+material nodes are not tokens. Keep calibration frozen for comparisons and
+retain failed runs. See [mathematical policy](trace-material-selection.md).
+These maintenance instructions add no editorial CI gate.

@@ -768,6 +768,34 @@ message TraceSearchOptions {
   uint32 paths_per_target = 6;
   uint32 max_states = 7;
   repeated TraceRelationStep follow = 8;
+  TraceMaterialSelectionOptions select = 9;
+}
+
+message TraceMaterialSelectionOptions {
+  uint32 max_material_nodes = 1;
+  uint32 max_paths = 2;
+  repeated TraceProofRequirement groups = 3;
+}
+
+message TraceProofRequirement {
+  repeated TraceProofAlternative alternatives = 1;
+  uint32 weight = 2;
+}
+
+message TraceProofAlternative {
+  repeated string refs = 1;
+}
+
+message TraceMaterialSelectionResult {
+  uint32 candidate_count = 1;
+  repeated uint32 selected_candidates = 2;
+  uint32 material_nodes = 3;
+  uint32 benefit = 4;
+  repeated uint32 covered_groups = 5;
+  repeated uint32 incomplete_groups = 6;
+  uint32 evaluated = 7;
+  uint32 pruned_by_width = 8;
+  string candidate_fingerprint = 9;
 }
 
 message TraceRelationStep {
@@ -799,6 +827,7 @@ message TraceSearchSelection {
   uint32 paths_per_target = 15;
   uint32 considered_states = 16;
   repeated string incomplete_targets = 17;
+  TraceMaterialSelectionResult material = 18;
 }
 
 message TraceResponse {

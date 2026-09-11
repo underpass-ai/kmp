@@ -61,6 +61,10 @@ pub(super) fn arguments(
                 return Err("search.follow replaces direction and relations".into());
             }
             Ok::<_, String>(TraceSearchOptions {
+                select: s
+                    .get("select")
+                    .map(super::trace_material::arguments)
+                    .transpose()?,
                 paths_per_target: limit("paths_per_target", 1, 8)?,
                 max_states: limit("max_states", 4096, 32768)?,
                 max_nodes: limit("max_nodes", 256, 4096)?,

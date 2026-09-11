@@ -11,6 +11,7 @@ pub struct TraceSearchRequest {
     pub relations: BTreeSet<String>,
     pub follow: Vec<crate::TraceRelationStep>,
     pub paths_per_target: u32,
+    pub select: Option<crate::TraceMaterialSelection>,
     pub limits: TraceSearchLimits,
     pub temporal: crate::TemporalSelection,
 }
@@ -18,6 +19,9 @@ pub struct TraceSearchRequest {
 impl TraceSearchRequest {
     pub fn validate(&self) -> Result<(), DomainError> {
         self.limits.validate()?;
+        if let Some(policy) = &self.select {
+            policy.validate(&self.targets)?;
+        }
         if !(1..=8).contains(&self.paths_per_target) || self.follow.len() > 16 {
             return Err(DomainError::InvalidState(
                 "trace search requires paths_per_target 1..8 and at most 16 follow moves".into(),

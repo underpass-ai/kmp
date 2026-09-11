@@ -36,6 +36,7 @@ fn query(targets: &[&str]) -> TraceSearchRequest {
         targets: targets.iter().map(|s| (*s).into()).collect(),
         direction: RelationDirection::Outgoing,
         relations: Default::default(),
+        select: None,
         follow: vec![],
         paths_per_target: 2,
         limits: TraceSearchLimits::default(),
@@ -89,6 +90,21 @@ async fn alternatives_survive_reconvergence_without_reading_adjacency_twice() {
     let single = store.load_bounded_trace(&single).await.expect("baseline");
     assert_eq!(single.routes[0], result.routes[0]);
     assert_eq!(single.relations, result.relations[..3]);
+    let mut selection = query(&["t"]);
+    selection.select = Some(kmp_domain::TraceMaterialSelection {
+        max_nodes: 4,
+        max_paths: 4,
+        groups: vec![],
+    });
+    let mut selected = store.load_bounded_trace(&selection).await.expect("select");
+    let material = selected.material.take().expect("material");
+    assert_eq!(material.selected_candidates, [0]);
+    assert_eq!(material.material_refs.len(), 4);
+    assert_eq!(material.benefit, 1);
+    assert_eq!(
+        selected, result,
+        "selection must not change discovery, clocks, paths or work counters"
+    );
 }
 
 #[tokio::test]

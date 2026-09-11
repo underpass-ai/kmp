@@ -18,6 +18,7 @@ mod temporal_entry_projection;
 mod temporal_page;
 pub(crate) mod temporal_projection;
 mod test_support;
+mod trace_material_expansion;
 pub(crate) mod trace_projection;
 pub(crate) mod visual_projection;
 

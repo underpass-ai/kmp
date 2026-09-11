@@ -49,6 +49,10 @@ pub fn trace_search_request_from_proto(
         } else {
             request.targets.iter().cloned().collect()
         },
+        select: options
+            .select
+            .map(super::trace_material::request)
+            .transpose()?,
         follow: options
             .follow
             .into_iter()
@@ -126,6 +130,7 @@ pub fn trace_search_response_from_result(
         trace: result.relations.iter().map(|edge| memory_relation_from_bundle_relationship(&BundleRelationship::from_projection(edge))).collect(),
         routes: result.routes.into_iter().map(|r| TraceRoute { target: r.target, edge_indexes: r.edge_indexes }).collect(),
         search: Some(TraceSearchSelection {
+            material: None,
             from: result.from, paths_per_target: result.paths_per_target,
             considered_states: result.considered_states, incomplete_targets: result.incomplete_targets,
             follow: result.follow.iter().map(|s| kmp_proto::v1beta1::TraceRelationStep {
@@ -143,6 +148,9 @@ pub fn trace_search_response_from_result(
         warnings: vec!["Bounded trace reads same-about entries and source-backed non-structural links on the selected clock. Missing link clocks remain unknown, not proof of their historical presence; clock_unknown_edges identifies those selected rows. Entry/source bodies, lifecycle state and missing proof requirements are not inferred.".into()],
         ..Default::default()
     };
+    if let Some(material) = result.material {
+        super::trace_material::project(&mut response, material);
+    }
     response.selection_fingerprint = ReadSelectionFingerprint::trace_search(&response);
     let total = response.trace.len();
     let offset = page.offset().min(total);

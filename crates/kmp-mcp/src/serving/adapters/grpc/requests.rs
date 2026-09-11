@@ -4,6 +4,7 @@ mod ingest;
 mod queries;
 mod relabel;
 mod temporal;
+mod trace_material;
 mod trace_search;
 mod visual;
 
