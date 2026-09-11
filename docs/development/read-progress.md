@@ -58,16 +58,18 @@ compresión y los demás requisitos del objetivo siguen su seguimiento separado.
 
 ## Resultado de la comprobación
 
-V2 conserva exactamente22páginas y añade16avisos; V3 verifica otra página completa
-con más historia disponible y sin aviso.54RPC entre los dos controles emparejados,
-sin errores ni modelos. V1 se conserva con10RPC y un rechazo correcto porque el
-investigador pidió page.entries enInspect; V2 retira ese argumento. El control
-V2 llamado goto-more-history no produjo esa condición y no se usa para probarla;
-V3 añade el limit.entries documentado sin cambiar código ni fuentes.
+V2 conserva exactamente 22 páginas y añade 16 avisos; V3 verifica otra página
+completa con más historia disponible y sin aviso. Son 54 RPC entre los dos
+controles emparejados, sin errores ni modelos. V1 se conserva con 10 RPC y un
+rechazo correcto porque el investigador pidió `page.entries` en Inspect; V2
+retira ese argumento. El control V2 llamado `goto-more-history` no produjo esa
+condición y no se usa para probarla; V3 añade el `limit.entries` documentado sin
+cambiar código ni fuentes.
 
-El aviso añade26tokenso200k por página parcial:416tokens/2176bytes enV2, sin cambiar
-structuredContent. Catálogo e inicialización nativos iguales. Entrada del agente
-359→389tokens; tarjeta temporal328→433. No se afirma ahorro ni comprensión nueva.
-613testsMCP pasan,1manual previo omitido;Clippy y generación de guía pasan. El
-control adicional shared_passages comprueba las nueve lecturas, expansión exacta
-y coherencia del primer texto con la ayuda opcional. No nuevos gates editoriales.
+El aviso añade 26 tokens o200k por página parcial: 416 tokens y 2176 bytes en V2,
+sin cambiar structuredContent. Catálogo e inicialización nativos iguales.
+Entrada del agente: 359 → 389 tokens; tarjeta temporal: 328 → 433. No se afirma
+ahorro ni comprensión nueva. Pasan 613 tests MCP; uno manual previo permanece
+omitido. Clippy y generación de guía pasan. El control adicional shared_passages
+comprueba las nueve lecturas, expansión exacta y coherencia del primer texto con
+la ayuda opcional. No se añaden barreras editoriales de CI.
