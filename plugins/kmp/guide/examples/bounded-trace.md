@@ -92,3 +92,52 @@ call returns candidates, not the best joint set. Quotas can hide a better set.
 attempt, including rejected cycles and visited nodes. Completed adjacency is
 reused inside the same snapshot. N/E still count actual discovered refs/decoded
 rows, not final context size. Compare those costs separately from material read.
+
+
+## Select shared material before reading all alternatives
+
+Suppose the stored paths are A→B→C, A→D→V, A→H→C and A→H→V.
+The reader needs C and V and already has their exact returned refs. This call
+can select the shared paths through H under four distinct entries:
+
+```json
+{"about":"about","from":"ref-A","to":["ref-C","ref-V"],
+ "search":{"paths_per_target":2,"select":{"max_material_nodes":4}}}
+```
+
+Without groups, each target is one equally weighted requirement. Source A and
+shared H count once; `search.max_nodes` still bounds all discovered refs.
+`search.material` reports original candidate indexes and the selected material.
+`routes` indexes only the selected relation table. All selected arrows, why and
+evidence remain intact. The fixed beam evaluates combinations; it does not
+promise the optimum or determine which sources are sufficient for your answer.
+
+For “I need C AND V”, extend the select object with:
+
+```json
+{"max_material_nodes":4,"groups":[{"alternatives":[["ref-C","ref-V"]]}]}
+```
+
+For “either C AND V, OR replacement report R”, include returned `ref-R` in `to`
+and use this select object:
+
+```json
+{"max_material_nodes":4,"groups":[{"weight":2,
+ "alternatives":[["ref-C","ref-V"],["ref-R"]]}]}
+```
+
+These requirements are the reader's explicit choices. Do not invent replacement
+or identity equivalence from matching words. Group indexes follow input order;
+without explicit groups they follow sorted target refs. A group is complete only
+when one whole alternative is in selected path material. Partial ANDs get no
+reported benefit, even though the beam can use partial progress to explore.
+
+If the AND example is limited to two material entries, neither complete route
+fits. Expect `candidate_count` to remain positive, no selected routes and an
+incomplete group. This does not say the evidence is absent. Execute the returned
+`search.material.expand_candidates` only if you need the full bounded catalogue.
+Follow its `next_actions` to finish that new read. Expansion retains about, time,
+search limits and direction, removes select and the old page cursor, and incurs
+additional context. It is optional, separate from selected-proof pagination, and
+does not retain a snapshot across calls. Body reads still use Inspect; graph/body
+snapshot consistency is not supplied by material selection.

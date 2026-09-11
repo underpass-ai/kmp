@@ -34,6 +34,7 @@ pub fn bounded_trace_search(
         moves.push((request.direction, None));
     }
     let mut result = TraceSearchResult {
+        material: None,
         from: request.from.clone(),
         follow: request.follow.clone(),
         paths_per_target: request.paths_per_target,
@@ -153,6 +154,12 @@ pub fn bounded_trace_search(
             .filter(|(_, edge)| !admission.window().relation_clock_known(&edge.explanation))
             .map(|(index, _)| index as u32)
             .collect();
+    }
+    if let Some(policy) = &request.select {
+        result.material = Some(
+            crate::select_trace_material(&result, &request.targets, policy)
+                .map_err(|e| PortError::InvalidState(e.to_string()))?,
+        );
     }
     Ok(result)
 }

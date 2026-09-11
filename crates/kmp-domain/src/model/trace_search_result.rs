@@ -2,6 +2,7 @@ use crate::{NodeRelationProjection, TraceRoute, TraceSearchStop};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TraceSearchResult {
+    pub material: Option<crate::TraceMaterialResult>,
     pub from: String,
     pub follow: Vec<crate::TraceRelationStep>,
     pub paths_per_target: u32,

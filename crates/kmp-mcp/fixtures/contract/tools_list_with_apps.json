@@ -6303,6 +6303,63 @@
                 },
                 "type": "array",
                 "uniqueItems": true
+              },
+              "select": {
+                "additionalProperties": false,
+                "description": "Select complete declared groups from bounded candidate paths before returning full links. Fixed beam B4/alpha0.5; heuristic, not a guarantee of optimality or semantic proof. Separate material budget from discovered nodes.",
+                "properties": {
+                  "groups": {
+                    "description": "Caller-declared requirements. Omitted/empty: one equally weighted group per target. Each alternative is an AND set; alternatives are OR. Every ref must appear in to.",
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "alternatives": {
+                          "items": {
+                            "items": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "maxItems": 8,
+                            "minItems": 1,
+                            "type": "array",
+                            "uniqueItems": true
+                          },
+                          "maxItems": 8,
+                          "minItems": 1,
+                          "type": "array"
+                        },
+                        "weight": {
+                          "default": 1,
+                          "maximum": 1000,
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "alternatives"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 8,
+                    "type": "array"
+                  },
+                  "max_material_nodes": {
+                    "description": "Unique entry refs on selected paths, including from. Does not count tokens or source bodies.",
+                    "maximum": 4096,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "max_paths": {
+                    "default": 4,
+                    "maximum": 8,
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "max_material_nodes"
+                ],
+                "type": "object"
               }
             },
             "type": "object"
@@ -6405,11 +6462,11 @@
             ]
           },
           "routes": {
-            "description": "Present in bounded mode. Each candidate has a target and zero-based edge_indexes into the complete trace table, in traversal hop order. Join every page first. Start at search.from and match each stored endpoint to reconstruct traversal direction. An empty index list is a zero-hop route to from.",
+            "description": "Present in bounded mode. Each candidate has a target and zero-based edge_indexes into the complete trace table, in traversal hop order. Join every page first. Start at search.from and match each stored endpoint to reconstruct traversal direction. An empty index list is a zero-hop route to from. With search.select, only selected candidate paths and their complete relations are returned.",
             "type": "array"
           },
           "search": {
-            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth/state_budget and source_outside_selection. Includes work counters, source from, direction (per_relation when follow is used), follow moves and paths_per_target. unreached_targets have no route; incomplete_targets have fewer than their quota. targets_reached means quotas obtained; the source needs only its zero-hop route. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut.",
+            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth/state_budget and source_outside_selection. Optional material reports candidate count, selected original indexes, material nodes, covered/incomplete group indexes, benefit and selection work. Group indexes follow supplied groups; without groups they follow sorted target refs. expand_candidates is an optional full call starting a new selection without select, not a page continuation. Zero selected paths can mean no group fit, even with candidates available. Includes work counters, source from, direction (per_relation when follow is used), follow moves and paths_per_target. unreached_targets have no route; incomplete_targets have fewer than their quota. targets_reached means quotas obtained; the source needs only its zero-hop route. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut.",
             "type": "object"
           },
           "summary": {

@@ -25,10 +25,13 @@ impl RelationPageBudget {
 
     pub(crate) fn apply(
         &self,
-        value: Value,
+        mut value: Value,
         arguments: &Value,
         fingerprint: &str,
     ) -> Result<Value, ToolError> {
+        if matches!(self, Self::Trace) {
+            super::trace_material_expansion::attach(&mut value, arguments);
+        }
         let limit = requested_byte_limit(arguments).map_err(ToolError::invalid_argument)?;
         let total = value["page"]["total"].as_u64().unwrap_or(0) as usize;
         let tool = match self {

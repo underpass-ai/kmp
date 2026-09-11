@@ -70,6 +70,7 @@ pub use visual_projection::{
     visual_projection_query_from_proto, visual_projection_response_from_result,
 };
 
+mod trace_material;
 mod trace_search;
 pub use trace_search::{trace_search_request_from_proto, trace_search_response_from_result};
 #[cfg(test)]

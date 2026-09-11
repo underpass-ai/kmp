@@ -5,6 +5,7 @@ use kmp_domain::{
 
 fn result() -> TraceSearchResult {
     TraceSearchResult {
+        material: None,
         from: "a".into(),
         follow: vec![],
         paths_per_target: 1,

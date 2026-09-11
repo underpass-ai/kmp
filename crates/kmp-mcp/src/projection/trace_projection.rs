@@ -27,6 +27,15 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
             "temporal_selection_resolved": search.temporal_selection_resolved,
             "clock_unknown_edges": search.clock_unknown_edges,
             "resolved_as_of": search.resolved_as_of.as_ref().map(|at| at.to_string())});
+        if let Some(material) = search.material {
+            value["search"]["material"] = json!({
+                "candidate_count":material.candidate_count,"selected_candidates":material.selected_candidates,
+                "material_nodes":material.material_nodes,"benefit":material.benefit,
+                "covered_groups":material.covered_groups,"incomplete_groups":material.incomplete_groups,
+                "evaluated":material.evaluated,"pruned_by_width":material.pruned_by_width,
+                "candidate_fingerprint":material.candidate_fingerprint
+            });
+        }
         value["routes"] = json!(
             response
                 .routes

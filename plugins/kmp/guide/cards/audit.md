@@ -15,3 +15,10 @@ not the current state of the memories it created.
 
 More: `guide:kmp-agent:example:budget-proof` and
 `guide:kmp-agent:example:decision-history`.
+
+For bounded routes, optional `search.select.max_material_nodes` selects joint
+material before full links are returned. Supply AND/OR `groups` only when the
+required target refs are known. Read `search.material`: zero selected paths can
+mean no complete group fits despite available candidates. Finish `next_actions`
+for selected proof; use `search.material.expand_candidates` only when the omitted
+alternatives are needed. See `guide:kmp-agent:example:bounded-trace`.

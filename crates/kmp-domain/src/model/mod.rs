@@ -53,3 +53,15 @@ mod trace_temporal_admission;
 pub use trace_relation_step::TraceRelationStep;
 mod trace_candidate_frontier;
 mod trace_path_state;
+
+mod select_trace_material;
+mod trace_material_catalog;
+mod trace_material_result;
+mod trace_material_selection;
+mod trace_material_set;
+mod trace_material_state;
+mod trace_proof_requirement;
+pub use select_trace_material::select_trace_material;
+pub use trace_material_result::TraceMaterialResult;
+pub use trace_material_selection::TraceMaterialSelection;
+pub use trace_proof_requirement::TraceProofRequirement;
