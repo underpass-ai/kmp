@@ -16,7 +16,14 @@ impl ToolErrorHelp {
         if matches!(
             error.code,
             ToolErrorCode::BackendError | ToolErrorCode::Unavailable
-        ) || arguments.get("about").and_then(Value::as_str) == Some("guide:kmp-agent")
+        ) || arguments
+            .get("about")
+            .and_then(Value::as_str)
+            .is_some_and(crate::guide::is_guide_about)
+            || error
+                .feedback
+                .iter()
+                .any(|item| item["code"] == "GUIDE_UNAVAILABLE")
         {
             return None;
         }

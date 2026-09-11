@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:3a165e21bbf0a5ed9ed9",
+    "idempotency_key": "ingest:guide-sync:1:agent:8b9783ebcad63597c913",
     "memory": {
       "dimensions": [
         {
@@ -51,7 +51,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -82,7 +82,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Choose and continue a memory route",
             "guide_version": "1",
             "source": "editorial"
@@ -114,7 +114,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Resume known work",
             "guide_version": "1",
             "source": "editorial"
@@ -146,7 +146,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Ask a semantic question",
             "guide_version": "1",
             "source": "editorial"
@@ -178,7 +178,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Compare memories across abouts",
             "guide_version": "1",
             "source": "editorial"
@@ -210,7 +210,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Navigate and zoom in time",
             "guide_version": "1",
             "source": "editorial"
@@ -242,7 +242,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Inspect evidence and trace a connection",
             "guide_version": "1",
             "source": "editorial"
@@ -274,7 +274,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Write evidence or change labels",
             "guide_version": "1",
             "source": "editorial"
@@ -306,7 +306,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Frame and share ChronoLoom",
             "guide_version": "1",
             "source": "editorial"
@@ -338,12 +338,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Synchronize guide assets",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Synchronize guide assets for requested guide setup/update, a human guide opening that needs current assets, or a confirmed store/version mismatch. The installed guide/AGENT.md is a brief entry with exact references to extended verbs and examples. Read it once while it remains in context; a routine memory call needs no full documentation wake. Sync converges both fixed guide abouts idempotently through kmp-guide-sync.sh; it writes the selected store and may update its maintained bundle. Check the selected store and matching assets before applying them. Software setup/update do not write memory: kmp-update.sh lets the native lifecycle choose the latest public release, or forwards an explicit --version target. The plugin manifest selects the bootstrap engine and default setup version; it must not pin an ordinary update to the old release."
+          "text": "Synchronize guide assets for requested guide setup/update, a human guide opening that needs current assets, or a confirmed store/version mismatch. The installed guide/AGENT.md is a brief entry with exact references to extended verbs and examples. Read it once while it remains in context; a routine memory call needs no full documentation wake. Sync converges both fixed guide abouts idempotently through kmp-guide-sync.sh; it writes the selected store and may update its maintained bundle. Check the selected store and matching assets before applying them. Software setup/update do not write memory: kmp-update.sh lets the native lifecycle choose the latest public release, or forwards an explicit --version target. The plugin manifest selects the bootstrap engine and default setup version; it must not pin an ordinary update to the old release. If the selected store has no guide or only part of it, kmp_guide and missing guide Inspect reads return GUIDE_UNAVAILABLE feedback with an explicit CLI repair. Preserve the same binary, working directory and store/backend environment; stop the embedded MCP holder before running kmp-mcp guide sync --plugin-root <plugin-root> with the matching plugin directory. Restart the connection on that same store and retry. Ref and version mistakes still require checking; reads never seed assets automatically."
         },
         {
           "coordinates": [
@@ -370,7 +370,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Install an optional lexical bridge",
             "guide_version": "1",
             "source": "editorial"
@@ -402,7 +402,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Cross abouts, labels and selectors",
             "guide_version": "1",
             "source": "editorial"
@@ -434,7 +434,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Choose a relation and justify it",
             "guide_version": "1",
             "source": "editorial"
@@ -466,7 +466,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Retry one logical write",
             "guide_version": "1",
             "source": "editorial"
@@ -498,7 +498,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Complete a bounded read",
             "guide_version": "1",
             "source": "editorial"
@@ -530,7 +530,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Choose a byte ceiling",
             "guide_version": "1",
             "source": "editorial"
@@ -562,7 +562,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Replace, contradict or expire",
             "guide_version": "1",
             "source": "editorial"
@@ -594,7 +594,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Interpret retrieved proof",
             "guide_version": "1",
             "source": "editorial"
@@ -626,7 +626,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Search language and literal evidence",
             "guide_version": "1",
             "source": "editorial"
@@ -658,7 +658,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Write or repair search summaries",
             "guide_version": "1",
             "source": "editorial"
@@ -691,7 +691,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Start here: one decision and its stated reason",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -723,7 +723,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Decision history and past validity",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -754,7 +754,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -786,7 +786,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Aliases, unresolved names and account assignment",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -817,7 +817,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Repository bundles and snapshots",
             "guide_version": "1",
             "source": "editorial"
@@ -849,7 +849,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Diagnose missing tools and errors",
             "guide_version": "1",
             "source": "editorial"
@@ -882,7 +882,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Distributed incident, proposed identity and late reports",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -914,7 +914,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Four clocks, interval boundaries and zoom to proof",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -946,7 +946,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Quantities, corrections, duplicates and exclusions",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -978,7 +978,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Conflicting assignments and evidence received late",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1010,7 +1010,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Multiple aliases, distinct facets and late memberships",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1042,7 +1042,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Labels, synonyms and negation under explicit conditions",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1074,7 +1074,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1106,7 +1106,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Fresh-session handoff and shared-view revision conflicts",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1138,7 +1138,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Preference and explicit policy delta",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1170,7 +1170,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Authorization, dependency and measured constraints",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1202,7 +1202,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Structure, membership and included contributions",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1234,7 +1234,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Validated canonical ingest and exact retry",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1265,7 +1265,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Find a concrete example for a tool, kind or relation",
             "guide_version": "1",
             "source": "editorial"
@@ -1298,7 +1298,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Atomic semantic packet with local proof links",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1329,7 +1329,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1360,7 +1360,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1391,7 +1391,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1422,7 +1422,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1453,7 +1453,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1484,7 +1484,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1515,7 +1515,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1546,7 +1546,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1577,12 +1577,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_title": "Manage agent identity and guidance",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Start one agent with `kmp_guide {\"registration_key\":\"unique-task-and-agent-key\"}`.\nKeep the returned agent id, random name and context id. Repeat that registration\nkey only for the same logical agent; another agent needs another key.\n\nResume with `{\"context_id\":\"<returned context_id>\"}`. Expand a worked card with\n`{\"context_id\":\"<returned context_id>\",\"topic\":\"write\"}`. Fold it with the same\narguments plus `\"fold\":true`. Folding keeps its delivery record; asking again\nserves the card again. Extended verb guidance is in `next_actions`.\n\nAfter compaction or a task change, use\n`{\"agent_id\":\"<returned agent id>\",\"context_key\":\"unique-reset-key\"}`. Keep the\nnew context id. The agent keeps its identity and random name but starts with no\nguidance served in that context. Repeating the reset key resumes that new context.\nA guide revision change also starts a fresh view of served topics; older delivery\nrecords remain in storage.\n\nThese are delivery records, not proof that you understood or still retain a\nlesson. They grant no additional permissions. Different agents sharing a host\nor connection keep different identities. KMP never infers identity from the\nconnection. Preserve these ids in the host's task state; do not substitute the\ndisplay name. `durable=false` identifies an in-memory test backend, not persistence.\n\n## Guidance during work\n\nPass `context_id` with memory and viewer calls. It is interaction metadata,\nremoved before the memory operation, its hash or pagination contract. It does\nnot grant access. Writer and Relabel may omit actor when this context supplies\nthe persistent name; an explicit actor takes precedence.\n\nBefore an unfamiliar operation, request its topic card and consult the linked\nverb/examples you need. A valid first operation is never blocked merely because\na delivery mark is absent. Help returned after an operation cannot prevent a\nmistake already made. If uncertain, ask `kmp_guide` explicitly even if a topic\nwas served before.\n\nA work result adds one JSON text block containing `kmp_guidance`. The original\nstructuredContent, proof, receipt and their byte budget stay unchanged. The\nextra block has its own context cost; consumers must pass it through to the\nagent. It is not duplicated in _meta. No context means no automatic usage block.\n\n`usage` counts observed calls, refusals and protocol UNKNOWNs; it is not a\nlearning score or a count of committed writes. A retry may count as another call\nwhile idempotency still keeps one memory. `usage.recorded=false` means metadata\nfailed: keep the original operation result and never repeat a write just to fix\nusage accounting. `served` records requested cards and exact guide/example refs\nwhose bodies were actually returned with context. A suggested link or reused\nobject without text does not count. An observed asset revision change starts a\nnew delivery view; ordinary work reports the last seen revision and does not\npretend to know an unread guide has changed.\n\nSet optional `purpose` to `continue` (default), `audit`, `history` or `answer`.\nThe recommendation uses typed result fields in this order:\n\n| Situation | Suggested move |\n| --- | --- |\n| Refusal with executable feedback | Review the producer's repair or restart |\n| Partial packet | Execute the native continuation, preserving selection |\n| Semantic UNKNOWN after completing the packet | Stop within that selection |\n| History with native next action | Use its clock and dimensions for a new selection |\n| History from current Inspect | Consult time guidance and choose a clock |\n| Audit of declared links in Inspect | Trace one stored relation and assess why/evidence |\n| Audit/answer from single-about recall | Inspect a canonical claim ref as a fresh current read |\n\nThe link choice has stable lexical order, not an importance score. Alternatives\nremain in the original response. `basis` points to the fields used;\n`changes_selection` identifies a fresh read. An inspection suggested after\nhistorical recall is current, not proof about the prior date. Multi-about recall\nwithout explicit source ownership never invents an about. No recommendation\nexecutes itself, widens an UNKNOWN search, proves a relation true or authorizes\na write. `signals` carries observable packet completeness and write coverage;\ncoverage of a packet does not assess fidelity to its source.\n\n## Consult a protocol expert\n\nWhen the cards and examples leave a protocol question unresolved, the installed\n`kmp-expert` skill can prepare a separate host subagent with the complete agent\nguide and all examples. Its local cache is keyed by the shipped asset; the\nexpert loads that content before consultations, checks the store's revision and\nkeeps its own persistent identity. After context loss it must reload the guide.\nThe working agent receives short explanations and concrete call proposals,\nchecks them against its sources and executes them under existing authorization.\nThis is host orchestration: KMP does not run a model. Local preload neither\nmarks MCP lessons served nor proves understanding, and its context cost counts\nalongside the working agent's cost. See that skill for the preparation workflow.\n"
+          "text": "Start one agent with `kmp_guide {\"registration_key\":\"unique-task-and-agent-key\"}`.\nKeep the returned agent id, random name and context id. Repeat that registration\nkey only for the same logical agent; another agent needs another key.\n\nThe runtime reads the installed guide and does not seed it. If the bundle is\nabsent, incomplete or lacks its revision, `GUIDE_UNAVAILABLE` feedback explains\nthe explicit repair. Check the requested ref and use the plugin assets matching\nthe binary. Keep the connection's working directory and store/backend environment,\nincluding `KMP_MCP_DATA_DIR` when set. Stop the MCP process if it holds the embedded\nstore, then run `kmp-mcp guide sync --plugin-root <plugin-root>` with the matching\nplugin directory containing `guide/guide.requests.json` and `guide/memory.jsonl`.\nSync writes both guide abouts and may update the maintained memory bundle; an\nexact retry is idempotent. Restart on that same store and retry the original\ncall. Missing guide reads reached through a refusal's help links carry this\nrepair too; repeatedly reading them cannot install the assets.\n\nResume with `{\"context_id\":\"<returned context_id>\"}`. Expand a worked card with\n`{\"context_id\":\"<returned context_id>\",\"topic\":\"write\"}`. Fold it with the same\narguments plus `\"fold\":true`. Folding keeps its delivery record; asking again\nserves the card again. Extended verb guidance is in `next_actions`.\n\nAfter compaction or a task change, use\n`{\"agent_id\":\"<returned agent id>\",\"context_key\":\"unique-reset-key\"}`. Keep the\nnew context id. The agent keeps its identity and random name but starts with no\nguidance served in that context. Repeating the reset key resumes that new context.\nA guide revision change also starts a fresh view of served topics; older delivery\nrecords remain in storage.\n\nThese are delivery records, not proof that you understood or still retain a\nlesson. They grant no additional permissions. Different agents sharing a host\nor connection keep different identities. KMP never infers identity from the\nconnection. Preserve these ids in the host's task state; do not substitute the\ndisplay name. `durable=false` identifies an in-memory test backend, not persistence.\n\n## Guidance during work\n\nPass `context_id` with memory and viewer calls. It is interaction metadata,\nremoved before the memory operation, its hash or pagination contract. It does\nnot grant access. Writer and Relabel may omit actor when this context supplies\nthe persistent name; an explicit actor takes precedence.\n\nBefore an unfamiliar operation, request its topic card and consult the linked\nverb/examples you need. A valid first operation is never blocked merely because\na delivery mark is absent. Help returned after an operation cannot prevent a\nmistake already made. If uncertain, ask `kmp_guide` explicitly even if a topic\nwas served before.\n\nA work result adds one JSON text block containing `kmp_guidance`. The original\nstructuredContent, proof, receipt and their byte budget stay unchanged. The\nextra block has its own context cost; consumers must pass it through to the\nagent. It is not duplicated in _meta. No context means no automatic usage block.\n\n`usage` counts observed calls, refusals and protocol UNKNOWNs; it is not a\nlearning score or a count of committed writes. A retry may count as another call\nwhile idempotency still keeps one memory. `usage.recorded=false` means metadata\nfailed: keep the original operation result and never repeat a write just to fix\nusage accounting. `served` records requested cards and exact guide/example refs\nwhose bodies were actually returned with context. A suggested link or reused\nobject without text does not count. An observed asset revision change starts a\nnew delivery view; ordinary work reports the last seen revision and does not\npretend to know an unread guide has changed.\n\nSet optional `purpose` to `continue` (default), `audit`, `history` or `answer`.\nThe recommendation uses typed result fields in this order:\n\n| Situation | Suggested move |\n| --- | --- |\n| Refusal with executable feedback | Review the producer's repair or restart |\n| Partial packet | Execute the native continuation, preserving selection |\n| Semantic UNKNOWN after completing the packet | Stop within that selection |\n| History with native next action | Use its clock and dimensions for a new selection |\n| History from current Inspect | Consult time guidance and choose a clock |\n| Audit of declared links in Inspect | Trace one stored relation and assess why/evidence |\n| Audit/answer from single-about recall | Inspect a canonical claim ref as a fresh current read |\n\nThe link choice has stable lexical order, not an importance score. Alternatives\nremain in the original response. `basis` points to the fields used;\n`changes_selection` identifies a fresh read. An inspection suggested after\nhistorical recall is current, not proof about the prior date. Multi-about recall\nwithout explicit source ownership never invents an about. No recommendation\nexecutes itself, widens an UNKNOWN search, proves a relation true or authorizes\na write. `signals` carries observable packet completeness and write coverage;\ncoverage of a packet does not assess fidelity to its source.\n\n## Consult a protocol expert\n\nWhen the cards and examples leave a protocol question unresolved, the installed\n`kmp-expert` skill can prepare a separate host subagent with the complete agent\nguide and all examples. Its local cache is keyed by the shipped asset; the\nexpert loads that content before consultations, checks the store's revision and\nkeeps its own persistent identity. After context loss it must reload the guide.\nThe working agent receives short explanations and concrete call proposals,\nchecks them against its sources and executes them under existing authorization.\nThis is host orchestration: KMP does not run a model. Local preload neither\nmarks MCP lessons served nor proves understanding, and its context cost counts\nalongside the working agent's cost. See that skill for the preparation workflow.\n"
         },
         {
           "coordinates": [
@@ -1610,7 +1610,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "One report, separate execution and verification events",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1642,7 +1642,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Trace several destinations under one work budget",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1674,7 +1674,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Discover compatible evidence paths from a seed",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1706,7 +1706,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:ask",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ask"
@@ -1739,7 +1739,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_forward"
@@ -1772,7 +1772,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_goto"
@@ -1805,12 +1805,12 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:guide",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_guide"
           },
-          "text": "LIVE TOOL kmp_guide. Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization."
+          "text": "LIVE TOOL kmp_guide. Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them."
         },
         {
           "coordinates": [
@@ -1838,7 +1838,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ingest"
@@ -1871,7 +1871,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_inspect"
@@ -1904,7 +1904,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_near"
@@ -1937,7 +1937,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relabel"
@@ -1970,7 +1970,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:relate",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relate"
@@ -2003,7 +2003,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_rewind"
@@ -2036,7 +2036,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_trace"
@@ -2069,7 +2069,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_apply_intent"
@@ -2102,7 +2102,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_get_state"
@@ -2135,7 +2135,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_open"
@@ -2168,7 +2168,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:wake",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_wake"
@@ -2201,7 +2201,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "3a165e21bbf0a5ed9ed940df2a051caaccfb7c1164ff7e52b692b40e6bb5c822",
+            "guide_revision": "8b9783ebcad63597c913eb9358a55fd8e531e18bfe53ac719c032660a3d060a5",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_write_memory"
@@ -2844,7 +2844,7 @@
           "supports": [
             "guide:kmp-agent:verb:guide"
           ],
-          "text": "The MCP guide assigns persistent agent identities and contexts, distinguishes served guidance from understanding, and provides explicit reset and fold operations. Native context tests cover usage persistence, returned guide bodies, profile actor, idempotency, intact memory budgets, executable typed continuations and relation audit, temporal UNKNOWN and accepted writes despite usage metadata failure. The kmp-expert host skill preloads every canonical agent-guide entry and example from a revision-keyed local cache; its manifest records delivery ranges and body hashes without changing MCP served state or adding model inference to the kernel.",
+          "text": "The MCP guide assigns persistent agent identities and contexts, distinguishes served guidance from understanding, and provides explicit reset and fold operations. Native context tests cover usage persistence, returned guide bodies, profile actor, idempotency, intact memory budgets, executable typed continuations and relation audit, temporal UNKNOWN and accepted writes despite usage metadata failure. The kmp-expert host skill preloads every canonical agent-guide entry and example from a revision-keyed local cache; its manifest records delivery ranges and body hashes without changing MCP served state or adding model inference to the kernel. Native #731 tests cover absent, human-only, missing-card and revisionless guide stores; the returned explicit CLI repair succeeds on the same store and retries without another guide write.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2935,7 +2935,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_guide"
           ],
-          "text": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization.",
+          "text": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -3549,7 +3549,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization.",
+          "evidence": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them.",
           "from": "guide:kmp-agent:tool:kmp_guide",
           "rel": "uses_background",
           "sequence": 46,

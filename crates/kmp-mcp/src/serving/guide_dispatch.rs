@@ -1,3 +1,4 @@
+use super::guide_repair::GuideRepair;
 use super::json_rpc::jsonrpc_result;
 use super::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use super::tool_result::tool_error_result;
@@ -86,7 +87,8 @@ impl KernelMcpServer {
                     "budget":{"max_bytes":40000}
                 }),
             )
-            .await?;
+            .await
+            .map_err(|error| GuideRepair::missing(node_ref, error))?;
         let object = response["structuredContent"]["object"].clone();
         if !object["text"].is_string() {
             return Err(ToolError::backend(
@@ -102,7 +104,15 @@ impl KernelMcpServer {
         let request = GuideRequest::parse(arguments)?;
         let opening = request.opening()?;
         let overview = self.guide_node("guide:kmp-agent:overview").await?;
-        let revision = overview["metadata"]["guide_revision"].as_str().filter(|v| !v.is_empty()).ok_or_else(|| ToolError::conflict("the installed guide has no asset revision; sync guide assets matching this binary"))?;
+        let revision = overview["metadata"]["guide_revision"]
+            .as_str()
+            .filter(|v| !v.is_empty())
+            .ok_or_else(|| {
+                GuideRepair::unavailable(
+                    "guide:kmp-agent:overview",
+                    ToolError::conflict("the installed guide has no asset revision"),
+                )
+            })?;
         let card = if let Some(topic) = &request.topic {
             if request.fold {
                 None
