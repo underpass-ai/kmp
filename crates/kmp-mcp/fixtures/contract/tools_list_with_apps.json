@@ -5935,7 +5935,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
+      "description": "Trace declared links between memory refs. A to array or search object enables a bounded shared search through current same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search retains equivalence-aware tracing.",
       "inputSchema": {
         "additionalProperties": false,
         "oneOf": [
@@ -6052,10 +6052,68 @@
             "minLength": 1,
             "type": "string"
           },
+          "search": {
+            "additionalProperties": false,
+            "description": "Bounded native baseline on the current graph. Shared work limits; page/budget control transport separately. No historical cut or cross-about expansion in this mode.",
+            "properties": {
+              "direction": {
+                "default": "outgoing",
+                "description": "Traversal direction; stored source/target and meaning are preserved.",
+                "enum": [
+                  "outgoing",
+                  "incoming"
+                ],
+                "type": "string"
+              },
+              "max_depth": {
+                "default": 128,
+                "maximum": 1024,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "max_edges": {
+                "default": 2048,
+                "description": "Adjacency rows decoded, including filtered rows.",
+                "maximum": 32768,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "max_nodes": {
+                "default": 256,
+                "description": "Distinct discovered refs, including excluded endpoints; reserve before reading.",
+                "maximum": 4096,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "relations": {
+                "description": "Exact relation types to follow. Omitted/empty admits every non-structural link with stored why and evidence.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "uniqueItems": true
+              }
+            },
+            "type": "object"
+          },
           "to": {
-            "description": "Target memory ref. In live gRPC mode this must resolve to a kernel node id.",
-            "minLength": 1,
-            "type": "string"
+            "description": "Destination ref, or 1..8 distinct same-about entry refs for bounded search.",
+            "oneOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 8,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              }
+            ]
           }
         },
         "type": "object"
@@ -6135,12 +6193,20 @@
               "null"
             ]
           },
+          "routes": {
+            "description": "Present in bounded mode. Each target has zero-based edge_indexes into the complete trace table, in traversal hop order. Join every page first. An empty index list is a zero-hop route to from.",
+            "type": "array"
+          },
+          "search": {
+            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted and node/edge/depth_budget. Includes work counters, direction and unreached_targets. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer.",
+            "type": "object"
+          },
           "summary": {
             "description": "Concise statement of the path selection.",
             "type": "string"
           },
           "trace": {
-            "description": "Ordered typed relations connecting from to to; empty with page.has_more=false means no path in the same memory graph; otherwise proof remains pending.",
+            "description": "Typed relation table. In bounded mode, routes index this complete table after all pages are joined; empty at a work cutoff does not prove no path.",
             "type": "array"
           },
           "warnings": {

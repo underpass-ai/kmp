@@ -402,6 +402,20 @@ where
         apply_dimension_selection(result, &dimensions, &render_options)
     }
 
+    pub async fn trace_search(
+        &self,
+        request: kmp_domain::TraceSearchRequest,
+    ) -> Result<kmp_domain::TraceSearchResult, ApplicationError> {
+        request
+            .validate()
+            .map_err(|e| ApplicationError::Validation(e.to_string()))?;
+        for reference in std::iter::once(&request.from).chain(request.targets.iter()) {
+            validate_supplied_entry_ref(&request.about, "trace search ref", reference)
+                .map_err(ApplicationError::Validation)?;
+        }
+        self.query_application.trace_search(&request).await
+    }
+
     pub async fn trace(
         &self,
         query: TraceMemoryQuery,

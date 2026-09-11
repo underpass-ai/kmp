@@ -13,6 +13,7 @@ mod serdes;
 mod snapshot_store;
 mod store;
 mod telemetry;
+mod trace_snapshot;
 
 pub use format_version::{
     EVENT_FORMAT_VERSION, SUPPORTED_FORMAT_VERSION, StorageEngine, format_version_path,

@@ -30,3 +30,16 @@ pub use temporal_memory::{
     TemporalTraversalResult, compare_temporal_coordinates, compare_temporal_instants,
     temporal_instant_nanos, temporal_instant_rfc3339,
 };
+
+mod bounded_trace_search;
+mod trace_route;
+mod trace_search_limits;
+mod trace_search_request;
+mod trace_search_result;
+mod trace_search_stop;
+pub use bounded_trace_search::bounded_trace_search;
+pub use trace_route::TraceRoute;
+pub use trace_search_limits::TraceSearchLimits;
+pub use trace_search_request::TraceSearchRequest;
+pub use trace_search_result::TraceSearchResult;
+pub use trace_search_stop::TraceSearchStop;

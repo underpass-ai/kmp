@@ -4,6 +4,7 @@ mod ingest;
 mod queries;
 mod relabel;
 mod temporal;
+mod trace_search;
 mod visual;
 
 pub(crate) use ingest::ingest_request_from_arguments;

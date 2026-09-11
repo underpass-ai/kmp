@@ -504,6 +504,26 @@ async fn embedded_trace(
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = trace_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+    if let Some(search) = kmp_proto_mapping::v1beta1::trace_search_request_from_proto(&request)
+        .map_err(|s| mapping_error(&s))?
+    {
+        let direction = search.direction;
+        let page = trace_query_from_proto(request)
+            .map_err(|s| mapping_error(&s))?
+            .page;
+        let result = service
+            .trace_search(search)
+            .await
+            .map_err(kernel_error("trace", "bounded search"))?;
+        let response =
+            kmp_proto_mapping::v1beta1::trace_search_response_from_result(result, direction, page);
+        let fingerprint = response.selection_fingerprint.clone();
+        return Ok(tool_success_result(RelationPageBudget::Trace.apply(
+            trace_from_response(response),
+            arguments,
+            &fingerprint,
+        )?));
+    }
     let query = trace_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let page = query.page.clone();
     let from = query.from.clone();

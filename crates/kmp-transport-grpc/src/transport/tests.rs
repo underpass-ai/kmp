@@ -2069,6 +2069,8 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let trace = service
         .trace(Request::new(TraceRequest {
+            targets: vec![],
+            search: None,
             about: "node-123".to_string(),
             from: "node-123".to_string(),
             to: "node-123:node-789".to_string(),
@@ -2089,6 +2091,8 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let paged_trace = service
         .trace(Request::new(TraceRequest {
+            targets: vec![],
+            search: None,
             about: "node-123".to_string(),
             from: "node-123".to_string(),
             to: "node-123:node-789".to_string(),
@@ -2117,6 +2121,8 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let invalid_cursor = service
         .trace(Request::new(TraceRequest {
+            targets: vec![],
+            search: None,
             about: "node-123".to_string(),
             from: "node-123".to_string(),
             to: "node-123:node-789".to_string(),
@@ -2133,6 +2139,8 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let oversized_page = service
         .trace(Request::new(TraceRequest {
+            targets: vec![],
+            search: None,
             about: "node-123".to_string(),
             from: "node-123".to_string(),
             to: "node-123:node-789".to_string(),

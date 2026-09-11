@@ -119,11 +119,14 @@ pub(crate) fn relate_request_from_arguments(arguments: &Value) -> Result<RelateR
 }
 
 pub(crate) fn trace_request_from_arguments(arguments: &Value) -> Result<TraceRequest, String> {
-    validate_required_arguments(arguments, &["about", "from", "to"])?;
+    validate_required_arguments(arguments, &["about", "from"])?;
+    let (to, targets, search) = super::trace_search::arguments(arguments)?;
     Ok(TraceRequest {
+        targets,
+        search,
         about: required_string(arguments, "about")?,
         from: required_string(arguments, "from")?,
-        to: required_string(arguments, "to")?,
+        to,
         goal: optional_string(arguments, "goal")
             .or_else(|| optional_string(arguments, "role"))
             .unwrap_or_default(),
