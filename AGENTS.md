@@ -1,17 +1,21 @@
 # KMP repository working agreement
 
-## MCP simplification integration
+## Evidence retrieval integration
 
 The active MCP evolution follows solution A: simplify the existing native MCP
 contract. SQL, GraphQL and another query language are out of scope for this track.
 
-- Base evolution branches on `integration/mcp-simplification` and target their
+- Base evolution branches on `integration/evidence-retrieval` and target their
   pull requests at that branch. Do not target `main` or `work/sota-gaps` for this
   redesign. Pass the PR base explicitly; the repository default remains `main`.
 - This is a breaking redesign. Backward compatibility, legacy-ref adapters and
   old-store migration are not requirements. Reject unsupported formats explicitly.
-- Implement in this order: dimensions; semantic writing and actionable feedback;
-  reading and continuations; independent agent evaluation.
+- The former `integration/mcp-simplification` track shipped in v0.17.0 and its
+  remote branch is closed. The new integration starts from released main
+  `2a9ad2f3cc7d25a8f7788ccc0bbddfbdcb53d53f`.
+- Finish selecting and materializing complete evidence paths, with behavioral
+  and performance evidence, before reader-authored compact trajectory summaries.
+  Preserve dimensions, semantic writing, temporal navigation and continuations.
 - Keep changes reviewable and run the behavioral checks appropriate to each
   change. Do not add editorial CI gates or change repository protections.
 - Bugs in released behavior retain the normal bug PR and check process against
