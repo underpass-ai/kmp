@@ -926,6 +926,10 @@ impl KernelMemoryService for FakeMemoryService {
 
         Ok(Response::new(TraceResponse {
             seek: None,
+            objects: vec![],
+            supports: vec![],
+            proof: None,
+            gaps: vec![],
             candidates: vec![],
             groups: vec![],
             search: None,

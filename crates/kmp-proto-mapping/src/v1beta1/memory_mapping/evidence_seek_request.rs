@@ -27,7 +27,7 @@ pub fn evidence_seek_request_from_proto(
         || options.paths_per_target != 0
     {
         return Err(invalid_argument(
-            "search.seek replaces to/targets and other search policies; only work limits are shared",
+            "search.seek replaces to/targets and other search policies; only work limits and proof are shared",
         ));
     }
     validate(seek)?;
@@ -94,6 +94,7 @@ pub fn evidence_seek_request_from_proto(
     let defaults = TraceSearchLimits::default();
     let or_default = |value, default| if value == 0 { default } else { value };
     let result = EvidencePathRequest {
+        proof: options.proof,
         about: request.about.clone(),
         from: request.from.clone(),
         roles,

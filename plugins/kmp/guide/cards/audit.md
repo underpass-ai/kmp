@@ -10,7 +10,7 @@ Choose ONE Trace mode:
 | Connect known destinations | `from` + `to` | `follow` or `direction`/`relations`, dimensions, `paths_per_target`, `select` |
 | Discover evidence without destinations | `from` + `search.seek` | role relations/sense/via/after/labels; optional `same_labels`, `same_ref` |
 
-Only `max_nodes`, `max_edges`, `max_depth`, `max_states` are shared search options.
+Work limits and optional `proof:true` are shared search options.
 Never combine `seek` with destination options or `to`. A mixed-mode error names
 all conflicting fields to remove together; other validation can still fail.
 
@@ -43,6 +43,12 @@ starts at its stored target action. Witness is the other endpoint. A role string
 in `same_ref` names its witness. `same_labels` intersects witness labels, never
 establishing identity. On incompatibility, review bindings and the question;
 do not remove a required equality just to obtain a group.
+
+Use `search.proof:true` to fetch selected entry bodies and their typed sources
+in the same search snapshot. Join `objects`, `supports` and `gaps` across pages.
+`proof.complete_groups` describes fetched declared sources; retain missing
+obligations, unknown clocks and `seek.review_required`. Materialization shares
+N/E with discovery. A body fetched later by Inspect is a new read.
 
 Finish every returned continuation before resolving path indexes or claiming
 proof complete. Page completion is distinct from semantic sufficiency. Preserve

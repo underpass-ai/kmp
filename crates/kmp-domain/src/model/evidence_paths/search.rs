@@ -38,7 +38,24 @@ pub fn search_evidence_paths(
         incompatible: 0,
         stop: None,
     };
-    search.run()
+    let mut result = search.run()?;
+    if request.proof {
+        result.proof = Some(crate::model::materialize_trace_proof::evidence(
+            reader,
+            &request.about,
+            &result,
+            &mut search.admission,
+        )?);
+        result.discovered_nodes = search.admission.budget.refs.len() as u32;
+        result.scanned_edges = search.admission.budget.scanned;
+        result.adjacency_pages = search.admission.budget.adjacency_pages;
+        result.coordinate_pages = search.admission.budget.coordinate_pages;
+        if let Some(stop) = search.admission.budget.stop {
+            result.stop = stop;
+            result.status = EvidencePathStatus::Partial;
+        }
+    }
+    Ok(result)
 }
 
 struct EvidencePathSearch<'a, R> {
@@ -424,6 +441,7 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
             status = EvidencePathStatus::ReviewRequired;
         }
         Ok(EvidencePathResult {
+            proof: None,
             context_discovery,
             from: self.request.from.clone(),
             relations: std::mem::take(&mut self.relations),

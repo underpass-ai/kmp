@@ -28,7 +28,8 @@ has no complete path in this selection. `incompatible_obligations` means its
 individual paths cannot coexist under the requested constraints. `partial` means
 work ended before the calculation completed. Never promote an unknown to known.
 
-Finish every `next_actions` page. Append `trace`, `candidates`, then `groups`;
+Finish every `next_actions` page. Append `trace`, `candidates`, then `groups`,
+followed by `objects`, `supports` and `gaps` when `proof:true`;
 their indexes address complete tables. A candidate's `anchor` is the traversal
 start of its main relation, after via/context; `witness` is the other endpoint,
 where labels apply. Reference constraints may name either. `nodes` and
@@ -89,10 +90,9 @@ search or of good performance for all graphs.
 
 Do not mix seek with `to`, `follow`, `relations`, `direction`, `dimensions`,
 `prefer_dimensions`, `select` or `paths_per_target`. Use role moves and witness
-labels instead. Only work limits are shared. These calls discover declared proof
-paths, not a question's missing requirements. Read the actual source bodies with
-temporal verbs before relying on their text; Seek returns link proof, not an
-automatic source-body batch. The example is a deterministic contract lesson, not
+labels instead. Work limits and optional `proof:true` are shared. These calls discover declared
+paths, not a question's missing requirements. Add `search.proof:true` to fetch
+selected groups' entry bodies and typed sources in the same store snapshot. The example is a deterministic contract lesson, not
 evidence that a separate agent understands the task.
 
 ## Discover the intermediate sequence from context
@@ -186,3 +186,33 @@ needed. Explicit `via` still places the anchor immediately before the main rel;
 `after` does not move either endpoint. The response prints `anchor`, `witness`
 and binding `endpoints` when an anchor is involved. These are stored identities,
 not inferred aliases, validity or approval of a different action.
+
+
+## Fetch the selected sources together
+
+```json
+{"about":"about","from":"ref-R","search":{
+  "seek":["verified_by",{"name":"permission","rel":"authorizes","direction":"incoming"}],
+  "same_labels":["event"],"proof":true}}
+```
+
+The objects table contains each selected entry and shared typed source once.
+`supports` keeps the source-to-entry arrow and its declaration clocks; each
+object retains source text, metadata, source time, available body hash/revision
+and admitted entry coordinates. Missing bodies have `has_body:false`; any text
+there is a summary, not the full source. Sources missing, wrong in kind or
+unauthorized by ownership cannot make an affected proof group complete.
+
+`proof.complete_groups` and `incomplete_groups` address the original seek groups.
+Known-destination mode uses the declared requirement groups, or sorted targets
+when groups were omitted. This is fetched declared proof, never truth or
+lifecycle adjudication. Missing obligations and unknown attachment clocks remain
+explicit; `review_required` is not cleared by fetching sources. A work cutoff
+leaves incomplete retrieval; it does not prove that a source is absent.
+
+Discovery and materialization share N/E. `body_bytes` counts canonical UTF-8
+bodies once per object. `budget.max_bytes` limits a response, not internal
+allocations. Raise it through the supplied action if the next indivisible
+object cannot fit. A page repeats the same selection and checks all selected
+bodies/metadata/revisions, including unseen objects; changed proof causes a
+conflict and a fresh read. Do not combine pages from different selections.

@@ -71,6 +71,7 @@ pub fn role(
 }
 pub fn request(roles: Vec<EvidencePathRole>) -> EvidencePathRequest {
     EvidencePathRequest {
+        proof: false,
         about: ABOUT.into(),
         from: "s".into(),
         roles,

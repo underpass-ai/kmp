@@ -67,6 +67,7 @@ fn proof(at: Option<&str>) -> RelationExplanation {
 
 fn query(axis: TemporalAxis) -> TraceSearchRequest {
     TraceSearchRequest {
+        proof: false,
         about: ABOUT.into(),
         from: "a".into(),
         targets: ["b".into()].into(),

@@ -65,8 +65,8 @@ pub use model::{
     EvidencePathStatus, search_evidence_paths,
 };
 pub use model::{
-    TraceRelationStep, TraceRoute, TraceSearchLimits, TraceSearchRequest, TraceSearchResult,
-    TraceSearchStop, bounded_trace_search,
+    TraceProofObject, TraceProofResult, TraceRelationStep, TraceRoute, TraceSearchLimits,
+    TraceSearchRequest, TraceSearchResult, TraceSearchStop, bounded_trace_search,
 };
 pub use repositories::TraceSnapshotReader;
 

@@ -1,5 +1,6 @@
 use super::common::{
-    object, optional_string_array_field, optional_string_field, optional_u32_field,
+    object, optional_bool_field, optional_string_array_field, optional_string_field,
+    optional_u32_field,
 };
 use kmp_proto::v1beta1::TraceSearchOptions;
 use serde_json::Value;
@@ -75,6 +76,7 @@ pub(super) fn arguments(
                     .transpose()
             };
             Ok::<_, String>(TraceSearchOptions {
+                proof: optional_bool_field(s, "proof", "search.proof")?.unwrap_or(false),
                 seek: super::trace_seek::arguments(s)?,
                 dimensions: dimensions("dimensions")?,
                 prefer_dimensions: dimensions("prefer_dimensions")?,

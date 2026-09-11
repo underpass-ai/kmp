@@ -66,6 +66,7 @@ fn prod() -> DimensionSelection {
 }
 fn query() -> TraceSearchRequest {
     TraceSearchRequest {
+        proof: false,
         about: ABOUT.into(),
         from: "s".into(),
         targets: ["t".into()].into(),

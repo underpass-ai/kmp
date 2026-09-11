@@ -8,7 +8,8 @@ use kmp_application::{
 };
 use kmp_embedded::EmbeddedKernel;
 use kmp_proto::v1beta1::{
-    InspectInclude, InspectRequest, kernel_memory_service_client::KernelMemoryServiceClient,
+    InspectInclude, InspectRequest, TraceRequest, TraceSearchOptions,
+    kernel_memory_service_client::KernelMemoryServiceClient,
     kernel_memory_service_server::KernelMemoryServiceServer,
 };
 use kmp_transport_grpc::MemoryGrpcService;
@@ -72,7 +73,7 @@ fn packet(version: usize) -> MemoryIngestCommand {
 }
 
 #[tokio::test]
-async fn grpc_reads_keep_graph_body_and_sources_together_during_peer_writes()
+async fn grpc_inspect_and_trace_proof_keep_graph_body_and_sources_together_during_peer_writes()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let dir = tempfile::tempdir()?;
     let kernel = EmbeddedKernel::open(dir.path())?;
@@ -123,6 +124,46 @@ async fn grpc_reads_keep_graph_body_and_sources_together_during_peer_writes()
             assert_eq!(source.text.split(':').next(), Some(epoch));
             assert_eq!(source.supports, [ENTRY]);
         }
+        let traced = client
+            .trace(TraceRequest {
+                about: ABOUT.into(),
+                from: ENTRY.into(),
+                targets: vec![ENTRY.into()],
+                search: Some(TraceSearchOptions {
+                    proof: true,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .await?
+            .into_inner();
+        let root = traced
+            .objects
+            .iter()
+            .find(|o| o.object.as_ref().expect("complete trace proof").r#ref == ENTRY)
+            .expect("complete trace proof");
+        let root = root.object.as_ref().expect("complete trace proof");
+        let epoch = root.metadata.get("epoch").expect("complete trace proof");
+        assert_eq!(
+            traced
+                .proof
+                .as_ref()
+                .expect("complete trace proof")
+                .complete_groups,
+            [0]
+        );
+        assert_eq!(traced.objects.len(), 3);
+        assert_eq!(traced.supports.len(), 2);
+        assert!(traced.objects.iter().all(|o| {
+            o.has_body
+                && o.object
+                    .as_ref()
+                    .expect("complete trace proof")
+                    .text
+                    .split(':')
+                    .next()
+                    == Some(epoch.as_str())
+        }));
     }
     writer.await??;
     stop.send(()).expect("stop gRPC server");

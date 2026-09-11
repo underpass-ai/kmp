@@ -79,3 +79,9 @@ pub use evidence_paths::{
     EvidencePathGroup, EvidencePathRequest, EvidencePathResult, EvidencePathRole,
     EvidencePathStatus, search_evidence_paths,
 };
+
+mod materialize_trace_proof;
+mod trace_proof_object;
+mod trace_proof_result;
+pub use trace_proof_object::TraceProofObject;
+pub use trace_proof_result::TraceProofResult;

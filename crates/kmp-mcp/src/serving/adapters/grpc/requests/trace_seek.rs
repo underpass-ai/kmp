@@ -33,7 +33,7 @@ pub(super) fn validate_mode(search: &Map<String, Value>, has_to: bool) -> Result
         return Ok(());
     }
     Err(format!(
-        "search.seek cannot be combined with {}; remove these fields together. Use seek role relations, via/after and witness labels. Only max_nodes, max_edges, max_depth and max_states are shared search options.",
+        "search.seek cannot be combined with {}; remove these fields together. Use seek role relations, via/after and witness labels. Only max_nodes, max_edges, max_depth, max_states and proof are shared search options.",
         conflicts.join(", ")
     ))
 }
@@ -54,6 +54,7 @@ pub(super) fn arguments(search: &Map<String, Value>) -> Result<Option<TraceSeekO
             "max_edges",
             "max_depth",
             "max_states",
+            "proof",
         ]
         .contains(&key.as_str())
         {

@@ -34,6 +34,7 @@ pub fn bounded_trace_search(
         moves.push((request.direction, None));
     }
     let mut result = TraceSearchResult {
+        proof: None,
         routing: None,
         material: None,
         from: request.from.clone(),
@@ -184,6 +185,24 @@ pub fn bounded_trace_search(
             crate::select_trace_material(&result, &request.targets, policy)
                 .map_err(|e| PortError::InvalidState(e.to_string()))?,
         );
+    }
+    if request.proof {
+        result.proof = Some(super::materialize_trace_proof::trace(
+            reader,
+            request,
+            &result,
+            &mut admission,
+        )?);
+        result.discovered_nodes = admission.budget.refs.len() as u32;
+        result.scanned_edges = admission.budget.scanned;
+        result.coordinate_rows = admission.budget.coordinate_rows;
+        if let Some(stop) = admission.budget.stop {
+            result.stop = stop;
+        }
+        if let Some(routing) = &mut result.routing {
+            routing.adjacency_pages = admission.budget.adjacency_pages;
+            routing.coordinate_pages = admission.budget.coordinate_pages;
+        }
     }
     Ok(result)
 }

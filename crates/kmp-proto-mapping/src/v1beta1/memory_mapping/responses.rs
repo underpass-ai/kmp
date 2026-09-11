@@ -1100,6 +1100,10 @@ pub fn trace_response_from_result(
     let selection_fingerprint = ReadSelectionFingerprint::trace(&summary, &trace, path.is_some());
     TraceResponse {
         search: None,
+        objects: vec![],
+        supports: vec![],
+        proof: None,
+        gaps: vec![],
         routes: Vec::new(),
         seek: None,
         candidates: Vec::new(),

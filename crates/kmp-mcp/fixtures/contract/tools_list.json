@@ -6234,7 +6234,7 @@
                 "type": "string"
               },
               "entries": {
-                "description": "Maximum whole items in trace, then candidates, then groups for seek; relations alone otherwise.",
+                "description": "Whole items: trace, candidates/groups in seek, then proof objects/supports/gaps when requested.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -6258,7 +6258,7 @@
           },
           "search": {
             "additionalProperties": false,
-            "description": "Choose exactly one mode below. Known destinations use to and destination options; evidence discovery uses seek and witness joins, without to. Only max_nodes/max_edges/max_depth/max_states are shared search fields. as_of/interval/axis select time at call level; page/budget page the result, not the search. Same-about traversal.",
+            "description": "Choose exactly one mode below. Known destinations use to and destination options; evidence discovery uses seek and witness joins, without to. Work limits and proof are shared search fields. as_of/interval/axis select time at call level; page/budget page the result, not the search. Same-about traversal.",
             "oneOf": [
               {
                 "description": "Requires to at call level. No seek or witness joins.",
@@ -6273,6 +6273,7 @@
                     "max_states",
                     "paths_per_target",
                     "prefer_dimensions",
+                    "proof",
                     "relations",
                     "select"
                   ]
@@ -6287,6 +6288,7 @@
                     "max_edges",
                     "max_nodes",
                     "max_states",
+                    "proof",
                     "same_labels",
                     "same_ref",
                     "seek"
@@ -6543,6 +6545,11 @@
                   }
                 },
                 "type": "object"
+              },
+              "proof": {
+                "default": false,
+                "description": "Fetch selected path entry bodies and typed sources together in the search snapshot. Shares N/E with discovery; a cutoff leaves explicit gaps. Adds whole objects/supports/gaps to the paged proof. Response max_bytes does not bound store allocations.",
+                "type": "boolean"
               },
               "relations": {
                 "description": "Destination mode only; not with seek. Exact relation types to follow. Omitted/empty admits every non-structural link with stored why and evidence.",
@@ -6820,12 +6827,20 @@
             "description": "Seek paths with stable index, role, anchor, witness, context_hops, nodes and directed trace edge_indexes. Anchor is the main relation traversal start; witness is its other endpoint. Bindings give label/reference domains, roles and explicit endpoints when anchor equality is used; missing names exact witness refs and keys. Paths outside groups cannot jointly satisfy the request. clock_unknown keeps historical presence unproven. Join all pages.",
             "type": "array"
           },
+          "gaps": {
+            "description": "Per-ref missing_ref, missing_body, incomplete_entry and clock_unknown reasons. A work cutoff is incomplete retrieval, not evidence of absence.",
+            "type": "array"
+          },
           "groups": {
             "description": "Compatible joint alternatives with stable index, candidate_indexes and intersected bindings. Missing values remain unknown even when another role has a known domain; clock_unknown requires review. All indexes address the complete tables, not a page. Multiple proofs of the same bindings need not mean ambiguity.",
             "type": "array"
           },
           "next_actions": {
             "description": "Complete tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; empty at the end. Execute without reconstructing filters or cursors.",
+            "type": "array"
+          },
+          "objects": {
+            "description": "Shared selected entries and typed sources: exact available body, ref, kind, canonical snapshot status (not historical lifecycle), source metadata, source time, support clocks, admitted coordinates, hash/revision and has_body. Missing bodies are marked; summary text with has_body=false is not the full source.",
             "type": "array"
           },
           "page": {
@@ -6859,6 +6874,10 @@
                 "type": "integer"
               }
             },
+            "type": "object"
+          },
+          "proof": {
+            "description": "Present with search.proof. Counts missing refs/bodies, incomplete entries and unknown attachment clocks. complete_groups/incomplete_groups index the declared target requirements or seek groups and describe fetched sources, not truth, lifecycle status or semantic sufficiency. Join all pages and retain seek review_required/unknown. stop_reason and body_bytes report joint materialization work; bytes are canonical UTF-8 body bytes, not transport or allocations.",
             "type": "object"
           },
           "quality": {
@@ -6904,12 +6923,16 @@
             "type": "object"
           },
           "seek": {
-            "description": "Seed evidence selection: status compatible, ambiguous, review_required, missing_obligation, incompatible_obligations or partial. declared_obligations_complete requires a known compatible group and is always false for contextual discovery; it never means answer completeness or unique identity. Reports missing_roles, work/cut counters, role order and complete candidate/group counts. Optional review_context is a new scoped Goto read, separate from mandatory page continuations. No source-body materialization or semantic inference.",
+            "description": "Seed evidence selection: status compatible, ambiguous, review_required, missing_obligation, incompatible_obligations or partial. declared_obligations_complete describes path/witness constraints, independently of proof source availability, and is always false for contextual discovery; it never means answer completeness or unique identity. Reports missing_roles, work/cut counters, role order and complete candidate/group counts. Optional review_context is a new scoped Goto read, separate from mandatory page continuations. Source materialization is optional through search.proof; semantic inference is never performed.",
             "type": "object"
           },
           "summary": {
             "description": "Concise statement of the path selection.",
             "type": "string"
+          },
+          "supports": {
+            "description": "Eligible typed source-to-entry attachments with original arrows, why/evidence and clocks. Join through refs to objects and routes/candidates; a shared source is returned once.",
+            "type": "array"
           },
           "trace": {
             "description": "Typed relation table. In bounded mode, routes index this complete table after all pages are joined; empty at a work cutoff does not prove no path.",

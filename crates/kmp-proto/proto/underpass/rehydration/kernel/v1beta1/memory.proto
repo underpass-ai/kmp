@@ -772,6 +772,8 @@ message TraceSearchOptions {
   DimensionSelection dimensions = 10;
   DimensionSelection prefer_dimensions = 11;
   TraceSeekOptions seek = 12;
+  // Share selected entry bodies and typed supports under the search N/E budget.
+  bool proof = 13;
 }
 
 // Find compatible evidence from a seed, without known destination refs.
@@ -934,6 +936,38 @@ message TraceResponse {
   TraceEvidenceSelection seek = 9;
   repeated TraceEvidenceCandidate candidates = 10;
   repeated TraceEvidenceGroup groups = 11;
+  repeated TraceProofObject objects = 12;
+  repeated MemoryRelation supports = 13;
+  TraceProofStatus proof = 14;
+  repeated TraceProofGap gaps = 15;
+}
+
+message TraceProofObject {
+  InspectedObject object = 1;
+  bool has_body = 2;
+  string content_hash = 3;
+  uint64 revision = 4;
+  repeated TemporalCoordinate coordinates = 5;
+  google.protobuf.Timestamp source_time = 6;
+  EvidenceSupportClocks support_clocks = 7;
+  // Canonical object status in this read; not a historical lifecycle derivation.
+  string status = 8;
+}
+
+message TraceProofStatus {
+  uint32 missing_refs_count = 1;
+  uint32 missing_bodies_count = 2;
+  uint32 incomplete_entries_count = 3;
+  uint32 clock_unknown_entries_count = 4;
+  repeated uint32 complete_groups = 5;
+  repeated uint32 incomplete_groups = 6;
+  string stop_reason = 7;
+  uint64 body_bytes = 8;
+}
+
+message TraceProofGap {
+  string ref = 1;
+  repeated string reasons = 2;
 }
 
 // Relate: what memories of several abouts have to do with each other,
