@@ -250,7 +250,11 @@ happened; omitted/null stays unknown unless a record inherits a root event date.
 A record's explicit null clears that inheritance. KMP never fills event time
 from observation or ingestion. Validity describes when a state held and remains
 independent. Equal clocks, or a shared observation across a packet, are valid.
-Select the clock that answers the question; reads are not all ordered by observation.
+A semantic member declares its fact, links and evidence support together at its
+effective observation. A member override or null applies to that generated proof
+as well. Canonical ingest can declare a later association to an older source
+without changing source time. Select the clock that answers the question; reads
+are not all ordered by observation.
 **For an explicit time, read the clock or source; do not compose a timestamp.** Local wall-clock time with a
 `Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry
 above the present — where `kmp_forward` from a correct "now" never finds

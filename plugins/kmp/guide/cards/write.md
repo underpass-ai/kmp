@@ -6,7 +6,9 @@ key/value before inventing another. A shared account is not a person's alias.
 Clocks: omit `observed_at` to use KMP's exact `ingested_at`. Supply it only
 when the source establishes another observation time. Unknown `occurred_at`:
 omit it or use null; KMP never copies observation into occurrence. Root clocks
-are defaults for records; a record's null clears that default.
+are defaults for records; a record's null clears that default. Each record's
+effective observation also dates its generated evidence and connect_to declarations;
+the target's dates do not date a new link.
 One report can describe several events: separate execution from a later check;
 keep the later result out of the earlier summary. Example:
 `guide:kmp-agent:example:event-separation`.

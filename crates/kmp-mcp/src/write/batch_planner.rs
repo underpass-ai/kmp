@@ -233,7 +233,10 @@ pub(crate) fn build_batch_plan(
                 .map_err(|error| error.within(&format!("memories[{index}]")))
         })();
         match planned {
-            Ok(plan) => plans.push(plan),
+            Ok(mut plan) => {
+                preserve_proof_observation(&mut plan.ingest_arguments);
+                plans.push(plan);
+            }
             Err(error) => errors.push(error),
         }
     }
@@ -277,6 +280,30 @@ pub(crate) fn build_batch_plan(
     all.local_refs = refs;
     all.relation_quality_metrics = relation_quality_metrics(&all.relation_quality);
     Ok(all)
+}
+
+/// A member declares its proof at its effective observation. Preserve that
+/// provenance before merging; an empty clock object opts into the command's
+/// ingestion default without borrowing the packet or target's observation.
+fn preserve_proof_observation(arguments: &mut Value) {
+    let mut clocks = json!({});
+    if let Some(observed) = arguments.pointer("/provenance/observed_at") {
+        clocks["observed_at"] = observed.clone();
+    }
+    for relation in arguments["memory"]["relations"]
+        .as_array_mut()
+        .expect("compiled relations")
+    {
+        if relation["class"] != "structural" {
+            relation["clocks"] = clocks.clone();
+        }
+    }
+    for evidence in arguments["memory"]["evidence"]
+        .as_array_mut()
+        .expect("compiled evidence")
+    {
+        evidence["support_clocks"] = clocks.clone();
+    }
 }
 
 fn merged_labels(common: Option<&Value>, own: Option<&Value>) -> Result<Value, String> {
