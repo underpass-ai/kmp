@@ -104,7 +104,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "bindings":bindings(&g.bindings),"clock_unknown":g.clock_unknown})).collect::<Vec<_>>(),
         "relations":result.relations.iter().map(|e| json!({"from":e.source_node_id,"to":e.target_node_id,
             "rel":e.relation_type,"why":e.explanation.rationale(),"evidence":e.explanation.evidence(),
-            "observed_at":e.explanation.observed_at()})).collect::<Vec<_>>(),
+            "observed_at":e.explanation.observed_at().map(|at|
+                temporal_instant_rfc3339(at).unwrap_or_else(|| at.to_owned()))})).collect::<Vec<_>>(),
         "work":{"nodes":result.discovered_nodes,"edges":result.scanned_edges,"states":result.work_states,
             "shared_states":result.shared_states,"incompatible_states":result.incompatible_states,
             "adjacency_pages":result.adjacency_pages,"coordinate_pages":result.coordinate_pages},
