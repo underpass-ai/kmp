@@ -744,3 +744,17 @@ regenerate. Validate a useful hint, a misleading hint with a bridge, temporal
 multivalue/negative selectors, hard exclusion, dense fanout, stale labels and
 full response costs. Do not tune the fixed 3:1 schedule on those controls.
 See [policy and known limits](trace-dimensional-routing.md). No editorial gate.
+
+### Resumable focused Trace exploration
+
+When changing discovery scheduling, keep the announced routing order, counters,
+extended audit guide and bounded-trace example consistent. A resumed expansion
+turn is not a new path state: S counts eligible extension attempts; N/E count
+actual references/rows. Report coordinate work and empty storage end probes.
+Share partial adjacency between alternatives in one ReadTx, retain per-path
+offsets, and give resumed queue entries fresh tickets so stale heap/FIFO entries
+cannot consume them twice. Leaf claims require full admitted adjacency exhaustion.
+Compare exact default BFS responses, late edges, misleading bridges, reconvergence,
+mixed directions/clocks and depth/work cuts. Freeze the page quantum before
+measurement; document its tradeoffs without a new size or editorial CI gate.
+See [policy and controls](trace-page-exploration.md).

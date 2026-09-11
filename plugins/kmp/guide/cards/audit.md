@@ -27,4 +27,6 @@ Use `search.prefer_dimensions` for a label hint; it prioritizes matching entries
 while reserving FIFO exploration for bridges. `search.dimensions` is a hard
 filter on every path entry and can remove those bridges. Both reuse native
 selectors on coordinates admitted by the selected clock. See `search.routing`;
-focus may return a longer route first and all work remains bounded.
+focus may return a longer route first and all work remains bounded. Focus yields
+after small adjacency pages so queued children can progress; page positions and
+partial rows are reused. A work cut or unexpanded boundary is not a known leaf.

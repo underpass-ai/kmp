@@ -1,5 +1,5 @@
 use super::{
-    trace_candidate_frontier::TraceCandidateFrontier,
+    trace_candidate_frontier::TraceCandidateFrontier, trace_node_expansion::TraceNodeExpansion,
     trace_temporal_admission::TraceTemporalAdmission,
 };
 use crate::{
@@ -61,7 +61,10 @@ pub fn bounded_trace_search(
     };
     let mut frontier =
         TraceCandidateFrontier::new(request, root_admitted, admission.preferred(&request.from));
-    let mut cache = BTreeMap::<String, Vec<NodeRelationProjection>>::new();
+    let focused = request.dimensions.preferred.is_some();
+    let alternatives = request.paths_per_target > 1;
+    let rows = if focused { 4 } else { 32 };
+    let mut cache = BTreeMap::<String, TraceNodeExpansion>::new();
     let mut depth_cut = false;
     'search: while admission.budget.stop.is_none() && frontier.stop.is_none() {
         let Some((state, node, depth)) = frontier.pop() else {
@@ -75,8 +78,22 @@ pub fn bounded_trace_search(
             depth_cut = true;
             continue;
         }
-        if let Some(edges) = cache.get(&node) {
-            for edge in edges {
+        let (mut offset, resumed) = frontier.begin_expansion(state);
+        admission.routing.resumed_states += u32::from(resumed);
+        let mut expansion = cache.remove(&node).unwrap_or_else(|| {
+            result.expanded_nodes += 1;
+            TraceNodeExpansion::default()
+        });
+        loop {
+            let end = if focused {
+                offset
+                    .saturating_add(rows as usize)
+                    .min(expansion.eligible.len())
+            } else {
+                expansion.eligible.len()
+            };
+            let replayed = end > offset;
+            for edge in &expansion.eligible[offset..end] {
                 if !frontier.extend(
                     state,
                     neighbor(edge, &node),
@@ -86,64 +103,59 @@ pub fn bounded_trace_search(
                     break 'search;
                 }
             }
-            continue;
-        }
-        result.expanded_nodes += 1;
-        let mut eligible = Vec::new();
-        let mut has_eligible = false;
-        for &(direction, relation_type) in &moves {
-            let mut after = None;
-            loop {
-                let Some(page) = admission
-                    .budget
-                    .page(&node, direction, after, relation_type)?
-                else {
-                    break 'search;
-                };
-                for edge in page.edges {
-                    if *edge.explanation.semantic_class() == RelationSemanticClass::Structural
-                        || edge
-                            .explanation
-                            .rationale()
-                            .is_none_or(|s| s.trim().is_empty())
-                        || edge
-                            .explanation
-                            .evidence()
-                            .is_none_or(|s| s.trim().is_empty())
-                        || !admission
-                            .window()
-                            .admits_dependency_relation(&edge.explanation)
-                        || (!request.relations.is_empty()
-                            && !request.relations.contains(&edge.relation_type))
-                    {
-                        continue;
-                    }
-                    let next = neighbor(&edge, &node);
-                    if !admission.admits(next)? {
-                        if admission.budget.stop.is_some() {
-                            break 'search;
-                        }
-                        continue;
-                    }
-                    has_eligible = true;
-                    if !frontier.extend(state, next, &edge, admission.preferred(next)) {
+            offset = end;
+            if (focused && replayed) || expansion.complete {
+                break;
+            }
+            let Some(edges) = expansion.page(&node, &moves, &mut admission.budget, rows)? else {
+                break 'search;
+            };
+            for edge in edges {
+                if *edge.explanation.semantic_class() == RelationSemanticClass::Structural
+                    || edge
+                        .explanation
+                        .rationale()
+                        .is_none_or(|s| s.trim().is_empty())
+                    || edge
+                        .explanation
+                        .evidence()
+                        .is_none_or(|s| s.trim().is_empty())
+                    || !admission
+                        .window()
+                        .admits_dependency_relation(&edge.explanation)
+                    || (!request.relations.is_empty()
+                        && !request.relations.contains(&edge.relation_type))
+                {
+                    continue;
+                }
+                let next = neighbor(&edge, &node);
+                if !admission.admits(next)? {
+                    if admission.budget.stop.is_some() {
                         break 'search;
                     }
-                    if request.paths_per_target > 1 {
-                        eligible.push(edge);
-                    }
+                    continue;
                 }
-                if page.exhausted {
-                    break;
+                expansion.has_eligible = true;
+                if !frontier.extend(state, next, &edge, admission.preferred(next)) {
+                    break 'search;
                 }
-                after = page.next;
+                if alternatives {
+                    expansion.eligible.push(edge);
+                    offset += 1;
+                }
+            }
+            if expansion.complete && !expansion.has_eligible {
+                result.leaves += 1;
+            }
+            if focused || expansion.complete {
+                break;
             }
         }
-        if !has_eligible {
-            result.leaves += 1;
+        if !expansion.complete || offset < expansion.eligible.len() {
+            frontier.resume(state, offset, admission.preferred(&node));
         }
-        if request.paths_per_target > 1 {
-            cache.insert(node, eligible);
+        if alternatives || !expansion.complete {
+            cache.insert(node, expansion);
         }
     }
     result.discovered_nodes = admission.budget.refs.len() as u32;
@@ -153,6 +165,8 @@ pub fn bounded_trace_search(
         result.stop = stop;
     }
     if request.dimensions.is_active() {
+        admission.routing.adjacency_pages = admission.budget.adjacency_pages;
+        admission.routing.coordinate_pages = admission.budget.coordinate_pages;
         result.routing = Some(admission.routing.clone());
     }
     frontier.finish(&mut result);

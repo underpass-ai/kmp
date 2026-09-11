@@ -781,6 +781,9 @@ message TraceRoutingStats {
   uint32 priority_pops = 5;
   uint32 exploration_pops = 6;
   repeated uint32 preferred_route_entries = 7;
+  uint32 adjacency_pages = 8;
+  uint32 coordinate_pages = 9;
+  uint32 resumed_states = 10;
 }
 
 message TraceMaterialSelectionOptions {
