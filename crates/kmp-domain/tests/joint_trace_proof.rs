@@ -133,7 +133,7 @@ fn trace() -> TraceSearchRequest {
         select: None,
         temporal: Default::default(),
         limits: TraceSearchLimits {
-            nodes: 4,
+            nodes: 5,
             ..Default::default()
         },
     }
@@ -148,7 +148,7 @@ fn seek() -> EvidencePathRequest {
             context: false,
             bindings: vec![],
             steps: vec![TraceRelationStep {
-                relation: MemoryRelationType::new("depends_on").unwrap(),
+                relation: MemoryRelationType::new("depends_on").expect("valid proof fixture"),
                 direction: RelationDirection::Outgoing,
             }],
         }],
@@ -159,13 +159,19 @@ fn seek() -> EvidencePathRequest {
 }
 
 #[test]
-fn both_modes_share_one_source_and_one_body_batch_even_at_exact_node_capacity() {
+fn both_modes_share_one_source_and_one_body_batch_with_sufficient_capacity() {
     for seed in [false, true] {
         let r = Reader::fixture();
         let proof = if seed {
-            search_evidence_paths(&r, &seek()).unwrap().proof.unwrap()
+            search_evidence_paths(&r, &seek())
+                .expect("valid proof fixture")
+                .proof
+                .expect("valid proof fixture")
         } else {
-            bounded_trace_search(&r, &trace()).unwrap().proof.unwrap()
+            bounded_trace_search(&r, &trace())
+                .expect("valid proof fixture")
+                .proof
+                .expect("valid proof fixture")
         };
         assert_eq!(proof.complete_groups, [0, 1]);
         assert!(proof.incomplete_groups.is_empty());
@@ -177,7 +183,7 @@ fn both_modes_share_one_source_and_one_body_batch_even_at_exact_node_capacity() 
             proof
                 .objects
                 .iter()
-                .all(|o| o.body.as_ref().unwrap().revision == 9)
+                .all(|o| o.body.as_ref().expect("valid proof fixture").revision == 9)
         );
     }
 }
@@ -196,7 +202,12 @@ fn nonproof_readers_still_work_and_proof_is_explicitly_unsupported() {
     let r = WithoutBodies(Reader::fixture());
     let mut q = trace();
     q.proof = false;
-    assert!(bounded_trace_search(&r, &q).unwrap().proof.is_none());
+    assert!(
+        bounded_trace_search(&r, &q)
+            .expect("valid proof fixture")
+            .proof
+            .is_none()
+    );
     q.proof = true;
     assert!(matches!(
         bounded_trace_search(&r, &q),
@@ -204,7 +215,12 @@ fn nonproof_readers_still_work_and_proof_is_explicitly_unsupported() {
     ));
     let mut q = seek();
     q.proof = false;
-    assert!(search_evidence_paths(&r, &q).unwrap().proof.is_none());
+    assert!(
+        search_evidence_paths(&r, &q)
+            .expect("valid proof fixture")
+            .proof
+            .is_none()
+    );
     q.proof = true;
     assert!(matches!(
         search_evidence_paths(&r, &q),
@@ -216,14 +232,46 @@ fn nonproof_readers_still_work_and_proof_is_explicitly_unsupported() {
 fn missing_sources_at_capacity_are_not_confused_with_unread_sources() {
     let mut r = Reader::fixture();
     r.nodes.remove("source");
-    let proof = bounded_trace_search(&r, &trace()).unwrap().proof.unwrap();
+    let proof = bounded_trace_search(&r, &trace())
+        .expect("valid proof fixture")
+        .proof
+        .expect("valid proof fixture");
     assert_eq!(proof.missing_refs, ["source"]);
     assert_eq!(proof.incomplete_entries, ["a", "b", "c"]);
     assert_eq!(*r.body_calls.borrow(), vec![vec!["a", "b", "c"]]);
     let mut q = trace();
     q.limits.nodes = 3;
-    let proof = bounded_trace_search(&r, &q).unwrap().proof.unwrap();
+    let proof = bounded_trace_search(&r, &q)
+        .expect("valid proof fixture")
+        .proof
+        .expect("valid proof fixture");
     assert_eq!(proof.stop, Some(TraceSearchStop::NodeBudget));
     assert!(proof.missing_refs.is_empty());
     assert!(proof.complete_groups.is_empty());
+}
+
+#[test]
+fn exact_node_capacity_remains_partial_without_probing_unreserved_endpoints() {
+    for seed in [false, true] {
+        let r = Reader::fixture();
+        let proof = if seed {
+            let mut q = seek();
+            q.limits.nodes = 4;
+            search_evidence_paths(&r, &q)
+                .expect("valid proof fixture")
+                .proof
+                .expect("proof")
+        } else {
+            let mut q = trace();
+            q.limits.nodes = 4;
+            bounded_trace_search(&r, &q)
+                .expect("valid proof fixture")
+                .proof
+                .expect("proof")
+        };
+        assert_eq!(proof.stop, Some(TraceSearchStop::NodeBudget));
+        assert!(proof.complete_groups.is_empty());
+        assert_eq!(proof.incomplete_groups, [0, 1]);
+        assert!(proof.missing_refs.is_empty());
+    }
 }

@@ -259,7 +259,7 @@ fn seek_request() -> EvidencePathRequest {
             name: "dependency".into(),
             context: false,
             steps: vec![TraceRelationStep {
-                relation: MemoryRelationType::new("depends_on").unwrap(),
+                relation: MemoryRelationType::new("depends_on").expect("valid proof fixture"),
                 direction: RelationDirection::Outgoing,
             }],
             bindings: vec![],
@@ -288,9 +288,19 @@ async fn selected_target_groups_keep_original_requirement_indices() {
             },
         ],
     });
-    let result = store.load_bounded_trace(&q).await.unwrap();
-    assert_eq!(result.material.as_ref().unwrap().selected_candidates, [1]);
-    let proof = result.proof.unwrap();
+    let result = store
+        .load_bounded_trace(&q)
+        .await
+        .expect("valid proof fixture");
+    assert_eq!(
+        result
+            .material
+            .as_ref()
+            .expect("valid proof fixture")
+            .selected_candidates,
+        [1]
+    );
+    let proof = result.proof.expect("valid proof fixture");
     assert_eq!(proof.complete_groups, [1]);
     assert_eq!(proof.incomplete_groups, [0]);
     assert!(!proof.objects.iter().any(|o| o.node.node_id == "b"));
@@ -301,13 +311,19 @@ async fn seek_materializes_union_and_preserves_unknown_obligations_and_review() 
     let (_dir, store) = fixture().await;
     let mut q = seek_request();
     q.proof = false;
-    let plain = store.load_evidence_paths(&q).await.unwrap();
+    let plain = store
+        .load_evidence_paths(&q)
+        .await
+        .expect("valid proof fixture");
     q.proof = true;
-    let result = store.load_evidence_paths(&q).await.unwrap();
+    let result = store
+        .load_evidence_paths(&q)
+        .await
+        .expect("valid proof fixture");
     assert_eq!(plain.candidates, result.candidates);
     assert_eq!(plain.groups, result.groups);
     assert_eq!(plain.status, result.status);
-    let proof = result.proof.unwrap();
+    let proof = result.proof.expect("valid proof fixture");
     assert_eq!(proof.objects.len(), 4);
     assert_eq!(proof.supports.len(), 3);
     assert_eq!(proof.complete_groups, [0, 1]);
@@ -316,7 +332,10 @@ async fn seek_materializes_union_and_preserves_unknown_obligations_and_review() 
         name: "event".into(),
         key: "event".into(),
     });
-    let unknown = store.load_evidence_paths(&q).await.unwrap();
+    let unknown = store
+        .load_evidence_paths(&q)
+        .await
+        .expect("valid proof fixture");
     assert_eq!(unknown.status, EvidencePathStatus::ReviewRequired);
     assert!(
         unknown
@@ -324,17 +343,42 @@ async fn seek_materializes_union_and_preserves_unknown_obligations_and_review() 
             .iter()
             .all(|g| !g.bindings.missing.is_empty())
     );
-    assert_eq!(unknown.proof.as_ref().unwrap().objects.len(), 4);
-    assert_eq!(unknown.proof.as_ref().unwrap().incomplete_groups, [0, 1]);
+    assert_eq!(
+        unknown
+            .proof
+            .as_ref()
+            .expect("valid proof fixture")
+            .objects
+            .len(),
+        4
+    );
+    assert_eq!(
+        unknown
+            .proof
+            .as_ref()
+            .expect("valid proof fixture")
+            .incomplete_groups,
+        [0, 1]
+    );
     q.roles[0].bindings.clear();
     q.roles[0].context = true;
-    let context = store.load_evidence_paths(&q).await.unwrap();
+    let context = store
+        .load_evidence_paths(&q)
+        .await
+        .expect("valid proof fixture");
     assert_eq!(context.status, EvidencePathStatus::ReviewRequired);
-    assert_eq!(context.proof.unwrap().complete_groups, [0, 1]);
-    q.roles[0].steps[0].relation = MemoryRelationType::new("verified_by").unwrap();
-    let empty = store.load_evidence_paths(&q).await.unwrap();
+    assert_eq!(
+        context.proof.expect("valid proof fixture").complete_groups,
+        [0, 1]
+    );
+    q.roles[0].steps[0].relation =
+        MemoryRelationType::new("verified_by").expect("valid proof fixture");
+    let empty = store
+        .load_evidence_paths(&q)
+        .await
+        .expect("valid proof fixture");
     assert!(empty.groups.is_empty());
-    let proof = empty.proof.unwrap();
+    let proof = empty.proof.expect("valid proof fixture");
     assert!(proof.objects.is_empty());
     assert!(proof.complete_groups.is_empty());
     assert!(proof.incomplete_groups.is_empty());
@@ -363,20 +407,20 @@ async fn foreign_and_ownerless_sources_never_expose_payloads_or_certify_proof() 
             link("ownerless", "c", "supports", Some(EARLY)),
         ])
         .await
-        .unwrap();
+        .expect("valid proof fixture");
     for proof in [
         store
             .load_bounded_trace(&request())
             .await
-            .unwrap()
+            .expect("valid proof fixture")
             .proof
-            .unwrap(),
+            .expect("valid proof fixture"),
         store
             .load_evidence_paths(&seek_request())
             .await
-            .unwrap()
+            .expect("valid proof fixture")
             .proof
-            .unwrap(),
+            .expect("valid proof fixture"),
     ] {
         assert_eq!(proof.missing_refs, ["foreign", "ownerless"]);
         assert_eq!(proof.incomplete_entries, ["b", "c"]);
@@ -406,16 +450,194 @@ async fn seek_cutoffs_preserve_groups_without_inventing_missing_objects() {
         let mut q = seek_request();
         q.limits.nodes = nodes;
         q.limits.edges = edges;
-        let got = store.load_evidence_paths(&q).await.unwrap();
+        let got = store
+            .load_evidence_paths(&q)
+            .await
+            .expect("valid proof fixture");
         assert_eq!(got.groups.len(), 2);
         assert_eq!(got.stop, stop);
         assert!(got.discovered_nodes <= nodes && got.scanned_edges <= edges);
         assert_eq!(got.status, EvidencePathStatus::Partial);
-        let proof = got.proof.unwrap();
+        let proof = got.proof.expect("valid proof fixture");
         assert_eq!(proof.stop, Some(stop));
         assert!(proof.complete_groups.is_empty());
         assert_eq!(proof.incomplete_groups, [0, 1]);
         assert!(proof.missing_refs.is_empty());
         assert!(proof.missing_bodies.is_empty());
+    }
+}
+
+fn coordinate_on_all_clocks(id: &str) -> ProjectionMutation {
+    let scope = MemoryDimensionIdentity::new(ABOUT, "work", "one")
+        .expect("valid proof fixture")
+        .node_id();
+    ProjectionMutation::UpsertNodeRelation(Box::new(NodeRelationProjection {
+        source_node_id: scope.clone(),
+        target_node_id: id.into(),
+        relation_type: "contains_entry".into(),
+        explanation: RelationExplanation::new(RelationSemanticClass::Structural)
+            .with_dimension("work")
+            .with_scope_id(scope)
+            .with_occurred_at(EARLY)
+            .with_observed_at(EARLY)
+            .with_ingested_at(EARLY)
+            .with_valid_from(EARLY)
+            .with_valid_until(LATE),
+    }))
+}
+fn all_clocks(mut mutation: ProjectionMutation) -> ProjectionMutation {
+    if let ProjectionMutation::UpsertNodeRelation(e) = &mut mutation {
+        e.explanation = e
+            .explanation
+            .clone()
+            .with_occurred_at(EARLY)
+            .with_observed_at(EARLY)
+            .with_ingested_at(EARLY)
+            .with_valid_from(EARLY);
+    }
+    mutation
+}
+
+#[tokio::test]
+async fn source_time_never_backdates_attachment_and_missing_selected_clocks_stay_unknown() {
+    let (_dir, store) = fixture().await;
+    let mut old_source = match object("late-attachment", "memory_evidence") {
+        ProjectionMutation::UpsertNode(n) => n,
+        _ => unreachable!(),
+    };
+    old_source.properties.insert("time".into(), EARLY.into());
+    let mut changes = vec![
+        ProjectionMutation::UpsertNode(old_source),
+        body("late-attachment", "Old event; later proof association."),
+    ];
+    for id in ["a", "b", "c"] {
+        changes.push(coordinate_on_all_clocks(id));
+        changes.push(all_clocks(link("source", id, "supports", Some(EARLY))));
+    }
+    changes.extend([
+        all_clocks(link("a", "b", "depends_on", Some(EARLY))),
+        all_clocks(link("a", "c", "depends_on", Some(EARLY))),
+    ]);
+    let mut attachment = link("late-attachment", "b", "supports", Some(LATE));
+    if let ProjectionMutation::UpsertNodeRelation(e) = &mut attachment {
+        e.explanation = e.explanation.clone().with_ingested_at(LATE);
+    }
+    changes.push(attachment);
+    store
+        .apply_mutations(changes)
+        .await
+        .expect("valid proof fixture");
+    for axis in [
+        TemporalAxis::Observed,
+        TemporalAxis::Ingested,
+        TemporalAxis::Occurred,
+        TemporalAxis::Validity,
+    ] {
+        let temporal = TemporalSelection::as_of(
+            TemporalCursor::time(CUT).expect("valid proof fixture"),
+            axis,
+        )
+        .expect("valid proof fixture");
+        let mut t = request();
+        t.temporal = temporal.clone();
+        let mut s = seek_request();
+        s.temporal = temporal;
+        for proof in [
+            store
+                .load_bounded_trace(&t)
+                .await
+                .expect("valid proof fixture")
+                .proof
+                .expect("valid proof fixture"),
+            store
+                .load_evidence_paths(&s)
+                .await
+                .expect("valid proof fixture")
+                .proof
+                .expect("valid proof fixture"),
+        ] {
+            let selected_has_clock =
+                matches!(axis, TemporalAxis::Observed | TemporalAxis::Ingested);
+            assert_eq!(
+                proof
+                    .objects
+                    .iter()
+                    .any(|o| o.node.node_id == "late-attachment"),
+                !selected_has_clock
+            );
+            if selected_has_clock {
+                assert_eq!(proof.complete_groups, [0, 1]);
+                assert!(proof.clock_unknown_entries.is_empty());
+            } else {
+                assert_eq!(proof.clock_unknown_entries, ["b"]);
+                assert_eq!(proof.complete_groups, [1]);
+                assert_eq!(proof.incomplete_groups, [0]);
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn validity_cut_excludes_expired_support_and_preserves_canonical_supersession_status() {
+    let (_dir, store) = fixture().await;
+    let mut changes = Vec::new();
+    for id in ["a", "b", "c"] {
+        changes.push(coordinate_on_all_clocks(id));
+        changes.push(all_clocks(link("source", id, "supports", Some(EARLY))));
+    }
+    changes.extend([
+        all_clocks(link("a", "b", "depends_on", Some(EARLY))),
+        all_clocks(link("a", "c", "depends_on", Some(EARLY))),
+        object("expired", "memory_evidence"),
+        body("expired", "Proof no longer valid at cut"),
+        ProjectionMutation::UpdateNodeStatus {
+            node_id: "b".into(),
+            status: "SUPERSEDED".into(),
+        },
+    ]);
+    let mut support = all_clocks(link("expired", "b", "supports", Some(EARLY)));
+    if let ProjectionMutation::UpsertNodeRelation(e) = &mut support {
+        e.explanation = e.explanation.clone().with_valid_until(CUT);
+    }
+    changes.push(support);
+    store
+        .apply_mutations(changes)
+        .await
+        .expect("valid proof fixture");
+    let temporal = TemporalSelection::as_of(
+        TemporalCursor::time(CUT).expect("valid proof fixture"),
+        TemporalAxis::Validity,
+    )
+    .expect("valid proof fixture");
+    let mut t = request();
+    t.temporal = temporal.clone();
+    let mut s = seek_request();
+    s.temporal = temporal;
+    for proof in [
+        store
+            .load_bounded_trace(&t)
+            .await
+            .expect("valid proof fixture")
+            .proof
+            .expect("valid proof fixture"),
+        store
+            .load_evidence_paths(&s)
+            .await
+            .expect("valid proof fixture")
+            .proof
+            .expect("valid proof fixture"),
+    ] {
+        assert_eq!(proof.complete_groups, [0, 1]);
+        assert!(!proof.objects.iter().any(|o| o.node.node_id == "expired"));
+        assert!(!proof.supports.iter().any(|e| e.source_node_id == "expired"));
+        let node = proof
+            .objects
+            .iter()
+            .find(|o| o.node.node_id == "b")
+            .expect("valid proof fixture");
+        assert_eq!(node.node.status, "SUPERSEDED");
+        assert_eq!(node.coordinates.len(), 1);
+        assert_eq!(node.coordinates[0].valid_from(), Some(EARLY));
+        assert_eq!(node.coordinates[0].valid_until(), Some(LATE));
     }
 }

@@ -116,7 +116,6 @@ fn fetch<R: TraceSnapshotReader>(
     entries: &BTreeSet<String>,
     admission: &mut TraceTemporalAdmission<'_, R>,
 ) -> Result<TraceProofResult, PortError> {
-    admission.budget.proof_reads = true;
     let mut result = TraceProofResult::default();
     let mut nodes = BTreeMap::<String, NodeProjection>::new();
     let mut missing = BTreeSet::new();
