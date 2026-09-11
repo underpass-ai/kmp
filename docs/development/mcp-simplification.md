@@ -4,10 +4,18 @@ Decision: 2026-09-09. Evolve the native MCP contract (solution A), preserving
 evidence-backed writing and navigation through dimensions, time and relations.
 SQL, GraphQL and a new query language are outside this implementation track.
 
-The integration branch is `integration/mcp-simplification`, created from `main`
-at `48bc5de36aaf83cb4b44096b0be69714d93220c9`. Feature branches start from integration
-and their PRs explicitly target integration. The repository default stays `main`.
-Use a separate integration-to-main PR when the combined change is ready.
+Delivery update, 2026-09-11: the former `integration/mcp-simplification` track
+shipped in v0.17.0 through PR724. Its remote branch is closed. The active branch
+is `integration/evidence-retrieval`, created from released `main` at
+`2a9ad2f3cc7d25a8f7788ccc0bbddfbdcb53d53f`. Feature branches start from this new
+integration and their PRs explicitly target it. The repository default stays
+`main`. Use a separate integration-to-main PR when the combined change is ready.
+
+The next delivery finishes selection and materialization of complete evidence
+paths (#538/#539), including bodies and sources from a consistent read view and
+measured performance. Reader-authored compact trajectory summaries follow that
+work. The original design and increments below describe the retained contract;
+they are not instructions to repeat work already shipped in v0.17.0.
 
 ## Delivery order
 
