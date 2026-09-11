@@ -723,6 +723,33 @@ message TraceRequest {
   MemoryBudget budget = 4;
   PageRequest page = 5;
   string about = 6;
+  // Bounded mode: destinations share a search. Empty retains the single `to`.
+  repeated string targets = 7;
+  TraceSearchOptions search = 8;
+}
+
+message TraceSearchOptions {
+  uint32 max_nodes = 1;
+  uint32 max_edges = 2;
+  uint32 max_depth = 3;
+  string direction = 4;
+  repeated string relations = 5;
+}
+
+message TraceRoute {
+  string target = 1;
+  // Zero-based positions in the COMPLETE trace table, before transport paging.
+  repeated uint32 edge_indexes = 2;
+}
+
+message TraceSearchSelection {
+  string stop_reason = 1;
+  uint32 discovered_nodes = 2;
+  uint32 scanned_edges = 3;
+  uint32 expanded_nodes = 4;
+  uint32 leaves = 5;
+  repeated string unreached_targets = 6;
+  string direction = 7;
 }
 
 message TraceResponse {
@@ -733,6 +760,8 @@ message TraceResponse {
   ResponseQuality quality = 5;
   // Digest of the complete selected proof, before positional pagination.
   string selection_fingerprint = 6;
+  TraceSearchSelection search = 7;
+  repeated TraceRoute routes = 8;
 }
 
 // Relate: what memories of several abouts have to do with each other,

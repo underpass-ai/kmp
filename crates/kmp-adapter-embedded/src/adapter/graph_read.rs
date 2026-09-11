@@ -139,6 +139,21 @@ fn shortest_outward_path(
 }
 
 impl GraphNeighborhoodReader for EmbeddedKernelStore {
+    async fn load_bounded_trace(
+        &self,
+        request: &kmp_domain::TraceSearchRequest,
+    ) -> Result<kmp_domain::TraceSearchResult, PortError> {
+        let request = request.clone();
+        self.run(move |store| {
+            let tx = store.begin_read()?;
+            kmp_domain::bounded_trace_search(
+                &super::trace_snapshot::TraceSnapshot(tx.as_ref()),
+                &request,
+            )
+        })
+        .await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,

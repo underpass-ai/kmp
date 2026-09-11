@@ -1096,6 +1096,8 @@ pub fn trace_response_from_result(
     let summary = rendered_summary(&result.rendered);
     let selection_fingerprint = ReadSelectionFingerprint::trace(&summary, &trace, path.is_some());
     TraceResponse {
+        search: None,
+        routes: Vec::new(),
         summary,
         selection_fingerprint,
         trace: returned_trace,

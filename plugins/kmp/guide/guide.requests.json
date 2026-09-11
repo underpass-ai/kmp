@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:151f1c8248f0f85bcf19",
+    "idempotency_key": "ingest:guide-sync:1:agent:0dcf879cd7afbda8a70a",
     "memory": {
       "dimensions": [
         {
@@ -51,7 +51,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -82,7 +82,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Choose and continue a memory route",
             "guide_version": "1",
             "source": "editorial"
@@ -114,7 +114,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Resume known work",
             "guide_version": "1",
             "source": "editorial"
@@ -146,7 +146,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Ask a semantic question",
             "guide_version": "1",
             "source": "editorial"
@@ -178,7 +178,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Compare memories across abouts",
             "guide_version": "1",
             "source": "editorial"
@@ -210,7 +210,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Navigate and zoom in time",
             "guide_version": "1",
             "source": "editorial"
@@ -242,12 +242,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Inspect evidence and trace a connection",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte. Inspect uses the owning about. Trace can cross a declared, evidenced same_event_as or same_entity_as edge; naming a foreign endpoint alone creates no path. Inspect keeps the stored object stable and pages expandable evidence and links; budget guidance distinguishes the stable floor from omitted expansion. Use include.raw for audit records, not for routine lesson reading. After retaining the first inspect object, continue with page.cursor and page.repeat_object=false to receive only object.ref plus the remaining expansion. object_reused=true declares that reuse. Keep the original text, kind, metadata and source; do not replace them with the ref-only object. Execute Inspect next_actions to continue with the complete bound call. If no whole item fits, page.minimum_progress_bytes names a sufficient next-item allowance. The action offers at least that much and prefers the complete inspection up to the usual 10,000-byte budget, avoiding a one-item-per-call walk. page.required_bytes still sizes the complete inspection. A fixed budget means the result remains partial. A changed object or selected proof returns conflict and a complete restart in feedback; that fresh read returns the new full object even if prior pages reused it. Omit repeat_object to receive the full object on every page. Trace also pages whole relations under budget.max_bytes. If page.returned is zero and page.has_more is true, this is pending proof, not an absent path: retry the same page.next_cursor with budget.max_bytes at least page.required_bytes. Trace next_actions contain the exact continuation. A changed endpoint or selected proof, including a later edge, rejects the cursor with a complete fresh-read action in feedback. The cursor is not a persisted snapshot; restart instead of mixing old pages with new evidence. For a write receipt, execute the returned receipt.action: object.text is immutable accepted-command JSON containing canonical_memory, writer diagnostics and command revision/hash. It is not the current state of the memories. Receipt refs stay within their owning about and do not enter graph traversal."
+          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte. Inspect uses the owning about. Trace can cross a declared, evidenced same_event_as or same_entity_as edge; naming a foreign endpoint alone creates no path. Inspect keeps the stored object stable and pages expandable evidence and links; budget guidance distinguishes the stable floor from omitted expansion. Use include.raw for audit records, not for routine lesson reading. After retaining the first inspect object, continue with page.cursor and page.repeat_object=false to receive only object.ref plus the remaining expansion. object_reused=true declares that reuse. Keep the original text, kind, metadata and source; do not replace them with the ref-only object. Execute Inspect next_actions to continue with the complete bound call. If no whole item fits, page.minimum_progress_bytes names a sufficient next-item allowance. The action offers at least that much and prefers the complete inspection up to the usual 10,000-byte budget, avoiding a one-item-per-call walk. page.required_bytes still sizes the complete inspection. A fixed budget means the result remains partial. A changed object or selected proof returns conflict and a complete restart in feedback; that fresh read returns the new full object even if prior pages reused it. Omit repeat_object to receive the full object on every page. Trace also pages whole relations under budget.max_bytes. If page.returned is zero and page.has_more is true, this is pending proof, not an absent path: retry the same page.next_cursor with budget.max_bytes at least page.required_bytes. Trace next_actions contain the exact continuation. A changed endpoint or selected proof, including a later edge, rejects the cursor with a complete fresh-read action in feedback. The cursor is not a persisted snapshot; restart instead of mixing old pages with new evidence. For a write receipt, execute the returned receipt.action: object.text is immutable accepted-command JSON containing canonical_memory, writer diagnostics and command revision/hash. It is not the current state of the memories. Receipt refs stay within their owning about and do not enter graph traversal. Bounded trace: use to as an array of up to eight entry refs, or provide search. All destinations share max_nodes/max_edges/max_depth. direction selects outgoing prerequisites or incoming dependants without reversing stored arrows. relations filters exact link types. This mode stays in one about and reads the current graph; it rejects historical arguments and does not traverse equivalences into another about. It returns one shortest discovered route per explicit target, not alternative routes to the same target or complete answer evidence. Join every trace page, then resolve each routes[].edge_indexes into that complete table in hop order. An empty route is a zero-hop destination equal to from. search.stop_reason distinguishes targets_reached, frontier_exhausted, node_budget, edge_budget and depth_budget. Counts include discarded endpoints and rows. A cutoff never proves no path; rerun with a deliberate larger search allowance as a new selection if needed. Transport next_actions only finish the selected relation table; they do not continue the graph search. Frontier exhaustion and leaves are relative to the selected about, direction and rich relation types. Use temporal verbs for historical evidence and inspect for entry/source bodies. See the bounded-trace example."
         },
         {
           "coordinates": [
@@ -274,7 +274,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Write evidence or change labels",
             "guide_version": "1",
             "source": "editorial"
@@ -306,7 +306,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Frame and share ChronoLoom",
             "guide_version": "1",
             "source": "editorial"
@@ -338,7 +338,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Synchronize guide assets",
             "guide_version": "1",
             "source": "editorial"
@@ -370,7 +370,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Install an optional lexical bridge",
             "guide_version": "1",
             "source": "editorial"
@@ -402,7 +402,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Cross abouts, labels and selectors",
             "guide_version": "1",
             "source": "editorial"
@@ -434,7 +434,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Choose a relation and justify it",
             "guide_version": "1",
             "source": "editorial"
@@ -466,7 +466,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Retry one logical write",
             "guide_version": "1",
             "source": "editorial"
@@ -498,7 +498,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Complete a bounded read",
             "guide_version": "1",
             "source": "editorial"
@@ -530,7 +530,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Choose a byte ceiling",
             "guide_version": "1",
             "source": "editorial"
@@ -562,7 +562,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Replace, contradict or expire",
             "guide_version": "1",
             "source": "editorial"
@@ -594,7 +594,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Interpret retrieved proof",
             "guide_version": "1",
             "source": "editorial"
@@ -626,7 +626,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Search language and literal evidence",
             "guide_version": "1",
             "source": "editorial"
@@ -658,7 +658,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Write or repair search summaries",
             "guide_version": "1",
             "source": "editorial"
@@ -691,7 +691,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Start here: one decision and its stated reason",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -723,7 +723,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Decision history and past validity",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -754,7 +754,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -786,7 +786,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Aliases, unresolved names and account assignment",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -817,7 +817,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Repository bundles and snapshots",
             "guide_version": "1",
             "source": "editorial"
@@ -849,7 +849,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Diagnose missing tools and errors",
             "guide_version": "1",
             "source": "editorial"
@@ -882,7 +882,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Distributed incident, proposed identity and late reports",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -914,7 +914,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Four clocks, interval boundaries and zoom to proof",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -946,7 +946,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Quantities, corrections, duplicates and exclusions",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -978,7 +978,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Conflicting assignments and evidence received late",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1010,7 +1010,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Multiple aliases, distinct facets and late memberships",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1042,7 +1042,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Labels, synonyms and negation under explicit conditions",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1074,7 +1074,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1106,7 +1106,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Fresh-session handoff and shared-view revision conflicts",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1138,7 +1138,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Preference and explicit policy delta",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1170,7 +1170,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Authorization, dependency and measured constraints",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1202,7 +1202,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Structure, membership and included contributions",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1234,7 +1234,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Validated canonical ingest and exact retry",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1265,7 +1265,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Find a concrete example for a tool, kind or relation",
             "guide_version": "1",
             "source": "editorial"
@@ -1298,7 +1298,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Atomic semantic packet with local proof links",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1329,7 +1329,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1360,7 +1360,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1391,7 +1391,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1422,7 +1422,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1453,7 +1453,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1484,7 +1484,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1515,7 +1515,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1546,7 +1546,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1577,7 +1577,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_title": "Manage agent identity and guidance",
             "guide_version": "1",
             "source": "editorial"
@@ -1610,7 +1610,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "One report, separate execution and verification events",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1632,22 +1632,21 @@
             },
             {
               "dimension": "depth",
-              "scope_id": "depth-advanced",
+              "scope_id": "depth-basic",
               "sequence": 51
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:bounded-trace",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
-            "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:ask",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "depth": "basic",
+            "example_title": "Trace several destinations under one work budget",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
+          "text": "# Several destinations, one search\n\nThe source register says: artifact A requires B; B requires C; a separate\nreport V verifies A. These facts and their relation-specific why/evidence\nare already stored. Obtain their exact entry refs from the write receipt or\na read. Below `ref-A`, `ref-C`, `ref-V` and `about` stand for those returned\nvalues, not refs to construct or send literally.\n\nCall `kmp_trace` with:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\",\"ref-V\"],\n \"search\":{\"max_nodes\":128,\"max_edges\":256,\"max_depth\":100,\n           \"direction\":\"outgoing\",\"relations\":[\"depends_on\",\"verified_by\"]}}\n```\n\nExpect two routes if the stored graph reaches both destinations. Each route\nindexes the complete `trace` relation table in hop order. Shared edges appear\nonce in that table. Follow `next_actions` until all pages are retained before\nresolving the zero-based `edge_indexes`. The route A→B→C preserves two declared\ndependency statements; the route A→V preserves the report's verification\nstatement. Neither tells you that those are all the sources a question needs.\nInspect the returned entry refs when the bodies or direct source evidence matter.\n\nFor “what depends on C?”, start from C with `direction:\"incoming\"` and\ndestinations A and B. The traversal goes C←B←A; the returned statements still\nsay A depends on B and B depends on C. Never reverse their meaning.\n\nIf `search.stop_reason` is `node_budget`, `edge_budget` or `depth_budget`,\nunreached destinations remain unknown. `page.has_more:false` only finishes\nthe selected relation table. There is no hidden search continuation: a larger\nsearch allowance starts a new selection. Even an exact-size final storage page\ncan leave exhaustion unknown when no allowance remains for another probe.\n\nThis mode reads current same-about entries and rich links with why/evidence.\nIt does not apply an as-of cut, discover destinations from a question, return\nseveral alternative paths to one target, or infer an AND/OR proof group.\nFor “what was known yesterday?”, first use the temporal verbs with the correct\nclock. A recent link returned by this current-state trace cannot prove that\nhistorical claim.\n"
         },
         {
           "coordinates": [
@@ -1669,18 +1668,18 @@
               "sequence": 52
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:ask",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval."
+          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
         },
         {
           "coordinates": [
@@ -1702,18 +1701,18 @@
               "sequence": 53
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it."
+          "text": "LIVE TOOL kmp_forward. Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval."
         },
         {
           "coordinates": [
@@ -1735,18 +1734,18 @@
               "sequence": 54
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_guide",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:guide",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_guide"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_guide. Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it."
         },
         {
           "coordinates": [
@@ -1768,18 +1767,18 @@
               "sequence": 55
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_guide",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:guide",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_guide"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_guide. Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization."
         },
         {
           "coordinates": [
@@ -1801,18 +1800,18 @@
               "sequence": 56
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -1834,18 +1833,18 @@
               "sequence": 57
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history."
+          "text": "LIVE TOOL kmp_inspect. Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object."
         },
         {
           "coordinates": [
@@ -1867,18 +1866,18 @@
               "sequence": 58
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history."
         },
         {
           "coordinates": [
@@ -1900,18 +1899,18 @@
               "sequence": 59
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:relate",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -1933,18 +1932,18 @@
               "sequence": 60
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:relate",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -1966,18 +1965,18 @@
               "sequence": 61
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval."
         },
         {
           "coordinates": [
@@ -1999,18 +1998,18 @@
               "sequence": 62
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace declared links between memory refs. A to array or search object enables a bounded shared search through current same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search retains equivalence-aware tracing."
         },
         {
           "coordinates": [
@@ -2032,18 +2031,18 @@
               "sequence": 63
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -2065,18 +2064,18 @@
               "sequence": 64
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -2098,18 +2097,18 @@
               "sequence": 65
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:wake",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -2131,13 +2130,46 @@
               "sequence": 66
             }
           ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T01:06:00Z",
+              "occurred_at": "2026-08-28T01:06:00Z",
+              "scope_id": "timeline",
+              "sequence": 67
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 67
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 67
+            }
+          ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "151f1c8248f0f85bcf19f956aa9bce9fedaae2fb5fbefe8a4d0c033a362f92bb",
+            "guide_revision": "0dcf879cd7afbda8a70abb74299a711a8d83756e5dbe7f9b52867ada23782b92",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_write_memory"
@@ -2234,7 +2266,7 @@
           "supports": [
             "guide:kmp-agent:verb:audit"
           ],
-          "text": "The live Inspect contract returns executable continuation, minimum-progress and stale-selection restart calls, preserving the about boundary, object reuse and canonical proof. Receipt inspection uses the existing accepted-command index without creating a graph memory.",
+          "text": "The live Inspect contract returns executable continuation, minimum-progress and stale-selection restart calls, preserving the about boundary, object reuse and canonical proof. Receipt inspection uses the existing accepted-command index without creating a graph memory. Bounded multi-target Trace exposes actual discovery work and preserves source-backed edge direction in one snapshot.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2797,6 +2829,19 @@
           "time": "2026-08-28T00:00:00Z"
         },
         {
+          "id": "evidence:guide:kmp-agent:example:bounded-trace",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:bounded-trace"
+          ],
+          "text": "The explicit dependency and verification example teaches shared work limits, retained arrows, deduplicated relation indexes and honest cutoffs; it makes no historical or answer-completeness claim.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
           "id": "evidence:guide:kmp-agent:tool:kmp_ask",
           "metadata": {
             "audience": "agent",
@@ -2936,7 +2981,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_trace"
           ],
-          "text": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
+          "text": "Trace declared links between memory refs. A to array or search object enables a bounded shared search through current same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search retains equivalence-aware tracing.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -3519,7 +3564,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
+          "evidence": "Trace declared links between memory refs. A to array or search object enables a bounded shared search through current same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search retains equivalence-aware tracing.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
           "sequence": 52,
@@ -3588,7 +3633,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:2832bcfd3e1ccfed86dd",
+    "idempotency_key": "ingest:guide-sync:1:person:d3e909fa1ac80dd2a3fc",
     "memory": {
       "dimensions": [
         {
@@ -3638,11 +3683,11 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "KMP remembers why. This is the human guide: five short ideas first, then the deeper mechanics when you want them. Ask your agent to run open:guide whenever you want this view back."
+          "text": "KMP remembers why. This is the human guide: five short ideas first, then the deeper mechanics when you want them. Ask your agent to run open:guide whenever you want this view back. Trace can also search several known destinations with a shared work budget. A budget cutoff and a complete response page are different; routes describe stored links, not a complete answer."
         },
         {
           "coordinates": [
@@ -3669,7 +3714,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3700,7 +3745,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3731,7 +3776,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3762,7 +3807,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3793,7 +3838,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3824,7 +3869,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3855,7 +3900,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3886,7 +3931,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3917,7 +3962,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3948,7 +3993,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3979,7 +4024,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4010,7 +4055,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4041,7 +4086,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4072,7 +4117,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4103,7 +4148,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4134,7 +4179,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4165,7 +4210,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4196,7 +4241,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4227,7 +4272,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4258,7 +4303,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4289,7 +4334,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4320,7 +4365,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4351,7 +4396,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "2832bcfd3e1ccfed86dd44e8dff4f674c29223fd81f537e404995783b4f9495c",
+            "guide_revision": "d3e909fa1ac80dd2a3fc8542642c76dd39f09069419bf992dfcac19e55273dd9",
             "guide_version": "1",
             "source": "editorial"
           },

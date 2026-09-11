@@ -46,3 +46,55 @@ keys, full-page versus exhaustion, opaque ids and a same-snapshot read across
 another engine's commit. A late page of seven among 10,000 neighbors uses the
 composite-key search with 109 SQLite VM steps in the local control; this is not
 whole-query performance. No new editorial CI gate is introduced.
+# Native bounded Trace baseline
+
+`kmp_trace` now uses this port when `to` is an array (1–8 destinations), or
+`search` is supplied. Embedded and gRPC map the same request/result. The embedded
+adapter borrows one SQLite `ReadTx` for source ownership, every adjacency page,
+every admitted endpoint's ownership and every returned relation explanation.
+Other graph adapters reject this capability explicitly rather than falling back
+to a full graph load. Ordinary single-destination Trace is unchanged.
+
+The coordinator is the deterministic **unit-cost baseline**, not M2:
+
+\[
+  c(e)=1,\quad d(v)=\min_{p:s\leadsto v}|p|,\quad
+  R=\bigcup_{t\in T_{reached}}p_t.
+\]
+
+A shared BFS visits each admitted entry at most once. It returns one discovered
+shortest-hop route per explicit destination, preserving arrows when walking the
+incoming index. Edges are eligible only when non-structural, carrying nonempty
+stored rationale/evidence and matching any requested exact type filter. This
+qualifies a stored link, not truth. Shared edges occupy one table row; each route
+contains zero-based indexes into the full unpaged table. Finish transport pages
+before resolving them. The selection fingerprint includes all selected edges,
+route indexes and search metadata, including content outside the returned page.
+
+The request limits discovered refs (`max_nodes`, N), decoded adjacency rows
+(`max_edges`, E) and hop depth (`max_depth`, D). Discovery includes rejected
+foreign/structural/missing endpoints. Before reading a page of q rows reserve
+`q <= min(N - discovered, E - scanned, 32)`. Each row can reveal at most one
+new endpoint. Counters never refund filtered work. N bounds identities and node
+lookups; it does **not** bound bytes in a stored node or explanation. Incoming
+rows also require canonical relation point gets. E is decoded adjacency rows,
+not SQLite VM instructions, physical pages or all point gets. BFS states are
+at most N, with O(N + E) retained graph state; ordered maps/sets add log N CPU
+factors. No graph-wide catalogue or detail-body batch is requested.
+
+`targets_reached` establishes those graph connections only. `frontier_exhausted`
+and the leaf count are relative to admitted about/direction/type/rich-link
+filters. `node_budget`, `edge_budget` and `depth_budget` mean incomplete search.
+No probe after exhausted allowance is made merely to certify a leaf. There is
+no resumable search cursor in this increment: transport actions finish the
+selected relation table; a larger search is a new selection and snapshot.
+
+Scope is current same-about **entries** verified from the stored projection;
+foreign endpoints, dimensions and direct evidence nodes are not expanded. This
+mode does not apply a historical cut, label predicates, lifecycle filtering or
+cross-about equivalences; it does not return entry bodies or direct source-node
+proof. Nodes contain projected payload metadata, so reading them can internally
+decode entry text even though it is not returned. No claim that #538 or #539 is
+complete follows from this baseline. Pending: temporal admission, useful route
+alternatives, M2 group selection, direct proof loading in the same snapshot,
+byte-aware discovery and revision-keyed reader phrases. Writers gain no fields.

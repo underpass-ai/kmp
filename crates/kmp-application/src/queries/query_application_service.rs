@@ -23,3 +23,12 @@ impl<G, D, S> QueryApplicationService<G, D, S> {
         }
     }
 }
+
+impl<G: kmp_domain::GraphNeighborhoodReader + Send + Sync, D, S> QueryApplicationService<G, D, S> {
+    pub async fn trace_search(
+        &self,
+        request: &kmp_domain::TraceSearchRequest,
+    ) -> Result<kmp_domain::TraceSearchResult, crate::ApplicationError> {
+        Ok(self.graph_reader.load_bounded_trace(request).await?)
+    }
+}

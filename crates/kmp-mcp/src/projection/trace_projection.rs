@@ -5,7 +5,7 @@ use kmp_proto::v1beta1::TraceResponse;
 use super::rendering::*;
 
 pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
-    json!({
+    let mut value = json!({
         "summary": response.summary,
         "trace": response.trace.iter().map(memory_relation_json).collect::<Vec<_>>(),
         "page": response
@@ -15,5 +15,18 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
             .unwrap_or_else(empty_page_info_json),
         "quality": optional_quality_json(response.quality.as_ref()),
         "warnings": response.warnings
-    })
+    });
+    if let Some(search) = response.search {
+        value["search"] = json!({"stop_reason": search.stop_reason, "discovered_nodes": search.discovered_nodes,
+            "scanned_edges": search.scanned_edges, "expanded_nodes": search.expanded_nodes,
+            "leaves": search.leaves, "unreached_targets": search.unreached_targets, "direction": search.direction});
+        value["routes"] = json!(
+            response
+                .routes
+                .iter()
+                .map(|r| json!({"target": r.target, "edge_indexes": r.edge_indexes}))
+                .collect::<Vec<_>>()
+        );
+    }
+    value
 }

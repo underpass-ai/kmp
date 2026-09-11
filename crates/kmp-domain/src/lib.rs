@@ -54,6 +54,12 @@ pub use value_objects::{
 };
 pub use value_objects::{RelationExplanation, RelationSemanticClass};
 
+pub use model::{
+    TraceRoute, TraceSearchLimits, TraceSearchRequest, TraceSearchResult, TraceSearchStop,
+    bounded_trace_search,
+};
+pub use repositories::TraceSnapshotReader;
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;

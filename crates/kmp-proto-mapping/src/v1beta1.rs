@@ -30,3 +30,5 @@ pub use rendered_mapping::{
 };
 pub use scope_mapping::proto_scope_validation_v1beta1;
 pub use version_mapping::{proto_accepted_version_v1beta1, proto_bundle_version_v1beta1};
+
+pub use memory_mapping::{trace_search_request_from_proto, trace_search_response_from_result};

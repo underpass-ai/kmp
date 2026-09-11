@@ -4,6 +4,19 @@ use std::sync::Arc;
 use crate::{ContextPathNeighborhood, NeighborhoodRequest, NodeNeighborhood, PortError};
 
 pub trait GraphNeighborhoodReader {
+    /// One bounded search and all returned relation explanations share a snapshot.
+    /// Unsupported adapters fail explicitly; never fall back to an unbounded read.
+    fn load_bounded_trace(
+        &self,
+        _request: &crate::TraceSearchRequest,
+    ) -> impl Future<Output = Result<crate::TraceSearchResult, PortError>> + Send {
+        async {
+            Err(PortError::Unavailable(
+                "bounded trace search is not supported by this graph adapter".into(),
+            ))
+        }
+    }
+
     fn load_neighborhood(
         &self,
         root_node_id: &str,
@@ -40,6 +53,13 @@ impl<T> GraphNeighborhoodReader for Arc<T>
 where
     T: GraphNeighborhoodReader + Send + Sync + ?Sized,
 {
+    async fn load_bounded_trace(
+        &self,
+        request: &crate::TraceSearchRequest,
+    ) -> Result<crate::TraceSearchResult, PortError> {
+        self.as_ref().load_bounded_trace(request).await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,
@@ -71,6 +91,13 @@ impl<T> GraphNeighborhoodReader for &T
 where
     T: GraphNeighborhoodReader + Send + Sync + ?Sized,
 {
+    async fn load_bounded_trace(
+        &self,
+        request: &crate::TraceSearchRequest,
+    ) -> Result<crate::TraceSearchResult, PortError> {
+        (*self).load_bounded_trace(request).await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,
