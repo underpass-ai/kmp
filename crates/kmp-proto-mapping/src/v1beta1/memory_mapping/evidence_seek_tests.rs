@@ -174,9 +174,11 @@ fn pages_preserve_candidate_group_indexes_and_bind_the_unreturned_domains() {
     };
     let result = EvidencePathResult {
         from: "seed".into(),
+        context_discovery: false,
         relations: vec![],
         candidates: vec![EvidencePathCandidate {
             role: 0,
+            context_hops: 0,
             nodes: vec!["seed".into(), "v".into()],
             edge_indexes: vec![],
             bindings: bindings.clone(),

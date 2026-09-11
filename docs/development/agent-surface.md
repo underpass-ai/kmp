@@ -795,3 +795,13 @@ separate from continuations and only offered at an equivalent explicit cut.
 Measure complete native calls against frozen controls; do not claim NLP or agent
 understanding from a deterministic compiler replay. These are maintenance
 instructions, not new editorial CI gates.
+
+For contextual seek, keep `via:"context"`, typed `context`, `context_discovery`
+and `context_hops` consistent through the same boundaries. The witness offset
+comes from the candidate's actual prefix depth. Include discovery mode and
+prefix lengths in the fingerprint. Document minimum-hop selection and retained
+ties, temporal/ownership/proof admission, explicit obligation input and required
+semantic review. Verify unknown/future links, mixed directions, joint conflicts,
+cycles, deep chains, all pages and embedded/gRPC parity. A discovered contextual
+prefix does not entail a claim about the seed. Compression is a later optional
+reader projection; add no writer fields or editorial CI gate here.

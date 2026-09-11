@@ -9,7 +9,7 @@ pub(super) fn roles_schema() -> Value {
         "name":{"type":"string","minLength":1,"description":"Unique role name; defaults to rel. Required to distinguish repeated relations."},
         "rel":{"type":"string","minLength":1},
         "direction":{"type":"string","enum":["outgoing","incoming"],"default":"outgoing"},
-        "via":{"type":"array","maxItems":1023,"items":step.clone()},
+        "via":{"oneOf":[{"type":"array","maxItems":1023,"items":step.clone()},{"const":"context"}],"description":"context discovers all minimum-hop prefixes to reachable relation origins through justified links in either direction at the same cut. It chooses intermediate sequences; rel/direction still declare the goal. These are leads requiring review, not inferred evidence for the seed. Longer prefixes to the same origin are omitted; ties survive. No label match creates an identity."},
         "after":{"type":"array","maxItems":1023,"items":step},
         "labels":{"type":"object","maxProperties":16,"additionalProperties":{"type":"array","minItems":1,"maxItems":64,"uniqueItems":true,"items":{"type":"string","minLength":1}},"description":"Allowed witness values per key. Missing membership remains unknown, never an inferred match."}
     }}]}})

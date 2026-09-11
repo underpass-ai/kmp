@@ -6615,37 +6615,45 @@
                           "type": "string"
                         },
                         "via": {
-                          "items": {
-                            "oneOf": [
-                              {
-                                "minLength": 1,
-                                "type": "string"
-                              },
-                              {
-                                "additionalProperties": false,
-                                "properties": {
-                                  "direction": {
-                                    "default": "outgoing",
-                                    "enum": [
-                                      "outgoing",
-                                      "incoming"
-                                    ],
-                                    "type": "string"
-                                  },
-                                  "rel": {
+                          "description": "context discovers all minimum-hop prefixes to reachable relation origins through justified links in either direction at the same cut. It chooses intermediate sequences; rel/direction still declare the goal. These are leads requiring review, not inferred evidence for the seed. Longer prefixes to the same origin are omitted; ties survive. No label match creates an identity.",
+                          "oneOf": [
+                            {
+                              "items": {
+                                "oneOf": [
+                                  {
                                     "minLength": 1,
                                     "type": "string"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "direction": {
+                                        "default": "outgoing",
+                                        "enum": [
+                                          "outgoing",
+                                          "incoming"
+                                        ],
+                                        "type": "string"
+                                      },
+                                      "rel": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "rel"
+                                    ],
+                                    "type": "object"
                                   }
-                                },
-                                "required": [
-                                  "rel"
-                                ],
-                                "type": "object"
-                              }
-                            ]
-                          },
-                          "maxItems": 1023,
-                          "type": "array"
+                                ]
+                              },
+                              "maxItems": 1023,
+                              "type": "array"
+                            },
+                            {
+                              "const": "context"
+                            }
+                          ]
                         }
                       },
                       "required": [

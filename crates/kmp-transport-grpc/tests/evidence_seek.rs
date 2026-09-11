@@ -16,13 +16,28 @@ use tokio_stream::wrappers::TcpListenerStream;
 #[tokio::test]
 async fn seek_over_grpc_matches_embedded_and_pages_candidate_groups()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    check(false).await
+}
+
+#[tokio::test]
+async fn context_sequences_over_grpc_match_embedded_and_preserve_witness_positions()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    check(true).await
+}
+
+async fn check(context: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let dir = tempfile::tempdir()?;
     let kernel = EmbeddedKernel::open(dir.path())?;
     let about = "project:seek-wire";
     let seed = format!("{about}:entry:observation:seed");
+    let anchor = if context {
+        format!("{about}:entry:observation:anchor")
+    } else {
+        seed.clone()
+    };
     let witness = format!("{about}:entry:observation:report");
     let mut mutations = vec![];
-    for id in [&seed, &witness] {
+    for id in [&seed, &anchor, &witness] {
         mutations.push(ProjectionMutation::UpsertNode(NodeProjection {
             node_id: id.clone(),
             node_kind: "observation".into(),
@@ -48,7 +63,7 @@ async fn seek_over_grpc_matches_embedded_and_pages_candidate_groups()
     }
     mutations.push(ProjectionMutation::UpsertNodeRelation(Box::new(
         NodeRelationProjection {
-            source_node_id: seed.clone(),
+            source_node_id: anchor.clone(),
             target_node_id: witness.clone(),
             relation_type: "verified_by".into(),
             explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
@@ -57,6 +72,19 @@ async fn seek_over_grpc_matches_embedded_and_pages_candidate_groups()
                 .with_observed_at("2026-09-01T00:00:00Z"),
         },
     )));
+    if context {
+        mutations.push(ProjectionMutation::UpsertNodeRelation(Box::new(
+            NodeRelationProjection {
+                source_node_id: seed.clone(),
+                target_node_id: anchor,
+                relation_type: "uses_background".into(),
+                explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
+                    .with_rationale("The seed refers to this contextual execution.")
+                    .with_evidence("Seed: related execution recorded.")
+                    .with_observed_at("2026-09-01T00:00:00Z"),
+            },
+        )));
+    }
     kernel.store().apply_mutations(mutations).await?;
     let request = TraceRequest {
         about: about.into(),
@@ -65,6 +93,7 @@ async fn seek_over_grpc_matches_embedded_and_pages_candidate_groups()
             seek: Some(TraceSeekOptions {
                 roles: vec![TraceSeekRole {
                     name: "verification".into(),
+                    context,
                     relation: Some(TraceRelationStep {
                         rel: "verified_by".into(),
                         direction: "outgoing".into(),
@@ -117,18 +146,31 @@ async fn seek_over_grpc_matches_embedded_and_pages_candidate_groups()
     let mut client = KernelMemoryServiceClient::connect(endpoint).await?;
     let first = client.trace(request.clone()).await?.into_inner();
     assert_eq!(first, expected);
-    assert_eq!(first.seek.as_ref().expect("seek").status, "compatible");
-    let mut second = request.clone();
-    second.page.as_mut().expect("page").cursor = first.page.expect("page").next_cursor;
-    let second = client.trace(second).await?.into_inner();
-    assert_eq!(second.candidates[0].witness, witness);
-    assert!(second.trace.is_empty());
-    let mut third = request;
-    third.page.as_mut().expect("page").cursor = second.page.expect("page").next_cursor;
-    let third = client.trace(third).await?.into_inner();
-    assert_eq!(third.groups[0].candidate_indexes, [0]);
-    assert!(!third.page.expect("page").has_more);
-    assert_eq!(third.selection_fingerprint, first.selection_fingerprint);
+    let selection = first.seek.as_ref().expect("seek");
+    assert_eq!(
+        selection.status,
+        if context {
+            "review_required"
+        } else {
+            "compatible"
+        }
+    );
+    assert_eq!(selection.context_discovery, context);
+    assert_eq!(selection.declared_obligations_complete, !context);
+    let mut page = first.clone();
+    let mut candidates = first.candidates.clone();
+    let mut groups = first.groups.clone();
+    while page.page.as_ref().expect("page").has_more {
+        let mut next = request.clone();
+        next.page.as_mut().expect("page").cursor = page.page.expect("page").next_cursor;
+        page = client.trace(next).await?.into_inner();
+        assert_eq!(page.selection_fingerprint, first.selection_fingerprint);
+        candidates.extend(page.candidates.clone());
+        groups.extend(page.groups.clone());
+    }
+    assert_eq!(candidates[0].witness, witness);
+    assert_eq!(candidates[0].context_hops, u32::from(context));
+    assert_eq!(groups[0].candidate_indexes, [0]);
     stop.send(()).expect("stop");
     server.await??;
     Ok(())

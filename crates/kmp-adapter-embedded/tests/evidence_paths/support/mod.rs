@@ -64,6 +64,7 @@ pub fn role(
 ) -> EvidencePathRole {
     EvidencePathRole {
         name: name.into(),
+        context: false,
         steps: relations.iter().map(|r| step(r)).collect(),
         bindings,
     }

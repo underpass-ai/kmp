@@ -788,6 +788,7 @@ message TraceSeekRole {
   repeated TraceRelationStep via = 3;
   repeated TraceRelationStep after = 4;
   repeated TraceWitnessLabel labels = 5;
+  bool context = 6; // Discover minimum-hop contextual prefixes; requires review.
 }
 message TraceEvidenceSelection {
   string from = 1;
@@ -809,6 +810,7 @@ message TraceEvidenceSelection {
   repeated uint32 clock_unknown_edges = 17;
   uint32 candidate_count = 18;
   uint32 group_count = 19;
+  bool context_discovery = 20;
 }
 message TraceEvidenceBinding {
   string key = 1;
@@ -830,6 +832,7 @@ message TraceEvidenceCandidate {
   repeated TraceEvidenceBinding bindings = 6;
   repeated TraceMissingWitness missing = 7;
   bool clock_unknown = 8;
+  uint32 context_hops = 9;
 }
 message TraceEvidenceGroup {
   uint32 index = 1;

@@ -7,7 +7,7 @@ pub(super) fn project(response: &TraceResponse, value: &mut Value) {
         return;
     };
     value["seek"] = json!({"from":s.from,"status":s.status,"declared_obligations_complete":s.declared_obligations_complete,
-        "roles":s.roles,"missing_roles":s.missing_roles,"stop_reason":s.stop_reason,
+        "context_discovery":s.context_discovery,"roles":s.roles,"missing_roles":s.missing_roles,"stop_reason":s.stop_reason,
         "discovered_nodes":s.discovered_nodes,"scanned_edges":s.scanned_edges,"work_states":s.work_states,
         "shared_states":s.shared_states,"incompatible_states":s.incompatible_states,
         "adjacency_pages":s.adjacency_pages,"coordinate_pages":s.coordinate_pages,
@@ -15,7 +15,7 @@ pub(super) fn project(response: &TraceResponse, value: &mut Value) {
         "temporal_selection_resolved":s.temporal_selection_resolved,"clock_unknown_edges":s.clock_unknown_edges,
         "candidate_count":s.candidate_count,"group_count":s.group_count});
     value["candidates"] = json!(response.candidates.iter().map(|c| json!({"index":c.index,"role":c.role,
-        "nodes":c.nodes,"edge_indexes":c.edge_indexes,"witness":c.witness,
+        "context_hops":c.context_hops,"nodes":c.nodes,"edge_indexes":c.edge_indexes,"witness":c.witness,
         "bindings":bindings(&c.bindings),"missing":missing(&c.missing),"clock_unknown":c.clock_unknown})).collect::<Vec<_>>());
     value["groups"] = json!(response.groups.iter().map(|g| json!({"index":g.index,"candidate_indexes":g.candidate_indexes,
         "bindings":bindings(&g.bindings),"missing":missing(&g.missing),"clock_unknown":g.clock_unknown})).collect::<Vec<_>>());

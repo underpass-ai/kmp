@@ -92,3 +92,38 @@ paths, not a question's missing requirements. Read the actual source bodies with
 temporal verbs before relying on their text; Seek returns link proof, not an
 automatic source-body batch. The example is a deterministic contract lesson, not
 evidence that a separate agent understands the task.
+
+## Discover the intermediate sequence from context
+
+Suppose the seed is an incident note N. N uses background B; a correction C
+points to B; C is verified by report V. The reader knows it needs verification,
+but has not yet read the sequence leading to it:
+
+```json
+{"about":"about","from":"ref-N","as_of":{"time":"2026-09-10T12:00:00Z"},
+ "axis":"observed","search":{"seek":[
+   {"name":"verification","rel":"verified_by","via":"context"}]}}
+```
+
+KMP discovers `N --uses_background--> B <--corrects-- C --verified_by--> V`.
+The candidate has `context_hops:2` and witness V. No intermediate relation names
+or destination refs were supplied. `after` can still require further ordered
+source dependencies, and labels/same_ref still apply at V. Different witnesses
+and equal-length prefixes remain alternatives joined against the other roles.
+
+Discovery reads justified non-structural links in either direction inside the
+same about and temporal cut. It keeps all minimum-hop prefixes per reachable
+origin of the requested main relation. It excludes cycles and longer prefixes
+to that same origin, without declaring those longer proofs irrelevant. A deep
+chain remains discoverable without spelling out its moves. Work exhaustion
+still means partial; this mode can read much more context than explicit via.
+
+`seek.context_discovery:true` and `declared_obligations_complete:false` distinguish
+these leads. Compatible discovered groups require review; missing, conflicting,
+ambiguous and partial results remain explicit. Read the original source bodies
+with the same temporal cut. V verifies C in the stored statement: KMP does not
+infer that V verifies N, that every contextual relation composes logically, or
+that the seed and C are the same event. `same_labels` and `same_ref` constrain
+the named witnesses, not an unbound seed. Require explicit evidence for that
+connection when the question needs it. Discovery selects sequences for reading;
+the reader still supplies the task's obligations and decides their relevance.

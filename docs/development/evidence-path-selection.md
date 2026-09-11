@@ -113,3 +113,44 @@ between several dimension values, native-agent understanding, and body/source
 batching. Fixed ordered paths can be deep but are not arbitrary graph programs.
 The existing work ceilings still apply; the frozen correctness controls set
 allowances above every observed requirement. No writer burden is added.
+
+## Contextual sequence discovery
+
+A role with `via:"context"` (typed proto `context:true`, no explicit via) adds
+contextual prefix discovery before its main relation and optional fixed suffix.
+The goal relation/direction and witness constraints remain explicit. There is
+no NLP classifier or universal implication rule over semantic links.
+
+Let H be the same-about, temporally admitted graph of justified rich relations,
+with two traversal directions preserving each stored statement. Set d(seed)=0
+and d(v)=minimum number of context hops from the seed. Keep the predecessor DAG
+P(v)={(u,e): d(u)+1=d(v)}. For each reachable anchor a with the requested directed
+relation to witness w, enumerate P(a), then that main relation and the declared
+suffix. All equal-length prefixes survive; no token ranking or route quota is
+applied. No discarded longer prefix is claimed to be semantically redundant.
+
+The product state is (role, declared position, node, bindings, context_hops).
+Its total depth strictly increases. Prefix distances are shared across roles;
+adjacency by node/direction is read once and reused for typed main steps. The
+existing state DAG retains alternative prefixes and fixed suffixes; the existing
+joint solver applies all witness constraints. Witness projection offsets its
+position by the actual context depth, without adding a hidden identity binding.
+
+Context expansion is linear in admitted nodes/edges per role before path and
+joint enumeration; the number of tied shortest paths or compatible groups can
+still be exponential. Work is bounded by the same N/E/S/depth controls, charged
+before reads/expansion/reconstruction. A cutoff remains partial. Zero-token
+penalties do not remove these explicit work ceilings.
+
+Outputs add context_discovery and per-candidate context_hops, included in the
+complete selection fingerprint. Contextual leads never set declared obligations
+complete. Compatible becomes review_required; ambiguity, incompatibility,
+missing roles, clock unknowns and partial work remain distinct. All pages use
+the same global proof indexes and the original relation arrows/why/evidence.
+
+This closes automatic *intermediate sequence* discovery for an explicit goal
+relation, with a documented minimum-hop policy. Choosing obligations from a
+question, preferring semantically useful longer paths, correlations between
+keys, and independent-agent understanding remain separate claims. Compression
+is the subsequent reader-written navigation projection; it is not implemented
+or required by this change.

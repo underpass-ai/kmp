@@ -6,6 +6,9 @@ use crate::TraceRelationStep;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvidencePathRole {
     pub name: String,
+    /// Discover minimum-hop context prefixes before the declared steps. These
+    /// are navigation leads, not implicit logical composition of relations.
+    pub context: bool,
     pub steps: Vec<TraceRelationStep>,
     pub bindings: Vec<EvidencePathBinding>,
 }

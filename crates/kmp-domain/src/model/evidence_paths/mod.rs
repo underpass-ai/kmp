@@ -8,6 +8,7 @@ mod request;
 mod result;
 mod role;
 mod search;
+mod state;
 mod state_graph;
 mod status;
 
