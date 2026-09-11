@@ -6,6 +6,9 @@ pub mod context_render_options;
 pub mod get_context;
 pub mod get_context_path;
 pub mod get_node_detail;
+mod get_node_details;
+#[cfg(test)]
+mod get_node_details_tests;
 pub mod get_node_relationships;
 pub mod graph_relationships;
 pub mod graph_traversal_depth;

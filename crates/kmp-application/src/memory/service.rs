@@ -579,20 +579,13 @@ where
             .filter(|relationship| relationship.relationship_type == "supports")
             .map(|relationship| relationship.source_node_id.clone())
             .collect::<BTreeSet<_>>();
-        for evidence_ref in supporting_refs {
-            let evidence_detail = match self
-                .query_application
-                .get_node_detail(GetNodeDetailQuery {
-                    node_id: evidence_ref,
-                })
-                .await
-            {
-                Ok(detail) => detail,
-                // A stale edge must not make the inspected node disappear.
-                // It is not evidence unless its typed source still exists.
-                Err(ApplicationError::NotFound(_)) => continue,
-                Err(error) => return Err(error),
-            };
+        let sources = self
+            .query_application
+            .get_node_details(supporting_refs.into_iter().collect())
+            .await?;
+        // A stale edge is not evidence; a present typed source with no body
+        // retains the same fallback as the single-node operation.
+        for evidence_detail in sources.into_iter().flatten() {
             if !is_memory_evidence_kind(&evidence_detail.node.node_kind) {
                 continue;
             }
