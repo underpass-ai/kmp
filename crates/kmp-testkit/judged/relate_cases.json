@@ -192,7 +192,10 @@
                 "class": "evidential",
                 "why": "One percent was too small to see anything.",
                 "evidence": "Canary dashboards, first week of March.",
-                "confidence": "high"
+                "confidence": "high",
+                "clocks": {
+                  "observed_at": "2026-03-10T10:00:00Z"
+                }
               },
               {
                 "from": "service:alpha:outcome:followup",
@@ -201,7 +204,10 @@
                 "class": "procedural",
                 "why": "The week after the canary widened.",
                 "evidence": "Canary dashboards, third week of March.",
-                "confidence": "high"
+                "confidence": "high",
+                "clocks": {
+                  "observed_at": "2026-03-18T10:00:00Z"
+                }
               }
             ]
           }
@@ -304,7 +310,10 @@
                 "class": "constraint",
                 "why": "A hotfix ships inside the audit freeze.",
                 "evidence": "Release calendar, March.",
-                "confidence": "high"
+                "confidence": "high",
+                "clocks": {
+                  "observed_at": "2026-03-15T10:00:00Z"
+                }
               },
               {
                 "from": "service:alpha:decision:ship",
@@ -313,7 +322,10 @@
                 "class": "constraint",
                 "why": "The hotfix ships in the afternoon.",
                 "evidence": "Release calendar, March.",
-                "confidence": "medium"
+                "confidence": "medium",
+                "clocks": {
+                  "observed_at": "2026-03-15T10:00:00Z"
+                }
               }
             ]
           }
@@ -963,7 +975,10 @@
                 "class": "procedural",
                 "why": "The release moved once the blocker cleared.",
                 "evidence": "Release calendar.",
-                "confidence": "high"
+                "confidence": "high",
+                "clocks": {
+                  "observed_at": "2026-03-18T10:00:00Z"
+                }
               }
             ]
           }
