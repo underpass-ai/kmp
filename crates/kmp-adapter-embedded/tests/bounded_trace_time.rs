@@ -71,6 +71,8 @@ fn query(axis: TemporalAxis) -> TraceSearchRequest {
         from: "a".into(),
         targets: ["b".into()].into(),
         direction: RelationDirection::Outgoing,
+        follow: vec![],
+        paths_per_target: 1,
         relations: Default::default(),
         limits: TraceSearchLimits::default(),
         temporal: TemporalSelection::as_of(TemporalCursor::time(CUT).expect("cut"), axis)
@@ -300,4 +302,55 @@ async fn explicit_clock_never_falls_back_and_invalid_direct_selections_fail() {
         };
         assert!(store.load_bounded_trace(&q).await.is_err());
     }
+}
+
+#[tokio::test]
+async fn alternatives_and_reverse_moves_still_admit_each_node_and_link_on_the_selected_clock() {
+    let (_dir, store) = store().await;
+    store
+        .apply_mutations(vec![
+            node("old"),
+            coordinate("old", "one", EARLY),
+            node("late_node"),
+            coordinate("late_node", "one", LATE),
+            node("late_link"),
+            coordinate("late_link", "one", EARLY),
+            link("old", "a", "corrects", proof(Some(EARLY))),
+            link("old", "b", "verified_by", proof(Some(EARLY))),
+            link("late_node", "a", "corrects", proof(Some(EARLY))),
+            link("late_node", "b", "verified_by", proof(Some(EARLY))),
+            link("late_link", "a", "corrects", proof(Some(LATE))),
+            link("late_link", "b", "verified_by", proof(Some(EARLY))),
+        ])
+        .await
+        .expect("alternatives");
+    let mut request = query(TemporalAxis::Observed);
+    request.paths_per_target = 2;
+    request.follow = [
+        ("corrects", RelationDirection::Incoming),
+        ("verified_by", RelationDirection::Outgoing),
+    ]
+    .into_iter()
+    .map(|(rel, direction)| kmp_domain::TraceRelationStep {
+        relation: kmp_domain::MemoryRelationType::new(rel).expect("rel"),
+        direction,
+    })
+    .collect();
+    let result = store.load_bounded_trace(&request).await.expect("as of");
+    assert_eq!(result.routes.len(), 1);
+    assert_eq!(result.incomplete_targets, ["b"]);
+    assert_eq!(result.stop, TraceSearchStop::FrontierExhausted);
+    assert_eq!(result.relations.len(), 2);
+    assert!(result.relations.iter().all(|e| e.source_node_id == "old"));
+    assert!(result.clock_unknown_edges.is_empty());
+    request.temporal = Default::default();
+    assert_eq!(
+        store
+            .load_bounded_trace(&request)
+            .await
+            .expect("frontier")
+            .routes
+            .len(),
+        2
+    );
 }

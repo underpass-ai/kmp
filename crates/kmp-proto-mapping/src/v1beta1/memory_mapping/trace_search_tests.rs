@@ -5,6 +5,11 @@ use kmp_domain::{
 
 fn result() -> TraceSearchResult {
     TraceSearchResult {
+        from: "a".into(),
+        follow: vec![],
+        paths_per_target: 1,
+        considered_states: 3,
+        incomplete_targets: vec![],
         routes: vec![kmp_domain::TraceRoute {
             target: "c".into(),
             edge_indexes: vec![0, 1],
@@ -163,4 +168,64 @@ fn temporal_status_and_undated_edges_are_retained_and_bound_to_the_cursor() {
         Default::default(),
     );
     assert_ne!(first.selection_fingerprint, changed.selection_fingerprint);
+}
+
+#[test]
+fn alternative_contract_preserves_policy_and_rejects_ambiguous_moves() {
+    use kmp_proto::v1beta1::{TraceRelationStep, TraceSearchOptions};
+    let mut request = TraceRequest {
+        about: "p".into(),
+        from: "s".into(),
+        to: "t".into(),
+        search: Some(TraceSearchOptions {
+            paths_per_target: 2,
+            max_states: 40,
+            follow: vec![TraceRelationStep {
+                rel: "corrects".into(),
+                direction: "incoming".into(),
+            }],
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let mapped = trace_search_request_from_proto(&request)
+        .expect("map")
+        .expect("bounded");
+    assert_eq!(mapped.paths_per_target, 2);
+    assert_eq!(mapped.limits.states, 40);
+    assert_eq!(mapped.follow[0].direction, RelationDirection::Incoming);
+    let mut selected = result();
+    selected.follow = mapped.follow;
+    selected.paths_per_target = 2;
+    selected.incomplete_targets = vec!["c".into()];
+    let response = trace_search_response_from_result(
+        selected.clone(),
+        RelationDirection::Outgoing,
+        Default::default(),
+    );
+    assert_eq!(
+        response.search.as_ref().expect("meta").direction,
+        "per_relation"
+    );
+    assert_eq!(response.search.as_ref().expect("meta").from, "a");
+    selected.considered_states += 1;
+    let changed = trace_search_response_from_result(
+        selected,
+        RelationDirection::Outgoing,
+        Default::default(),
+    );
+    assert_ne!(
+        response.selection_fingerprint,
+        changed.selection_fingerprint
+    );
+    let options = request.search.as_mut().expect("options");
+    options.direction = "outgoing".into();
+    assert!(trace_search_request_from_proto(&request).is_err());
+    request.search.as_mut().expect("options").direction.clear();
+    request.search.as_mut().expect("options").paths_per_target = 9;
+    assert!(trace_search_request_from_proto(&request).is_err());
+    let options = request.search.as_mut().expect("options");
+    options.paths_per_target = 2;
+    options.follow.push(options.follow[0].clone());
+    assert!(trace_search_request_from_proto(&request).is_err());
 }

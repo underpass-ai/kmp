@@ -694,3 +694,18 @@ temporal e Inspect. La admisión temporal debe filtrar candidatos y soportes,
 no sólo esconder la arista en la respuesta. Probar fuente antigua/asociación
 posterior, cortes inclusivos/exclusivos, replay y restauración. Sin campos nuevos
 obligatorios para el escritor ni relojes inventados al reproyectar eventos antiguos.
+
+
+### Trace candidate routes
+
+Candidate discovery lives in domain (`bounded_trace_search` and
+`TraceCandidateFrontier`); storage admission stays in `TraceTemporalAdmission`
+and `TraceReadBudget`. Change both protobuf copies, proto request/result mapping,
+MCP request parser, trace projection and tool schema together. `follow` replaces
+global filters; `paths_per_target` changes the route quota, not proof truth.
+Preserve arrows and shared global indexes across pages. Count rejected cycle
+attempts in max_states, cache only completely expanded adjacency, and retain
+early routes at a later work cutoff. Test mixed direction, reconvergence, hubs,
+deep paths, temporal exclusions, quotas, zero hops and cursor reconstruction.
+See [candidate discovery design](trace-alternatives.md). Guidance and cost
+accounting remain documentation, with no new CI gate.

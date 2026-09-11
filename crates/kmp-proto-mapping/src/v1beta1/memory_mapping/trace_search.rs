@@ -25,6 +25,13 @@ pub fn trace_search_request_from_proto(
     }
     let options = request.search.clone().unwrap_or_default();
     let defaults = TraceSearchLimits::default();
+    if !options.follow.is_empty()
+        && (!options.direction.is_empty() || !options.relations.is_empty())
+    {
+        return Err(invalid_argument(
+            "search.follow replaces direction and relations",
+        ));
+    }
     let direction = match options.direction.as_str() {
         "" | "outgoing" => RelationDirection::Outgoing,
         "incoming" => RelationDirection::Incoming,
@@ -42,6 +49,30 @@ pub fn trace_search_request_from_proto(
         } else {
             request.targets.iter().cloned().collect()
         },
+        follow: options
+            .follow
+            .into_iter()
+            .map(|step| {
+                Ok(kmp_domain::TraceRelationStep {
+                    relation: kmp_domain::MemoryRelationType::new(step.rel)
+                        .map_err(|e| invalid_argument(e.to_string()))?,
+                    direction: match step.direction.as_str() {
+                        "outgoing" => RelationDirection::Outgoing,
+                        "incoming" => RelationDirection::Incoming,
+                        _ => {
+                            return Err(invalid_argument(
+                                "search.follow direction must be outgoing or incoming",
+                            ));
+                        }
+                    },
+                })
+            })
+            .collect::<ProtoMappingResult<Vec<_>>>()?,
+        paths_per_target: if options.paths_per_target == 0 {
+            1
+        } else {
+            options.paths_per_target
+        },
         direction,
         relations: options.relations.into_iter().collect(),
         temporal: super::queries::temporal_selection_from_proto(
@@ -50,6 +81,11 @@ pub fn trace_search_request_from_proto(
             request.axis,
         )?,
         limits: TraceSearchLimits {
+            states: if options.max_states == 0 {
+                defaults.states
+            } else {
+                options.max_states
+            },
             nodes: if options.max_nodes == 0 {
                 defaults.nodes
             } else {
@@ -78,12 +114,23 @@ pub fn trace_search_response_from_result(
     direction: RelationDirection,
     page: TracePageRequest,
 ) -> TraceResponse {
+    let reached = result
+        .routes
+        .iter()
+        .map(|r| &r.target)
+        .collect::<BTreeSet<_>>()
+        .len();
     let mut response = TraceResponse {
         summary: format!("Reached {} of {} explicit destinations; {}. Routes are declared links, not a complete answer proof.",
-            result.routes.len(), result.routes.len() + result.unreached.len(), result.stop.as_str()),
+            reached, reached + result.unreached.len(), result.stop.as_str()),
         trace: result.relations.iter().map(|edge| memory_relation_from_bundle_relationship(&BundleRelationship::from_projection(edge))).collect(),
         routes: result.routes.into_iter().map(|r| TraceRoute { target: r.target, edge_indexes: r.edge_indexes }).collect(),
         search: Some(TraceSearchSelection {
+            from: result.from, paths_per_target: result.paths_per_target,
+            considered_states: result.considered_states, incomplete_targets: result.incomplete_targets,
+            follow: result.follow.iter().map(|s| kmp_proto::v1beta1::TraceRelationStep {
+                rel: s.relation.as_str().into(), direction: direction_name(s.direction).into(),
+            }).collect(),
             stop_reason: result.stop.as_str().into(), discovered_nodes: result.discovered_nodes,
             scanned_edges: result.scanned_edges, expanded_nodes: result.expanded_nodes,
             leaves: result.leaves, unreached_targets: result.unreached,
@@ -91,7 +138,7 @@ pub fn trace_search_response_from_result(
             resolved_as_of: timestamp_from_sort_or_rfc3339(result.resolved_as_of.as_deref()),
             temporal_selection_resolved: result.temporal_selection_resolved,
             coordinate_rows: result.coordinate_rows, clock_unknown_edges: result.clock_unknown_edges,
-            direction: match direction { RelationDirection::Outgoing => "outgoing", RelationDirection::Incoming => "incoming" }.into(),
+            direction: if result.follow.is_empty() { direction_name(direction) } else { "per_relation" }.into(),
         }),
         warnings: vec!["Bounded trace reads same-about entries and source-backed non-structural links on the selected clock. Missing link clocks remain unknown, not proof of their historical presence; clock_unknown_edges identifies those selected rows. Entry/source bodies, lifecycle state and missing proof requirements are not inferred.".into()],
         ..Default::default()
@@ -112,6 +159,13 @@ pub fn trace_search_response_from_result(
         },
     });
     response
+}
+
+fn direction_name(direction: RelationDirection) -> &'static str {
+    match direction {
+        RelationDirection::Outgoing => "outgoing",
+        RelationDirection::Incoming => "incoming",
+    }
 }
 
 #[cfg(test)]

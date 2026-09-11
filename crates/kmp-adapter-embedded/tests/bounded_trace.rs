@@ -36,6 +36,8 @@ fn query(from: &str, targets: &[&str]) -> TraceSearchRequest {
         from: from.into(),
         targets: targets.iter().map(|s| (*s).into()).collect(),
         direction: RelationDirection::Outgoing,
+        follow: vec![],
+        paths_per_target: 1,
         relations: Default::default(),
         limits: TraceSearchLimits::default(),
         temporal: Default::default(),
