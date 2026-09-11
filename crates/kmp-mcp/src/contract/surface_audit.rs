@@ -330,7 +330,10 @@ mod tests {
         }
         assert_eq!(
             memory_keys("kmp_trace"),
-            expected(&["about", "budget", "from", "goal", "page", "role", "to"])
+            expected(&[
+                "about", "as_of", "axis", "budget", "from", "goal", "interval", "page", "role",
+                "search", "to",
+            ])
         );
         assert_eq!(
             memory_keys("kmp_inspect"),
