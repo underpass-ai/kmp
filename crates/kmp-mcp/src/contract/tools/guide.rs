@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_guide",
-        "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization.",
+        "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them.",
         json!({"type":"object","additionalProperties":false,"properties":{
             "registration_key":{"type":"string","minLength":1,"description":"Unique logical agent registration. Reuse only to retry that registration; a different agent needs another key."},
             "context_id":{"type":"string","minLength":1,"description":"Exact active context returned by KMP; enough to resume that agent."},

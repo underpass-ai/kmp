@@ -2,6 +2,18 @@ Start one agent with `kmp_guide {"registration_key":"unique-task-and-agent-key"}
 Keep the returned agent id, random name and context id. Repeat that registration
 key only for the same logical agent; another agent needs another key.
 
+The runtime reads the installed guide and does not seed it. If the bundle is
+absent, incomplete or lacks its revision, `GUIDE_UNAVAILABLE` feedback explains
+the explicit repair. Check the requested ref and use the plugin assets matching
+the binary. Keep the connection's working directory and store/backend environment,
+including `KMP_MCP_DATA_DIR` when set. Stop the MCP process if it holds the embedded
+store, then run `kmp-mcp guide sync --plugin-root <plugin-root>` with the matching
+plugin directory containing `guide/guide.requests.json` and `guide/memory.jsonl`.
+Sync writes both guide abouts and may update the maintained memory bundle; an
+exact retry is idempotent. Restart on that same store and retry the original
+call. Missing guide reads reached through a refusal's help links carry this
+repair too; repeatedly reading them cannot install the assets.
+
 Resume with `{"context_id":"<returned context_id>"}`. Expand a worked card with
 `{"context_id":"<returned context_id>","topic":"write"}`. Fold it with the same
 arguments plus `"fold":true`. Folding keeps its delivery record; asking again
