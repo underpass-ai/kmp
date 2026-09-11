@@ -1,3 +1,5 @@
+#[path = "evidence_paths/anchors.rs"]
+mod anchors;
 #[path = "evidence_paths/context.rs"]
 mod context;
 #[path = "evidence_paths/joint.rs"]

@@ -11,7 +11,7 @@ use kmp_domain::{
 };
 use kmp_proto::v1beta1::{
     PageInfo, TraceEvidenceBinding, TraceEvidenceCandidate, TraceEvidenceGroup,
-    TraceEvidenceSelection, TraceMissingWitness, TraceResponse,
+    TraceEvidenceSelection, TraceMissingWitness, TraceReferenceEndpoint, TraceResponse,
 };
 use std::collections::BTreeMap;
 
@@ -29,13 +29,14 @@ pub fn evidence_seek_response_from_result(
         EvidencePathStatus::IncompatibleObligations => "incompatible_obligations",
         EvidencePathStatus::Partial => "partial",
     };
-    let constraints = constraints(request);
+    let constraints = constraints(request, seek);
     let mut response = TraceResponse {
         summary: format!("Declared evidence obligations: {status}; {} compatible groups. This does not establish answer truth or completeness.",result.groups.len()),
         trace: result.relations.iter().map(|r| memory_relation_from_bundle_relationship(&BundleRelationship::from_projection(r))).collect(),
         candidates: result.candidates.iter().enumerate().map(|(index,c)| TraceEvidenceCandidate {
             index: index as u32, role: request.roles[c.role].name.clone(), nodes: c.nodes.clone(), edge_indexes: c.edge_indexes.clone(),
             witness: c.nodes[c.context_hops as usize + seek.roles[c.role].via.len() + 1].clone(),
+            anchor: c.nodes[c.context_hops as usize + seek.roles[c.role].via.len()].clone(),
             context_hops: c.context_hops,
             bindings: bindings(&c.bindings,&constraints), missing: missing(&c.bindings), clock_unknown: c.clock_unknown
         }).collect(),
@@ -90,9 +91,12 @@ fn slice<T: Clone>(items: &mut Vec<T>, skip: &mut usize, remaining: &mut usize) 
     *items = items[start..start + count].to_vec();
 }
 
-fn constraints(request: &EvidencePathRequest) -> BTreeMap<String, TraceEvidenceBinding> {
+fn constraints(
+    request: &EvidencePathRequest,
+    seek: &kmp_proto::v1beta1::TraceSeekOptions,
+) -> BTreeMap<String, TraceEvidenceBinding> {
     let mut result = BTreeMap::<String, TraceEvidenceBinding>::new();
-    for role in &request.roles {
+    for (i, role) in request.roles.iter().enumerate() {
         for binding in &role.bindings {
             let (key, reference) = match binding {
                 EvidencePathBinding::Label { key, .. } => (key.clone(), false),
@@ -108,6 +112,12 @@ fn constraints(request: &EvidencePathRequest) -> BTreeMap<String, TraceEvidenceB
                     });
             if !entry.roles.contains(&role.name) {
                 entry.roles.push(role.name.clone());
+            }
+            if reference {
+                entry.endpoints.push(TraceReferenceEndpoint {
+                    role: role.name.clone(),
+                    anchor: binding.at() as usize == seek.roles[i].via.len(),
+                });
             }
         }
     }

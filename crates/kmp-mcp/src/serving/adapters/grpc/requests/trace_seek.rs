@@ -2,7 +2,8 @@
 //! proto mapping so embedded and gRPC callers compile the same obligations.
 use super::common::{object, optional_string_array_field, optional_string_field};
 use kmp_proto::v1beta1::{
-    TraceRelationStep, TraceSeekOptions, TraceSeekRole, TraceWitnessGroup, TraceWitnessLabel,
+    TraceReferenceEndpoint, TraceRelationStep, TraceSeekOptions, TraceSeekRole, TraceWitnessGroup,
+    TraceWitnessLabel,
 };
 use serde_json::{Map, Value};
 
@@ -57,26 +58,42 @@ pub(super) fn arguments(search: &Map<String, Value>) -> Result<Option<TraceSeekO
             .map(|g| {
                 let values = g
                     .as_array()
-                    .ok_or("search.same_ref requires arrays of role names")?;
+                    .ok_or("search.same_ref requires arrays of role endpoints")?;
                 Ok(TraceWitnessGroup {
-                    roles: values
-                        .iter()
-                        .map(|v| {
-                            v.as_str()
-                                .map(str::to_owned)
-                                .ok_or_else(|| "search.same_ref requires role names".to_owned())
-                        })
-                        .collect::<Result<_, _>>()?,
+                    endpoints: values.iter().map(endpoint).collect::<Result<_, _>>()?,
                 })
             })
             .collect::<Result<_, String>>()?,
-        _ => return Err("search.same_ref requires arrays of role names".into()),
+        _ => return Err("search.same_ref requires arrays of role endpoints".into()),
     };
     Ok(Some(TraceSeekOptions {
         roles,
         same_labels: optional_string_array_field(search, "same_labels", "search.same_labels")?,
         same_ref,
     }))
+}
+
+fn endpoint(value: &Value) -> Result<TraceReferenceEndpoint, String> {
+    if let Some(role) = value.as_str() {
+        return Ok(TraceReferenceEndpoint {
+            role: role.into(),
+            anchor: false,
+        });
+    }
+    let point = object(value, "search.same_ref endpoint")?;
+    if point.keys().any(|k| !["role", "at"].contains(&k.as_str())) {
+        return Err("search.same_ref endpoint accepts only role and at".into());
+    }
+    let role = optional_string_field(point, "role", "search.same_ref.role")?
+        .ok_or("search.same_ref endpoint requires role")?;
+    let at = optional_string_field(point, "at", "search.same_ref.at")?
+        .ok_or("search.same_ref endpoint requires at: anchor or witness")?;
+    let anchor = match at.as_str() {
+        "anchor" => true,
+        "witness" => false,
+        _ => return Err("search.same_ref.at must be anchor or witness".into()),
+    };
+    Ok(TraceReferenceEndpoint { role, anchor })
 }
 
 fn step(value: &Value) -> Result<TraceRelationStep, String> {
@@ -162,6 +179,41 @@ fn role(value: &Value) -> Result<TraceSeekRole, String> {
 #[cfg(test)]
 mod tests {
     use serde_json::json;
+    #[test]
+    fn reference_groups_accept_anchor_and_witness_points_without_numeric_positions() {
+        let value = json!({"about":"p","from":"s","search":{"seek":[
+            {"name":"v","rel":"verified_by","via":"context"},
+            {"name":"p","rel":"authorizes","direction":"incoming","via":"context"}],
+            "same_ref":[[{"role":"v","at":"anchor"},{"role":"p","at":"anchor"}],["v","p"]]}});
+        let request = super::super::queries::trace_request_from_arguments(&value).expect("parsed");
+        let native = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)
+            .expect("valid test fixture")
+            .expect("valid test fixture");
+        assert_eq!(
+            native.roles[0]
+                .bindings
+                .iter()
+                .map(|b| b.at())
+                .collect::<Vec<_>>(),
+            [0, 1]
+        );
+        for point in [
+            json!({"role":"v","at":"source"}),
+            json!({"role":"v"}),
+            json!({"role":"v","at":"anchor","extra":true}),
+            json!({"role":"absent","at":"anchor"}),
+        ] {
+            let mut bad = value.clone();
+            bad["search"]["same_ref"][0][0] = point;
+            let refused = match super::super::queries::trace_request_from_arguments(&bad) {
+                Err(_) => true,
+                Ok(proto) => {
+                    kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&proto).is_err()
+                }
+            };
+            assert!(refused, "{bad}");
+        }
+    }
     #[test]
     fn shorthand_and_advanced_moves_compile_through_the_same_proto_boundary() {
         let value = json!({"about":"p","from":"s","search":{"seek":["verified_by",{"name":"permission","rel":"authorizes","direction":"incoming","via":["same_entity_as"],"after":[{"rel":"uses_background"}],"labels":{"env":["prod"]}}],"same_labels":["event"]}});

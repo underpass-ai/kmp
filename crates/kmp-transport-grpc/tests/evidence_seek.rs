@@ -5,8 +5,9 @@ use kmp_domain::{
 };
 use kmp_embedded::EmbeddedKernel;
 use kmp_proto::v1beta1::{
-    PageRequest, TraceRelationStep, TraceRequest, TraceSearchOptions, TraceSeekOptions,
-    TraceSeekRole, kernel_memory_service_client::KernelMemoryServiceClient,
+    PageRequest, TraceReferenceEndpoint, TraceRelationStep, TraceRequest, TraceSearchOptions,
+    TraceSeekOptions, TraceSeekRole, TraceWitnessGroup,
+    kernel_memory_service_client::KernelMemoryServiceClient,
     kernel_memory_service_server::KernelMemoryServiceServer,
 };
 use kmp_transport_grpc::MemoryGrpcService;
@@ -16,16 +17,25 @@ use tokio_stream::wrappers::TcpListenerStream;
 #[tokio::test]
 async fn seek_over_grpc_matches_embedded_and_pages_candidate_groups()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    check(false).await
+    check(false, false).await
 }
 
 #[tokio::test]
 async fn context_sequences_over_grpc_match_embedded_and_preserve_witness_positions()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    check(true).await
+    check(true, false).await
 }
 
-async fn check(context: bool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+#[tokio::test]
+async fn relation_endpoints_over_grpc_match_embedded_and_survive_paging()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    check(true, true).await
+}
+
+async fn check(
+    context: bool,
+    endpoints: bool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let dir = tempfile::tempdir()?;
     let kernel = EmbeddedKernel::open(dir.path())?;
     let about = "project:seek-wire";
@@ -76,7 +86,7 @@ async fn check(context: bool) -> Result<(), Box<dyn std::error::Error + Send + S
         mutations.push(ProjectionMutation::UpsertNodeRelation(Box::new(
             NodeRelationProjection {
                 source_node_id: seed.clone(),
-                target_node_id: anchor,
+                target_node_id: anchor.clone(),
                 relation_type: "uses_background".into(),
                 explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
                     .with_rationale("The seed refers to this contextual execution.")
@@ -86,7 +96,7 @@ async fn check(context: bool) -> Result<(), Box<dyn std::error::Error + Send + S
         )));
     }
     kernel.store().apply_mutations(mutations).await?;
-    let request = TraceRequest {
+    let mut request = TraceRequest {
         about: about.into(),
         from: seed,
         search: Some(TraceSearchOptions {
@@ -111,6 +121,36 @@ async fn check(context: bool) -> Result<(), Box<dyn std::error::Error + Send + S
         }),
         ..Default::default()
     };
+    if endpoints {
+        let seek = request
+            .search
+            .as_mut()
+            .expect("valid test fixture")
+            .seek
+            .as_mut()
+            .expect("valid test fixture");
+        seek.roles.push(TraceSeekRole {
+            name: "reverse".into(),
+            context: true,
+            relation: Some(TraceRelationStep {
+                rel: "verified_by".into(),
+                direction: "incoming".into(),
+            }),
+            ..Default::default()
+        });
+        seek.same_ref.push(TraceWitnessGroup {
+            endpoints: vec![
+                TraceReferenceEndpoint {
+                    role: "verification".into(),
+                    anchor: true,
+                },
+                TraceReferenceEndpoint {
+                    role: "reverse".into(),
+                    anchor: false,
+                },
+            ],
+        });
+    }
     let native = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)
         .expect("valid")
         .expect("seek");
@@ -169,8 +209,23 @@ async fn check(context: bool) -> Result<(), Box<dyn std::error::Error + Send + S
         groups.extend(page.groups.clone());
     }
     assert_eq!(candidates[0].witness, witness);
+    assert_eq!(candidates[0].anchor, anchor);
     assert_eq!(candidates[0].context_hops, u32::from(context));
-    assert_eq!(groups[0].candidate_indexes, [0]);
+    assert_eq!(
+        groups[0].candidate_indexes,
+        if endpoints { vec![0, 1] } else { vec![0] }
+    );
+    if endpoints {
+        let binding = groups[0]
+            .bindings
+            .iter()
+            .find(|b| b.reference)
+            .expect("valid test fixture");
+        assert_eq!(binding.values, [anchor]);
+        assert_eq!(binding.endpoints.len(), 2);
+        assert!(binding.endpoints[0].anchor);
+        assert!(!binding.endpoints[1].anchor);
+    }
     stop.send(()).expect("stop");
     server.await??;
     Ok(())

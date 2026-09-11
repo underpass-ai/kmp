@@ -72,9 +72,9 @@ pub fn evidence_seek_request_from_proto(
             }
         }
         for (group, same) in seek.same_ref.iter().enumerate() {
-            if same.roles.contains(&role.name) {
+            for endpoint in same.endpoints.iter().filter(|p| p.role == role.name) {
                 bindings.push(EvidencePathBinding::Reference {
-                    at,
+                    at: if endpoint.anchor { at - 1 } else { at },
                     name: format!("same-ref:{group}"),
                 });
             }
@@ -167,15 +167,14 @@ fn validate(seek: &TraceSeekOptions) -> ProtoMappingResult<()> {
     }
     let mut joined = BTreeSet::new();
     for same in &seek.same_ref {
-        if same.roles.len() < 2
-            || !distinct(&same.roles, 8)
-            || same
-                .roles
-                .iter()
-                .any(|name| !seek.roles.iter().any(|r| &r.name == name) || !joined.insert(name))
+        if same.endpoints.len() < 2
+            || same.endpoints.len() > 16
+            || same.endpoints.iter().any(|p| {
+                !seek.roles.iter().any(|r| r.name == p.role) || !joined.insert((&p.role, p.anchor))
+            })
         {
             return Err(invalid_argument(
-                "search.same_ref needs disjoint groups of 2..8 existing role names; put all equal witnesses in one group",
+                "search.same_ref needs disjoint groups of 2..16 existing role endpoints; put all equal anchors/witnesses in one group",
             ));
         }
     }

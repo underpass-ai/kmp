@@ -42,8 +42,7 @@ impl EvidencePathRequest {
                 ));
             }
             for binding in &role.bindings {
-                if (role.context && binding.at() == 0)
-                    || binding.at() as usize > role.steps.len()
+                if binding.at() as usize > role.steps.len()
                     || binding.name().trim().is_empty()
                     || binding.label_key().is_some_and(|k| k.trim().is_empty())
                 {

@@ -805,3 +805,14 @@ semantic review. Verify unknown/future links, mixed directions, joint conflicts,
 cycles, deep chains, all pages and embedded/gRPC parity. A discovered contextual
 prefix does not entail a claim about the seed. Compression is a later optional
 reader projection; add no writer fields or editorial CI gate here.
+
+For relation endpoint equality, maintain TraceReferenceEndpoint in both protobufs,
+JSON same_ref members, zero-position contextual capture, candidate.anchor, binding
+endpoints and their whole-selection fingerprint together. Anchor means traversal
+start of the main relation, after via/context; it is the stored target when the
+move is incoming. Preserve role-string witness shorthand. Groups partition
+endpoints so one role can join an action and a person separately. Test different
+actions with the same witnesses/labels, convergence, fixed prefixes, unknowns,
+disjoint endpoint validation, paging and real gRPC. Update the reduced audit card,
+extended audit, human guide and evidence-seek example. Contextual compatibility
+remains a lead requiring original source review, not logical entailment.
