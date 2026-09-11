@@ -23,8 +23,10 @@ No semantic truth or historical body-version archive is inferred.
 MCP and gRPC use the same typed request/result mappings. Positional page order
 is trace, candidates/groups for seek, then objects/supports/gaps. The selection
 fingerprint is computed before slicing, including all proof content and sorted
-metadata. A changed hidden source invalidates an old cursor; a continuation
-recomputes and validates a selected result, not a transaction across calls.
+metadata. MCP rejects an old cursor when a hidden source changes, including
+when MCP uses the gRPC backend. Direct gRPC retains its positional page cursor;
+its client must compare `selection_fingerprint` across pages and restart when
+it changes. No transaction spans separate calls.
 MCP byte projection keeps whole items and supplies a sufficient next action if
 an item cannot fit. `body_bytes` measures canonical loaded text; the response
 byte ceiling does not impose a storage allocation bound.
