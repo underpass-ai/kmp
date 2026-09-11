@@ -1,3 +1,4 @@
+mod bounded_adjacency;
 mod context_events;
 mod engine;
 mod format_version;

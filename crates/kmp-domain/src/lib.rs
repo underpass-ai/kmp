@@ -25,6 +25,9 @@ pub use projection::{
     ProjectionEventHandler, ProjectionHandlingRequest, ProjectionHandlingResult,
     ProjectionMutation, RelatedNodeExplanationData, RelatedNodeReference,
 };
+pub use repositories::{
+    AdjacencyPage, AdjacencyRequest, BoundedRelationReader, RelationDirection, RelationPosition,
+};
 pub use repositories::{COMMAND_RECEIPT_ENTITY_KIND, StoredCommandReceipt};
 pub use repositories::{
     ContextEventChange, ContextEventStore, ContextRevision, ContextUpdatedEvent,
