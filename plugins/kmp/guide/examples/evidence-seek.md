@@ -14,7 +14,7 @@ Copy the about and R's ref from a receipt or a temporal read. In the calls below
   "same_labels":["event"]}}
 ```
 
-No destination refs are needed. `seek` requires both roles; paths within each
+This is evidence mode: no `to`, `select` or `paths_per_target`. Those belong to known-destination mode; the schema lists both choices separately. A mixed-mode rejection names all conflicting fields together. No destination refs are needed. `seek` requires both roles; paths within each
 role are alternatives. The main relation reaches its witness: V for verification,
 P for permission. KMP intersects the witnesses' event values jointly. E1/E1 can
 form a group; E1/E2 cannot. If P has no event membership, the group requires review,
@@ -130,6 +130,27 @@ that the seed and C are the same event. `same_labels` constrains named witnesses
 connection when the question needs it. Discovery selects sequences for reading;
 the reader still supplies the task's obligations and decides their relevance.
 
+## A verified copy and an authorized publication are different actions
+
+A source explicitly says copy R is verified by V. Another source authorizes
+publication U using V: A --authorizes--> U and A --chosen_because--> V. The
+question asks for the copy's verification and the publication's permission,
+not for one action that has both. Starting at R:
+
+```json
+{"about":"about","from":"ref-R","axis":"observed",
+ "as_of":{"time":"2026-09-10T12:00:00Z"},"search":{"seek":[
+   {"name":"verification","rel":"verified_by","via":"context"},
+   {"name":"permission","rel":"authorizes","direction":"incoming","via":"context"}]}}
+```
+
+The candidate anchors are R and U. Do not add `same_ref` anchor equality here:
+it would change the question and reject that group. Review the source linking
+the report and the permission; context does not prove a publication was executed.
+The same event label would not make R and U one action. If the question instead
+requires one action with both properties, use the following equality. A zero-group
+result then reports an unmet requirement: never remove it merely to obtain a group.
+
 ## Verify and authorize the same action
 
 Two actions can share event E1 and the same authorizer. Verification of one
@@ -137,7 +158,8 @@ does not verify the other. For contextual roles, equate the traversal starts
 of their main relations:
 
 ```json
-{"about":"about","from":"ref-N","search":{
+{"about":"about","from":"ref-N","axis":"observed",
+ "as_of":{"time":"2026-09-10T12:00:00Z"},"search":{
   "seek":[
     {"name":"verification","rel":"verified_by","via":"context"},
     {"name":"permission","rel":"authorizes","direction":"incoming","via":"context"}],

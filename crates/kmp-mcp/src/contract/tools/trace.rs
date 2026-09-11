@@ -14,7 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_trace",
-        "Trace declared links between refs, or use search.seek to discover jointly compatible evidence paths from a seed without known destinations. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
+        "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -94,7 +94,7 @@ fn trace_dimensions_schema(preferred: bool) -> Value {
 
 fn trace_search_schema() -> Value {
     let mut schema = json!({"type":"object","additionalProperties":false,
-    "description":"Bounded native traversal on the selected clock. Shared work limits; page/budget control transport separately. Temporal admission uses as_of/interval/axis; no cross-about expansion in this mode.",
+    "description":"Choose exactly one mode below. Known destinations use to and destination options; evidence discovery uses seek and witness joins, without to. Only max_nodes/max_edges/max_depth/max_states are shared search fields. as_of/interval/axis select time at call level; page/budget page the result, not the search. Same-about traversal.",
     "properties": {
         "max_nodes":{"type":"integer","minimum":1,"maximum":4096,"default":256,"description":"Distinct discovered refs, including excluded endpoints and coordinate labels; reserve before reading."},
         "max_edges":{"type":"integer","minimum":1,"maximum":32768,"default":2048,"description":"Adjacency rows decoded, including coordinate and filtered rows."},
@@ -111,5 +111,36 @@ fn trace_search_schema() -> Value {
     schema["properties"]["seek"] = super::trace_seek::roles_schema();
     schema["properties"]["same_labels"] = json!({"type":"array","maxItems":16,"uniqueItems":true,"items":{"type":"string","minLength":1},"description":"With seek, require common values for these label keys across all role witnesses. Missing stays unknown. A label never proves identity."});
     schema["properties"]["same_ref"] = super::trace_seek::same_ref_schema();
+    let evidence_fields = ["seek", "same_labels", "same_ref"];
+    let work_fields = ["max_nodes", "max_edges", "max_depth", "max_states"];
+    let properties = schema["properties"]
+        .as_object_mut()
+        .expect("search properties");
+    let mut destinations = Vec::new();
+    let mut evidence = Vec::new();
+    for (key, field) in properties {
+        if work_fields.contains(&key.as_str()) {
+            destinations.push(key.clone());
+            evidence.push(key.clone());
+        } else {
+            let mode = if evidence_fields.contains(&key.as_str()) {
+                evidence.push(key.clone());
+                "Evidence mode only. "
+            } else {
+                destinations.push(key.clone());
+                "Destination mode only; not with seek. "
+            };
+            let description = field["description"].as_str().unwrap_or_default();
+            field["description"] = json!(format!("{mode}{description}"));
+        }
+    }
+    // Declare field bodies once: clients see two exclusive choices while the
+    // existing unknown-argument validator retains recursive property checks.
+    schema["oneOf"] = json!([
+        {"title":"Known destinations", "description":"Requires to at call level. No seek or witness joins.",
+         "propertyNames":{"enum":destinations}},
+        {"title":"Evidence from seed", "description":"Requires seek; no to. Relations and constraints live inside roles.",
+         "required":["seek"], "propertyNames":{"enum":evidence}}
+    ]);
     schema
 }
