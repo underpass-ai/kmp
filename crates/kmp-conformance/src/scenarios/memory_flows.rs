@@ -103,6 +103,7 @@ fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
                 coordinate: None,
             }],
             evidence: vec![MemoryEvidenceData {
+                support_clocks: None,
                 id: "evidence:question:conformance:one".to_string(),
                 supports: vec!["question:conformance:claim:one".to_string()],
                 text: "Transcript line supporting the first decision.".to_string(),

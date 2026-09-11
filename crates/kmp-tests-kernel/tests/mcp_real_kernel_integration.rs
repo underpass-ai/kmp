@@ -592,7 +592,7 @@ async fn assert_remote_error_code_parity(
 }
 
 fn parity_seed_arguments() -> Value {
-    json!({
+    let mut arguments = json!({
         "about":"project:parity-live",
         "memory":{
             "dimensions":[{"id":"timeline:parity-live","kind":"timeline"}],
@@ -623,7 +623,20 @@ fn parity_seed_arguments() -> Value {
         },
         "provenance":{"source_kind":"agent","source_agent":"grpc_mcp_semantic_parity","observed_at":"2026-08-25T00:01:00Z"},
         "idempotency_key":"grpc-mcp-semantic-parity-seed"
-    })
+    });
+    // These stores are ingested separately. Restore the same fixture clocks,
+    // just as entry coordinates above do, so exact transport parity compares
+    // one declared history instead of two legitimate ingestion instants.
+    for evidence in arguments["memory"]["evidence"]
+        .as_array_mut()
+        .expect("evidence fixtures")
+    {
+        evidence["support_clocks"] = json!({
+            "observed_at":"2026-08-25T00:01:00Z",
+            "ingested_at":"2026-08-25T00:05:00Z"
+        });
+    }
+    arguments
 }
 
 fn parity_http_app(server: KernelMcpServer) -> Router {

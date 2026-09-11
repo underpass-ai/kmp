@@ -264,6 +264,25 @@ fn relation_from_value(value: &Value) -> Result<MemoryRelation, String> {
 fn evidence_from_value(value: &Value) -> Result<MemoryEvidence, String> {
     let value = object(value, "memory.evidence[]")?;
     Ok(MemoryEvidence {
+        support_clocks: value
+            .get("support_clocks")
+            .filter(|v| !v.is_null())
+            .map(|clocks| {
+                let clocks = object(clocks, "memory.evidence[].support_clocks")?;
+                Ok::<_, String>(kmp_proto::v1beta1::EvidenceSupportClocks {
+                    observed_at: optional_timestamp_field(
+                        clocks,
+                        "observed_at",
+                        "memory.evidence[].support_clocks.observed_at",
+                    )?,
+                    ingested_at: optional_timestamp_field(
+                        clocks,
+                        "ingested_at",
+                        "memory.evidence[].support_clocks.ingested_at",
+                    )?,
+                })
+            })
+            .transpose()?,
         id: required_string_field(value, "id", "memory.evidence[].id")?,
         supports: optional_string_array_field(value, "supports", "memory.evidence[].supports")?,
         text: required_string_field(value, "text", "memory.evidence[].text")?,

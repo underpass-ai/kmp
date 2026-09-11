@@ -128,6 +128,7 @@ pub(crate) mod fixtures {
     }
     pub(crate) fn evidence() -> MemoryEvidence {
         MemoryEvidence {
+            support_clocks: None,
             id: "evidence:1".to_string(),
             supports: vec!["claim:target".to_string()],
             text: "Evidence".to_string(),

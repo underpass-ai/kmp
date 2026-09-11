@@ -228,6 +228,12 @@ fn relation_from_proto(value: MemoryRelation) -> MemoryRelationData {
 
 fn evidence_from_proto(value: MemoryEvidence) -> MemoryEvidenceData {
     MemoryEvidenceData {
+        support_clocks: value.support_clocks.map(|clocks| {
+            kmp_application::memory::EvidenceSupportClocks {
+                observed_at: proto_timestamp_to_sort_string(clocks.observed_at),
+                ingested_at: proto_timestamp_to_sort_string(clocks.ingested_at),
+            }
+        }),
         id: value.id,
         supports: value.supports,
         text: value.text,

@@ -373,6 +373,12 @@ pub(super) fn memory_evidence_json(evidence: &MemoryEvidence) -> Value {
     object.insert("text".to_string(), json!(evidence.text));
     insert_optional_string(&mut object, "source", &evidence.source);
     insert_optional_timestamp(&mut object, "time", evidence.time);
+    if let Some(clocks) = &evidence.support_clocks {
+        let mut values = Map::new();
+        insert_optional_timestamp(&mut values, "observed_at", clocks.observed_at);
+        insert_optional_timestamp(&mut values, "ingested_at", clocks.ingested_at);
+        object.insert("support_clocks".to_string(), Value::Object(values));
+    }
     if !evidence.metadata.is_empty() {
         object.insert("metadata".to_string(), json!(evidence.metadata));
     }

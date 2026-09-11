@@ -137,6 +137,7 @@ mod tests {
 
     fn evidence() -> MemoryEvidence {
         MemoryEvidence {
+            support_clocks: None,
             id: "detail:entry:a".into(),
             supports: vec!["entry:a".into()],
             text: "The launch was postponed.".into(),
