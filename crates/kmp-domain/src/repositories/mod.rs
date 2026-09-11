@@ -31,3 +31,6 @@ pub use quality_metrics_observer::{QualityMetricsObserver, QualityObservationCon
 pub use snapshot_save_options::SnapshotSaveOptions;
 pub use snapshot_store::SnapshotStore;
 pub use token_estimator::TokenEstimator;
+
+pub mod read_snapshot_provider;
+pub use read_snapshot_provider::{ReadSnapshotFuture, ReadSnapshotProvider};

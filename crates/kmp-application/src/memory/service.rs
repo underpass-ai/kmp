@@ -193,7 +193,23 @@ where
         self.query_application.list_memory_abouts().await
     }
 
+    async fn read_snapshot(&self) -> Result<Option<Self>, ApplicationError> {
+        Ok(self
+            .query_application
+            .read_snapshot()
+            .await?
+            .map(|query| Self::new(Arc::new(query), Arc::clone(&self.command_application))))
+    }
+
     pub async fn wake(&self, query: WakeMemoryQuery) -> Result<GetContextResult, ApplicationError> {
+        let snapshot = self.read_snapshot().await?;
+        snapshot.as_ref().unwrap_or(self).wake_snapshot(query).await
+    }
+
+    async fn wake_snapshot(
+        &self,
+        query: WakeMemoryQuery,
+    ) -> Result<GetContextResult, ApplicationError> {
         let render_options = memory_render_options(
             query.token_budget,
             query.max_tier,
@@ -214,6 +230,14 @@ where
     }
 
     pub async fn ask(&self, query: AskMemoryQuery) -> Result<GetContextResult, ApplicationError> {
+        let snapshot = self.read_snapshot().await?;
+        snapshot.as_ref().unwrap_or(self).ask_snapshot(query).await
+    }
+
+    async fn ask_snapshot(
+        &self,
+        query: AskMemoryQuery,
+    ) -> Result<GetContextResult, ApplicationError> {
         let render_options = memory_render_options(
             query.token_budget,
             query.max_tier,
@@ -234,6 +258,18 @@ where
     }
 
     pub async fn temporal(
+        &self,
+        query: TemporalMemoryQuery,
+    ) -> Result<TemporalMemoryResult, ApplicationError> {
+        let snapshot = self.read_snapshot().await?;
+        snapshot
+            .as_ref()
+            .unwrap_or(self)
+            .temporal_snapshot(query)
+            .await
+    }
+
+    async fn temporal_snapshot(
         &self,
         query: TemporalMemoryQuery,
     ) -> Result<TemporalMemoryResult, ApplicationError> {
@@ -280,6 +316,18 @@ where
         &self,
         query: VisualProjectionQuery,
     ) -> Result<VisualProjectionResult, ApplicationError> {
+        let snapshot = self.read_snapshot().await?;
+        snapshot
+            .as_ref()
+            .unwrap_or(self)
+            .visual_projection_snapshot(query)
+            .await
+    }
+
+    async fn visual_projection_snapshot(
+        &self,
+        query: VisualProjectionQuery,
+    ) -> Result<VisualProjectionResult, ApplicationError> {
         let temporal_query = query.temporal_query()?;
         let read = self.temporal_read(&temporal_query).await?;
         // The catalogue is read before the filter: a renderer draws the
@@ -306,6 +354,18 @@ where
         &self,
         query: RelateMemoryQuery,
     ) -> Result<GetContextResult, ApplicationError> {
+        let snapshot = self.read_snapshot().await?;
+        snapshot
+            .as_ref()
+            .unwrap_or(self)
+            .relate_snapshot(query)
+            .await
+    }
+
+    async fn relate_snapshot(
+        &self,
+        query: RelateMemoryQuery,
+    ) -> Result<GetContextResult, ApplicationError> {
         let render_options = memory_render_options(
             query.token_budget,
             query.max_tier,
@@ -326,6 +386,18 @@ where
     }
 
     pub async fn trace(
+        &self,
+        query: TraceMemoryQuery,
+    ) -> Result<GetContextPathResult, ApplicationError> {
+        let snapshot = self.read_snapshot().await?;
+        snapshot
+            .as_ref()
+            .unwrap_or(self)
+            .trace_snapshot(query)
+            .await
+    }
+
+    async fn trace_snapshot(
         &self,
         query: TraceMemoryQuery,
     ) -> Result<GetContextPathResult, ApplicationError> {
@@ -352,6 +424,18 @@ where
     }
 
     pub async fn inspect(
+        &self,
+        query: InspectMemoryQuery,
+    ) -> Result<InspectMemoryResult, ApplicationError> {
+        let snapshot = self.read_snapshot().await?;
+        snapshot
+            .as_ref()
+            .unwrap_or(self)
+            .inspect_snapshot(query)
+            .await
+    }
+
+    async fn inspect_snapshot(
         &self,
         query: InspectMemoryQuery,
     ) -> Result<InspectMemoryResult, ApplicationError> {
