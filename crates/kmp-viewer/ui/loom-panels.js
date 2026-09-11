@@ -160,6 +160,13 @@ KMP_APP.panels = (() => {
     const clocked = model.entries.filter((m) => KMP_LOOM.strictMs(m, view.clock) !== null).length;
     $("s-clocked").textContent =
       model.currentLod === "moment" ? `${clocked}/${model.total}` : `—/${model.total}`;
+    const missingClock = $("clock-missing");
+    const missingAxisEntries = Number(
+      (model.projection?.metrics || []).find((metric) => metric.name === "missing_axis_entries")?.value || 0
+    );
+    missingClock.hidden = missingAxisEntries === 0;
+    missingClock.textContent = missingAxisEntries ? `${missingAxisEntries} without ${view.clock} time` : "";
+    missingClock.title = "Entries omitted because they have no position on the selected clock";
     $("s-window").textContent = view.full ? `${fmtMs(view.t0)} → ${fmtMs(view.t1)}` : "—";
   }
 

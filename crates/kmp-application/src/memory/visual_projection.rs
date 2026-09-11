@@ -259,11 +259,16 @@ pub fn build_visual_projection(
     let selection_hash = selection_hash(query, revision, &content_hash);
     let offset = cursor_offset(query.cursor.as_deref(), &selection_hash)?;
 
+    let mut missing_axis_entries = 0;
     let mut positioned = temporal
         .traversal
         .entries()
         .iter()
         .filter_map(|entry| {
+            if missing_axis_entry(entry.coordinates(), query.axis) {
+                missing_axis_entries += 1;
+                return None;
+            }
             let (position, position_text) = entry
                 .coordinates()
                 .iter()
@@ -359,11 +364,7 @@ pub fn build_visual_projection(
     let causal = causal_relation_count(&relations);
     let relation_count = relations.len();
     let source_truncated = temporal.traversal.page().has_more();
-    let missing = if source_truncated {
-        vec!["visual_source_entries".to_string()]
-    } else {
-        Vec::new()
-    };
+    let missing = visual_missing(source_truncated, missing_axis_entries);
 
     Ok(VisualProjectionResult {
         contract: "kmp.visual.projection.v1".to_string(),
@@ -386,6 +387,12 @@ pub fn build_visual_projection(
                 value: total as f64,
                 unit: "entries".to_string(),
                 scope: "selected_range".to_string(),
+            },
+            VisualMetric {
+                name: "missing_axis_entries".to_string(),
+                value: missing_axis_entries as f64,
+                unit: "entries".to_string(),
+                scope: "selected_source".to_string(),
             },
             VisualMetric {
                 name: "relation_count".to_string(),
@@ -413,6 +420,23 @@ pub fn build_visual_projection(
         truncated: source_truncated || has_more,
         missing,
     })
+}
+
+fn missing_axis_entry(coordinates: &[TemporalCoordinate], axis: TemporalAxis) -> bool {
+    !coordinates
+        .iter()
+        .any(|coordinate| axis_time(coordinate, axis).is_some())
+}
+
+fn visual_missing(source_truncated: bool, missing_axis_entries: usize) -> Vec<String> {
+    let mut missing = Vec::new();
+    if source_truncated {
+        missing.push("visual_source_entries".to_string());
+    }
+    if missing_axis_entries > 0 {
+        missing.push("temporal_positions".to_string());
+    }
+    missing
 }
 
 fn visual_bins(entries: &[PositionedEntry], from: i128, to: i128, count: usize) -> Vec<VisualBin> {
@@ -780,5 +804,37 @@ mod tests {
         ];
 
         assert_eq!(causal_relation_count(&relations), 1);
+    }
+
+    #[test]
+    fn missing_axis_entry_is_reported_without_using_another_clock() {
+        let observed_only =
+            TemporalCoordinate::cursor_time("2026-08-27T12:00:00Z", TemporalAxis::Observed)
+                .expect("coordinate");
+        let occurred =
+            TemporalCoordinate::cursor_time("2026-08-27T12:00:00Z", TemporalAxis::Occurred)
+                .expect("coordinate");
+
+        assert!(missing_axis_entry(
+            std::slice::from_ref(&observed_only),
+            TemporalAxis::Occurred
+        ));
+        assert!(!missing_axis_entry(
+            std::slice::from_ref(&observed_only),
+            TemporalAxis::Observed
+        ));
+        assert!(!missing_axis_entry(
+            &[observed_only, occurred],
+            TemporalAxis::Occurred
+        ));
+    }
+
+    #[test]
+    fn visual_missing_keeps_source_truncation_and_axis_gap_distinct() {
+        assert_eq!(
+            visual_missing(true, 2),
+            vec!["visual_source_entries", "temporal_positions"]
+        );
+        assert_eq!(visual_missing(false, 0), Vec::<String>::new());
     }
 }
