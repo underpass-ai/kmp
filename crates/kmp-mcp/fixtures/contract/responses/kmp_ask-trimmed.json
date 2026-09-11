@@ -57,7 +57,7 @@
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:1:aa8028b67e04939706cf1e28894763d689c460f8f6f68146b17fe66e0a51cd35",
+        "next_cursor": "kmp1:1:<stamped at call time>",
         "offset": 0,
         "returned": 1,
         "total": 3
@@ -176,6 +176,10 @@
       "path": [
         {
           "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",

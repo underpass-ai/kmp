@@ -249,6 +249,10 @@ fn memory_relation_mutations(
         .transpose()?
         .unwrap_or(RelationSemanticClass::Evidential);
     let coordinate = payload.get("coordinate").filter(|value| value.is_object());
+    let clocks = payload
+        .get("clocks")
+        .filter(|value| value.is_object())
+        .or(coordinate);
     let sequence = coordinate
         .and_then(|coordinate| payload_u32(coordinate, "sequence"))
         .or_else(|| payload_u32(&payload, "sequence"));
@@ -266,21 +270,11 @@ fn memory_relation_mutations(
         .with_optional_scope_id(
             coordinate.and_then(|coordinate| payload_string(coordinate, "scope_id")),
         )
-        .with_optional_occurred_at(
-            coordinate.and_then(|coordinate| payload_string(coordinate, "occurred_at")),
-        )
-        .with_optional_observed_at(
-            coordinate.and_then(|coordinate| payload_string(coordinate, "observed_at")),
-        )
-        .with_optional_ingested_at(
-            coordinate.and_then(|coordinate| payload_string(coordinate, "ingested_at")),
-        )
-        .with_optional_valid_from(
-            coordinate.and_then(|coordinate| payload_string(coordinate, "valid_from")),
-        )
-        .with_optional_valid_until(
-            coordinate.and_then(|coordinate| payload_string(coordinate, "valid_until")),
-        )
+        .with_optional_occurred_at(clocks.and_then(|clock| payload_string(clock, "occurred_at")))
+        .with_optional_observed_at(clocks.and_then(|clock| payload_string(clock, "observed_at")))
+        .with_optional_ingested_at(clocks.and_then(|clock| payload_string(clock, "ingested_at")))
+        .with_optional_valid_from(clocks.and_then(|clock| payload_string(clock, "valid_from")))
+        .with_optional_valid_until(clocks.and_then(|clock| payload_string(clock, "valid_until")))
         .with_optional_sequence(sequence)
         .with_optional_rank(coordinate.and_then(|coordinate| payload_u32(coordinate, "rank")));
 
@@ -621,6 +615,30 @@ mod tests {
             }]
         })
         .to_string()
+    }
+
+    #[test]
+    fn projecting_an_old_undated_relation_never_invents_clocks() {
+        let change = UpdateContextChange {
+            operation: "UPSERT".into(),
+            entity_kind: "memory_relation".into(),
+            entity_id: "relation:a:supports:b".into(),
+            reason: "old declaration".into(),
+            scopes: vec![],
+            payload_json: serde_json::json!({"from":"a","to":"b","rel":"supports",
+                "class":"evidential","why":"Review links the records.","evidence":"R3."})
+            .to_string(),
+        };
+        let result = super::memory_relation_mutations(&change).expect("old relation projects");
+        let ProjectionMutation::UpsertNodeRelation(relation) = &result[0] else {
+            panic!("relation")
+        };
+        let clocks = &relation.explanation;
+        assert!(clocks.occurred_at().is_none());
+        assert!(clocks.observed_at().is_none());
+        assert!(clocks.ingested_at().is_none());
+        assert!(clocks.valid_from().is_none());
+        assert!(clocks.valid_until().is_none());
     }
 
     fn sample_event() -> ContextUpdatedEvent {

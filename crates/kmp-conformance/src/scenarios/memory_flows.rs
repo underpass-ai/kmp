@@ -87,6 +87,7 @@ fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
                 ),
             ],
             relations: vec![MemoryRelationData {
+                clocks: None,
                 source_ref: "question:conformance:claim:two".to_string(),
                 target_ref: "question:conformance:claim:one".to_string(),
                 rel: "supports".to_string(),

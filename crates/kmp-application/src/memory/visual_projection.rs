@@ -144,6 +144,8 @@ impl From<&TemporalCoordinate> for TemporalCoordinateView {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct VisualRelation {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clocks: Option<super::MemoryRelationClocks>,
     pub from: String,
     pub to: String,
     pub rel: String,
@@ -508,7 +510,16 @@ fn visual_relations(
 }
 
 fn visual_relation(relation: &BundleRelationship) -> VisualRelation {
+    let explanation = relation.explanation();
+    let clocks = super::MemoryRelationClocks {
+        occurred_at: explanation.occurred_at().map(ToString::to_string),
+        observed_at: explanation.observed_at().map(ToString::to_string),
+        ingested_at: explanation.ingested_at().map(ToString::to_string),
+        valid_from: explanation.valid_from().map(ToString::to_string),
+        valid_until: explanation.valid_until().map(ToString::to_string),
+    };
     VisualRelation {
+        clocks: (clocks != Default::default()).then_some(clocks),
         from: relation.source_node_id().to_string(),
         to: relation.target_node_id().to_string(),
         rel: relation.relationship_type().to_string(),
@@ -752,6 +763,7 @@ mod tests {
     #[test]
     fn visual_causal_density_does_not_count_other_explanatory_classes() {
         let relation = |class: &str| VisualRelation {
+            clocks: None,
             from: "a".to_string(),
             to: "b".to_string(),
             rel: "rel".to_string(),

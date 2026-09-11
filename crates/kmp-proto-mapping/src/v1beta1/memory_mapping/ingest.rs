@@ -201,6 +201,15 @@ fn relation_from_proto(value: MemoryRelation) -> MemoryRelationData {
     let explanation = value.explanation.unwrap_or_default();
 
     MemoryRelationData {
+        clocks: explanation
+            .clocks
+            .map(|clocks| kmp_application::memory::MemoryRelationClocks {
+                occurred_at: proto_timestamp_to_sort_string(clocks.occurred_at),
+                observed_at: proto_timestamp_to_sort_string(clocks.observed_at),
+                ingested_at: proto_timestamp_to_sort_string(clocks.ingested_at),
+                valid_from: proto_timestamp_to_sort_string(clocks.valid_from),
+                valid_until: proto_timestamp_to_sort_string(clocks.valid_until),
+            }),
         source_ref: value.source_ref,
         target_ref: value.target_ref,
         rel: value.rel,
@@ -243,6 +252,16 @@ fn write_clocks_to_proto(
 ) -> kmp_proto::v1beta1::WriteClocks {
     use kmp_proto::v1beta1::WriteClocks;
     WriteClocks {
+        relations: value
+            .relations
+            .map(|c| kmp_proto::v1beta1::RelationClockCoverage {
+                relations: c.relations as u32,
+                occurred: c.occurred as u32,
+                observed: c.observed as u32,
+                ingested: c.ingested as u32,
+                valid_from: c.valid_from as u32,
+                valid_until: c.valid_until as u32,
+            }),
         entries: value.entries as u32,
         occurred: Some(write_clock_to_proto(value.occurred)),
         observed: Some(write_clock_to_proto(value.observed)),

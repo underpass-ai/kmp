@@ -68,7 +68,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "valid_until":valid_until,
                 "rank":rank,
                 "connect_to":{
-                    "description":"Justified links: this containing memory is the source, connect_to.ref is the target. Read each as source -> rel -> target before submitting.",
+                    "description":"Justified links: containing memory -> rel -> target. Each declaration gets packet observation (or ingestion) and kernel ingestion; endpoint clocks do not date the link. Occurrence and validity remain unknown.",
                     "type":"array","items":relation
                 }
             }

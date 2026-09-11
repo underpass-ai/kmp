@@ -12,6 +12,17 @@ not independent LLM learning. Each write is a separate logical operation with
 its own idempotency key. All timestamps are UTC; ingestion uses the actual
 runtime clock. No source below states a validity interval.
 
+Canonical semantic relations may carry `clocks` with `occurred_at`,
+`observed_at`, `ingested_at`, `valid_from` and `valid_until`, independently of a
+label. Normally omit that group: KMP dates a new declaration using packet
+observation (or ingestion) and its actual ingestion time. Preserve explicit
+historical ingestion only when restoring canonical data; an unknown historical
+observation stays unknown. Explicit coordinate clocks, when supplied, must agree
+with the independent clocks. Structural memberships keep their clocks in
+`coordinate`. For example, a link learned on September 4 between two September 2
+memories has observed_at September 4; neither endpoint dates its declaration.
+This is a stored declaration clock, not inference of when its meaning became true.
+
 ```json
 {"tool":"kmp_wake","save_as":"initial","expect_error":"not_found","arguments":{"about":"example:guide:canonical-ingest","budget":{"detail":"compact","max_bytes":20000}}}
 ```

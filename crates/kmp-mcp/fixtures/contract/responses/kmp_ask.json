@@ -34,7 +34,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9423
+        "used_bytes": 9708
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
@@ -51,7 +51,7 @@
             "tokens": 2400
           },
           "page": {
-            "cursor": "kmp1:3:1dacfa8ca6996056e3aa4a1968401e5b18c3432eb51ae3e5eb314987adeceaba"
+            "cursor": "kmp1:3:<stamped at call time>"
           },
           "question": "Where is Rachel moving?"
         },
@@ -60,7 +60,7 @@
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:3:1dacfa8ca6996056e3aa4a1968401e5b18c3432eb51ae3e5eb314987adeceaba",
+        "next_cursor": "kmp1:3:<stamped at call time>",
         "offset": 0,
         "returned": 3,
         "total": 9
@@ -179,6 +179,10 @@
       "path": [
         {
           "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
@@ -195,6 +199,10 @@
         },
         {
           "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
@@ -209,6 +217,10 @@
         },
         {
           "class": "evidential",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "confidence": "high",
           "evidence": "She named Boulder after naming Denver.",
           "evidence_refs": [

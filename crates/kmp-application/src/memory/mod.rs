@@ -1,5 +1,6 @@
 mod dimension_registry;
 mod ingest;
+mod memory_relation_clocks;
 mod merge_memory_bundles;
 mod neighborhood_item;
 mod neighborhood_link;
@@ -7,6 +8,7 @@ mod observation_defaults;
 mod receipt;
 mod ref_boundary;
 mod relabel;
+mod resolve_relation_clocks;
 mod service;
 mod types;
 mod visual_label;
@@ -14,12 +16,15 @@ mod visual_projection;
 mod write_clock_coverage;
 mod write_clocks;
 mod write_neighborhood;
+mod write_relation_clocks;
 
+pub use memory_relation_clocks::MemoryRelationClocks;
 pub use neighborhood_item::NeighborhoodItem;
 pub use neighborhood_link::NeighborhoodLink;
 pub use write_clock_coverage::WriteClockCoverage;
 pub use write_clocks::WriteClocks;
 pub use write_neighborhood::WriteNeighborhood;
+pub use write_relation_clocks::WriteRelationClocks;
 
 pub use ingest::{ExistingMemoryRefs, crosses_abouts, translate_memory_ingest};
 pub use ref_boundary::{

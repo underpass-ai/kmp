@@ -120,6 +120,7 @@ fn command(key: &str, rich: bool) -> MemoryIngestCommand {
     if rich {
         entries.push(entry("second"));
         relations.push(MemoryRelationData {
+            clocks: None,
             source_ref: entries[0].id.clone(),
             target_ref: entries[1].id.clone(),
             rel: "verified_by".into(),

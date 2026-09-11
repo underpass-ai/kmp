@@ -163,6 +163,7 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
                 .relations
                 .into_iter()
                 .map(|relation| kmp_application::MemoryRelationData {
+                    clocks: None,
                     source_ref: relation.from,
                     target_ref: relation.to,
                     rel: relation.rel,

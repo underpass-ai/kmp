@@ -30,6 +30,10 @@ def check(saved, client, authored):
     declared = authored['pending']['memories'][0]['connect_to'][0]
     assert (edge['from'], edge['rel'], edge['to']) == (refs['execution'], 'verified_by', refs['check'])
     assert edge['why'] == declared['why'] and edge['evidence'] == declared['evidence']
+    assert edge['clocks']['observed_at'] == authored['pending']['observed_at']
+    assert edge['clocks'].get('ingested_at')
+    assert 'occurred_at' not in edge['clocks'] and 'valid_from' not in edge['clocks']
+    assert saved['written']['clocks']['relations']['observed'] == 1
     for name, selected in [('before_frame', 'execution'), ('after_frame', 'check')]:
         assert saved[name]['applied'] and not saved[name]['unhonored']
         assert saved[name]['state']['selection'] == refs[selected]

@@ -1023,10 +1023,7 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     assert_eq!(relation["decision_id"], "question:e3:decision:e3");
     assert_eq!(relation["caused_by_node_id"], "question:e3:claim:e3");
     assert_eq!(relation["coordinate"]["dimension"], "conversation");
-    assert_eq!(
-        relation["coordinate"]["valid_until"],
-        "2026-07-22T10:20:00Z"
-    );
+    assert_eq!(relation["clocks"]["valid_until"], "2026-07-22T10:20:00Z");
 
     let wake = call(&server, 5, "kmp_wake", json!({"about": "question:e3"})).await;
     let wake_evidence = wake["proof"]["evidence"]
@@ -2668,7 +2665,7 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         )
         .await
         .expect("trace succeeds");
-    backend
+    let goto = backend
         .call_tool(
             "kmp_goto",
             &serde_json::json!({
@@ -2678,6 +2675,7 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         )
         .await
         .expect("goto succeeds");
+    assert!(goto["structuredContent"]["quality"].is_object(), "{goto}");
     drop(backend);
 
     let telemetry = SqliteQualityTelemetryReader::open(data_dir.path()).expect("journal opens");
@@ -2696,7 +2694,10 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
     assert_eq!(wakes.len(), 1, "wake must journal one observation");
     assert_eq!(asks.len(), 1, "ask must journal one observation");
     assert_eq!(traces.len(), 1, "trace must journal one observation");
-    assert_eq!(gotos.len(), 1, "goto must journal one observation");
+    assert!(
+        gotos.is_empty(),
+        "unrendered temporal reads must not fabricate prompt-token observations"
+    );
     assert_eq!(wakes[0].root_node_id(), "question:e3");
     assert!(wakes[0].raw_equivalent_tokens() > 0);
 }

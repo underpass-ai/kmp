@@ -21,7 +21,7 @@ pub(crate) fn definition() -> Value {
             "allOf":[{"if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},"then":{"properties":{"provenance":{"required":["observed_at"]}}}}],
             "properties": {
                 "about": string_schema("Memory anchor or root ref this memory should attach to."),
-                "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, evidence and packet provenance using the exact kernel ingestion time. Preserve already ingested coordinates. Ordinary canonical ingest leaves unknown clocks unchanged."}),
+                "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, evidence and packet provenance using the exact kernel ingestion time. Preserve already ingested coordinates. Ordinary canonical ingest preserves unknown entry clocks. New semantic relations get their own declaration observation from packet provenance or ingestion."}),
                 "memory": {
                     "type": "object",
                     "additionalProperties": true,
@@ -99,7 +99,8 @@ pub(crate) fn definition() -> Value {
                                     "method": string_schema("Optional method by which the relation holds."),
                                     "decision_id": string_schema("Optional about-owned decision ref associated with the relation."),
                                     "caused_by_node_id": string_schema("Optional about-owned causal predecessor ref."),
-                                    "coordinate": temporal_coordinate_schema()
+                                    "coordinate": temporal_coordinate_schema(),
+                                    "clocks": relation_clocks_schema()
                                 }
                             }
                         },
@@ -176,4 +177,18 @@ fn ingest_output_schema() -> Value {
         })),
         "warnings": warnings_output_schema()
     }))
+}
+
+fn relation_clocks_schema() -> Value {
+    json!({
+                                        "type":"object", "additionalProperties":false,
+                                        "description":"Own clocks of a semantic relation, independent of endpoint coordinates. New declarations default observed_at from packet provenance, else ingestion; ingested_at is assigned by KMP. Preserve explicit ingestion only for canonical restoration. Occurrence and validity stay unknown unless supplied. Structural relations use coordinate instead. Conflicting clocks and coordinate instants are rejected.",
+                                        "properties": {
+                                            "occurred_at": string_schema("RFC3339 event time of the relationship itself, only when known."),
+                                            "observed_at": string_schema("RFC3339 observation of this declaration; never inherited from endpoints."),
+                                            "ingested_at": string_schema("Preserved RFC3339 ingestion for canonical restoration; normally omit."),
+                                            "valid_from": string_schema("Explicit RFC3339 validity start of this relationship."),
+                                            "valid_until": string_schema("Explicit RFC3339 exclusive validity end, after valid_from.")
+                                        }
+                                    } )
 }

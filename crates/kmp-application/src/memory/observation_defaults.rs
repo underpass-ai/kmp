@@ -20,6 +20,7 @@ pub(super) fn resolve(command: &MemoryIngestCommand, ingested_at: &str) -> Memor
                 .memory
                 .relations
                 .iter_mut()
+                .filter(|relation| relation.semantic_class.trim() == "structural")
                 .filter_map(|relation| relation.coordinate.as_mut()),
         )
     {

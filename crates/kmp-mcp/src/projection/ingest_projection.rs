@@ -72,6 +72,10 @@ fn write_clocks_json(value: &kmp_proto::v1beta1::WriteClocks) -> Value {
     }
     json!({
         "scope": "accepted_command", "entries": value.entries,
+        "relations": value.relations.as_ref().map(|r| json!({
+            "relations": r.relations, "occurred": r.occurred, "observed": r.observed,
+            "ingested": r.ingested, "valid_from": r.valid_from, "valid_until": r.valid_until
+        })),
         "occurred": clock(value.occurred.as_ref()),
         "observed": clock(value.observed.as_ref()),
         "ingested": clock(value.ingested.as_ref()),

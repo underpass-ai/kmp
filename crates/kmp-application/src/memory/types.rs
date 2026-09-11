@@ -107,6 +107,8 @@ pub struct MemoryCoordinateData {
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct MemoryRelationData {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clocks: Option<super::MemoryRelationClocks>,
     #[serde(rename = "from")]
     pub source_ref: String,
     #[serde(rename = "to")]

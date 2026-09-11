@@ -655,3 +655,30 @@ extremos antiguos y cambio concurrente de coordenadas. La página continúa el
 resultado seleccionado; no continúa la búsqueda ni promete un snapshot entre
 llamadas. Mantener la advertencia de que una ruta no determina verdad ni
 completitud de pruebas. Estas indicaciones son informativas, sin gate editorial.
+
+
+### Relojes propios de las relaciones
+
+La declaración semántica se fecha en ingest, una vez por comando aceptado.
+`MemoryRelationClocks` separa esos relojes de la pertenencia dimensional;
+`connect_to` no exige más campos. Observación procede del paquete o de ingesta,
+nunca de un extremo ni de un override de registro. Ocurrencia y vigencia sólo
+se conservan cuando están declaradas explícitamente para esa relación.
+La restauración canónica conserva relojes históricos; el replay usa el recibo.
+No fechar aristas antiguas durante su proyección. Un UPSERT nuevo representa
+la declaración almacenada actual; esto no añade versiones históricas de aristas.
+
+Mantener juntos protobuf canónico y vendorizado, mapper de ingest, proyección de
+payload, respuestas MCP directas y compactas de recall, VisualRelation y
+ChronoLoom (HTTP y MCP App). Las relaciones semánticas muestran `clocks` sin
+necesitar una dimensión; los enlaces estructurales conservan su coordenada.
+No duplicar los relojes en ambos grupos de una relación semántica. Dos valores
+explícitos incompatibles se rechazan. `clocks.relations` del recibo cuenta
+cobertura de enlaces; los contadores de entradas conservan su significado.
+
+Verificar extremos antiguos con declaración tardía, corte inclusivo y extremo
+superior exclusivo, omisión, overrides de registro, restauración y replay tras
+reinicio. Los relojes de la declaración no garantizan verdad ni completitud.
+Una proyección visual selecciona entradas: sus enlaces muestran las fechas,
+pero no sustituyen una lectura temporal de prueba. Actualizar guía, tarjetas y
+fixture del contrato en el mismo cambio, sin gate editorial.

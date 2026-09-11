@@ -95,6 +95,29 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
         let semantic_class = required_object_string(relation, "memory.relations[].class")?;
         validate_semantic_class(semantic_class)?;
         validate_relation_explanation(relation, semantic_class)?;
+        if let Some(clocks) = relation.get("clocks").filter(|value| !value.is_null()) {
+            if semantic_class.trim() == "structural" {
+                return Err(
+                    "structural relations carry their clocks in coordinate, not clocks".to_string(),
+                );
+            }
+            let clocks = clocks
+                .as_object()
+                .ok_or("memory.relations[].clocks must be an object")?;
+            for field in clocks.keys() {
+                if ![
+                    "occurred_at",
+                    "observed_at",
+                    "ingested_at",
+                    "valid_from",
+                    "valid_until",
+                ]
+                .contains(&field.as_str())
+                {
+                    return Err(format!("unknown field memory.relations[].clocks.{field}"));
+                }
+            }
+        }
         if let Some(coordinate) = relation.get("coordinate") {
             validate_coordinate(
                 coordinate,

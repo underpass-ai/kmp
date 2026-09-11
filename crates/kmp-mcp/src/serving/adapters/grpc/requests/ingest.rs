@@ -205,6 +205,37 @@ fn relation_from_value(value: &Value) -> Result<MemoryRelation, String> {
         sequence: optional_positive_u32_field(value, "sequence", "memory.relations[].sequence")?,
         evidence_refs: Vec::new(),
         explanation: Some(MemoryRelationExplanation {
+            clocks: optional_object_field(value, "clocks", "memory.relations[].clocks")?
+                .map(|clocks| {
+                    Ok::<_, String>(kmp_proto::v1beta1::RelationClocks {
+                        occurred_at: optional_timestamp_field(
+                            clocks,
+                            "occurred_at",
+                            "memory.relations[].clocks.occurred_at",
+                        )?,
+                        observed_at: optional_timestamp_field(
+                            clocks,
+                            "observed_at",
+                            "memory.relations[].clocks.observed_at",
+                        )?,
+                        ingested_at: optional_timestamp_field(
+                            clocks,
+                            "ingested_at",
+                            "memory.relations[].clocks.ingested_at",
+                        )?,
+                        valid_from: optional_timestamp_field(
+                            clocks,
+                            "valid_from",
+                            "memory.relations[].clocks.valid_from",
+                        )?,
+                        valid_until: optional_timestamp_field(
+                            clocks,
+                            "valid_until",
+                            "memory.relations[].clocks.valid_until",
+                        )?,
+                    })
+                })
+                .transpose()?,
             motivation: optional_string_field(
                 value,
                 "motivation",

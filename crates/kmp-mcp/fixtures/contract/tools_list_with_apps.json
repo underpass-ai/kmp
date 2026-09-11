@@ -72,7 +72,7 @@
           },
           "default_observation_to_ingestion": {
             "default": false,
-            "description": "Semantic-writer policy: fill missing observations on new coordinates, evidence and packet provenance using the exact kernel ingestion time. Preserve already ingested coordinates. Ordinary canonical ingest leaves unknown clocks unchanged.",
+            "description": "Semantic-writer policy: fill missing observations on new coordinates, evidence and packet provenance using the exact kernel ingestion time. Preserve already ingested coordinates. Ordinary canonical ingest preserves unknown entry clocks. New semantic relations get their own declaration observation from packet provenance or ingestion.",
             "type": "boolean"
           },
           "dry_run": {
@@ -298,6 +298,38 @@
                         "constraint"
                       ],
                       "type": "string"
+                    },
+                    "clocks": {
+                      "additionalProperties": false,
+                      "description": "Own clocks of a semantic relation, independent of endpoint coordinates. New declarations default observed_at from packet provenance, else ingestion; ingested_at is assigned by KMP. Preserve explicit ingestion only for canonical restoration. Occurrence and validity stay unknown unless supplied. Structural relations use coordinate instead. Conflicting clocks and coordinate instants are rejected.",
+                      "properties": {
+                        "ingested_at": {
+                          "description": "Preserved RFC3339 ingestion for canonical restoration; normally omit.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "observed_at": {
+                          "description": "RFC3339 observation of this declaration; never inherited from endpoints.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "occurred_at": {
+                          "description": "RFC3339 event time of the relationship itself, only when known.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "valid_from": {
+                          "description": "Explicit RFC3339 validity start of this relationship.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "valid_until": {
+                          "description": "Explicit RFC3339 exclusive validity end, after valid_from.",
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
                     },
                     "confidence": {
                       "enum": [
@@ -586,6 +618,44 @@
                           }
                         },
                         "type": "object"
+                      },
+                      "relations": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "ingested": {
+                                "description": "Relations with a stored ingestion time.",
+                                "type": "integer"
+                              },
+                              "observed": {
+                                "description": "Relations with a declaration observation, independent of endpoint clocks.",
+                                "type": "integer"
+                              },
+                              "occurred": {
+                                "description": "Relations with their own event time.",
+                                "type": "integer"
+                              },
+                              "relations": {
+                                "description": "Semantic declarations in this command, excluding structural memberships.",
+                                "type": "integer"
+                              },
+                              "valid_from": {
+                                "description": "Relations with an explicit validity start.",
+                                "type": "integer"
+                              },
+                              "valid_until": {
+                                "description": "Relations with an explicit validity end.",
+                                "type": "integer"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "Relation clock coverage; null means unavailable, not zero."
                       },
                       "scope": {
                         "description": "accepted_command: clocks of this historical write, including on replay; not current graph state or source fidelity.",
@@ -885,7 +955,7 @@
               "additionalProperties": false,
               "properties": {
                 "connect_to": {
-                  "description": "Justified links: this containing memory is the source, connect_to.ref is the target. Read each as source -> rel -> target before submitting.",
+                  "description": "Justified links: containing memory -> rel -> target. Each declaration gets packet observation (or ingestion) and kernel ingestion; endpoint clocks do not date the link. Occurrence and validity remain unknown.",
                   "items": {
                     "additionalProperties": false,
                     "if": {
@@ -1393,6 +1463,44 @@
                       }
                     },
                     "type": "object"
+                  },
+                  "relations": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "ingested": {
+                            "description": "Relations with a stored ingestion time.",
+                            "type": "integer"
+                          },
+                          "observed": {
+                            "description": "Relations with a declaration observation, independent of endpoint clocks.",
+                            "type": "integer"
+                          },
+                          "occurred": {
+                            "description": "Relations with their own event time.",
+                            "type": "integer"
+                          },
+                          "relations": {
+                            "description": "Semantic declarations in this command, excluding structural memberships.",
+                            "type": "integer"
+                          },
+                          "valid_from": {
+                            "description": "Relations with an explicit validity start.",
+                            "type": "integer"
+                          },
+                          "valid_until": {
+                            "description": "Relations with an explicit validity end.",
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Relation clock coverage; null means unavailable, not zero."
                   },
                   "scope": {
                     "description": "accepted_command: clocks of this historical write, including on replay; not current graph state or source fidelity.",
