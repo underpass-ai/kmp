@@ -295,3 +295,14 @@ coordinate. A missing label in the returned lanes does not mean the entry
 lacks that label. Consult the wake catalogue before selecting.
 
 RFC3339 clocks keep fractional seconds and accept explicit numeric UTC offsets. `2026-09-11T12:00:00.125+02:00` names the same instant as `2026-09-11T10:00:00.125Z`. An `as_of` cut includes an equal instant; an interval end excludes it. Do not round source clocks to whole seconds.
+
+## Selected entries versus delivered proof
+
+The leading `READ_INCOMPLETE` notice is unconditional: no registered context or
+guide read is needed. It reflects page.has_more, not selection.has_more. Two
+selected entries can be fully returned while seven proof.path relations still
+remain; finish the native next_actions read before relying on the whole packet.
+After page completion, next_actions may offer a different historical position.
+Do not treat that new selection as unfinished proof, or page completion as proof
+of semantic sufficiency. The structured summary still counts selected entries;
+its wording alone does not establish delivery completion.

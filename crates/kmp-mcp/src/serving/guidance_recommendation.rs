@@ -38,9 +38,7 @@ impl GuidanceRecommendation {
                 "reason":"Nothing was written. Review the neighborhood, proposed directions and omissions; expand if needed. Resume the returned write only after reviewing, or correct the proposal.",
                 "basis":{"context_pointer":"/neighborhood","resume_pointer":"/next_actions/0"}, "review_required":true}));
         }
-        let partial = body.pointer("/page/has_more") == Some(&Value::Bool(true))
-            || body.pointer("/projection/page/has_more") == Some(&Value::Bool(true))
-            || body.pointer("/projection/core_text_shortened") == Some(&Value::Bool(true));
+        let partial = super::tool_result::packet_is_partial(body);
         let action = valid_call(&body["projection"]["next_action"])
             .map(|a| ("/projection/next_action".to_owned(), a))
             .or_else(|| {

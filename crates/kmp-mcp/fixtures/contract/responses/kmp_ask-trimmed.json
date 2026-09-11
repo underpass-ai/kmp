@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Retrieved 5 memory items for: Where is Rachel moving?",
+      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\nRetrieved 5 memory items for: Where is Rachel moving?",
       "type": "text"
     }
   ],
