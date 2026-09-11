@@ -60,6 +60,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore = "experimental observer: run EVAL539_PROFILE=1 with --ignored"]
     fn prepared_cached_vm_work_is_per_execution_and_partial_rows_are_counted() {
         assert!(eval539_profile::enabled(), "run with EVAL539_PROFILE=1");
         let connection = Connection::open_in_memory().unwrap();
