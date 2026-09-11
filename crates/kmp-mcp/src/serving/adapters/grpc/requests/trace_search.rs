@@ -8,7 +8,12 @@ pub(super) fn arguments(
     value: &Value,
 ) -> Result<(String, Vec<String>, Option<TraceSearchOptions>), String> {
     let root = object(value, "trace")?;
+    let seeking = value.get("search").and_then(|s| s.get("seek")).is_some();
+    if seeking && value.get("to").is_some() {
+        return Err("search.seek replaces to; supply only the source ref".into());
+    }
     let (to, targets) = match value.get("to") {
+        None if seeking => (String::new(), vec![]),
         Some(Value::String(s)) if !s.trim().is_empty() => (s.trim().to_string(), vec![]),
         Some(Value::Array(_)) => {
             let targets = optional_string_array_field(root, "to", "to")?;
@@ -70,13 +75,18 @@ pub(super) fn arguments(
                     .transpose()
             };
             Ok::<_, String>(TraceSearchOptions {
+                seek: super::trace_seek::arguments(s)?,
                 dimensions: dimensions("dimensions")?,
                 prefer_dimensions: dimensions("prefer_dimensions")?,
                 select: s
                     .get("select")
                     .map(super::trace_material::arguments)
                     .transpose()?,
-                paths_per_target: limit("paths_per_target", 1, 8)?,
+                paths_per_target: if seeking {
+                    0
+                } else {
+                    limit("paths_per_target", 1, 8)?
+                },
                 max_states: limit("max_states", 4096, 32768)?,
                 max_nodes: limit("max_nodes", 256, 4096)?,
                 max_edges: limit("max_edges", 2048, 32768)?,

@@ -30,3 +30,11 @@ selectors on coordinates admitted by the selected clock. See `search.routing`;
 focus may return a longer route first and all work remains bounded. Focus yields
 after small adjacency pages so queued children can progress; page positions and
 partial rows are reused. A work cut or unexpanded boundary is not a known leaf.
+
+For proof discovery from a known seed without destination refs, use
+`search.seek:["verified_by",{"name":"permission","rel":"authorizes","direction":"incoming"}]`.
+Optional `same_labels:["event"]` requires a shared event value at the witnesses.
+Read `seek.status` and joint `groups`; missing labels stay unknown. No token score
+prunes paths, but work cuts remain partial. Finish all pages before interpreting
+indexes. Expand `guide:kmp-agent:example:evidence-seek` for identity, ordered
+via/after paths, clocks and limits.

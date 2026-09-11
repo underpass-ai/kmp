@@ -75,3 +75,11 @@ mod trace_search;
 pub use trace_search::{trace_search_request_from_proto, trace_search_response_from_result};
 #[cfg(test)]
 mod rfc3339_precision_tests;
+
+mod evidence_seek_request;
+mod evidence_seek_response;
+pub use evidence_seek_request::evidence_seek_request_from_proto;
+pub use evidence_seek_response::evidence_seek_response_from_result;
+
+#[cfg(test)]
+mod evidence_seek_tests;

@@ -35,3 +35,5 @@ pub(crate) use relate_projection::relate_from_response;
 pub(crate) use temporal_projection::{enforce_temporal_output_budget, temporal_from_response};
 pub(crate) use trace_projection::trace_from_response;
 pub(crate) use visual_projection::visual_projection_from_response;
+
+mod evidence_seek;

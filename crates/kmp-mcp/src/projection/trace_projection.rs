@@ -16,6 +16,7 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
         "quality": optional_quality_json(response.quality.as_ref()),
         "warnings": response.warnings
     });
+    super::evidence_seek::project(&response, &mut value);
     if let Some(search) = response.search {
         value["search"] = json!({"stop_reason": search.stop_reason, "discovered_nodes": search.discovered_nodes,
             "scanned_edges": search.scanned_edges, "expanded_nodes": search.expanded_nodes,

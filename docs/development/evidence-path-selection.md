@@ -1,9 +1,10 @@
 # Native evidence path selection
 
-This library increment implements seed-based discovery under #538. It does not
-add an MCP tool, expose a public pattern language, or claim that an agent can
-translate a question into complete obligations. MCP projection and progressive
-guidance are a subsequent part of the same integration track.
+Seed-based discovery under #538 is exposed through the existing `kmp_trace`
+verb's `search.seek` arguments. It does not add a tool or a text query language,
+nor claim that an agent can translate a question into complete obligations.
+The domain types remain internal; proto mapping compiles relation roles and
+witness constraints for both embedded and gRPC dispatch.
 
 `MemoryApplicationService::evidence_paths` validates owned input refs and calls
 the graph port. The embedded adapter opens one `ReadTx` for the whole operation.
@@ -76,10 +77,39 @@ incoming direction and about ownership. The developer example
 `evidence_paths_control` maps frozen investigator JSON into the library request;
 it is not a supported API and does not read expected answers.
 
-Before the capability becomes agent-facing, extend the existing native verb
-surface, preserve full continuations and proof provenance, provide actionable
-missing-obligation signals, map gRPC and embedded behavior consistently and
-update the canonical guide sources under `agent-surface.md`. Do not advertise
-the investigator schema as a new user query language or load a second manual.
-Compare with the frozen joint-selection oracle, then validate how agents select
-or discover obligations. No additional writer work is required by this layer.
+## Native agent contract
+
+A simple call supplies `from` and `search.seek:["verified_by"]`, without `to`.
+Each role can name `rel`, `direction`, ordered `via` moves before the relation,
+and ordered `after` moves after it. The main relation's traversal endpoint is
+its witness. No caller variables or numeric witness positions are necessary.
+`labels` constrains only that witness; `same_labels` joins listed keys across
+all role witnesses; `same_ref` joins disjoint groups of named witness refs.
+Shared explicit label constants are intersected before execution; contradictory
+constants are an invalid request, unlike incompatible stored candidates.
+
+For role path sets P1...Pk, a group chooses one path from each Pi. Every shared
+known domain must have nonempty intersection across the entire group; missing
+witness values remain recorded, not filled from known peers. An incoming move
+changes traversal direction, never the stored relation statement. This is exact
+compatibility for declared paths, without token utility or score-based pruning.
+
+Response `seek` carries status, declared-obligation completeness, missing roles,
+clock resolution and work counters. Whole `trace`, `candidates` and `groups`
+items share one positional page. Candidate/edge indexes are global. The cursor
+hashes every complete table, including unreturned bindings and groups, before
+pagination; changing either arguments or proof rejects continuation. A larger
+work allowance starts a new selection, never resumes an old search state.
+
+`seek.review_context` optionally offers a Goto focused on the seed at the same
+explicit `as_of` and axis. It is separate from `next_actions` page completion.
+No implicit widening or unbounded Inspect replaces a historical read. Other
+cuts require the reader to choose its next temporal move deliberately.
+The audit card, verb, error lesson and example:evidence-seek share this contract.
+
+Remaining scope: automatically discovering the task's obligations, alternative
+relation sequences for one role, variable-length path patterns, correlations
+between several dimension values, native-agent understanding, and body/source
+batching. Fixed ordered paths can be deep but are not arbitrary graph programs.
+The existing work ceilings still apply; the frozen correctness controls set
+allowances above every observed requirement. No writer burden is added.

@@ -24,6 +24,11 @@ impl ReadSelectionFingerprint {
         digest.bytes(response.summary.as_bytes());
         digest.messages("trace", &response.trace);
         digest.messages("routes", &response.routes);
+        if let Some(seek) = &response.seek {
+            digest.message(seek);
+            digest.messages("candidates", &response.candidates);
+            digest.messages("groups", &response.groups);
+        }
         if let Some(search) = &response.search {
             digest.message(search);
         }
