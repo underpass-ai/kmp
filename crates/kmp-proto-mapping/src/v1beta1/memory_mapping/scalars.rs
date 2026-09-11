@@ -154,7 +154,7 @@ pub(super) fn proto_timestamp_to_sort_string(value: Option<Timestamp>) -> Option
 
 pub(super) fn timestamp_from_sort_or_rfc3339(value: Option<&str>) -> Option<Timestamp> {
     let value = value?;
-    parse_unix_sort_timestamp(value).or_else(|| parse_basic_rfc3339(value))
+    parse_unix_sort_timestamp(value).or_else(|| value.parse::<Timestamp>().ok())
 }
 
 fn parse_unix_sort_timestamp(value: &str) -> Option<Timestamp> {
@@ -164,17 +164,4 @@ fn parse_unix_sort_timestamp(value: &str) -> Option<Timestamp> {
         seconds: seconds.parse::<i64>().ok()? - UNIX_SORT_OFFSET,
         nanos: nanos.parse::<i32>().ok()?,
     })
-}
-
-fn parse_basic_rfc3339(value: &str) -> Option<Timestamp> {
-    if value.len() < 20 || !value.ends_with('Z') {
-        return None;
-    }
-    let year = value[0..4].parse::<i64>().ok()?;
-    let month = value[5..7].parse::<u8>().ok()?;
-    let day = value[8..10].parse::<u8>().ok()?;
-    let hour = value[11..13].parse::<u8>().ok()?;
-    let minute = value[14..16].parse::<u8>().ok()?;
-    let second = value[17..19].parse::<u8>().ok()?;
-    Timestamp::date_time(year, month, day, hour, minute, second).ok()
 }

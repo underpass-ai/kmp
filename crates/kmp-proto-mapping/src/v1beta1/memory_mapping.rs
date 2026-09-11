@@ -69,3 +69,6 @@ pub use semantic_source::SemanticSource;
 pub use visual_projection::{
     visual_projection_query_from_proto, visual_projection_response_from_result,
 };
+
+#[cfg(test)]
+mod rfc3339_precision_tests;
