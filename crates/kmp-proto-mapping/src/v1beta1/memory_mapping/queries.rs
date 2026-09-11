@@ -109,7 +109,7 @@ fn relate_page_from_proto(value: Option<PageRequest>) -> ProtoMappingResult<Rela
 /// to select on: naming one without the other would be a request that
 /// changes nothing, and a request that changes nothing is a mistake the
 /// caller would rather hear about.
-fn temporal_selection_from_proto(
+pub(super) fn temporal_selection_from_proto(
     as_of: Option<ProtoTemporalCursor>,
     interval: Option<ProtoTemporalInterval>,
     axis: i32,

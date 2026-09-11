@@ -124,6 +124,9 @@ pub(crate) fn trace_request_from_arguments(arguments: &Value) -> Result<TraceReq
     Ok(TraceRequest {
         targets,
         search,
+        as_of: as_of_from_arguments(arguments)?,
+        interval: interval_from_arguments(arguments)?,
+        axis: temporal_axis_from_arguments(arguments)?,
         about: required_string(arguments, "about")?,
         from: required_string(arguments, "from")?,
         to,

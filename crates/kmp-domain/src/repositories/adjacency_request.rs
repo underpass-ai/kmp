@@ -11,6 +11,7 @@ pub struct AdjacencyRequest {
     direction: RelationDirection,
     limit: NonZeroU32,
     after: Option<RelationPosition>,
+    relation_type: Option<String>,
 }
 
 impl AdjacencyRequest {
@@ -31,12 +32,25 @@ impl AdjacencyRequest {
             direction,
             limit,
             after: None,
+            relation_type: None,
         })
     }
 
     pub fn with_after(mut self, position: RelationPosition) -> Self {
         self.after = Some(position);
         self
+    }
+
+    /// Exact type selection for indexed coordinate admission, without reading
+    /// every incoming relation. A position belongs to the same type selection.
+    pub fn with_relation_type(mut self, relation: impl AsRef<str>) -> Result<Self, DomainError> {
+        let relation = crate::MemoryRelationType::new(relation)?;
+        self.relation_type = Some(relation.as_str().to_string());
+        Ok(self)
+    }
+
+    pub fn relation_type(&self) -> Option<&str> {
+        self.relation_type.as_deref()
     }
 
     pub fn node_id(&self) -> &str {

@@ -726,6 +726,9 @@ message TraceRequest {
   // Bounded mode: destinations share a search. Empty retains the single `to`.
   repeated string targets = 7;
   TraceSearchOptions search = 8;
+  TemporalCursor as_of = 9;
+  TemporalInterval interval = 10;
+  TemporalAxis axis = 11;
 }
 
 message TraceSearchOptions {
@@ -750,6 +753,11 @@ message TraceSearchSelection {
   uint32 leaves = 5;
   repeated string unreached_targets = 6;
   string direction = 7;
+  TemporalAxis axis = 8;
+  google.protobuf.Timestamp resolved_as_of = 9;
+  bool temporal_selection_resolved = 10;
+  uint32 coordinate_rows = 11;
+  repeated uint32 clock_unknown_edges = 12;
 }
 
 message TraceResponse {

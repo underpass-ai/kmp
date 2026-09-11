@@ -11,4 +11,9 @@ pub struct TraceSearchResult {
     pub expanded_nodes: u32,
     /// Existing nodes whose entire selected directed adjacency had no eligible link.
     pub leaves: u32,
+    pub coordinate_rows: u32,
+    pub clock_unknown_edges: Vec<u32>,
+    pub temporal_axis: crate::TemporalAxis,
+    pub resolved_as_of: Option<String>,
+    pub temporal_selection_resolved: bool,
 }

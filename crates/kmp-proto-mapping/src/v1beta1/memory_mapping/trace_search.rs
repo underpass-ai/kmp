@@ -1,4 +1,6 @@
-use super::scalars::{ProtoMappingResult, invalid_argument};
+use super::scalars::{
+    ProtoMappingResult, invalid_argument, proto_temporal_axis, timestamp_from_sort_or_rfc3339,
+};
 use super::{
     bundle_views::memory_relation_from_bundle_relationship,
     read_selection_fingerprint::ReadSelectionFingerprint,
@@ -13,7 +15,12 @@ use std::collections::BTreeSet;
 pub fn trace_search_request_from_proto(
     request: &TraceRequest,
 ) -> ProtoMappingResult<Option<TraceSearchRequest>> {
-    if request.search.is_none() && request.targets.is_empty() {
+    if request.search.is_none()
+        && request.targets.is_empty()
+        && request.as_of.is_none()
+        && request.interval.is_none()
+        && request.axis == 0
+    {
         return Ok(None);
     }
     let options = request.search.clone().unwrap_or_default();
@@ -37,6 +44,11 @@ pub fn trace_search_request_from_proto(
         },
         direction,
         relations: options.relations.into_iter().collect(),
+        temporal: super::queries::temporal_selection_from_proto(
+            request.as_of.clone(),
+            request.interval,
+            request.axis,
+        )?,
         limits: TraceSearchLimits {
             nodes: if options.max_nodes == 0 {
                 defaults.nodes
@@ -75,9 +87,13 @@ pub fn trace_search_response_from_result(
             stop_reason: result.stop.as_str().into(), discovered_nodes: result.discovered_nodes,
             scanned_edges: result.scanned_edges, expanded_nodes: result.expanded_nodes,
             leaves: result.leaves, unreached_targets: result.unreached,
+            axis: proto_temporal_axis(result.temporal_axis) as i32,
+            resolved_as_of: timestamp_from_sort_or_rfc3339(result.resolved_as_of.as_deref()),
+            temporal_selection_resolved: result.temporal_selection_resolved,
+            coordinate_rows: result.coordinate_rows, clock_unknown_edges: result.clock_unknown_edges,
             direction: match direction { RelationDirection::Outgoing => "outgoing", RelationDirection::Incoming => "incoming" }.into(),
         }),
-        warnings: vec!["Bounded trace reads current same-about entries and source-backed non-structural links. It does not apply a historical cut, return entry bodies or infer missing proof requirements.".into()],
+        warnings: vec!["Bounded trace reads same-about entries and source-backed non-structural links on the selected clock. Missing link clocks remain unknown, not proof of their historical presence; clock_unknown_edges identifies those selected rows. Entry/source bodies, lifecycle state and missing proof requirements are not inferred.".into()],
         ..Default::default()
     };
     response.selection_fingerprint = ReadSelectionFingerprint::trace_search(&response);

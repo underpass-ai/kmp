@@ -5,6 +5,7 @@ pub enum TraceSearchStop {
     NodeBudget,
     EdgeBudget,
     DepthBudget,
+    SourceOutsideSelection,
 }
 
 impl TraceSearchStop {
@@ -15,6 +16,7 @@ impl TraceSearchStop {
             Self::NodeBudget => "node_budget",
             Self::EdgeBudget => "edge_budget",
             Self::DepthBudget => "depth_budget",
+            Self::SourceOutsideSelection => "source_outside_selection",
         }
     }
 }
