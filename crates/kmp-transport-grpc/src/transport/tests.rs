@@ -2398,6 +2398,7 @@ fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
                 ..Default::default()
             }],
             evidence: vec![MemoryEvidence {
+                support_clocks: None,
                 id: "evidence:question:830ce83f:rachel-denver".to_string(),
                 supports: vec!["question:830ce83f:claim:rachel-denver".to_string()],
                 text: "Conversation transcript line 1".to_string(),

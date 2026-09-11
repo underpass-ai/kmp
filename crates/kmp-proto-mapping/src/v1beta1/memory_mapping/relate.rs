@@ -324,6 +324,7 @@ pub fn relate_response_from_result(
             let candidates = outside
                 .iter()
                 .map(|entry_ref| MemoryEvidence {
+                    support_clocks: None,
                     id: format!("entry:{entry_ref}"),
                     supports: vec![entry_ref.clone()],
                     ..MemoryEvidence::default()

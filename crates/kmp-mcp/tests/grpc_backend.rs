@@ -390,7 +390,8 @@ async fn grpc_backend_maps_kmp_ingest_to_kernel_memory_service() {
                         "id": "evidence:rachel-turn-2",
                         "supports": ["claim:rachel-austin"],
                         "text": "Rachel corrected the destination.",
-                        "source": "conversation turn 2"
+                        "source": "conversation turn 2",
+                        "support_clocks": {"observed_at":"1970-01-01T00:00:00Z","ingested_at":"1970-01-01T00:00:00.500Z"}
                     }
                 ]
             },
@@ -451,6 +452,24 @@ async fn grpc_backend_maps_kmp_ingest_to_kernel_memory_service() {
     assert_eq!(memory.entries[0].coordinates[0].sequence, Some(1));
     assert_eq!(memory.relations[0].source_ref, "claim:rachel-austin");
     assert_eq!(memory.relations[0].target_ref, "claim:rachel-denver");
+    let clocks = memory.evidence[0]
+        .support_clocks
+        .as_ref()
+        .expect("support clocks forwarded");
+    assert_eq!(
+        clocks.observed_at,
+        Some(prost_types::Timestamp {
+            seconds: 0,
+            nanos: 0
+        })
+    );
+    assert_eq!(
+        clocks.ingested_at,
+        Some(prost_types::Timestamp {
+            seconds: 0,
+            nanos: 500_000_000
+        })
+    );
 }
 
 #[tokio::test]
@@ -1193,6 +1212,7 @@ fn relation(source_ref: &str, target_ref: &str, rel: &str) -> MemoryRelation {
 
 fn evidence(source: &str) -> MemoryEvidence {
     MemoryEvidence {
+        support_clocks: None,
         id: "evidence:typed".to_string(),
         supports: vec![source.to_string()],
         text: "Typed evidence.".to_string(),

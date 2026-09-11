@@ -1,4 +1,5 @@
 mod dimension_registry;
+mod evidence_support_clocks;
 mod ingest;
 mod memory_relation_clocks;
 mod merge_memory_bundles;
@@ -18,6 +19,7 @@ mod write_clocks;
 mod write_neighborhood;
 mod write_relation_clocks;
 
+pub use evidence_support_clocks::EvidenceSupportClocks;
 pub use memory_relation_clocks::MemoryRelationClocks;
 pub use neighborhood_item::NeighborhoodItem;
 pub use neighborhood_link::NeighborhoodLink;

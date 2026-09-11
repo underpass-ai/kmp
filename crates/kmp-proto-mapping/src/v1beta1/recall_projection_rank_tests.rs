@@ -8,6 +8,7 @@ fn ranked_response() -> AskResponse {
             evidence: ["z-best", "m-middle", "a-last"]
                 .into_iter()
                 .map(|id| MemoryEvidence {
+                    support_clocks: None,
                     id: id.into(),
                     supports: vec![format!("project:kmp:observation:{id}")],
                     text: format!("Stored text for {id}."),

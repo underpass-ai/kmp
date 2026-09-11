@@ -486,6 +486,13 @@ fn namespaced_memory(
         }
         let mut evidence = evidence.clone();
         evidence.supports = supports;
+        if !evidence.supports.is_empty() {
+            evidence.support_clocks = Some(super::EvidenceSupportClocks::resolve(
+                evidence.support_clocks.as_ref(),
+                observed_at,
+                ingested_at,
+            )?);
+        }
         evidence_items.push(evidence);
     }
 
@@ -1356,6 +1363,7 @@ mod tests {
                     coordinate: None,
                 }],
                 evidence: vec![MemoryEvidenceData {
+                    support_clocks: None,
                     id: "evidence:question:830ce83f:claim:rachel-denver".to_string(),
                     supports: vec!["question:830ce83f:claim:rachel-denver".to_string()],
                     text: "Conversation transcript line 1".to_string(),

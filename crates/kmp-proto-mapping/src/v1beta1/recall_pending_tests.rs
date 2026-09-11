@@ -12,6 +12,7 @@ fn response() -> AskResponse {
             confidence: MemoryConfidence::High as i32,
             evidence: (0..6)
                 .map(|n| MemoryEvidence {
+                    support_clocks: None,
                     id: format!("evidence:{n}"),
                     supports: vec![format!("claim:{n}")],
                     text: format!(

@@ -361,3 +361,15 @@ Other formats, times, amounts, versions and acronyms remain literal. An amount
 of 17 EUR still needs its own 17; the day in a date does not preserve that amount.
 This check does not prove the meaning of the rest of the summary. A changed or
 omitted recognized date is reported as its canonical ISO identifier.
+
+
+Evidence source time and support declaration time are separate. When a packet
+associates evidence with a memory, KMP dates that association from the packet's
+observation and its accepted ingestion. An old source or old target does not
+backdate a new association. The writer supplies no additional required field.
+Historical observed/ingested reads exclude known later support; event-time
+reads answer a different question. Inspect is the current record. Canonical
+`memory.evidence[].support_clocks` preserves declaration clocks when restoring;
+ordinary writes omit it. Repeated declarations update the current edge, without
+creating versions of its earlier associations. Old undated events stay undated
+when projections are rebuilt.

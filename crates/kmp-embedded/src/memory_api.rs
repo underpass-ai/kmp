@@ -183,6 +183,7 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
                 .evidence
                 .into_iter()
                 .map(|evidence| MemoryEvidenceData {
+                    support_clocks: None,
                     id: evidence.id,
                     supports: evidence.supports,
                     text: evidence.text,

@@ -34,7 +34,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9708
+        "used_bytes": 9204
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
@@ -51,7 +51,7 @@
             "tokens": 2400
           },
           "page": {
-            "cursor": "kmp1:3:<stamped at call time>"
+            "cursor": "kmp1:2:<stamped at call time>"
           },
           "question": "Where is Rachel moving?"
         },
@@ -60,9 +60,9 @@
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:3:<stamped at call time>",
+        "next_cursor": "kmp1:2:<stamped at call time>",
         "offset": 0,
-        "returned": 3,
+        "returned": 2,
         "total": 9
       },
       "sections": {
@@ -76,8 +76,8 @@
         "proof.path": {
           "core": 0,
           "eligible": 9,
-          "remaining": 6,
-          "returned_on_page": 3,
+          "remaining": 7,
+          "returned_on_page": 2,
           "total": 16
         }
       },
@@ -125,6 +125,10 @@
             "proof_role": "stored_evidence"
           },
           "source": "kmp_write_memory:parity-test",
+          "support_clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "supports": [
             "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
           ],
@@ -137,6 +141,10 @@
             "proof_role": "stored_evidence"
           },
           "source": "kmp_write_memory:parity-test:relation:updates_state",
+          "support_clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "supports": [
             "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
             "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
@@ -150,6 +158,10 @@
             "proof_role": "stored_evidence"
           },
           "source": "kmp_write_memory:parity-test",
+          "support_clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
           "supports": [
             "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
           ],
@@ -214,25 +226,6 @@
           "sequence": 1,
           "to": "question:parity:claim:denver",
           "why": "The later statement corrects the earlier one."
-        },
-        {
-          "class": "evidential",
-          "clocks": {
-            "ingested_at": "<stamped at call time>",
-            "observed_at": "2026-04-12T17:00:00Z"
-          },
-          "confidence": "high",
-          "evidence": "She named Boulder after naming Denver.",
-          "evidence_refs": [
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:current",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
-            "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
-          ],
-          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
-          "rel": "supersedes",
-          "sequence": 1,
-          "to": "question:parity:claim:denver",
-          "why": "The corrected city replaces the first one while the first stays readable as history."
         }
       ],
       "superseded": [
@@ -249,9 +242,9 @@
       "omitted": {
         "core_text_shortened": false,
         "excluded_by_detail": 7,
-        "page_items": 6,
+        "page_items": 7,
         "prior_page_items": 0,
-        "remaining_page_items": 6,
+        "remaining_page_items": 7,
         "selection_items": 0
       },
       "token_limit": 2400,

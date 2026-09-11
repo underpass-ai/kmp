@@ -118,7 +118,13 @@ pub(crate) fn definition() -> Value {
                                     },
                                     "text": string_schema("Evidence text."),
                                     "source": string_schema("Evidence source."),
-                                    "time": string_schema("Evidence timestamp."),
+                                    "time": string_schema("Source evidence timestamp. Does not date when its supports associations were declared."),
+                                    "support_clocks": json!({"type":"object","additionalProperties":false,
+                                        "description":"Own clocks of this support declaration, independent of source time. Normally omit: observation uses packet provenance or ingestion, and KMP assigns ingestion. Preserve explicit ingestion only for restoration. Repeated declarations replace the current edge; they do not create historical edge versions.",
+                                        "properties": {
+                                            "observed_at": string_schema("RFC3339 observation of the support declaration."),
+                                            "ingested_at": string_schema("Preserved RFC3339 ingestion for restoration; normally omit.")
+                                        }}),
                                     "metadata": string_map_schema()
                                 }
                             }
