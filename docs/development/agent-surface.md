@@ -816,3 +816,19 @@ actions with the same witnesses/labels, convergence, fixed prefixes, unknowns,
 disjoint endpoint validation, paging and real gRPC. Update the reduced audit card,
 extended audit, human guide and evidence-seek example. Contextual compatibility
 remains a lead requiring original source review, not logical entailment.
+
+### Trace: mantener separados los modos
+
+Al cambiar opciones de Trace, asignarlas a destinos conocidos o a evidencia desde
+semilla. Mantener `oneOf`/campos permitidos en el esquema y el rechazo agrupado
+antes de interpretar cuerpos incompatibles; no añadir un selector redundante.
+Las definiciones compartidas permanecen únicas para conservar la validación
+recursiva de campos desconocidos. Verificar ambas familias válidas y la reparación
+de mezclas con `to`, opciones de destino y límites comunes.
+
+Actualizar tarjeta, verbo ampliado, guía humana y ejemplos en el mismo cambio.
+Contrastar misma acción frente a copia/publicación distintas y escribir el reloj
+explícito en ejemplos históricos. Comparar resultados válidos completos y medir
+esquema, tarjeta y rechazos, sin inferir comprensión de agentes del replay.
+[Diseño y aceptación](trace-search-modes.md); instrucciones informativas, sin CI
+editorial adicional.

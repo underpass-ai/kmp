@@ -6060,7 +6060,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Trace declared links between refs, or use search.seek to discover jointly compatible evidence paths from a seed without known destinations. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
+      "description": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
       "inputSchema": {
         "additionalProperties": false,
         "oneOf": [
@@ -6258,11 +6258,50 @@
           },
           "search": {
             "additionalProperties": false,
-            "description": "Bounded native traversal on the selected clock. Shared work limits; page/budget control transport separately. Temporal admission uses as_of/interval/axis; no cross-about expansion in this mode.",
+            "description": "Choose exactly one mode below. Known destinations use to and destination options; evidence discovery uses seek and witness joins, without to. Only max_nodes/max_edges/max_depth/max_states are shared search fields. as_of/interval/axis select time at call level; page/budget page the result, not the search. Same-about traversal.",
+            "oneOf": [
+              {
+                "description": "Requires to at call level. No seek or witness joins.",
+                "propertyNames": {
+                  "enum": [
+                    "dimensions",
+                    "direction",
+                    "follow",
+                    "max_depth",
+                    "max_edges",
+                    "max_nodes",
+                    "max_states",
+                    "paths_per_target",
+                    "prefer_dimensions",
+                    "relations",
+                    "select"
+                  ]
+                },
+                "title": "Known destinations"
+              },
+              {
+                "description": "Requires seek; no to. Relations and constraints live inside roles.",
+                "propertyNames": {
+                  "enum": [
+                    "max_depth",
+                    "max_edges",
+                    "max_nodes",
+                    "max_states",
+                    "same_labels",
+                    "same_ref",
+                    "seek"
+                  ]
+                },
+                "required": [
+                  "seek"
+                ],
+                "title": "Evidence from seed"
+              }
+            ],
             "properties": {
               "dimensions": {
                 "additionalProperties": false,
-                "description": "Hard filter on source and every traversed entry, using only coordinates admitted on the selected clock. It can remove a necessary bridge; use prefer_dimensions for a preference. Reuses native only/except/scopes/selectors. Coordinate work shares N/E.",
+                "description": "Destination mode only; not with seek. Hard filter on source and every traversed entry, using only coordinates admitted on the selected clock. It can remove a necessary bridge; use prefer_dimensions for a preference. Reuses native only/except/scopes/selectors. Coordinate work shares N/E.",
                 "properties": {
                   "exclude": {
                     "items": {
@@ -6349,7 +6388,7 @@
               },
               "direction": {
                 "default": "outgoing",
-                "description": "Traversal direction; stored source/target and meaning are preserved.",
+                "description": "Destination mode only; not with seek. Traversal direction; stored source/target and meaning are preserved.",
                 "enum": [
                   "outgoing",
                   "incoming"
@@ -6357,7 +6396,7 @@
                 "type": "string"
               },
               "follow": {
-                "description": "Allowed moves instead of direction/relations. Unordered; does not require a sequence of types.",
+                "description": "Destination mode only; not with seek. Allowed moves instead of direction/relations. Unordered; does not require a sequence of types.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -6413,14 +6452,14 @@
               },
               "paths_per_target": {
                 "default": 1,
-                "description": "Up to this many simple candidate paths per target. Quotas and work limits can omit a better joint proof.",
+                "description": "Destination mode only; not with seek. Up to this many simple candidate paths per target. Quotas and work limits can omit a better joint proof.",
                 "maximum": 8,
                 "minimum": 1,
                 "type": "integer"
               },
               "prefer_dimensions": {
                 "additionalProperties": false,
-                "description": "Soft order, not exclusion: three priority turns then one FIFO turn. Read at most four raw relations per turn; unfinished parents resume at child depth after newly queued children. Priority maximizes (matches, -effective depth, -enqueue order). Requires a kind, scope value or selector. May reach a longer route first; no shortest-path guarantee. Whole coordinate reads share N/E. Finite limits can still omit bridges or late unread edges.",
+                "description": "Destination mode only; not with seek. Soft order, not exclusion: three priority turns then one FIFO turn. Read at most four raw relations per turn; unfinished parents resume at child depth after newly queued children. Priority maximizes (matches, -effective depth, -enqueue order). Requires a kind, scope value or selector. May reach a longer route first; no shortest-path guarantee. Whole coordinate reads share N/E. Finite limits can still omit bridges or late unread edges.",
                 "properties": {
                   "exclude": {
                     "items": {
@@ -6506,7 +6545,7 @@
                 "type": "object"
               },
               "relations": {
-                "description": "Exact relation types to follow. Omitted/empty admits every non-structural link with stored why and evidence.",
+                "description": "Destination mode only; not with seek. Exact relation types to follow. Omitted/empty admits every non-structural link with stored why and evidence.",
                 "items": {
                   "type": "string"
                 },
@@ -6514,7 +6553,7 @@
                 "uniqueItems": true
               },
               "same_labels": {
-                "description": "With seek, require common values for these label keys across all role witnesses. Missing stays unknown. A label never proves identity.",
+                "description": "Evidence mode only. With seek, require common values for these label keys across all role witnesses. Missing stays unknown. A label never proves identity.",
                 "items": {
                   "minLength": 1,
                   "type": "string"
@@ -6524,7 +6563,7 @@
                 "uniqueItems": true
               },
               "same_ref": {
-                "description": "With seek, equate exact refs in each group. A role string means its main witness; {role,at:anchor} names the main relation traversal start after via/context. Incoming keeps stored arrows: its anchor is the stored target. Endpoints belong to one group; a role may join by anchor and witness separately. To verify and authorize the same action, equate those anchors; same event labels alone do not identify an action. Identity needs its evidenced same_entity_as link.",
+                "description": "Evidence mode only. With seek, equate exact refs in each group. A role string means its main witness; {role,at:anchor} names the main relation traversal start after via/context. Incoming keeps stored arrows: its anchor is the stored target. Endpoints belong to one group; a role may join by anchor and witness separately. Only when the question requires the same action, equate those anchors. Verifying a copy and authorizing its publication concern different actions: do not add anchor equality. Do not remove a required equality merely to obtain a group. Same event labels alone do not identify an action. Identity needs its evidenced same_entity_as link.",
                 "items": {
                   "items": {
                     "oneOf": [
@@ -6563,7 +6602,7 @@
                 "type": "array"
               },
               "seek": {
-                "description": "Find compatible paths for required evidence roles from from, without to. A relation string uses its name as role and outgoing direction. Each role follows via, its main rel from anchor to witness, then after. All roles are required; paths are alternatives. Labels bind the witness; same_ref can equate anchors or witnesses across roles, allowing unlabelled bridges. Replaces other search policies except work limits. Example: seek:[\"verified_by\",{\"name\":\"permission\",\"rel\":\"authorizes\",\"direction\":\"incoming\"}], same_labels:[\"event\"].",
+                "description": "Evidence mode only. Find compatible paths for required evidence roles from from, without to. A relation string uses its name as role and outgoing direction. Each role follows via, its main rel from anchor to witness, then after. All roles are required; paths are alternatives. Labels bind the witness; same_ref can equate anchors or witnesses across roles, allowing unlabelled bridges. Replaces other search policies except work limits. Example: seek:[\"verified_by\",{\"name\":\"permission\",\"rel\":\"authorizes\",\"direction\":\"incoming\"}], same_labels:[\"event\"].",
                 "items": {
                   "oneOf": [
                     {
@@ -6693,7 +6732,7 @@
               },
               "select": {
                 "additionalProperties": false,
-                "description": "Select complete declared groups from bounded candidate paths before returning full links. Fixed beam B4/alpha0.5; heuristic, not a guarantee of optimality or semantic proof. Separate material budget from discovered nodes.",
+                "description": "Destination mode only; not with seek. Select complete declared groups from bounded candidate paths before returning full links. Fixed beam B4/alpha0.5; heuristic, not a guarantee of optimality or semantic proof. Separate material budget from discovered nodes.",
                 "properties": {
                   "groups": {
                     "description": "Caller-declared requirements. Omitted/empty: one equally weighted group per target. Each alternative is an AND set; alternatives are OR. Every ref must appear in to.",

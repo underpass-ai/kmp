@@ -7,13 +7,15 @@ use kmp_proto::v1beta1::{
 };
 use serde_json::{Map, Value};
 
-pub(super) fn arguments(search: &Map<String, Value>) -> Result<Option<TraceSeekOptions>, String> {
-    let Some(value) = search.get("seek") else {
-        if search.contains_key("same_labels") || search.contains_key("same_ref") {
-            return Err("search.same_labels and same_ref require seek".into());
-        }
-        return Ok(None);
-    };
+/// Reject every cross-mode option together before parsing any option body.
+pub(super) fn validate_mode(search: &Map<String, Value>, has_to: bool) -> Result<(), String> {
+    if !search.contains_key("seek") {
+        return Ok(());
+    }
+    let mut conflicts = Vec::new();
+    if has_to {
+        conflicts.push("to".to_owned());
+    }
     for key in [
         "follow",
         "direction",
@@ -24,11 +26,25 @@ pub(super) fn arguments(search: &Map<String, Value>) -> Result<Option<TraceSeekO
         "paths_per_target",
     ] {
         if search.contains_key(key) {
-            return Err(format!(
-                "search.seek replaces search.{key}; use seek relations, via/after and witness labels"
-            ));
+            conflicts.push(format!("search.{key}"));
         }
     }
+    if conflicts.is_empty() {
+        return Ok(());
+    }
+    Err(format!(
+        "search.seek cannot be combined with {}; remove these fields together. Use seek role relations, via/after and witness labels. Only max_nodes, max_edges, max_depth and max_states are shared search options.",
+        conflicts.join(", ")
+    ))
+}
+
+pub(super) fn arguments(search: &Map<String, Value>) -> Result<Option<TraceSeekOptions>, String> {
+    let Some(value) = search.get("seek") else {
+        if search.contains_key("same_labels") || search.contains_key("same_ref") {
+            return Err("search.same_labels and same_ref require seek".into());
+        }
+        return Ok(None);
+    };
     for key in search.keys() {
         if ![
             "seek",

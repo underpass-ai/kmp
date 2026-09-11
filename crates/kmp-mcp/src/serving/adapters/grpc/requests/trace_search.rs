@@ -9,8 +9,8 @@ pub(super) fn arguments(
 ) -> Result<(String, Vec<String>, Option<TraceSearchOptions>), String> {
     let root = object(value, "trace")?;
     let seeking = value.get("search").and_then(|s| s.get("seek")).is_some();
-    if seeking && value.get("to").is_some() {
-        return Err("search.seek replaces to; supply only the source ref".into());
+    if let Some(search) = value.get("search") {
+        super::trace_seek::validate_mode(object(search, "search")?, root.contains_key("to"))?;
     }
     let (to, targets) = match value.get("to") {
         None if seeking => (String::new(), vec![]),
@@ -123,3 +123,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "trace_search_mode_tests.rs"]
+mod mode_tests;
