@@ -342,10 +342,13 @@ pub fn ask_response_from_result(
     // What the selection admits is decided before the ranker weighs a word,
     // so the collection its statistics read is the selection's own: a word
     // common in the about and rare in the span earns what it earns there.
-    let (candidate_evidence, outside_evidence): (Vec<_>, Vec<_>) =
+    let (mut candidate_evidence, outside_evidence): (Vec<_>, Vec<_>) =
         answer_evidence_from_bundle(&result.bundle)
             .into_iter()
             .partition(|item| admission.admits(item));
+    for evidence in &mut candidate_evidence {
+        admission.bound_supports(evidence);
+    }
     let semantic = retrieval
         .semantic
         .as_ref()
@@ -1235,6 +1238,7 @@ pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectRespo
                 .entry("proof_role".to_string())
                 .or_insert_with(|| "stored_evidence".to_string());
             MemoryEvidence {
+                support_clocks: super::bundle_views::persisted_support_clocks(properties),
                 id: evidence.detail.node.node_id.clone(),
                 supports: evidence.supports.clone(),
                 text: evidence
@@ -2202,6 +2206,7 @@ mod wake_cap_tests {
 
     fn ev(source: &str) -> MemoryEvidence {
         MemoryEvidence {
+            support_clocks: None,
             id: format!("detail:{source}"),
             supports: vec![source.to_string()],
             text: source.to_string(),

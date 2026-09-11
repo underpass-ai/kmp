@@ -108,18 +108,6 @@ impl TemporalAdmission {
             .map(|(entry_ref, _)| entry_ref.clone())
             .collect::<BTreeSet<_>>();
 
-        let mut supported_by = BTreeMap::<String, Vec<String>>::new();
-        for relationship in bundle
-            .relationships()
-            .iter()
-            .filter(|relationship| relationship.relationship_type() == "supports")
-        {
-            supported_by
-                .entry(relationship.source_node_id().to_string())
-                .or_default()
-                .push(relationship.target_node_id().to_string());
-        }
-
         let observed_end = (axis == TemporalAxis::Observed)
             .then(|| match selection {
                 TemporalSelection::AsOf { .. } => resolved_as_of.as_deref().map(|at| (at, true)),
@@ -145,15 +133,35 @@ impl TemporalAdmission {
             .map(|node| node.node_id().to_string())
             .collect();
 
-        Ok(Self {
+        let mut admission = Self {
             selection: selection.clone(),
             resolved_as_of,
             admitted: Some(admitted),
             placed: coordinates.into_keys().collect(),
             instants_by_ref,
-            supported_by,
+            supported_by: BTreeMap::new(),
             late_evidence,
-        })
+        };
+        // Keep a key even when no association survives. Candidate.supports is
+        // from the current payload and must not bypass the historical edges.
+        let boundary = admission.lifecycle_instant();
+        for edge in bundle
+            .relationships()
+            .iter()
+            .filter(|e| e.relationship_type() == "supports")
+        {
+            let admitted = !admission.excludes(edge.source_node_id())
+                && !admission.excludes(edge.target_node_id())
+                && admission.admits_relation_clock(edge.explanation(), boundary);
+            let targets = admission
+                .supported_by
+                .entry(edge.source_node_id().to_owned())
+                .or_default();
+            if admitted {
+                targets.push(edge.target_node_id().to_owned());
+            }
+        }
+        Ok(admission)
     }
 
     /// Whether an entry, by its own coordinates, falls inside the selection.
@@ -329,9 +337,29 @@ impl TemporalAdmission {
         if self.late_evidence.contains(evidence_ref) {
             return false;
         }
+        if self.placed.contains(evidence_ref) {
+            return admitted.contains(evidence_ref);
+        }
+        if let Some(targets) = self.supported_by.get(evidence_ref) {
+            return targets.iter().any(|target| admitted.contains(target));
+        }
         candidate_refs(item)
             .into_iter()
             .any(|candidate_ref| self.admits_ref(admitted, &candidate_ref))
+    }
+
+    /// An admitted source may still have associations outside this cut.
+    pub(super) fn bound_supports(&self, item: &mut MemoryEvidence) {
+        if self.admitted.is_none() {
+            return;
+        }
+        let source = item.id.strip_prefix("detail:").unwrap_or(&item.id);
+        if self.placed.contains(source) {
+            return;
+        }
+        if let Some(targets) = self.supported_by.get(source) {
+            item.supports.retain(|target| targets.contains(target));
+        }
     }
 
     fn admits_ref(&self, admitted: &BTreeSet<String>, candidate_ref: &str) -> bool {
@@ -590,6 +618,7 @@ mod tests {
 
     fn candidate(id: &str, supports: &[&str]) -> MemoryEvidence {
         MemoryEvidence {
+            support_clocks: None,
             id: id.to_string(),
             supports: supports.iter().map(|s| s.to_string()).collect(),
             text: String::new(),
@@ -610,6 +639,27 @@ mod tests {
     /// Inside the span an entry competes by its own clock; evidence follows
     /// the entry it supports; and an explicit clock the entry lacks admits
     /// nothing.
+    #[test]
+    fn an_entry_supporting_a_future_entry_keeps_its_own_temporal_identity() {
+        let bundle = bundle(
+            vec![
+                entry("e:march", Some("2026-03-10T00:00:00Z"), None),
+                entry("e:april", Some("2026-04-10T00:00:00Z"), None),
+                supports("e:march", "e:april"),
+            ],
+            &["scope:work", "e:march", "e:april"],
+        );
+        let admission = TemporalAdmission::read(
+            &bundle,
+            &TemporalSelection::within(march(), TemporalAxis::Occurred),
+        )
+        .expect("selection");
+        let mut item = candidate("detail:e:march", &["e:march"]);
+        assert!(admission.admits(&item));
+        admission.bound_supports(&mut item);
+        assert_eq!(item.supports, vec!["e:march"]);
+    }
+
     #[test]
     fn a_span_admits_by_the_clock_read_and_proof_follows_its_entry() {
         let bundle = bundle(

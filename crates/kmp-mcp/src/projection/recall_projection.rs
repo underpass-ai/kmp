@@ -157,6 +157,7 @@ mod tests {
             .iter()
             .enumerate()
             .map(|(index, body)| MemoryEvidence {
+                support_clocks: None,
                 id: format!("detail:evidence:{index}"),
                 supports: vec![format!("claim:{index}")],
                 text: body.clone(),

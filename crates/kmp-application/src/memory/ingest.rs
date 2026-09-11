@@ -41,7 +41,13 @@ pub fn translate_memory_ingest(
 ) -> Result<(UpdateContextCommand, MemoryIngestOutcome), ApplicationError> {
     validate_command(command)?;
     let ingested_at = kernel_ingested_at();
-    let memory = namespaced_memory(&command.about, &command.memory, existing, &ingested_at)?;
+    let memory = namespaced_memory(
+        &command.about,
+        &command.memory,
+        existing,
+        &ingested_at,
+        command.provenance.as_ref().map(|p| p.observed_at.as_str()),
+    )?;
     // A dimension declared here that the about did not hold yet is a label
     // this write creates; the writer reports it so vocabulary growth is
     // seen at the moment it happens rather than discovered later.
@@ -177,6 +183,7 @@ fn namespaced_memory(
     memory: &MemoryData,
     existing: &ExistingMemoryRefs,
     ingested_at: &str,
+    observed_at: Option<&str>,
 ) -> Result<MemoryData, ApplicationError> {
     if memory.dimensions.is_empty() && existing.dimensions.is_empty() {
         return Err(ApplicationError::Validation(
@@ -440,6 +447,13 @@ fn namespaced_memory(
         }
         let mut evidence = evidence.clone();
         evidence.supports = supports;
+        if !evidence.supports.is_empty() {
+            evidence.support_clocks = Some(super::EvidenceSupportClocks::resolve(
+                evidence.support_clocks.as_ref(),
+                observed_at,
+                ingested_at,
+            )?);
+        }
         evidence_items.push(evidence);
     }
 
@@ -1304,6 +1318,7 @@ mod tests {
                     coordinate: None,
                 }],
                 evidence: vec![MemoryEvidenceData {
+                    support_clocks: None,
                     id: "evidence:question:830ce83f:claim:rachel-denver".to_string(),
                     supports: vec!["question:830ce83f:claim:rachel-denver".to_string()],
                     text: "Conversation transcript line 1".to_string(),

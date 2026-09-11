@@ -14,6 +14,10 @@
           "proof_role": "string"
         },
         "source": "string",
+        "support_clocks": {
+          "ingested_at": "string",
+          "observed_at": "string"
+        },
         "supports": [
           "string"
         ],

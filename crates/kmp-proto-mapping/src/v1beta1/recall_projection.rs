@@ -1958,6 +1958,12 @@ fn memory_evidence_value(evidence: &MemoryEvidence) -> Value {
     value.insert("text".to_string(), json!(evidence.text));
     insert_non_empty(&mut value, "source", &evidence.source);
     insert_timestamp(&mut value, "time", evidence.time);
+    if let Some(clocks) = &evidence.support_clocks {
+        let mut times = Map::new();
+        insert_timestamp(&mut times, "observed_at", clocks.observed_at);
+        insert_timestamp(&mut times, "ingested_at", clocks.ingested_at);
+        value.insert("support_clocks".to_string(), Value::Object(times));
+    }
     if !evidence.metadata.is_empty() {
         value.insert("metadata".to_string(), json!(evidence.metadata));
     }
@@ -3014,6 +3020,7 @@ mod tests {
     fn typed_ask_fixture(path_count: usize) -> AskResponse {
         let evidence = (0..8)
             .map(|index| MemoryEvidence {
+                support_clocks: None,
                 id: format!("evidence:{index}"),
                 supports: vec![format!("claim:{index}")],
                 text: format!(

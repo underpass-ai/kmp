@@ -1,4 +1,5 @@
 mod dimension_registry;
+mod evidence_support_clocks;
 mod ingest;
 mod receipt;
 mod ref_boundary;
@@ -10,6 +11,7 @@ mod visual_projection;
 mod write_clock_coverage;
 mod write_clocks;
 
+pub use evidence_support_clocks::EvidenceSupportClocks;
 pub use write_clock_coverage::WriteClockCoverage;
 pub use write_clocks::WriteClocks;
 

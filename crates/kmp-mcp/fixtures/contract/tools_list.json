@@ -221,6 +221,23 @@
                       "minLength": 1,
                       "type": "string"
                     },
+                    "support_clocks": {
+                      "additionalProperties": false,
+                      "description": "Own clocks of this support declaration, independent of source time. Normally omit: observation uses packet provenance or ingestion, and KMP assigns ingestion. Preserve explicit ingestion only for restoration. Repeated declarations replace the current edge; they do not create historical edge versions.",
+                      "properties": {
+                        "ingested_at": {
+                          "description": "Preserved RFC3339 ingestion for restoration; normally omit.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "observed_at": {
+                          "description": "RFC3339 observation of the support declaration.",
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
                     "supports": {
                       "items": {
                         "description": "About-owned memory ref supported by this evidence, the about anchor, or a declared dimension id.",
@@ -235,7 +252,7 @@
                       "type": "string"
                     },
                     "time": {
-                      "description": "Evidence timestamp.",
+                      "description": "Source evidence timestamp. Does not date when its supports associations were declared.",
                       "minLength": 1,
                       "type": "string"
                     }

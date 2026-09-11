@@ -588,3 +588,16 @@ que concatena sin separadores; no necesita calcular offsets. Comprobar fuente
 omitida por presupuesto, testimonios independientes y recuperación exacta de
 restricciones, conflictos y UNKNOWN. Medir también bindings, tablas y manifiestos;
 el ahorro del cuerpo de texto por sí solo no representa el contexto completo.
+
+
+### Asociaciones de evidencia y sus relojes
+
+`memory.evidence[].time` conserva el instante de la fuente. `support_clocks`
+fecha la declaración de sus asociaciones: observación del paquete o ingesta
+si falta, e ingesta aceptada por KMP. No copiar fechas de los extremos ni retimar
+la fuente. Al cambiar este contrato, revisar el DTO canónico, ambos protobufs,
+traductor de ingest, proyección del evento y mappers de evidencia en recall,
+temporal e Inspect. La admisión temporal debe filtrar candidatos y soportes,
+no sólo esconder la arista en la respuesta. Probar fuente antigua/asociación
+posterior, cortes inclusivos/exclusivos, replay y restauración. Sin campos nuevos
+obligatorios para el escritor ni relojes inventados al reproyectar eventos antiguos.

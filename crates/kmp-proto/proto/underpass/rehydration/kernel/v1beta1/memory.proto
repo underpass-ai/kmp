@@ -119,7 +119,14 @@ message MemoryRelationExplanation {
   TemporalCoordinate coordinate = 5;
 }
 
+// Own declaration clocks of evidence supports; not the source timestamp.
+message EvidenceSupportClocks {
+  google.protobuf.Timestamp observed_at = 1;
+  google.protobuf.Timestamp ingested_at = 2;
+}
+
 message MemoryEvidence {
+  EvidenceSupportClocks support_clocks = 7;
   string id = 1;
   repeated string supports = 2;
   string text = 3;

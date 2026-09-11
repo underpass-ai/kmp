@@ -459,15 +459,16 @@ const VOLATILE_KEYS: [&str; 5] = [
 ];
 const REDACTED: &str = "<stamped at call time>";
 
-/// An inspect cursor is `kmpi1:<offset>:<sha256>`, and the digest covers the
-/// links it pages — whose coordinates carry `ingested_at`. The version and the
+/// Inspect `kmpi1` and recall `kmp1` cursors bind the accepted clocks. Their
+/// digests vary when evidence associations carry kernel ingestion. The version and the
 /// offset are contract and stay pinned; only the digest is dropped. A temporal
 /// `next_cursor` is an entry ref and is left alone.
-fn redact_inspect_digest(text: &str) -> Option<String> {
+fn redact_read_digest(text: &str) -> Option<String> {
     let (head, digest) = text.rsplit_once(':')?;
     let looks_like_a_digest =
         digest.len() == 64 && digest.bytes().all(|byte| byte.is_ascii_hexdigit());
-    (head.starts_with("kmpi") && looks_like_a_digest).then(|| format!("{head}:{REDACTED}"))
+    ((head.starts_with("kmpi") || head.starts_with("kmp1:")) && looks_like_a_digest)
+        .then(|| format!("{head}:{REDACTED}"))
 }
 
 fn redact(value: &mut Value) {
@@ -496,7 +497,7 @@ fn redact(value: &mut Value) {
                 if VOLATILE_KEYS.contains(&key.as_str()) && !child.is_object() {
                     *child = json!(REDACTED);
                 } else if let Some(text) = child.as_str()
-                    && let Some(masked) = redact_inspect_digest(text)
+                    && let Some(masked) = redact_read_digest(text)
                 {
                     *child = json!(masked);
                 } else {
