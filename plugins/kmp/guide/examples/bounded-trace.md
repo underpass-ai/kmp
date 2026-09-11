@@ -26,7 +26,7 @@ For “what depends on C?”, start from C with `direction:"incoming"` and
 destinations A and B. The traversal goes C←B←A; the returned statements still
 say A depends on B and B depends on C. Never reverse their meaning.
 
-If `search.stop_reason` is `node_budget`, `edge_budget` or `depth_budget`,
+If `search.stop_reason` is `node_budget`, `edge_budget`, `depth_budget` or `state_budget`,
 unreached destinations remain unknown. `page.has_more:false` only finishes
 the selected relation table. There is no hidden search continuation: a larger
 search allowance starts a new selection. Even an exact-size final storage page
@@ -56,6 +56,39 @@ A selected link without a usable clock remains explicitly unknown. Its index in
 `search.clock_unknown_edges` refers to the complete relation table after pages
 are joined. It is not evidence that the link already existed at the cut.
 
-This mode does not discover destinations from a question, return several
-alternative paths to one target, evaluate supersession, or infer an AND/OR proof
+This mode does not discover destinations from a question, evaluate supersession, or infer an AND/OR proof
 group. Use temporal verbs to discover entries and Inspect for their full sources.
+
+
+## Alternative paths and mixed directions
+
+A later claim R corrects old claim A; verification V verifies R. The stored
+arrows are R --corrects--> A and R --verified_by--> V. To walk from A to V:
+
+```json
+{"about":"about","from":"ref-A","to":["ref-V"],
+ "search":{"follow":[{"rel":"corrects","direction":"incoming"},
+                     {"rel":"verified_by","direction":"outgoing"}],
+           "paths_per_target":2}}
+```
+
+Use exact refs returned by a write/read. `follow` replaces `direction` and
+`relations`; do not combine them. It allows these moves wherever applicable,
+not a required order of types. KMP preserves both stored arrows and their proof.
+Starting at `search.from`, match each endpoint to reconstruct the walk. A
+correction is not made true merely because a path reaches it.
+
+`paths_per_target` defaults to1. With2, the reader can compare two routes to V
+when stored alternatives exist. If only A←R→V exists, the result has one route,
+V in `incomplete_targets`, no `unreached_targets`, and an exhausted selected
+frontier. With2 discovered paths, `targets_reached` means the quota is met;
+there may be more paths. A route through a target may continue to another one.
+Cycles are excluded. Source equal to target needs just its zero-hop route.
+
+Two routes to different destinations can share a useful prefix: selecting both
+may require less unique material than selecting separately found routes. This
+call returns candidates, not the best joint set. Quotas can hide a better set.
+`max_states` (default4096) bounds the admitted root plus every eligible extension
+attempt, including rejected cycles and visited nodes. Completed adjacency is
+reused inside the same snapshot. N/E still count actual discovered refs/decoded
+rows, not final context size. Compare those costs separately from material read.

@@ -48,4 +48,8 @@ mod temporal_read_window;
 pub use temporal_read_window::{TemporalReadWindow, temporal_clock_instant};
 
 mod trace_read_budget;
+mod trace_relation_step;
 mod trace_temporal_admission;
+pub use trace_relation_step::TraceRelationStep;
+mod trace_candidate_frontier;
+mod trace_path_state;

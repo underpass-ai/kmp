@@ -62,6 +62,8 @@ async fn ownership_and_all_route_explanations_share_one_snapshot_during_independ
         from: "a".into(),
         targets: ["c".into()].into(),
         direction: RelationDirection::Outgoing,
+        follow: vec![],
+        paths_per_target: 1,
         relations: Default::default(),
         limits: TraceSearchLimits::default(),
         temporal: Default::default(),
@@ -126,6 +128,8 @@ async fn coordinate_admission_and_proof_share_one_snapshot_during_retiming() {
         from: "a".into(),
         targets: ["b".into()].into(),
         direction: RelationDirection::Outgoing,
+        follow: vec![],
+        paths_per_target: 1,
         relations: Default::default(),
         limits: Default::default(),
         temporal: TemporalSelection::as_of(

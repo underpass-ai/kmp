@@ -19,6 +19,9 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
     if let Some(search) = response.search {
         value["search"] = json!({"stop_reason": search.stop_reason, "discovered_nodes": search.discovered_nodes,
             "scanned_edges": search.scanned_edges, "expanded_nodes": search.expanded_nodes,
+            "from": search.from, "paths_per_target": search.paths_per_target,
+            "considered_states": search.considered_states, "incomplete_targets": search.incomplete_targets,
+            "follow": search.follow.iter().map(|step| json!({"rel":step.rel,"direction":step.direction})).collect::<Vec<_>>(),
             "leaves": search.leaves, "unreached_targets": search.unreached_targets, "direction": search.direction,
             "axis": temporal_axis_label(search.axis), "coordinate_rows": search.coordinate_rows,
             "temporal_selection_resolved": search.temporal_selection_resolved,

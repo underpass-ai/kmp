@@ -2,6 +2,11 @@ use crate::{NodeRelationProjection, TraceRoute, TraceSearchStop};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TraceSearchResult {
+    pub from: String,
+    pub follow: Vec<crate::TraceRelationStep>,
+    pub paths_per_target: u32,
+    pub considered_states: u32,
+    pub incomplete_targets: Vec<String>,
     pub routes: Vec<TraceRoute>,
     pub relations: Vec<NodeRelationProjection>,
     pub unreached: Vec<String>,

@@ -765,6 +765,14 @@ message TraceSearchOptions {
   uint32 max_depth = 3;
   string direction = 4;
   repeated string relations = 5;
+  uint32 paths_per_target = 6;
+  uint32 max_states = 7;
+  repeated TraceRelationStep follow = 8;
+}
+
+message TraceRelationStep {
+  string rel = 1;
+  string direction = 2;
 }
 
 message TraceRoute {
@@ -786,6 +794,11 @@ message TraceSearchSelection {
   bool temporal_selection_resolved = 10;
   uint32 coordinate_rows = 11;
   repeated uint32 clock_unknown_edges = 12;
+  string from = 13;
+  repeated TraceRelationStep follow = 14;
+  uint32 paths_per_target = 15;
+  uint32 considered_states = 16;
+  repeated string incomplete_targets = 17;
 }
 
 message TraceResponse {

@@ -6060,7 +6060,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Trace declared links between memory refs. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
+      "description": "Trace declared links between memory refs. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
       "inputSchema": {
         "additionalProperties": false,
         "oneOf": [
@@ -6234,6 +6234,34 @@
                 ],
                 "type": "string"
               },
+              "follow": {
+                "description": "Allowed moves instead of direction/relations. Unordered; does not require a sequence of types.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "direction": {
+                      "enum": [
+                        "outgoing",
+                        "incoming"
+                      ],
+                      "type": "string"
+                    },
+                    "rel": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "rel",
+                    "direction"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
               "max_depth": {
                 "default": 128,
                 "maximum": 1024,
@@ -6251,6 +6279,20 @@
                 "default": 256,
                 "description": "Distinct discovered refs, including excluded endpoints and coordinate labels; reserve before reading.",
                 "maximum": 4096,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "max_states": {
+                "default": 4096,
+                "description": "Root plus eligible path extensions attempted, including cycle and visited-node rejections.",
+                "maximum": 32768,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "paths_per_target": {
+                "default": 1,
+                "description": "Up to this many simple candidate paths per target. Quotas and work limits can omit a better joint proof.",
+                "maximum": 8,
                 "minimum": 1,
                 "type": "integer"
               },
@@ -6363,11 +6405,11 @@
             ]
           },
           "routes": {
-            "description": "Present in bounded mode. Each target has zero-based edge_indexes into the complete trace table, in traversal hop order. Join every page first. An empty index list is a zero-hop route to from.",
+            "description": "Present in bounded mode. Each candidate has a target and zero-based edge_indexes into the complete trace table, in traversal hop order. Join every page first. Start at search.from and match each stored endpoint to reconstruct traversal direction. An empty index list is a zero-hop route to from.",
             "type": "array"
           },
           "search": {
-            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth_budget and source_outside_selection. Includes work counters, direction and unreached_targets. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut.",
+            "description": "Present only for bounded mode. Stop reason distinguishes targets_reached, frontier_exhausted, node/edge/depth/state_budget and source_outside_selection. Includes work counters, source from, direction (per_relation when follow is used), follow moves and paths_per_target. unreached_targets have no route; incomplete_targets have fewer than their quota. targets_reached means quotas obtained; the source needs only its zero-hop route. Frontier/leaf exhaustion is relative to selected direction, types and about; it proves no semantic answer. coordinate_rows are included in scanned_edges. A false temporal_selection_resolved means the ref cut could not be resolved within budget. clock_unknown_edges index undated selected links and do not prove those links existed at the cut.",
             "type": "object"
           },
           "summary": {
