@@ -21,7 +21,7 @@
 //! beyond the in-flight event.
 
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use kmp_domain::PortError;
@@ -59,7 +59,7 @@ const ALL_TABLES: [Table; 12] = [
 #[derive(Debug)]
 pub(crate) struct SqliteEngine {
     path: PathBuf,
-    pool: Mutex<Vec<Connection>>,
+    pool: Arc<Mutex<Vec<Connection>>>,
 }
 
 impl SqliteEngine {
@@ -71,7 +71,7 @@ impl SqliteEngine {
         validate_tables(&connection, store_file)?;
         Ok(Self {
             path: store_file.to_path_buf(),
-            pool: Mutex::new(vec![connection]),
+            pool: Arc::new(Mutex::new(vec![connection])),
         })
     }
 
@@ -104,6 +104,15 @@ impl SqliteEngine {
 }
 
 impl Engine for SqliteEngine {
+    fn read_snapshot(&self) -> Result<Arc<dyn Engine>, PortError> {
+        let mut pooled = self.take_connection()?;
+        let connection = pooled.connection.take().expect("pooled connection");
+        Ok(Arc::new(super::sqlite_snapshot::SqliteSnapshot::new(
+            connection,
+            Arc::clone(&self.pool),
+        )?))
+    }
+
     fn begin_read(&self) -> Result<Box<dyn ReadTx + '_>, PortError> {
         let connection = self.take_connection()?;
         // A deferred BEGIN: the snapshot is taken at the first read and
@@ -390,12 +399,12 @@ fn check_key(table: Table, key: Key<'_>) -> Result<(), PortError> {
 
 /// Every seam operation on one connection. Both transaction types delegate
 /// here; the difference between them is only which `BEGIN` they issued.
-struct Ops<'c> {
-    connection: &'c Connection,
+pub(super) struct Ops<'c> {
+    pub(super) connection: &'c Connection,
 }
 
 impl Ops<'_> {
-    fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
+    pub(super) fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         check_key(table, key)?;
         let sql = format!(
             "SELECT v FROM \"{table}\" WHERE {}",
@@ -411,7 +420,7 @@ impl Ops<'_> {
         result.optional().map_err(|error| read_error(table, &error))
     }
 
-    fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
+    pub(super) fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         if table.key_shape() != KeyShape::Str {
             return Err(scan_shape_mismatch(table, KeyShape::Str));
         }
@@ -426,7 +435,11 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
-    fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
+    pub(super) fn scan_str3_by_first(
+        &self,
+        table: Table,
+        first: &str,
+    ) -> Result<Vec<Str3Row>, PortError> {
         if table.key_shape() != KeyShape::Str3 {
             return Err(scan_shape_mismatch(table, KeyShape::Str3));
         }
@@ -449,7 +462,7 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
-    fn scan_str3_page(
+    pub(super) fn scan_str3_page(
         &self,
         table: Table,
         first: &str,
@@ -491,7 +504,7 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
-    fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
+    pub(super) fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         if table.key_shape() != KeyShape::U64 {
             return Err(scan_shape_mismatch(table, KeyShape::U64));
         }
@@ -509,7 +522,7 @@ impl Ops<'_> {
         .collect()
     }
 
-    fn last_u64(&self, table: Table) -> Result<Option<U64Row>, PortError> {
+    pub(super) fn last_u64(&self, table: Table) -> Result<Option<U64Row>, PortError> {
         if table.key_shape() != KeyShape::U64 {
             return Err(scan_shape_mismatch(table, KeyShape::U64));
         }
@@ -525,7 +538,7 @@ impl Ops<'_> {
             .transpose()
     }
 
-    fn count(&self, table: Table) -> Result<u64, PortError> {
+    pub(super) fn count(&self, table: Table) -> Result<u64, PortError> {
         let sql = format!("SELECT COUNT(*) FROM \"{table}\"");
         let mut statement = self.prepare(&sql)?;
         let count: i64 = statement

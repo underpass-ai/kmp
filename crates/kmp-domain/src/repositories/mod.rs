@@ -46,3 +46,5 @@ pub use token_estimator::TokenEstimator;
 
 mod trace_snapshot_reader;
 pub use trace_snapshot_reader::TraceSnapshotReader;
+pub mod read_snapshot_provider;
+pub use read_snapshot_provider::{ReadSnapshotFuture, ReadSnapshotProvider};

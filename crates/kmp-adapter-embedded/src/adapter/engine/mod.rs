@@ -23,6 +23,8 @@ use std::fmt;
 use kmp_domain::PortError;
 
 pub(crate) mod sqlite;
+mod sqlite_snapshot;
+mod sqlite_snapshot_read;
 
 /// The tables a kernel store consists of. Every engine materializes all of
 /// them; the key shape of each is fixed and recorded on the variant.
@@ -183,6 +185,11 @@ pub(crate) trait WriteTx: ReadTx {
 
 /// A storage engine: one opened kernel store, shareable across tasks.
 pub(crate) trait Engine: fmt::Debug + Send + Sync {
+    fn read_snapshot(&self) -> Result<std::sync::Arc<dyn Engine>, PortError> {
+        Err(PortError::Unavailable(
+            "read snapshots are not supported by this engine".into(),
+        ))
+    }
     fn begin_read(&self) -> Result<Box<dyn ReadTx + '_>, PortError>;
     fn begin_write(&self) -> Result<Box<dyn WriteTx + '_>, PortError>;
 }

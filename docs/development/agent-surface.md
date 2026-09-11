@@ -133,6 +133,16 @@ alcance, verbo, cursor/corte, intervalo, ventana y límites. Comparar también l
 prueba: conservar sólo el nombre del reloj no conserva el instante. Si varias
 entradas comparten una acción de paquete completo, ejecutarla una sola vez.
 Un cambio en contenido oculto también debe invalidar el cursor.
+La composición SQLite de `EmbeddedKernel` fija una vista de lectura para toda
+una operación de memoria: abouts, comprobación de pertenencia, grafo, cuerpos y
+fuentes. Los clones de sus puertos comparten esa vista; no entra en un cursor ni
+se persiste entre llamadas. Los errores al abrirla se propagan, sin volver a
+puertos en vivo. Composiciones sobre almacenes separados necesitan un proveedor
+que pueda garantizar ese estado conjunto; no se promete una transacción
+distribuida. Probar cambios concurrentes reales, ausencia de datos y cancelación
+además de equivalencia de bytes. La declaración de consistencia debe indicar
+el alcance de una llamada, no de toda la conversación.
+
 La ampliación es una lectura nueva, no una promesa de snapshot. Medir tanto
 navegación selectiva como ampliación de todos los resultados.
 

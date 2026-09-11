@@ -7,6 +7,7 @@ mod migration;
 mod node_detail;
 mod portability;
 mod projection_write;
+mod read_snapshot;
 mod replay;
 mod runtime_state;
 mod serdes;

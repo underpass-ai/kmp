@@ -39,7 +39,7 @@ pub use repositories::{
     GraphNeighborhoodReader, IdempotentOutcome, MemoryAboutIndexReader, NeighborhoodRequest,
     NodeDetailReader, NodeRelationshipReader, NodeRelationships, PortError, ProcessedEventStore,
     ProjectionCheckpointStore, ProjectionWriter, QualityMetricsObserver, QualityObservationContext,
-    SnapshotSaveOptions, SnapshotStore, TokenEstimator,
+    ReadSnapshotFuture, ReadSnapshotProvider, SnapshotSaveOptions, SnapshotStore, TokenEstimator,
 };
 pub use value_objects::MemoryReceiptRef;
 pub use value_objects::{
