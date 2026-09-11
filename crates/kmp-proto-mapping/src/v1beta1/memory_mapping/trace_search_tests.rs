@@ -5,6 +5,7 @@ use kmp_domain::{
 
 fn result() -> TraceSearchResult {
     TraceSearchResult {
+        proof: None,
         routing: None,
         material: None,
         from: "a".into(),

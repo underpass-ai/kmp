@@ -47,6 +47,7 @@ pub fn trace_search_request_from_proto(
         }
     };
     let query = TraceSearchRequest {
+        proof: options.proof,
         about: request.about.clone(),
         from: request.from.clone(),
         targets: if request.targets.is_empty() {
@@ -167,11 +168,22 @@ pub fn trace_search_response_from_result(
     if let Some(material) = result.material {
         super::trace_material::project(&mut response, material);
     }
+    if let Some(proof) = result.proof {
+        super::trace_proof::project(&mut response, proof);
+    }
     response.selection_fingerprint = ReadSelectionFingerprint::trace_search(&response);
-    let total = response.trace.len();
+    let total = response.trace.len()
+        + response.objects.len()
+        + response.supports.len()
+        + response.gaps.len();
     let offset = page.offset().min(total);
     let end = offset.saturating_add(page.entries_or_default()).min(total);
-    response.trace = response.trace[offset..end].to_vec();
+    let mut skip = offset;
+    let mut remaining = end - offset;
+    super::trace_proof::page(&mut response.trace, &mut skip, &mut remaining);
+    super::trace_proof::page(&mut response.objects, &mut skip, &mut remaining);
+    super::trace_proof::page(&mut response.supports, &mut skip, &mut remaining);
+    super::trace_proof::page(&mut response.gaps, &mut skip, &mut remaining);
     response.page = Some(PageInfo {
         returned: (end - offset) as u32,
         total: total as u32,

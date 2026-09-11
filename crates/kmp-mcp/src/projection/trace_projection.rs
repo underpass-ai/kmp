@@ -17,6 +17,42 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
         "warnings": response.warnings
     });
     super::evidence_seek::project(&response, &mut value);
+    if let Some(proof) = response.proof {
+        value["gaps"] = json!(
+            response
+                .gaps
+                .iter()
+                .map(|g| json!({"ref":g.r#ref,"reasons":g.reasons}))
+                .collect::<Vec<_>>()
+        );
+        value["proof"] = json!({"missing_refs_count":proof.missing_refs_count,"missing_bodies_count":proof.missing_bodies_count,
+            "incomplete_entries_count":proof.incomplete_entries_count,"clock_unknown_entries_count":proof.clock_unknown_entries_count,
+            "complete_groups":proof.complete_groups,"incomplete_groups":proof.incomplete_groups,
+            "stop_reason":proof.stop_reason,"body_bytes":proof.body_bytes});
+        value["objects"] = json!(response.objects.iter().map(|o| {
+            let object = o.object.as_ref().expect("trace proof object");
+                    let mut value = json!({"ref":object.r#ref,"kind":object.kind,"text":object.text,"metadata":object.metadata,
+                        "source":object.source,"has_body":o.has_body,"status":o.status,
+                        "coordinates":o.coordinates.iter().map(temporal_coordinate_json).collect::<Vec<_>>(),
+                        "content_hash":o.has_body.then_some(&o.content_hash),"revision":o.has_body.then_some(o.revision)});
+                    let fields = value.as_object_mut().expect("proof object");
+                    insert_optional_timestamp(fields, "time", o.source_time);
+                    if let Some(clocks) = &o.support_clocks {
+                        let mut stamps = serde_json::Map::new();
+                        insert_optional_timestamp(&mut stamps, "observed_at", clocks.observed_at);
+                        insert_optional_timestamp(&mut stamps, "ingested_at", clocks.ingested_at);
+                        fields.insert("support_clocks".into(), Value::Object(stamps));
+                    }
+                    value
+        }).collect::<Vec<_>>());
+        value["supports"] = json!(
+            response
+                .supports
+                .iter()
+                .map(memory_relation_json)
+                .collect::<Vec<_>>()
+        );
+    }
     if let Some(search) = response.search {
         value["search"] = json!({"stop_reason": search.stop_reason, "discovered_nodes": search.discovered_nodes,
             "scanned_edges": search.scanned_edges, "expanded_nodes": search.expanded_nodes,

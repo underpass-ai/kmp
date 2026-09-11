@@ -18,7 +18,18 @@ pub(crate) enum RelationPageBudget {
 impl RelationPageBudget {
     fn sections(&self, value: &Value) -> &'static [&'static str] {
         match self {
+            Self::Trace if value.get("seek").is_some() && value.get("proof").is_some() => &[
+                "trace",
+                "candidates",
+                "groups",
+                "objects",
+                "supports",
+                "gaps",
+            ],
             Self::Trace if value.get("seek").is_some() => &["trace", "candidates", "groups"],
+            Self::Trace if value.get("proof").is_some() => {
+                &["trace", "objects", "supports", "gaps"]
+            }
             Self::Trace => &["trace"],
             Self::Relate => &["facts", "declared", "coordinate", "tensions", "proposed"],
         }

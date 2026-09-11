@@ -71,3 +71,35 @@ fn destination_options_still_parse_and_unknown_nested_fields_still_fail() {
         );
     }
 }
+
+#[test]
+fn proof_is_shared_by_both_modes_and_requires_a_boolean() {
+    for mut request in [
+        json!({"about":"p","from":"s","to":["t"],"search":{}}),
+        json!({"about":"p","from":"s","search":{"seek":["verified_by"]}}),
+    ] {
+        assert!(
+            !super::arguments(&request)
+                .expect("default")
+                .2
+                .expect("search")
+                .proof
+        );
+        request["search"]["proof"] = json!(true);
+        crate::contract::validator::reject_unknown_arguments("kmp_trace", &request)
+            .expect("known option");
+        assert!(
+            super::arguments(&request)
+                .expect("proof")
+                .2
+                .expect("search")
+                .proof
+        );
+        request["search"]["proof"] = json!("true");
+        assert!(
+            super::arguments(&request)
+                .expect_err("typed boundary")
+                .contains("search.proof")
+        );
+    }
+}

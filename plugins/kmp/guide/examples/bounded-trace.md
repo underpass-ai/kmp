@@ -197,3 +197,13 @@ A useful edge late in index order can still remain unread. Whole-label admission
 may also exhaust N/E during one turn; four relations is not a four-row bound on
 coordinate work. Compare total work and latency. This policy has no global
 histogram, IDF, degree bonus or learned relevance score.
+
+
+With `search.proof:true`, the same operation materializes the selected paths'
+entry bodies and eligible typed source attachments. Shared `objects` and
+`supports` tables preserve source provenance; `gaps` reports incomplete or
+unknown proof by ref. Complete groups concern fetched sources, not semantic
+truth. Finish every page before resolving indexes. Discovery and materialization
+share N/E; `body_bytes` counts bodies, while `budget.max_bytes` limits transport
+only. Source changes invalidate a continuation even before its object is paged.
+The same option works with `search.seek`; see the evidence-seek lesson.

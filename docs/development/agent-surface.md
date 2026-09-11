@@ -849,3 +849,18 @@ al sobre, no a la fuente. Probar continuación real sin contexto, con contexto,
 UNKNOWN completo, núcleo abreviado y otra posición histórica tras página completa.
 Actualizar entrada, tarjeta temporal, verbo y ejemplo de presupuesto; medir el
 sobre completo además del cuerpo. [Diseño](read-progress.md), sin CI editorial.
+
+
+### Joint Trace proof materialization
+
+`search.proof` is shared by destination and seed modes. Keep both protobufs,
+request mappings, shared object/support/gap projection and whole-selection
+fingerprint together. Page order must agree between kernel slices and MCP byte
+projection. Preserve source provenance, attachment admission, missing bodies,
+unknown proof and contextual review state. A body change outside the current
+page still invalidates the cursor. Do not count existing snapshots/source batches
+as a new improvement. Validate both modes, shared/foreign/missing sources, clocks,
+N/E cutoffs, concurrent revisions and transport parity before paired timings.
+`budget.max_bytes` is a response ceiling, not an allocation guarantee. Update
+audit, bounded-trace/evidence-seek lessons and both generated guides together.
+See [contract and limits](joint-evidence-materialization.md).
