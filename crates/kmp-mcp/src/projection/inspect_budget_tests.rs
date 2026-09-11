@@ -37,16 +37,29 @@ fn encoded(value: &Value) -> Vec<u8> {
 // the original input, not the emptied template or the candidate's cached sizes.
 fn original_selection_hash(value: &Value, arguments: &Value) -> String {
     let mut arguments = arguments.clone();
-    arguments.as_object_mut().unwrap().remove("page");
+    arguments
+        .as_object_mut()
+        .expect("valid inspection fixture")
+        .remove("page");
     if let Some(budget) = arguments.get_mut("budget") {
-        budget.as_object_mut().unwrap().remove("max_bytes");
-        if budget.as_object().unwrap().is_empty() {
-            arguments.as_object_mut().unwrap().remove("budget");
+        budget
+            .as_object_mut()
+            .expect("valid inspection fixture")
+            .remove("max_bytes");
+        if budget
+            .as_object()
+            .expect("valid inspection fixture")
+            .is_empty()
+        {
+            arguments
+                .as_object_mut()
+                .expect("valid inspection fixture")
+                .remove("budget");
         }
     }
     let mut core = value.clone();
     for (_, path) in SECTIONS {
-        *core.pointer_mut(path).unwrap() = json!([]);
+        *core.pointer_mut(path).expect("valid inspection fixture") = json!([]);
     }
     let mut hash = Sha256::new();
     hash.update(b"kmpi1\0");
@@ -54,7 +67,12 @@ fn original_selection_hash(value: &Value, arguments: &Value) -> String {
     hash.update(b"\0");
     hash.update(encoded(&core));
     for (section, path) in SECTIONS {
-        for item in value.pointer(path).unwrap().as_array().unwrap() {
+        for item in value
+            .pointer(path)
+            .expect("valid inspection fixture")
+            .as_array()
+            .expect("valid inspection fixture")
+        {
             hash.update(b"\0");
             hash.update(section.as_bytes());
             hash.update(b"\0");
@@ -100,7 +118,7 @@ fn template_bytes_equal_real_json_for_all_slices_and_object_modes() {
                             page["page"]["minimum_progress_bytes"] = json!(10000);
                             page["warnings"]
                                 .as_array_mut()
-                                .unwrap()
+                                .expect("valid inspection fixture")
                                 .push(json!(format!("{required}-byte floor — \n")));
                             let measured =
                                 inspect_page_serialized_len(&page, &items, encoded(&object).len());
@@ -116,9 +134,9 @@ fn template_bytes_equal_real_json_for_all_slices_and_object_modes() {
                                 .flat_map(|(name, path)| {
                                     original
                                         .pointer(path)
-                                        .unwrap()
+                                        .expect("valid inspection fixture")
                                         .as_array()
-                                        .unwrap()
+                                        .expect("valid inspection fixture")
                                         .iter()
                                         .map(move |value| (name, value))
                                 })
@@ -131,13 +149,24 @@ fn template_bytes_equal_real_json_for_all_slices_and_object_modes() {
                                     .filter(|(section, _)| *section == name)
                                     .map(|(_, value)| (*value).clone())
                                     .collect();
-                                assert_eq!(materialized.pointer(path).unwrap(), &json!(expected));
+                                assert_eq!(
+                                    materialized
+                                        .pointer(path)
+                                        .expect("valid inspection fixture"),
+                                    &json!(expected)
+                                );
                             }
                             assert_eq!(materialized["object"], object);
                             assert_eq!(
                                 materialized["quality"]["relationships"],
-                                materialized["links"]["outgoing"].as_array().unwrap().len()
-                                    + materialized["links"]["incoming"].as_array().unwrap().len()
+                                materialized["links"]["outgoing"]
+                                    .as_array()
+                                    .expect("valid inspection fixture")
+                                    .len()
+                                    + materialized["links"]["incoming"]
+                                        .as_array()
+                                        .expect("valid inspection fixture")
+                                        .len()
                             );
                         }
                     }
@@ -158,7 +187,7 @@ fn exact_whole_item_boundary_changes_only_when_real_bytes_fit() {
         original.clone(),
         &json!({"ref": original["object"]["ref"], "budget": {"max_bytes": 1000000}}),
     )
-    .unwrap();
+    .expect("valid inspection fixture");
     let required = encoded(&full).len();
     template["object"] = Value::Null;
     // Solve against REAL materialized JSON, independently of the sizing helper.
@@ -174,11 +203,12 @@ fn exact_whole_item_boundary_changes_only_when_real_bytes_fit() {
         }
         args["budget"]["max_bytes"] = json!(size);
     };
-    let exact = enforce_inspect_output_budget(original.clone(), &args).unwrap();
+    let exact =
+        enforce_inspect_output_budget(original.clone(), &args).expect("valid inspection fixture");
     assert_eq!(encoded(&exact), encoded(&expected));
     assert_eq!(exact["page"]["returned"], 1);
     args["budget"]["max_bytes"] = json!(encoded(&expected).len() - 1);
-    let below = enforce_inspect_output_budget(original, &args).unwrap();
+    let below = enforce_inspect_output_budget(original, &args).expect("valid inspection fixture");
     assert_eq!(below["page"]["returned"], 0);
     assert!(below["page"]["minimum_progress_bytes"].as_u64().is_some());
 }
@@ -191,7 +221,7 @@ fn exact_floor_actions_and_reused_pages_reconstruct_original_sections() {
             original.clone(),
             &json!({"ref": original["object"]["ref"], "budget": {"max_bytes": 1000000}}),
         )
-        .unwrap();
+        .expect("valid inspection fixture");
         assert_eq!(full["page"]["required_bytes"], encoded(&full).len());
         for reuse in [false, true] {
             for allowance in [512, 2400, 9999, 10000] {
@@ -201,19 +231,30 @@ fn exact_floor_actions_and_reused_pages_reconstruct_original_sections() {
                     json!({"evidence": [], "links": {"outgoing": [], "incoming": []}, "raw": []});
                 let mut completed = false;
                 for index in 0..40 {
-                    let page = enforce_inspect_output_budget(original.clone(), &args).unwrap();
+                    let page = enforce_inspect_output_budget(original.clone(), &args)
+                        .expect("valid inspection fixture");
                     let actual_size = encoded(&page).len();
                     assert_eq!(
                         page["page"]["required_bytes"],
                         full["page"]["required_bytes"]
                     );
-                    if actual_size > args["budget"]["max_bytes"].as_u64().unwrap() as usize {
-                        assert!(page["warnings"].as_array().unwrap().iter().any(|warning| {
-                            warning
-                                .as_str()
-                                .unwrap()
-                                .contains(&format!("{actual_size}-byte floor"))
-                        }));
+                    if actual_size
+                        > args["budget"]["max_bytes"]
+                            .as_u64()
+                            .expect("valid inspection fixture") as usize
+                    {
+                        assert!(
+                            page["warnings"]
+                                .as_array()
+                                .expect("valid inspection fixture")
+                                .iter()
+                                .any(|warning| {
+                                    warning
+                                        .as_str()
+                                        .expect("valid inspection fixture")
+                                        .contains(&format!("{actual_size}-byte floor"))
+                                })
+                        );
                     }
                     assert_eq!(
                         page["object"],
@@ -226,14 +267,14 @@ fn exact_floor_actions_and_reused_pages_reconstruct_original_sections() {
                     for (_, path) in SECTIONS {
                         collected
                             .pointer_mut(path)
-                            .unwrap()
+                            .expect("valid inspection fixture")
                             .as_array_mut()
-                            .unwrap()
+                            .expect("valid inspection fixture")
                             .extend(
                                 page.pointer(path)
-                                    .unwrap()
+                                    .expect("valid inspection fixture")
                                     .as_array()
-                                    .unwrap()
+                                    .expect("valid inspection fixture")
                                     .iter()
                                     .cloned(),
                             );
@@ -243,8 +284,12 @@ fn exact_floor_actions_and_reused_pages_reconstruct_original_sections() {
                         completed = true;
                         break;
                     }
-                    let offset = page["page"]["offset"].as_u64().unwrap()
-                        + page["page"]["returned"].as_u64().unwrap();
+                    let offset = page["page"]["offset"]
+                        .as_u64()
+                        .expect("valid inspection fixture")
+                        + page["page"]["returned"]
+                            .as_u64()
+                            .expect("valid inspection fixture");
                     assert_eq!(
                         page["page"]["next_cursor"],
                         format!(
@@ -270,7 +315,8 @@ fn exact_floor_actions_and_reused_pages_reconstruct_original_sections() {
 fn reused_cursor_still_binds_source_identity_body_and_shared_supports() {
     let original = inspection(2, "source body");
     let mut args = json!({"ref": original["object"]["ref"], "budget": {"max_bytes": 512}});
-    let first = enforce_inspect_output_budget(original.clone(), &args).unwrap();
+    let first =
+        enforce_inspect_output_budget(original.clone(), &args).expect("valid inspection fixture");
     args["page"] = json!({"cursor": first["page"]["next_cursor"], "repeat_object": false});
     for path in [
         "/object/text",
@@ -279,7 +325,8 @@ fn reused_cursor_still_binds_source_identity_body_and_shared_supports() {
         "/evidence/0/supports/1",
     ] {
         let mut changed = original.clone();
-        *changed.pointer_mut(path).unwrap() = json!("changed source revision");
+        *changed.pointer_mut(path).expect("valid inspection fixture") =
+            json!("changed source revision");
         let error = enforce_inspect_output_budget(changed, &args).expect_err("stale source cursor");
         assert_eq!(error.code, crate::serving::ToolErrorCode::Conflict);
         assert_eq!(error.feedback[0]["code"], "READ_SELECTION_CHANGED");
