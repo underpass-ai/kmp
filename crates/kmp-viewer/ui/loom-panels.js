@@ -164,9 +164,12 @@ KMP_APP.panels = (() => {
     const missingAxisEntries = Number(
       (model.projection?.metrics || []).find((metric) => metric.name === "missing_axis_entries")?.value || 0
     );
+    const sourceTruncated = (model.projection?.missing || []).includes("visual_source_entries");
     missingClock.hidden = missingAxisEntries === 0;
     missingClock.textContent = missingAxisEntries ? `${missingAxisEntries} without ${view.clock} time` : "";
-    missingClock.title = "Entries omitted because they have no position on the selected clock";
+    missingClock.title = sourceTruncated
+      ? "At least this many reviewed source entries lack the selected clock; the source is truncated"
+      : "Entries omitted because they have no position on the selected clock";
     $("s-window").textContent = view.full ? `${fmtMs(view.t0)} → ${fmtMs(view.t1)}` : "—";
   }
 
