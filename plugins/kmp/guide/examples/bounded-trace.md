@@ -155,8 +155,12 @@ hint should let the reader cross B:
    {"key":"env","op":"in","values":["prod"]}]}}}
 ```
 
-Focused order selects matching queued entries first, breaking ties by depth and
-discovery order, for three pops; one FIFO pop then admits an older queued state.
+Focused order selects matching queued entries first for three turns, then uses
+one FIFO turn. Each turn reads at most four raw relations or replays four cached
+admitted rows. An unfinished parent keeps its exact page position and requeues
+after new children. Ties prefer smaller effective depth, then enqueue order; a
+resumed parent competes at its child depth. This lets a discovered child progress
+before a dense parent has been read completely.
 No admitted state is removed just for a low preference. N/E/D/S and first-visited
 behavior still limit candidates, so this is not a shortest-path or completeness
 guarantee. `search.routing.preferred_route_entries` counts matching entries in
@@ -183,7 +187,13 @@ and `notexists` read the admitted membership set; omitted or undated memberships
 are not proof of global absence. Explicit clocks never fall back. A ref cut is
 resolved from canonical coordinates before applying the dimensional filter.
 
-A very large root fanout may spend N/E while decoding its adjacency before the
-first queued child is expanded. Preference does not bypass that bound. Extra
-coordinate reads cost N/E too, so compare total work and latency. This first
-policy has no global histogram, IDF, degree bonus or learned relevance score.
+`search.routing.order` identifies `dimension_focus_pages_v2`. `adjacency_pages`
+and `coordinate_pages` count actual storage calls, including empty end probes;
+`resumed_states` counts turns on a path whose expansion already started. Shared
+partial adjacency lets alternatives reuse rows without charging another disk
+read, but every path extension still spends S. A cut parent is not a leaf.
+
+A useful edge late in index order can still remain unread. Whole-label admission
+may also exhaust N/E during one turn; four relations is not a four-row bound on
+coordinate work. Compare total work and latency. This policy has no global
+histogram, IDF, degree bonus or learned relevance score.

@@ -10,6 +10,8 @@ pub(super) struct TraceReadBudget<'a, R> {
     pub refs: BTreeSet<String>,
     pub scanned: u32,
     pub coordinate_rows: u32,
+    pub adjacency_pages: u32,
+    pub coordinate_pages: u32,
     pub stop: Option<TraceSearchStop>,
 }
 
@@ -21,6 +23,8 @@ impl<'a, R: TraceSnapshotReader> TraceReadBudget<'a, R> {
             refs: BTreeSet::new(),
             scanned: 0,
             coordinate_rows: 0,
+            adjacency_pages: 0,
+            coordinate_pages: 0,
             stop: None,
         }
     }
@@ -41,6 +45,17 @@ impl<'a, R: TraceSnapshotReader> TraceReadBudget<'a, R> {
         after: Option<RelationPosition>,
         relation_type: Option<&str>,
     ) -> Result<Option<AdjacencyPage>, PortError> {
+        self.page_limited(node, direction, after, relation_type, 32)
+    }
+
+    pub fn page_limited(
+        &mut self,
+        node: &str,
+        direction: RelationDirection,
+        after: Option<RelationPosition>,
+        relation_type: Option<&str>,
+        rows: u32,
+    ) -> Result<Option<AdjacencyPage>, PortError> {
         let nodes_left = self.limits.nodes - self.refs.len() as u32;
         let edges_left = self.limits.edges - self.scanned;
         if nodes_left == 0 || edges_left == 0 {
@@ -52,7 +67,7 @@ impl<'a, R: TraceSnapshotReader> TraceReadBudget<'a, R> {
             return Ok(None);
         }
         let mut request =
-            AdjacencyRequest::new(node, direction, nodes_left.min(edges_left).min(32))
+            AdjacencyRequest::new(node, direction, nodes_left.min(edges_left).min(rows))
                 .map_err(|e| PortError::InvalidState(e.to_string()))?;
         if let Some(kind) = relation_type {
             request = request
@@ -66,6 +81,9 @@ impl<'a, R: TraceSnapshotReader> TraceReadBudget<'a, R> {
         self.scanned += page.edges.len() as u32;
         if relation_type == Some("contains_entry") {
             self.coordinate_rows += page.edges.len() as u32;
+            self.coordinate_pages += 1;
+        } else {
+            self.adjacency_pages += 1;
         }
         for edge in &page.edges {
             self.refs.insert(

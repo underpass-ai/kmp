@@ -8,4 +8,7 @@ pub struct TraceRoutingStats {
     pub dimensional_rejections: u32,
     pub priority_pops: u32,
     pub exploration_pops: u32,
+    pub adjacency_pages: u32,
+    pub coordinate_pages: u32,
+    pub resumed_states: u32,
 }

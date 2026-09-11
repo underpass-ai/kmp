@@ -140,7 +140,7 @@ pub fn trace_search_response_from_result(
         trace: result.relations.iter().map(|edge| memory_relation_from_bundle_relationship(&BundleRelationship::from_projection(edge))).collect(),
         routes: result.routes.into_iter().map(|r| TraceRoute { target: r.target, edge_indexes: r.edge_indexes }).collect(),
         search: Some(TraceSearchSelection {
-            routing: result.routing.map(|s| kmp_proto::v1beta1::TraceRoutingStats { focused: s.focused, evaluated_entries: s.evaluated_entries, preferred_entries: s.preferred_entries, dimensional_rejections: s.dimensional_rejections, priority_pops: s.priority_pops, exploration_pops: s.exploration_pops, preferred_route_entries: s.preferred_route_entries }),
+            routing: result.routing.map(|s| kmp_proto::v1beta1::TraceRoutingStats { focused: s.focused, evaluated_entries: s.evaluated_entries, preferred_entries: s.preferred_entries, dimensional_rejections: s.dimensional_rejections, priority_pops: s.priority_pops, exploration_pops: s.exploration_pops, preferred_route_entries: s.preferred_route_entries, adjacency_pages: s.adjacency_pages, coordinate_pages: s.coordinate_pages, resumed_states: s.resumed_states }),
         material: None,
             from: result.from, paths_per_target: result.paths_per_target,
             considered_states: result.considered_states, incomplete_targets: result.incomplete_targets,

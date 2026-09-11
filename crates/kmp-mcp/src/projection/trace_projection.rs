@@ -28,10 +28,11 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
             "clock_unknown_edges": search.clock_unknown_edges,
             "resolved_as_of": search.resolved_as_of.as_ref().map(|at| at.to_string())});
         if let Some(routing) = search.routing {
-            value["search"]["routing"] = json!({"order":if routing.focused {"dimension_focus_v1"} else {"breadth_first"},
+            value["search"]["routing"] = json!({"order":if routing.focused {"dimension_focus_pages_v2"} else {"breadth_first"},
                 "evaluated_entries":routing.evaluated_entries,"preferred_entries":routing.preferred_entries,
                 "dimensional_rejections":routing.dimensional_rejections,"priority_pops":routing.priority_pops,
-                "exploration_pops":routing.exploration_pops,"preferred_route_entries":routing.preferred_route_entries});
+                "exploration_pops":routing.exploration_pops,"preferred_route_entries":routing.preferred_route_entries,
+                "adjacency_pages":routing.adjacency_pages,"coordinate_pages":routing.coordinate_pages,"resumed_states":routing.resumed_states});
         }
         if let Some(material) = search.material {
             value["search"]["material"] = json!({

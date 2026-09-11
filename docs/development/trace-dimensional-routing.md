@@ -1,5 +1,9 @@
 # Dimensional admission and fair focused discovery
 
+Historical PR706 policy and frozen measurements. Focused expansion is extended
+by [resumable pages](trace-page-exploration.md); retain the results below as the
+whole-parent baseline.
+
 Next increment after PR705. Reuse DimensionSelection, LabelSelector and
 EntryLabels rather than invent a label language. Add optional search.dimensions
 (hard membership constraints on source and every path entry) and

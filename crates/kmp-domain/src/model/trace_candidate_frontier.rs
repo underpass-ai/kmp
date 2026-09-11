@@ -4,7 +4,7 @@ use crate::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-/// Parent-linked BFS states. Adjacency admission and storage remain outside it.
+/// Parent-linked path states. Adjacency admission and storage remain outside it.
 pub(super) struct TraceCandidateFrontier<'a> {
     request: &'a TraceSearchRequest,
     states: Vec<TracePathState>,
@@ -35,6 +35,8 @@ impl<'a> TraceCandidateFrontier<'a> {
                 node: request.from.clone(),
                 depth: 0,
                 preferred_nodes: u32::from(preferred),
+                adjacency_offset: 0,
+                expansion_started: false,
                 parent: None,
                 edge: None,
             });
@@ -51,6 +53,20 @@ impl<'a> TraceCandidateFrontier<'a> {
             let state = &self.states[index];
             (index, state.node.clone(), state.depth)
         })
+    }
+
+    pub fn begin_expansion(&mut self, index: usize) -> (usize, bool) {
+        let state = &mut self.states[index];
+        let resumed = state.expansion_started;
+        state.expansion_started = true;
+        (state.adjacency_offset, resumed)
+    }
+
+    pub fn resume(&mut self, index: usize, offset: usize, preferred: bool) {
+        let state = &mut self.states[index];
+        state.adjacency_offset = offset;
+        // A partial parent competes at child depth, after children just enqueued.
+        self.queue.push(index, state.depth + 1, preferred);
     }
 
     /// Counts attempts before cycle/visited checks, bounding unsuccessful work too.
@@ -93,6 +109,8 @@ impl<'a> TraceCandidateFrontier<'a> {
             node: neighbor.into(),
             depth: self.states[parent].depth + 1,
             preferred_nodes: self.states[parent].preferred_nodes + u32::from(preferred),
+            adjacency_offset: 0,
+            expansion_started: false,
             parent: Some(parent),
             edge: Some(edge_index),
         });

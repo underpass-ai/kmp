@@ -158,3 +158,70 @@ async fn coordinate_admission_and_proof_share_one_snapshot_during_retiming() {
             .is_empty()
     );
 }
+
+#[tokio::test]
+async fn focused_resumed_pages_keep_ownership_and_evidence_in_the_original_snapshot() {
+    use kmp_domain::{DimensionSelection, LabelSelector, LabelSelectorOperator};
+    let dir = tempfile::tempdir().expect("directory");
+    let reader = EmbeddedKernelStore::open(dir.path()).expect("reader");
+    let writer = EmbeddedKernelStore::open(dir.path()).expect("writer");
+    let mut mutations = vec![
+        node("a", "project:test"),
+        node("z", "project:test"),
+        node("t", "project:test"),
+        edge("a", "z", "old AZ"),
+        edge("z", "t", "old ZT"),
+    ];
+    for i in 0..12 {
+        let child = format!("n{i:02}");
+        mutations.extend([
+            node(&child, "project:test"),
+            edge("a", &child, "declared distractor"),
+        ]);
+    }
+    writer
+        .apply_mutations(mutations)
+        .await
+        .expect("initial graph");
+    let tx = reader.begin_read().expect("snapshot");
+    let snapshot = TraceSnapshot(tx.as_ref());
+    assert!(snapshot.node("a").expect("fix snapshot").is_some());
+    writer
+        .apply_mutations(vec![node("z", "project:foreign"), edge("z", "t", "new ZT")])
+        .await
+        .expect("independent commit");
+    let request = TraceSearchRequest {
+        about: "project:test".into(),
+        from: "a".into(),
+        targets: ["t".into()].into(),
+        direction: RelationDirection::Outgoing,
+        relations: Default::default(),
+        follow: vec![],
+        paths_per_target: 1,
+        select: None,
+        limits: Default::default(),
+        temporal: Default::default(),
+        dimensions: kmp_domain::TraceDimensionPolicy {
+            required: None,
+            preferred: Some(
+                DimensionSelection::all().with_selectors([LabelSelector::new(
+                    "env",
+                    LabelSelectorOperator::Exists,
+                    Vec::<String>::new(),
+                )
+                .expect("selector")]),
+            ),
+        },
+    };
+    let old = bounded_trace_search(&snapshot, &request).expect("resumed old snapshot");
+    assert_eq!(old.stop, TraceSearchStop::TargetsReached);
+    assert_eq!(old.relations[1].explanation.evidence(), Some("old ZT"));
+    assert!(old.routing.expect("routing").resumed_states >= 3);
+    drop(tx);
+    let fresh = reader
+        .load_bounded_trace(&request)
+        .await
+        .expect("new snapshot");
+    assert_eq!(fresh.stop, TraceSearchStop::FrontierExhausted);
+    assert!(fresh.routes.is_empty());
+}

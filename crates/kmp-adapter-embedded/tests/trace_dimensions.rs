@@ -246,7 +246,7 @@ async fn memberships_use_the_selected_clock_whole_label_sets_and_exact_keys() {
 }
 
 #[tokio::test]
-async fn dense_parent_cut_is_explicit_and_preferences_do_not_bypass_global_work_limits() {
+async fn focused_pages_reach_a_dense_child_without_bypassing_global_work_limits() {
     let mut mutations = vec![node("s"), node("t"), label("s", "env", "prod", EARLY)];
     for i in 0..100 {
         let child = format!("n{i:03}");
@@ -260,12 +260,17 @@ async fn dense_parent_cut_is_explicit_and_preferences_do_not_bypass_global_work_
     let (_dir, store) = open(mutations).await;
     let mut q = query();
     q.limits.nodes = 16;
-    q.dimensions.preferred = Some(prod());
     let cut = store.load_bounded_trace(&q).await.expect("bounded");
     assert_eq!(cut.stop, TraceSearchStop::NodeBudget);
     assert!(cut.routes.is_empty());
     assert_eq!(cut.expanded_nodes, 1);
     assert!(cut.discovered_nodes <= 16);
+    q.dimensions.preferred = Some(prod());
+    let focus = store.load_bounded_trace(&q).await.expect("focused pages");
+    assert_eq!(focus.stop, TraceSearchStop::TargetsReached);
+    assert_eq!(focus.routes[0].edge_indexes.len(), 2);
+    assert!(focus.discovered_nodes <= 16);
+    assert_eq!(focus.expanded_nodes, 2);
     q.limits.nodes = 4096;
     q.limits.edges = 1;
     let cut = store.load_bounded_trace(&q).await.expect("edge cut");
