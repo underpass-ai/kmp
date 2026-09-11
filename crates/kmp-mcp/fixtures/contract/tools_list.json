@@ -3456,7 +3456,7 @@
             "type": "object"
           },
           "axis": {
-            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock.",
+            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock. Entry selectors and returned coordinates use memberships admitted by this temporal move; Goto excludes later labels.",
             "enum": [
               "occurred",
               "observed",
@@ -3858,7 +3858,7 @@
                 "type": "array"
               },
               "entries": {
-                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "description": "With include.dependencies, full stored dependency records with coordinates admitted by the proof boundary. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
                 "type": "array"
               },
               "evidence": {
@@ -4114,7 +4114,7 @@
             "type": "object"
           },
           "axis": {
-            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock.",
+            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock. Entry selectors and returned coordinates use memberships admitted by this temporal move; Goto excludes later labels.",
             "enum": [
               "occurred",
               "observed",
@@ -4516,7 +4516,7 @@
                 "type": "array"
               },
               "entries": {
-                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "description": "With include.dependencies, full stored dependency records with coordinates admitted by the proof boundary. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
                 "type": "array"
               },
               "evidence": {
@@ -4762,7 +4762,7 @@
             "type": "string"
           },
           "axis": {
-            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock.",
+            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock. Entry selectors and returned coordinates use memberships admitted by this temporal move; Goto excludes later labels.",
             "enum": [
               "occurred",
               "observed",
@@ -5185,7 +5185,7 @@
                 "type": "array"
               },
               "entries": {
-                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "description": "With include.dependencies, full stored dependency records with coordinates admitted by the proof boundary. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
                 "type": "array"
               },
               "evidence": {
@@ -5431,7 +5431,7 @@
             "type": "string"
           },
           "axis": {
-            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock.",
+            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock. Entry selectors and returned coordinates use memberships admitted by this temporal move; Goto excludes later labels.",
             "enum": [
               "occurred",
               "observed",
@@ -5854,7 +5854,7 @@
                 "type": "array"
               },
               "entries": {
-                "description": "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+                "description": "With include.dependencies, full stored dependency records with coordinates admitted by the proof boundary. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
                 "type": "array"
               },
               "evidence": {
