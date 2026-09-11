@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 
 use kmp_application::{TemporalIncludeOptions, TemporalMemoryResult};
 use kmp_domain::{
-    BundleMetadata, BundleNode, BundleNodeDetail, BundleQualityMetrics, BundleRelationship, CaseId,
-    KmpBundle, RelationExplanation, RelationSemanticClass, Role, TemporalAxis, TemporalCursor,
+    BundleMetadata, BundleNode, BundleNodeDetail, BundleRelationship, CaseId, KmpBundle,
+    RelationExplanation, RelationSemanticClass, Role, TemporalAxis, TemporalCursor,
     TemporalDirection, TemporalMemoryTraversal, TemporalTraversalRequest,
 };
 use kmp_proto::v1beta1::{TemporalCursor as ProtoCursor, TemporalMoveResponse};
@@ -120,7 +120,6 @@ fn read(
                 relations,
                 raw_refs: false,
             },
-            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
         },
     )
 }

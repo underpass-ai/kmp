@@ -82,6 +82,25 @@ where
     D: NodeDetailReader + Send + Sync,
     S: SnapshotStore + Send + Sync,
 {
+    /// Read the structured context for consumers that do their own projection.
+    /// No prompt rendering, tokenization or snapshot write is needed here.
+    pub(crate) async fn read_context_bundle(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+    ) -> Result<KmpBundle, ApplicationError> {
+        let rehydrate = RehydrateSessionUseCase::new(
+            std::sync::Arc::clone(&self.graph_reader),
+            std::sync::Arc::clone(&self.detail_reader),
+            std::sync::Arc::clone(&self.snapshot_store),
+            self.generator_version,
+        );
+        let (bundle, _) = rehydrate
+            .execute_for(request, role, false, SnapshotSaveOptions::default())
+            .await?;
+        Ok(bundle)
+    }
+
     pub async fn get_context(
         &self,
         query: GetContextQuery,

@@ -1,5 +1,6 @@
 mod dimension_registry;
 mod ingest;
+mod merge_memory_bundles;
 mod neighborhood_item;
 mod neighborhood_link;
 mod observation_defaults;

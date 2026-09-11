@@ -242,36 +242,13 @@ async fn embedded_tool_result(
         }
         "kmp_wake" => embedded_wake(service, observer, arguments).await,
         "kmp_ask" => embedded_ask(service, observer, bridge, semantic, arguments).await,
-        "kmp_goto" => {
-            embedded_temporal(
-                service,
-                observer,
-                TemporalDirection::Goto,
-                "goto",
-                arguments,
-            )
-            .await
-        }
-        "kmp_near" => embedded_near(service, observer, arguments).await,
+        "kmp_goto" => embedded_temporal(service, TemporalDirection::Goto, "goto", arguments).await,
+        "kmp_near" => embedded_near(service, arguments).await,
         "kmp_rewind" => {
-            embedded_temporal(
-                service,
-                observer,
-                TemporalDirection::Rewind,
-                "rewind",
-                arguments,
-            )
-            .await
+            embedded_temporal(service, TemporalDirection::Rewind, "rewind", arguments).await
         }
         "kmp_forward" => {
-            embedded_temporal(
-                service,
-                observer,
-                TemporalDirection::Forward,
-                "forward",
-                arguments,
-            )
-            .await
+            embedded_temporal(service, TemporalDirection::Forward, "forward", arguments).await
         }
         "kmp_relate" => embedded_relate(service, observer, bridge, arguments).await,
         "kmp_trace" => embedded_trace(service, observer, arguments).await,
@@ -439,7 +416,6 @@ async fn embedded_ask(
 
 async fn embedded_temporal(
     service: &EmbeddedMemoryService,
-    observer: &dyn QualityMetricsObserver,
     direction: TemporalDirection,
     direction_name: &str,
     arguments: &Value,
@@ -454,14 +430,8 @@ async fn embedded_temporal(
         .temporal(query)
         .await
         .map_err(temporal_error(direction_name, &about))?;
-    observe_quality(
-        observer,
-        &format!("kmp_{direction_name}"),
-        result.source_bundle.root_node_id().as_str(),
-        result.source_bundle.role().as_str(),
-        result.source_bundle.metadata().revision,
-        &result.quality,
-    );
+    // Structured temporal responses compute selection quality during mapping.
+    // Do not render a discarded prompt merely to journal its token metrics.
     Ok(tool_success_result(enforce_temporal_output_budget(
         temporal_from_response(temporal_response_from_result(
             requested_cursor,
@@ -474,7 +444,6 @@ async fn embedded_temporal(
 
 async fn embedded_near(
     service: &EmbeddedMemoryService,
-    observer: &dyn QualityMetricsObserver,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
@@ -486,14 +455,8 @@ async fn embedded_near(
         .temporal(query)
         .await
         .map_err(temporal_error("near", &about))?;
-    observe_quality(
-        observer,
-        "kmp_near",
-        result.source_bundle.root_node_id().as_str(),
-        result.source_bundle.role().as_str(),
-        result.source_bundle.metadata().revision,
-        &result.quality,
-    );
+    // Structured temporal responses compute selection quality during mapping.
+    // Do not render a discarded prompt merely to journal its token metrics.
     Ok(tool_success_result(enforce_temporal_output_budget(
         temporal_from_response(temporal_response_from_result(
             requested_cursor,

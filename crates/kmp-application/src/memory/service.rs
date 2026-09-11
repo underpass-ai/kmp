@@ -325,24 +325,24 @@ where
         &self,
         query: &TemporalMemoryQuery,
     ) -> Result<TemporalRead, ApplicationError> {
-        let render_options = memory_render_options(
-            query.token_budget,
-            query.max_tier,
-            KmpMode::ReasonPreserving,
-            EndpointHint::Neighborhood,
-        );
         let dimensions = query.dimensions.resolve_current_about(&query.about);
-        let context = self
-            .memory_context(
-                &query.about,
-                "temporal-reader",
-                query.depth,
-                &dimensions,
-                &render_options,
+        let roots = self.memory_context_roots(&query.about, &dimensions).await?;
+        let scopes = requested_dimension_scopes(&query.about, &dimensions, &roots);
+        let mut bundles = Vec::with_capacity(roots.len());
+        for root in roots {
+            let request = kmp_domain::NeighborhoodRequest::new(
+                root,
+                crate::queries::clamp_native_graph_traversal_depth(query.depth),
             )
-            .await?;
+            .with_scopes(scopes.clone());
+            bundles.push(
+                self.query_application
+                    .read_context_bundle(&request, "temporal-reader")
+                    .await?,
+            );
+        }
         Ok(TemporalRead {
-            context,
+            bundle: super::merge_memory_bundles::merge(bundles)?,
             dimensions,
         })
     }
@@ -363,9 +363,9 @@ where
         // about's labels, and says which are empty in this range. Under
         // `scope_ids` the graph read itself is narrowed to those scopes, so
         // the catalogue is what that read reached.
-        let catalogue = VisualLabel::catalogue(&read.context.bundle);
+        let catalogue = VisualLabel::catalogue(&read.bundle);
         let declarations = if query.level_of_detail == super::VisualLevelOfDetail::Moment {
-            super::visual_projection::declared_equivalences(&read.context.bundle)
+            super::visual_projection::declared_equivalences(&read.bundle)
         } else {
             Vec::new()
         };
@@ -665,7 +665,7 @@ where
 /// One temporal read before its filter: the context the graph returned and
 /// the selection resolved against the current about.
 struct TemporalRead {
-    context: GetContextResult,
+    bundle: KmpBundle,
     dimensions: DimensionSelection,
 }
 
@@ -674,12 +674,8 @@ fn temporal_result(
     query: TemporalMemoryQuery,
     read: TemporalRead,
 ) -> Result<TemporalMemoryResult, ApplicationError> {
-    let TemporalRead {
-        context,
-        dimensions,
-    } = read;
-    let quality = context.rendered.quality.clone();
-    let source_bundle = filter_bundle_by_memory_dimensions(&context.bundle, &dimensions)?;
+    let TemporalRead { bundle, dimensions } = read;
+    let source_bundle = filter_bundle_by_memory_dimensions(&bundle, &dimensions)?;
 
     let request = TemporalTraversalRequest::new(query.direction, query.cursor)
         .with_entry_selection(query.entry_selection)
@@ -701,13 +697,12 @@ fn temporal_result(
     // Select against the original label map. The returned source bundle has
     // already dropped excluded lanes, which may carry labels a selector needs.
     // Traversal applies the same coordinate and entry filters before paging.
-    let traversal = TemporalMemoryTraversal::traverse(&context.bundle, &request)?;
+    let traversal = TemporalMemoryTraversal::traverse(&bundle, &request)?;
 
     Ok(TemporalMemoryResult {
         traversal,
         source_bundle,
         include: query.include,
-        quality,
     })
 }
 
@@ -1015,70 +1010,12 @@ fn merge_context_results(
         return Ok(result);
     }
 
-    let mut node_ids = BTreeSet::from([result.bundle.root_node().node_id().to_string()]);
-    let mut neighbor_nodes = result.bundle.neighbor_nodes().to_vec();
-    for node in &neighbor_nodes {
-        node_ids.insert(node.node_id().to_string());
-    }
-
-    let mut relationships = result.bundle.relationships().to_vec();
-    let mut relationship_ids = relationships
-        .iter()
-        .map(relationship_key)
-        .collect::<BTreeSet<_>>();
-    let mut node_details = result.bundle.node_details().to_vec();
-    let mut detail_ids = node_details
-        .iter()
-        .map(|detail| detail.node_id().to_string())
-        .collect::<BTreeSet<_>>();
-
-    for other in results {
-        push_node(&mut neighbor_nodes, &mut node_ids, other.bundle.root_node());
-        for node in other.bundle.neighbor_nodes() {
-            push_node(&mut neighbor_nodes, &mut node_ids, node);
-        }
-        for relationship in other.bundle.relationships() {
-            if relationship_ids.insert(relationship_key(relationship)) {
-                relationships.push(relationship.clone());
-            }
-        }
-        for detail in other.bundle.node_details() {
-            if detail_ids.insert(detail.node_id().to_string()) {
-                node_details.push(detail.clone());
-            }
-        }
-    }
-
-    result.bundle = KmpBundle::new(
-        result.bundle.root_node_id().clone(),
-        result.bundle.role().clone(),
-        result.bundle.root_node().clone(),
-        neighbor_nodes,
-        relationships,
-        node_details,
-        result.bundle.metadata().clone(),
-    )
-    .map_err(ApplicationError::Domain)?;
+    let bundles = std::iter::once(result.bundle)
+        .chain(results.into_iter().map(|other| other.bundle))
+        .collect();
+    result.bundle = super::merge_memory_bundles::merge(bundles)?;
     result.rendered = render_graph_bundle_with_options(&result.bundle, render_options);
     Ok(result)
-}
-
-fn push_node(
-    neighbor_nodes: &mut Vec<BundleNode>,
-    node_ids: &mut BTreeSet<String>,
-    node: &BundleNode,
-) {
-    if node_ids.insert(node.node_id().to_string()) {
-        neighbor_nodes.push(node.clone());
-    }
-}
-
-fn relationship_key(relationship: &BundleRelationship) -> (String, String, String) {
-    (
-        relationship.source_node_id().to_string(),
-        relationship.target_node_id().to_string(),
-        relationship.relationship_type().to_string(),
-    )
 }
 
 #[cfg(test)]
