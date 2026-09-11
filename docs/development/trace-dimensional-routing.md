@@ -37,3 +37,45 @@ read work plus full serialized context, not only target coverage. Same refs and
 links mean the same proof; a temporal label must not steer an earlier search.
 No parameters are tuned after inspecting these controls. Human Cala review still
 gates independent readers; this increment uses only investigator controls.
+
+## Native evidence, 2026-09-11
+
+Frozen source 0f00ae31, binary SHA256
+fc50f0f22ea814bb418d5e36c581b2bd73ec5bed28d056ce8efc551dd67e742e.
+Primary run `trace-dimensions-20260911-v1`: 133 RPCs, 19 expected rejections,
+zero API; five new registers, one warmup and five rotating measured triplets.
+The supplemental `trace-dimensions-expansion-20260911-v1` has five RPCs and
+checks an incomplete AND whose full expansion preserves BOTH hard dimensions
+and soft preferences. No parameter tuning or engine changes after freezing.
+
+| Control | BFS / hard / focus complete requirement | Focus N / E | Focus median ms |
+| --- | --- | --- | ---: |
+| Helpful hint | 0 / 1 / 1 | 7 / 13 | 3.28 |
+| Misleading hint, necessary bridge | 1 / 0 / 1 | 8 / 15 | 1.76 |
+| 100-hop AND, N limit 180 | 0 / 1 / 1 | 142 / 382 | 27.06 |
+| Dense root, N limit 16 | 0 / 0 / 0 | 16 / 15 | 1.48 |
+| Future membership at observed cut | 1 / 0 / 1 | 4 / 5 | 2.33 |
+
+Hard filters change the admitted problem; their zeros are not engine errors.
+Focus preserves the nonpreferred bridge with one FIFO pop. Deep focus uses 33
+FIFO pops and preserves the 100-hop route, check and rule, with material 103.
+BFS hits N180 and retains no complete AND; its 13.24ms/497-token output therefore
+cannot be compared with focus's 27.06ms/13,197-token complete proof as equal work.
+Focus adds 243 coordinate rows, included in E382. The bridge also costs more
+than BFS: E4→15, JSON504→550, median1.35→1.76ms. It is optional, not a universal
+speed or compression improvement. Current labels added after a page invalidate
+that focused cursor while a new read preserves exact selected relation evidence.
+
+831 focused Rust tests, workspace Clippy, guide/probes, surface parity and
+capability inventory pass. The reviewed Trace definition grows 2,442→3,296 JSON
+tokens; costs are informative. Operational evidence, full response metrics and
+CSV/PNG/SVG/PDF live in kmp-eval `reports/TRACE-DIMENSIONS-20260911.md`.
+Tokenization is sorted compact JSON with tiktoken0.14.0/o200k_base, not host
+billing. Latency is exploratory on one local device; no Cargo during timing.
+
+Dense-root failure is retained. Next compare page-level resumable exploration
+against this base so an early discovered useful child can expand before the
+parent's full adjacency consumes N/E. Preserve costs of label reads and shared
+adjacency under alternatives. Histograms, calibrated type/role scoring, unknown
+targets and graph/body snapshot work remain pending. Do not make preference
+mandatory or quietly change hard constraints to pass a recovery control.
