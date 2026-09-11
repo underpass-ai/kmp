@@ -81,3 +81,38 @@ body consistency: graph/body snapshot #539 remains an explicit next requirement.
   static figures/tables. Native M 2 success remains conditional on supplied targets,
   declared groups and admitted candidate catalogue. Dimensions/intent-directed
   discovery and proof bodies in the same snapshot remain pending, not complete.
+
+## Native validation, 2026-09-11
+
+Implementation a7d10e02, binary SHA256 c891069bb3b9713b933880f6225a890722ed026299562b994a65f731cc051dbb.
+The isolated kmp-eval run `trace-material-20260911-v4` made 81 RPCs, including
+16 expected errors, at zero API cost. Native choices, material, benefit and
+selection work exactly match frozen external M2 in all three candidate catalogues.
+No parameters were fitted. Selected relation objects match raw candidates exactly;
+N/E/S and temporal omissions remain unchanged. Selected paging (3/6/2 pages),
+optional expansion, infeasible/unknown requirements and changed-hidden-proof
+cursor rejection pass. The deep case preserves a 100-hop route plus both AND
+supports, at 103 material nodes. Small exhaustive domain controls check 35
+budget/weight combinations without assuming global beam optimality.
+
+| Control | Raw → selected JSON tokens | Selected group coverage | RPC median ms |
+| --- | ---: | ---: | ---: |
+| Shared paths | 1,112 → 842 | 2/2 | 1.13 → 1.18 |
+| Deep AND | 23,953 → 12,479 | 1/1 | 24.24 → 21.61 |
+| One route at a temporal cut | 531 → 640 | 1/1 | 2.06 → 1.83 |
+
+Tokens count the whole sorted compact structured response with tiktoken 0.14.0,
+o200k_base, including material metadata and the optional expansion call. They are
+not host context or billing. Five measured pairs per case, alternating order after
+one warmup pair; local latency is exploratory. Reading every candidate afterwards
+costs 1,954 tokens shared and 36,432 deep in total, more than a direct raw read.
+Keep selection optional, and do not automatically follow candidate expansion.
+The reviewed Trace schema increases from 2,094 to 2,442 tokens; no size CI gate.
+
+V1-V3 preserve investigator fixture errors: full reingest changed clocks; then
+canonical relation-only writes lacked the required array/entry envelope. V4
+restates the unchanged unselected entry and its dimension and changes only the
+unselected semantic relation. Exact selected-proof equality remains asserted.
+The engine did not change between these runs. Operational report, raw calls,
+CSV and PNG/SVG/PDF live in kmp-eval `reports/TRACE-MATERIAL-20260911.md` and the
+versioned artifact directories. This result does not close #538 or #539.
