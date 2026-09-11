@@ -34,6 +34,33 @@ pub(super) fn resolve(command: &MemoryIngestCommand, ingested_at: &str) -> Memor
     }
     for evidence in &mut resolved.memory.evidence {
         evidence.time.get_or_insert_with(|| ingested_at.to_owned());
+        if let Some(clocks) = &mut evidence.support_clocks
+            && clocks.ingested_at.is_none()
+        {
+            clocks
+                .observed_at
+                .get_or_insert_with(|| ingested_at.to_owned());
+        }
+    }
+    // Explicit proof clock objects carry the semantic member's own declaration.
+    // Absence still uses canonical packet inheritance in namespaced_memory.
+    // Restored clocks, including unknown historical observations, stay intact.
+    for clocks in resolved
+        .memory
+        .relations
+        .iter_mut()
+        .filter(|relation| relation.semantic_class.trim() != "structural")
+        .filter(|relation| {
+            !relation.coordinate.as_ref().is_some_and(|coordinate| {
+                coordinate.observed_at.is_some() || coordinate.ingested_at.is_some()
+            })
+        })
+        .filter_map(|relation| relation.clocks.as_mut())
+        .filter(|clocks| clocks.ingested_at.is_none())
+    {
+        clocks
+            .observed_at
+            .get_or_insert_with(|| ingested_at.to_owned());
     }
     resolved
 }

@@ -204,7 +204,11 @@ async fn explicit_packet_clocks_and_record_null_overrides_are_distinct() {
     let detail = receipt(&server, &written).await;
     let entries = &detail["canonical_memory"]["entries"];
     let link = &detail["canonical_memory"]["relations"][0]["clocks"];
-    assert_eq!(link["observed_at"], detail["provenance"]["observed_at"]);
+    assert_eq!(link["observed_at"], link["ingested_at"]);
+    assert_eq!(
+        link["observed_at"],
+        entries[1]["coordinates"][0]["observed_at"]
+    );
     assert!(link.get("occurred_at").is_none());
     assert!(link.get("valid_from").is_none());
     assert_eq!(

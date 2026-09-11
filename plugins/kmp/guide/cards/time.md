@@ -4,6 +4,8 @@ substitute a known observation date for an unknown event or validity start.
 On write, omitted/null `observed_at` uses the exact ingestion instant; unknown
 `occurred_at` stays absent. An explicit source observation is preserved. Equal
 observation times across a packet are valid; they do not imply equal event times.
+Each semantic member's effective observation also dates its generated links and
+evidence support; null clears the root default for all of them.
 
 Use Goto for a position, Near for its neighborhood, and Rewind/Forward to move
 through history. Copy the cursor or ref returned by KMP. Keep the same about,

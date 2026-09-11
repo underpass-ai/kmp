@@ -678,8 +678,9 @@ completitud de pruebas. Estas indicaciones son informativas, sin gate editorial.
 
 La declaración semántica se fecha en ingest, una vez por comando aceptado.
 `MemoryRelationClocks` separa esos relojes de la pertenencia dimensional;
-`connect_to` no exige más campos. Observación procede del paquete o de ingesta,
-nunca de un extremo ni de un override de registro. Ocurrencia y vigencia sólo
+`connect_to` no exige más campos. En lotes semánticos, observación procede de la declaración del miembro: herencia
+del paquete, override propio o ingesta exacta para null. El compilador fija esa
+procedencia antes de unir planes; no inferirla de un extremo al ingerir. Ocurrencia y vigencia sólo
 se conservan cuando están declaradas explícitamente para esa relación.
 La restauración canónica conserva relojes históricos; el replay usa el recibo.
 No fechar aristas antiguas durante su proyección. Un UPSERT nuevo representa
@@ -703,8 +704,12 @@ fixture del contrato en el mismo cambio, sin gate editorial.
 ### Asociaciones de evidencia y sus relojes
 
 `memory.evidence[].time` conserva el instante de la fuente. `support_clocks`
-fecha la declaración de sus asociaciones: observación del paquete o ingesta
-si falta, e ingesta aceptada por KMP. No copiar fechas de los extremos ni retimar
+fecha la declaración de sus asociaciones: observación propia, del paquete o
+ingesta si falta, e ingesta aceptada por KMP. El lote semántico preserva la
+observación efectiva del miembro también aquí, incluido null que limpia la raíz.
+Con default_observation_to_ingestion, un objeto explícito de relojes sin observación
+ni ingesta restaurada recibe el instante de ingesta; un objeto ausente conserva
+la herencia canónica del paquete. Ver [diseño y controles](batch-proof-observation.md). No copiar fechas de los extremos ni retimar
 la fuente. Al cambiar este contrato, revisar el DTO canónico, ambos protobufs,
 traductor de ingest, proyección del evento y mappers de evidencia en recall,
 temporal e Inspect. La admisión temporal debe filtrar candidatos y soportes,

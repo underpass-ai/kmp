@@ -68,7 +68,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "valid_until":valid_until,
                 "rank":rank,
                 "connect_to":{
-                    "description":"Justified links: containing memory -> rel -> target. Each declaration gets packet observation (or ingestion) and kernel ingestion; endpoint clocks do not date the link. Occurrence and validity remain unknown.",
+                    "description":"Justified links: containing memory -> rel -> target. Each declaration and its generated evidence use the containing member's effective observation (root default, member override, or exact ingestion for null). Target clocks do not date the link. Occurrence and validity remain unknown.",
                     "type":"array","items":relation
                 }
             }
