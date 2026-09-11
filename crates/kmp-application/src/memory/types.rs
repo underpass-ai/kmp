@@ -131,6 +131,8 @@ pub struct MemoryRelationData {
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct MemoryEvidenceData {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub support_clocks: Option<super::EvidenceSupportClocks>,
     pub id: String,
     pub supports: Vec<String>,
     pub text: String,

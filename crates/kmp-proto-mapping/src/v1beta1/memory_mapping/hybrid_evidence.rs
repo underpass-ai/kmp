@@ -57,6 +57,7 @@ mod tests {
 
     fn item(id: &str, indirect: bool) -> MemoryEvidence {
         let mut item = MemoryEvidence {
+            support_clocks: None,
             id: id.into(),
             text: id.into(),
             ..Default::default()

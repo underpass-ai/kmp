@@ -83,6 +83,7 @@ pub(super) fn answer_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
         let mut metadata = persisted_memory_metadata(properties);
         metadata.insert("proof_role".to_string(), "entry_text".to_string());
         candidates.push(MemoryEvidence {
+            support_clocks: None,
             id: format!("entry:{}", node.node_id()),
             supports: vec![node.node_id().to_string()],
             text: node.summary().to_string(),
@@ -189,6 +190,7 @@ fn evidence_from_detail(
         role.to_string()
     });
     MemoryEvidence {
+        support_clocks: properties.and_then(persisted_support_clocks),
         id: format!("detail:{}", detail.node_id()),
         supports,
         text: detail.detail().to_string(),
@@ -225,6 +227,21 @@ pub(super) fn persisted_memory_source(properties: &BTreeMap<String, String>) -> 
         .or_else(|| properties.get("payload_source"))
         .map(String::as_str)
         .filter(|source| !source.trim().is_empty())
+}
+
+pub(super) fn persisted_support_clocks(
+    properties: &BTreeMap<String, String>,
+) -> Option<kmp_proto::v1beta1::EvidenceSupportClocks> {
+    let clocks: serde_json::Value =
+        serde_json::from_str(properties.get("payload_support_clocks")?).ok()?;
+    Some(kmp_proto::v1beta1::EvidenceSupportClocks {
+        observed_at: timestamp_from_sort_or_rfc3339(
+            clocks.get("observed_at").and_then(|v| v.as_str()),
+        ),
+        ingested_at: timestamp_from_sort_or_rfc3339(
+            clocks.get("ingested_at").and_then(|v| v.as_str()),
+        ),
+    })
 }
 
 pub(super) fn bundle_node_properties<'a>(
@@ -653,6 +670,7 @@ mod tests {
                 evidence_refs: Vec::new(),
             }],
             vec![MemoryEvidence {
+                support_clocks: None,
                 id: "detail:evidence:selected".to_string(),
                 supports: vec!["claim:selected".to_string()],
                 text: body.to_string(),

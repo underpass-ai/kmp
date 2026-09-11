@@ -43,7 +43,7 @@
             "tokens": 1600
           },
           "page": {
-            "cursor": "kmp1:16:0c8bacac3ee923c39e6ab47f48f794aa232d3a518eb2cf7a605d6e2c2b590627"
+            "cursor": "kmp1:16:<stamped at call time>"
           }
         },
         "tool": "kmp_wake"
@@ -51,7 +51,7 @@
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:16:0c8bacac3ee923c39e6ab47f48f794aa232d3a518eb2cf7a605d6e2c2b590627",
+        "next_cursor": "kmp1:16:<stamped at call time>",
         "offset": 0,
         "returned": 16,
         "total": 44

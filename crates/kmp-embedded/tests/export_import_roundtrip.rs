@@ -72,6 +72,7 @@ fn corpus_with_first_entry_text(
             ],
             relations: vec![],
             evidence: vec![MemoryEvidenceData {
+                support_clocks: None,
                 id: "evidence:project:roundtrip:first".to_string(),
                 supports: vec!["project:roundtrip:decision:first".to_string()],
                 text: "Proof for the first decision.".to_string(),
@@ -240,6 +241,28 @@ async fn export_import_preserves_wake_temporal_and_proof() {
         })
         .expect("imported store keeps the proof relation");
     assert!(supports.explanation.evidence().is_some());
+    assert!(supports.explanation.ingested_at().is_some());
+    let original = source
+        .service()
+        .inspect(InspectMemoryQuery {
+            about: ABOUT.to_string(),
+            ref_id: "project:roundtrip:decision:first".to_string(),
+            include_details: true,
+            include_incoming: true,
+            include_outgoing: false,
+            include_raw: false,
+        })
+        .await
+        .expect("source proof");
+    let original_support = original
+        .incoming
+        .iter()
+        .find(|edge| edge.relationship_type == "supports")
+        .expect("source supports");
+    assert_eq!(
+        supports.explanation, original_support.explanation,
+        "reprojection preserves declaration clocks"
+    );
 
     // Fail-fast: importing into a non-empty store is rejected.
     let error = target

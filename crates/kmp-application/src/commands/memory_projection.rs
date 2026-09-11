@@ -361,7 +361,17 @@ fn memory_evidence_mutations(
                 relation_type: "supports".to_string(),
                 explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
                     .with_rationale("Evidence supports this memory entry.")
-                    .with_evidence(text.clone()),
+                    .with_evidence(text.clone())
+                    .with_optional_observed_at(
+                        payload
+                            .get("support_clocks")
+                            .and_then(|c| payload_string(c, "observed_at")),
+                    )
+                    .with_optional_ingested_at(
+                        payload
+                            .get("support_clocks")
+                            .and_then(|c| payload_string(c, "ingested_at")),
+                    ),
             },
         )));
     }
@@ -678,6 +688,30 @@ mod tests {
             ProjectionMutation::UpsertNodeDetail(detail) if detail.node_id == "claim:replayed"
                 && detail.revision == 3
         )));
+    }
+
+    #[test]
+    fn old_evidence_events_do_not_acquire_support_clocks_during_replay() {
+        let mut event = sample_event();
+        event.changes[0].entity_kind = "memory_evidence".to_string();
+        event.changes[0].payload_json = serde_json::json!({
+            "id":"evidence:question:r:old","text":"Original source.",
+            "supports":["claim:replayed"],"time":"2026-07-01T10:00:00Z"
+        })
+        .to_string();
+        let mutations = projection_mutations_for_context_event(&event).expect("old event");
+        let edge = mutations
+            .iter()
+            .find_map(|m| match m {
+                ProjectionMutation::UpsertNodeRelation(r) if r.relation_type == "supports" => {
+                    Some(r)
+                }
+                _ => None,
+            })
+            .expect("support edge");
+        assert!(edge.explanation.observed_at().is_none());
+        assert!(edge.explanation.ingested_at().is_none());
+        assert!(edge.explanation.occurred_at().is_none());
     }
 
     #[test]

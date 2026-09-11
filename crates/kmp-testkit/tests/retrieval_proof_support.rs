@@ -33,6 +33,57 @@ async fn seed(server: &KernelMcpServer) -> Value {
         .clone()
 }
 
+/// Replay the declared source history, rather than attaching all its evidence
+/// in the fixture's September 10 packet. Local links resolve to earlier writes.
+async fn seed_source_history(server: &KernelMcpServer) -> Value {
+    let mut packet: Value = serde_json::from_str(SOURCE).expect("source fixture");
+    let mut memories = packet["memories"].as_array().expect("memories").clone();
+    memories.sort_by(|a, b| {
+        kmp_domain::compare_temporal_instants(
+            a["observed_at"].as_str().expect("observation"),
+            b["observed_at"].as_str().expect("observation"),
+        )
+        .expect("valid source instants")
+    });
+    let mut refs = serde_json::Map::new();
+    for mut memory in memories {
+        let mut inspected_refs = Vec::new();
+        if let Some(links) = memory.get_mut("connect_to").and_then(Value::as_array_mut) {
+            for link in links {
+                link["ref"] = refs[link["ref"].as_str().expect("earlier local id")].clone();
+                call(
+                    server,
+                    "kmp_inspect",
+                    json!({"about":ABOUT,"ref":link["ref"]}),
+                )
+                .await;
+                inspected_refs.push(link["ref"].clone());
+            }
+        }
+        packet
+            .as_object_mut()
+            .expect("packet")
+            .remove("read_context");
+        if !inspected_refs.is_empty() {
+            packet["read_context"] = json!({"inspected_refs":inspected_refs});
+        }
+        packet["observed_at"] = memory["observed_at"].clone();
+        packet["idempotency_key"] = json!(format!(
+            "retrieval-support:history:{}",
+            memory["id"].as_str().expect("local id")
+        ));
+        packet["memories"] = json!([memory]);
+        let written = call(server, "kmp_write_memory", packet.clone()).await;
+        refs.extend(
+            written["local_refs"]
+                .as_object()
+                .expect("accepted refs")
+                .clone(),
+        );
+    }
+    Value::Object(refs)
+}
+
 fn query(refs: &Value) -> Value {
     json!({"about":ABOUT,"at":{"time":"2026-09-10T10:00:00Z"},
         "axis":"observed","refs":[refs["role"]],"include":{"dependencies":true},
@@ -151,7 +202,7 @@ async fn hard_labels_exclude_support_and_unfiltered_navigation_recovers_it() {
 async fn chronological_read_retains_two_scoped_names_without_equating_them() {
     let dir = tempfile::tempdir().expect("isolated store");
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded");
-    let refs = seed(&server).await;
+    let refs = seed_source_history(&server).await;
     let packet = call(
         &server,
         "kmp_forward",

@@ -2074,8 +2074,11 @@ async fn inspect_negotiates_an_oversized_result_and_floors_below_the_object_floo
         assert_eq!(response["result"]["isError"], false, "{response}");
         let page = &response["result"]["structuredContent"];
         assert_eq!(page["object"]["ref"], "project:inspect-budget:decision:hub");
+        let allowance = arguments["budget"]["max_bytes"]
+            .as_u64()
+            .expect("requested byte allowance") as usize;
         assert!(
-            serde_json::to_string(page).expect("page serializes").len() <= 3_000,
+            serde_json::to_string(page).expect("page serializes").len() <= allowance,
             "{page}"
         );
         let this_required = page["page"]["required_bytes"]
@@ -2092,9 +2095,24 @@ async fn inspect_negotiates_an_oversized_result_and_floors_below_the_object_floo
         if !page["page"]["has_more"].as_bool().expect("has_more") {
             break;
         }
-        arguments["page"] = json!({
-            "cursor": page["page"]["next_cursor"].as_str().expect("next cursor")
-        });
+        let continuation = &page["next_actions"][0];
+        assert_eq!(continuation["tool"], "kmp_inspect");
+        if page["page"]["returned"] == 0 {
+            let minimum = page["page"]["minimum_progress_bytes"]
+                .as_u64()
+                .expect("an empty page negotiates enough bytes for a whole item");
+            assert!(minimum > allowance as u64, "{page}");
+            assert!(
+                continuation["arguments"]["budget"]["max_bytes"]
+                    .as_u64()
+                    .expect("negotiated allowance")
+                    >= minimum,
+                "{page}"
+            );
+        }
+        // Execute the supplied continuation, including a larger allowance when
+        // the stable object and the next whole evidence item cannot fit.
+        arguments = continuation["arguments"].clone();
         assert!(pages < 20, "inspect continuation must make progress");
     }
     assert!(pages > 1, "fixture must exercise continuation");

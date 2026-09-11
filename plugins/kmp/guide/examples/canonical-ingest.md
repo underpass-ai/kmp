@@ -173,3 +173,21 @@ Inspect D1 and follow chosen_because to C1. The source text, event/observation t
 ```json
 {"tool":"kmp_view_get_state","save_as":"view_state","arguments":{"view_id":"${view.view_id}"}}
 ```
+
+
+## Source time is not support declaration time
+
+A log R1 is observed on September 1 without a known association to execution E1.
+On September 2 a review establishes that R1 verifies E1. Preserve R1's original
+id, text, source and `time` when declaring `supports: [E1]` in the September 2
+packet. Do not change E1's earlier coordinates. KMP stores the association's
+own observation and ingestion as `support_clocks`; normal calls omit this group.
+A September 1 observed read must not use that new support. A read at the September 2
+declaration includes it. An occurred read can retrieve later evidence about an
+older event; this does not show that the association was known then.
+
+For canonical restoration, retain the returned `support_clocks` group. A preserved
+ingestion with an absent observation keeps that observation unknown. This does
+not create historical versions when the same association is declared again.
+Native regression `evidence_attachment_clocks` executes the old-source/later-link
+case with inclusive and exclusive cuts, retry, restart and restoration.

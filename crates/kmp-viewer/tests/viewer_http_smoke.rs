@@ -78,6 +78,7 @@ fn corpus() -> MemoryIngestCommand {
                 coordinate: None,
             }],
             evidence: vec![MemoryEvidenceData {
+                support_clocks: None,
                 id: "evidence:project:viewer-smoke:first".to_string(),
                 supports: vec!["project:viewer-smoke:decision:first".to_string()],
                 text: "Benchmarks and the ADR-009 measurements.".to_string(),

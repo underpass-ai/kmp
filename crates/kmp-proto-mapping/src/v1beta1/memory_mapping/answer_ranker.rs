@@ -544,6 +544,7 @@ mod tests {
 
     fn ev(source: &str) -> MemoryEvidence {
         MemoryEvidence {
+            support_clocks: None,
             id: format!("detail:{source}"),
             supports: vec![source.to_string()],
             text: source.to_string(),
@@ -555,6 +556,7 @@ mod tests {
 
     fn claim_ev(id: &str, claim: &str, text: &str) -> MemoryEvidence {
         MemoryEvidence {
+            support_clocks: None,
             id: format!("detail:{id}"),
             supports: vec![claim.to_string()],
             text: text.to_string(),
