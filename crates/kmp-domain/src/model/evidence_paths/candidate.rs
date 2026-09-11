@@ -4,6 +4,7 @@ use super::EvidencePathBindings;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvidencePathCandidate {
     pub role: usize,
+    pub context_hops: u32,
     pub nodes: Vec<String>,
     pub edge_indexes: Vec<u32>,
     pub bindings: EvidencePathBindings,

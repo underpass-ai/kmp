@@ -1,6 +1,7 @@
 use super::{
     EvidenceMissingWitness, EvidencePathBinding, EvidencePathBindings, EvidencePathRequest,
-    EvidencePathResult, EvidencePathStatus, join, state_graph::EvidencePathStateGraph,
+    EvidencePathResult, EvidencePathStatus, join, state::EvidencePathState,
+    state_graph::EvidencePathStateGraph,
 };
 use crate::model::trace_temporal_admission::TraceTemporalAdmission;
 use crate::{
@@ -32,6 +33,7 @@ pub fn search_evidence_paths(
         relations: vec![],
         relation_index: BTreeMap::new(),
         adjacency: BTreeMap::new(),
+        context_distance: [(request.from.clone(), 0)].into(),
         work: 0,
         incompatible: 0,
         stop: None,
@@ -45,7 +47,8 @@ struct EvidencePathSearch<'a, R> {
     graph: EvidencePathStateGraph,
     relations: Vec<NodeRelationProjection>,
     relation_index: BTreeMap<(String, String, String), u32>,
-    adjacency: BTreeMap<(String, String, bool), Vec<u32>>,
+    adjacency: BTreeMap<(String, Option<String>, bool), Vec<u32>>,
+    context_distance: BTreeMap<String, u32>,
     work: u32,
     incompatible: u32,
     stop: Option<TraceSearchStop>,
@@ -102,16 +105,25 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
     fn edges(
         &mut self,
         node: &str,
-        relation: &str,
+        relation: Option<&str>,
         direction: RelationDirection,
     ) -> Result<Vec<u32>, PortError> {
         let key = (
             node.to_owned(),
-            relation.to_owned(),
+            relation.map(str::to_owned),
             direction == RelationDirection::Incoming,
         );
         if let Some(edges) = self.adjacency.get(&key) {
             return Ok(edges.clone());
+        }
+        if let Some(relation) = relation
+            && let Some(all) = self.adjacency.get(&(node.to_owned(), None, key.2))
+        {
+            return Ok(all
+                .iter()
+                .copied()
+                .filter(|&i| self.relations[i as usize].relation_type == relation)
+                .collect());
         }
         let mut edges = Vec::new();
         let mut after = None;
@@ -119,12 +131,12 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
             let Some(page) = self
                 .admission
                 .budget
-                .page(node, direction, after, Some(relation))?
+                .page(node, direction, after, relation)?
             else {
                 return Ok(edges);
             };
             for edge in page.edges {
-                if edge.relation_type != relation
+                if relation.is_some_and(|r| edge.relation_type != r)
                     || *edge.explanation.semantic_class() == RelationSemanticClass::Structural
                     || edge
                         .explanation
@@ -191,6 +203,56 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
         Ok(edges)
     }
 
+    /// BFS keeps every minimum-hop prefix to each context anchor. Longer
+    /// prefixes and cycles cannot expose a new anchor. This is navigation,
+    /// deliberately not a logical entailment rule between arbitrary relations.
+    fn expand_context(
+        &mut self,
+        index: usize,
+        pending: &mut VecDeque<usize>,
+    ) -> Result<(), PortError> {
+        let state = self.graph.states[index].clone();
+        for direction in [RelationDirection::Outgoing, RelationDirection::Incoming] {
+            let edges = self.edges(&state.node, None, direction)?;
+            if self.admission.budget.stop.is_some() {
+                return Ok(());
+            }
+            for edge_index in edges {
+                if !self.charge() {
+                    return Ok(());
+                }
+                let edge = &self.relations[edge_index as usize];
+                let next = match direction {
+                    RelationDirection::Outgoing => &edge.target_node_id,
+                    RelationDirection::Incoming => &edge.source_node_id,
+                }
+                .clone();
+                let distance = state.context_hops + 1;
+                let best = self
+                    .context_distance
+                    .entry(next.clone())
+                    .or_insert(distance);
+                if *best != distance {
+                    continue;
+                }
+                let (child, fresh) = self.graph.add(
+                    EvidencePathState {
+                        role: state.role,
+                        position: 0,
+                        node: next,
+                        bindings: state.bindings.clone(),
+                        context_hops: distance,
+                    },
+                    Some((index, edge_index)),
+                );
+                if fresh {
+                    pending.push_back(child);
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn run(&mut self) -> Result<EvidencePathResult, PortError> {
         if !self.admission.is_owned(&self.request.from)? {
             return Err(PortError::InvalidState(
@@ -210,9 +272,16 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
                     ..Default::default()
                 };
                 if let Some(bindings) = self.capture(role, 0, &self.request.from, root)? {
-                    let (index, _) = self
-                        .graph
-                        .add((role, 0, self.request.from.clone(), bindings), None);
+                    let (index, _) = self.graph.add(
+                        EvidencePathState {
+                            role,
+                            position: 0,
+                            node: self.request.from.clone(),
+                            bindings,
+                            context_hops: 0,
+                        },
+                        None,
+                    );
                     pending.push_back(index);
                 }
                 if self.admission.budget.stop.is_some() {
@@ -224,17 +293,29 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
             let Some(index) = pending.pop_front() else {
                 break;
             };
-            let (role, position, node, bindings) = self.graph.states[index].clone();
+            let EvidencePathState {
+                role,
+                position,
+                node,
+                bindings,
+                context_hops,
+            } = self.graph.states[index].clone();
             if position as usize == self.request.roles[role].steps.len() {
                 self.graph.terminals.push(index);
                 continue;
             }
-            if position == self.request.limits.depth {
+            if position + context_hops == self.request.limits.depth {
                 self.stop = Some(TraceSearchStop::DepthBudget);
                 break;
             }
+            if position == 0 && self.request.roles[role].context {
+                self.expand_context(index, &mut pending)?;
+                if self.stop.is_some() || self.admission.budget.stop.is_some() {
+                    break;
+                }
+            }
             let step = self.request.roles[role].steps[position as usize].clone();
-            let edges = self.edges(&node, step.relation.as_str(), step.direction)?;
+            let edges = self.edges(&node, Some(step.relation.as_str()), step.direction)?;
             if self.admission.budget.stop.is_some() {
                 break;
             }
@@ -252,7 +333,13 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
                     self.capture(role, position + 1, &next, bindings.clone())?
                 {
                     let (child, fresh) = self.graph.add(
-                        (role, position + 1, next, next_bindings),
+                        EvidencePathState {
+                            role,
+                            position: position + 1,
+                            node: next,
+                            bindings: next_bindings,
+                            context_hops,
+                        },
                         Some((index, edge_index)),
                     );
                     if fresh {
@@ -309,7 +396,7 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
             } else {
                 TraceSearchStop::SourceOutsideSelection
             });
-        let status = if !matches!(
+        let mut status = if !matches!(
             stop,
             TraceSearchStop::FrontierExhausted | TraceSearchStop::SourceOutsideSelection
         ) {
@@ -317,7 +404,12 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
         } else {
             join::status(&groups, !missing_roles.is_empty())
         };
+        let context_discovery = self.request.roles.iter().any(|r| r.context);
+        if context_discovery && status == EvidencePathStatus::Compatible {
+            status = EvidencePathStatus::ReviewRequired;
+        }
         Ok(EvidencePathResult {
+            context_discovery,
             from: self.request.from.clone(),
             relations: std::mem::take(&mut self.relations),
             candidates,

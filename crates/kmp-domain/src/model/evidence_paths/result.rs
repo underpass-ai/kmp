@@ -5,6 +5,7 @@ use crate::{NodeRelationProjection, TraceSearchStop};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvidencePathResult {
     pub from: String,
+    pub context_discovery: bool,
     pub relations: Vec<NodeRelationProjection>,
     pub candidates: Vec<EvidencePathCandidate>,
     pub groups: Vec<EvidencePathGroup>,
@@ -25,7 +26,8 @@ pub struct EvidencePathResult {
 
 impl EvidencePathResult {
     pub fn known_complete(&self) -> bool {
-        self.status != EvidencePathStatus::Partial
+        !self.context_discovery
+            && self.status != EvidencePathStatus::Partial
             && self
                 .groups
                 .iter()

@@ -49,6 +49,7 @@ fn request(value: &Value) -> Result<EvidencePathRequest, Box<dyn Error>> {
         }
         roles.push(EvidencePathRole {
             name: string(&row["name"])?,
+            context: false,
             steps,
             bindings,
         });

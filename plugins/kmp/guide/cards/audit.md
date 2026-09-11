@@ -38,3 +38,10 @@ Read `seek.status` and joint `groups`; missing labels stay unknown. No token sco
 prunes paths, but work cuts remain partial. Finish all pages before interpreting
 indexes. Expand `guide:kmp-agent:example:evidence-seek` for identity, ordered
 via/after paths, clocks and limits.
+
+If intermediate moves are unknown, use `{"rel":"verified_by","via":"context"}`.
+KMP discovers minimum-hop prefixes to reachable relation origins; ties survive.
+Read `context_hops` and the arrows. `context_discovery:true` requires review and
+keeps `declared_obligations_complete:false`: the neighbor's verification does
+not automatically verify the seed. Longer prefixes are omitted. The example
+explains discovery, witness constraints and the source-read step.

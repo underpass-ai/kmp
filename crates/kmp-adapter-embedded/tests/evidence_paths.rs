@@ -1,3 +1,5 @@
+#[path = "evidence_paths/context.rs"]
+mod context;
 #[path = "evidence_paths/joint.rs"]
 mod joint;
 #[path = "evidence_paths/support/mod.rs"]

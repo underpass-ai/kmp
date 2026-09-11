@@ -131,7 +131,8 @@ fn role(value: &Value) -> Result<TraceSeekRole, String> {
                 )),
             }
         };
-        role.via = moves("via")?;
+        role.context = s.get("via").is_some_and(|v| v == "context");
+        role.via = if role.context { vec![] } else { moves("via")? };
         role.after = moves("after")?;
         if let Some(labels) = s.get("labels") {
             role.labels = object(labels, "search.seek.labels")?
@@ -184,6 +185,20 @@ mod tests {
         }
         let mut bad = value;
         bad["to"] = json!("t");
+        assert!(super::super::queries::trace_request_from_arguments(&bad).is_err());
+    }
+    #[test]
+    fn context_discovery_replaces_via_and_does_not_change_the_declared_witness() {
+        let value = json!({"about":"p","from":"s","search":{"seek":[{"rel":"verified_by","via":"context","after":["uses_background"],"labels":{"event":["A"]}}]}});
+        let request = super::super::queries::trace_request_from_arguments(&value).expect("parsed");
+        let native = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)
+            .expect("valid")
+            .expect("seek");
+        assert!(native.roles[0].context);
+        assert_eq!(native.roles[0].steps.len(), 2);
+        assert!(native.roles[0].bindings.iter().all(|b| b.at() == 1));
+        let mut bad = value;
+        bad["search"]["seek"][0]["via"] = json!("anything");
         assert!(super::super::queries::trace_request_from_arguments(&bad).is_err());
     }
 }

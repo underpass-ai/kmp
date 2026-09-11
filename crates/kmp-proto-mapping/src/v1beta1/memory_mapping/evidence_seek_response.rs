@@ -35,12 +35,14 @@ pub fn evidence_seek_response_from_result(
         trace: result.relations.iter().map(|r| memory_relation_from_bundle_relationship(&BundleRelationship::from_projection(r))).collect(),
         candidates: result.candidates.iter().enumerate().map(|(index,c)| TraceEvidenceCandidate {
             index: index as u32, role: request.roles[c.role].name.clone(), nodes: c.nodes.clone(), edge_indexes: c.edge_indexes.clone(),
-            witness: c.nodes[seek.roles[c.role].via.len() + 1].clone(),
+            witness: c.nodes[c.context_hops as usize + seek.roles[c.role].via.len() + 1].clone(),
+            context_hops: c.context_hops,
             bindings: bindings(&c.bindings,&constraints), missing: missing(&c.bindings), clock_unknown: c.clock_unknown
         }).collect(),
         groups: result.groups.iter().enumerate().map(|(index,g)| TraceEvidenceGroup { index: index as u32,
             candidate_indexes: g.candidate_indexes.clone(), bindings: bindings(&g.bindings,&constraints), missing: missing(&g.bindings), clock_unknown: g.clock_unknown }).collect(),
         seek: Some(TraceEvidenceSelection {
+            context_discovery: result.context_discovery,
             from: result.from.clone(), status: status.into(), declared_obligations_complete: result.known_complete(),
             roles: request.roles.iter().map(|r|r.name.clone()).collect(), missing_roles: result.missing_roles.clone(),
             stop_reason: result.stop.as_str().into(), discovered_nodes: result.discovered_nodes, scanned_edges: result.scanned_edges,
@@ -54,6 +56,9 @@ pub fn evidence_seek_response_from_result(
         warnings: vec!["Seek checks only declared relation paths and witness constraints in one same-about snapshot. Missing labels and relation clocks remain unknown. Shared labels do not prove identity; source bodies and lifecycle truth are not inferred. Join all pages before auditing global edge/candidate indexes. A work cutoff is partial, never evidence of absence.".into()],
         ..Default::default()
     };
+    if result.context_discovery {
+        response.warnings.push("Context discovery retains all minimum-hop prefixes per reachable relation origin, with ties; longer prefixes are omitted. Prefix links are navigation leads, never a composed claim about the seed. Review original arrows, rationale, evidence and source bodies before deciding relevance. No task obligations are inferred from prose.".into());
+    }
     response.selection_fingerprint = ReadSelectionFingerprint::trace_search(&response);
     let total = response.trace.len() + response.candidates.len() + response.groups.len();
     let offset = page.offset().min(total);

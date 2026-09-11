@@ -81,6 +81,7 @@ pub fn evidence_seek_request_from_proto(
         }
         roles.push(EvidencePathRole {
             name: role.name.clone(),
+            context: role.context,
             steps,
             bindings,
         });
@@ -179,6 +180,11 @@ fn validate(seek: &TraceSeekOptions) -> ProtoMappingResult<()> {
         }
     }
     for role in &seek.roles {
+        if role.context && !role.via.is_empty() {
+            return Err(invalid_argument(
+                "search.seek context discovery replaces explicit via moves",
+            ));
+        }
         if !distinct(
             &role
                 .labels
