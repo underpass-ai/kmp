@@ -69,7 +69,7 @@ async fn explicit_older_seed_preserves_newer_dependency_for_each_temporal_verb()
             about: request.about.clone(),
             cursor: cursor.clone(),
             entry_selection: selection.clone(),
-            interval: interval.clone(),
+            interval,
             include,
             limit: request.limit,
             ..Default::default()
@@ -79,7 +79,7 @@ async fn explicit_older_seed_preserves_newer_dependency_for_each_temporal_verb()
         .into_inner();
     let forward = service
         .forward(Request::new(ForwardRequest {
-            interval: interval.clone(),
+            interval,
             about: request.about.clone(),
             cursor: Some(ProtoTemporalCursor {
                 time: Some(ts(99)),
