@@ -1,14 +1,16 @@
 use super::trace_read_budget::TraceReadBudget;
 use crate::{
     DimensionSelection, EntryLabels, MemoryDimensionIdentity, PortError, RelationDirection,
-    TemporalCoordinate, TemporalCursor, TemporalReadWindow, TraceDimensionPolicy,
-    TraceRoutingStats, TraceSearchRequest, TraceSnapshotReader, compare_temporal_instants,
-    temporal_clock_instant, temporal_instant_nanos,
+    TemporalCoordinate, TemporalCursor, TemporalReadWindow, TemporalSelection,
+    TraceDimensionPolicy, TraceRoutingStats, TraceSearchLimits, TraceSearchRequest,
+    TraceSnapshotReader, compare_temporal_instants, temporal_clock_instant, temporal_instant_nanos,
 };
 use std::collections::BTreeMap;
 
 pub(super) struct TraceTemporalAdmission<'a, R> {
-    request: &'a TraceSearchRequest,
+    about: &'a str,
+    temporal: &'a TemporalSelection,
+    dimensions: &'a TraceDimensionPolicy,
     pub budget: TraceReadBudget<'a, R>,
     pub resolved_as_of: Option<String>,
     owned: BTreeMap<String, bool>,
@@ -20,16 +22,34 @@ pub(super) struct TraceTemporalAdmission<'a, R> {
 
 impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
     pub fn new(reader: &'a R, request: &'a TraceSearchRequest) -> Self {
+        Self::for_selection(
+            reader,
+            &request.about,
+            &request.temporal,
+            &request.dimensions,
+            request.limits,
+        )
+    }
+
+    pub fn for_selection(
+        reader: &'a R,
+        about: &'a str,
+        temporal: &'a TemporalSelection,
+        dimensions: &'a TraceDimensionPolicy,
+        limits: TraceSearchLimits,
+    ) -> Self {
         Self {
-            request,
-            budget: TraceReadBudget::new(reader, request.limits),
+            about,
+            temporal,
+            dimensions,
+            budget: TraceReadBudget::new(reader, limits),
             resolved_as_of: None,
             owned: BTreeMap::new(),
             coordinates: BTreeMap::new(),
             admitted: BTreeMap::new(),
             preferred: BTreeMap::new(),
             routing: TraceRoutingStats {
-                focused: request.dimensions.preferred.is_some(),
+                focused: dimensions.preferred.is_some(),
                 ..Default::default()
             },
         }
@@ -40,7 +60,7 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
             return Ok(*owned);
         }
         let owned = self.budget.node(id)?.is_some_and(|node| {
-            node.properties.get("memory_about") == Some(&self.request.about)
+            node.properties.get("memory_about").map(String::as_str) == Some(self.about)
                 && node.labels.iter().any(|label| label == "entry")
         });
         if self.budget.stop.is_none() {
@@ -50,7 +70,7 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
     }
 
     pub fn resolve_cut(&mut self) -> Result<bool, PortError> {
-        match self.request.temporal.cursor() {
+        match self.temporal.cursor() {
             Some(TemporalCursor::Time(time)) => self.resolved_as_of = Some(time.clone()),
             Some(TemporalCursor::Ref(reference)) => {
                 if !self.is_owned(reference)? {
@@ -64,7 +84,7 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
                 if !self.load_coordinates(reference)? {
                     return Ok(false);
                 }
-                let axis = self.request.temporal.axis().unwrap_or_default();
+                let axis = self.temporal.axis().unwrap_or_default();
                 self.resolved_as_of = self.coordinates[reference]
                     .iter()
                     .filter_map(|c| temporal_clock_instant(c, axis))
@@ -91,7 +111,7 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
         if !self.is_owned(id)? {
             return Ok(false);
         }
-        if self.request.temporal.is_frontier() && !self.request.dimensions.reads_coordinates() {
+        if self.temporal.is_frontier() && !self.dimensions.reads_coordinates() {
             return Ok(true);
         }
         if !self.load_coordinates(id)? {
@@ -104,10 +124,10 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
         let labels = EntryLabels::from_coordinates(
             coordinates.iter().map(|c| (c.dimension(), c.scope_id())),
         );
-        if self.request.dimensions.is_active() {
+        if self.dimensions.is_active() {
             self.routing.evaluated_entries += 1;
         }
-        let temporal = self.request.temporal.is_frontier() || !coordinates.is_empty();
+        let temporal = self.temporal.is_frontier() || !coordinates.is_empty();
         let matches = |selection: &DimensionSelection| {
             !TraceDimensionPolicy::constrained(selection)
                 || (coordinates
@@ -115,23 +135,12 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
                     .any(|c| selection.includes_coordinate(c.dimension(), c.scope_id()))
                     && selection.admits(&labels))
         };
-        let dimensional = self
-            .request
-            .dimensions
-            .required
-            .as_ref()
-            .is_none_or(matches);
+        let dimensional = self.dimensions.required.as_ref().is_none_or(matches);
         if temporal && !dimensional {
             self.routing.dimensional_rejections += 1;
         }
         let admitted = temporal && dimensional;
-        let preferred = admitted
-            && self
-                .request
-                .dimensions
-                .preferred
-                .as_ref()
-                .is_some_and(matches);
+        let preferred = admitted && self.dimensions.preferred.as_ref().is_some_and(matches);
         if preferred {
             self.routing.preferred_entries += 1;
         }
@@ -145,7 +154,20 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
     }
 
     pub fn window(&self) -> TemporalReadWindow<'_> {
-        TemporalReadWindow::new(&self.request.temporal, self.resolved_as_of.as_deref())
+        TemporalReadWindow::new(self.temporal, self.resolved_as_of.as_deref())
+    }
+
+    /// None means a read budget stopped coordinate discovery, never a missing label.
+    pub fn labels(&mut self, id: &str) -> Result<Option<EntryLabels>, PortError> {
+        if !self.load_coordinates(id)? {
+            return Ok(None);
+        }
+        Ok(Some(EntryLabels::from_coordinates(
+            self.coordinates[id]
+                .iter()
+                .filter(|c| self.window().admits_coordinate(c))
+                .map(|c| (c.dimension(), c.scope_id())),
+        )))
     }
 
     fn load_coordinates(&mut self, id: &str) -> Result<bool, PortError> {
@@ -165,9 +187,7 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
                 return Ok(false);
             };
             for edge in page.edges {
-                if MemoryDimensionIdentity::resolve(&self.request.about, &edge.source_node_id)
-                    .is_none()
-                {
+                if MemoryDimensionIdentity::resolve(self.about, &edge.source_node_id).is_none() {
                     continue;
                 }
                 if let Some(coordinate) =

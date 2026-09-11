@@ -168,6 +168,21 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
         .await
     }
 
+    async fn load_evidence_paths(
+        &self,
+        request: &kmp_domain::EvidencePathRequest,
+    ) -> Result<kmp_domain::EvidencePathResult, PortError> {
+        let request = request.clone();
+        self.run(move |store| {
+            let tx = store.begin_read()?;
+            kmp_domain::search_evidence_paths(
+                &super::trace_snapshot::TraceSnapshot(tx.as_ref()),
+                &request,
+            )
+        })
+        .await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,
