@@ -44,7 +44,7 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
             "axis": {
                 "type": "string",
                 "enum": ["occurred", "observed", "ingested", "validity"],
-                "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock."
+                "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock. Entry selectors and returned coordinates use memberships admitted by this temporal move; Goto excludes later labels."
             },
             "window": {
                 "type": "object",
@@ -124,7 +124,7 @@ pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Val
     );
     proof["properties"]["entries"] = described(
         "array",
-        "With include.dependencies, full stored dependency records and coordinates. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
+        "With include.dependencies, full stored dependency records with coordinates admitted by the proof boundary. These support the selected entries; they are not additional matches in the history window. fields does not shorten proof entries.",
     );
     proof["properties"]["groups"] = json!({"type":"array", "description":"With include.dependencies, bounded writer-declared neighborhoods. Members resolve in entries or proof.entries after all pages. Source passages and typed links remain in proof.evidence/path. Anonymous counts describe only the selected scoped graph, never semantic sufficiency.", "items":output_object(json!({
         "seed_ref":described("string", "The selected temporal entry."),

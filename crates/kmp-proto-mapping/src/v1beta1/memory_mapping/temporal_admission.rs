@@ -197,6 +197,11 @@ impl TemporalAdmission {
             .collect()
     }
 
+    pub(super) fn admits_coordinate(&self, coordinate: &TemporalCoordinate) -> bool {
+        kmp_domain::TemporalReadWindow::new(&self.selection, self.resolved_as_of.as_deref())
+            .admits_coordinate(coordinate)
+    }
+
     /// Whether a node stands in time outside the selection: an entry with a
     /// coordinate that the selection did not admit. What touches such a
     /// node did not exist where the recall stands.
