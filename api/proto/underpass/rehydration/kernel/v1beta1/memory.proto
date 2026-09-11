@@ -780,7 +780,11 @@ message TraceSeekOptions {
   repeated string same_labels = 2;
   repeated TraceWitnessGroup same_ref = 3;
 }
-message TraceWitnessGroup { repeated string roles = 1; }
+message TraceReferenceEndpoint {
+  string role = 1;
+  bool anchor = 2; // Traversal start of the main relation; false is its witness.
+}
+message TraceWitnessGroup { repeated TraceReferenceEndpoint endpoints = 1; }
 message TraceWitnessLabel { string key = 1; repeated string values = 2; }
 message TraceSeekRole {
   string name = 1;
@@ -817,6 +821,7 @@ message TraceEvidenceBinding {
   repeated string roles = 2;
   bool reference = 3;
   repeated string values = 4;
+  repeated TraceReferenceEndpoint endpoints = 5;
 }
 message TraceMissingWitness {
   string role = 1;
@@ -833,6 +838,7 @@ message TraceEvidenceCandidate {
   repeated TraceMissingWitness missing = 7;
   bool clock_unknown = 8;
   uint32 context_hops = 9;
+  string anchor = 10; // Main relation traversal start, after via/context.
 }
 message TraceEvidenceGroup {
   uint32 index = 1;

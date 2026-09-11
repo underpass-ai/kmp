@@ -15,13 +15,21 @@ pub(super) fn project(response: &TraceResponse, value: &mut Value) {
         "temporal_selection_resolved":s.temporal_selection_resolved,"clock_unknown_edges":s.clock_unknown_edges,
         "candidate_count":s.candidate_count,"group_count":s.group_count});
     value["candidates"] = json!(response.candidates.iter().map(|c| json!({"index":c.index,"role":c.role,
-        "context_hops":c.context_hops,"nodes":c.nodes,"edge_indexes":c.edge_indexes,"witness":c.witness,
+        "context_hops":c.context_hops,"nodes":c.nodes,"edge_indexes":c.edge_indexes,"anchor":c.anchor,"witness":c.witness,
         "bindings":bindings(&c.bindings),"missing":missing(&c.missing),"clock_unknown":c.clock_unknown})).collect::<Vec<_>>());
     value["groups"] = json!(response.groups.iter().map(|g| json!({"index":g.index,"candidate_indexes":g.candidate_indexes,
         "bindings":bindings(&g.bindings),"missing":missing(&g.missing),"clock_unknown":g.clock_unknown})).collect::<Vec<_>>());
 }
 fn bindings(items: &[TraceEvidenceBinding]) -> Vec<Value> {
-    items.iter().map(|b| json!({"kind":if b.reference {"reference"} else {"label"},"key":b.key,"roles":b.roles,"values":b.values})).collect()
+    items.iter().map(|b| {
+        let mut value = json!({"kind":if b.reference {"reference"} else {"label"},"key":b.key,"roles":b.roles,"values":b.values});
+        // Witness-only groups already identify their members through roles.
+        if b.endpoints.iter().any(|p| p.anchor) {
+            value["endpoints"] = json!(b.endpoints.iter().map(|p| json!({"role":p.role,
+                "at":if p.anchor {"anchor"} else {"witness"}})).collect::<Vec<_>>());
+        }
+        value
+    }).collect()
 }
 fn missing(items: &[TraceMissingWitness]) -> Vec<Value> {
     items

@@ -45,3 +45,10 @@ Read `context_hops` and the arrows. `context_discovery:true` requires review and
 keeps `declared_obligations_complete:false`: the neighbor's verification does
 not automatically verify the seed. Longer prefixes are omitted. The example
 explains discovery, witness constraints and the source-read step.
+
+For verification and permission of the same action, require equal main-relation
+anchors: `same_ref:[[{"role":"verification","at":"anchor"},{"role":"permission","at":"anchor"}]]`.
+Anchor is the traversal start after via/context, witness is the other endpoint.
+An incoming permission has the action as anchor and authorizer as witness.
+A role string in same_ref means its witness. Shared event labels alone do not
+identify the action; the extended example combines anchor and person equality.

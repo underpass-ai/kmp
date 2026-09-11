@@ -84,7 +84,7 @@ Each role can name `rel`, `direction`, ordered `via` moves before the relation,
 and ordered `after` moves after it. The main relation's traversal endpoint is
 its witness. No caller variables or numeric witness positions are necessary.
 `labels` constrains only that witness; `same_labels` joins listed keys across
-all role witnesses; `same_ref` joins disjoint groups of named witness refs.
+all role witnesses; `same_ref` joins disjoint groups of main-relation endpoints; role strings name witnesses and {role,at:"anchor"} names traversal starts.
 Shared explicit label constants are intersected before execution; contradictory
 constants are an invalid request, unlike incompatible stored candidates.
 
@@ -154,3 +154,39 @@ question, preferring semantically useful longer paths, correlations between
 keys, and independent-agent understanding remain separate claims. Compression
 is the subsequent reader-written navigation projection; it is not implemented
 or required by this change.
+
+## Equality at relation anchors
+
+A main relation has two traversal endpoints: anchor immediately before it and
+witness immediately after it. Incoming changes their traversal roles, not the
+stored arrow: P --authorizes--> R has anchor R when read incoming. Neither a
+shared event value nor a common authorizer makes two action refs identical.
+
+`same_ref` accepts role strings (witness shorthand) and `{role,at}` members, with
+at equal to anchor or witness. Groups partition endpoints, not whole roles; a
+role can join its anchor in one group and its witness in another. Proto uses
+TraceReferenceEndpoint. Mapping compiles each point into the existing reference
+binding at via.len() or via.len()+1. There is no new variable language or solver.
+
+For contextual prefixes, position-zero bindings are captured at each discovered
+main-relation anchor, just before that main transition. They are not captured
+at the seed or propagated through arbitrary bridges. Context expansion therefore
+remains shared and unfiltered. Different anchor assignments remain distinct after
+converging on the same witness. Fixed via bindings retain their existing position
+semantics. Joining all groups intersects exact refs and preserves missing values.
+
+For candidate c in role r, let A(c) be its main anchor and W(c) its witness. A
+complete group G is retained only if all required endpoint equalities hold, e.g.
+A(verification)=A(permission)=A(constraint), and W(identity)=W(permission).
+This chooses a compatible set of discovered paths, including a longer route to
+an authorized action when a shorter route reaches a different action. It does
+not enumerate longer prefixes to the same anchor merely to repeat the same
+obligations, nor infer unstated requirements. Source relevance still needs review.
+
+Candidates expose anchor alongside witness and context_hops. Reference bindings
+expose their endpoint members when an anchor participates; witness-only groups
+keep their compact roles representation. Proto fingerprints include all anchor
+refs and binding endpoints before pagination. Validate reversed edges, explicit
+prefixes, mixed anchor/witness equality, convergence, separate groups for one
+role's endpoints, unknown role/endpoint/duplicate refusal, transport parity and
+changing an unreturned anchor assignment. No canonical memory or writer change.

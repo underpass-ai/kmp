@@ -271,7 +271,14 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
                     domains: self.request.constants.clone(),
                     ..Default::default()
                 };
-                if let Some(bindings) = self.capture(role, 0, &self.request.from, root)? {
+                // Position zero of a contextual role is its discovered main
+                // relation anchor, not the seed or an intermediate bridge.
+                let bindings = if self.request.roles[role].context {
+                    Some(root)
+                } else {
+                    self.capture(role, 0, &self.request.from, root)?
+                };
+                if let Some(bindings) = bindings {
                     let (index, _) = self.graph.add(
                         EvidencePathState {
                             role,
@@ -314,6 +321,14 @@ impl<R: TraceSnapshotReader> EvidencePathSearch<'_, R> {
                     break;
                 }
             }
+            let bindings = if position == 0 && self.request.roles[role].context {
+                let Some(bindings) = self.capture(role, 0, &node, bindings)? else {
+                    continue;
+                };
+                bindings
+            } else {
+                bindings
+            };
             let step = self.request.roles[role].steps[position as usize].clone();
             let edges = self.edges(&node, Some(step.relation.as_str()), step.direction)?;
             if self.admission.budget.stop.is_some() {

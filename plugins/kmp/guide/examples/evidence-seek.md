@@ -29,8 +29,10 @@ individual paths cannot coexist under the requested constraints. `partial` means
 work ended before the calculation completed. Never promote an unknown to known.
 
 Finish every `next_actions` page. Append `trace`, `candidates`, then `groups`;
-their indexes address complete tables. A candidate's `witness` is where labels
-and identity constraints apply. `nodes` and `edge_indexes` retain the entire path,
+their indexes address complete tables. A candidate's `anchor` is the traversal
+start of its main relation, after via/context; `witness` is the other endpoint,
+where labels apply. Reference constraints may name either. `nodes` and
+`edge_indexes` retain the entire path,
 including source proof after that witness. Preserve original arrow, why, evidence
 and clocks. Paths outside all groups cannot jointly satisfy this request.
 
@@ -62,7 +64,7 @@ to the identity role. Those moves are ordered, and the witness remains I.
 `via` is ordered before the main relation. Each move can be a relation string
 (outgoing) or `{rel,direction}`. A role permits at most 1024 total moves. Repeated
 relations need distinct role names. `same_ref` groups are disjoint; put all
-witnesses that must be equal in one group.
+endpoints that must be equal in one group. A role string means its witness.
 
 Add `as_of:{"time":"2026-09-10T12:00:00Z"},axis:"observed"` to either call
 to ask what links and memberships were observed by noon. A later identity link
@@ -108,7 +110,7 @@ but has not yet read the sequence leading to it:
 KMP discovers `N --uses_background--> B <--corrects-- C --verified_by--> V`.
 The candidate has `context_hops:2` and witness V. No intermediate relation names
 or destination refs were supplied. `after` can still require further ordered
-source dependencies, and labels/same_ref still apply at V. Different witnesses
+source dependencies; labels and witness-reference constraints still apply at V. Different witnesses
 and equal-length prefixes remain alternatives joined against the other roles.
 
 Discovery reads justified non-structural links in either direction inside the
@@ -123,7 +125,42 @@ these leads. Compatible discovered groups require review; missing, conflicting,
 ambiguous and partial results remain explicit. Read the original source bodies
 with the same temporal cut. V verifies C in the stored statement: KMP does not
 infer that V verifies N, that every contextual relation composes logically, or
-that the seed and C are the same event. `same_labels` and `same_ref` constrain
-the named witnesses, not an unbound seed. Require explicit evidence for that
+that the seed and C are the same event. `same_labels` constrains named witnesses;
+`same_ref` constrains only the named endpoints, not an unbound seed. Require explicit evidence for that
 connection when the question needs it. Discovery selects sequences for reading;
 the reader still supplies the task's obligations and decides their relevance.
+
+## Verify and authorize the same action
+
+Two actions can share event E1 and the same authorizer. Verification of one
+does not verify the other. For contextual roles, equate the traversal starts
+of their main relations:
+
+```json
+{"about":"about","from":"ref-N","search":{
+  "seek":[
+    {"name":"verification","rel":"verified_by","via":"context"},
+    {"name":"permission","rel":"authorizes","direction":"incoming","via":"context"}],
+  "same_ref":[[
+    {"role":"verification","at":"anchor"},
+    {"role":"permission","at":"anchor"}]]}}
+```
+
+For R --verified_by--> V, anchor=R and witness=V. For P --authorizes--> R
+traversed incoming, anchor=R and witness=P. Equality requires the exact same R,
+not just matching event labels or the same P. A longer route to the authorized
+R survives when the short contextual shortcut reaches a different action.
+If no R has both relations, KMP returns no compatible group; individual candidates
+remain diagnostic. If two actions satisfy the request, their different anchor
+assignments remain ambiguous. Contextual groups still require source review.
+
+An advanced identity request can also add the identity role above and keep
+`["identity","permission"]` as another same_ref group. This equates their
+witness P while the anchor group equates action R. The same role may participate
+through its two distinct endpoints. Mix anchor and witness members when the
+task requires one role's result to be another role's starting object. Each
+endpoint belongs to one equality group; no variables or numeric positions are
+needed. Explicit `via` still places the anchor immediately before the main rel;
+`after` does not move either endpoint. The response prints `anchor`, `witness`
+and binding `endpoints` when an anchor is involved. These are stored identities,
+not inferred aliases, validity or approval of a different action.

@@ -6524,22 +6524,46 @@
                 "uniqueItems": true
               },
               "same_ref": {
-                "description": "With seek, disjoint groups of role names requiring the exact same witness ref. Identity traversal requires an actual evidenced same_entity_as link.",
+                "description": "With seek, equate exact refs in each group. A role string means its main witness; {role,at:anchor} names the main relation traversal start after via/context. Incoming keeps stored arrows: its anchor is the stored target. Endpoints belong to one group; a role may join by anchor and witness separately. To verify and authorize the same action, equate those anchors; same event labels alone do not identify an action. Identity needs its evidenced same_entity_as link.",
                 "items": {
                   "items": {
-                    "minLength": 1,
-                    "type": "string"
+                    "oneOf": [
+                      {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "at": {
+                            "enum": [
+                              "anchor",
+                              "witness"
+                            ]
+                          },
+                          "role": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "at"
+                        ],
+                        "type": "object"
+                      }
+                    ]
                   },
-                  "maxItems": 8,
+                  "maxItems": 16,
                   "minItems": 2,
                   "type": "array",
                   "uniqueItems": true
                 },
-                "maxItems": 4,
+                "maxItems": 8,
                 "type": "array"
               },
               "seek": {
-                "description": "Find all compatible paths for these required evidence roles from from, without to. A relation string uses its name as role and outgoing direction. Each role follows ordered via moves, its main rel to the witness, then ordered after moves. All roles are required; alternative paths are OR. Bind labels and same_ref at the main witness only, allowing unlabelled bridges. Replaces other search policies except work limits. Example: seek:[\"verified_by\",{\"name\":\"permission\",\"rel\":\"authorizes\",\"direction\":\"incoming\"}], same_labels:[\"event\"].",
+                "description": "Find compatible paths for required evidence roles from from, without to. A relation string uses its name as role and outgoing direction. Each role follows via, its main rel from anchor to witness, then after. All roles are required; paths are alternatives. Labels bind the witness; same_ref can equate anchors or witnesses across roles, allowing unlabelled bridges. Replaces other search policies except work limits. Example: seek:[\"verified_by\",{\"name\":\"permission\",\"rel\":\"authorizes\",\"direction\":\"incoming\"}], same_labels:[\"event\"].",
                 "items": {
                   "oneOf": [
                     {
@@ -6754,7 +6778,7 @@
         "additionalProperties": false,
         "properties": {
           "candidates": {
-            "description": "Seek paths with stable index, role, witness, nodes and directed trace edge_indexes. Bindings give label/reference domains and participating roles; missing names exact witness refs and keys. Paths outside groups cannot jointly satisfy the request. clock_unknown keeps historical presence unproven. Join all pages.",
+            "description": "Seek paths with stable index, role, anchor, witness, context_hops, nodes and directed trace edge_indexes. Anchor is the main relation traversal start; witness is its other endpoint. Bindings give label/reference domains, roles and explicit endpoints when anchor equality is used; missing names exact witness refs and keys. Paths outside groups cannot jointly satisfy the request. clock_unknown keeps historical presence unproven. Join all pages.",
             "type": "array"
           },
           "groups": {
@@ -6841,7 +6865,7 @@
             "type": "object"
           },
           "seek": {
-            "description": "Seed evidence selection: status compatible, ambiguous, review_required, missing_obligation, incompatible_obligations or partial. declared_obligations_complete means at least one complete known compatible group for the supplied roles and constraints, never answer completeness or unique identity. Reports missing_roles, work/cut counters, role order and complete candidate/group counts. Optional review_context is a new scoped Goto read, separate from mandatory page continuations. No source-body materialization or semantic inference.",
+            "description": "Seed evidence selection: status compatible, ambiguous, review_required, missing_obligation, incompatible_obligations or partial. declared_obligations_complete requires a known compatible group and is always false for contextual discovery; it never means answer completeness or unique identity. Reports missing_roles, work/cut counters, role order and complete candidate/group counts. Optional review_context is a new scoped Goto read, separate from mandatory page continuations. No source-body materialization or semantic inference.",
             "type": "object"
           },
           "summary": {

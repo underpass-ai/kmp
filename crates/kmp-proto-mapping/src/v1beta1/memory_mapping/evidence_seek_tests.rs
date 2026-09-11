@@ -1,8 +1,8 @@
 use super::{evidence_seek_request_from_proto, evidence_seek_response_from_result};
 use kmp_domain::{EvidencePathBinding, EvidencePathResult, EvidencePathStatus, TraceSearchStop};
 use kmp_proto::v1beta1::{
-    TraceRelationStep, TraceRequest, TraceSearchOptions, TraceSeekOptions, TraceSeekRole,
-    TraceWitnessGroup, TraceWitnessLabel,
+    TraceReferenceEndpoint, TraceRelationStep, TraceRequest, TraceSearchOptions, TraceSeekOptions,
+    TraceSeekRole, TraceWitnessGroup, TraceWitnessLabel,
 };
 
 fn request() -> TraceRequest {
@@ -104,7 +104,13 @@ fn compiler_rejects_contradictory_constraints_unknown_roles_and_mixed_modes() {
         .as_mut()
         .expect("seek");
     seek.same_ref.push(TraceWitnessGroup {
-        roles: vec!["verification".into(), "missing".into()],
+        endpoints: ["verification", "missing"]
+            .into_iter()
+            .map(|role| TraceReferenceEndpoint {
+                role: role.into(),
+                anchor: false,
+            })
+            .collect(),
     });
     assert!(evidence_seek_request_from_proto(&bad).is_err());
     let mut bad = request();
@@ -135,7 +141,13 @@ fn compiler_rejects_contradictory_constraints_unknown_roles_and_mixed_modes() {
         .expect("seek")
         .same_ref
         .push(TraceWitnessGroup {
-            roles: vec!["verification".into(), "permission".into()],
+            endpoints: ["verification", "permission"]
+                .into_iter()
+                .map(|role| TraceReferenceEndpoint {
+                    role: role.into(),
+                    anchor: false,
+                })
+                .collect(),
         });
     let native = evidence_seek_request_from_proto(&identity)
         .expect("valid")
@@ -148,6 +160,69 @@ fn compiler_rejects_contradictory_constraints_unknown_roles_and_mixed_modes() {
         native.roles[0].bindings[1].name(),
         native.roles[1].bindings[1].name()
     );
+}
+
+#[test]
+fn compiler_binds_context_and_explicit_anchors_and_keeps_endpoint_groups_disjoint() {
+    let mut request = request();
+    let seek = request
+        .search
+        .as_mut()
+        .expect("valid test fixture")
+        .seek
+        .as_mut()
+        .expect("valid test fixture");
+    seek.roles[0].context = true;
+    seek.roles[1].via.push(TraceRelationStep {
+        rel: "uses_background".into(),
+        ..Default::default()
+    });
+    seek.same_ref.push(TraceWitnessGroup {
+        endpoints: ["verification", "permission"]
+            .into_iter()
+            .map(|role| TraceReferenceEndpoint {
+                role: role.into(),
+                anchor: true,
+            })
+            .collect(),
+    });
+    seek.same_ref.push(TraceWitnessGroup {
+        endpoints: ["verification", "permission"]
+            .into_iter()
+            .map(|role| TraceReferenceEndpoint {
+                role: role.into(),
+                anchor: false,
+            })
+            .collect(),
+    });
+    let native = evidence_seek_request_from_proto(&request)
+        .expect("valid test fixture")
+        .expect("valid test fixture");
+    assert_eq!(
+        native.roles[0]
+            .bindings
+            .iter()
+            .map(|b| b.at())
+            .collect::<Vec<_>>(),
+        [1, 0, 1]
+    );
+    assert_eq!(
+        native.roles[1]
+            .bindings
+            .iter()
+            .map(|b| b.at())
+            .collect::<Vec<_>>(),
+        [2, 1, 2]
+    );
+    let seek = request
+        .search
+        .as_mut()
+        .expect("valid test fixture")
+        .seek
+        .as_mut()
+        .expect("valid test fixture");
+    seek.same_ref[1].endpoints[0].anchor = true;
+    assert!(evidence_seek_request_from_proto(&request).is_err());
 }
 
 #[test]
