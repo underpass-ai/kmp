@@ -22,3 +22,9 @@ required target refs are known. Read `search.material`: zero selected paths can
 mean no complete group fits despite available candidates. Finish `next_actions`
 for selected proof; use `search.material.expand_candidates` only when the omitted
 alternatives are needed. See `guide:kmp-agent:example:bounded-trace`.
+
+Use `search.prefer_dimensions` for a label hint; it prioritizes matching entries
+while reserving FIFO exploration for bridges. `search.dimensions` is a hard
+filter on every path entry and can remove those bridges. Both reuse native
+selectors on coordinates admitted by the selected clock. See `search.routing`;
+focus may return a longer route first and all work remains bounded.

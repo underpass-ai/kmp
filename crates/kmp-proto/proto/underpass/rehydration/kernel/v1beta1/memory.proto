@@ -769,6 +769,18 @@ message TraceSearchOptions {
   uint32 max_states = 7;
   repeated TraceRelationStep follow = 8;
   TraceMaterialSelectionOptions select = 9;
+  DimensionSelection dimensions = 10;
+  DimensionSelection prefer_dimensions = 11;
+}
+
+message TraceRoutingStats {
+  bool focused = 1;
+  uint32 evaluated_entries = 2;
+  uint32 preferred_entries = 3;
+  uint32 dimensional_rejections = 4;
+  uint32 priority_pops = 5;
+  uint32 exploration_pops = 6;
+  repeated uint32 preferred_route_entries = 7;
 }
 
 message TraceMaterialSelectionOptions {
@@ -828,6 +840,7 @@ message TraceSearchSelection {
   uint32 considered_states = 16;
   repeated string incomplete_targets = 17;
   TraceMaterialSelectionResult material = 18;
+  TraceRoutingStats routing = 19;
 }
 
 message TraceResponse {

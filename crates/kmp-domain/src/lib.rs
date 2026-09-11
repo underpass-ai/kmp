@@ -19,7 +19,8 @@ pub use model::{
 };
 pub use model::{TemporalReadWindow, temporal_clock_instant};
 pub use model::{
-    TraceMaterialResult, TraceMaterialSelection, TraceProofRequirement, select_trace_material,
+    TraceDimensionPolicy, TraceMaterialResult, TraceMaterialSelection, TraceProofRequirement,
+    TraceRoutingStats, select_trace_material,
 };
 pub use projection::{
     ContextPathNeighborhood, GraphNodeMaterializedData, GraphNodeMaterializedEvent,

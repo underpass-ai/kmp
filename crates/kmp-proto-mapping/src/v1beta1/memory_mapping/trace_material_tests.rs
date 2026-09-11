@@ -87,3 +87,41 @@ fn trace_material_request_defaults_and_invalid_requirements_cross_the_domain_bou
     };
     assert!(invalid.validate(&targets).is_err());
 }
+
+#[test]
+fn material_selection_reindexes_route_preference_counts_and_binds_routing_to_cursor() {
+    let mut original = candidates();
+    original.search.as_mut().expect("search").routing =
+        Some(kmp_proto::v1beta1::TraceRoutingStats {
+            focused: true,
+            preferred_route_entries: vec![1, 3],
+            ..Default::default()
+        });
+    let mut first = original.clone();
+    project(&mut first, selection());
+    assert_eq!(
+        first
+            .search
+            .as_ref()
+            .expect("search")
+            .routing
+            .as_ref()
+            .expect("routing")
+            .preferred_route_entries,
+        [3]
+    );
+    original
+        .search
+        .as_mut()
+        .expect("search")
+        .routing
+        .as_mut()
+        .expect("routing")
+        .preferred_route_entries[0] = 2;
+    project(&mut original, selection());
+    assert_eq!(first.trace, original.trace);
+    assert_ne!(
+        ReadSelectionFingerprint::trace_search(&first),
+        ReadSelectionFingerprint::trace_search(&original)
+    );
+}

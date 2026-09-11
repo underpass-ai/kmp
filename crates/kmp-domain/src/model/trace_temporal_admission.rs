@@ -1,7 +1,8 @@
 use super::trace_read_budget::TraceReadBudget;
 use crate::{
-    MemoryDimensionIdentity, PortError, RelationDirection, TemporalCoordinate, TemporalCursor,
-    TemporalReadWindow, TraceSearchRequest, TraceSnapshotReader, compare_temporal_instants,
+    DimensionSelection, EntryLabels, MemoryDimensionIdentity, PortError, RelationDirection,
+    TemporalCoordinate, TemporalCursor, TemporalReadWindow, TraceDimensionPolicy,
+    TraceRoutingStats, TraceSearchRequest, TraceSnapshotReader, compare_temporal_instants,
     temporal_clock_instant, temporal_instant_nanos,
 };
 use std::collections::BTreeMap;
@@ -13,6 +14,8 @@ pub(super) struct TraceTemporalAdmission<'a, R> {
     owned: BTreeMap<String, bool>,
     coordinates: BTreeMap<String, Vec<TemporalCoordinate>>,
     admitted: BTreeMap<String, bool>,
+    preferred: BTreeMap<String, bool>,
+    pub routing: TraceRoutingStats,
 }
 
 impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
@@ -24,6 +27,11 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
             owned: BTreeMap::new(),
             coordinates: BTreeMap::new(),
             admitted: BTreeMap::new(),
+            preferred: BTreeMap::new(),
+            routing: TraceRoutingStats {
+                focused: request.dimensions.preferred.is_some(),
+                ..Default::default()
+            },
         }
     }
 
@@ -83,17 +91,57 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
         if !self.is_owned(id)? {
             return Ok(false);
         }
-        if self.request.temporal.is_frontier() {
+        if self.request.temporal.is_frontier() && !self.request.dimensions.reads_coordinates() {
             return Ok(true);
         }
         if !self.load_coordinates(id)? {
             return Ok(false);
         }
-        let admitted = self.coordinates[id]
+        let coordinates = self.coordinates[id]
             .iter()
-            .any(|c| self.window().admits_coordinate(c));
+            .filter(|c| self.window().admits_coordinate(c))
+            .collect::<Vec<_>>();
+        let labels = EntryLabels::from_coordinates(
+            coordinates.iter().map(|c| (c.dimension(), c.scope_id())),
+        );
+        if self.request.dimensions.is_active() {
+            self.routing.evaluated_entries += 1;
+        }
+        let temporal = self.request.temporal.is_frontier() || !coordinates.is_empty();
+        let matches = |selection: &DimensionSelection| {
+            !TraceDimensionPolicy::constrained(selection)
+                || (coordinates
+                    .iter()
+                    .any(|c| selection.includes_coordinate(c.dimension(), c.scope_id()))
+                    && selection.admits(&labels))
+        };
+        let dimensional = self
+            .request
+            .dimensions
+            .required
+            .as_ref()
+            .is_none_or(matches);
+        if temporal && !dimensional {
+            self.routing.dimensional_rejections += 1;
+        }
+        let admitted = temporal && dimensional;
+        let preferred = admitted
+            && self
+                .request
+                .dimensions
+                .preferred
+                .as_ref()
+                .is_some_and(matches);
+        if preferred {
+            self.routing.preferred_entries += 1;
+        }
+        self.preferred.insert(id.into(), preferred);
         self.admitted.insert(id.into(), admitted);
         Ok(admitted)
+    }
+
+    pub fn preferred(&self, id: &str) -> bool {
+        self.preferred.get(id).copied().unwrap_or(false)
     }
 
     pub fn window(&self) -> TemporalReadWindow<'_> {

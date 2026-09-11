@@ -60,7 +60,18 @@ pub(super) fn arguments(
             if !follow.is_empty() && (s.contains_key("direction") || s.contains_key("relations")) {
                 return Err("search.follow replaces direction and relations".into());
             }
+            let dimensions = |key: &str| {
+                s.get(key)
+                    .map(|v| {
+                        object(v, &format!("search.{key}"))
+                            .and_then(super::dimensions::dimension_selection_from_object)
+                            .map_err(|e| format!("search.{key}: {e}"))
+                    })
+                    .transpose()
+            };
             Ok::<_, String>(TraceSearchOptions {
+                dimensions: dimensions("dimensions")?,
+                prefer_dimensions: dimensions("prefer_dimensions")?,
                 select: s
                     .get("select")
                     .map(super::trace_material::arguments)
@@ -78,4 +89,27 @@ pub(super) fn arguments(
         })
         .transpose()?;
     Ok((to, targets, search))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    #[test]
+    fn dimensions_use_the_common_parser_and_name_their_search_field_in_errors() {
+        let request = json!({"to":["t"],"search":{"dimensions":{"mode":"only","include":["env"]},"prefer_dimensions":{"selectors":[{"key":"env","op":"in","values":["prod"]}]}}});
+        let (_, _, options) = arguments(&request).expect("parsed");
+        let options = options.expect("search");
+        assert_eq!(options.dimensions.expect("hard").include, ["env"]);
+        assert_eq!(
+            options.prefer_dimensions.expect("soft").selectors[0].values,
+            ["prod"]
+        );
+        let bad = json!({"to":["t"],"search":{"prefer_dimensions":{"selectors":[{"key":"env","op":"in"}]}}});
+        assert!(
+            arguments(&bad)
+                .expect_err("missing values")
+                .starts_with("search.prefer_dimensions:")
+        );
+    }
 }

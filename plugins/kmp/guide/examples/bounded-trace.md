@@ -141,3 +141,49 @@ search limits and direction, removes select and the old page cursor, and incurs
 additional context. It is optional, separate from selected-proof pagination, and
 does not retain a snapshot across calls. Body reads still use Inspect; graph/body
 snapshot consistency is not supplied by material selection.
+
+
+## Labels as a constraint or as a hint
+
+Use label values copied from memory. Suppose A and C stand in env=prod, while
+A→B→C is the only proof route and B is catalogued under a different key. A label
+hint should let the reader cross B:
+
+```json
+{"about":"about","from":"ref-A","to":["ref-C"],
+ "search":{"prefer_dimensions":{"selectors":[
+   {"key":"env","op":"in","values":["prod"]}]}}}
+```
+
+Focused order selects matching queued entries first, breaking ties by depth and
+discovery order, for three pops; one FIFO pop then admits an older queued state.
+No admitted state is removed just for a low preference. N/E/D/S and first-visited
+behavior still limit candidates, so this is not a shortest-path or completeness
+guarantee. `search.routing.preferred_route_entries` counts matching entries in
+each returned route, including A. A nonmatching B can still be part of the proof.
+
+Only when every path entry must meet the label constraint, use the hard field:
+
+```json
+{"about":"about","from":"ref-A","to":["ref-C"],
+ "search":{"dimensions":{"selectors":[
+   {"key":"env","op":"in","values":["prod"]}]}}}
+```
+
+This excludes B and can return no route despite the stored A→B→C path. It also
+filters A itself. `dimensional_rejections` counts entries excluded by dimensions
+after temporal admission. Do not describe exhaustion of this filtered graph as
+absence from all memory. Both fields are optional and remain in current_about.
+An empty prefer_dimensions has no useful hint and is rejected.
+
+With an observed as_of cut, only memberships observed by that instant contribute.
+If B gained env=prod tomorrow, it cannot improve yesterday's priority or satisfy
+yesterday's hard predicate. Multiple values under env stay independent. `notin`
+and `notexists` read the admitted membership set; omitted or undated memberships
+are not proof of global absence. Explicit clocks never fall back. A ref cut is
+resolved from canonical coordinates before applying the dimensional filter.
+
+A very large root fanout may spend N/E while decoding its adjacency before the
+first queued child is expanded. Preference does not bypass that bound. Extra
+coordinate reads cost N/E too, so compare total work and latency. This first
+policy has no global histogram, IDF, degree bonus or learned relevance score.

@@ -78,6 +78,13 @@ pub(super) fn project(response: &mut TraceResponse, material: TraceMaterialResul
         .iter()
         .filter_map(|old| indexes.get(old).copied())
         .collect();
+    if let Some(routing) = search.routing.as_mut() {
+        routing.preferred_route_entries = material
+            .selected_candidates
+            .iter()
+            .map(|i| routing.preferred_route_entries[*i as usize])
+            .collect();
+    }
     search.material = Some(TraceMaterialSelectionResult {
         candidate_count,
         selected_candidates: material.selected_candidates,

@@ -36,6 +36,7 @@ fn query(targets: &[&str]) -> TraceSearchRequest {
         targets: targets.iter().map(|s| (*s).into()).collect(),
         direction: RelationDirection::Outgoing,
         relations: Default::default(),
+        dimensions: Default::default(),
         select: None,
         follow: vec![],
         paths_per_target: 2,
