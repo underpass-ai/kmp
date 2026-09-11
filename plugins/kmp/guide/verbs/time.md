@@ -267,3 +267,5 @@ entry, including labels on lanes excluded from the result. Combining
 selector retains the matching document coordinate without returning the record
 coordinate. A missing label in the returned lanes does not mean the entry
 lacks that label. Consult the wake catalogue before selecting.
+
+RFC3339 clocks keep fractional seconds and accept explicit numeric UTC offsets. `2026-09-11T12:00:00.125+02:00` names the same instant as `2026-09-11T10:00:00.125Z`. An `as_of` cut includes an equal instant; an interval end excludes it. Do not round source clocks to whole seconds.
