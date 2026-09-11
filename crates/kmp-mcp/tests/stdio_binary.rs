@@ -2616,6 +2616,7 @@ fn relate_reads_what_two_abouts_share_and_pages_by_position() {
         serde_json::json!({
             "about": "service:alpha", "dimensions": both,
             "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"},
+            "axis": "occurred",
             "page": {"entries": 3}
         }),
     );
