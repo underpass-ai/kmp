@@ -345,7 +345,6 @@ pub struct TemporalMemoryResult {
     pub traversal: kmp_domain::TemporalTraversalResult,
     pub source_bundle: kmp_domain::KmpBundle,
     pub include: TemporalIncludeOptions,
-    pub quality: kmp_domain::BundleQualityMetrics,
 }
 
 /// One label an entry stands in, as the pair a reader names it by: `key`
