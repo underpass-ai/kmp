@@ -16,6 +16,8 @@ pub fn search_evidence_paths(
     reader: &impl TraceSnapshotReader,
     request: &EvidencePathRequest,
 ) -> Result<EvidencePathResult, PortError> {
+    let _eval539_total = crate::eval539_profile::span("search.seek.total");
+    let eval539_selection = crate::eval539_profile::span("search.seek.selection");
     request
         .validate()
         .map_err(|e| PortError::InvalidState(e.to_string()))?;
@@ -39,6 +41,7 @@ pub fn search_evidence_paths(
         stop: None,
     };
     let mut result = search.run()?;
+    drop(eval539_selection);
     if request.proof {
         result.proof = Some(crate::model::materialize_trace_proof::evidence(
             reader,

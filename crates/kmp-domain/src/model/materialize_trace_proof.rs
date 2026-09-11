@@ -16,6 +16,7 @@ pub(super) fn trace<R: TraceSnapshotReader>(
     search: &TraceSearchResult,
     admission: &mut TraceTemporalAdmission<'_, R>,
 ) -> Result<TraceProofResult, PortError> {
+    let _eval539_span = crate::eval539_profile::span("proof.target.materialize");
     let selected: Vec<usize> = search.material.as_ref().map_or_else(
         || (0..search.routes.len()).collect(),
         |m| m.selected_candidates.iter().map(|&i| i as usize).collect(),
@@ -90,6 +91,7 @@ pub(super) fn evidence<R: TraceSnapshotReader>(
     admission: &mut TraceTemporalAdmission<'_, R>,
     options: &TraceBodyOptions,
 ) -> Result<TraceProofResult, PortError> {
+    let _eval539_span = crate::eval539_profile::span("proof.seek.materialize");
     let about = &request.about;
     let entries: BTreeSet<String> = search
         .viable_candidates()

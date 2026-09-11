@@ -7,24 +7,32 @@
 use serde_json::{Value, json};
 
 pub(crate) fn jsonrpc_result(id: Value, result: Value) -> String {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "result": result
-    })
-    .to_string()
+    let value = {
+        let _span = kmp_domain::eval539_profile::span("encoding.jsonrpc_value");
+        json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "result": result
+        })
+    };
+    let _span = kmp_domain::eval539_profile::span("encoding.jsonrpc_string");
+    value.to_string()
 }
 
 pub(crate) fn jsonrpc_error(id: Value, code: i64, message: &str) -> String {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "error": {
-            "code": code,
-            "message": message
-        }
-    })
-    .to_string()
+    let value = {
+        let _span = kmp_domain::eval539_profile::span("encoding.jsonrpc_value");
+        json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": {
+                "code": code,
+                "message": message
+            }
+        })
+    };
+    let _span = kmp_domain::eval539_profile::span("encoding.jsonrpc_string");
+    value.to_string()
 }
 
 #[cfg(test)]

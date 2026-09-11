@@ -21,6 +21,7 @@ pub fn evidence_seek_response_from_result(
     seek: &kmp_proto::v1beta1::TraceSeekOptions,
     page: TracePageRequest,
 ) -> TraceResponse {
+    let _eval539_span = kmp_domain::eval539_profile::span("mapping.seek");
     let status = match result.status {
         EvidencePathStatus::Compatible => "compatible",
         EvidencePathStatus::Ambiguous => "ambiguous",

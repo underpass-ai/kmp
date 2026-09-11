@@ -28,6 +28,7 @@ mod snapshot_revision_observer;
 mod sqlite_linked_json;
 pub(crate) use linked_json_row::LinkedJsonRow;
 pub(crate) use linked_json_scan::LinkedJsonScan;
+mod eval539_sql;
 pub(crate) mod sqlite;
 mod sqlite_snapshot;
 mod sqlite_snapshot_read;

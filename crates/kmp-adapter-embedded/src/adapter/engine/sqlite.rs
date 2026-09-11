@@ -179,6 +179,7 @@ fn open_connection(store_file: &Path) -> Result<Connection, PortError> {
             store_file.display()
         ))
     })?;
+    super::eval539_sql::install(&connection);
     harden_connection(&connection, store_file)?;
     // busy_timeout FIRST. Switching the journal mode takes a brief
     // exclusive lock, so two processes opening at the same instant collide
@@ -423,6 +424,194 @@ pub(super) struct Ops<'c> {
 
 impl Ops<'_> {
     pub(super) fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
+        if !kmp_domain::eval539_profile::active() {
+            return self.get_unprofiled(table, key);
+        }
+        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.get");
+        let result = self.get_unprofiled(table, key);
+        let (rows, bytes, keys) = match &result {
+            Ok(value) => (
+                value.iter().count() as u64,
+                value.iter().map(|v| v.len() as u64).sum(),
+                0,
+            ),
+            Err(_) => (0, 0, 0),
+        };
+        kmp_domain::eval539_profile::logical(
+            table.to_string(),
+            "get",
+            rows,
+            bytes,
+            keys,
+            result.is_err(),
+        );
+        result
+    }
+
+    pub(super) fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
+        if !kmp_domain::eval539_profile::active() {
+            return self.scan_str_unprofiled(table);
+        }
+        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.scan_str");
+        let result = self.scan_str_unprofiled(table);
+        let (rows, bytes, keys) = match &result {
+            Ok(value) => (
+                value.len() as u64,
+                value.iter().map(|(_, v)| v.len() as u64).sum(),
+                value.iter().map(|(k, _)| k.len() as u64).sum(),
+            ),
+            Err(_) => (0, 0, 0),
+        };
+        kmp_domain::eval539_profile::logical(
+            table.to_string(),
+            "scan_str",
+            rows,
+            bytes,
+            keys,
+            result.is_err(),
+        );
+        result
+    }
+
+    pub(super) fn scan_str3_by_first(
+        &self,
+        table: Table,
+        first: &str,
+    ) -> Result<Vec<Str3Row>, PortError> {
+        if !kmp_domain::eval539_profile::active() {
+            return self.scan_str3_by_first_unprofiled(table, first);
+        }
+        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.scan_str3_by_first");
+        let result = self.scan_str3_by_first_unprofiled(table, first);
+        let (rows, bytes, keys) = match &result {
+            Ok(value) => (
+                value.len() as u64,
+                value.iter().map(|(_, v)| v.len() as u64).sum(),
+                value
+                    .iter()
+                    .map(|((a, b, c), _)| (a.len() + b.len() + c.len()) as u64)
+                    .sum(),
+            ),
+            Err(_) => (0, 0, 0),
+        };
+        kmp_domain::eval539_profile::logical(
+            table.to_string(),
+            "scan_str3_by_first",
+            rows,
+            bytes,
+            keys,
+            result.is_err(),
+        );
+        result
+    }
+
+    pub(super) fn scan_str3_page(
+        &self,
+        table: Table,
+        first: &str,
+        after: Option<(&str, &str)>,
+        limit: u32,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<Str3Row>, PortError> {
+        if !kmp_domain::eval539_profile::active() {
+            return self.scan_str3_page_unprofiled(table, first, after, limit, relation_type);
+        }
+        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.scan_str3_page");
+        let result = self.scan_str3_page_unprofiled(table, first, after, limit, relation_type);
+        let (rows, bytes, keys) = match &result {
+            Ok(value) => (
+                value.len() as u64,
+                value.iter().map(|(_, v)| v.len() as u64).sum(),
+                value
+                    .iter()
+                    .map(|((a, b, c), _)| (a.len() + b.len() + c.len()) as u64)
+                    .sum(),
+            ),
+            Err(_) => (0, 0, 0),
+        };
+        kmp_domain::eval539_profile::logical(
+            table.to_string(),
+            "scan_str3_page",
+            rows,
+            bytes,
+            keys,
+            result.is_err(),
+        );
+        result
+    }
+
+    pub(super) fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
+        if !kmp_domain::eval539_profile::active() {
+            return self.scan_u64_unprofiled(table);
+        }
+        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.scan_u64");
+        let result = self.scan_u64_unprofiled(table);
+        let (rows, bytes, keys) = match &result {
+            Ok(value) => (
+                value.len() as u64,
+                value.iter().map(|(_, v)| v.len() as u64).sum(),
+                8 * value.len() as u64,
+            ),
+            Err(_) => (0, 0, 0),
+        };
+        kmp_domain::eval539_profile::logical(
+            table.to_string(),
+            "scan_u64",
+            rows,
+            bytes,
+            keys,
+            result.is_err(),
+        );
+        result
+    }
+
+    pub(super) fn last_u64(&self, table: Table) -> Result<Option<U64Row>, PortError> {
+        if !kmp_domain::eval539_profile::active() {
+            return self.last_u64_unprofiled(table);
+        }
+        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.last_u64");
+        let result = self.last_u64_unprofiled(table);
+        let (rows, bytes, keys) = match &result {
+            Ok(value) => (
+                value.iter().count() as u64,
+                value.iter().map(|(_, v)| v.len() as u64).sum(),
+                8 * value.iter().count() as u64,
+            ),
+            Err(_) => (0, 0, 0),
+        };
+        kmp_domain::eval539_profile::logical(
+            table.to_string(),
+            "last_u64",
+            rows,
+            bytes,
+            keys,
+            result.is_err(),
+        );
+        result
+    }
+
+    pub(super) fn count(&self, table: Table) -> Result<u64, PortError> {
+        if !kmp_domain::eval539_profile::active() {
+            return self.count_unprofiled(table);
+        }
+        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.count");
+        let result = self.count_unprofiled(table);
+        let (rows, bytes, keys) = match &result {
+            Ok(_value) => (1, 0, 0),
+            Err(_) => (0, 0, 0),
+        };
+        kmp_domain::eval539_profile::logical(
+            table.to_string(),
+            "count",
+            rows,
+            bytes,
+            keys,
+            result.is_err(),
+        );
+        result
+    }
+
+    fn get_unprofiled(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         check_key(table, key)?;
         let sql = format!(
             "SELECT v FROM \"{table}\" WHERE {}",
@@ -472,7 +661,7 @@ impl Ops<'_> {
         })
     }
 
-    pub(super) fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
+    fn scan_str_unprofiled(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         if table.key_shape() != KeyShape::Str {
             return Err(scan_shape_mismatch(table, KeyShape::Str));
         }
@@ -526,7 +715,7 @@ impl Ops<'_> {
             .map_err(|e| read_error(table, &e))
     }
 
-    pub(super) fn scan_str3_by_first(
+    fn scan_str3_by_first_unprofiled(
         &self,
         table: Table,
         first: &str,
@@ -553,7 +742,7 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
-    pub(super) fn scan_str3_page(
+    fn scan_str3_page_unprofiled(
         &self,
         table: Table,
         first: &str,
@@ -595,7 +784,7 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
-    pub(super) fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
+    fn scan_u64_unprofiled(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         if table.key_shape() != KeyShape::U64 {
             return Err(scan_shape_mismatch(table, KeyShape::U64));
         }
@@ -613,7 +802,7 @@ impl Ops<'_> {
         .collect()
     }
 
-    pub(super) fn last_u64(&self, table: Table) -> Result<Option<U64Row>, PortError> {
+    fn last_u64_unprofiled(&self, table: Table) -> Result<Option<U64Row>, PortError> {
         if table.key_shape() != KeyShape::U64 {
             return Err(scan_shape_mismatch(table, KeyShape::U64));
         }
@@ -629,7 +818,7 @@ impl Ops<'_> {
             .transpose()
     }
 
-    pub(super) fn count(&self, table: Table) -> Result<u64, PortError> {
+    fn count_unprofiled(&self, table: Table) -> Result<u64, PortError> {
         let sql = format!("SELECT COUNT(*) FROM \"{table}\"");
         let mut statement = self.prepare(&sql)?;
         let count: i64 = statement

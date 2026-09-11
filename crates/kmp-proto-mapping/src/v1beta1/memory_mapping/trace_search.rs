@@ -135,6 +135,7 @@ pub fn trace_search_response_from_result(
     direction: RelationDirection,
     page: TracePageRequest,
 ) -> TraceResponse {
+    let _eval539_span = kmp_domain::eval539_profile::span("mapping.trace_search");
     let reached = result
         .routes
         .iter()

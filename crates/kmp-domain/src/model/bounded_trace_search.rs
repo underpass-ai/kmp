@@ -13,6 +13,8 @@ pub fn bounded_trace_search(
     reader: &impl TraceSnapshotReader,
     request: &TraceSearchRequest,
 ) -> Result<TraceSearchResult, PortError> {
+    let _eval539_total = crate::eval539_profile::span("search.target.total");
+    let eval539_selection = crate::eval539_profile::span("search.target.selection");
     request
         .validate()
         .map_err(|e| PortError::InvalidState(e.to_string()))?;
@@ -186,6 +188,7 @@ pub fn bounded_trace_search(
                 .map_err(|e| PortError::InvalidState(e.to_string()))?,
         );
     }
+    drop(eval539_selection);
     if request.proof {
         result.proof = Some(super::materialize_trace_proof::trace(
             reader,
