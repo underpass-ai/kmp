@@ -4,7 +4,8 @@ substitute a known observation date for an unknown event or validity start.
 
 Use Goto for a position, Near for its neighborhood, and Rewind/Forward to move
 through history. Copy the cursor or ref returned by KMP. Keep the same about,
-clock and dimensions while finishing one selection.
+clock and dimensions while finishing one selection. Goto tests labels as of
+that position: a label added later cannot match or appear in its coordinates.
 
 For the sample R1 observation, use
 `kmp_goto {"about":"project:sample","at":{"time":"2026-09-01T09:00:00Z"},"axis":"observed"}`.

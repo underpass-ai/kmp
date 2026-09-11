@@ -2,6 +2,7 @@ mod axis_key;
 mod entry_selection;
 mod extract;
 mod position;
+mod proof_memberships;
 mod request;
 
 pub use entry_selection::TemporalEntrySelection;
@@ -14,9 +15,8 @@ pub use axis_key::{compare_temporal_instants, temporal_instant_nanos, temporal_i
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    DimensionSelection, DimensionSelectionMode, DomainError, EntryLabels, KmpBundle, TemporalAxis,
+    DimensionSelection, DimensionSelectionMode, DomainError, KmpBundle, TemporalAxis,
     TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalInterval, bare_label_value,
-    labels_by_entry,
 };
 
 use self::axis_key::TemporalKeyKind;
@@ -155,20 +155,20 @@ impl TemporalMemoryTraversal {
     ) -> Result<TemporalTraversalResult, DomainError> {
         request.validate()?;
         let nodes = bundle_nodes_by_id(bundle);
-        let labels = labels_by_entry(bundle);
-        let no_labels = EntryLabels::default();
-        let mut positions = temporal_positions(bundle, &nodes, request.axis())?
-            .into_iter()
+        let mut all_positions = temporal_positions(bundle, &nodes, request.axis())?;
+        all_positions.sort();
+        // Lanes resolve the anchor; entry predicates apply only after the
+        // temporal cut, using every admitted lane of the same entry (#560).
+        let positions = all_positions
+            .iter()
             .filter(|position| {
                 request.dimensions().includes_coordinate(
                     position.coordinate.dimension(),
                     position.coordinate.scope_id(),
-                ) && request
-                    .dimensions()
-                    .admits(labels.get(&position.ref_id).unwrap_or(&no_labels))
+                )
             })
+            .cloned()
             .collect::<Vec<_>>();
-        positions.sort();
         let warnings = request
             .cursor()
             .map(|cursor| sequence_cursor_warnings(cursor, &positions))
@@ -193,7 +193,8 @@ impl TemporalMemoryTraversal {
                 })
             },
         );
-        let selection = select_positions(&positions, cursor.as_ref(), request);
+        let selection = select_positions(&all_positions, cursor.as_ref(), request);
+        let coordinates_by_ref = coordinates_by_ref(&selection.positions);
         let mut selected_ref_ids = ordered_unique_ref_ids(selection.positions);
         // A rewind page is consumed in the same direction the cursor moves:
         // newest to oldest. Keeping the page ascending while its continuation
@@ -207,7 +208,6 @@ impl TemporalMemoryTraversal {
             selection.total_unique_refs,
             selection.next_cursor,
         );
-        let coordinates_by_ref = coordinates_by_ref(&positions);
         let entries = build_entries(
             selected_ref_ids,
             &nodes,

@@ -117,6 +117,13 @@ que recupera el objeto nuevo aunque las páginas anteriores lo reutilizasen. Ver
 recorrido, incluida la primera página; omitir un cuerpo repetido no autoriza
 resumir ni eliminar evidencia.
 
+Al cambiar etiquetas temporales, probar una entrada antigua con una pertenencia
+posterior: ésta no puede satisfacer un selector ni aparecer en las coordenadas
+del Goto anterior. Mantener etiquetas múltiples y filtros de otras dimensiones
+(#560), ausencia de reloj, extremos inclusivo/exclusivo y continuaciones. La
+prueba conserva antecedentes anteriores al intervalo, pero sus pertenencias
+respetan su corte superior. Esta comprobación es conductual, no editorial.
+
 En los verbos temporales, `page` cuenta elementos de entradas y prueba del mismo
 paquete; `selection` identifica la selección limitada del núcleo. Ejecutar
 `next_actions` con sus argumentos completos: primero reconstruir ese paquete y
