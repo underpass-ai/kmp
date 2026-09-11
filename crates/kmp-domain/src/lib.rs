@@ -60,6 +60,11 @@ pub use value_objects::{
 pub use value_objects::{RelationExplanation, RelationSemanticClass};
 
 pub use model::{
+    EvidenceMissingWitness, EvidencePathBinding, EvidencePathBindings, EvidencePathCandidate,
+    EvidencePathGroup, EvidencePathRequest, EvidencePathResult, EvidencePathRole,
+    EvidencePathStatus, search_evidence_paths,
+};
+pub use model::{
     TraceRelationStep, TraceRoute, TraceSearchLimits, TraceSearchRequest, TraceSearchResult,
     TraceSearchStop, bounded_trace_search,
 };

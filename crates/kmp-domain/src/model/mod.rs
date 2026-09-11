@@ -72,3 +72,10 @@ mod trace_pending_states;
 mod trace_routing_stats;
 pub use trace_dimension_policy::TraceDimensionPolicy;
 pub use trace_routing_stats::TraceRoutingStats;
+
+mod evidence_paths;
+pub use evidence_paths::{
+    EvidenceMissingWitness, EvidencePathBinding, EvidencePathBindings, EvidencePathCandidate,
+    EvidencePathGroup, EvidencePathRequest, EvidencePathResult, EvidencePathRole,
+    EvidencePathStatus, search_evidence_paths,
+};

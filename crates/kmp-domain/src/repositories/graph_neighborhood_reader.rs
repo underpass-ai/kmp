@@ -39,6 +39,19 @@ pub trait GraphNeighborhoodReader {
         }
     }
 
+    /// Seed-based role discovery and joint obligations over one graph snapshot.
+    /// This library capability is separate from MCP request/response projection.
+    fn load_evidence_paths(
+        &self,
+        _request: &crate::EvidencePathRequest,
+    ) -> impl Future<Output = Result<crate::EvidencePathResult, PortError>> + Send {
+        async {
+            Err(PortError::Unavailable(
+                "evidence paths are not supported by this graph adapter".into(),
+            ))
+        }
+    }
+
     fn load_neighborhood(
         &self,
         root_node_id: &str,
@@ -89,6 +102,13 @@ where
         self.as_ref().load_bounded_trace(request).await
     }
 
+    async fn load_evidence_paths(
+        &self,
+        request: &crate::EvidencePathRequest,
+    ) -> Result<crate::EvidencePathResult, PortError> {
+        self.as_ref().load_evidence_paths(request).await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,
@@ -132,6 +152,13 @@ where
         request: &crate::TraceSearchRequest,
     ) -> Result<crate::TraceSearchResult, PortError> {
         (*self).load_bounded_trace(request).await
+    }
+
+    async fn load_evidence_paths(
+        &self,
+        request: &crate::EvidencePathRequest,
+    ) -> Result<crate::EvidencePathResult, PortError> {
+        (*self).load_evidence_paths(request).await
     }
 
     async fn load_neighborhood(

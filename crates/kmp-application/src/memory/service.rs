@@ -462,6 +462,24 @@ where
         apply_dimension_selection(result, &dimensions, &render_options)
     }
 
+    /// Library-level seed discovery. The MCP transport does not expose this
+    /// internal role policy until its progressive agent surface is designed.
+    pub async fn evidence_paths(
+        &self,
+        request: kmp_domain::EvidencePathRequest,
+    ) -> Result<kmp_domain::EvidencePathResult, ApplicationError> {
+        request
+            .validate()
+            .map_err(|e| ApplicationError::Validation(e.to_string()))?;
+        validate_supplied_entry_ref(&request.about, "evidence seed", &request.from)
+            .map_err(ApplicationError::Validation)?;
+        if let Some(kmp_domain::TemporalCursor::Ref(reference)) = request.temporal.cursor() {
+            validate_supplied_entry_ref(&request.about, "as_of.ref", reference)
+                .map_err(ApplicationError::Validation)?;
+        }
+        self.query_application.evidence_paths(&request).await
+    }
+
     pub async fn trace_search(
         &self,
         request: kmp_domain::TraceSearchRequest,
