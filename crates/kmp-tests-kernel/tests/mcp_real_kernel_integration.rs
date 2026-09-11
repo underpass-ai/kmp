@@ -636,6 +636,15 @@ fn parity_seed_arguments() -> Value {
             "ingested_at":"2026-08-25T00:05:00Z"
         });
     }
+    for relation in arguments["memory"]["relations"]
+        .as_array_mut()
+        .expect("relation fixtures")
+    {
+        relation["clocks"] = json!({
+            "observed_at":"2026-08-25T00:01:00Z",
+            "ingested_at":"2026-08-25T00:05:00Z"
+        });
+    }
     arguments
 }
 
