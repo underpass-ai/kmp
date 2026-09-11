@@ -1,9 +1,31 @@
 use std::future::Future;
 use std::sync::Arc;
 
-use crate::{ContextPathNeighborhood, NeighborhoodRequest, NodeNeighborhood, PortError};
+use crate::{
+    ContextPathNeighborhood, NeighborhoodRequest, NodeNeighborhood, NodeProjection, PortError,
+};
 
 pub trait GraphNeighborhoodReader {
+    /// Read the requested nodes without requiring their neighborhoods. Results
+    /// preserve input order, duplicates and missing slots. This operation does
+    /// not discover neighbors or authorize a scope; callers select refs first.
+    /// Backends may override the sequential fallback with a point-read batch.
+    fn load_nodes_batch(
+        &self,
+        node_ids: Vec<String>,
+    ) -> impl Future<Output = Result<Vec<Option<NodeProjection>>, PortError>> + Send
+    where
+        Self: Sync,
+    {
+        async {
+            let mut nodes = Vec::with_capacity(node_ids.len());
+            for id in node_ids {
+                nodes.push(self.load_neighborhood(&id, 1).await?.map(|n| n.root));
+            }
+            Ok(nodes)
+        }
+    }
+
     /// One bounded search and all returned relation explanations share a snapshot.
     /// Unsupported adapters fail explicitly; never fall back to an unbounded read.
     fn load_bounded_trace(
@@ -53,6 +75,13 @@ impl<T> GraphNeighborhoodReader for Arc<T>
 where
     T: GraphNeighborhoodReader + Send + Sync + ?Sized,
 {
+    async fn load_nodes_batch(
+        &self,
+        node_ids: Vec<String>,
+    ) -> Result<Vec<Option<NodeProjection>>, PortError> {
+        self.as_ref().load_nodes_batch(node_ids).await
+    }
+
     async fn load_bounded_trace(
         &self,
         request: &crate::TraceSearchRequest,
@@ -91,6 +120,13 @@ impl<T> GraphNeighborhoodReader for &T
 where
     T: GraphNeighborhoodReader + Send + Sync + ?Sized,
 {
+    fn load_nodes_batch(
+        &self,
+        node_ids: Vec<String>,
+    ) -> impl Future<Output = Result<Vec<Option<NodeProjection>>, PortError>> + Send {
+        (*self).load_nodes_batch(node_ids)
+    }
+
     async fn load_bounded_trace(
         &self,
         request: &crate::TraceSearchRequest,

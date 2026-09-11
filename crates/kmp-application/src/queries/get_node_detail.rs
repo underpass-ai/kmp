@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use kmp_domain::{
-    GraphNeighborhoodReader, NodeDetailProjection, NodeDetailReader, NodeNeighborhood,
-};
+use kmp_domain::{GraphNeighborhoodReader, NodeDetailProjection, NodeDetailReader, NodeProjection};
 
 use crate::ApplicationError;
 use crate::queries::{GraphNodeView, QueryApplicationService};
@@ -60,7 +58,7 @@ where
         };
 
         Ok(GetNodeDetailResult {
-            node: map_root_node(&neighborhood),
+            node: map_node(&neighborhood.root),
             detail: node_detail,
         })
     }
@@ -84,19 +82,19 @@ where
     }
 }
 
-fn map_root_node(neighborhood: &NodeNeighborhood) -> GraphNodeView {
+pub(super) fn map_node(node: &NodeProjection) -> GraphNodeView {
     GraphNodeView {
-        node_id: neighborhood.root.node_id.clone(),
-        node_kind: neighborhood.root.node_kind.clone(),
-        title: neighborhood.root.title.clone(),
-        summary: neighborhood.root.summary.clone(),
-        status: neighborhood.root.status.clone(),
-        labels: neighborhood.root.labels.clone(),
-        properties: neighborhood.root.properties.clone(),
+        node_id: node.node_id.clone(),
+        node_kind: node.node_kind.clone(),
+        title: node.title.clone(),
+        summary: node.summary.clone(),
+        status: node.status.clone(),
+        labels: node.labels.clone(),
+        properties: node.properties.clone(),
     }
 }
 
-fn map_node_detail(projection: NodeDetailProjection) -> NodeDetailView {
+pub(super) fn map_node_detail(projection: NodeDetailProjection) -> NodeDetailView {
     NodeDetailView {
         node_id: projection.node_id,
         detail: projection.detail,
@@ -105,7 +103,7 @@ fn map_node_detail(projection: NodeDetailProjection) -> NodeDetailView {
     }
 }
 
-fn trim_to_option(value: &str) -> Option<String> {
+pub(super) fn trim_to_option(value: &str) -> Option<String> {
     let trimmed = value.trim();
     if trimmed.is_empty() {
         None
