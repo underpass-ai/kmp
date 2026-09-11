@@ -76,6 +76,7 @@ pub(super) fn select(
                 .chain(bundle.neighbor_nodes())
                 .find(|node| node.node_id() == id)?;
             let mut entry_coordinates = coordinates.get(id)?.clone();
+            entry_coordinates.retain(|coordinate| admission.admits_coordinate(coordinate));
             entry_coordinates.sort_by(compare_temporal_coordinates);
             entry_coordinates.dedup();
             Some(TemporalEntry {

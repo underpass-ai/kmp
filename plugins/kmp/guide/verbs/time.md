@@ -70,6 +70,32 @@ An empty `proof.expired` alone does not establish that every returned state hold
 If a budget or selection cap prevents completion, report the exact pending
 continuation; never call a partial packet the whole period.
 
+## Labels have their own temporal membership
+
+The selected clock applies to each label membership, not just to the entry's
+first coordinate. Goto includes memberships at or before its cursor; Rewind
+and Forward use their strict side, Near both sides, and `interval` restricts
+membership to its half-open range. Missing explicit clocks do not substitute.
+Returned entry coordinates come from that selection. Entry selectors run
+before entry/window limits and can use any admitted lane of the entry, even
+when `dimensions.mode: only` displays another lane. Multiple values under one
+key remain independent; `stage=prod` does not satisfy `env=prod`.
+
+For example, an observation has `task=register` on September 1 and gains
+`env=prod` on September 2. Goto on the observed clock at September 1 noon
+returns only the task coordinate. Adding the selector below excludes that
+observation; at the exact September 2 membership instant it includes it.
+
+```json
+{"about":"project:sample","at":{"time":"2026-09-01T12:00:00Z"},"axis":"observed","dimensions":{"selectors":[{"key":"env","op":"in","values":["prod"]}]}}
+```
+
+Dependency proof may include earlier antecedents outside the entry interval.
+Its label predicates and coordinates obey the proof upper boundary: Goto's
+inclusive cursor or a stricter exclusive interval end. These are selected
+memberships, not a reconstruction of every historical version of an entry's
+text. Inspect remains available for the current stored record.
+
 ## Complete the selected packet before navigating onward
 
 `page.has_more` means entry or proof items remain in this response selection.

@@ -1,7 +1,9 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{DomainError, TemporalAxis, TemporalCoordinate, TemporalCursor, TemporalDirection};
+use crate::{
+    DomainError, EntryLabels, TemporalAxis, TemporalCoordinate, TemporalCursor, TemporalDirection,
+};
 
 use super::TemporalTraversalRequest;
 use super::axis_key::{TemporalAxisKey, TemporalKeyKind, primary_coordinate_key};
@@ -93,7 +95,8 @@ pub(super) fn select_positions(
         .collect::<Vec<_>>();
 
     let Some(cursor_axis_key) = cursor_axis_key else {
-        comparable.retain(|position| entry_selected(position, request));
+        let labels = labels_for_positions(comparable.iter());
+        comparable.retain(|position| entry_selected(position, request, &labels));
         // A direct interval starts at the selected range itself. Do not invent
         // a time just before its start or lose memories tied at that boundary.
         let side = if request.direction() == TemporalDirection::Rewind {
@@ -119,11 +122,12 @@ pub(super) fn select_positions(
     // direction branches below still partition rewind, near and forward by
     // their validity start (or their end when the start is open).
     if validity_time_cursor && request.direction() == TemporalDirection::Goto {
-        let active = comparable
+        let mut active: Vec<_> = comparable
             .into_iter()
             .filter(|position| validity_contains(&position.coordinate, cursor_axis_key))
-            .filter(|position| entry_selected(position, request))
             .collect();
+        let labels = labels_for_positions(active.iter());
+        active.retain(|position| entry_selected(position, request, &labels));
         return select_limited(
             active,
             request.limit_entries().unwrap_or(DEFAULT_GOTO_ENTRIES),
@@ -131,10 +135,34 @@ pub(super) fn select_positions(
         );
     }
 
+    // A Goto ref is still an as-of state. A later coordinate of an old
+    // entry must not leak through whole-entry ref ordering.
+    if request.direction() == TemporalDirection::Goto {
+        comparable.retain(|position| position.axis_key <= *cursor_axis_key);
+    }
     let mut partitions = partition_positions(
         comparable,
         cursor_axis_key,
         cursor.and_then(|cursor| cursor.ref_id.as_deref()),
+        request,
+    );
+    let labels = labels_for_positions(
+        partitions
+            .before
+            .iter()
+            .filter(|_| request.direction() != TemporalDirection::Forward)
+            .chain(partitions.exact.iter().filter(|_| {
+                matches!(
+                    request.direction(),
+                    TemporalDirection::Goto | TemporalDirection::Near
+                )
+            }))
+            .chain(partitions.after.iter().filter(|_| {
+                matches!(
+                    request.direction(),
+                    TemporalDirection::Forward | TemporalDirection::Near
+                )
+            })),
     );
     // Resolve the original ref's ordered position before focusing entries.
     // An unselected anchor still determines the sides; limits apply afterward.
@@ -143,7 +171,7 @@ pub(super) fn select_positions(
         &mut partitions.exact,
         &mut partitions.after,
     ] {
-        side.retain(|position| entry_selected(position, request));
+        side.retain(|position| entry_selected(position, request, &labels));
     }
 
     match request.direction() {
@@ -229,8 +257,38 @@ fn validity_contains(coordinate: &TemporalCoordinate, cursor_axis_key: &Temporal
     started && validity_not_ended(coordinate, cursor_axis_key)
 }
 
-fn entry_selected(position: &TemporalPosition, request: &TemporalTraversalRequest) -> bool {
-    request
+fn labels_for_positions<'a>(
+    positions: impl Iterator<Item = &'a TemporalPosition>,
+) -> BTreeMap<String, EntryLabels> {
+    let mut coordinates = BTreeMap::<String, Vec<(&str, &str)>>::new();
+    for position in positions {
+        coordinates
+            .entry(position.ref_id.clone())
+            .or_default()
+            .push((
+                position.coordinate.dimension(),
+                position.coordinate.scope_id(),
+            ));
+    }
+    coordinates
+        .into_iter()
+        .map(|(id, coords)| (id, EntryLabels::from_coordinates(coords)))
+        .collect()
+}
+
+fn entry_selected(
+    position: &TemporalPosition,
+    request: &TemporalTraversalRequest,
+    labels: &BTreeMap<String, EntryLabels>,
+) -> bool {
+    request.dimensions().includes_coordinate(
+        position.coordinate.dimension(),
+        position.coordinate.scope_id(),
+    ) && request.dimensions().admits(
+        labels
+            .get(&position.ref_id)
+            .unwrap_or(&EntryLabels::default()),
+    ) && request
         .entry_selection()
         .is_none_or(|selection| selection.admits(&position.ref_id))
 }
@@ -251,6 +309,7 @@ fn partition_positions(
     comparable: Vec<TemporalPosition>,
     cursor_axis_key: &TemporalAxisKey,
     cursor_ref: Option<&str>,
+    request: &TemporalTraversalRequest,
 ) -> TemporalPartitions {
     let Some(cursor_ref) = cursor_ref else {
         return TemporalPartitions {
@@ -271,7 +330,18 @@ fn partition_positions(
         };
     };
 
-    let ordered_refs = ordered_unique_ref_ids(comparable.clone());
+    let ordered_refs = ordered_unique_ref_ids(
+        comparable
+            .iter()
+            .filter(|position| {
+                request.dimensions().includes_coordinate(
+                    position.coordinate.dimension(),
+                    position.coordinate.scope_id(),
+                )
+            })
+            .cloned()
+            .collect(),
+    );
     let Some(anchor) = ordered_refs.iter().position(|ref_id| ref_id == cursor_ref) else {
         return TemporalPartitions {
             before: Vec::new(),

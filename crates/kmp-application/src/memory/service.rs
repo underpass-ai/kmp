@@ -674,7 +674,6 @@ fn temporal_result(
         dimensions,
     } = read;
     let quality = context.rendered.quality.clone();
-    let source_bundle = filter_bundle_by_memory_dimensions(&context.bundle, &dimensions)?;
 
     let request = TemporalTraversalRequest::new(query.direction, query.cursor)
         .with_entry_selection(query.entry_selection)
@@ -693,10 +692,14 @@ fn temporal_result(
         request
     };
 
-    // Select against the original label map. The returned source bundle has
-    // already dropped excluded lanes, which may carry labels a selector needs.
-    // Traversal applies the same coordinate and entry filters before paging.
+    // Apply temporal membership admission before entry predicates and lanes.
+    // Proof can include older antecedents, but no labels beyond its upper cut.
     let traversal = TemporalMemoryTraversal::traverse(&context.bundle, &request)?;
+    let source_bundle = filter_bundle_by_memory_dimensions_with_labels(
+        &context.bundle,
+        &dimensions,
+        &traversal.proof_labels(&context.bundle)?,
+    )?;
 
     Ok(TemporalMemoryResult {
         traversal,
@@ -855,17 +858,24 @@ fn filter_bundle_by_memory_dimensions(
     bundle: &KmpBundle,
     dimensions: &DimensionSelection,
 ) -> Result<KmpBundle, ApplicationError> {
+    filter_bundle_by_memory_dimensions_with_labels(bundle, dimensions, &labels_by_entry(bundle))
+}
+
+fn filter_bundle_by_memory_dimensions_with_labels(
+    bundle: &KmpBundle,
+    dimensions: &DimensionSelection,
+    labels: &BTreeMap<String, EntryLabels>,
+) -> Result<KmpBundle, ApplicationError> {
     let mut included_node_ids = BTreeSet::from([bundle.root_node().node_id().to_string()]);
     let mut selected_entry_ids = BTreeSet::new();
     let node_kinds = bundle_node_kinds(bundle);
-    let labels = labels_by_entry(bundle);
 
     for relationship in bundle
         .relationships()
         .iter()
         .filter(|relationship| relationship.relationship_type() == "contains_entry")
     {
-        if contains_entry_selected(relationship, dimensions, &labels) {
+        if contains_entry_selected(relationship, dimensions, labels) {
             included_node_ids.insert(relationship.source_node_id().to_string());
             included_node_ids.insert(relationship.target_node_id().to_string());
             selected_entry_ids.insert(relationship.target_node_id().to_string());
@@ -893,7 +903,7 @@ fn filter_bundle_by_memory_dimensions(
         .iter()
         .filter(|relationship| {
             if relationship.relationship_type() == "contains_entry" {
-                return contains_entry_selected(relationship, dimensions, &labels);
+                return contains_entry_selected(relationship, dimensions, labels);
             }
             included_node_ids.contains(relationship.source_node_id())
                 && included_node_ids.contains(relationship.target_node_id())
