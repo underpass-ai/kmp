@@ -30,6 +30,7 @@ tokio-stream.workspace = true
 tokio-rustls = "0.26.4"
 
 [dev-dependencies]
+kmp-embedded.workspace = true
 kmp-observability = { workspace = true, features = ["otel"] }
 kmp-testkit.workspace = true
 tempfile = "3.26.0"

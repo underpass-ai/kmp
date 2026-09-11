@@ -8,7 +8,7 @@ use kmp_adapter_embedded::{
 };
 use kmp_application::{
     CommandApplicationService, KernelMemoryApplicationService, QueryApplicationService,
-    RoutingProjectionWriter, UpdateContextUseCase,
+    UpdateContextUseCase,
 };
 use kmp_domain::{PortError, QualityMetricsObserver};
 use kmp_observability::{BufferedQualityMetricsObserver, EmbeddedTelemetryGuard};
@@ -23,7 +23,7 @@ pub type EmbeddedMemoryService = KernelMemoryApplicationService<
     EmbeddedKernelStore,
     EmbeddedKernelStore,
     EmbeddedKernelStore,
-    RoutingProjectionWriter<Arc<EmbeddedKernelStore>, Arc<EmbeddedKernelStore>>,
+    EmbeddedKernelStore,
 >;
 
 /// One opened embedded kernel: the composed service plus the store handle
@@ -65,15 +65,18 @@ impl EmbeddedKernel {
 
         let graph = Arc::new(store.clone());
         let detail = Arc::new(store.clone());
-        let query_application = Arc::new(QueryApplicationService::new(
-            Arc::clone(&graph),
-            Arc::clone(&detail),
-            Arc::new(store.clone()),
-            GENERATOR_VERSION,
-        ));
+        let query_application = Arc::new(
+            QueryApplicationService::new(
+                Arc::clone(&graph),
+                Arc::clone(&detail),
+                Arc::new(store.clone()),
+                GENERATOR_VERSION,
+            )
+            .with_read_snapshots(Arc::new(store.clone())),
+        );
         let update_context = Arc::new(UpdateContextUseCase::new_with_projection_writer(
             Arc::new(store.clone()),
-            RoutingProjectionWriter::new(graph, detail),
+            store.clone(),
             GENERATOR_VERSION,
         ));
         let service = Arc::new(KernelMemoryApplicationService::new(

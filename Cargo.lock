@@ -1912,6 +1912,7 @@ dependencies = [
  "kmp-application",
  "kmp-config",
  "kmp-domain",
+ "kmp-embedded",
  "kmp-observability",
  "kmp-ports",
  "kmp-proto",

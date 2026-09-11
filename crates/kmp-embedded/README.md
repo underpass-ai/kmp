@@ -29,6 +29,17 @@ Projection is synchronous on purpose: when a write returns, what it
 materialized is already readable. There is no queue to drain and no eventual
 window where memory disagrees with itself.
 
+Each memory read pins one SQLite read-only snapshot for graph, bodies, sources,
+about selection and membership checks. The connection returns to its pool when
+the operation finishes or is cancelled. A later request opens a new snapshot;
+cursors still detect changes in the selected content. Projection mutations for
+one command use one transaction for both graph and details.
+
+Custom application compositions can install a `ReadSnapshotProvider` on their
+`QueryApplicationService`. Configured provider errors propagate. Separate-store
+compositions without a provider retain their existing best-effort semantics;
+this is not a distributed-transaction guarantee.
+
 SQLite stores support multiple agent processes. The
 [viewer](https://crates.io/crates/kmp-viewer) still mounts in-process so it
 shares the exact live kernel and adds no daemon, network hop or second read
