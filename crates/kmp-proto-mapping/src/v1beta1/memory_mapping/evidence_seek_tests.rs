@@ -248,6 +248,7 @@ fn pages_preserve_candidate_group_indexes_and_bind_the_unreturned_domains() {
         ..Default::default()
     };
     let result = EvidencePathResult {
+        proof: None,
         from: "seed".into(),
         context_discovery: false,
         relations: vec![],

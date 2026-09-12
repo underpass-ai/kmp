@@ -9,25 +9,25 @@ use kmp_domain::{
     NodeDetailReader, NodeRelationshipReader, ProjectionWriter, SnapshotStore, TemporalDirection,
 };
 use kmp_proto::v1beta1::{
-    AskRequest, AskResponse, ForwardRequest, ForwardResponse, GotoRequest, GotoResponse,
-    IngestRequest, IngestResponse, InspectRequest, InspectResponse, NearRequest, NearResponse,
-    ProjectVisualRequest, ProjectVisualResponse, RelabelRequest, RelabelResponse, RelateRequest,
-    RelateResponse, RewindRequest, RewindResponse, TemporalMoveRequest, TemporalMoveResponse,
-    TemporalNearRequest, TraceRequest, TraceResponse, WakeRequest, WakeResponse,
-    kernel_memory_service_server::KernelMemoryService,
+    AskRequest, AskResponse, CondenseRequest, CondenseResponse, ForwardRequest, ForwardResponse,
+    GotoRequest, GotoResponse, IngestRequest, IngestResponse, InspectRequest, InspectResponse,
+    NearRequest, NearResponse, ProjectVisualRequest, ProjectVisualResponse, RelabelRequest,
+    RelabelResponse, RelateRequest, RelateResponse, RewindRequest, RewindResponse,
+    TemporalMoveRequest, TemporalMoveResponse, TemporalNearRequest, TraceRequest, TraceResponse,
+    WakeRequest, WakeResponse, kernel_memory_service_server::KernelMemoryService,
 };
 use opentelemetry::KeyValue;
 use prost::Message;
 use tonic::{Code, Request, Response, Status};
 
 use crate::transport::proto_mapping_v1beta1::{
-    ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
-    ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
-    relabel_command_from_proto, relabel_response_from_outcome, relate_query_from_proto,
-    relate_response_from_result, temporal_query_from_move_proto, temporal_query_from_near_proto,
-    temporal_response_from_result, trace_query_from_proto, trace_response_from_result,
-    visual_projection_query_from_proto, visual_projection_response_from_result,
-    wake_query_from_proto, wake_response_from_result,
+    ask_query_from_proto, ask_response_from_result, condense_command_from_proto,
+    condense_response_from_card, ingest_command_from_proto, ingest_response_from_outcome,
+    inspect_query_from_proto, inspect_response_from_result, relabel_command_from_proto,
+    relabel_response_from_outcome, relate_query_from_proto, relate_response_from_result,
+    temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
+    trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
+    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use crate::transport::support::map_application_error;
 use kmp_proto_mapping::v1beta1::recall_projection::{
@@ -453,6 +453,64 @@ where
         Ok(Response::new(response))
     }
 
+    #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Condense"))]
+    async fn condense(
+        &self,
+        request: Request<CondenseRequest>,
+    ) -> Result<Response<CondenseResponse>, Status> {
+        let start = Instant::now();
+        // The kernel stamps authorship. A card carrying the caller's own
+        // instant could be placed before a historical cut it never existed at.
+        let command = condense_command_from_proto(request.into_inner(), kernel_now_rfc3339())
+            .map_err(|status| map_proto_error("KernelMemoryService.Condense", &start, *status))?;
+        tracing::info!(
+            rpc = "KernelMemoryService.Condense",
+            about = %command.about,
+            ref_id = %command.node_id,
+            language = %command.language,
+            source_revision = command.source_revision,
+            "kernel memory grpc request"
+        );
+        let outcome = self.application.condense(command).await.map_err(|error| {
+            map_application_error_with_log("KernelMemoryService.Condense", &start, error)
+        })?;
+        let card = match outcome {
+            Ok(card) => card,
+            Err(rejection) => {
+                // The policy refused a write the store could have performed.
+                // The code says which kind so a caller can branch without
+                // reading the sentence.
+                let code = if rejection.is_conflict() {
+                    Code::Aborted
+                } else if rejection.is_not_found() {
+                    Code::NotFound
+                } else {
+                    Code::InvalidArgument
+                };
+                record_kmp_grpc_rpc(
+                    "KernelMemoryService.Condense",
+                    "error",
+                    code.description(),
+                    start.elapsed(),
+                );
+                return Err(Status::new(code, rejection.to_string()));
+            }
+        };
+        tracing::info!(
+            rpc = "KernelMemoryService.Condense",
+            ref_id = %card.node_id,
+            card_revision = card.card_revision,
+            "kernel memory grpc response"
+        );
+        record_kmp_grpc_rpc(
+            "KernelMemoryService.Condense",
+            "success",
+            "none",
+            start.elapsed(),
+        );
+        Ok(Response::new(condense_response_from_card(card)))
+    }
+
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Inspect"))]
     async fn inspect(
         &self,
@@ -766,6 +824,15 @@ fn selected_abouts_from_bundle_and_scope_ids<'a>(
     }
 
     selected
+}
+
+/// The kernel's own clock, formatted the way stored instants are.
+fn kernel_now_rfc3339() -> String {
+    let seconds = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|since| since.as_secs() as i64)
+        .unwrap_or_default();
+    kmp_domain::rfc3339_from_epoch_seconds(seconds)
 }
 
 fn map_proto_error(rpc: &'static str, start: &Instant, status: Status) -> Status {

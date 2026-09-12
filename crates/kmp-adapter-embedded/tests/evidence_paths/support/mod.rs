@@ -71,6 +71,7 @@ pub fn role(
 }
 pub fn request(roles: Vec<EvidencePathRole>) -> EvidencePathRequest {
     EvidencePathRequest {
+        proof: false,
         about: ABOUT.into(),
         from: "s".into(),
         roles,
@@ -82,6 +83,7 @@ pub fn request(roles: Vec<EvidencePathRole>) -> EvidencePathRequest {
             depth: 1024,
             states: 32768,
         },
+        body: Default::default(),
     }
 }
 pub async fn store(mutations: Vec<ProjectionMutation>) -> (tempfile::TempDir, EmbeddedKernelStore) {

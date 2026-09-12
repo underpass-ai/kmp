@@ -3,7 +3,7 @@ use serde_json::Value;
 use crate::contract::validate_required_arguments;
 use crate::projection::try_enforce_recall_output_budget;
 use crate::serving::ToolError;
-use crate::serving::adapters::grpc::requests::visual_projection_request_from_arguments;
+use crate::serving::adapters::tool_request_mapping::VisualProjectionRequestMapper;
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::serving::{app_data_success_result, tool_success_result};
 use crate::write::build_ingest_plan;
@@ -35,6 +35,8 @@ const INSPECT_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/inspect.response.json");
 const RELABEL_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/relabel.response.json");
+const CONDENSE_RESPONSE_FIXTURE: &str =
+    include_str!("../../../fixtures/kernel/v1beta1/kmp/condense.response.json");
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FixtureKernelMcpBackend;
@@ -76,8 +78,18 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
             &["about", "ref", "why", "idempotency_key"],
             RELABEL_RESPONSE_FIXTURE,
         ),
+        // The fixture backend validates the call and answers the reference
+        // example. It stores nothing, so it cannot refuse a stale card: a
+        // compare-and-set is only meaningful against a real store.
+        "kmp_condense" => read_fixture_tool_result(
+            arguments,
+            &[
+                "about", "ref", "language", "scope", "card", "source", "expect",
+            ],
+            CONDENSE_RESPONSE_FIXTURE,
+        ),
         "kmp_view_read_projection" => {
-            visual_projection_request_from_arguments(arguments)
+            VisualProjectionRequestMapper::from_arguments(arguments)
                 .map_err(ToolError::invalid_argument)?;
             Ok(app_data_success_result(serde_json::json!({
                 "contract": "kmp.visual.projection.v1",

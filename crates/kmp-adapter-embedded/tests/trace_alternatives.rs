@@ -31,6 +31,7 @@ fn edge(a: &str, b: &str, rel: &str) -> ProjectionMutation {
 }
 fn query(targets: &[&str]) -> TraceSearchRequest {
     TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: "s".into(),
         targets: targets.iter().map(|s| (*s).into()).collect(),
@@ -42,6 +43,7 @@ fn query(targets: &[&str]) -> TraceSearchRequest {
         paths_per_target: 2,
         limits: TraceSearchLimits::default(),
         temporal: Default::default(),
+        body: Default::default(),
     }
 }
 fn step(rel: &str, direction: RelationDirection) -> TraceRelationStep {

@@ -32,6 +32,22 @@ impl ReadSelectionFingerprint {
         if let Some(search) = &response.search {
             digest.message(search);
         }
+        if let Some(proof) = &response.proof {
+            digest.messages("gaps", &response.gaps);
+            digest.message(proof);
+            digest.messages("supports", &response.supports);
+            digest.bytes(b"objects");
+            for object in &response.objects {
+                let mut canonical = object.clone();
+                if let Some(o) = canonical.object.as_mut() {
+                    o.metadata.clear();
+                }
+                digest.message(&canonical);
+                if let Some(o) = &object.object {
+                    digest.metadata(&o.metadata);
+                }
+            }
+        }
         digest.finish()
     }
 

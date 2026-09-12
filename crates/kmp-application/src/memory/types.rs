@@ -307,6 +307,11 @@ pub struct InspectMemoryQuery {
     pub include_incoming: bool,
     pub include_outgoing: bool,
     pub include_raw: bool,
+    /// The body revision the caller declares it wants. `None` inspects
+    /// whatever is current. `Some` turns this read into an exact expansion:
+    /// the store holds one body version per node, so it either is that
+    /// revision or the read is a conflict naming the one that is there.
+    pub expect_revision: Option<u64>,
 }
 
 #[derive(Clone, PartialEq, Eq)]

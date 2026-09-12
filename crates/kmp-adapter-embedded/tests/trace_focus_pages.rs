@@ -64,6 +64,7 @@ async fn fixture(arrows: &[(String, String, &str)]) -> (tempfile::TempDir, Embed
 
 fn query(target: &str) -> TraceSearchRequest {
     TraceSearchRequest {
+        proof: false,
         about: ABOUT.into(),
         from: "s".into(),
         targets: [target.into()].into(),
@@ -80,6 +81,7 @@ fn query(target: &str) -> TraceSearchRequest {
                 LabelSelector::new("env", LabelSelectorOperator::In, ["prod"]).expect("selector"),
             ])),
         },
+        body: Default::default(),
     }
 }
 

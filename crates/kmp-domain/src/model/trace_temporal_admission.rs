@@ -170,6 +170,22 @@ impl<'a, R: TraceSnapshotReader> TraceTemporalAdmission<'a, R> {
         )))
     }
 
+    pub fn proof_coordinates(
+        &mut self,
+        id: &str,
+    ) -> Result<Option<Vec<TemporalCoordinate>>, PortError> {
+        if !self.load_coordinates(id)? {
+            return Ok(None);
+        }
+        Ok(Some(
+            self.coordinates[id]
+                .iter()
+                .filter(|c| self.window().admits_coordinate(c))
+                .cloned()
+                .collect(),
+        ))
+    }
+
     fn load_coordinates(&mut self, id: &str) -> Result<bool, PortError> {
         if self.coordinates.contains_key(id) {
             return Ok(true);

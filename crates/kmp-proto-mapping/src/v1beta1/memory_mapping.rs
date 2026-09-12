@@ -70,7 +70,11 @@ pub use visual_projection::{
     visual_projection_query_from_proto, visual_projection_response_from_result,
 };
 
+mod condense;
+mod trace_body_options;
 mod trace_material;
+mod trace_proof;
+pub use condense::{NODE_BODY_SCOPE, condense_command_from_proto, condense_response_from_card};
 mod trace_search;
 pub use trace_search::{trace_search_request_from_proto, trace_search_response_from_result};
 #[cfg(test)]

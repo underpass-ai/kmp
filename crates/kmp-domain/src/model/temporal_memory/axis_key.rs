@@ -180,6 +180,23 @@ pub fn temporal_instant_rfc3339(value: &str) -> Option<String> {
     Some(text)
 }
 
+/// Writes an epoch-second instant as RFC 3339 in UTC.
+///
+/// The inverse direction of [`temporal_instant_rfc3339`], for a caller that
+/// holds a clock reading rather than a stored string. The domain formats it;
+/// reading the clock stays outside, where it can be substituted.
+pub fn rfc3339_from_epoch_seconds(seconds: i64) -> String {
+    let days = seconds.div_euclid(86_400);
+    let second_of_day = seconds.rem_euclid(86_400);
+    let (year, month, day) = civil_from_days(days);
+    format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
+        second_of_day / 3_600,
+        (second_of_day % 3_600) / 60,
+        second_of_day % 60
+    )
+}
+
 /// Proleptic Gregorian date of a day count since 1970-01-01 (Howard
 /// Hinnant's `civil_from_days`).
 fn civil_from_days(days: i64) -> (i64, u32, u32) {

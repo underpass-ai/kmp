@@ -18,7 +18,18 @@ pub(crate) enum RelationPageBudget {
 impl RelationPageBudget {
     fn sections(&self, value: &Value) -> &'static [&'static str] {
         match self {
+            Self::Trace if value.get("seek").is_some() && value.get("proof").is_some() => &[
+                "trace",
+                "candidates",
+                "groups",
+                "objects",
+                "supports",
+                "gaps",
+            ],
             Self::Trace if value.get("seek").is_some() => &["trace", "candidates", "groups"],
+            Self::Trace if value.get("proof").is_some() => {
+                &["trace", "objects", "supports", "gaps"]
+            }
             Self::Trace => &["trace"],
             Self::Relate => &["facts", "declared", "coordinate", "tensions", "proposed"],
         }
@@ -32,6 +43,7 @@ impl RelationPageBudget {
     ) -> Result<Value, ToolError> {
         if matches!(self, Self::Trace) {
             super::trace_material_expansion::attach(&mut value, arguments);
+            super::trace_body_actions::attach(&mut value, arguments);
             super::evidence_seek::attach_review(&mut value, arguments);
         }
         let limit = requested_byte_limit(arguments).map_err(ToolError::invalid_argument)?;

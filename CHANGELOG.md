@@ -9,6 +9,34 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-09-12
+
+### Added
+
+- Trace fetches selected path entries and typed evidence sources together, preserving their provenance, attachment clocks and explicit missing or incomplete proof. Both destination search and evidence discovery use the same materialization contract.
+- Body descriptors expose stored record sizes and exact revisions before canonical text is fetched. `max_body_record_bytes` admits a deterministic prefix; named expansion actions bind requested refs to the selection manifest and reject a changed selection before returning text.
+- `kmp_condense` stores a reader-authored card for one entry or evidence source, bound to its body revision and record digest. Fresh compact Trace reads reuse valid cards; stale, absent, wrong-language or post-cut cards do not silently fall back to canonical bodies.
+- The progressive guide includes a Condense topic, a short worked card and a complete descriptor→expansion→card→compact example. Audit starts with a brief map and keeps detailed routing and proof guidance available on demand.
+
+### Changed
+
+- Inspect reduces repeated response-sizing work while preserving canonical objects, selected evidence, byte ceilings and exact continuation behavior.
+- ChronoLoom refreshes its light and dark themes, navigation and controls. Empty temporal lanes remain explicit; memories without an occurrence time remain discoverable on their observation or ingestion clock.
+- Embedded MCP operations have separate handlers; request mapping is shared at the embedded/gRPC boundary. Surface maintenance documentation identifies the source, generated guide assets, behavioral checks and host activation evidence for future changes.
+
+### Fixed
+
+- A named canonical expansion that is deferred by its body budget no longer leaks compact card text.
+- Current and historical tool inventories account for Condense without requiring it from older released engines.
+- Condense uses the persistent agent name when its author is omitted. Body-option rejections link to the reader example, and schemas accurately describe descriptor provenance, compact precedence and UTF-8 byte limits.
+
+Body admission counts stored Details records, not response tokens or peak RAM.
+Cards are derived orientation, never proof; relationships retain their original
+`why` and `evidence`. Finishing pages or expansion actions does not establish
+semantic completeness. Focused native controls and small reader-use checks
+support this release; they do not establish universal convergence or savings
+for every memory size.
+
 ## [0.17.0] - 2026-09-11
 
 ### Added
@@ -1657,7 +1685,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/underpass-ai/kmp/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/underpass-ai/kmp/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/underpass-ai/kmp/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/underpass-ai/kmp/compare/v0.14.0...v0.15.0

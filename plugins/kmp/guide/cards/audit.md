@@ -1,51 +1,38 @@
-Inspect a returned ref with `kmp_inspect {"about":"<about>","ref":"<ref>"}`.
-Copy actual abouts/refs from memory results; replace every placeholder below.
-Inspect returns the current object, evidence and typed links. A receipt instead
-contains the historical accepted command. For past state, use temporal verbs.
-
-Choose ONE Trace mode:
-
-| Need | Arguments | Search options |
-| --- | --- | --- |
-| Connect known destinations | `from` + `to` | `follow` or `direction`/`relations`, dimensions, `paths_per_target`, `select` |
-| Discover evidence without destinations | `from` + `search.seek` | role relations/sense/via/after/labels; optional `same_labels`, `same_ref` |
-
-Only `max_nodes`, `max_edges`, `max_depth`, `max_states` are shared search options.
-Never combine `seek` with destination options or `to`. A mixed-mode error names
-all conflicting fields to remove together; other validation can still fail.
-
-For evidence known by a given instant, set the observed clock explicitly:
+Inspect one returned ref:
 
 ```json
-{"about":"<about>","from":"<seed-ref>",
- "axis":"observed","as_of":{"time":"2026-09-10T12:00:00Z"},
- "search":{"seek":[
-   {"name":"verification","rel":"verified_by","via":"context"},
-   {"name":"permission","rel":"authorizes","direction":"incoming","via":"context"}]}}
+{"about":"<owning-about>","ref":"<returned-ref>"}
 ```
 
-Choose the task's clock and cut; this example date is not a default. Omitted
-clock/cut reads the current graph. `as_of` is effectiveness at a cut, not exact
-timestamp equality. Use Goto for a purely temporal question; UNKNOWN from Ask
-does not diagnose its cause.
+Replace placeholders with memory results. Inspect returns the object and its
+proof; a receipt instead contains the historical accepted command.
 
-Context discovers minimum-hop prefixes through justified links, preserving ties
-and stored arrows. Read `context_hops`, candidate `anchor` and `witness`, and
-joint `groups`. These are leads: `review_required` and
-`declared_obligations_complete:false` require source review. A neighbor's
-verification does not verify the seed; work cuts remain partial.
+Trace connections with ONE mode:
 
-A verified copy and an authorized publication are distinct actions: do not
-add anchor equality for that question. Only if the question requires the SAME
-action, add `same_ref:[[{"role":"verification","at":"anchor"},{"role":"permission","at":"anchor"}]]`.
-Anchor is the main relation's traversal start after context; incoming permission
-starts at its stored target action. Witness is the other endpoint. A role string
-in `same_ref` names its witness. `same_labels` intersects witness labels, never
-establishing identity. On incompatibility, review bindings and the question;
-do not remove a required equality just to obtain a group.
+| Need | Call shape |
+| --- | --- |
+| Known destination | `about`, `from`, `to`; optional destination search policies |
+| Evidence from seed | `about`, `from`, `search.seek` roles; no `to` or destination policies |
 
-Finish every returned continuation before resolving path indexes or claiming
-proof complete. Page completion is distinct from semantic sufficiency. Preserve
-source text, link why/evidence and clocks. For the worked cases expand
-`guide:kmp-agent:example:evidence-seek`. Known-destination alternatives, material
-selection and hard/soft dimensions are in `guide:kmp-agent:example:bounded-trace`.
+For example, discover verification from a seed:
+
+```json
+{"about":"<about>","from":"<seed-ref>","search":{
+ "seek":[{"name":"verification","rel":"verified_by","via":"context"}],
+ "proof":true,"proof_refs":[]}}
+```
+
+`via:"context"` gives contextual leads; a neighbor's verification does not verify
+this seed. Review candidates, bindings, groups and original sources. Preserve
+`review_required`, unknown clocks and missing obligations. For known-by
+questions, add the task's `axis:"observed"` and `as_of` cut explicitly.
+
+Finish returned page actions before resolving indexes. With `proof:true`,
+`proof_refs:[]` shows descriptors without bodies; execute body expansion actions
+and join fetched refs under one manifest. Paths and fetched declared groups do
+not establish answer completeness. A changed selection requires a fresh read.
+
+Read `guide:kmp-agent:example:evidence-seek` for roles/joins;
+`guide:kmp-agent:example:bounded-trace` for destinations and dimensions.
+For short reusable cards after reading canonical bodies, open topic `condense`;
+`guide:kmp-agent:example:reader-cards` teaches the complete delivery workflow.

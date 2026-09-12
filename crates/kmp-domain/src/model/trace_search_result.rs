@@ -4,6 +4,7 @@ use crate::{NodeRelationProjection, TraceRoute, TraceSearchStop};
 pub struct TraceSearchResult {
     pub routing: Option<crate::TraceRoutingStats>,
     pub material: Option<crate::TraceMaterialResult>,
+    pub proof: Option<crate::TraceProofResult>,
     pub from: String,
     pub follow: Vec<crate::TraceRelationStep>,
     pub paths_per_target: u32,

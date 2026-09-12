@@ -55,6 +55,7 @@ fn request(value: &Value) -> Result<EvidencePathRequest, Box<dyn Error>> {
         });
     }
     Ok(EvidencePathRequest {
+        proof: false,
         about: string(&value["about"])?,
         from: string(&value["from"])?,
         roles,
@@ -71,6 +72,7 @@ fn request(value: &Value) -> Result<EvidencePathRequest, Box<dyn Error>> {
             depth: 1024,
             states: 32768,
         },
+        body: Default::default(),
     })
 }
 

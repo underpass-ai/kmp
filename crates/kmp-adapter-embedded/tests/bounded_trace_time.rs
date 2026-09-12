@@ -67,6 +67,7 @@ fn proof(at: Option<&str>) -> RelationExplanation {
 
 fn query(axis: TemporalAxis) -> TraceSearchRequest {
     TraceSearchRequest {
+        proof: false,
         about: ABOUT.into(),
         from: "a".into(),
         targets: ["b".into()].into(),
@@ -79,6 +80,7 @@ fn query(axis: TemporalAxis) -> TraceSearchRequest {
         limits: TraceSearchLimits::default(),
         temporal: TemporalSelection::as_of(TemporalCursor::time(CUT).expect("cut"), axis)
             .expect("selection"),
+        body: Default::default(),
     }
 }
 

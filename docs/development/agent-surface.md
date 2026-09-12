@@ -27,6 +27,47 @@ Las rutas son relativas a la raíz del repositorio.
 | Cómo se entra desde Codex o Claude | [skills](../../plugins/kmp/skills/), [adaptadores Claude](../../plugins/kmp/claude/commands/) y [capabilities.json](../../plugins/kmp/capabilities.json) | Paridad de capacidades y acceso a la misma entrada; evitar otra copia del manual |
 | Relato público del producto | Bloque `kmp:public-overview` de [plugins/kmp/README.md](../../plugins/kmp/README.md) | Sincronizar README de repositorio y crate; revisar guía humana |
 
+## Añadir un verbo: lo que hizo falta para `kmp_condense`
+
+Un verbo nuevo no termina en `contract/tools/` ni en el registro. Este es el
+recorrido completo del último que se añadió, como referencia de qué se toca y
+por qué, no como lista que una CI deba comprobar.
+
+| Pieza | Por qué |
+| --- | --- |
+| `contract/tools/condense.rs` y `contract/registry.rs` | La herramienta y su sitio en la superficie |
+| `serving/adapters/embedded_backend.rs`, `serving/adapters/grpc/tools.rs` | El verbo existe en los dos backends o no existe |
+| `serving/adapters/fixture_backend.rs` y su fixture de respuesta | El backend de ejemplos responde a todo lo que anuncia |
+| `tool_error_help.rs` | Un rechazo devuelve su propio verbo y su propia lección; apuntar a la lección de otro movimiento responde peor que no responder |
+| `guide_request_mapper.rs::tool_verb` | Todo tool público resuelve a un verbo indexado |
+| `guidance/guide_scheme.rs`, `contract/tools/guide.rs`, `guide/cards/` y su relación al verbo | El tema existe en el esquema progresivo y sirve una ficha y ampliación ejecutables; indexar el verbo solo no lo hace descubrible |
+| `guide/editorial.json` más su `text_file` | La fuente canónica de la guía; regenerar con `guide assets write` |
+| `plugins/kmp/capabilities.json` | El generador compara la lista viva contra este inventario y falla si divergen |
+| `distribution/mcpb/manifest.json` | Lo que instala el host |
+| Bloque `kmp:public-overview` y `readme sync` | Las tres superficies públicas describen la misma superficie |
+| `tests/tool_surface_parity.rs` | Fija definición y respuesta |
+| `plugins/kmp/skills/kmp-moves/SKILL.md` | La skill que enumera los movimientos vivos |
+| Tabla de propiedad y lista de movimientos del README raíz | Describen la misma superficie |
+
+Los recuentos fijos («dieciséis herramientas», «doce de memoria») se han
+retirado de la prosa donde no aportaban nada: cada verbo nuevo los dejaba
+desfasados en cuatro sitios a la vez. Donde el listado sí ayuda —la skill de
+movimientos y la tabla del README— se mantiene la lista y se apunta a
+`tools/list` como autoridad. No hay prueba de recuento ni gate nuevo.
+
+La respuesta de `kmp_condense` no está fijada en ese parity: una tarjeta declara
+el digest del registro que el almacén tiene, y ese valor no se repite entre
+sembrados. La llamada positiva se cubre con descriptor dinámico en
+`kmp-mcp/tests/reader_cards.rs` y `kmp-transport-grpc/tests/condense_parity.rs`,
+que leen el descriptor del store y escriben contra él por MCP y por gRPC. Si
+alguien resuelve el digest en tiempo de llamada dentro del parity, la excepción
+documentada allí sobra; quitar la herramienta del bucle no es la alternativa.
+
+Al medir el ciclo, separar magnitudes: `search.max_body_record_bytes` acota
+registros de `Details`, no el tamaño total de la respuesta ni la memoria del
+proceso. Los bytes de respuesta no son tokens ni pico de RAM, y una tarjeta más
+corta que su cuerpo no garantiza que un ciclo completo amortice.
+
 `guide/AGENT.md`, `guide/guide.requests.json` y `guide/memory.jsonl` son salidas
 generadas. No corregirlas a mano: corregir la fuente y regenerar las tres.
 Los fixtures de contrato son evidencia revisable; no se actualizan sólo para
@@ -291,7 +332,7 @@ historial. El cliente debe recuperar las fichas que necesite de nuevo.
 
 Las fichas breves viven en `guide/cards/`; los verbos extendidos en `verbs/`.
 El mapper estampa el digest del asset en cada nodo: cambiar contenido exige
-regenerar el conjunto. Al añadir un tema, actualizar esquema, schema, ficha,
+regenerar el conjunto. Al añadir un tema, actualizar catálogo progresivo, schema, ficha,
 verbo y relación entre ambos; ejecutar las acciones de ampliación devueltas.
 Initialize y las skills entran por el esquema; el Markdown es la alternativa.
 No duplicar ambas cargas. Reutilizar el target de este checkout para iterar;
@@ -849,3 +890,50 @@ al sobre, no a la fuente. Probar continuación real sin contexto, con contexto,
 UNKNOWN completo, núcleo abreviado y otra posición histórica tras página completa.
 Actualizar entrada, tarjeta temporal, verbo y ejemplo de presupuesto; medir el
 sobre completo además del cuerpo. [Diseño](read-progress.md), sin CI editorial.
+
+
+### Joint Trace proof materialization
+
+`search.proof` is shared by destination and seed modes. Keep both protobufs,
+request mappings, shared object/support/gap projection and whole-selection
+fingerprint together. Page order must agree between kernel slices and MCP byte
+projection. Preserve source provenance, attachment admission, missing bodies,
+unknown proof and contextual review state. A body change outside the current
+page still invalidates the cursor. Do not count existing snapshots/source batches
+as a new improvement. Validate both modes, shared/foreign/missing sources, clocks,
+N/E cutoffs, concurrent revisions and transport parity before paired timings.
+`budget.max_bytes` is a response ceiling, not an allocation guarantee. Update
+audit, bounded-trace/evidence-seek lessons and both generated guides together.
+See [contract and limits](joint-evidence-materialization.md).
+
+
+### Lectura, ampliación y tarjetas: comprobar el recorrido
+
+Mantener alineados Trace, Condense, fichas `audit`/`condense`, verbos, ejemplo
+`reader-cards` y ayuda ante rechazos. El verbo audit sirve como mapa; el detalle
+de navegación se consulta en `advanced:audit-reference`. No cargar ambos por
+defecto. Conservar refs al mover prosa y revisar los enlaces regenerados.
+
+El descriptor para Condense procede de Trace con `proof:true` y una opción de
+cuerpos activa, por ejemplo `proof_refs:[]`; Inspect no expone ese digest. El
+lector debe leer el cuerpo canónico correspondiente antes de redactar. El paso
+a compact es una lectura nueva: conservar consulta/relojes, quitar
+`proof_refs`, `expect_selection` y el cursor viejo. Una tarjeta ausente o no
+vigente no provoca fallback canónico. Separar final de páginas, inventario de
+refs leídos y suficiencia semántica; una cola de expansiones vacía no prueba
+que se leyeran refs anteriores omitidos por lotes manuales.
+
+Antes de comprobar aprendizaje con agentes, sembrar guía y caso en un store
+aislado; verificar registro, ficha, verbo y ejemplo con una identidad de
+preparación distinta. Congelar binario, asset y hashes. `GUIDE_UNAVAILABLE`
+invalida una prueba de uso con guía, aunque sí documente respuesta al schema.
+El driver ejecuta las llamadas elegidas por el lector, sin seguir acciones ni
+corregir argumentos a escondidas. Conservar errores y recuperación. Medir por
+separado texto, sobre MCP y catálogo con tokenizer identificado; bytes o palabras
+no se presentan como tokens ni una captura local como coste del host completo.
+
+Al publicar, comprobar el paquete generado y su `tools/list`, además del código.
+La herramienta del binario candidato no aparece automáticamente en una sesión
+que conserva un registro anterior: documentar la versión instalada, la vía de
+actualización y el reinicio necesario. No afirmar activación por haber compilado.
+Estas comprobaciones son evidencia de entrega, sin gates editoriales nuevos.

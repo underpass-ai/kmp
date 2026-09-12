@@ -16,6 +16,7 @@ pub use relation_direction::RelationDirection;
 pub use relation_position::RelationPosition;
 pub mod memory_about_index_reader;
 pub mod neighborhood_request;
+pub mod node_card_store;
 pub mod node_detail_reader;
 pub mod node_relationship_reader;
 pub mod port_error;
@@ -33,6 +34,7 @@ pub use context_event_store::{
 pub use graph_neighborhood_reader::GraphNeighborhoodReader;
 pub use memory_about_index_reader::MemoryAboutIndexReader;
 pub use neighborhood_request::NeighborhoodRequest;
+pub use node_card_store::{NodeCardStore, NodeCardWriteFuture};
 pub use node_detail_reader::NodeDetailReader;
 pub use node_relationship_reader::{NodeRelationshipReader, NodeRelationships};
 pub use port_error::PortError;

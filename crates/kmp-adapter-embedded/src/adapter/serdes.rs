@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::time::{Duration, SystemTime};
 
 use kmp_domain::{
-    NodeDetailProjection, NodeProjection, PortError, ProjectionCheckpoint, Provenance,
+    NodeCard, NodeDetailProjection, NodeProjection, PortError, ProjectionCheckpoint, Provenance,
     RelationExplanation, SourceKind,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -118,6 +118,57 @@ impl From<DetailRecord> for NodeDetailProjection {
             detail: record.detail,
             content_hash: record.content_hash,
             revision: record.revision,
+        }
+    }
+}
+
+/// A reader-authored card as stored. Keyed by node and language, so the
+/// record repeats neither; the node id is kept anyway because a batch read
+/// verifies that the slot it got back is the slot it asked for.
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct CardRecord {
+    node_id: String,
+    language: String,
+    text: String,
+    source_revision: u64,
+    source_content_hash: String,
+    source_record_digest: String,
+    source_body_bytes: u64,
+    authored_by: String,
+    authored_at: String,
+    card_revision: u64,
+}
+
+impl From<NodeCard> for CardRecord {
+    fn from(card: NodeCard) -> Self {
+        Self {
+            node_id: card.node_id,
+            language: card.language,
+            text: card.text,
+            source_revision: card.source_revision,
+            source_content_hash: card.source_content_hash,
+            source_record_digest: card.source_record_digest,
+            source_body_bytes: card.source_body_bytes,
+            authored_by: card.authored_by,
+            authored_at: card.authored_at,
+            card_revision: card.card_revision,
+        }
+    }
+}
+
+impl From<CardRecord> for NodeCard {
+    fn from(record: CardRecord) -> Self {
+        Self {
+            node_id: record.node_id,
+            language: record.language,
+            text: record.text,
+            source_revision: record.source_revision,
+            source_content_hash: record.source_content_hash,
+            source_record_digest: record.source_record_digest,
+            source_body_bytes: record.source_body_bytes,
+            authored_by: record.authored_by,
+            authored_at: record.authored_at,
+            card_revision: record.card_revision,
         }
     }
 }

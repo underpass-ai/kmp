@@ -32,6 +32,7 @@ fn edge(from: &str, to: &str, rel: &str, class: RelationSemanticClass) -> Projec
 
 fn query(from: &str, targets: &[&str]) -> TraceSearchRequest {
     TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: from.into(),
         targets: targets.iter().map(|s| (*s).into()).collect(),
@@ -43,6 +44,7 @@ fn query(from: &str, targets: &[&str]) -> TraceSearchRequest {
         relations: Default::default(),
         limits: TraceSearchLimits::default(),
         temporal: Default::default(),
+        body: Default::default(),
     }
 }
 

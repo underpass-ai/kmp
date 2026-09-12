@@ -47,6 +47,15 @@ pub(crate) fn definition() -> Value {
                         }
                     }
                 },
+                "expect": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["revision"],
+                    "description": "Canonical expansion: return exactly this body revision or a typed conflict naming the one the store holds, with no text. This store keeps one body version per entry, so a revision that has moved cannot be reconstructed and is never guessed at. Use the revision a trace object or an earlier inspection returned. Not valid on a receipt ref, which carries no body revision.",
+                    "properties": {
+                        "revision": {"type": "integer", "minimum": 1, "description": "The body revision this expansion declares."}
+                    }
+                },
                 "budget": inspect_budget_schema(),
                 "page": inspect_page_schema()
             }

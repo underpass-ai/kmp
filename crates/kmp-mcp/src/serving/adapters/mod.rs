@@ -1,3 +1,4 @@
+mod embedded;
 pub(crate) mod embedded_backend;
 pub(crate) mod embedded_errors;
 pub(crate) mod fixture_backend;
@@ -7,3 +8,4 @@ mod loopback_semantic_retriever;
 pub(crate) mod retrying_embedded_backend;
 mod semantic_rank_response;
 mod semantic_retriever_config;
+pub(crate) mod tool_request_mapping;

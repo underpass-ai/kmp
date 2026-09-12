@@ -4,6 +4,7 @@ use kmp_domain::{
     NodeProjection, NodeRelationProjection, PortError, ProjectionMutation, ProjectionWriter,
 };
 
+use super::detail_header::{self, DetailHeaderRecord};
 use super::engine::{Key, Table, WriteTx};
 use super::serdes::{DetailRecord, NodeRecord, decode, encode, encode_explanation};
 use super::store::EmbeddedKernelStore;
@@ -122,8 +123,12 @@ pub(crate) fn apply_mutations_in_transaction(
             }
             ProjectionMutation::UpsertNodeDetail(detail) => {
                 let node_id = detail.node_id.clone();
-                let bytes = encode("node detail", &DetailRecord::from(detail))?;
+                let bytes = encode("node detail", &DetailRecord::from(detail.clone()))?;
+                // The header describes the bytes this transaction stores, so
+                // it is built here, from them, and never recomputed later.
+                let header = DetailHeaderRecord::describe(&detail, &bytes);
                 tx.insert(Table::Details, Key::Str(&node_id), &bytes)?;
+                detail_header::write(tx, &header)?;
             }
         }
         applied += 1;

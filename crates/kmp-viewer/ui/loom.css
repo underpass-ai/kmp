@@ -1,16 +1,20 @@
 /* KMP ChronoLoom — ink & signal, woven.
-   Dark-first, violet-cast ink; the mark's violet-to-green gradient is
-   reserved for meaning. Time is the primary geometry: lanes are quiet
-   furniture, entries and their braids carry the ink. No fonts fetched, no
-   framework, both themes complete.
+   Time is the primary geometry: lanes are quiet furniture, entries and their
+   braids carry the ink. No fonts fetched, no framework, both themes complete.
+
+   This file owns the *vocabulary*: the mark's gradient, the meaning colours
+   for memory kinds and relation classes, and the type, space, radius and
+   motion scales every rule below reads through.
+
+   It deliberately owns no surface, ink, line or accent value. The palette —
+   and with it both complete themes — belongs to loom-shell.css, which loads
+   after this file. One palette in one place is what keeps the shell and the
+   evidence pane from drifting into two different whites.
 
    loom.js always stamps data-theme="light"|"dark" (auto resolved in script),
    so each theme is written exactly once. */
 
-:root,
-:root[data-theme="light"] {
-  color-scheme: light;
-
+:root {
   /* the mark's gradient — banner.rs, six anchors */
   --grad-1: #815bf0;
   --grad-2: #646ae9;
@@ -18,19 +22,8 @@
   --grad-4: #348dc0;
   --grad-5: #269f9b;
   --grad-6: #1baf7a;
-  --accent: var(--grad-3);
 
-  --surface-1: #f7f7fb;
-  --surface-2: #efeff5;
-  --surface-3: #e5e5ee;
-  --border: #d7d7e3;
-  --text-primary: #17171d;
-  --text-secondary: #4e4e5c;
-  --text-muted: #8a8a99;
-  --danger: #c23636;
-  --lane-line: #e2e2ec;
-  --halo: #f7f7fb;
-
+  /* meaning: memory kind (light values; the dark set follows) */
   --kind-anchor: #6d47e0;
   --kind-decision: #2f6bd8;
   --kind-evidence: #1a9a6c;
@@ -44,6 +37,7 @@
   --kind-dimension: #7a7a8c;
   --kind-overflow: #8a8a99;
 
+  /* meaning: relation class */
   --class-causal: var(--grad-3);
   --class-evidential: var(--grad-6);
   --class-motivational: var(--grad-1);
@@ -51,33 +45,33 @@
   --class-constraint: #c98500;
   --class-structural: #9a9aa8;
 
+  /* type: six steps, each with a job. --fs-body is the reading size. */
+  --fs-micro: 10px;   /* axis ticks, eyebrows, unit suffixes */
+  --fs-small: 11px;   /* stat values, captions, dense mono readouts */
+  --fs-compact: 12px; /* controls, pills, legends */
+  --fs-body: 13px;    /* record text, relation why, pane titles */
+  --fs-lead: 15px;    /* the selected record's title */
+  --fs-title: 17px;   /* one band heading */
+  --fs-brand: 21px;   /* the wordmark lockup */
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 22px;
+  --space-6: 32px;
   --radius-1: 6px;
   --radius-2: 10px;
   --dur-1: 120ms;
   --dur-2: 240ms;
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* two elevations only: an attached panel and a floating one */
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 12%);
+  --shadow-2: 0 8px 24px rgb(0 0 0 / 22%);
 }
 
 :root[data-theme="dark"] {
-  color-scheme: dark;
-
-  --accent: #5b8bff;
-
-  --surface-1: #0f0f14;
-  --surface-2: #15151c;
-  --surface-3: #1c1c25;
-  --border: #262633;
-  --text-primary: #ececf4;
-  --text-secondary: #b8b8c9;
-  --text-muted: #7c7c8f;
-  --danger: #ff6b6b;
-  --lane-line: #1d1d27;
-  --halo: #0f0f14;
-
   --kind-anchor: #9d7bff;
   --kind-decision: #5b8bff;
   --kind-evidence: #2fd695;
@@ -114,16 +108,33 @@ body {
 .muted { color: var(--text-muted); }
 
 .item-list, .legend-list { list-style: none; margin: 0; padding: 0; }
+
+/* Hover and selection must not look alike. Hover tints the surface; the
+   selection also carries an accent edge and accent ink. Neither changes the
+   font weight, so picking a row never reflows the list under the pointer. */
 .item-list li {
+  position: relative;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-1);
+  border-left: 2px solid transparent;
   cursor: pointer;
   overflow-wrap: anywhere;
-  transition: background var(--dur-1) var(--ease);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 .item-list li:hover { background: var(--surface-3); }
-.item-list li.active { background: var(--surface-3); font-weight: 600; }
-.item-list li .sub { display: block; font-size: 12px; color: var(--text-muted); }
+.item-list li.active {
+  background: color-mix(in srgb, var(--accent) var(--tint), transparent);
+  border-left-color: var(--accent);
+  color: var(--text-primary);
+}
+.item-list li.active .sub { color: var(--text-secondary); }
+.item-list li.empty-hint {
+  cursor: default;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.item-list li.empty-hint:hover { background: none; }
+.item-list li .sub { display: block; font-size: var(--fs-compact); color: var(--text-muted); }
 .legend-list li {
   display: flex; align-items: center; gap: 7px;
   padding: 2px var(--space-2); border-radius: var(--radius-1);
@@ -131,9 +142,10 @@ body {
   cursor: pointer;
   transition: background var(--dur-1) var(--ease), opacity var(--dur-1) var(--ease);
 }
-.legend-list li:hover { background: var(--surface-3); }
+.legend-list li:hover { background: var(--surface-3); color: var(--text-primary); }
 .legend-list li.dimmed { opacity: 0.4; }
 .legend-list li.legend-static { cursor: default; }
+.legend-list li.legend-static:hover { background: none; color: var(--text-secondary); }
 .legend-description { line-height: 1.25; }
 .legend-count { margin-left: auto; }
 .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
@@ -161,12 +173,13 @@ body {
 .chip-list[hidden] { display: none; }
 .label-chip {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 12px; padding: 1px 4px 1px 8px; border-radius: 999px;
-  border: 1px solid var(--accent); color: var(--text-primary); background: var(--surface-1);
+  font-size: var(--fs-compact); padding: 1px 4px 1px 8px; border-radius: 999px;
+  border: 1px solid var(--accent); color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent) var(--tint), transparent);
   max-width: 100%; overflow: hidden;
 }
 .chip-key { font-weight: 600; }
-.chip-op { color: var(--accent); font-size: 11px; }
+.chip-op { color: var(--accent); font-size: var(--fs-small); }
 .chip-values { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip-remove {
   font: inherit; line-height: 1; padding: 0 4px; border: 0; background: none;
@@ -189,7 +202,7 @@ body {
   background: color-mix(in srgb, var(--surface-2) 88%, transparent);
   border: 1px solid var(--border);
   border-radius: var(--radius-1);
-  font-size: 11px;
+  font-size: var(--fs-small);
   line-height: 1.25;
   pointer-events: none;
 }
@@ -210,13 +223,13 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
   padding: 8px 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-2);
 }
 #diff-panel[hidden] { display: none; }
-.diff-head { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 5px; }
+.diff-head { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-bottom: var(--space-1); }
 .diff-side { padding: 4px 7px; border-left: 3px solid var(--accent); background: var(--surface-1); }
 .diff-side.b { border-color: var(--class-evidential); }
-.diff-grid { display: grid; grid-template-columns: 72px minmax(92px, 1fr) minmax(92px, 1fr) minmax(92px, 1fr); gap: 3px 8px; font-size: 12px; }
+.diff-grid { display: grid; grid-template-columns: 72px minmax(92px, 1fr) minmax(92px, 1fr) minmax(92px, 1fr); gap: 3px 8px; font-size: var(--fs-compact); }
 .diff-grid > :nth-child(4n + 1) { color: var(--text-muted); }
 .diff-set { min-width: 0; overflow-wrap: anywhere; }
 .diff-set strong, .diff-set small { display: block; }
@@ -229,8 +242,8 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
   padding: 7px 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-  font-size: 13px;
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-body);
   z-index: 10;
   overflow-wrap: anywhere;
 }
@@ -253,13 +266,49 @@ body {
   overflow-y: auto;
   overflow-wrap: anywhere;
 }
-#detail h2 { margin: 6px 0 2px; font-size: 16px; }
+#detail h2 { margin: var(--space-2) 0 var(--space-1); font-size: var(--fs-lead); line-height: 1.35; }
 #detail h3 { margin: var(--space-3) 0 var(--space-1); }
-.inspection-scope { margin: var(--space-2) 0; font-size: 12px; color: var(--text-secondary); }
-.node-head { display: flex; gap: 6px; flex-wrap: wrap; }
+/* An empty evidence pane is a third of the window. Rather than one grey
+   line in the middle of it, say what will be here once something is picked
+   — the three things the pane always holds, named in the order it holds
+   them. No card, no icon: the same prose the filled pane uses. */
+.detail-empty {
+  margin: var(--space-4) 0;
+  font-size: var(--fs-body);
+  color: var(--text-secondary);
+}
+.detail-empty p {
+  margin: 0 0 var(--space-3);
+  line-height: 1.6;
+}
+.detail-empty ul {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+}
+.detail-empty li {
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  border-left: 2px solid var(--border);
+  margin-bottom: var(--space-1);
+  line-height: 1.5;
+}
+.detail-empty li strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.inspection-scope {
+  margin: var(--space-2) 0;
+  padding: var(--space-2) 10px;
+  border-left: 2px solid var(--border);
+  background: var(--surface-3);
+  border-radius: 0 var(--radius-1) var(--radius-1) 0;
+  font-size: var(--fs-compact);
+  color: var(--text-secondary);
+}
+.node-head { display: flex; gap: var(--space-1); flex-wrap: wrap; }
 .pill {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12px; padding: 1px 8px; border-radius: 999px;
+  font-size: var(--fs-compact); padding: 1px 8px; border-radius: 999px;
   border: 1px solid var(--border);
   color: var(--text-secondary);
   background: var(--surface-1);
@@ -267,7 +316,7 @@ body {
 }
 .pill .legend-dot { width: 7px; height: 7px; }
 .pill-muted { color: var(--text-muted); }
-.label-row { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
+.label-row { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-2) 0; }
 details { margin: var(--space-2) 0; }
 summary { cursor: pointer; color: var(--text-secondary); }
 .rendered {
@@ -279,43 +328,67 @@ summary { cursor: pointer; color: var(--text-secondary); }
   padding: var(--space-2) 10px;
   max-height: 36vh;
   overflow-y: auto;
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
 }
+
+/* A relation card leads with its class colour, then the verb, then where it
+   points. The why is a quote under it: the part a reader is here for. */
 .rel-list { list-style: none; margin: 0; padding: 0; }
 .rel-list li {
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
   background: var(--surface-1);
-  padding: 6px 9px;
-  margin: 6px 0;
+  padding: var(--space-2) 10px;
+  margin: var(--space-2) 0;
+  transition: border-color var(--dur-1) var(--ease);
 }
-.rel-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.rel-type { font-weight: 600; }
-.rel-target { cursor: pointer; color: var(--accent); text-decoration: none; }
+.rel-list li:hover { border-color: var(--line-strong, var(--border)); }
+.rel-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+/* A ref is long and a flex item does not shrink below its content by
+   default; without this the counterpart ran off the edge of the pane. */
+.rel-head > * { min-width: 0; }
+.rel-type { font-weight: 600; color: var(--text-primary); }
+.rel-target {
+  cursor: pointer; color: var(--accent); text-decoration: none;
+  border-radius: var(--radius-1); overflow-wrap: anywhere;
+}
 .rel-target:hover { text-decoration: underline; }
 .rel-why {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   padding-left: var(--space-2);
-  border-left: 2px solid var(--border);
+  border-left: 2px solid var(--class-structural);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--fs-body);
 }
-.rel-evidence { color: var(--text-muted); font-size: 12px; margin: 3px 0 0; }
-.small-btn { font-size: 12px; padding: 1px 8px; }
+.rel-evidence { color: var(--text-muted); font-size: var(--fs-compact); margin: var(--space-1) 0 0; }
+.relation-clocks { font-size: var(--fs-small); margin: var(--space-1) 0 0; }
+.small-btn { font-size: var(--fs-compact); padding: 2px var(--space-2); min-height: 24px; }
 
 /* the prism */
-#prism { margin: var(--space-2) 0; }
-.prism-rail { display: flex; align-items: center; gap: var(--space-2); margin: 3px 0; font-size: 12px; }
-.prism-name { width: 74px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-size: 10px; }
-.prism-track { position: relative; flex: 1; height: 14px; }
+#prism {
+  margin: var(--space-2) 0;
+  padding: var(--space-2) 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+}
+.prism-rail { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-1) 0; font-size: var(--fs-compact); }
+.prism-name {
+  width: 80px; flex: none; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.02em; font-size: var(--fs-micro); line-height: 1.3;
+}
+.prism-track { position: relative; flex: 1; height: 14px; min-width: 0; }
 .prism-line { position: absolute; left: 0; right: 0; top: 6.5px; height: 1px; background: var(--border); }
 .prism-dot {
   position: absolute; top: 3px; width: 8px; height: 8px; border-radius: 50%;
   transform: translateX(-4px);
 }
 .prism-band { position: absolute; top: 4.5px; height: 5px; border-radius: 2px; opacity: 0.55; }
-.prism-absent { color: var(--text-muted); font-size: 11px; font-style: italic; }
-.prism-when { width: 88px; text-align: right; color: var(--text-secondary); font-size: 11px; }
+.prism-absent { color: var(--text-muted); font-size: var(--fs-small); font-style: italic; }
+.prism-when {
+  width: 104px; flex: none; text-align: right; color: var(--text-secondary);
+  font-size: var(--fs-small); font-variant-numeric: tabular-nums; line-height: 1.3;
+}
 .prism-thread {
   position: absolute; top: 7px; height: 1.5px;
   background: linear-gradient(90deg, var(--grad-1), var(--grad-6));
@@ -334,13 +407,13 @@ summary { cursor: pointer; color: var(--text-secondary); }
   background: var(--surface-2);
   overflow-x: auto;
 }
-.stat { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.stat { display: inline-flex; align-items: baseline; gap: var(--space-1); white-space: nowrap; }
 .stat[hidden] { display: none; }
 .stat-label {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--text-muted);
 }
-.stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat-value { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .error { color: var(--danger); margin-left: auto; overflow: hidden; text-overflow: ellipsis; }
 
 

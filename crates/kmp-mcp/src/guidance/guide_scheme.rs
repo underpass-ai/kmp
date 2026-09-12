@@ -1,11 +1,12 @@
 use serde_json::{Value, json};
 
-pub(crate) const TOPICS: [(&str, &str); 8] = [
+pub(crate) const TOPICS: [(&str, &str); 9] = [
     ("wake", "Resume known work"),
     ("write", "Record separate facts with evidence and labels"),
     ("ask", "Retrieve semantic evidence or stop at UNKNOWN"),
     ("time", "Navigate history with the right clock"),
     ("audit", "Inspect a claim or trace its proof"),
+    ("condense", "Write a compact card for one stored body"),
     ("relate", "Compare explicitly selected abouts"),
     ("view", "Frame memory in ChronoLoom"),
     ("guide", "Resume identity and expand or fold this scheme"),

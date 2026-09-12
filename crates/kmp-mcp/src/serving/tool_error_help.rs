@@ -38,7 +38,9 @@ impl ToolErrorHelp {
         }
         if examples.is_empty() {
             examples.push(
-                if tool == "kmp_trace" && arguments.pointer("/search/seek").is_some() {
+                if tool == "kmp_trace" && trace_has_body_options(arguments) {
+                    "example:reader-cards"
+                } else if tool == "kmp_trace" && arguments.pointer("/search/seek").is_some() {
                     "example:evidence-seek"
                 } else {
                     default_example
@@ -94,6 +96,10 @@ impl ToolErrorHelp {
             "kmp_write_memory" => ("verb:write", "example:semantic-batch"),
             "kmp_relabel" => ("verb:write", "example:dimensional-memberships"),
             "kmp_ingest" => ("verb:write", "example:canonical-ingest"),
+            // Its own verb and its own lesson. Pointing a refused card at the
+            // writer's ingest example answered with something that teaches a
+            // different move entirely, which is worse than answering nothing.
+            "kmp_condense" => ("verb:condense", "example:reader-cards"),
             "kmp_wake" => ("verb:wake", "example:shared-resumption"),
             "kmp_ask" => ("verb:ask", "example:decision-history"),
             "kmp_relate" => ("verb:relate", "example:distributed-incident"),
@@ -116,4 +122,20 @@ impl ToolErrorHelp {
             "budget":{"max_bytes":10000}
         }})
     }
+}
+
+fn trace_has_body_options(arguments: &Value) -> bool {
+    arguments
+        .get("search")
+        .and_then(Value::as_object)
+        .is_some_and(|search| {
+            [
+                "max_body_record_bytes",
+                "proof_refs",
+                "expect_selection",
+                "compact",
+            ]
+            .iter()
+            .any(|key| search.contains_key(*key))
+        })
 }

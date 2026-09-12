@@ -60,14 +60,25 @@ pub fn evidence_seek_response_from_result(
     if result.context_discovery {
         response.warnings.push("Context discovery retains all minimum-hop prefixes per reachable relation origin, with ties; longer prefixes are omitted. Prefix links are navigation leads, never a composed claim about the seed. Review original arrows, rationale, evidence and source bodies before deciding relevance. No task obligations are inferred from prose.".into());
     }
+    if let Some(proof) = result.proof {
+        super::trace_proof::project(&mut response, proof);
+    }
     response.selection_fingerprint = ReadSelectionFingerprint::trace_search(&response);
-    let total = response.trace.len() + response.candidates.len() + response.groups.len();
+    let total = response.trace.len()
+        + response.candidates.len()
+        + response.groups.len()
+        + response.objects.len()
+        + response.supports.len()
+        + response.gaps.len();
     let offset = page.offset().min(total);
     let mut skip = offset;
     let mut remaining = page.entries_or_default();
     slice(&mut response.trace, &mut skip, &mut remaining);
     slice(&mut response.candidates, &mut skip, &mut remaining);
     slice(&mut response.groups, &mut skip, &mut remaining);
+    slice(&mut response.objects, &mut skip, &mut remaining);
+    slice(&mut response.supports, &mut skip, &mut remaining);
+    slice(&mut response.gaps, &mut skip, &mut remaining);
     let returned = page.entries_or_default() - remaining;
     let end = offset + returned;
     response.page = Some(PageInfo {

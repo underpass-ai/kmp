@@ -74,6 +74,7 @@ async fn inspect_batches_only_incoming_typed_supports_and_retains_body_absence()
                 include_incoming: show_links,
                 include_outgoing: show_links,
                 include_raw: false,
+                expect_revision: None,
             })
             .await
             .expect("inspect");
@@ -114,6 +115,7 @@ async fn inspect_batches_only_incoming_typed_supports_and_retains_body_absence()
                 include_incoming: true,
                 include_outgoing: true,
                 include_raw: false,
+                expect_revision: None,
             })
             .await
             .is_err(),

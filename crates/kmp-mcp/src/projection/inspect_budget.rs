@@ -53,6 +53,7 @@ impl InspectSection {
 struct InspectPageItem {
     section: InspectSection,
     value: Value,
+    serialized_bytes: usize,
 }
 
 /// Keeps the inspected object as a stable core and pages the sections that can
@@ -61,7 +62,7 @@ struct InspectPageItem {
 /// page.repeat_object=false reuses the first page's object after validating the
 /// unchanged selection, including the full object, against its cursor.
 pub(crate) fn enforce_inspect_output_budget(
-    value: Value,
+    mut value: Value,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let limit = requested_byte_limit(arguments).map_err(ToolError::invalid_argument)?;
@@ -74,16 +75,29 @@ pub(crate) fn enforce_inspect_output_budget(
             "page.repeat_object=false requires page.cursor and the retained object from its first page",
         ));
     }
-    let items = inspect_page_items(&value);
-    let selection_hash = inspect_selection_hash(&value, &items, arguments);
+    // Move the expansions out of the core. Hash their original encodings once,
+    // retaining only each exact length for subsequent page-size decisions.
+    let mut items = inspect_page_items(&mut value);
+    let (selection_hash, core_bytes) = inspect_selection_hash(&value, &mut items, arguments);
     let offset = inspect_page_offset(arguments, &selection_hash, items.len())?;
-    let required_bytes = inspect_full_required_bytes(&value, &items, &selection_hash, arguments);
+    let original_bytes = core_bytes + inspect_expansion_bytes(&items, 0, items.len());
+    let mut object = std::mem::replace(&mut value["object"], Value::Null);
+    let mut object_bytes = serialized_len(&object);
+    let required_bytes = inspect_full_required_bytes(
+        &value,
+        &items,
+        &selection_hash,
+        arguments,
+        original_bytes,
+        object_bytes,
+    );
     // Hash and size the complete inspection before reusing any part of it.
-    let mut value = value;
     if !repeat_object {
-        value["object"] = json!({"ref": value["object"]["ref"]});
+        object = json!({"ref": object["ref"]});
+        object_bytes = serialized_len(&object);
         value["object_reused"] = json!(true);
     }
+    let page_size = |page: &Value| inspect_page_serialized_len(page, &items, object_bytes);
     let render = |count, args: &Value| {
         render_inspect_page(
             &value,
@@ -97,8 +111,9 @@ pub(crate) fn enforce_inspect_output_budget(
     };
     let remaining = items.len().saturating_sub(offset);
     let complete = render(remaining, arguments);
-    if serialized_len(&complete) <= limit {
-        return Ok(complete);
+    let complete_bytes = page_size(&complete);
+    if complete_bytes <= limit {
+        return Ok(materialize_inspect_page(complete, object, items));
     }
 
     let mut best = render(0, arguments);
@@ -108,7 +123,7 @@ pub(crate) fn enforce_inspect_output_budget(
     while low <= high {
         let middle = low + (high - low) / 2;
         let candidate = render(middle, arguments);
-        if serialized_len(&candidate) <= limit {
+        if page_size(&candidate) <= limit {
             best = candidate;
             low = middle + 1;
         } else {
@@ -119,10 +134,10 @@ pub(crate) fn enforce_inspect_output_budget(
         // Size an actual progressing response, including its continuation.
         // Only the decimal allowance can grow during this fixed point.
         let mut retry = arguments.clone();
-        let mut required = serialized_len(&render(1, &retry)).max(512);
+        let mut required = page_size(&render(1, &retry)).max(512);
         loop {
             retry["budget"]["max_bytes"] = json!(required);
-            let measured = serialized_len(&render(1, &retry));
+            let measured = page_size(&render(1, &retry));
             if measured <= required {
                 break;
             }
@@ -131,7 +146,7 @@ pub(crate) fn enforce_inspect_output_budget(
         // The final remainder can be smaller than a one-item continuation
         // because it carries no next action. Prefer a useful normal-size
         // retry over forcing every caller through one item per response.
-        required = required.min(serialized_len(&complete));
+        required = required.min(complete_bytes);
         let suggested = required.max(required_bytes.min(DEFAULT_MAX_BYTES));
         retry["budget"]["max_bytes"] = json!(suggested);
         best["page"]["minimum_progress_bytes"] = json!(required);
@@ -145,7 +160,7 @@ pub(crate) fn enforce_inspect_output_budget(
             "the next whole inspection item does not fit; execute next_actions with its negotiated byte allowance, or retain this result as partial if the budget is fixed"
         ));
     }
-    if serialized_len(&best) > limit {
+    if page_size(&best) > limit {
         let warnings = best["warnings"].as_array_mut().expect("warnings");
         warnings.push(json!(""));
         let index = warnings.len() - 1;
@@ -154,36 +169,47 @@ pub(crate) fn enforce_inspect_output_budget(
             best["warnings"][index] = json!(format!(
                 "budget.max_bytes {limit} is below this response's stable floor; returned the {size}-byte floor instead (the full response requires {required_bytes} bytes)"
             ));
-            let measured = serialized_len(&best);
+            let measured = page_size(&best);
             if measured == size {
                 break;
             }
             size = measured;
         }
     }
-    Ok(best)
+    Ok(materialize_inspect_page(best, object, items))
 }
 
-fn inspect_page_items(value: &Value) -> Vec<InspectPageItem> {
-    let values = |section| match section {
-        InspectSection::Evidence => value.get("evidence").and_then(Value::as_array),
-        InspectSection::Outgoing => value.pointer("/links/outgoing").and_then(Value::as_array),
-        InspectSection::Incoming => value.pointer("/links/incoming").and_then(Value::as_array),
-        InspectSection::Raw => value.get("raw").and_then(Value::as_array),
-    };
-    InspectSection::ALL
-        .into_iter()
-        .flat_map(|section| {
-            values(section)
-                .into_iter()
-                .flatten()
-                .cloned()
-                .map(move |value| InspectPageItem { section, value })
-        })
-        .collect()
+fn inspect_page_items(value: &mut Value) -> Vec<InspectPageItem> {
+    let mut items = Vec::new();
+    for section in InspectSection::ALL {
+        let values = std::mem::replace(inspect_section_mut(value, section), json!([]));
+        if let Value::Array(values) = values {
+            items.extend(values.into_iter().map(|value| InspectPageItem {
+                section,
+                value,
+                // Filled from the same encoding used for the selection hash,
+                // before any sizing or pagination is allowed to use this item.
+                serialized_bytes: 0,
+            }));
+        }
+    }
+    items
 }
 
-fn inspect_selection_hash(value: &Value, items: &[InspectPageItem], arguments: &Value) -> String {
+fn inspect_section_mut(value: &mut Value, section: InspectSection) -> &mut Value {
+    match section {
+        InspectSection::Evidence => &mut value["evidence"],
+        InspectSection::Outgoing => &mut value["links"]["outgoing"],
+        InspectSection::Incoming => &mut value["links"]["incoming"],
+        InspectSection::Raw => &mut value["raw"],
+    }
+}
+
+fn inspect_selection_hash(
+    core: &Value,
+    items: &mut [InspectPageItem],
+    arguments: &Value,
+) -> (String, usize) {
     let mut bound_arguments = arguments.clone();
     if let Some(arguments) = bound_arguments.as_object_mut() {
         arguments.remove("page");
@@ -203,19 +229,18 @@ fn inspect_selection_hash(value: &Value, items: &[InspectPageItem], arguments: &
     hasher.update(b"\0");
     hasher.update(serde_json::to_vec(&bound_arguments).expect("inspect arguments serialize"));
     hasher.update(b"\0");
-    let mut core = value.clone();
-    core["evidence"] = json!([]);
-    core["links"]["outgoing"] = json!([]);
-    core["links"]["incoming"] = json!([]);
-    core["raw"] = json!([]);
-    hasher.update(serde_json::to_vec(&core).expect("inspect core serializes"));
+    let core_encoding = serde_json::to_vec(core).expect("inspect core serializes");
+    let core_bytes = core_encoding.len();
+    hasher.update(core_encoding);
     for item in items {
         hasher.update(b"\0");
         hasher.update(item.section.name().as_bytes());
         hasher.update(b"\0");
-        hasher.update(serde_json::to_vec(&item.value).expect("inspect item serializes"));
+        let encoding = serde_json::to_vec(&item.value).expect("inspect item serializes");
+        item.serialized_bytes = encoding.len();
+        hasher.update(encoding);
     }
-    format!("{:x}", hasher.finalize())
+    (format!("{:x}", hasher.finalize()), core_bytes)
 }
 
 fn inspect_page_offset(
@@ -276,8 +301,10 @@ fn inspect_full_required_bytes(
     items: &[InspectPageItem],
     selection_hash: &str,
     arguments: &Value,
+    original_bytes: usize,
+    object_bytes: usize,
 ) -> usize {
-    let mut required = serialized_len(value);
+    let mut required = original_bytes;
     for _ in 0..8 {
         let candidate = render_inspect_page(
             value,
@@ -288,7 +315,7 @@ fn inspect_full_required_bytes(
             required,
             arguments,
         );
-        let measured = serialized_len(&candidate);
+        let measured = inspect_page_serialized_len(&candidate, items, object_bytes);
         if measured == required {
             return measured;
         }
@@ -306,31 +333,16 @@ fn render_inspect_page(
     required_bytes: usize,
     arguments: &Value,
 ) -> Value {
+    // This template contains null in place of the object and empty expansion
+    // arrays. Large bodies are restored only after the page has been chosen.
     let mut page = value.clone();
-    page["evidence"] = json!([]);
-    page["links"]["outgoing"] = json!([]);
-    page["links"]["incoming"] = json!([]);
-    page["raw"] = json!([]);
-
     let end = offset.saturating_add(keep).min(items.len());
-    for item in &items[offset.min(items.len())..end] {
-        let target = match item.section {
-            InspectSection::Evidence => &mut page["evidence"],
-            InspectSection::Outgoing => &mut page["links"]["outgoing"],
-            InspectSection::Incoming => &mut page["links"]["incoming"],
-            InspectSection::Raw => &mut page["raw"],
-        };
-        target
-            .as_array_mut()
-            .expect("inspect expansion section is an array")
-            .push(item.value.clone());
-    }
-
     let has_more = end < items.len();
     let partial = offset > 0 || has_more;
     let mut omitted = Map::new();
     omitted.insert("details".to_string(), json!(0));
     let mut sections = Map::new();
+    let mut relationships = 0;
     for section in InspectSection::ALL {
         let total = items.iter().filter(|item| item.section == section).count();
         let returned = items[offset.min(items.len())..end]
@@ -341,6 +353,9 @@ fn render_inspect_page(
             .iter()
             .filter(|item| item.section == section)
             .count();
+        if matches!(section, InspectSection::Outgoing | InspectSection::Incoming) {
+            relationships += returned;
+        }
         omitted.insert(section.name().to_string(), json!(remaining));
         sections.insert(
             section.name().to_string(),
@@ -382,17 +397,50 @@ fn render_inspect_page(
         "required_bytes": required_bytes,
         "guidance": guidance
     });
-    let relationships = page["links"]["incoming"]
-        .as_array()
-        .map(Vec::len)
-        .unwrap_or_default()
-        + page["links"]["outgoing"]
-            .as_array()
-            .map(Vec::len)
-            .unwrap_or_default();
     if let Some(quality) = page.get_mut("quality").and_then(Value::as_object_mut) {
         quality.insert("truncated".to_string(), json!(partial));
         quality.insert("relationships".to_string(), json!(relationships));
+    }
+    page
+}
+
+// Each array already contributes its brackets in the empty template. Only
+// serde's item bytes and the commas between items in that SAME array are added.
+fn inspect_expansion_bytes(items: &[InspectPageItem], offset: usize, keep: usize) -> usize {
+    let end = offset.saturating_add(keep).min(items.len());
+    let mut bytes = 0;
+    let mut previous_section = None;
+    for item in &items[offset.min(items.len())..end] {
+        if previous_section == Some(item.section) {
+            bytes += 1;
+        }
+        bytes += item.serialized_bytes;
+        previous_section = Some(item.section);
+    }
+    bytes
+}
+
+fn inspect_page_serialized_len(
+    page: &Value,
+    items: &[InspectPageItem],
+    object_bytes: usize,
+) -> usize {
+    let offset = page["page"]["offset"].as_u64().expect("inspect offset") as usize;
+    let keep = page["page"]["returned"].as_u64().expect("inspect returned") as usize;
+    // The object's key and colon are already present. Replace precisely the
+    // four bytes of JSON null with the object's canonical encoding length.
+    serialized_len(page) - 4 + object_bytes + inspect_expansion_bytes(items, offset, keep)
+}
+
+fn materialize_inspect_page(mut page: Value, object: Value, items: Vec<InspectPageItem>) -> Value {
+    page["object"] = object;
+    let offset = page["page"]["offset"].as_u64().expect("inspect offset") as usize;
+    let keep = page["page"]["returned"].as_u64().expect("inspect returned") as usize;
+    for item in items.into_iter().skip(offset).take(keep) {
+        inspect_section_mut(&mut page, item.section)
+            .as_array_mut()
+            .expect("inspect expansion section is an array")
+            .push(item.value);
     }
     page
 }
@@ -402,3 +450,7 @@ fn inspect_action(arguments: &Value, cursor: &str) -> Value {
     next["page"]["cursor"] = json!(cursor);
     json!({"tool":"kmp_inspect","arguments":next})
 }
+
+#[cfg(test)]
+#[path = "inspect_budget_tests.rs"]
+mod tests;

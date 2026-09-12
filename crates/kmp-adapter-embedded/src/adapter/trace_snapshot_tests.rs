@@ -58,6 +58,7 @@ async fn ownership_and_all_route_explanations_share_one_snapshot_during_independ
         .await
         .expect("fixture write or bounded read");
     let request = TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: "a".into(),
         targets: ["c".into()].into(),
@@ -69,6 +70,7 @@ async fn ownership_and_all_route_explanations_share_one_snapshot_during_independ
         relations: Default::default(),
         limits: TraceSearchLimits::default(),
         temporal: Default::default(),
+        body: Default::default(),
     };
     let result = bounded_trace_search(&snapshot, &request).expect("fixture write or bounded read");
     assert_eq!(result.stop, TraceSearchStop::TargetsReached);
@@ -126,6 +128,7 @@ async fn coordinate_admission_and_proof_share_one_snapshot_during_retiming() {
         .await
         .expect("later commit");
     let request = TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: "a".into(),
         targets: ["b".into()].into(),
@@ -141,6 +144,7 @@ async fn coordinate_admission_and_proof_share_one_snapshot_during_retiming() {
             TemporalAxis::Observed,
         )
         .expect("selection"),
+        body: Default::default(),
     };
     let result = bounded_trace_search(&snapshot, &request).expect("old snapshot");
     assert_eq!(result.stop, TraceSearchStop::TargetsReached);
@@ -191,6 +195,7 @@ async fn focused_resumed_pages_keep_ownership_and_evidence_in_the_original_snaps
         .await
         .expect("independent commit");
     let request = TraceSearchRequest {
+        proof: false,
         about: "project:test".into(),
         from: "a".into(),
         targets: ["t".into()].into(),
@@ -212,6 +217,7 @@ async fn focused_resumed_pages_keep_ownership_and_evidence_in_the_original_snaps
                 .expect("selector")]),
             ),
         },
+        body: Default::default(),
     };
     let old = bounded_trace_search(&snapshot, &request).expect("resumed old snapshot");
     assert_eq!(old.stop, TraceSearchStop::TargetsReached);

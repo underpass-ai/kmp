@@ -66,6 +66,7 @@ fn prod() -> DimensionSelection {
 }
 fn query() -> TraceSearchRequest {
     TraceSearchRequest {
+        proof: false,
         about: ABOUT.into(),
         from: "s".into(),
         targets: ["t".into()].into(),
@@ -77,6 +78,7 @@ fn query() -> TraceSearchRequest {
         dimensions: Default::default(),
         limits: TraceSearchLimits::default(),
         temporal: Default::default(),
+        body: Default::default(),
     }
 }
 async fn open(mutations: Vec<ProjectionMutation>) -> (tempfile::TempDir, EmbeddedKernelStore) {
