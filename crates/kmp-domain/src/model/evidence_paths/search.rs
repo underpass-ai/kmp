@@ -42,7 +42,7 @@ pub fn search_evidence_paths(
     if request.proof {
         result.proof = Some(crate::model::materialize_trace_proof::evidence(
             reader,
-            &request.about,
+            request,
             &result,
             &mut search.admission,
             &request.body,

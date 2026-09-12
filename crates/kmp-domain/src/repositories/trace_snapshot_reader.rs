@@ -15,6 +15,26 @@ pub trait TraceSnapshotReader {
         ))
     }
 
+    /// Bodies checked against the digest their descriptor records, over the
+    /// exact stored bytes, before they are returned.
+    ///
+    /// Separate from [`bodies`](Self::bodies) because the legacy unbounded
+    /// read consults no descriptor and must keep working on a store written
+    /// before descriptors existed. A read that binds cards or expansions to a
+    /// digest asks for this one: delivering a body the descriptor does not
+    /// describe would break every binding made against it.
+    ///
+    /// The default refuses rather than falling back to an unchecked read: a
+    /// snapshot that cannot verify must not silently answer as if it had.
+    fn verified_bodies(
+        &self,
+        _ids: &[String],
+    ) -> Result<Vec<Option<crate::NodeDetailProjection>>, PortError> {
+        Err(PortError::Unavailable(
+            "verified body reads are not supported by this snapshot".into(),
+        ))
+    }
+
     /// Identity and size of each canonical body, in requested order,
     /// preserving duplicates and missing slots, from the same snapshot as
     /// `bodies`, `cards` and `adjacency`.

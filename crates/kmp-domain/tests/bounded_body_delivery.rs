@@ -196,6 +196,13 @@ impl TraceSnapshotReader for Snapshot {
             .collect())
     }
 
+    fn verified_bodies(
+        &self,
+        ids: &[String],
+    ) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
+        self.bodies(ids)
+    }
+
     fn bodies(&self, ids: &[String]) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
         *self.body_calls.borrow_mut() += 1;
         self.body_reads.borrow_mut().extend(ids.iter().cloned());
@@ -737,4 +744,187 @@ fn the_manifest_ignores_the_ceiling_and_the_requested_subset_but_not_the_selecti
         },
     );
     assert_ne!(wide.manifest_id, after.manifest_id);
+}
+
+
+#[test]
+fn a_changed_cut_over_the_same_selection_is_a_different_manifest() {
+    // The refs, the relations and the descriptors are identical; only the
+    // instant the reader stands at moved. An expansion of one must not be
+    // accepted as a continuation of the other.
+    let snapshot = Snapshot::new();
+    let frontier = run(
+        &snapshot,
+        TraceBodyOptions {
+            max_record_bytes: Some(8192),
+            ..TraceBodyOptions::default()
+        },
+    );
+
+    let mut historical = request(TraceBodyOptions {
+        max_record_bytes: Some(8192),
+        ..TraceBodyOptions::default()
+    });
+    historical.temporal = TemporalSelection::as_of(
+        TemporalCursor::Time("2026-06-01T00:00:00Z".into()),
+        TemporalAxis::Occurred,
+    )
+    .expect("cut");
+    let cut = bounded_trace_search(&snapshot, &historical)
+        .expect("search")
+        .proof
+        .expect("proof");
+
+    assert_ne!(
+        frontier.manifest_id, cut.manifest_id,
+        "the bound query is part of the selection's identity, not only its result"
+    );
+}
+
+
+/// The seek mode, over the same graph, so the manifest's query binding and
+/// its candidate coverage can be exercised where the review found them thin.
+mod seek {
+    use super::*;
+
+    fn seek_request(body: TraceBodyOptions) -> EvidencePathRequest {
+        EvidencePathRequest {
+            proof: true,
+            about: ABOUT.into(),
+            from: "a".into(),
+            roles: vec![EvidencePathRole {
+                name: "cause".into(),
+                context: false,
+                bindings: vec![],
+                steps: vec![TraceRelationStep {
+                    relation: MemoryRelationType::new("depends_on").expect("relation"),
+                    direction: RelationDirection::Outgoing,
+                }],
+            }],
+            constants: Default::default(),
+            temporal: Default::default(),
+            limits: TraceSearchLimits {
+                nodes: 16,
+                ..Default::default()
+            },
+            body,
+        }
+    }
+
+    fn run_seek(snapshot: &Snapshot, request: &EvidencePathRequest) -> TraceProofResult {
+        search_evidence_paths(snapshot, request)
+            .expect("seek")
+            .proof
+            .expect("proof")
+    }
+
+    #[test]
+    fn a_changed_seek_request_over_the_same_graph_is_a_different_manifest() {
+        let snapshot = Snapshot::new();
+        let frontier = run_seek(
+            &snapshot,
+            &seek_request(TraceBodyOptions {
+                max_record_bytes: Some(8192),
+                ..TraceBodyOptions::default()
+            }),
+        );
+
+        // Same graph, same relations, same refs; a different instant to stand
+        // at. Nothing in the result table distinguishes them.
+        let mut historical = seek_request(TraceBodyOptions {
+            max_record_bytes: Some(8192),
+            ..TraceBodyOptions::default()
+        });
+        historical.temporal = TemporalSelection::as_of(
+            TemporalCursor::Time("2026-06-01T00:00:00Z".into()),
+            TemporalAxis::Occurred,
+        )
+        .expect("cut");
+        let cut = run_seek(&snapshot, &historical);
+        assert_ne!(frontier.manifest_id, cut.manifest_id);
+
+        // And a different role name is a different question, even when it
+        // selects the same edges.
+        let mut renamed = seek_request(TraceBodyOptions {
+            max_record_bytes: Some(8192),
+            ..TraceBodyOptions::default()
+        });
+        renamed.roles[0].name = "effect".into();
+        assert_ne!(frontier.manifest_id, run_seek(&snapshot, &renamed).manifest_id);
+    }
+
+    #[test]
+    fn seek_delivery_options_never_change_the_manifest() {
+        let snapshot = Snapshot::new();
+        let wide = run_seek(
+            &snapshot,
+            &seek_request(TraceBodyOptions {
+                max_record_bytes: Some(8192),
+                ..TraceBodyOptions::default()
+            }),
+        );
+        let narrow = run_seek(
+            &snapshot,
+            &seek_request(TraceBodyOptions {
+                refs: Some(BTreeSet::new()),
+                ..TraceBodyOptions::default()
+            }),
+        );
+        let carded = run_seek(
+            &Snapshot::new().with_card("a", "Resumen de a.", "sha256:a"),
+            &seek_request(TraceBodyOptions {
+                max_record_bytes: Some(8192),
+                compact: Some("es".into()),
+                ..TraceBodyOptions::default()
+            }),
+        );
+
+        assert_eq!(wide.manifest_id, narrow.manifest_id);
+        assert_eq!(
+            wide.manifest_id, carded.manifest_id,
+            "a ceiling, a named subset and a card are delivery, not selection"
+        );
+    }
+
+    #[test]
+    fn a_seek_expansion_of_a_moved_selection_reads_no_body_and_no_card() {
+        let snapshot = Snapshot::new().with_card("a", "Resumen de a.", "sha256:a");
+        let first = run_seek(
+            &snapshot,
+            &seek_request(TraceBodyOptions {
+                max_record_bytes: Some(8192),
+                ..TraceBodyOptions::default()
+            }),
+        );
+        let manifest = first.manifest_id.clone().expect("manifest");
+
+        // The store moves outside the materialized proof table: one body goes.
+        let mut moved = Snapshot::new().with_card("a", "Resumen de a.", "sha256:a");
+        moved.without_body.insert("b".into());
+
+        let refused = run_seek(
+            &moved,
+            &seek_request(TraceBodyOptions {
+                max_record_bytes: Some(8192),
+                refs: Some(BTreeSet::from(["a".to_string()])),
+                expect_selection: Some(manifest),
+                compact: Some("es".into()),
+            }),
+        );
+
+        assert!(matches!(
+            refused.refusal,
+            Some(TraceExpansionRefusal::SelectionChanged { .. })
+        ));
+        assert!(refused.objects.is_empty());
+        assert!(
+            moved.read_bodies().is_empty(),
+            "refused before a single body was read"
+        );
+        assert_eq!(
+            *moved.card_calls.borrow(),
+            0,
+            "and before a single card was read"
+        );
+    }
 }

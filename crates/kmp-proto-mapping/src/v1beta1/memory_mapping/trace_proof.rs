@@ -64,6 +64,11 @@ pub(super) fn project(response: &mut TraceResponse, proof: TraceProofResult) {
         response.warnings.push(warning.into());
         return;
     }
+    // Whether this read consulted descriptors at all. An object with no
+    // descriptor is a body the store does not hold, which in this mode is
+    // still a withheld body as far as the wire is concerned; the flag must
+    // therefore come from the read, never from the object.
+    let descriptor_mode = proof.delivery.is_some();
     let mut gaps = std::collections::BTreeMap::<String, Vec<String>>::new();
     for (refs, reason) in [
         (&proof.missing_refs, "missing_ref"),
@@ -118,7 +123,7 @@ pub(super) fn project(response: &mut TraceResponse, proof: TraceProofResult) {
             object: Some(InspectedObject {
                 r#ref: o.node.node_id,
                 kind: o.node.node_kind,
-                text: o.body.as_ref().map_or(o.node.summary, |b| b.detail.clone()),
+                text: canonical_text(&o.body, descriptor_mode, o.node.summary),
                 metadata: persisted_memory_metadata(&o.node.properties),
                 source: persisted_memory_source(&o.node.properties)
                     .unwrap_or_default()
@@ -140,7 +145,14 @@ pub(super) fn project(response: &mut TraceResponse, proof: TraceProofResult) {
                 .or_else(|| descriptor.as_ref().map(|d| d.revision))
                 .unwrap_or_default(),
             required_record_bytes: required,
-            body_state: state.as_str().into(),
+            // Only the descriptor path reports delivery. The legacy read
+            // withholds nothing, so naming a state there would change the
+            // one output the no-option oracle is frozen against.
+            body_state: if descriptor_mode {
+                state.as_str().into()
+            } else {
+                String::new()
+            },
             descriptor: descriptor.map(|d| NodeBodyDescriptor {
                 r#ref: d.node_id,
                 revision: d.revision,
@@ -236,5 +248,29 @@ fn card_view(presented: NodeCardPresentation) -> NodeCardView {
             .map(|s| s.authored_at.clone())
             .unwrap_or_default(),
         text_bytes: stamp.as_ref().map_or(0, |s| s.text_bytes),
+    }
+}
+
+/// The canonical text this object may carry.
+///
+/// A withheld body must not come back through another field. The projection
+/// writer stores the same text twice — once as the detail record a ceiling
+/// admits, and once as the node summary — so returning the summary when the
+/// body was deferred, not requested or replaced by a card hands back exactly
+/// the bytes that were refused, while every byte counter honestly reports
+/// zero. The counters were right; the wire was not.
+///
+/// The legacy read keeps its contract, summary fallback included: it consults
+/// no descriptor, withholds nothing, and its frozen baseline is what the
+/// no-option oracle compares against.
+fn canonical_text(
+    body: &Option<kmp_domain::NodeDetailProjection>,
+    descriptor_mode: bool,
+    summary: String,
+) -> String {
+    match body {
+        Some(body) => body.detail.clone(),
+        None if descriptor_mode => String::new(),
+        None => summary,
     }
 }

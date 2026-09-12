@@ -20,6 +20,7 @@ pub(crate) mod temporal_projection;
 mod test_support;
 mod trace_material_expansion;
 pub(crate) mod condense_projection;
+mod trace_body_actions;
 mod trace_projection;
 pub(crate) mod visual_projection;
 

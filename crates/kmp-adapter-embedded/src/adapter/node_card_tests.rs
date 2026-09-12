@@ -313,3 +313,114 @@ async fn a_ref_of_another_about_is_refused_however_it_is_labelled() {
 
     assert!(rejection.is_not_found(), "{rejection}");
 }
+
+
+#[tokio::test]
+async fn a_body_rewritten_under_the_same_public_tokens_is_refused_not_delivered() {
+    // The case the record digest exists for: same revision, same public
+    // content hash, same record length, different bytes. Every comparison a
+    // reader can make without the record agrees; only the digest disagrees.
+    let dir = tempfile::tempdir().expect("temporary store");
+    let store = EmbeddedKernelStore::open(dir.path()).expect("open store");
+    store
+        .apply_mutations(vec![node(), body(1, BODY)])
+        .await
+        .expect("seed");
+    let before = stored_digest(&store, NODE).await;
+
+    let rewritten: String = BODY
+        .chars()
+        .map(|c| if c == 'r' { 'R' } else { c })
+        .collect();
+    assert_eq!(rewritten.len(), BODY.len(), "same length, different bytes");
+    assert_ne!(rewritten, BODY);
+
+    // A write that leaves the public tokens alone. The header moves with the
+    // record, so this is the store staying consistent with itself.
+    store
+        .apply_mutations(vec![ProjectionMutation::UpsertNodeDetail(
+            NodeDetailProjection {
+                node_id: NODE.into(),
+                detail: rewritten,
+                content_hash: "sha256:1".into(),
+                revision: 1,
+            },
+        )])
+        .await
+        .expect("rewrite");
+
+    let after = stored_digest(&store, NODE).await;
+    assert_ne!(
+        before, after,
+        "the digest moves with the bytes even when revision and hash do not"
+    );
+
+    // A card bound to the old digest no longer describes this body, so a
+    // compact read reports it stale rather than showing its prose.
+    let tx = store.begin_read().expect("read");
+    let descriptor = super::super::node_body_descriptor::read_one(tx.as_ref(), NODE)
+        .expect("descriptor")
+        .expect("descriptor");
+    let stale = NodeCard {
+        node_id: NODE.into(),
+        language: "es".into(),
+        text: "Resumen viejo.".into(),
+        source_revision: 1,
+        source_content_hash: "sha256:1".into(),
+        source_record_digest: before,
+        source_body_bytes: BODY.len() as u64,
+        authored_by: "reader".into(),
+        authored_at: "2026-09-12T09:00:00Z".into(),
+        card_revision: 1,
+    };
+    assert!(
+        !kmp_domain::node_card_policy::describes(&stale, &descriptor),
+        "an unchanged revision and content hash do not make a card current"
+    );
+}
+
+#[tokio::test]
+async fn a_body_whose_record_disagrees_with_its_descriptor_is_never_delivered() {
+    use kmp_domain::TraceSnapshotReader;
+
+    let dir = tempfile::tempdir().expect("temporary store");
+    let store = EmbeddedKernelStore::open(dir.path()).expect("open store");
+    store
+        .apply_mutations(vec![node(), body(1, BODY)])
+        .await
+        .expect("seed");
+
+    // Only the header's digest is changed, and only to another well-formed
+    // one. Its record length still matches the stored record, so nothing but
+    // the digest itself can catch this.
+    {
+        let tx = store.begin_read().expect("read");
+        let raw = tx
+            .get(Table::DetailHeaders, Key::Str(NODE))
+            .expect("read")
+            .expect("header");
+        let mut header: serde_json::Value = serde_json::from_slice(&raw).expect("header json");
+        header["record_digest"] = serde_json::json!(format!("sha256:{}", "0".repeat(64)));
+        drop(tx);
+        let mut write = store.begin_write().expect("write");
+        write
+            .insert(
+                Table::DetailHeaders,
+                Key::Str(NODE),
+                &serde_json::to_vec(&header).expect("header bytes"),
+            )
+            .expect("forge header");
+        write.commit().expect("commit");
+    }
+
+    let tx = store.begin_read().expect("read");
+    let snapshot = super::super::trace_snapshot::TraceSnapshot(tx.as_ref());
+    let error = snapshot
+        .verified_bodies(&[NODE.to_string()])
+        .expect_err("a body that does not match its descriptor is not returned");
+
+    assert!(
+        error.to_string().contains("does not match the digest"),
+        "{error}"
+    );
+}

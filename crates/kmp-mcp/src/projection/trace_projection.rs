@@ -79,6 +79,13 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
                         "content_hash":o.has_body.then_some(&o.content_hash),"revision":o.has_body.then_some(o.revision)});
                     if !o.body_state.is_empty() {
                         value["body_state"] = json!(o.body_state);
+                        // A withheld body carries no text field at all, rather
+                        // than an empty one a reader could mistake for an
+                        // empty body. The state and the descriptor say what
+                        // is there and what expanding it would cost.
+                        if o.object.as_ref().is_some_and(|object| object.text.is_empty()) {
+                            value.as_object_mut().expect("proof object").remove("text");
+                        }
                     }
                     if let Some(descriptor) = &o.descriptor {
                         value["descriptor"] = json!({
