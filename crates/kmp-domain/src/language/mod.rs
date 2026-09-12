@@ -16,6 +16,9 @@ mod search_tokens;
 mod date_fidelity_tests;
 
 #[cfg(test)]
+mod decimal_separator_fidelity_tests;
+
+#[cfg(test)]
 mod emphasis_fidelity_tests;
 
 #[cfg(test)]
