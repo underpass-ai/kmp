@@ -57,12 +57,20 @@ pub(super) fn write(tx: &mut dyn WriteTx, header: &DetailHeaderRecord) -> Result
 /// preserved exactly as `node_detail::read_batch` reports them.
 ///
 /// `None` means no `Details` row: the body genuinely does not exist. A stored
-/// detail whose header is absent or whose length disagrees with the stored
-/// record is an inconsistent projection and fails here, because answering
-/// `None` would report present evidence as missing and reading the body would
-/// defeat the point of asking.
+/// detail whose header is absent, unreadable or inconsistent is an
+/// inconsistent projection and fails here, because answering `None` would
+/// report present evidence as missing and reading the body would defeat the
+/// point of asking.
 ///
-/// No path through this function reads the `Details` value.
+/// No path through this function reads the `Details` value, which bounds what
+/// can be caught. Everything checkable without the bytes is checked: the
+/// header names the body that was asked for, its record length matches the
+/// stored record, its canonical body cannot exceed the record containing it,
+/// and its digest has the one shape this store writes. What cannot be caught
+/// here is a well-formed digest that does not describe those bytes, or a
+/// plausible but wrong `body_bytes`. Both would need the record. Writing the
+/// pair in one transaction is what makes them right at the source; a consumer
+/// that later loads a body checks it against this digest.
 ///
 /// The port forwarding that turns these into the shared `NodeBodyDescriptor`
 /// belongs to the admission contract patch; until it lands, this side of the
@@ -83,19 +91,72 @@ pub(super) fn read_batch(
             let raw = tx
                 .get(Table::DetailHeaders, Key::Str(id))?
                 .ok_or_else(|| inconsistent(id, "has no stored header"))?;
-            let header = decode::<DetailHeaderRecord>("node detail header", &raw)?;
-            if header.record_bytes != stored {
-                return Err(inconsistent(
-                    id,
-                    &format!(
-                        "has a header of {} bytes against a stored record of {stored}",
-                        header.record_bytes
-                    ),
-                ));
-            }
-            Ok(Some(header))
+            let header =
+                decode::<DetailHeaderRecord>("node detail header", &raw).map_err(|error| {
+                    inconsistent(id, &format!("has an unreadable header ({error})"))
+                })?;
+            validated(id, header, stored).map(Some)
         })
         .collect()
+}
+
+/// Every invariant a header can be held to without its record. Serde proves
+/// the JSON has the right field types and nothing more: a header that names
+/// another body, counts more canonical bytes than the record holding them, or
+/// carries a digest this store could not have written is corrupt, however well
+/// it parses. The public `content_hash` is an opaque token by contract and is
+/// not inspected.
+fn validated(
+    id: &str,
+    header: DetailHeaderRecord,
+    stored: u64,
+) -> Result<DetailHeaderRecord, PortError> {
+    if header.node_id != id {
+        return Err(inconsistent(
+            id,
+            &format!("has a header naming `{}`", header.node_id),
+        ));
+    }
+    if header.record_bytes != stored {
+        return Err(inconsistent(
+            id,
+            &format!(
+                "has a header of {} bytes against a stored record of {stored}",
+                header.record_bytes
+            ),
+        ));
+    }
+    if header.body_bytes > header.record_bytes {
+        return Err(inconsistent(
+            id,
+            &format!(
+                "has a header claiming {} canonical bytes inside a record of {}",
+                header.body_bytes, header.record_bytes
+            ),
+        ));
+    }
+    if !is_record_digest(&header.record_digest) {
+        return Err(inconsistent(
+            id,
+            &format!(
+                "has a header whose digest `{}` is not sha256 followed by 64 lowercase hex digits",
+                header.record_digest
+            ),
+        ));
+    }
+    Ok(header)
+}
+
+/// The one digest shape this store writes: `sha256:` and 64 lowercase hex
+/// digits. Uppercase is rejected rather than normalized, because a value this
+/// store never produces is evidence of something else having written it.
+fn is_record_digest(value: &str) -> bool {
+    value.strip_prefix("sha256:").is_some_and(|hex| {
+        hex.len() == 64
+            && hex
+                .bytes()
+                .all(|digit| digit.is_ascii_digit() || matches!(digit, b'a'..=b'f'))
+    })
 }
 
 fn inconsistent(node_id: &str, what: &str) -> PortError {

@@ -209,7 +209,7 @@ fn a_header_disagreeing_with_the_stored_record_length_is_refused() {
 }
 
 #[test]
-fn a_malformed_header_fails_to_decode_rather_than_answering() {
+fn a_malformed_header_fails_to_decode_and_still_names_the_remedy() {
     let (_dir, engine) = engine();
     write_details(&engine, &[detail("a", AWKWARD, 1, "public:x")]);
 
@@ -220,10 +220,115 @@ fn a_malformed_header_fails_to_decode_rather_than_answering() {
 
     let tx = engine.begin_read().expect("read transaction");
     let error = read_batch(tx.as_ref(), &["a".to_string()]).expect_err("malformed header");
+    let message = error.to_string();
     assert!(
-        error.to_string().contains("node detail header"),
-        "got: {error}"
+        message.contains("node detail header"),
+        "the decode failure must stay visible, got: {message}"
     );
+    assert!(
+        message.contains("`a`") && message.contains("rebuild"),
+        "an unreadable header must also say what to repair, got: {message}"
+    );
+}
+
+/// Serde accepts any JSON of the right shape. These three corruptions keep the
+/// record length intact, so the only thing standing between them and a
+/// consumer that trusts headers without loading bodies is validation here.
+#[test]
+fn a_header_naming_another_body_is_refused() {
+    let (_dir, engine) = engine();
+    write_details(
+        &engine,
+        &[
+            detail("a", AWKWARD, 1, "public:x"),
+            detail("b", AWKWARD, 1, "public:y"),
+        ],
+    );
+    let mut header = header_of(&engine, "a");
+    header.node_id = "b".into();
+
+    let mut tx = engine.begin_write().expect("write transaction");
+    // Written under key `a`, so the record length it is checked against is
+    // still the right one: only the identity inside the header moved.
+    tx.insert(
+        Table::DetailHeaders,
+        Key::Str("a"),
+        &encode("node detail header", &header).expect("encode"),
+    )
+    .expect("swap the identity");
+    Box::new(tx).commit().expect("commit");
+
+    let tx = engine.begin_read().expect("read transaction");
+    let error = read_batch(tx.as_ref(), &["a".to_string()])
+        .expect_err("a header must describe the body it is filed under");
+    let message = error.to_string();
+    assert!(
+        message.contains("`a`") && message.contains("`b`") && message.contains("rebuild"),
+        "got: {message}"
+    );
+}
+
+#[test]
+fn a_header_claiming_more_canonical_bytes_than_its_record_is_refused() {
+    let (_dir, engine) = engine();
+    write_details(&engine, &[detail("a", AWKWARD, 1, "public:x")]);
+    let mut header = header_of(&engine, "a");
+    header.body_bytes = header.record_bytes + 1;
+
+    let mut tx = engine.begin_write().expect("write transaction");
+    write(tx.as_mut(), &header).expect("overwrite the header");
+    Box::new(tx).commit().expect("commit");
+
+    let tx = engine.begin_read().expect("read transaction");
+    let error = read_batch(tx.as_ref(), &["a".to_string()])
+        .expect_err("a body cannot be larger than the record holding it");
+    let message = error.to_string();
+    assert!(
+        message.contains("`a`")
+            && message.contains("canonical bytes")
+            && message.contains("rebuild"),
+        "the refusal must be the size invariant, not another check, got: {message}"
+    );
+}
+
+#[test]
+fn a_digest_this_store_could_not_have_written_is_refused() {
+    let valid = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    for corrupt in [
+        "not-a-digest",
+        "",
+        "sha256:",
+        // Right alphabet, one digit short.
+        "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
+        // Uppercase hex: a shape this store never writes.
+        "sha256:0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789abcdef",
+        // Non-hex letter inside the right length.
+        "sha256:0123456789abcdefg123456789abcdef0123456789abcdef0123456789abcde",
+        // Another algorithm.
+        "sha512:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    ] {
+        let (_dir, engine) = engine();
+        write_details(&engine, &[detail("a", AWKWARD, 1, "public:x")]);
+        let mut header = header_of(&engine, "a");
+        assert!(
+            header.record_digest.len() == valid.len(),
+            "the fixture must match the written shape"
+        );
+        header.record_digest = corrupt.into();
+
+        let mut tx = engine.begin_write().expect("write transaction");
+        write(tx.as_mut(), &header).expect("overwrite the header");
+        Box::new(tx).commit().expect("commit");
+
+        let tx = engine.begin_read().expect("read transaction");
+        let error = read_batch(tx.as_ref(), &["a".to_string()])
+            .expect_err(&format!("`{corrupt}` must be refused"));
+        let message = error.to_string();
+        assert!(
+            message.contains("`a`") && message.contains("digest") && message.contains("rebuild"),
+            "the refusal must be the digest shape, not another check; `{corrupt}` gave: {message}"
+        );
+    }
 }
 
 #[test]
