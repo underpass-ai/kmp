@@ -192,20 +192,68 @@ fn is_slashed_word_pair(inner: &str, runs: &[&str]) -> bool {
         })
 }
 
-/// What a rendering token carries for fidelity: itself, and, when it is a
-/// number joined to a unit word, that number.
+/// What a rendering token carries for fidelity: itself, the number it joined
+/// to a unit word, and the decimal it wrote with the other separator.
 ///
 /// English builds `90-minute` out of the very number a Spanish source wrote as
-/// `90 minutos`, and refusing that rendering asks a writer to be less faithful,
-/// not more. Only a whole run at the joiner is read and only in that one
-/// grammatical shape, so nothing here matches a substring: `1990-minute`
-/// carries `1990` and not `90`, a date keeps its parts to itself, and a ticket
-/// such as `INC-42` still carries `INC-42` alone.
+/// `90 minutos`, and writes `0.6` where that source wrote `0,6`. Refusing
+/// either rendering asks a writer to be less faithful, not more. Both readings
+/// are literal: a whole run at a joiner, or the same digits either side of one
+/// separator. Nothing here matches a substring and nothing here parses a
+/// quantity, so `1990-minute` carries `1990` and not `90`, `0,60` does not
+/// carry `0.6`, a date keeps its parts to itself, and a ticket such as
+/// `INC-42` still carries `INC-42` alone.
 fn carried_forms(token: String) -> Vec<String> {
-    match unit_adjective_number(&token) {
-        Some(number) => vec![number.to_string(), token],
-        None => vec![token],
+    let mut forms = Vec::with_capacity(3);
+    if let Some(number) = unit_adjective_number(&token) {
+        forms.push(number.to_string());
     }
+    if let Some(spelling) = other_decimal_separator(&token) {
+        forms.push(spelling);
+    }
+    forms.push(token);
+    forms
+}
+
+/// Where a group of exactly this many digits after a separator is how
+/// thousands are written, and so says nothing about which separator was meant.
+const THOUSANDS_GROUP: usize = 3;
+
+/// The same decimal written with the other separator, when which separator it
+/// is cannot be in doubt.
+///
+/// Spanish writes `0,6` where English writes `0.6`. The kernel compares bytes
+/// and does not read quantities, so the comma spelling was reported dropped
+/// from a faithful English rendering and the writer had to paste the Spanish
+/// number back into the English field.
+///
+/// Only one separator with digits on both sides is read, which is what keeps a
+/// version, a date, a ticket, a time and a path out of it: `v0.7.0` and
+/// `0.7.0` carry a second separator, `2026-09-03` and `09:00` carry neither of
+/// these two, and `lib.rs` has no digits to the left. The digits themselves
+/// must match exactly afterwards, so a changed value never covers another and
+/// `0,60` is not `0.6`.
+///
+/// A separator followed by exactly three digits is how thousands are grouped.
+/// `1,500` is one thousand five hundred to one writer and one and a half to
+/// another, and the token cannot say which. That notation keeps its
+/// limitation rather than being guessed at, so both spellings stay distinct
+/// and a rendering that changes one into the other is still refused.
+fn other_decimal_separator(token: &str) -> Option<String> {
+    let number = token.strip_prefix(['-', '+', '−']).unwrap_or(token);
+    let sign = &token[..token.len() - number.len()];
+    let (whole, fraction, separator) = match number.split_once(',') {
+        Some((whole, fraction)) => (whole, fraction, '.'),
+        None => {
+            let (whole, fraction) = number.split_once('.')?;
+            (whole, fraction, ',')
+        }
+    };
+    let digits = |run: &str| !run.is_empty() && run.bytes().all(|byte| byte.is_ascii_digit());
+    if !digits(whole) || !digits(fraction) || fraction.len() == THOUSANDS_GROUP {
+        return None;
+    }
+    Some(format!("{sign}{whole}{separator}{fraction}"))
 }
 
 fn unit_adjective_number(token: &str) -> Option<&str> {
