@@ -53,7 +53,13 @@ async fn joined_endpoints_share_sources_and_keep_all_proof_pages()
 #[tokio::test]
 async fn named_seek_expansion_preserves_manifest_budget_and_refs_across_metadata_pages()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    check_admission(true, true, true, true).await
+    check_admission(true, true, true, true, false).await
+}
+
+#[tokio::test]
+async fn named_target_expansion_preserves_manifest_budget_and_exact_bodies_across_pages()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    check_admission(true, false, true, true, true).await
 }
 
 async fn check(
@@ -61,7 +67,7 @@ async fn check(
     endpoints: bool,
     proof: bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    check_admission(context, endpoints, proof, false).await
+    check_admission(context, endpoints, proof, false, false).await
 }
 
 async fn check_admission(
@@ -69,6 +75,7 @@ async fn check_admission(
     endpoints: bool,
     proof: bool,
     admission: bool,
+    target: bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let dir = tempfile::tempdir()?;
     let kernel = EmbeddedKernel::open(dir.path())?;
@@ -177,9 +184,14 @@ async fn check_admission(
     let mut request = TraceRequest {
         about: about.into(),
         from: seed,
+        targets: if target {
+            vec![witness.clone()]
+        } else {
+            vec![]
+        },
         search: Some(TraceSearchOptions {
             proof,
-            seek: Some(TraceSeekOptions {
+            seek: (!target).then(|| TraceSeekOptions {
                 roles: vec![TraceSeekRole {
                     name: "verification".into(),
                     context,
@@ -230,26 +242,32 @@ async fn check_admission(
             ],
         });
     }
-    let native = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)
-        .expect("valid")
-        .expect("seek");
-    let result = kernel.service().evidence_paths(native.clone()).await?;
-    let seek = request
-        .search
-        .as_ref()
-        .expect("search")
-        .seek
-        .as_ref()
-        .expect("seek");
-    let expected = kmp_proto_mapping::v1beta1::evidence_seek_response_from_result(
-        result,
-        &native,
-        seek,
-        kmp_application::TracePageRequest {
-            entries: Some(1),
-            cursor: None,
-        },
-    );
+    let expected = if target {
+        None
+    } else {
+        let native = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)
+            .expect("valid")
+            .expect("seek");
+        let result = kernel.service().evidence_paths(native.clone()).await?;
+        let seek = request
+            .search
+            .as_ref()
+            .expect("search")
+            .seek
+            .as_ref()
+            .expect("seek");
+        Some(
+            kmp_proto_mapping::v1beta1::evidence_seek_response_from_result(
+                result,
+                &native,
+                seek,
+                kmp_application::TracePageRequest {
+                    entries: Some(1),
+                    cursor: None,
+                },
+            ),
+        )
+    };
     let listener = TcpListener::bind("127.0.0.1:0").await?;
     let endpoint = format!("http://{}", listener.local_addr()?);
     let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
@@ -270,7 +288,7 @@ async fn check_admission(
         return Ok(());
     }
     let first = client.trace(request.clone()).await?.into_inner();
-    assert_eq!(first, expected);
+    assert_eq!(Some(first.clone()), expected);
     let selection = first.seek.as_ref().expect("seek");
     assert_eq!(
         selection.status,
@@ -432,6 +450,12 @@ async fn check_named_pages(
                 if object.body_state == "loaded" {
                     assert_eq!(&inspected.r#ref, id);
                     assert!(!inspected.text.is_empty());
+                    let expected_text = if id.ends_with(":shared") {
+                        "Exact signed source π".to_string()
+                    } else {
+                        format!("Exact full body of {id}")
+                    };
+                    assert_eq!(inspected.text, expected_text);
                     loaded.push(inspected.r#ref.clone());
                 } else {
                     assert!(inspected.text.is_empty());
