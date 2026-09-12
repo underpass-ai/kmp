@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-09-12
+
 ### Added
 
 - Trace fetches selected path entries and typed evidence sources together, preserving their provenance, attachment clocks and explicit missing or incomplete proof. Both destination search and evidence discovery use the same materialization contract.
@@ -1683,7 +1685,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/underpass-ai/kmp/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/underpass-ai/kmp/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/underpass-ai/kmp/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/underpass-ai/kmp/compare/v0.14.0...v0.15.0
