@@ -45,6 +45,14 @@ por qué, no como lista que una CI deba comprobar.
 | `distribution/mcpb/manifest.json` | Lo que instala el host |
 | Bloque `kmp:public-overview` y `readme sync` | Las tres superficies públicas describen la misma superficie |
 | `tests/tool_surface_parity.rs` | Fija definición y respuesta |
+| `plugins/kmp/skills/kmp-moves/SKILL.md` | La skill que enumera los movimientos vivos |
+| Tabla de propiedad y lista de movimientos del README raíz | Describen la misma superficie |
+
+Los recuentos fijos («dieciséis herramientas», «doce de memoria») se han
+retirado de la prosa donde no aportaban nada: cada verbo nuevo los dejaba
+desfasados en cuatro sitios a la vez. Donde el listado sí ayuda —la skill de
+movimientos y la tabla del README— se mantiene la lista y se apunta a
+`tools/list` como autoridad. No hay prueba de recuento ni gate nuevo.
 
 La respuesta de `kmp_condense` no está fijada en ese parity: una tarjeta declara
 el digest del registro que el almacén tiene, y ese valor no se repite entre

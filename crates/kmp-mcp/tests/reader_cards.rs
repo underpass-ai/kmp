@@ -407,3 +407,138 @@ async fn condense_over_the_tool_surface_holds_its_compare_and_set() {
         "condensing moves no canonical row"
     );
 }
+
+
+#[tokio::test]
+async fn a_named_expansion_with_compact_delivers_the_body_and_not_its_card_again() {
+    // F3: when both could be emitted, only one is. A card beside the body it
+    // stands for is the same text twice, and a counter that ignored those
+    // bytes would under-report what the response cost.
+    let (_dir, server) = seeded().await;
+    for node_id in [ENTRY_A, ENTRY_B, SOURCE] {
+        condense(&server, node_id, "Tarjeta corta del lector.").await;
+    }
+    let first = call(
+        &server,
+        "kmp_trace",
+        trace(json!({"proof": true, "proof_refs": []})),
+    )
+    .await;
+    let manifest = structured(&first)["proof"]["manifest_id"]
+        .as_str()
+        .expect("manifest")
+        .to_string();
+
+    let expansion = call(
+        &server,
+        "kmp_trace",
+        trace(json!({
+            "proof": true,
+            "max_body_record_bytes": 400_000,
+            "proof_refs": [SOURCE],
+            "expect_selection": manifest,
+            "compact": {"language": "es"}
+        })),
+    )
+    .await;
+
+    let value = structured(&expansion);
+    let expanded = value["objects"]
+        .as_array()
+        .expect("objects")
+        .iter()
+        .find(|object| object["ref"] == SOURCE)
+        .expect("source");
+    assert_eq!(expanded["body_state"], "loaded");
+    assert!(
+        expanded["text"].as_str().is_some_and(|text| text.contains(SOURCE_MARKER)),
+        "the body it named is delivered: {expanded}"
+    );
+    assert_eq!(
+        expanded["card"]["status"], "valid",
+        "the card's state is still reported"
+    );
+    assert!(
+        expanded["card"].get("text").is_none(),
+        "but not its prose, which would be the same text twice: {expanded}"
+    );
+    // The omitted total counts the bodies cards actually stood for, and only
+    // those: the one this call expanded is delivered, not saved.
+    let omitted_by_cards: u64 = value["objects"]
+        .as_array()
+        .expect("objects")
+        .iter()
+        .filter(|object| object["body_state"] == "compact")
+        .map(|object| object["descriptor"]["body_bytes"].as_u64().expect("bytes"))
+        .sum();
+    assert_eq!(
+        value["proof"]["compact"]["body_bytes_omitted"]
+            .as_u64()
+            .expect("omitted"),
+        omitted_by_cards,
+        "the expanded body is delivered, so it is not counted as omitted"
+    );
+    assert!(omitted_by_cards > 0, "and the other two cards did save their bodies");
+}
+
+#[tokio::test]
+async fn following_the_offered_actions_recovers_every_body_exactly_once() {
+    // One record at a time, over the real surface, until the chain ends. A
+    // single executed action could not have caught a cycle.
+    let (_dir, server) = seeded().await;
+    let smallest = {
+        let descriptors = call(
+            &server,
+            "kmp_trace",
+            trace(json!({"proof": true, "proof_refs": []})),
+        )
+        .await;
+        structured(&descriptors)["objects"]
+            .as_array()
+            .expect("objects")
+            .iter()
+            .map(|object| object["required_record_bytes"].as_u64().expect("cost"))
+            .max()
+            .expect("at least one body")
+    };
+
+    let mut arguments = trace(json!({
+        "proof": true,
+        "max_body_record_bytes": smallest,
+        "proof_refs": []
+    }));
+    let mut recovered: Vec<String> = Vec::new();
+    let mut rounds = 0;
+
+    loop {
+        rounds += 1;
+        assert!(rounds <= 12, "the chain did not finish");
+        let response = call(&server, "kmp_trace", arguments.clone()).await;
+        let value = structured(&response);
+        for object in value["objects"].as_array().expect("objects") {
+            if object["body_state"] == "loaded" {
+                let reference = object["ref"].as_str().expect("ref").to_string();
+                assert!(
+                    !recovered.contains(&reference),
+                    "`{reference}` was delivered twice across the chain"
+                );
+                recovered.push(reference);
+            }
+        }
+        let Some(action) = value["proof"]["expand_bodies"].as_object() else {
+            break;
+        };
+        arguments = action["arguments"].clone();
+    }
+
+    let mut once = recovered.clone();
+    once.sort();
+    once.dedup();
+    assert_eq!(once.len(), recovered.len());
+    assert!(
+        recovered.contains(&SOURCE.to_string())
+            && recovered.contains(&ENTRY_A.to_string())
+            && recovered.contains(&ENTRY_B.to_string()),
+        "the chain reached every body of the selection: {recovered:?}"
+    );
+}

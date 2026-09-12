@@ -3,62 +3,114 @@
 //! A capability that reports a manifest, a deferred ref and an exact cost, and
 //! then leaves the agent to rebuild the call, has not delivered the action —
 //! it has delivered homework. Everything here is a complete `kmp_trace` call:
-//! the same bound query, the same ceiling, the refs still pending, and the
-//! manifest the response was computed from.
+//! the same bound query, the ceiling the caller chose, the next refs of the
+//! selection, and the manifest the response was computed from.
+//!
+//! **These continue a suffix; they do not promise a whole selection.** The
+//! response carries no memory of earlier calls, so the only honest frontier is
+//! the last ref of the manifest order that *this* response actually loaded.
+//! Everything after it is offered; everything before it the consumer already
+//! holds, or deliberately skipped, and either way it is named by its own
+//! `body_state`. A consumer joins responses by ref against one manifest. No
+//! action here says a selection is complete, and the end of one page is not
+//! the end of a selection.
 //!
 //! What is deliberately not here: paging. A continuation walks one projection
-//! of one selection; these ask for different bodies of the same selection, and
-//! conflating them is how a consumer ends up joining chunks that never
-//! belonged together.
+//! of one selection; these ask for different bodies of the same selection.
+
+use std::collections::BTreeSet;
 
 use serde_json::{Map, Value, json};
 
-/// Refs whose canonical body this response withheld but the store holds, in
-/// the order the response listed them, with what each one costs to expand.
-fn pending_refs(value: &Value) -> Vec<(String, u64)> {
+use kmp_domain::MAX_EXPANSION_REFS;
+
+/// One object of the manifest order, as this response reports it.
+struct Slot {
+    reference: String,
+    loaded: bool,
+    /// `Some` when the store holds a body this response did not deliver.
+    pending_cost: Option<u64>,
+}
+
+fn slots(value: &Value) -> Vec<Slot> {
     value["objects"]
         .as_array()
         .into_iter()
         .flatten()
-        .filter(|object| {
-            matches!(
-                object["body_state"].as_str(),
-                Some("deferred_budget" | "not_requested" | "compact")
-            )
-        })
         .filter_map(|object| {
             let reference = object["ref"].as_str()?.to_string();
-            let cost = object["required_record_bytes"]
-                .as_u64()
-                .or_else(|| object["descriptor"]["record_bytes"].as_u64())?;
-            Some((reference, cost))
+            let state = object["body_state"].as_str()?;
+            let pending_cost = matches!(
+                state,
+                "deferred_budget" | "not_requested" | "compact"
+            )
+            .then(|| {
+                object["required_record_bytes"]
+                    .as_u64()
+                    .or_else(|| object["descriptor"]["record_bytes"].as_u64())
+            })
+            .flatten();
+            Some(Slot {
+                reference,
+                loaded: state == "loaded",
+                pending_cost,
+            })
         })
         .collect()
 }
 
-/// The batch this action names, and the allowance it carries.
+/// Where a suffix continuation may start.
 ///
-/// A named batch pays only for what it names, so the allowance is the exact
-/// sum of the records in it — never a round number, and never the whole
-/// selection. Under a ceiling the caller chose, the batch is the longest
-/// prefix that fits; when not even the first record fits, the action names
-/// that one record with its exact requirement, so the reader can see the
-/// price and decide. Offering it is not reading it.
-fn next_batch(pending: &[(String, u64)], declared: Option<u64>) -> (Vec<String>, u64) {
+/// One ref past the last body this response really loaded. A ref the caller
+/// asked for and did not get — because it did not fit — never advances the
+/// frontier, so the next action offers it again instead of walking past it.
+/// With nothing loaded the frontier is the start of what the caller asked
+/// about: the beginning of the selection, or the first ref it named.
+fn frontier(slots: &[Slot], named: Option<&BTreeSet<String>>) -> usize {
+    let considered = |slot: &Slot| named.is_none_or(|named| named.contains(&slot.reference));
+    let last_loaded = slots
+        .iter()
+        .enumerate()
+        .filter(|(_, slot)| slot.loaded && considered(slot))
+        .map(|(index, _)| index)
+        .next_back();
+    match (last_loaded, named) {
+        (Some(index), _) => index + 1,
+        (None, None) => 0,
+        (None, Some(_)) => slots
+            .iter()
+            .position(considered)
+            .unwrap_or(slots.len()),
+    }
+}
+
+/// The next batch of the suffix, and the allowance it carries.
+///
+/// Bounded twice: by `MAX_EXPANSION_REFS`, because a batch the parser would
+/// refuse is not a copyable action, and by the ceiling the caller chose, which
+/// is carried through unchanged. A record larger than that ceiling on its own
+/// is skipped here and kept explicitly pending: the rest of the suffix is
+/// still recoverable, and the large one is offered separately, at a price the
+/// caller can see and refuse.
+fn next_batch(suffix: &[&Slot], ceiling: Option<u64>) -> (Vec<String>, u64) {
     let mut refs = Vec::new();
-    let mut allowance = 0;
-    for (reference, cost) in pending {
-        match declared {
-            Some(ceiling) if allowance + cost > ceiling => break,
+    let mut total = 0;
+    for slot in suffix {
+        let Some(cost) = slot.pending_cost else {
+            continue;
+        };
+        if refs.len() == MAX_EXPANSION_REFS {
+            break;
+        }
+        match ceiling {
+            Some(ceiling) if cost > ceiling => continue,
+            Some(ceiling) if total + cost > ceiling => break,
             _ => {}
         }
-        refs.push(reference.clone());
-        allowance += cost;
+        refs.push(slot.reference.clone());
+        total += cost;
     }
-    match pending.first() {
-        Some((reference, cost)) if refs.is_empty() => (vec![reference.clone()], *cost),
-        _ => (refs, allowance),
-    }
+    (refs, ceiling.unwrap_or(total))
 }
 
 /// The bound query, without anything that belongs to one delivery rather than
@@ -87,6 +139,15 @@ fn with_search(query: &Value, mutate: impl FnOnce(&mut Map<String, Value>)) -> V
     call
 }
 
+fn expansion(query: &Value, refs: Vec<String>, manifest: &str, allowance: u64) -> Value {
+    let call = with_search(query, |search| {
+        search.insert("proof_refs".into(), json!(refs));
+        search.insert("expect_selection".into(), json!(manifest));
+        search.insert("max_body_record_bytes".into(), json!(allowance));
+    });
+    json!({"tool": "kmp_trace", "arguments": call})
+}
+
 /// Attaches the next batch to a delivered response, and the fresh read to a
 /// refused one.
 pub(crate) fn attach(value: &mut Value, arguments: &Value) {
@@ -106,24 +167,45 @@ pub(crate) fn attach(value: &mut Value, arguments: &Value) {
     else {
         return;
     };
-    let pending = pending_refs(value);
-    if pending.is_empty() {
-        return;
-    }
     let manifest = manifest.to_string();
-    let declared = arguments
+    let slots = slots(value);
+    let named: Option<BTreeSet<String>> = arguments
+        .pointer("/search/proof_refs")
+        .and_then(Value::as_array)
+        .map(|refs| {
+            refs.iter()
+                .filter_map(|reference| reference.as_str().map(str::to_string))
+                .collect()
+        })
+        .filter(|refs: &BTreeSet<String>| !refs.is_empty());
+    let ceiling = arguments
         .pointer("/search/max_body_record_bytes")
         .and_then(Value::as_u64);
-    let (refs, allowance) = next_batch(&pending, declared);
-    if refs.is_empty() || allowance == 0 {
-        return;
+    let suffix: Vec<&Slot> = slots[frontier(&slots, named.as_ref()).min(slots.len())..]
+        .iter()
+        .collect();
+    let query = bound_query(arguments);
+
+    let (refs, allowance) = next_batch(&suffix, ceiling);
+    if !refs.is_empty() && allowance > 0 {
+        value["proof"]["expand_bodies"] = expansion(&query, refs, &manifest, allowance);
     }
-    let batch = with_search(&bound_query(arguments), |search| {
-        search.insert("proof_refs".into(), json!(refs));
-        search.insert("expect_selection".into(), json!(manifest));
-        search.insert("max_body_record_bytes".into(), json!(allowance));
-    });
-    value["proof"]["expand_bodies"] = json!({"tool": "kmp_trace", "arguments": batch});
+    // A record the caller's ceiling cannot hold is never folded into the batch
+    // above and never raises that ceiling behind its back. It is offered on
+    // its own, priced exactly, so taking it is a decision and not a surprise.
+    if let Some(oversized) = ceiling.and_then(|ceiling| {
+        suffix
+            .iter()
+            .find(|slot| slot.pending_cost.is_some_and(|cost| cost > ceiling))
+    }) {
+        let cost = oversized.pending_cost.expect("oversized cost");
+        value["proof"]["expand_oversized_body"] = expansion(
+            &query,
+            vec![oversized.reference.clone()],
+            &manifest,
+            cost,
+        );
+    }
 }
 
 #[cfg(test)]
