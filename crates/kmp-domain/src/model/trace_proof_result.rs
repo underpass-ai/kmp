@@ -1,6 +1,6 @@
 use crate::{
-    NodeRelationProjection, TraceBodyDelivery, TraceCompactSummary, TraceExpansionRefusal,
-    TraceProofObject, TraceSearchStop,
+    NodeRelationProjection, TraceBodyDelivery, TraceCompactSummary, TraceExpansionPlan,
+    TraceExpansionRefusal, TraceProofObject, TraceSearchStop,
 };
 
 /// Completeness of the fetched declared proof, never semantic answer sufficiency.
@@ -29,6 +29,9 @@ pub struct TraceProofResult {
     pub delivery: Option<TraceBodyDelivery>,
     /// Present only when the read asked for a compact presentation.
     pub compact: Option<TraceCompactSummary>,
+    /// What to ask for next, decided over the whole selection before any
+    /// pagination. `None` when nothing the store holds is still withheld.
+    pub expansion_plan: Option<TraceExpansionPlan>,
     /// Set when a named expansion was refused. Objects, supports and every
     /// text are empty: nothing is joined across two different selections and
     /// nothing is delivered for a partly invalid batch.

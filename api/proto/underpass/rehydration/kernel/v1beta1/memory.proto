@@ -1063,6 +1063,22 @@ message TraceBodyDelivery {
   uint64 named_record_bytes = 10;
 }
 
+// What to ask for next, decided over the complete proof table before this
+// response was paginated. A page that happens to hold no pending ref still
+// carries this, so following the protocol's actions never loses a body.
+message TraceExpansionPlan {
+  // Next batch, in manifest order, at most 64 refs. Empty when only the
+  // oversized record below remains.
+  repeated string refs = 1;
+  // Allowance that batch needs: the caller's ceiling when it set one, else
+  // the exact sum of these records.
+  uint64 record_bytes = 2;
+  // A record the caller's ceiling cannot hold on its own. Kept out of the
+  // batch and offered separately at exactly this size.
+  string oversized_ref = 3;
+  uint64 oversized_record_bytes = 4;
+}
+
 message TraceCompactSummary {
   string language = 1;
   uint32 valid = 2;
@@ -1101,6 +1117,9 @@ message TraceProofStatus {
   string manifest_id = 9;
   TraceBodyDelivery delivery = 10;
   TraceCompactSummary compact = 11;
+  // Present while the store still holds a selected body this response did
+  // not deliver. Not paginated: it describes the selection, not the page.
+  TraceExpansionPlan expansion_plan = 12;
 }
 
 message TraceProofGap {

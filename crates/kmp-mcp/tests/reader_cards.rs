@@ -542,3 +542,191 @@ async fn following_the_offered_actions_recovers_every_body_exactly_once() {
         "the chain reached every body of the selection: {recovered:?}"
     );
 }
+
+
+const WIDE_ABOUT: &str = "question:wide";
+const WIDE_COUNT: usize = 130;
+
+fn wide_ref(index: usize) -> String {
+    format!("{WIDE_ABOUT}:claim:{index:03}")
+}
+
+/// A chain longer than one expansion batch and longer than one page, so a
+/// response's page can hold none of the refs its actions must name.
+async fn seeded_wide() -> (tempfile::TempDir, KernelMcpServer) {
+    let dir = tempfile::tempdir().expect("store");
+    let backend = EmbeddedKernelMcpBackend::open(dir.path()).expect("backend");
+    let server = KernelMcpServer::with_embedded_backend(backend);
+    let entries: Vec<Value> = (0..WIDE_COUNT)
+        .map(|index| {
+            json!({"id": wide_ref(index), "kind": "claim",
+                   "text": format!("{ENTRY_MARKER}-{index:03} {}", "filler ".repeat(8)),
+                   "coordinates": [{"dimension":"conversation","scope_id":"conversation:s1",
+                                    "occurred_at":"2026-07-22T10:00:00Z","sequence": index + 1}]})
+        })
+        .collect();
+    let relations: Vec<Value> = (0..WIDE_COUNT - 1)
+        .map(|index| {
+            json!({"from": wide_ref(index), "to": wide_ref(index + 1), "rel": "depends_on",
+                   "class": "causal", "confidence": "high",
+                   "why": "The chain declares this link.",
+                   "evidence": "wide chain fixture"})
+        })
+        .collect();
+    let response = call(
+        &server,
+        "kmp_ingest",
+        json!({
+            "about": WIDE_ABOUT,
+            "idempotency_key": "ingest:wide",
+            "memory": {
+                "dimensions": [{"id": "conversation:s1", "kind": "conversation"}],
+                "entries": entries,
+                "relations": relations,
+                "evidence": [{"id": format!("evidence:{WIDE_ABOUT}:one"),
+                              "supports": [wide_ref(0), wide_ref(WIDE_COUNT - 1)],
+                              "text": long_body(SOURCE_MARKER),
+                              "source": "wide chain fixture"}]
+            }
+        }),
+    )
+    .await;
+    assert_ne!(response["result"]["isError"], true, "seed: {response}");
+    (dir, server)
+}
+
+fn wide_trace(mut search: Value, page_entries: u64) -> Value {
+    let options = search.as_object_mut().expect("search");
+    options.insert("max_depth".into(), json!(1024));
+    options.insert("max_nodes".into(), json!(4096));
+    options.insert("max_edges".into(), json!(8192));
+    options.insert("max_states".into(), json!(32768));
+    json!({
+        "about": WIDE_ABOUT,
+        "from": wide_ref(0),
+        "to": wide_ref(WIDE_COUNT - 1),
+        "search": search,
+        "page": {"entries": page_entries},
+        "budget": {"max_bytes": 900_000}
+    })
+}
+
+/// Every action a response offers, collected without looking at its objects.
+fn offered(value: &Value) -> Vec<Value> {
+    ["expand_bodies", "expand_oversized_body"]
+        .iter()
+        .filter_map(|name| value["proof"][*name]["arguments"].as_object().cloned())
+        .map(Value::Object)
+        .collect()
+}
+
+/// One operation, read to its last page: every ref it delivered and every
+/// action any of its pages offered.
+///
+/// Walking the continuations is the point. An action is not allowed to depend
+/// on which page it happened to land on, and a consumer that stops at the
+/// first page must not lose refs the later ones carry.
+async fn whole_operation(
+    server: &KernelMcpServer,
+    arguments: Value,
+) -> (Vec<String>, Vec<Value>) {
+    let mut loaded = Vec::new();
+    let mut actions = Vec::new();
+    let mut call_arguments = arguments;
+    for _ in 0..40 {
+        let response = call(server, "kmp_trace", call_arguments.clone()).await;
+        let value = structured(&response);
+        for object in value["objects"].as_array().expect("objects") {
+            if object["body_state"] == "loaded" {
+                loaded.push(object["ref"].as_str().expect("ref").to_string());
+            }
+        }
+        actions.extend(offered(value));
+        let Some(cursor) = value["page"]["next_cursor"].as_str() else {
+            break;
+        };
+        call_arguments["page"] = json!({
+            "entries": call_arguments["page"]["entries"].clone(),
+            "cursor": cursor
+        });
+    }
+    (loaded, actions)
+}
+
+#[tokio::test]
+async fn following_every_offered_action_recovers_the_whole_selection_across_pages() {
+    // The failure this pins: actions used to be derived from one page, so a
+    // page holding none of the pending refs offered nothing and those bodies
+    // were never named by any action. Following the whole protocol still lost
+    // them. The page size changes between operations on purpose.
+    let (_dir, server) = seeded_wide().await;
+    // The whole selected table, gathered across every page of one read.
+    let descriptor_only = wide_trace(json!({"proof": true, "proof_refs": []}), 32);
+    let selected: Vec<String> = {
+        let mut refs = Vec::new();
+        let mut arguments = descriptor_only.clone();
+        for _ in 0..40 {
+            let response = call(&server, "kmp_trace", arguments.clone()).await;
+            let value = structured(&response);
+            for object in value["objects"].as_array().expect("objects") {
+                refs.push(object["ref"].as_str().expect("ref").to_string());
+            }
+            let Some(cursor) = value["page"]["next_cursor"].as_str() else {
+                break;
+            };
+            arguments["page"] = json!({"entries": 32, "cursor": cursor});
+        }
+        refs
+    };
+    assert!(
+        selected.len() > 64,
+        "the fixture must exceed one batch: {} objects",
+        selected.len()
+    );
+
+    let (_, first_actions) = whole_operation(&server, descriptor_only).await;
+    let mut pending = first_actions;
+    assert!(!pending.is_empty(), "a descriptor-only read must offer an action");
+    let mut recovered: Vec<String> = Vec::new();
+    let mut seen_arguments: Vec<Value> = Vec::new();
+    let mut page_entries = 32;
+
+    while let Some(mut arguments) = pending.pop() {
+        if seen_arguments.contains(&arguments) {
+            continue;
+        }
+        seen_arguments.push(arguments.clone());
+        // A consumer is free to read the same selection with another page
+        // size; recovery must not depend on the partition.
+        arguments["page"] = json!({"entries": page_entries});
+        page_entries = if page_entries == 32 { 64 } else { 32 };
+
+        let (loaded, actions) = whole_operation(&server, arguments).await;
+        for reference in loaded {
+            assert!(
+                !recovered.contains(&reference),
+                "`{reference}` was delivered twice"
+            );
+            recovered.push(reference);
+        }
+        pending.extend(actions);
+        assert!(
+            seen_arguments.len() <= 400,
+            "the chain is not terminating: {} calls",
+            seen_arguments.len()
+        );
+    }
+
+    let mut missing: Vec<&String> = selected
+        .iter()
+        .filter(|reference| !recovered.contains(reference))
+        .collect();
+    missing.sort();
+    assert!(
+        missing.is_empty(),
+        "{} of {} selected bodies were never offered by any action: {:?}",
+        missing.len(),
+        selected.len(),
+        &missing[..missing.len().min(8)]
+    );
+}

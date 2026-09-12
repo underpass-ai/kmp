@@ -194,6 +194,17 @@ pub(super) fn project(response: &mut TraceResponse, proof: TraceProofResult) {
             rerun_record_bytes: d.rerun_record_bytes.unwrap_or_default(),
             named_record_bytes: d.named_record_bytes.unwrap_or_default(),
         }),
+        expansion_plan: proof.expansion_plan.map(|plan| {
+            let (oversized_ref, oversized_record_bytes) = plan
+                .oversized
+                .map_or((String::new(), 0), |(reference, bytes)| (reference, bytes));
+            kmp_proto::v1beta1::TraceExpansionPlan {
+                refs: plan.refs,
+                record_bytes: plan.record_bytes,
+                oversized_ref,
+                oversized_record_bytes,
+            }
+        }),
         compact: proof.compact.map(|c| TraceCompactSummary {
             language: c.language,
             valid: c.valid,

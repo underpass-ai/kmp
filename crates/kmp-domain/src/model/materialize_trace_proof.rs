@@ -4,7 +4,8 @@ use crate::{
     NodeProjection, PortError, RelationDirection, TemporalCoordinate, TraceBodyAdmission,
     TraceBodyDelivery, TraceBodyOptions, TraceBodyState, TraceCompactSummary, TraceManifestDigest,
     TraceProofObject, TraceProofResult, TraceSearchRequest, TraceSearchResult,
-    TraceExpansionRefusal, TraceSnapshotReader, node_card_policy, trace_body_admission,
+    TraceExpansionPlan, TraceExpansionRefusal, TraceSnapshotReader, node_card_policy,
+    trace_body_admission,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -423,6 +424,7 @@ fn fetch<R: TraceSnapshotReader>(
         }
         result.compact = summary;
         result.manifest_id = Some(manifest);
+        result.expansion_plan = expansion_plan(&ids, &admitted, &descriptors, options);
         result.delivery = Some(delivery(&admitted));
     }
 
@@ -554,6 +556,77 @@ fn verify_against_descriptor(
         )));
     }
     Ok(())
+}
+
+/// What to ask for next, over the complete selection.
+///
+/// The frontier is one ref past the last body this response really loaded, in
+/// manifest order, so a chain advances and never alternates. A ref the caller
+/// asked for and did not get never moves it. Deciding this here, rather than
+/// from a projected page, is what makes the answer independent of how the
+/// response is partitioned: the refs that remain are a fact about the
+/// selection.
+fn expansion_plan(
+    ids: &[String],
+    admitted: &TraceBodyAdmission,
+    descriptors: &BTreeMap<String, NodeBodyDescriptor>,
+    options: &TraceBodyOptions,
+) -> Option<TraceExpansionPlan> {
+    // An empty named set is a descriptor-only view: it requested no body, so
+    // the frontier is the start of the selection rather than its end.
+    let named = options.refs.as_ref().filter(|refs| !refs.is_empty());
+    let considered = |id: &String| named.is_none_or(|named| named.contains(id));
+    let last_loaded = ids
+        .iter()
+        .enumerate()
+        .filter(|(_, id)| admitted.state(id) == TraceBodyState::Loaded && considered(id))
+        .map(|(index, _)| index)
+        .next_back();
+    let frontier = match (last_loaded, named) {
+        (Some(index), _) => index + 1,
+        (None, None) => 0,
+        // Nothing the caller named came back; start again at the first of them
+        // rather than walking past a body that was never delivered.
+        (None, Some(_)) => ids.iter().position(considered).unwrap_or(ids.len()),
+    };
+    let suffix = &ids[frontier.min(ids.len())..];
+    let cost = |id: &String| {
+        admitted
+            .state(id)
+            .is_omitted()
+            .then(|| descriptors.get(id).map(|descriptor| descriptor.record_bytes))
+            .flatten()
+    };
+    let mut refs = Vec::new();
+    let mut total = 0;
+    for id in suffix {
+        let Some(record_bytes) = cost(id) else {
+            continue;
+        };
+        if refs.len() == crate::MAX_EXPANSION_REFS {
+            break;
+        }
+        match options.max_record_bytes {
+            // Too large for the ceiling the caller chose: skipped here and
+            // offered on its own below.
+            Some(ceiling) if record_bytes > ceiling => continue,
+            Some(ceiling) if total + record_bytes > ceiling => break,
+            _ => {}
+        }
+        refs.push(id.clone());
+        total += record_bytes;
+    }
+    let oversized = options.max_record_bytes.and_then(|ceiling| {
+        suffix
+            .iter()
+            .find_map(|id| cost(id).filter(|bytes| *bytes > ceiling).map(|bytes| (id.clone(), bytes)))
+    });
+    let plan = TraceExpansionPlan {
+        record_bytes: options.max_record_bytes.unwrap_or(total),
+        refs,
+        oversized,
+    };
+    (!plan.is_empty()).then_some(plan)
 }
 
 fn delivery(admitted: &TraceBodyAdmission) -> TraceBodyDelivery {

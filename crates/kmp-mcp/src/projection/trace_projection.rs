@@ -63,6 +63,14 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
             }
             value["proof"]["delivery"] = rendered;
         }
+        if let Some(plan) = &proof.expansion_plan {
+            let mut rendered = json!({"refs": plan.refs, "record_bytes": plan.record_bytes});
+            if !plan.oversized_ref.is_empty() {
+                rendered["oversized_ref"] = json!(plan.oversized_ref);
+                rendered["oversized_record_bytes"] = json!(plan.oversized_record_bytes);
+            }
+            value["proof"]["expansion_plan"] = rendered;
+        }
         if let Some(compact) = &proof.compact {
             value["proof"]["compact"] = json!({
                 "language": compact.language, "valid": compact.valid, "stale": compact.stale,

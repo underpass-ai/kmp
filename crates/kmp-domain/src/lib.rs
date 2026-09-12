@@ -79,7 +79,7 @@ pub use model::{
 pub use projection::NodeBodyDescriptor;
 pub use value_objects::{
     NodeCard, NodeCardPresentation, NodeCardStamp, NodeCardStatus, TraceBodyDelivery,
-    TraceBodyState, TraceCompactSummary, TraceExpansionRefusal,
+    TraceBodyState, TraceCompactSummary, TraceExpansionPlan, TraceExpansionRefusal,
 };
 
 #[cfg(test)]

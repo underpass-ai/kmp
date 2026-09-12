@@ -38,6 +38,8 @@ struct Snapshot {
     body_calls: RefCell<u32>,
     descriptor_calls: RefCell<u32>,
     card_calls: RefCell<u32>,
+    /// Ids of the long chain, when this snapshot is a wide one.
+    wide_ids: Vec<String>,
 }
 
 impl Snapshot {
@@ -94,6 +96,7 @@ impl Snapshot {
             body_calls: RefCell::default(),
             descriptor_calls: RefCell::default(),
             card_calls: RefCell::default(),
+            wide_ids: Vec::new(),
         }
     }
 
@@ -131,6 +134,66 @@ impl Snapshot {
 
     fn read_bodies(&self) -> Vec<String> {
         self.body_reads.borrow().clone()
+    }
+
+    /// A chain of `count` entries, so the proof table is larger than one
+    /// expansion batch. Everything else behaves exactly as above.
+    fn wide(count: usize) -> Self {
+        let mut snapshot = Snapshot::new();
+        snapshot.nodes.clear();
+        snapshot.edges.clear();
+        let ids: Vec<String> = (0..count).map(|index| format!("wide-{index:03}")).collect();
+        for id in &ids {
+            snapshot.nodes.insert(
+                id.clone(),
+                NodeProjection {
+                    node_id: id.clone(),
+                    node_kind: "observation".into(),
+                    title: id.clone(),
+                    summary: id.clone(),
+                    status: "ACTIVE".into(),
+                    labels: vec!["entry".into()],
+                    properties: [("memory_about".into(), ABOUT.into())].into(),
+                    provenance: None,
+                },
+            );
+        }
+        for pair in ids.windows(2) {
+            snapshot.edges.push(NodeRelationProjection {
+                source_node_id: pair[0].clone(),
+                target_node_id: pair[1].clone(),
+                relation_type: "depends_on".into(),
+                explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
+                    .with_rationale("The register declares this link.")
+                    .with_evidence(format!("{} depends_on {}", pair[0], pair[1]))
+                    .with_occurred_at("2026-01-01T00:00:00Z"),
+            });
+        }
+        snapshot.wide_ids = ids;
+        snapshot
+    }
+
+    fn wide_request(&self) -> TraceSearchRequest {
+        self.wide_request_with(TraceBodyOptions {
+            refs: Some(BTreeSet::new()),
+            ..TraceBodyOptions::default()
+        })
+    }
+
+    fn wide_request_with(&self, body: TraceBodyOptions) -> TraceSearchRequest {
+        let last = self.wide_ids.last().expect("a chain").clone();
+        TraceSearchRequest {
+            from: self.wide_ids[0].clone(),
+            targets: [last].into(),
+            limits: TraceSearchLimits {
+                nodes: 4096,
+                edges: 8192,
+                depth: 1024,
+                states: 32768,
+            },
+            relations: Default::default(),
+            ..request(body)
+        }
     }
 }
 
@@ -925,6 +988,121 @@ mod seek {
             *moved.card_calls.borrow(),
             0,
             "and before a single card was read"
+        );
+    }
+}
+
+
+/// The plan the kernel computes over the whole selection, which is what makes
+/// recovery independent of how a response is partitioned.
+mod plan {
+    use super::*;
+
+    fn plan_of(proof: &TraceProofResult) -> &TraceExpansionPlan {
+        proof.expansion_plan.as_ref().expect("a plan while bodies remain")
+    }
+
+    #[test]
+    fn a_descriptor_only_read_plans_the_head_of_the_selection() {
+        let snapshot = Snapshot::new();
+
+        let proof = run(
+            &snapshot,
+            TraceBodyOptions {
+                refs: Some(BTreeSet::new()),
+                ..TraceBodyOptions::default()
+            },
+        );
+
+        let plan = plan_of(&proof);
+        assert_eq!(plan.refs, vec!["a", "b", "source"]);
+        assert_eq!(
+            plan.record_bytes,
+            ["a", "b", "source"].iter().map(|id| record_bytes(id)).sum::<u64>(),
+            "with no ceiling the plan carries its own exact total"
+        );
+        assert_eq!(plan.oversized, None);
+    }
+
+    #[test]
+    fn the_plan_never_exceeds_the_public_expansion_limit() {
+        // A selection larger than one batch. Naming every pending ref would
+        // produce a call the kernel itself refuses.
+        let snapshot = Snapshot::wide(MAX_EXPANSION_REFS + 60);
+        let request = snapshot.wide_request();
+
+        let search = bounded_trace_search(&snapshot, &request).expect("search");
+        let proof = search.proof.as_ref().expect("proof");
+        assert!(
+            proof.objects.len() > MAX_EXPANSION_REFS,
+            "the fixture must exceed one batch: {} objects",
+            proof.objects.len()
+        );
+
+        assert_eq!(plan_of(proof).refs.len(), MAX_EXPANSION_REFS);
+    }
+
+    #[test]
+    fn following_the_plan_recovers_every_body_once_whatever_the_page_size() {
+        // The chain is driven only by each response's plan. Nothing here reads
+        // objects, which is exactly the position a paginated consumer is in.
+        let snapshot = Snapshot::wide(MAX_EXPANSION_REFS + 60);
+        let ceiling = record_bytes("wide-000") * 70;
+        let mut recovered: Vec<String> = Vec::new();
+        let mut refs: Option<BTreeSet<String>> = Some(BTreeSet::new());
+        let mut manifest: Option<String> = None;
+
+        for round in 0..12 {
+            let proof = bounded_trace_search(
+                &snapshot,
+                &snapshot.wide_request_with(TraceBodyOptions {
+                    max_record_bytes: Some(ceiling),
+                    // A named batch declares the manifest it continues, which
+                    // is what the kernel checks before reading anything.
+                    expect_selection: refs
+                        .as_ref()
+                        .filter(|refs| !refs.is_empty())
+                        .and(manifest.clone()),
+                    refs: refs.clone(),
+                    compact: None,
+                }),
+            )
+            .expect("search")
+            .proof
+            .expect("proof");
+            manifest = proof.manifest_id.clone();
+
+            for object in &proof.objects {
+                if object.body_state == TraceBodyState::Loaded {
+                    let reference = object.node.node_id.clone();
+                    assert!(
+                        !recovered.contains(&reference),
+                        "round {round} delivered `{reference}` twice"
+                    );
+                    recovered.push(reference);
+                }
+            }
+            let Some(plan) = &proof.expansion_plan else {
+                break;
+            };
+            assert_eq!(
+                plan.record_bytes, ceiling,
+                "the ceiling never grows to make progress"
+            );
+            assert!(plan.refs.len() <= MAX_EXPANSION_REFS);
+            refs = Some(plan.refs.iter().cloned().collect());
+        }
+
+        let mut once = recovered.clone();
+        once.sort();
+        once.dedup();
+        assert_eq!(once.len(), recovered.len(), "no body was delivered twice");
+        assert_eq!(
+            once.len(),
+            MAX_EXPANSION_REFS + 60,
+            "every body of the selection was recovered: {} of {}",
+            once.len(),
+            MAX_EXPANSION_REFS + 60
         );
     }
 }

@@ -35,6 +35,7 @@ pub use label_selector::{LabelSelector, LabelSelectorOperator, bare_label_value}
 pub use memory_dimension_identity::MemoryDimensionIdentity;
 pub use node_card::NodeCard;
 pub use trace_body_delivery::TraceBodyDelivery;
+pub use trace_expansion_plan::TraceExpansionPlan;
 pub use trace_body_state::TraceBodyState;
 pub use trace_selection_conflict::TraceExpansionRefusal;
 pub use trace_compact_summary::TraceCompactSummary;
@@ -63,6 +64,7 @@ pub use temporal_selection::TemporalSelection;
 pub mod memory_receipt_ref;
 mod node_card;
 mod trace_body_delivery;
+mod trace_expansion_plan;
 mod trace_body_state;
 mod trace_selection_conflict;
 mod trace_compact_summary;
