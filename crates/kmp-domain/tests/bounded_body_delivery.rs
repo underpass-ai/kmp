@@ -694,7 +694,6 @@ fn a_named_expansion_beats_a_valid_card_for_the_ref_it_names() {
             refs: Some(BTreeSet::from(["source".to_string()])),
             expect_selection: Some(manifest),
             compact: Some("es".into()),
-            ..TraceBodyOptions::default()
         },
     );
 
