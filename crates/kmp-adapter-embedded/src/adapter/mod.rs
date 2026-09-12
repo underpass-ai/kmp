@@ -1,5 +1,6 @@
 mod bounded_adjacency;
 mod context_events;
+mod detail_header;
 mod engine;
 mod format_version;
 mod graph_read;

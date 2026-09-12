@@ -1,7 +1,7 @@
 //! The storage seam ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 //!
 //! Everything the kernel ports need from a storage engine, and nothing an
-//! engine would need to know about the kernel: eleven key-to-bytes maps,
+//! engine would need to know about the kernel: thirteen key-to-bytes maps,
 //! transactions over them, and four key shapes. Port logic — graph
 //! traversal, revision checks, idempotency — is written once against this
 //! and never sees an engine type.
@@ -38,6 +38,10 @@ pub(crate) enum Table {
     RelationsByTarget,
     /// Node details: `node_id -> DetailRecord`.
     Details,
+    /// Canonical body headers: `node_id -> DetailHeaderRecord`. Written in the
+    /// same transaction as `Details`, so a detail without its header is an
+    /// inconsistent projection, never a body that does not exist.
+    DetailHeaders,
     /// Memory anchor index: `node_id -> ()`.
     Anchors,
     /// Append-only context event log: `sequence -> ContextUpdatedEvent`.
@@ -64,6 +68,7 @@ impl Table {
         match self {
             Table::Nodes
             | Table::Details
+            | Table::DetailHeaders
             | Table::Anchors
             | Table::Aggregates
             | Table::Idempotency
@@ -82,6 +87,7 @@ impl fmt::Display for Table {
             Table::Relations => "relations_by_source",
             Table::RelationsByTarget => "relations_by_target",
             Table::Details => "details",
+            Table::DetailHeaders => "detail_headers",
             Table::Anchors => "memory_anchors",
             Table::EventLog => "event_log",
             Table::Aggregates => "aggregates",
@@ -142,10 +148,6 @@ pub(crate) trait ReadTx {
     /// it. A value that is not stored as a blob is reported as an error
     /// rather than measured, because a text value would be counted in
     /// characters and silently under-report its bytes.
-    ///
-    /// Exercised by this crate's tests only until the body admission contract
-    /// of #539 lands its consumer; the allow goes away with that change.
-    #[allow(dead_code)]
     fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError>;
 
     /// Every row of a `Str`-keyed table, ascending.

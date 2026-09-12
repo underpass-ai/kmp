@@ -23,7 +23,6 @@ pub(super) fn read_batch(
 /// loaded or decoded: the answer counts the stored detail record, envelope
 /// included, which is larger than the canonical body inside it. It bounds what
 /// a later read would fetch from this table, not the memory a request holds.
-#[allow(dead_code)] // Until the #539 admission consumer lands.
 pub(super) fn size_batch(
     tx: &dyn ReadTx,
     node_ids: &[String],
