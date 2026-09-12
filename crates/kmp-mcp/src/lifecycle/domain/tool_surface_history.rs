@@ -11,6 +11,9 @@ const TOOLS_ADDED_LATER: &[(&str, &str)] = &[
     // The fifteenth: every release up to 0.11.0 answered fourteen.
     ("kmp_relabel", "0.11.0"),
     ("kmp_guide", "0.15.0"),
+    // Condense landed after the published 0.17.0 release. The current-build
+    // override below still holds this development build to its full surface.
+    ("kmp_condense", "0.17.0"),
 ];
 
 /// The tool surface an engine of `target` is held to.
@@ -55,7 +58,13 @@ mod tests {
 
     #[test]
     fn an_older_engine_is_held_to_the_surface_it_shipped_with() {
-        let current = surface(&["kmp_ask", "kmp_relate", "kmp_relabel", "kmp_wake"]);
+        let current = surface(&[
+            "kmp_ask",
+            "kmp_relate",
+            "kmp_relabel",
+            "kmp_condense",
+            "kmp_wake",
+        ]);
         // Not the last release without relate itself: until the next
         // release bumps the crate, this build carries its version and
         // answers the whole surface, and the same-release rule says so.
@@ -69,6 +78,10 @@ mod tests {
             assert!(
                 !expected.contains("kmp_relabel"),
                 "{older} shipped before relabel"
+            );
+            assert!(
+                !expected.contains("kmp_condense"),
+                "{older} shipped before condense"
             );
             assert!(expected.contains("kmp_ask"));
         }
@@ -90,19 +103,25 @@ mod tests {
     }
 
     #[test]
-    fn a_release_after_relabel_and_this_build_answer_the_whole_surface() {
-        let current = surface(&["kmp_ask", "kmp_relate", "kmp_relabel", "kmp_wake"]);
-        for newer in ["0.12.0", "1.0.0"] {
+    fn a_release_after_condense_and_this_build_answer_the_whole_surface() {
+        let current = surface(&[
+            "kmp_ask",
+            "kmp_relate",
+            "kmp_relabel",
+            "kmp_condense",
+            "kmp_wake",
+        ]);
+        for newer in ["0.17.1", "1.0.0"] {
             let expected =
                 expected_tool_surface(&ReleaseVersion::parse(newer).expect("v"), current.clone());
             assert!(expected.contains("kmp_relate"), "{newer} carries relate");
             assert!(expected.contains("kmp_relabel"), "{newer} carries relabel");
+            assert!(
+                expected.contains("kmp_condense"),
+                "{newer} carries condense"
+            );
         }
         let this_build = expected_tool_surface(&ReleaseVersion::current(), current.clone());
-        assert_eq!(
-            this_build.len(),
-            4,
-            "this build answers everything it declares"
-        );
+        assert_eq!(this_build, current.into_iter().collect());
     }
 }
