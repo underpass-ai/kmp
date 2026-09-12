@@ -18,6 +18,7 @@ pub mod retrieval_scorecard;
 pub mod seed_publisher;
 pub mod seed_to_bundle;
 pub mod text_normalization;
+pub mod write_receipt;
 
 pub use container_runtime::ensure_testcontainers_runtime;
 pub use dataset_generator::{
@@ -104,6 +105,7 @@ pub use seed_to_bundle::{seed_raw_equivalent_tokens, seed_to_bundle};
 pub use text_normalization::{
     DetectedTextKind, DetectedTextSpan, NormalizedText, TextNormalizationPipeline,
 };
+pub use write_receipt::WriteReceipt;
 
 #[cfg(test)]
 fn seed_bundle(case_id: kmp_domain::CaseId, role: &str) -> kmp_domain::KmpBundle {

@@ -9,6 +9,7 @@ mod existing_entry_read;
 pub(crate) mod grpc_tls_config;
 pub(crate) mod grpc_tls_mode;
 mod guide_dispatch;
+mod guide_repair;
 pub(crate) mod json_rpc;
 pub(crate) mod kernel_mcp_server;
 mod passage_projection;

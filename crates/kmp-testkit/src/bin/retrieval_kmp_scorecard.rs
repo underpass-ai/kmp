@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use kmp_mcp::KernelMcpServer;
+use kmp_testkit::WriteReceipt;
 use kmp_testkit::retrieval_scorecard::{RetrievalOutcome, RetrievalScorecard};
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -147,7 +148,7 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
     fs::create_dir_all(&data_dir)?;
     let server = KernelMcpServer::embedded(&data_dir)?;
 
-    call(
+    let receipt = call(
         &server,
         1,
         "kmp_ingest",
@@ -158,8 +159,9 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
         }),
     )
     .await?;
+    WriteReceipt::read("kmp_ingest", &receipt).require_accepted()?;
     for (index, seeded) in case.memories.iter().enumerate() {
-        call(
+        let receipt = call(
             &server,
             10 + index as u64,
             "kmp_ingest",
@@ -170,15 +172,13 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
             }),
         )
         .await?;
+        WriteReceipt::read("kmp_ingest", &receipt).require_accepted()?;
     }
+    // A case is only scorable once every seeded write actually landed. A
+    // proposal still waiting on a review has written nothing, and scoring it
+    // would grade the store for memory it never held (#691).
     for (index, write) in case.writes.iter().enumerate() {
-        call(
-            &server,
-            30 + index as u64,
-            "kmp_write_memory",
-            write.clone(),
-        )
-        .await?;
+        commit_judged_write(&server, &case.id, 30 + index as u64, write).await?;
     }
 
     let mut arguments = json!({
@@ -268,6 +268,43 @@ fn strip_prefix(value: &str) -> String {
         .or_else(|| value.strip_prefix("detail:"))
         .unwrap_or(value)
         .to_string()
+}
+
+/// Commits a judged case's write, resolving a review the kernel asks for.
+///
+/// A judged case is a deterministic fixture and its expected citations include
+/// what these writes record, so the case resolves its own review through the
+/// continuation the write returned — deliberately, and saying so on stderr. A
+/// generic helper accepting a review on an agent's behalf would be recording a
+/// judgement nobody made; this is the fixture making its own (#691).
+async fn commit_judged_write(
+    server: &KernelMcpServer,
+    case: &str,
+    id: u64,
+    write: &Value,
+) -> Result<(), Box<dyn Error>> {
+    let written = call(server, id, "kmp_write_memory", write.clone()).await?;
+    let receipt = WriteReceipt::read("kmp_write_memory", &written);
+    if receipt.is_accepted() {
+        return Ok(());
+    }
+    if !receipt.needs_review() {
+        return Err(format!(
+            "case `{case}` write {id}: {}",
+            receipt.require_accepted().expect_err("not accepted")
+        )
+        .into());
+    }
+    let action = &written["next_actions"][0];
+    let tool = action["tool"]
+        .as_str()
+        .ok_or_else(|| format!("case `{case}` write {id}: the review returned no verb"))?;
+    eprintln!("case `{case}`: resolving the review its write asked for through `{tool}`");
+    let resolved = call(server, id + 1_000, tool, action["arguments"].clone()).await?;
+    WriteReceipt::read(tool, &resolved)
+        .require_accepted()
+        .map_err(|error| format!("case `{case}` write {id}, after review: {error}"))?;
+    Ok(())
 }
 
 async fn call(

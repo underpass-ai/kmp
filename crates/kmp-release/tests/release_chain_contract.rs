@@ -68,8 +68,8 @@ impl ReleaseWorkspace for RecordingWorkspace {
     fn refresh_lockfile(&self) -> Result<(), ReleaseError> {
         Ok(())
     }
-    fn build_engine(&self) -> Result<(), ReleaseError> {
-        Ok(())
+    fn build_engine(&self) -> Result<PathBuf, ReleaseError> {
+        Ok(PathBuf::from("/cargo-cache/debug/kmp-mcp"))
     }
     fn show_version_diff(&self) -> Result<(), ReleaseError> {
         Ok(())
