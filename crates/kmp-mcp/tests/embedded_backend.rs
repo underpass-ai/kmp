@@ -253,6 +253,54 @@ async fn an_unwritable_bundle_is_refused_before_the_store_changes() {
 }
 
 #[tokio::test]
+async fn commit_native_preflight_precedes_ingest_parsing_for_every_alias_except_dry_run() {
+    use kmp_mcp::{KernelMcpToolBackend, ToolErrorCode};
+
+    let project = tempfile::tempdir().expect("project");
+    let data_dir = project.path().join(".kernel");
+    let blocked_parent = project.path().join("blocked");
+    std::fs::write(&blocked_parent, b"not a directory").expect("blocker");
+    let bundle =
+        kmp_embedded::CommitNativeBundle::new(&data_dir, blocked_parent.join("memory.jsonl"));
+    let backend =
+        EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(&data_dir, None, Some(bundle))
+            .expect("embedded backend");
+
+    for name in ["kmp_ingest", "kernel_remember", "kernel_ingest_context"] {
+        for arguments in [json!({}), json!({"dry_run": "true"})] {
+            let error = backend
+                .call_tool(name, &arguments)
+                .await
+                .expect_err("preflight");
+            assert_eq!(error.code, ToolErrorCode::Unavailable, "{name}: {error}");
+            assert!(error.message.contains("refused before changing the store"));
+        }
+        let error = backend
+            .call_tool(name, &json!({"dry_run": true}))
+            .await
+            .expect_err("dry-run parses without a bundle guard");
+        assert_eq!(
+            error.code,
+            ToolErrorCode::InvalidArgument,
+            "{name}: {error}"
+        );
+    }
+    assert!(kmp_embedded::pending_bundle_exports(&data_dir).is_empty());
+    let live = backend
+        .kernel()
+        .store()
+        .export_bundle()
+        .await
+        .expect("export");
+    assert_eq!(
+        kmp_embedded::verify_bundle(&live)
+            .expect("header")
+            .event_count,
+        0
+    );
+}
+
+#[tokio::test]
 async fn a_stale_project_store_is_refused_before_sqlite_changes() {
     let project = tempfile::tempdir().expect("project");
     let data_dir = project.path().join(".kernel");

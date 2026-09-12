@@ -149,3 +149,29 @@ The nets that made this safe remain the contract for what comes next:
 audits — and the rule that a mutation probe runs after the final bless,
 because three of them found real holes on the way and each hole became a
 test before the probe was re-run red.
+
+## Embedded operation ownership — EVAL-123
+
+`serving/adapters/embedded_backend.rs` composes a single embedded session and
+dispatches tool names, retaining the kernel accessors used by the viewer.
+`serving/adapters/embedded/` owns the MCP operation adapters: one primary type
+per operation, each borrowing the application service and only the additional
+collaborators that operation needs. Goto/Rewind/Forward share the existing
+temporal use case; Trace keeps seek, target search and legacy mode within one
+operation. Application commands and domain policies remain in their existing
+crates.
+
+`EmbeddedIngestTool` alone composes `CommitNativeWriteGuard`. The guard begins
+before ingest parsing, coordinates the existing `CommitNativeBundle` and
+`PendingBundleExport`, and preserves pending markers on ambiguous failures.
+Dry-run skips this guard; Condense and Relabel retain their existing write
+paths. `EmbeddedReadTelemetry` forwards the existing typed bundle identity and
+quality metrics to `QualityMetricsObserver` without another render.
+
+`serving/adapters/tool_request_mapping/` owns the transport-neutral
+JSON-to-protobuf request mappers used by embedded, gRPC and fixture. Each
+operation and shared option family has a mapper type. `JsonFieldReader` owns
+field access separately from budget and enum mapping; all remain private to
+this boundary. gRPC owns channels and RPC execution. Protobuf-to-application/domain
+mapping remains in `kmp-proto-mapping`; neither transport DTOs nor card policy
+move into the router.

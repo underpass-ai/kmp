@@ -1,0 +1,549 @@
+use super::json_fields::JsonFieldReader;
+use super::memory_enums::MemoryEnumMapper;
+use kmp_proto::v1beta1::{
+    IngestRequest, Memory, MemoryConfidence, MemoryDimension, MemoryEntry, MemoryEvidence,
+    MemoryProvenance, MemoryRelation, MemoryRelationExplanation, MemorySemanticClass,
+    TemporalCoordinate,
+};
+use serde_json::{Map, Value};
+
+pub(crate) struct IngestRequestMapper;
+
+impl IngestRequestMapper {
+    pub(crate) fn from_arguments(arguments: &Value) -> Result<IngestRequest, String> {
+        let arguments = JsonFieldReader::object(arguments, "tool arguments")?;
+        let about = JsonFieldReader::required_string_field(arguments, "about", "about")?;
+        let memory = memory_from_object(JsonFieldReader::required_object_field(
+            arguments, "memory", "memory",
+        )?)?;
+        let default_observation_to_ingestion = JsonFieldReader::optional_bool_field(
+            arguments,
+            "default_observation_to_ingestion",
+            "default_observation_to_ingestion",
+        )?
+        .unwrap_or(false);
+        let provenance =
+            JsonFieldReader::optional_object_field(arguments, "provenance", "provenance")?
+                .map(|value| provenance_with_defaults(value, default_observation_to_ingestion))
+                .transpose()?;
+        let idempotency_key = JsonFieldReader::required_string_field(
+            arguments,
+            "idempotency_key",
+            "idempotency_key",
+        )?;
+        let dry_run =
+            JsonFieldReader::optional_bool_field(arguments, "dry_run", "dry_run")?.unwrap_or(false);
+        let label_policy = match arguments.get("label_policy").and_then(Value::as_str) {
+            None | Some("warn") => kmp_proto::v1beta1::LabelPolicy::Warn,
+            Some("refuse") => kmp_proto::v1beta1::LabelPolicy::Refuse,
+            Some(other) => {
+                return Err(format!(
+                    "label_policy must be `warn` or `refuse`, not `{other}`"
+                ));
+            }
+        };
+
+        let receipt_context_json = JsonFieldReader::optional_object_field(
+            arguments,
+            "receipt_context",
+            "receipt_context",
+        )?
+        .map(|context| Value::Object(context.clone()).to_string());
+
+        Ok(IngestRequest {
+            neighborhood_review: arguments
+                .get("neighborhood_review")
+                .map(|value| {
+                    value
+                        .as_str()
+                        .map(str::to_owned)
+                        .ok_or_else(|| "neighborhood_review must be a string".to_owned())
+                })
+                .transpose()?,
+            receipt_context_json,
+            default_observation_to_ingestion,
+            about,
+            memory: Some(memory),
+            provenance,
+            idempotency_key,
+            dry_run,
+            label_policy: label_policy as i32,
+        })
+    }
+}
+
+fn memory_from_object(memory: &Map<String, Value>) -> Result<Memory, String> {
+    let dimensions = required_array_field_allow_empty(memory, "dimensions", "memory.dimensions")?;
+    let entries = JsonFieldReader::required_array_field(memory, "entries", "memory.entries")?;
+    let relations = JsonFieldReader::optional_array_field(memory, "relations", "memory.relations")?;
+    let evidence = JsonFieldReader::optional_array_field(memory, "evidence", "memory.evidence")?;
+
+    Ok(Memory {
+        dimensions: dimensions
+            .iter()
+            .map(dimension_from_value)
+            .collect::<Result<Vec<_>, _>>()?,
+        entries: entries
+            .iter()
+            .map(entry_from_value)
+            .collect::<Result<Vec<_>, _>>()?,
+        relations: relations
+            .iter()
+            .map(relation_from_value)
+            .collect::<Result<Vec<_>, _>>()?,
+        evidence: evidence
+            .iter()
+            .map(evidence_from_value)
+            .collect::<Result<Vec<_>, _>>()?,
+    })
+}
+
+fn required_array_field_allow_empty<'a>(
+    object: &'a Map<String, Value>,
+    key: &str,
+    path: &str,
+) -> Result<&'a [Value], String> {
+    object
+        .get(key)
+        .ok_or_else(|| format!("missing required array argument `{path}`"))
+        .and_then(|value| {
+            value
+                .as_array()
+                .map(Vec::as_slice)
+                .ok_or_else(|| format!("argument `{path}` must be an array"))
+        })
+}
+
+fn dimension_from_value(value: &Value) -> Result<MemoryDimension, String> {
+    let value = JsonFieldReader::object(value, "memory.dimensions[]")?;
+    Ok(MemoryDimension {
+        id: JsonFieldReader::required_string_field(value, "id", "memory.dimensions[].id")?,
+        kind: JsonFieldReader::required_string_field(value, "kind", "memory.dimensions[].kind")?,
+        title: JsonFieldReader::optional_string_field(value, "title", "memory.dimensions[].title")?
+            .unwrap_or_default(),
+        metadata: JsonFieldReader::optional_metadata_field(
+            value,
+            "metadata",
+            "memory.dimensions[].metadata",
+        )?,
+    })
+}
+
+fn entry_from_value(value: &Value) -> Result<MemoryEntry, String> {
+    let value = JsonFieldReader::object(value, "memory.entries[]")?;
+    let coordinates = JsonFieldReader::required_array_field(
+        value,
+        "coordinates",
+        "memory.entries[].coordinates",
+    )?;
+
+    Ok(MemoryEntry {
+        id: JsonFieldReader::required_string_field(value, "id", "memory.entries[].id")?,
+        kind: JsonFieldReader::required_string_field(value, "kind", "memory.entries[].kind")?,
+        text: JsonFieldReader::required_string_field(value, "text", "memory.entries[].text")?,
+        coordinates: coordinates
+            .iter()
+            .map(|coordinate| coordinate_from_value(coordinate, "memory.entries[].coordinates[]"))
+            .collect::<Result<Vec<_>, _>>()?,
+        metadata: JsonFieldReader::optional_metadata_field(
+            value,
+            "metadata",
+            "memory.entries[].metadata",
+        )?,
+    })
+}
+
+fn coordinate_from_value(value: &Value, path: &str) -> Result<TemporalCoordinate, String> {
+    let value = JsonFieldReader::object(value, path)?;
+    Ok(TemporalCoordinate {
+        dimension: JsonFieldReader::required_string_field(
+            value,
+            "dimension",
+            &format!("{path}.dimension"),
+        )?,
+        scope_id: JsonFieldReader::required_string_field(
+            value,
+            "scope_id",
+            &format!("{path}.scope_id"),
+        )?,
+        occurred_at: JsonFieldReader::optional_timestamp_field(
+            value,
+            "occurred_at",
+            &format!("{path}.occurred_at"),
+        )?,
+        observed_at: JsonFieldReader::optional_timestamp_field(
+            value,
+            "observed_at",
+            &format!("{path}.observed_at"),
+        )?,
+        ingested_at: JsonFieldReader::optional_timestamp_field(
+            value,
+            "ingested_at",
+            &format!("{path}.ingested_at"),
+        )?,
+        valid_from: JsonFieldReader::optional_timestamp_field(
+            value,
+            "valid_from",
+            &format!("{path}.valid_from"),
+        )?,
+        valid_until: JsonFieldReader::optional_timestamp_field(
+            value,
+            "valid_until",
+            &format!("{path}.valid_until"),
+        )?,
+        sequence: JsonFieldReader::optional_positive_u32_field(
+            value,
+            "sequence",
+            &format!("{path}.sequence"),
+        )?,
+        rank: JsonFieldReader::optional_positive_u32_field(value, "rank", &format!("{path}.rank"))?,
+        metadata: JsonFieldReader::optional_metadata_field(
+            value,
+            "metadata",
+            &format!("{path}.metadata"),
+        )?,
+        // An origin is what the kernel stamps on a coordinate it reads back,
+        // never something a writer sends.
+        method: String::new(),
+        why: String::new(),
+        motivation: String::new(),
+    })
+}
+
+fn relation_from_value(value: &Value) -> Result<MemoryRelation, String> {
+    let value = JsonFieldReader::object(value, "memory.relations[]")?;
+    let semantic_class =
+        MemoryEnumMapper::semantic_class_from_field(value, "class", "memory.relations[].class")?;
+    let why = JsonFieldReader::optional_string_field(value, "why", "memory.relations[].why")?
+        .unwrap_or_default();
+    let evidence =
+        JsonFieldReader::optional_string_field(value, "evidence", "memory.relations[].evidence")?
+            .unwrap_or_default();
+    let confidence = MemoryEnumMapper::confidence_from_field(
+        value,
+        "confidence",
+        "memory.relations[].confidence",
+    )?;
+    let coordinate = JsonFieldReader::optional_object_field(
+        value,
+        "coordinate",
+        "memory.relations[].coordinate",
+    )?
+    .map(|coordinate| {
+        coordinate_from_value(
+            &Value::Object(coordinate.clone()),
+            "memory.relations[].coordinate",
+        )
+    })
+    .transpose()?;
+
+    if semantic_class != MemorySemanticClass::Structural as i32 {
+        if confidence == MemoryConfidence::Unspecified as i32 {
+            return Err("non-structural memory relations require confidence".to_string());
+        }
+        if why.trim().is_empty() && evidence.trim().is_empty() {
+            return Err("non-structural memory relations require why or evidence".to_string());
+        }
+    }
+
+    Ok(MemoryRelation {
+        source_ref: JsonFieldReader::required_string_field(
+            value,
+            "from",
+            "memory.relations[].from",
+        )?,
+        target_ref: JsonFieldReader::required_string_field(value, "to", "memory.relations[].to")?,
+        rel: JsonFieldReader::required_string_field(value, "rel", "memory.relations[].rel")?,
+        semantic_class,
+        why,
+        evidence,
+        confidence,
+        sequence: JsonFieldReader::optional_positive_u32_field(
+            value,
+            "sequence",
+            "memory.relations[].sequence",
+        )?,
+        evidence_refs: Vec::new(),
+        explanation: Some(MemoryRelationExplanation {
+            clocks: JsonFieldReader::optional_object_field(
+                value,
+                "clocks",
+                "memory.relations[].clocks",
+            )?
+            .map(|clocks| {
+                Ok::<_, String>(kmp_proto::v1beta1::RelationClocks {
+                    occurred_at: JsonFieldReader::optional_timestamp_field(
+                        clocks,
+                        "occurred_at",
+                        "memory.relations[].clocks.occurred_at",
+                    )?,
+                    observed_at: JsonFieldReader::optional_timestamp_field(
+                        clocks,
+                        "observed_at",
+                        "memory.relations[].clocks.observed_at",
+                    )?,
+                    ingested_at: JsonFieldReader::optional_timestamp_field(
+                        clocks,
+                        "ingested_at",
+                        "memory.relations[].clocks.ingested_at",
+                    )?,
+                    valid_from: JsonFieldReader::optional_timestamp_field(
+                        clocks,
+                        "valid_from",
+                        "memory.relations[].clocks.valid_from",
+                    )?,
+                    valid_until: JsonFieldReader::optional_timestamp_field(
+                        clocks,
+                        "valid_until",
+                        "memory.relations[].clocks.valid_until",
+                    )?,
+                })
+            })
+            .transpose()?,
+            motivation: JsonFieldReader::optional_string_field(
+                value,
+                "motivation",
+                "memory.relations[].motivation",
+            )?
+            .unwrap_or_default(),
+            method: JsonFieldReader::optional_string_field(
+                value,
+                "method",
+                "memory.relations[].method",
+            )?
+            .unwrap_or_default(),
+            decision_id: JsonFieldReader::optional_string_field(
+                value,
+                "decision_id",
+                "memory.relations[].decision_id",
+            )?
+            .unwrap_or_default(),
+            caused_by_node_id: JsonFieldReader::optional_string_field(
+                value,
+                "caused_by_node_id",
+                "memory.relations[].caused_by_node_id",
+            )?
+            .unwrap_or_default(),
+            coordinate,
+        }),
+    })
+}
+
+fn evidence_from_value(value: &Value) -> Result<MemoryEvidence, String> {
+    let value = JsonFieldReader::object(value, "memory.evidence[]")?;
+    Ok(MemoryEvidence {
+        support_clocks: value
+            .get("support_clocks")
+            .filter(|v| !v.is_null())
+            .map(|clocks| {
+                let clocks = JsonFieldReader::object(clocks, "memory.evidence[].support_clocks")?;
+                Ok::<_, String>(kmp_proto::v1beta1::EvidenceSupportClocks {
+                    observed_at: JsonFieldReader::optional_timestamp_field(
+                        clocks,
+                        "observed_at",
+                        "memory.evidence[].support_clocks.observed_at",
+                    )?,
+                    ingested_at: JsonFieldReader::optional_timestamp_field(
+                        clocks,
+                        "ingested_at",
+                        "memory.evidence[].support_clocks.ingested_at",
+                    )?,
+                })
+            })
+            .transpose()?,
+        id: JsonFieldReader::required_string_field(value, "id", "memory.evidence[].id")?,
+        supports: JsonFieldReader::optional_string_array_field(
+            value,
+            "supports",
+            "memory.evidence[].supports",
+        )?,
+        text: JsonFieldReader::required_string_field(value, "text", "memory.evidence[].text")?,
+        source: JsonFieldReader::optional_string_field(
+            value,
+            "source",
+            "memory.evidence[].source",
+        )?
+        .unwrap_or_default(),
+        time: JsonFieldReader::optional_timestamp_field(value, "time", "memory.evidence[].time")?,
+        metadata: JsonFieldReader::optional_metadata_field(
+            value,
+            "metadata",
+            "memory.evidence[].metadata",
+        )?,
+    })
+}
+
+pub(super) fn provenance_from_object(
+    value: &Map<String, Value>,
+) -> Result<MemoryProvenance, String> {
+    provenance_with_defaults(value, false)
+}
+
+fn provenance_with_defaults(
+    value: &Map<String, Value>,
+    allow_missing: bool,
+) -> Result<MemoryProvenance, String> {
+    Ok(MemoryProvenance {
+        source_kind: MemoryEnumMapper::source_kind_from_field(
+            value,
+            "source_kind",
+            "provenance.source_kind",
+        )?,
+        source_agent: JsonFieldReader::required_string_field(
+            value,
+            "source_agent",
+            "provenance.source_agent",
+        )?,
+        observed_at: if allow_missing {
+            JsonFieldReader::optional_timestamp_field(
+                value,
+                "observed_at",
+                "provenance.observed_at",
+            )?
+        } else {
+            Some(JsonFieldReader::required_timestamp_field(
+                value,
+                "observed_at",
+                "provenance.observed_at",
+            )?)
+        },
+        correlation_id: JsonFieldReader::optional_string_field(
+            value,
+            "correlation_id",
+            "provenance.correlation_id",
+        )?
+        .unwrap_or_default(),
+        causation_id: JsonFieldReader::optional_string_field(
+            value,
+            "causation_id",
+            "provenance.causation_id",
+        )?
+        .unwrap_or_default(),
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use kmp_proto::v1beta1::MemorySourceKind;
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn ingest_request_maps_mcp_memory_to_kernel_memory_service_proto() {
+        let request = IngestRequestMapper::from_arguments(&json!({
+            "about": "question:830ce83f",
+            "memory": {
+                "dimensions": [
+                    {
+                        "id": "conversation:rachel",
+                        "kind": "conversation"
+                    }
+                ],
+                "entries": [
+                    {
+                        "id": "claim:rachel-austin",
+                        "kind": "claim",
+                        "text": "Rachel moved to Austin.",
+                        "coordinates": [
+                            {
+                                "dimension": "conversation",
+                                "scope_id": "conversation:rachel",
+                                "sequence": 1,
+                                "occurred_at": "2026-04-12T15:05:00Z"
+                            }
+                        ]
+                    }
+                ],
+                "relations": [
+                    {
+                        "from": "claim:rachel-austin",
+                        "to": "claim:rachel-denver",
+                        "rel": "supersedes",
+                        "class": "evidential",
+                        "why": "Later statement corrects earlier statement.",
+                        "confidence": "high"
+                    }
+                ],
+                "evidence": [
+                    {
+                        "id": "evidence:rachel",
+                        "supports": ["claim:rachel-austin"],
+                        "text": "Rachel corrected the destination."
+                    }
+                ]
+            },
+            "provenance": {
+                "source_kind": "agent",
+                "source_agent": "longmemeval-adapter",
+                "observed_at": "2026-05-04T10:00:00Z"
+            },
+            "idempotency_key": "ingest:830ce83f:1"
+        }))
+        .expect("ingest request should map");
+
+        assert_eq!(request.about, "question:830ce83f");
+        assert_eq!(
+            request.memory.as_ref().expect("memory").relations[0].source_ref,
+            "claim:rachel-austin"
+        );
+        assert_eq!(
+            request.provenance.expect("provenance").source_kind,
+            MemorySourceKind::Agent as i32
+        );
+    }
+
+    #[test]
+    fn ingest_request_allows_empty_dimensions_for_incremental_append() {
+        let request = IngestRequestMapper::from_arguments(&json!({
+            "about": "question:830ce83f",
+            "memory": {
+                "dimensions": [],
+                "entries": [
+                    {
+                        "id": "claim:rachel-denver",
+                        "kind": "claim",
+                        "text": "Rachel moved to Denver.",
+                        "coordinates": [
+                            {
+                                "dimension": "conversation",
+                                "scope_id": "conversation:rachel",
+                                "sequence": 2,
+                                "occurred_at": "2026-04-13T15:05:00Z"
+                            }
+                        ]
+                    }
+                ],
+                "relations": [],
+                "evidence": []
+            },
+            "idempotency_key": "ingest:830ce83f:2"
+        }))
+        .expect("incremental append should map");
+
+        let memory = request.memory.expect("memory");
+        assert!(memory.dimensions.is_empty());
+        assert_eq!(memory.entries[0].id, "claim:rachel-denver");
+    }
+
+    #[test]
+    fn missing_observation_is_forwarded_as_a_policy_not_a_client_timestamp() {
+        let mut args = json!({"about":"project:clock", "idempotency_key":"clock",
+            "memory":{"entries":[{"id":"fact","kind":"observation","text":"A source fact.",
+                "coordinates":[{"dimension":"task","scope_id":"clock"}]}],"relations":[],"evidence":[],"dimensions":[]},
+            "provenance":{"source_kind":"agent","source_agent":"writer"}});
+        assert!(IngestRequestMapper::from_arguments(&args).is_err());
+        args["default_observation_to_ingestion"] = json!(true);
+        let request = IngestRequestMapper::from_arguments(&args).expect("policy");
+        assert!(request.default_observation_to_ingestion);
+        assert!(
+            request
+                .provenance
+                .expect("provenance")
+                .observed_at
+                .is_none()
+        );
+        args["default_observation_to_ingestion"] = json!("true");
+        assert!(IngestRequestMapper::from_arguments(&args).is_err());
+    }
+}
