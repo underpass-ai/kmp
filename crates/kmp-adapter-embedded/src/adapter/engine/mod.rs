@@ -8,9 +8,9 @@
 //!
 //! The seam is deliberately narrow. Every method here corresponds to an
 //! operation the port code performs against SQLite, and no more:
-//! point get, insert, remove, a full ordered scan, a scan of one first key
-//! component, the last row of a `u64`-keyed table, a row count, and a table
-//! clear. Rows come back in ascending key order, compared component by
+//! point get, the stored byte length of one value, insert, remove, a full
+//! ordered scan, a scan of one first key component, the last row of a
+//! `u64`-keyed table, a row count, and a table clear. Rows come back in ascending key order, compared component by
 //! component and byte-wise within a component; the neighborhood output
 //! depends on it.
 //!
@@ -134,6 +134,19 @@ pub(crate) trait ReadTx {
     /// The value at `key`, if any. Unit-valued tables answer `Some(vec![])`
     /// for a present key.
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError>;
+
+    /// Stored byte length of the value at `key`, without loading or decoding
+    /// it. `None` means the key is absent, which is not the same answer as
+    /// `Some(0)` for a present unit value. This measures the stored record,
+    /// including whatever envelope the record carries, never a field inside
+    /// it. A value that is not stored as a blob is reported as an error
+    /// rather than measured, because a text value would be counted in
+    /// characters and silently under-report its bytes.
+    ///
+    /// Exercised by this crate's tests only until the body admission contract
+    /// of #539 lands its consumer; the allow goes away with that change.
+    #[allow(dead_code)]
+    fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError>;
 
     /// Every row of a `Str`-keyed table, ascending.
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError>;

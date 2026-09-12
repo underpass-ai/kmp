@@ -20,6 +20,9 @@ impl ReadTx for SqliteSnapshotRead<'_> {
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         self.ops().get(table, key)
     }
+    fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
+        self.ops().value_len(table, key)
+    }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
