@@ -495,6 +495,87 @@ async fn a_named_expansion_with_compact_delivers_the_body_and_not_its_card_again
 }
 
 #[tokio::test]
+async fn a_deferred_named_expansion_with_compact_does_not_expose_card_prose() {
+    let (_dir, server) = seeded().await;
+    let card_text = "Tarjeta corta del lector.";
+    condense(&server, SOURCE, card_text).await;
+    let first = call(
+        &server,
+        "kmp_trace",
+        trace(json!({"proof": true, "proof_refs": []})),
+    )
+    .await;
+    let first = structured(&first);
+    let manifest = first["proof"]["manifest_id"]
+        .as_str()
+        .expect("manifest")
+        .to_string();
+    let required_record_bytes = first["objects"]
+        .as_array()
+        .expect("objects")
+        .iter()
+        .find(|object| object["ref"] == SOURCE)
+        .expect("source")["required_record_bytes"]
+        .as_u64()
+        .expect("source record bytes");
+
+    let deferred = call(
+        &server,
+        "kmp_trace",
+        trace(json!({
+            "proof": true,
+            "max_body_record_bytes": 1,
+            "proof_refs": [SOURCE],
+            "expect_selection": manifest,
+            "compact": {"language": "es"}
+        })),
+    )
+    .await;
+
+    let value = structured(&deferred);
+    let source = value["objects"]
+        .as_array()
+        .expect("objects")
+        .iter()
+        .find(|object| object["ref"] == SOURCE)
+        .expect("source");
+    assert_eq!(source["body_state"], "deferred_budget");
+    assert_eq!(source["required_record_bytes"], required_record_bytes);
+    assert!(
+        source.get("text").is_none(),
+        "a deferred canonical body must not reach the response: {source}"
+    );
+    assert_eq!(source["card"]["status"], "valid");
+    assert!(
+        source["card"].get("text").is_none(),
+        "a named expansion is canonical even when its body is deferred: {source}"
+    );
+    assert!(
+        !wire(&deferred).contains(card_text),
+        "the deferred expansion exposed card prose elsewhere: {deferred}"
+    );
+    assert_eq!(value["proof"]["delivery"]["deferred_budget"], 1);
+    assert_eq!(value["proof"]["delivery"]["compact"], 0);
+    assert_eq!(value["proof"]["compact"]["card_bytes"], 0);
+    assert_eq!(value["proof"]["compact"]["body_bytes_omitted"], 0);
+
+    let expansion = &value["proof"]["expand_oversized_body"];
+    assert_eq!(expansion["tool"], "kmp_trace");
+    assert_eq!(
+        expansion["arguments"]["search"]["max_body_record_bytes"],
+        required_record_bytes
+    );
+    assert_eq!(
+        expansion["arguments"]["search"]["proof_refs"],
+        json!([SOURCE])
+    );
+    assert_eq!(
+        expansion["arguments"]["search"]["expect_selection"],
+        value["proof"]["manifest_id"]
+    );
+}
+
+#[tokio::test]
 async fn following_the_offered_actions_recovers_every_body_exactly_once() {
     // One record at a time, over the real surface, until the chain ends. A
     // single executed action could not have caught a cycle.
