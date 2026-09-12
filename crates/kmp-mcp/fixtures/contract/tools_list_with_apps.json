@@ -7919,7 +7919,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization.",
+      "description": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {

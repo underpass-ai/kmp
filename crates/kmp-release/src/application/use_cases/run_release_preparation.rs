@@ -78,8 +78,7 @@ where
         } else {
             println!(
                 "{}",
-                PrepareReleaseWorkflow::new(self.contracts, self.workspace, self.root)
-                    .execute(version)?
+                PrepareReleaseWorkflow::new(self.contracts, self.workspace).execute(version)?
             );
         }
         self.commit_and_push(&format!("chore: prepare {}", version.tag()))?;

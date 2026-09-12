@@ -117,3 +117,178 @@ async fn long_source_is_omitted_whole_and_exact_inspect_preserves_qualification(
     let detail = call(&server, "kmp_inspect", item["action"]["arguments"].clone()).await;
     assert_eq!(detail["object"]["text"], text);
 }
+
+/// #683: the writer reads the neighborhood. Clocks reach it as RFC 3339, the
+/// spelling every other surface answers with, never as the kernel's internal
+/// `unix:<offset>:<nanos>` key — which is not a Unix timestamp either, so an
+/// agent that tries to read it literally lands over three thousand years away.
+#[tokio::test]
+async fn neighborhood_clocks_reach_the_writer_as_rfc3339() {
+    let dir = scratch();
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    let limit = seed_at(
+        &server,
+        "dated-limit",
+        "constraint",
+        "P9 limits the copy to 80 MB.",
+        "copy",
+        json!({"observed_at":"2026-09-10T12:00:00Z","occurred_at":"2026-09-10T12:00:00.250Z"}),
+    )
+    .await;
+    let mut proposed = packet();
+    proposed["memories"]
+        .as_array_mut()
+        .expect("typed neighborhood fixture")
+        .remove(0);
+    proposed["memories"][0]["connect_to"][0]["ref"] = limit.clone();
+    // An explicit offset names the same instant as its UTC spelling.
+    proposed["memories"][0]["observed_at"] = json!("2026-09-11T08:30:00.125+02:00");
+
+    let review = call(&server, "kmp_write_memory", proposed).await;
+
+    let items = review["neighborhood"]["items"]
+        .as_array()
+        .expect("typed neighborhood fixture");
+    let stored = items
+        .iter()
+        .find(|item| item["ref"] == limit)
+        .expect("the proposed endpoint is in its own neighborhood");
+    assert_eq!(stored["state"], "stored");
+    assert_eq!(
+        stored["clocks"]["observed_at"],
+        json!(["2026-09-10T12:00:00Z"])
+    );
+    assert_eq!(
+        stored["clocks"]["occurred_at"],
+        json!(["2026-09-10T12:00:00.25Z"]),
+        "sub-second digits survive; only trailing zeros go"
+    );
+    assert!(
+        stored["clocks"]["ingested_at"][0]
+            .as_str()
+            .expect("a stored fact carries the clock the kernel gave it")
+            .ends_with('Z'),
+        "the clock the kernel set is rendered like the ones the writer set: {stored}"
+    );
+    let proposed_item = items
+        .iter()
+        .find(|item| item["state"] == "proposed")
+        .expect("the proposed fact appears beside the stored one");
+    assert_eq!(
+        proposed_item["clocks"]["observed_at"],
+        json!(["2026-09-11T06:30:00.125Z"]),
+        "one neighborhood speaks one clock spelling, so its instants compare"
+    );
+    let rendered = review["neighborhood"].to_string();
+    assert!(
+        !rendered.contains("unix:"),
+        "no internal clock key reaches the writer: {rendered}"
+    );
+}
+
+/// A neighbor without clocks says so by carrying none. Rendering never invents
+/// an instant, and never drops a value it cannot read.
+#[tokio::test]
+async fn absent_clocks_stay_absent_and_unreadable_ones_stay_visible() {
+    let dir = scratch();
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    let limit = seed(
+        &server,
+        "undated-limit",
+        "constraint",
+        "P9 limits the copy to 80 MB.",
+        "copy",
+    )
+    .await;
+    let mut proposed = packet();
+    proposed["memories"]
+        .as_array_mut()
+        .expect("typed neighborhood fixture")
+        .remove(0);
+    proposed["memories"][0]["connect_to"][0]["ref"] = limit.clone();
+
+    let review = call(&server, "kmp_write_memory", proposed).await;
+
+    let items = review["neighborhood"]["items"]
+        .as_array()
+        .expect("typed neighborhood fixture");
+    let undated = items
+        .iter()
+        .find(|item| item["state"] == "proposed")
+        .expect("the proposed fact appears in its own neighborhood");
+    assert_eq!(
+        undated["clocks"],
+        json!({}),
+        "a fact the writer gave no clock keeps none: {undated}"
+    );
+    // A stored fact does carry the observation clock the kernel defaulted for
+    // it; every clock it carries is still readable.
+    let stored = items
+        .iter()
+        .find(|item| item["ref"] == limit)
+        .expect("the stored endpoint appears");
+    for (axis, values) in stored["clocks"]
+        .as_object()
+        .expect("typed neighborhood fixture")
+    {
+        for value in values.as_array().expect("typed neighborhood fixture") {
+            let value = value.as_str().expect("typed neighborhood fixture");
+            assert!(
+                value.ends_with('Z') && value.starts_with("20"),
+                "{axis} reaches the writer as an instant it can read: {value}"
+            );
+        }
+    }
+}
+
+/// Rendering is presentation. What the neighborhood shows must not move what
+/// review asks for, what the continuation resolves, or what the store keeps.
+#[tokio::test]
+async fn readable_clocks_change_nothing_that_was_selected_or_stored() {
+    let dir = scratch();
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    let limit = seed_at(
+        &server,
+        "dated-limit",
+        "constraint",
+        "P9 limits the copy to 80 MB.",
+        "copy",
+        json!({"observed_at":"2026-09-10T12:00:00Z","occurred_at":"2026-09-10T12:00:00.250Z"}),
+    )
+    .await;
+    let mut proposed = packet();
+    proposed["memories"]
+        .as_array_mut()
+        .expect("typed neighborhood fixture")
+        .remove(0);
+    proposed["memories"][0]["connect_to"][0]["ref"] = limit.clone();
+
+    let review = call(&server, "kmp_write_memory", proposed.clone()).await;
+    assert_eq!(review["status"], "needs_review");
+    let first_token = review["neighborhood"]["token"].clone();
+
+    // A repeat of the same packet against the same material fingerprints the
+    // same: the review token follows the material, not the rendering.
+    let repeated = call(&server, "kmp_write_memory", proposed).await;
+    assert_eq!(
+        repeated["neighborhood"]["token"], first_token,
+        "an unchanged neighborhood keeps its fingerprint"
+    );
+
+    // The continuation the review handed back still applies.
+    let committed = resume(&server, &review).await;
+    assert_eq!(committed["status"], "committed", "{committed}");
+
+    // The store kept the clocks it was given, in its own canonical spelling.
+    let inspected = call(
+        &server,
+        "kmp_inspect",
+        json!({"about":ABOUT,"ref":limit,"include":{"details":true,"raw":true}}),
+    )
+    .await;
+    let stored = inspected.to_string();
+    assert!(
+        stored.contains("2026-09-10T12:00:00.250Z"),
+        "the stored clock keeps the precision it was written with: {stored}"
+    );
+}

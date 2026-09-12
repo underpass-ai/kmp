@@ -69,6 +69,10 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
 }
 
 pub(crate) fn tool_error_result(tool: &str, arguments: &Value, error: &ToolError) -> Value {
+    let guide_error = (tool == "kmp_inspect")
+        .then(|| super::guide_repair::GuideRepair::for_inspect(arguments, error))
+        .flatten();
+    let error = guide_error.as_ref().unwrap_or(error);
     let mut result = json!({
         "content": [
             {

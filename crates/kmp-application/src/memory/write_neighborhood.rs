@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use kmp_domain::{EntryLabels, KmpBundle, MemoryRelationType, labels_by_entry};
+use kmp_domain::{
+    EntryLabels, KmpBundle, MemoryRelationType, labels_by_entry, temporal_instant_rfc3339,
+};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
@@ -22,6 +24,35 @@ pub struct WriteNeighborhood {
     pub omitted_conflicts: usize,
     pub abouts: Vec<String>,
     pub partial: bool,
+}
+
+/// Clocks leave for the writer in the spelling every other surface answers
+/// with.
+///
+/// The kernel persists instants as `unix:<offset seconds>:<nanos>` so its keys
+/// sort chronologically, but that key is not a Unix timestamp: read literally,
+/// `unix:101789041600:000000000` lands over three thousand years from the
+/// 2026-09-10T12:00:00Z it denotes. An agent reading its own write's
+/// neighborhood cannot compare what it cannot interpret (#683).
+///
+/// A value that is not an instant stays exactly as it is; it is better to show
+/// an unparsed clock than to drop one.
+fn readable_clocks(clocks: BTreeMap<String, Vec<String>>) -> BTreeMap<String, Vec<String>> {
+    clocks
+        .into_iter()
+        .map(|(axis, values)| {
+            let mut readable = Vec::with_capacity(values.len());
+            for value in values {
+                let value = temporal_instant_rfc3339(&value).unwrap_or(value);
+                // Two spellings of one instant are one instant: a proposed
+                // `+02:00` and a stored `Z` must not read as two clocks.
+                if !readable.contains(&value) {
+                    readable.push(value);
+                }
+            }
+            (axis, readable)
+        })
+        .collect()
 }
 
 pub(super) fn requires_review(command: &MemoryIngestCommand) -> bool {
@@ -200,6 +231,10 @@ pub(super) fn build_neighborhood(
             .then_with(|| a.reference.cmp(&b.reference))
             .then_with(|| a.state.cmp(&b.state))
     });
+    // After the ordering above, which compares the stored keys themselves.
+    for candidate in &mut candidates {
+        candidate.clocks = readable_clocks(std::mem::take(&mut candidate.clocks));
+    }
     let references = sources.keys().collect::<BTreeSet<_>>();
     let links = bundles
         .iter()
