@@ -56,13 +56,15 @@ Copy `revision` and `record_digest` from that body's descriptor:
 
 ```json
 {"tool":"kmp_condense","arguments":{
- "about":"<owning-about>","ref":"<read-ref>","language":"en",
+ "about":"<owning-about>","ref":"<read-ref>","language":"en","actor":"<reader-name>",
  "scope":"node_body","card":"<your faithful phrase about this body only>",
  "source":{"revision":3,"record_digest":"<copied digest>"},
  "expect":{"absent":true}}}
 ```
 
-Replace `3` with the observed revision. Card text must be nonempty, at most
+Replace `3` with the observed revision. Without `context_id`, `actor` is required;
+with a valid context, an omitted actor defaults to the persistent agent name.
+Card text must be nonempty, at most
 4096 UTF-8 bytes and strictly shorter than its body. Entries and evidence
 sources can both be condensed. Do not summarize a path or neighborhood into
 one body's card. KMP checks the declared dependency, not the prose's truth.

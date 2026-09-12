@@ -7,14 +7,16 @@ Condense a canonical body you have read; reuse its short phrase on later paths.
 3. Replace every placeholder below with observed values:
 
 ```json
-{"about":"<owning-about>","ref":"<read-ref>","language":"en",
+{"about":"<owning-about>","ref":"<read-ref>","language":"en","actor":"<reader-name>",
  "scope":"node_body","card":"<your phrase about this body only>",
  "source":{"revision":1,"record_digest":"<copied digest>"},
  "expect":{"absent":true}}
 ```
 
 Call `kmp_condense`; copy the actual source revision instead of the illustrative
-`1`. For an existing card use its observed `expect:{card_revision:...}`. Text
+`1`. Without `context_id`, `actor` is required; with a valid context, an omitted
+actor defaults to the persistent agent name. For an existing card use its
+observed `expect:{card_revision:...}`. Text
 must be at most 4096 UTF-8 bytes and shorter than its body. On conflict, reread.
 
 4. Reuse: start the same Trace with `proof:true,compact:{language:"en"}`.

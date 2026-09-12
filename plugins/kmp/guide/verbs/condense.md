@@ -10,7 +10,8 @@ It does not summarize automatically or verify the phrase's faithfulness.
 3. Write `about`, `ref`, `language`, `scope:"node_body"`, `card`, `source` and
    `expect`. Use `expect:{absent:true}` first, or the observed `card_revision`
    to replace an existing card. The text must be nonempty, at most 4096 UTF-8
-   bytes, and strictly shorter in bytes than its body.
+   bytes, and strictly shorter in bytes than its body. Include `actor` without
+   `context_id`; with a valid context, an omitted actor uses the persistent name.
 4. Start the same Trace selection afresh with
    `search.proof:true,compact:{language:...}`. **Remove `proof_refs`,
    `expect_selection` and the old `page.cursor`.** Otherwise named refs request

@@ -67,7 +67,7 @@
           "id": "verb:condense",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The tool contract in crates/kmp-mcp/src/contract/tools/condense.rs and the card policy in crates/kmp-domain/src/model/node_card_policy.rs: scope node_body only, digest-bound validity, compare-and-set on card_revision, kernel-stamped authorship and refusal of a source that moved.",
+          "evidence": "The tool contract in crates/kmp-mcp/src/contract/tools/condense.rs and the card policy in crates/kmp-domain/src/model/node_card_policy.rs: scope node_body only, digest-bound validity, compare-and-set on card_revision, kernel-stamped authorship and refusal of a source that moved. Condense mapping requires actor; CallGuidance fills an omitted actor only from a valid persistent context. Standalone examples therefore include an explicit actor.",
           "guide_title": "Condense: write a compact card bound to one body version",
           "text_file": "verbs/condense.md"
         },
