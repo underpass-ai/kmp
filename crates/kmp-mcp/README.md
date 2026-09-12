@@ -66,8 +66,8 @@ Current status:
 
 - exposes `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
   `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
-  `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_relabel`, `kmp_view_open`,
-  `kmp_view_apply_intent`, and `kmp_view_get_state`;
+  `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_condense`, `kmp_relabel`,
+  `kmp_guide`, `kmp_view_open`, `kmp_view_apply_intent`, and `kmp_view_get_state`;
 - can serve explicit fixture-backed KMP responses, embedded from the
   contract's reference examples;
 - can use the live gRPC kernel when `KMP_KERNEL_GRPC_ENDPOINT` is set;
@@ -243,6 +243,8 @@ Live backend mapping:
 | `kmp_relate` | `KernelMemoryService.Relate` |
 | `kmp_trace` | `KernelMemoryService.Trace` |
 | `kmp_inspect` | `KernelMemoryService.Inspect` |
+| `kmp_condense` | `KernelMemoryService.Condense` |
+| `kmp_guide` | MCP-local persistent agent identity and progressive guidance |
 | `kmp_relabel` | `KernelMemoryService.Relabel` |
 | ChronoLoom app data | `KernelMemoryService.ProjectVisual` (hidden from model tool discovery) |
 
