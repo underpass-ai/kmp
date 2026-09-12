@@ -91,6 +91,13 @@ the receipt names the digest it replaced (`replaced_sha256`). A table you
 built and want to keep belongs beside one store, or wherever
 `KMP_LEXICAL_BRIDGE` points.
 
+`KMP_LEXICAL_BRIDGE=none` says the opposite of a path: run without a table on
+purpose. The machine's copy sits behind every store that has none of its own,
+so a test or a baseline that means to exercise the unbridged path has to be
+able to declare that rather than hope nothing is installed nearby. `info` and
+`doctor` then report a bridge deliberately turned off, not one that could not
+be read.
+
 Absent, `ask` behaves exactly as before. A malformed table is logged and
 ignored; it is an aid to retrieval, not a condition of it.
 
