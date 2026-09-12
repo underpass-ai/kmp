@@ -15,6 +15,13 @@ impl TraceSnapshotReader for TraceSnapshot<'_> {
         super::node_detail::read_batch(self.0, ids)
     }
 
+    fn descriptors(
+        &self,
+        ids: &[String],
+    ) -> Result<Vec<Option<kmp_domain::NodeBodyDescriptor>>, PortError> {
+        super::node_body_descriptor::read_batch(self.0, ids)
+    }
+
     fn cards(
         &self,
         ids: &[String],

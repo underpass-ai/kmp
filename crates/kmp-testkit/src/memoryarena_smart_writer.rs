@@ -2,6 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::time::{Duration, Instant};
 
+use crate::write_receipt::WriteReceipt;
+
 use kmp_domain::{
     KnownMemoryRelationType, MemoryRelationQuality, MemoryRelationType, RelationSemanticClass,
 };
@@ -288,6 +290,30 @@ impl MemoryArenaSmartWriter {
                 call_writer_tool_with_record(server, request_id, "kmp_write_memory", &request)
                     .await?;
             let commit_content = commit_call.content.clone();
+            // The commit call answering without an error does not mean the
+            // write landed. A proposal held for review has written nothing,
+            // and the verification below would then inspect an entry that does
+            // not carry the relation this run believes it wrote (#691). The
+            // review belongs to the writer, so this stops and says so rather
+            // than confirming it here.
+            let receipt = WriteReceipt::read("kmp_write_memory", &commit_content);
+            if let Err(pending) = receipt.require_accepted() {
+                log_writer_navigation(
+                    self.config.log_mcp_navigation,
+                    json!({
+                        "event": "memoryarena_smart_writer.write.commit.pending",
+                        "about": event.about,
+                        "entry_ref": input.entry_ref.as_str(),
+                        "reason": pending,
+                        "review": receipt.review_context()
+                    }),
+                );
+                return Err(format!(
+                    "memoryarena smart writer stopped at `{}`: {pending}",
+                    input.entry_ref.as_str()
+                )
+                .into());
+            }
             log_writer_navigation(
                 self.config.log_mcp_navigation,
                 json!({

@@ -55,8 +55,7 @@ where
             .execute(&version)
             .into_result(),
             ReleaseWorkflowCommandDto::Version { version } => {
-                PrepareReleaseWorkflow::new(self.contracts, self.workspace, self.root)
-                    .execute(&version)
+                PrepareReleaseWorkflow::new(self.contracts, self.workspace).execute(&version)
             }
             ReleaseWorkflowCommandDto::Candidate { version, run_id } => SealReleaseCandidate::new(
                 self.file_system,

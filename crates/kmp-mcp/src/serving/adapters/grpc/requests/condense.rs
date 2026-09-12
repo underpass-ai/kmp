@@ -12,10 +12,10 @@ use super::common::{object, optional_string_field};
 pub(crate) fn condense_request_from_arguments(
     arguments: &Value,
 ) -> Result<CondenseRequest, String> {
-    validate_required_arguments(
-        arguments,
-        &["about", "ref", "language", "scope", "card", "source", "expect"],
-    )?;
+    // Only the string-valued arguments: this helper reads strings, and
+    // `source` and `expect` are objects, checked below with what is wrong
+    // about them rather than as a bare absence.
+    validate_required_arguments(arguments, &["about", "ref", "language", "scope", "card"])?;
     let source = object(
         arguments.get("source").ok_or("condense requires source")?,
         "source",

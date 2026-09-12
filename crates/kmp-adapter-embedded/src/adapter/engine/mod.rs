@@ -1,16 +1,16 @@
 //! The storage seam ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 //!
 //! Everything the kernel ports need from a storage engine, and nothing an
-//! engine would need to know about the kernel: thirteen key-to-bytes maps,
+//! engine would need to know about the kernel: fourteen key-to-bytes maps,
 //! transactions over them, and four key shapes. Port logic — graph
 //! traversal, revision checks, idempotency — is written once against this
 //! and never sees an engine type.
 //!
 //! The seam is deliberately narrow. Every method here corresponds to an
 //! operation the port code performs against SQLite, and no more:
-//! point get, insert, remove, a full ordered scan, a scan of one first key
-//! component, the last row of a `u64`-keyed table, a row count, and a table
-//! clear. Rows come back in ascending key order, compared component by
+//! point get, the stored byte length of one value, insert, remove, a full
+//! ordered scan, a scan of one first key component, the last row of a
+//! `u64`-keyed table, a row count, and a table clear. Rows come back in ascending key order, compared component by
 //! component and byte-wise within a component; the neighborhood output
 //! depends on it.
 //!
@@ -38,6 +38,10 @@ pub(crate) enum Table {
     RelationsByTarget,
     /// Node details: `node_id -> DetailRecord`.
     Details,
+    /// Canonical body headers: `node_id -> DetailHeaderRecord`. Written in the
+    /// same transaction as `Details`, so a detail without its header is an
+    /// inconsistent projection, never a body that does not exist.
+    DetailHeaders,
     /// Reader-authored compact cards: `(node_id, language) -> CardRecord`.
     /// A derived view beside the canonical body, never inside it.
     Cards,
@@ -67,6 +71,7 @@ impl Table {
         match self {
             Table::Nodes
             | Table::Details
+            | Table::DetailHeaders
             | Table::Anchors
             | Table::Aggregates
             | Table::Idempotency
@@ -87,6 +92,7 @@ impl fmt::Display for Table {
             Table::Relations => "relations_by_source",
             Table::RelationsByTarget => "relations_by_target",
             Table::Details => "details",
+            Table::DetailHeaders => "detail_headers",
             Table::Cards => "node_cards",
             Table::Anchors => "memory_anchors",
             Table::EventLog => "event_log",
@@ -140,6 +146,15 @@ pub(crate) trait ReadTx {
     /// The value at `key`, if any. Unit-valued tables answer `Some(vec![])`
     /// for a present key.
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError>;
+
+    /// Stored byte length of the value at `key`, without loading or decoding
+    /// it. `None` means the key is absent, which is not the same answer as
+    /// `Some(0)` for a present unit value. This measures the stored record,
+    /// including whatever envelope the record carries, never a field inside
+    /// it. A value that is not stored as a blob is reported as an error
+    /// rather than measured, because a text value would be counted in
+    /// characters and silently under-report its bytes.
+    fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError>;
 
     /// Every row of a `Str`-keyed table, ascending.
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError>;

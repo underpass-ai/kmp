@@ -20,6 +20,13 @@ selected store. Name the data effect: sync writes that store and may change
 its maintained `.kmp/memory.jsonl`. Run
 `<plugin-root>/scripts/kmp-guide-sync.sh sync`; exact sync is idempotent.
 Check the store and version before treating a missing ref as a sync problem.
+The native command is `kmp-mcp guide sync --plugin-root <plugin-root>` with the
+matching plugin directory containing `guide/guide.requests.json` and
+`guide/memory.jsonl`. Preserve the MCP connection's binary, working directory
+and store/backend environment, including `KMP_MCP_DATA_DIR` when set. Stop that
+MCP process first if it holds the embedded store; restart with the same selection
+after sync, then retry the original call. `GUIDE_UNAVAILABLE` feedback provides
+this repair when a guide read finds missing or incomplete installed assets.
 
 The scheme reads the installed guide from KMP. A missing or stale asset
 requires the explicit sync described above, not an automatic retry loop.

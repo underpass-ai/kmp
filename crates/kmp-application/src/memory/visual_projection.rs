@@ -259,6 +259,7 @@ pub fn build_visual_projection(
     let selection_hash = selection_hash(query, revision, &content_hash);
     let offset = cursor_offset(query.cursor.as_deref(), &selection_hash)?;
 
+    let missing_axis_entries = missing_axis_entries(&temporal, query);
     let mut positioned = temporal
         .traversal
         .entries()
@@ -359,11 +360,7 @@ pub fn build_visual_projection(
     let causal = causal_relation_count(&relations);
     let relation_count = relations.len();
     let source_truncated = temporal.traversal.page().has_more();
-    let missing = if source_truncated {
-        vec!["visual_source_entries".to_string()]
-    } else {
-        Vec::new()
-    };
+    let missing = visual_missing(source_truncated, missing_axis_entries);
 
     Ok(VisualProjectionResult {
         contract: "kmp.visual.projection.v1".to_string(),
@@ -386,6 +383,12 @@ pub fn build_visual_projection(
                 value: total as f64,
                 unit: "entries".to_string(),
                 scope: "selected_range".to_string(),
+            },
+            VisualMetric {
+                name: "missing_axis_entries".to_string(),
+                value: missing_axis_entries as f64,
+                unit: "entries".to_string(),
+                scope: "selected_source".to_string(),
             },
             VisualMetric {
                 name: "relation_count".to_string(),
@@ -413,6 +416,56 @@ pub fn build_visual_projection(
         truncated: source_truncated || has_more,
         missing,
     })
+}
+
+fn missing_axis_entry(coordinates: &[TemporalCoordinate], axis: TemporalAxis) -> bool {
+    !coordinates
+        .iter()
+        .any(|coordinate| axis_time(coordinate, axis).is_some())
+}
+
+fn missing_axis_entries(temporal: &TemporalMemoryResult, query: &VisualProjectionQuery) -> usize {
+    let mut candidates = BTreeSet::new();
+    let mut coordinates = BTreeMap::<String, Vec<TemporalCoordinate>>::new();
+    for relationship in temporal.source_bundle.relationships() {
+        if relationship.relationship_type() != "contains_entry" {
+            continue;
+        }
+        let explanation = relationship.explanation();
+        if !query.dimensions.includes_coordinate(
+            explanation.dimension().unwrap_or_default(),
+            explanation.scope_id().unwrap_or_default(),
+        ) {
+            continue;
+        }
+        candidates.insert(relationship.target_node_id().to_string());
+        if let Ok(Some(coordinate)) = TemporalCoordinate::from_relation_explanation(explanation) {
+            coordinates
+                .entry(relationship.target_node_id().to_string())
+                .or_default()
+                .push(coordinate);
+        }
+    }
+    candidates
+        .into_iter()
+        .filter(|ref_id| {
+            missing_axis_entry(
+                coordinates.get(ref_id).map_or(&[], Vec::as_slice),
+                query.axis,
+            )
+        })
+        .count()
+}
+
+fn visual_missing(source_truncated: bool, missing_axis_entries: usize) -> Vec<String> {
+    let mut missing = Vec::new();
+    if source_truncated {
+        missing.push("visual_source_entries".to_string());
+    }
+    if missing_axis_entries > 0 {
+        missing.push("temporal_positions".to_string());
+    }
+    missing
 }
 
 fn visual_bins(entries: &[PositionedEntry], from: i128, to: i128, count: usize) -> Vec<VisualBin> {
@@ -737,6 +790,12 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use kmp_domain::{
+        BundleMetadata, BundleNode, BundleRelationship, CaseId, KmpBundle, RelationExplanation,
+        RelationSemanticClass, Role, TemporalMemoryTraversal, TemporalTraversalRequest,
+        TemporalWindow,
+    };
+    use std::collections::BTreeMap;
 
     #[test]
     fn sortable_and_rfc3339_timestamps_share_one_coordinate_space() {
@@ -780,5 +839,111 @@ mod tests {
         ];
 
         assert_eq!(causal_relation_count(&relations), 1);
+    }
+
+    #[test]
+    fn missing_axis_entry_is_reported_without_using_another_clock() {
+        let observed_only =
+            TemporalCoordinate::cursor_time("2026-08-27T12:00:00Z", TemporalAxis::Observed)
+                .expect("coordinate");
+        let occurred =
+            TemporalCoordinate::cursor_time("2026-08-27T12:00:00Z", TemporalAxis::Occurred)
+                .expect("coordinate");
+
+        assert!(missing_axis_entry(
+            std::slice::from_ref(&observed_only),
+            TemporalAxis::Occurred
+        ));
+        assert!(!missing_axis_entry(
+            std::slice::from_ref(&observed_only),
+            TemporalAxis::Observed
+        ));
+        assert!(!missing_axis_entry(
+            &[observed_only, occurred],
+            TemporalAxis::Occurred
+        ));
+    }
+
+    #[test]
+    fn visual_missing_keeps_source_truncation_and_axis_gap_distinct() {
+        assert_eq!(
+            visual_missing(true, 2),
+            vec!["visual_source_entries", "temporal_positions"]
+        );
+        assert_eq!(visual_missing(false, 0), Vec::<String>::new());
+    }
+
+    #[test]
+    fn projection_counts_missing_axis_entries_and_keeps_range_entries() {
+        let node =
+            |id: &str| BundleNode::new(id, "memory", id, id, "ACTIVE", vec![], BTreeMap::new());
+        let edge = |id: &str, occurred: Option<&str>, observed: Option<&str>| {
+            let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+                .with_dimension("lane")
+                .with_scope_id("scope");
+            if let Some(value) = occurred {
+                explanation = explanation.with_occurred_at(value);
+            }
+            if let Some(value) = observed {
+                explanation = explanation.with_observed_at(value);
+            }
+            BundleRelationship::new("scope", id, "contains_entry", explanation)
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("about").expect("about"),
+            Role::new("memory").expect("role"),
+            node("about"),
+            vec![
+                node("scope"),
+                node("observed"),
+                node("inside"),
+                node("outside"),
+            ],
+            vec![
+                edge("observed", None, Some("2026-08-15T00:00:00Z")),
+                edge("inside", Some("2026-08-15T00:00:00Z"), None),
+                edge("outside", Some("2026-07-15T00:00:00Z"), None),
+            ],
+            vec![],
+            BundleMetadata::initial("visual-test"),
+        )
+        .expect("bundle");
+        let request = TemporalTraversalRequest::new(
+            TemporalDirection::Goto,
+            TemporalCursor::time("2026-09-01T00:00:00Z").expect("cursor"),
+        )
+        .with_axis(TemporalAxis::Occurred)
+        .with_window(TemporalWindow::new(20, 20));
+        let traversal = TemporalMemoryTraversal::traverse(&bundle, &request).expect("traversal");
+        let temporal = TemporalMemoryResult {
+            traversal,
+            source_bundle: bundle,
+            include: TemporalIncludeOptions::default(),
+        };
+        let query = VisualProjectionQuery {
+            about: "about".to_string(),
+            from: "2026-08-01T00:00:00Z".to_string(),
+            to: "2026-09-01T00:00:00Z".to_string(),
+            axis: TemporalAxis::Occurred,
+            dimensions: DimensionSelection::all(),
+            level_of_detail: VisualLevelOfDetail::Moment,
+            bin_count: 4,
+            page_entries: 20,
+            cursor: None,
+            depth: 1,
+        };
+        let result = build_visual_projection(&query, temporal, vec![]).expect("projection");
+
+        assert_eq!(result.entries.len(), 1);
+        assert_eq!(result.entries[0].ref_id, "inside");
+        assert_eq!(result.page.total, 1);
+        assert_eq!(result.missing, vec!["temporal_positions"]);
+        let missing = result
+            .metrics
+            .iter()
+            .find(|metric| metric.name == "missing_axis_entries")
+            .expect("missing metric");
+        assert_eq!(missing.value, 1.0);
+        assert_eq!(missing.scope, "selected_source");
     }
 }

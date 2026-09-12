@@ -1,11 +1,9 @@
 use kmp_domain::{
-    AuthorNodeCard, NodeBodyDescriptor, NodeCard, NodeCardStore, NodeCardWriteFuture, PortError,
-    node_card_policy,
+    AuthorNodeCard, NodeCard, NodeCardStore, NodeCardWriteFuture, PortError, node_card_policy,
 };
-use sha2::{Digest, Sha256};
 
 use super::engine::{Key, ReadTx, Table, WriteTx};
-use super::serdes::{CardRecord, DetailRecord, NodeRecord, decode, encode};
+use super::serdes::{CardRecord, NodeRecord, decode, encode};
 use super::store::EmbeddedKernelStore;
 
 /// Cards in requested order, preserving duplicates and missing slots.
@@ -26,34 +24,6 @@ pub(super) fn read_batch(
                 .transpose()
         })
         .collect()
-}
-
-/// `sha256:<lowercase hex>` over the exact stored record bytes.
-///
-/// The same definition the header table will carry, so a card authored before
-/// that table exists stays valid after it does. It is computed over the bytes
-/// as stored, never over the decoded text: escaping and field order are part
-/// of what changed when a record changed.
-pub(super) fn record_digest(raw: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(raw))
-}
-
-/// The descriptor of one body, derived from its stored record.
-///
-/// Authorship is the one path that legitimately reads a canonical record: the
-/// reader had to read the body to write about it. Compact reads never come
-/// here; they take descriptors from the port, which reads no record at all.
-fn descriptor_from_record(node_id: &str, raw: &[u8]) -> Result<NodeBodyDescriptor, PortError> {
-    let record: DetailRecord = decode("card body", raw)?;
-    let detail = kmp_domain::NodeDetailProjection::from(record);
-    Ok(NodeBodyDescriptor {
-        node_id: node_id.to_string(),
-        revision: detail.revision,
-        content_hash: detail.content_hash,
-        record_bytes: raw.len() as u64,
-        body_bytes: detail.detail.len() as u64,
-        record_digest: record_digest(raw),
-    })
 }
 
 fn stored_card(
@@ -80,10 +50,11 @@ impl NodeCardStore for EmbeddedKernelStore {
                     .get(Table::Nodes, Key::Str(&command.node_id))?
                     .map(|raw| decode::<NodeRecord>("card node", &raw)?.into_projection())
                     .transpose()?;
-                let descriptor = tx
-                    .get(Table::Details, Key::Str(&command.node_id))?
-                    .map(|raw| descriptor_from_record(&command.node_id, &raw))
-                    .transpose()?;
+                // The header, never the record. A reader already paid to read
+                // the body it is writing about; the kernel checking that write
+                // must not pay for it a second time.
+                let descriptor =
+                    super::node_body_descriptor::read_one(tx.as_ref(), &command.node_id)?;
                 let existing = stored_card(tx.as_ref(), &command.node_id, &command.language)?;
 
                 let admitted = match node_card_policy::admit(

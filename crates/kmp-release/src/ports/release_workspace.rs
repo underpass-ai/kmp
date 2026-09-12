@@ -9,7 +9,14 @@ use crate::domain::workflow_run_id::WorkflowRunId;
 
 pub trait ReleaseWorkspace {
     fn refresh_lockfile(&self) -> Result<(), ReleaseError>;
-    fn build_engine(&self) -> Result<(), ReleaseError>;
+    /// Build the engine and answer where it landed.
+    ///
+    /// Cargo chooses its own output directory — `CARGO_TARGET_DIR`, a
+    /// `build.target-dir` in config, a shared cache between checkouts — so the
+    /// path has to come back from the build that produced it. A caller that
+    /// names `target/debug/kmp-mcp` itself is guessing, and guesses wrong for
+    /// every checkout that does not use the default (#723).
+    fn build_engine(&self) -> Result<PathBuf, ReleaseError>;
     fn show_version_diff(&self) -> Result<(), ReleaseError>;
     fn require_clean(&self) -> Result<(), ReleaseError>;
     fn current_branch(&self) -> Result<BranchName, ReleaseError>;

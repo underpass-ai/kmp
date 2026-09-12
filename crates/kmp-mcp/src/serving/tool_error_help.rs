@@ -16,7 +16,14 @@ impl ToolErrorHelp {
         if matches!(
             error.code,
             ToolErrorCode::BackendError | ToolErrorCode::Unavailable
-        ) || arguments.get("about").and_then(Value::as_str) == Some("guide:kmp-agent")
+        ) || arguments
+            .get("about")
+            .and_then(Value::as_str)
+            .is_some_and(crate::guide::is_guide_about)
+            || error
+                .feedback
+                .iter()
+                .any(|item| item["code"] == "GUIDE_UNAVAILABLE")
         {
             return None;
         }
@@ -87,6 +94,9 @@ impl ToolErrorHelp {
             "kmp_write_memory" => ("verb:write", "example:semantic-batch"),
             "kmp_relabel" => ("verb:write", "example:dimensional-memberships"),
             "kmp_ingest" => ("verb:write", "example:canonical-ingest"),
+            // A card is a reader's own write about what it just read, so a
+            // refused one is answered from the write verb.
+            "kmp_condense" => ("verb:write", "example:canonical-ingest"),
             "kmp_wake" => ("verb:wake", "example:shared-resumption"),
             "kmp_ask" => ("verb:ask", "example:decision-history"),
             "kmp_relate" => ("verb:relate", "example:distributed-incident"),

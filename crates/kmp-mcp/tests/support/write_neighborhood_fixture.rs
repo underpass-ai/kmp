@@ -62,3 +62,28 @@ pub async fn events(path: &std::path::Path) -> usize {
         .expect("bundle")
         .event_count as usize
 }
+
+/// Seeds a fact carrying explicit clocks, so what the neighborhood shows for a
+/// stored endpoint can be compared with what the writer declared.
+pub async fn seed_at(
+    server: &KernelMcpServer,
+    key: &str,
+    kind: &str,
+    text: &str,
+    label: &str,
+    clocks: Value,
+) -> Value {
+    let mut memory = json!({"id":"source","kind":kind,"summary":text,"evidence":text});
+    for (axis, value) in clocks.as_object().expect("typed clocks") {
+        memory[axis] = value.clone();
+    }
+    let result = call(
+        server,
+        "kmp_write_memory",
+        json!({"about":ABOUT,"actor":"writer","idempotency_key":key,
+            "labels":{"task":[label]},"memories":[memory]}),
+    )
+    .await;
+    assert_eq!(result["status"], "committed", "{result}");
+    result["local_refs"]["source"].clone()
+}

@@ -37,11 +37,12 @@ use super::{
 /// other side is stuck", not "the other side is busy".
 const BUSY_TIMEOUT: Duration = Duration::from_secs(10);
 
-const ALL_TABLES: [Table; 13] = [
+const ALL_TABLES: [Table; 14] = [
     Table::Nodes,
     Table::Relations,
     Table::RelationsByTarget,
     Table::Details,
+    Table::DetailHeaders,
     Table::Cards,
     Table::Anchors,
     Table::EventLog,
@@ -421,6 +422,40 @@ impl Ops<'_> {
         result.optional().map_err(|error| read_error(table, &error))
     }
 
+    /// `length` and `typeof` on a blob are answered from the record header,
+    /// so SQLite does not walk the overflow pages a large value occupies.
+    /// The type is checked in the same row: a value stored as text would make
+    /// `length` count characters, and a silent under-count is worse here than
+    /// a refusal.
+    pub(super) fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
+        check_key(table, key)?;
+        let sql = value_len_sql(table);
+        let mut statement = self.prepare(&sql)?;
+        let read = |row: &rusqlite::Row<'_>| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?));
+        let result = match key {
+            Key::Str(k) => statement.query_row(params![k], read),
+            Key::Str2(a, b) => statement.query_row(params![a, b], read),
+            Key::Str3(a, b, c) => statement.query_row(params![a, b, c], read),
+            Key::U64(k) => statement.query_row(params![u64_to_sql(k)?], read),
+        };
+        let Some((length, stored_type)) = result
+            .optional()
+            .map_err(|error| read_error(table, &error))?
+        else {
+            return Ok(None);
+        };
+        if stored_type != "blob" {
+            return Err(PortError::InvalidState(format!(
+                "embedded store: `{table}` holds a {stored_type} value where a blob is required; its byte length cannot be measured"
+            )));
+        }
+        u64::try_from(length).map(Some).map_err(|_| {
+            PortError::InvalidState(format!(
+                "embedded store: `{table}` reported a negative value length ({length})"
+            ))
+        })
+    }
+
     pub(super) fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         if table.key_shape() != KeyShape::Str {
             return Err(scan_shape_mismatch(table, KeyShape::Str));
@@ -626,6 +661,9 @@ impl ReadTx for SqliteRead<'_> {
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         self.ops().get(table, key)
     }
+    fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
+        self.ops().value_len(table, key)
+    }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
@@ -671,6 +709,9 @@ impl SqliteWrite<'_> {
 impl ReadTx for SqliteWrite<'_> {
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         self.ops().get(table, key)
+    }
+    fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
+        self.ops().value_len(table, key)
     }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
@@ -750,6 +791,15 @@ fn adjacency_page_sql(table: Table, resume: bool, filtered: bool) -> String {
     }
     let after = if resume { " AND (k2, k3) > (?, ?)" } else { "" };
     format!("SELECT k1, k2, k3, v FROM \"{table}\" WHERE k1 = ?{after} ORDER BY k2, k3 LIMIT ?")
+}
+
+/// One source for the probe statement, so the test that checks SQLite still
+/// answers it from the record header reads the same SQL the probe issues.
+fn value_len_sql(table: Table) -> String {
+    format!(
+        "SELECT length(v), typeof(v) FROM \"{table}\" WHERE {}",
+        where_clause(table.key_shape())
+    )
 }
 
 fn read_error(table: Table, error: &rusqlite::Error) -> PortError {
@@ -885,3 +935,7 @@ mod tests {
 #[cfg(test)]
 #[path = "sqlite_adjacency_tests.rs"]
 mod adjacency_tests;
+
+#[cfg(test)]
+#[path = "sqlite_value_len_tests.rs"]
+mod value_len_tests;
