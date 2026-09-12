@@ -325,6 +325,13 @@ permit and its signature proof. Zoom changes the representation. Selecting a
 ref does not make a hidden memory part of a projection. The inspector reads
 the stored object; it is not an independent historical query.
 
+Visual projections admit an entry only when it has a usable position on the
+selected clock. An entry missing that clock is not placed using another clock:
+the response reports `missing: ["temporal_positions"]` and a
+`missing_axis_entries` metric scoped to the selected source. ChronoLoom shows
+that count beside the clock chips, so an unexpectedly sparse clock remains
+explicit rather than looking like an empty store.
+
 ```json
 {"tool":"kmp_view_open","save_as":"opened","arguments":{"about":"example:guide:four-clocks"}}
 ```
