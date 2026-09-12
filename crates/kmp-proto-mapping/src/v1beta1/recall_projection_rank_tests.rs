@@ -1,4 +1,10 @@
-use super::*;
+//! Ask paging keeps the retrieval rank the cursor is bound to.
+use kmp_proto::v1beta1::{
+    AskRequest, AskResponse, MemoryConfidence, MemoryDetailLevel, MemoryEvidence,
+};
+
+use super::response_value::ask_value;
+use super::typed_recall::project_ask_response;
 
 fn ranked_response() -> AskResponse {
     AskResponse {
