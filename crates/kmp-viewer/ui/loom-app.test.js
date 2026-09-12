@@ -502,6 +502,25 @@ test("an about with nothing on this clock renders an explicit empty state", asyn
   assert.ok(!calls.some((call) => call.name === "sync.viewOpen"), "nothing is announced without a range");
 });
 
+test("an empty clock preserves the probe's missing-time evidence", async () => {
+  const { app } = loom();
+  const { model, view } = app.state;
+  const metrics = [{ name: "missing_axis_entries", value: 3, scope: "selected_source" }];
+  const missing = ["temporal_positions"];
+  view.clock = "occurred";
+  app.api = {
+    ...app.api,
+    fetchProjection: async () => ({ entries: [], bins: [], clusters: [], relations: [],
+      page: { total: 0 }, metrics, missing }),
+  };
+  app.sync.reportView = () => {};
+  await app.data.loadAbout("project:no-occurrence");
+  assert.equal(view.full, null);
+  assert.equal(model.total, 0);
+  assert.deepEqual(model.projection.metrics, metrics);
+  assert.deepEqual(model.projection.missing, missing);
+});
+
 /* ---------------- selection & trace ---------------- */
 
 test("selecting a projected entry inspects it and renders the evidence", async () => {

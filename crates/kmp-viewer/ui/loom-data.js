@@ -277,6 +277,8 @@ KMP_APP.data = (() => {
             bins: [],
             clusters: [],
             relations: [],
+            metrics: probe.metrics || [],
+            missing: probe.missing || [],
           },
           "atlas",
         );

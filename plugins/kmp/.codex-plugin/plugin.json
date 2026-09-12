@@ -30,6 +30,7 @@
     "capabilities": [
       "Interactive"
     ],
+    "websiteURL": "https://underpassai.com/",
     "defaultPrompt": [
       "Recover what you know about this project before touching any file.",
       "Store this decision and its reasons in memory.",
