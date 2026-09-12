@@ -387,12 +387,13 @@ fn fetch<R: TraceSnapshotReader>(
         for ((id, node), mut presented) in nodes.into_iter().zip(presentations) {
             let state = admitted.state(&id);
             let body = bodies.remove(&id);
-            if state == TraceBodyState::Loaded
+            if state != TraceBodyState::Compact
                 && let Some(presented) = presented.as_mut()
             {
-                // The canonical body is in this response, so its card would
-                // be the same thing said twice. The state and provenance stay;
-                // only the redundant prose goes.
+                // Card prose is delivery, not merely card state: it survives
+                // only when Compact says that the card stood for the body.
+                // Named expansions stay canonical when loaded or deferred;
+                // their card state and provenance remain, but never its prose.
                 presented.text = None;
             }
             if let Some(body) = &body {
