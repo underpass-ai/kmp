@@ -304,3 +304,7 @@ async fn independent_writer_between_selected_graph_and_bodies_cannot_mix_either_
         }));
     }
 }
+
+// Keep the heavyweight contract fixture separate from snapshot-race controls.
+#[path = "trace_large_body_tests.rs"]
+mod large_body;

@@ -742,3 +742,39 @@ async fn following_every_offered_action_recovers_the_whole_selection_across_page
         &missing[..missing.len().min(8)]
     );
 }
+
+#[tokio::test]
+async fn changing_a_card_between_compact_pages_invalidates_cursor_not_manifest() {
+    let (_dir, server) = seeded().await;
+    for id in [ENTRY_A, ENTRY_B, SOURCE] {
+        structured(&condense(&server, id, "Resumen inicial.").await);
+    }
+    let descriptor = descriptor_of(&server, SOURCE).await;
+    let mut request = trace(json!({"proof": true, "compact": {"language": "es"}}));
+    request["page"] = json!({"entries": 1});
+    let first = call(&server, "kmp_trace", request.clone()).await;
+    let value = structured(&first);
+    let manifest = value["proof"]["manifest_id"].clone();
+    assert!(manifest.as_str().is_some_and(|s| !s.is_empty()));
+    let cursor = value["page"]["next_cursor"]
+        .as_str()
+        .expect("more compact pages");
+    let replaced = call(&server, "kmp_condense", json!({
+        "about": ABOUT, "ref": SOURCE, "language": "es", "scope": "node_body",
+        "card": "Resumen cambiado.",
+        "source": {"revision": descriptor["revision"], "record_digest": descriptor["record_digest"]},
+        "expect": {"card_revision": 1}, "actor": "reader-card-test"
+    })).await;
+    structured(&replaced);
+    let mut next = request.clone();
+    next["page"]["cursor"] = cursor.into();
+    let rejected = call(&server, "kmp_trace", next).await;
+    assert_eq!(rejected["result"]["isError"], true, "{rejected}");
+    assert_eq!(
+        rejected["result"]["structuredContent"]["error"]["code"],
+        "conflict"
+    );
+    assert!(wire(&rejected).contains("cursor"), "{rejected}");
+    let fresh = call(&server, "kmp_trace", request).await;
+    assert_eq!(structured(&fresh)["proof"]["manifest_id"], manifest);
+}

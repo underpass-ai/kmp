@@ -1123,3 +1123,61 @@ mod plan {
         );
     }
 }
+
+#[test]
+fn one_complete_group_survives_other_groups_shared_source_deferral() {
+    let mut snapshot = Snapshot::new();
+    // Independent c is fully backed; b and d share the large deferred source.
+    snapshot
+        .edges
+        .retain(|e| !(e.source_node_id == "source" && e.target_node_id == "a"));
+    for (id, template) in [("c", "b"), ("d", "b"), ("small", "source")] {
+        let mut node = snapshot.nodes[template].clone();
+        node.node_id = id.into();
+        snapshot.nodes.insert(id.into(), node);
+    }
+    for (from, to, rel) in [
+        ("a", "c", "depends_on"),
+        ("a", "d", "depends_on"),
+        ("small", "a", "supports"),
+        ("small", "c", "supports"),
+        ("source", "d", "supports"),
+    ] {
+        snapshot.edges.push(NodeRelationProjection {
+            source_node_id: from.into(),
+            target_node_id: to.into(),
+            relation_type: rel.into(),
+            explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
+                .with_rationale("Fixture declared dependency")
+                .with_evidence("Signed fixture")
+                .with_occurred_at("2026-01-01T00:00:00Z"),
+        });
+    }
+    let budget = ["a", "b", "c", "d", "small"]
+        .into_iter()
+        .map(record_bytes)
+        .sum();
+    let mut query = request(TraceBodyOptions {
+        max_record_bytes: Some(budget),
+        ..Default::default()
+    });
+    query.targets = ["b".into(), "c".into(), "d".into()].into();
+    let proof = bounded_trace_search(&snapshot, &query)
+        .expect("trace")
+        .proof
+        .expect("proof");
+    assert_eq!(proof.complete_groups, [1], "c is independently complete");
+    assert_eq!(
+        proof.incomplete_groups,
+        [0, 2],
+        "b and d need their shared source"
+    );
+    assert_eq!(
+        object(&proof, "source").body_state,
+        TraceBodyState::DeferredBudget
+    );
+    assert!(!snapshot.read_bodies().contains(&"source".into()));
+    assert!(proof.incomplete_entries.contains(&"b".into()));
+    assert!(proof.incomplete_entries.contains(&"d".into()));
+    assert!(!proof.incomplete_entries.contains(&"c".into()));
+}
