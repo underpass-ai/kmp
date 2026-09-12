@@ -3,12 +3,11 @@ use std::sync::Arc;
 
 use kmp_domain::{
     AuthorNodeCard, BundleNode, BundleRelationship, ContextEventStore, DimensionScopeMode,
-    DimensionSelection,
-    DimensionSelectionMode, EntryLabels, GraphNeighborhoodReader, KmpBundle, KmpMode,
-    LabelSelector, MemoryAboutIndexReader, MemoryDimensionIdentity, MemoryRelationType,
+    DimensionSelection, DimensionSelectionMode, EntryLabels, GraphNeighborhoodReader, KmpBundle,
+    KmpMode, LabelSelector, MemoryAboutIndexReader, MemoryDimensionIdentity, MemoryRelationType,
     NodeCard, NodeCardRejection, NodeCardStore, NodeDetailReader, NodeRelationshipReader,
-    ProjectionWriter, ResolutionTier, SnapshotStore,
-    TemporalCoordinate, TemporalMemoryTraversal, TemporalTraversalRequest, labels_by_entry,
+    ProjectionWriter, ResolutionTier, SnapshotStore, TemporalCoordinate, TemporalMemoryTraversal,
+    TemporalTraversalRequest, labels_by_entry,
 };
 
 use crate::ApplicationError;

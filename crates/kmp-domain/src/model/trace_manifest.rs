@@ -15,9 +15,7 @@
 
 use sha2::{Digest, Sha256};
 
-use crate::{
-    NodeBodyDescriptor, NodeProjection, NodeRelationProjection, TemporalCoordinate,
-};
+use crate::{NodeBodyDescriptor, NodeProjection, NodeRelationProjection, TemporalCoordinate};
 
 pub struct TraceManifestDigest(Sha256);
 

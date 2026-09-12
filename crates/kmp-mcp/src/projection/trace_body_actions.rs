@@ -40,7 +40,10 @@ fn bound_query(arguments: &Value) -> Value {
     if let Some(page) = query.get_mut("page").and_then(Value::as_object_mut) {
         page.remove("cursor");
         if page.is_empty() {
-            query.as_object_mut().expect("trace arguments").remove("page");
+            query
+                .as_object_mut()
+                .expect("trace arguments")
+                .remove("page");
         }
     }
     if let Some(object) = query.as_object_mut() {
@@ -77,8 +80,7 @@ pub(crate) fn attach(value: &mut Value, arguments: &Value) {
         // manifest it returns. Naming refs or an expectation of the selection
         // that was just refused would repeat the refusal.
         let fresh = bound_query(arguments);
-        value["expansion_refusal"]["fresh_read"] =
-            json!({"tool": "kmp_trace", "arguments": fresh});
+        value["expansion_refusal"]["fresh_read"] = json!({"tool": "kmp_trace", "arguments": fresh});
         return;
     }
     let Some(manifest) = value

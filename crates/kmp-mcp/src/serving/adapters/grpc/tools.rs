@@ -4,17 +4,15 @@ use serde_json::Value;
 
 use crate::projection::{
     ask_from_response, condense_from_response, enforce_inspect_output_budget,
-    enforce_temporal_output_budget,
-    ingest_from_response, inspect_from_response, relabel_from_response, relate_from_response,
-    temporal_from_response, trace_from_response, visual_projection_from_response,
-    wake_from_response,
+    enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
+    relabel_from_response, relate_from_response, temporal_from_response, trace_from_response,
+    visual_projection_from_response, wake_from_response,
 };
 use crate::serving::KernelMcpGrpcTlsConfig;
 use crate::serving::adapters::grpc::channel::connect_memory_client;
 use crate::serving::adapters::grpc::requests::{
     ask_request_from_arguments, condense_request_from_arguments, ingest_request_from_arguments,
-    inspect_request_from_arguments,
-    relabel_request_from_arguments, relate_request_from_arguments,
+    inspect_request_from_arguments, relabel_request_from_arguments, relate_request_from_arguments,
     temporal_move_request_from_arguments, temporal_near_request_from_arguments,
     trace_request_from_arguments, visual_projection_request_from_arguments,
     wake_request_from_arguments,
@@ -156,7 +154,8 @@ async fn grpc_condense(
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = condense_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+    let request =
+        condense_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let subject = format!("{}/{}", request.about, request.r#ref);
     let mut client = connect_memory_client(endpoint, tls)
         .await

@@ -180,7 +180,9 @@ async fn a_descriptor_only_read_puts_no_canonical_body_on_the_wire() {
     );
     let value = structured(&descriptors);
     assert!(
-        value["proof"]["manifest_id"].as_str().is_some_and(|m| !m.is_empty()),
+        value["proof"]["manifest_id"]
+            .as_str()
+            .is_some_and(|m| !m.is_empty()),
         "and the caller still gets the identity it needs to expand: {value}"
     );
     for object in value["objects"].as_array().expect("objects") {
@@ -302,7 +304,10 @@ async fn a_refused_expansion_carries_no_text_of_the_selection_it_refused() {
     assert_eq!(value["objects"], json!([]));
     let fresh = &value["expansion_refusal"]["fresh_read"];
     assert_eq!(fresh["tool"], "kmp_trace");
-    assert_eq!(fresh["arguments"]["search"]["expect_selection"], Value::Null);
+    assert_eq!(
+        fresh["arguments"]["search"]["expect_selection"],
+        Value::Null
+    );
 
     // The offered action is executable and returns a usable manifest.
     let again = call(&server, "kmp_trace", fresh["arguments"].clone()).await;
@@ -331,14 +336,16 @@ async fn the_offered_expansion_action_recovers_exactly_what_was_withheld() {
     let objects = objects_wire(&expanded);
     assert!(objects.contains(SOURCE_MARKER));
     assert!(objects.contains(ENTRY_MARKER));
-    for object in structured(&expanded)["objects"].as_array().expect("objects") {
+    for object in structured(&expanded)["objects"]
+        .as_array()
+        .expect("objects")
+    {
         assert_eq!(
             object["body_state"], "loaded",
             "the action named every ref that was pending: {object}"
         );
     }
 }
-
 
 #[tokio::test]
 async fn condense_over_the_tool_surface_holds_its_compare_and_set() {
@@ -351,7 +358,9 @@ async fn condense_over_the_tool_surface_holds_its_compare_and_set() {
     assert_eq!(card["status"], "valid");
     assert_eq!(card["source_record_digest"], descriptor["record_digest"]);
     assert!(
-        card["authored_at"].as_str().is_some_and(|at| !at.is_empty()),
+        card["authored_at"]
+            .as_str()
+            .is_some_and(|at| !at.is_empty()),
         "the kernel stamps authorship, the caller does not: {card}"
     );
 
@@ -408,7 +417,6 @@ async fn condense_over_the_tool_surface_holds_its_compare_and_set() {
     );
 }
 
-
 #[tokio::test]
 async fn a_named_expansion_with_compact_delivers_the_body_and_not_its_card_again() {
     // F3: when both could be emitted, only one is. A card beside the body it
@@ -451,7 +459,9 @@ async fn a_named_expansion_with_compact_delivers_the_body_and_not_its_card_again
         .expect("source");
     assert_eq!(expanded["body_state"], "loaded");
     assert!(
-        expanded["text"].as_str().is_some_and(|text| text.contains(SOURCE_MARKER)),
+        expanded["text"]
+            .as_str()
+            .is_some_and(|text| text.contains(SOURCE_MARKER)),
         "the body it named is delivered: {expanded}"
     );
     assert_eq!(
@@ -478,7 +488,10 @@ async fn a_named_expansion_with_compact_delivers_the_body_and_not_its_card_again
         omitted_by_cards,
         "the expanded body is delivered, so it is not counted as omitted"
     );
-    assert!(omitted_by_cards > 0, "and the other two cards did save their bodies");
+    assert!(
+        omitted_by_cards > 0,
+        "and the other two cards did save their bodies"
+    );
 }
 
 #[tokio::test]
@@ -542,7 +555,6 @@ async fn following_the_offered_actions_recovers_every_body_exactly_once() {
         "the chain reached every body of the selection: {recovered:?}"
     );
 }
-
 
 const WIDE_ABOUT: &str = "question:wide";
 const WIDE_COUNT: usize = 130;
@@ -626,10 +638,7 @@ fn offered(value: &Value) -> Vec<Value> {
 /// Walking the continuations is the point. An action is not allowed to depend
 /// on which page it happened to land on, and a consumer that stops at the
 /// first page must not lose refs the later ones carry.
-async fn whole_operation(
-    server: &KernelMcpServer,
-    arguments: Value,
-) -> (Vec<String>, Vec<Value>) {
+async fn whole_operation(server: &KernelMcpServer, arguments: Value) -> (Vec<String>, Vec<Value>) {
     let mut loaded = Vec::new();
     let mut actions = Vec::new();
     let mut call_arguments = arguments;
@@ -686,7 +695,10 @@ async fn following_every_offered_action_recovers_the_whole_selection_across_page
 
     let (_, first_actions) = whole_operation(&server, descriptor_only).await;
     let mut pending = first_actions;
-    assert!(!pending.is_empty(), "a descriptor-only read must offer an action");
+    assert!(
+        !pending.is_empty(),
+        "a descriptor-only read must offer an action"
+    );
     let mut recovered: Vec<String> = Vec::new();
     let mut seen_arguments: Vec<Value> = Vec::new();
     let mut page_entries = 32;

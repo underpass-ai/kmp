@@ -159,7 +159,10 @@ fn an_empty_named_expansion_is_a_descriptor_only_view() {
     let admitted = admit(&manifest, &descriptors, &options, &BTreeSet::new());
 
     assert!(admitted.load.is_empty());
-    assert_eq!(admitted.selected_body_bytes, 4, "two records of 2 text bytes");
+    assert_eq!(
+        admitted.selected_body_bytes, 4,
+        "two records of 2 text bytes"
+    );
     assert_eq!(admitted.omitted().len(), 2);
 }
 

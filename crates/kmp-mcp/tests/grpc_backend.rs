@@ -711,7 +711,9 @@ impl KernelMemoryService for FakeMemoryService {
         &self,
         _request: Request<kmp_proto::v1beta1::CondenseRequest>,
     ) -> Result<Response<kmp_proto::v1beta1::CondenseResponse>, Status> {
-        Err(Status::unimplemented("condense is not part of this fixture"))
+        Err(Status::unimplemented(
+            "condense is not part of this fixture",
+        ))
     }
 
     async fn ingest(

@@ -9,13 +9,12 @@ use kmp_domain::{
     NodeDetailReader, NodeRelationshipReader, ProjectionWriter, SnapshotStore, TemporalDirection,
 };
 use kmp_proto::v1beta1::{
-    AskRequest, AskResponse, ForwardRequest, ForwardResponse, GotoRequest, GotoResponse,
-    CondenseRequest, CondenseResponse, IngestRequest, IngestResponse, InspectRequest,
-    InspectResponse, NearRequest, NearResponse,
-    ProjectVisualRequest, ProjectVisualResponse, RelabelRequest, RelabelResponse, RelateRequest,
-    RelateResponse, RewindRequest, RewindResponse, TemporalMoveRequest, TemporalMoveResponse,
-    TemporalNearRequest, TraceRequest, TraceResponse, WakeRequest, WakeResponse,
-    kernel_memory_service_server::KernelMemoryService,
+    AskRequest, AskResponse, CondenseRequest, CondenseResponse, ForwardRequest, ForwardResponse,
+    GotoRequest, GotoResponse, IngestRequest, IngestResponse, InspectRequest, InspectResponse,
+    NearRequest, NearResponse, ProjectVisualRequest, ProjectVisualResponse, RelabelRequest,
+    RelabelResponse, RelateRequest, RelateResponse, RewindRequest, RewindResponse,
+    TemporalMoveRequest, TemporalMoveResponse, TemporalNearRequest, TraceRequest, TraceResponse,
+    WakeRequest, WakeResponse, kernel_memory_service_server::KernelMemoryService,
 };
 use opentelemetry::KeyValue;
 use prost::Message;
@@ -23,13 +22,12 @@ use tonic::{Code, Request, Response, Status};
 
 use crate::transport::proto_mapping_v1beta1::{
     ask_query_from_proto, ask_response_from_result, condense_command_from_proto,
-    condense_response_from_card, ingest_command_from_proto,
-    ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
-    relabel_command_from_proto, relabel_response_from_outcome, relate_query_from_proto,
-    relate_response_from_result, temporal_query_from_move_proto, temporal_query_from_near_proto,
-    temporal_response_from_result, trace_query_from_proto, trace_response_from_result,
-    visual_projection_query_from_proto, visual_projection_response_from_result,
-    wake_query_from_proto, wake_response_from_result,
+    condense_response_from_card, ingest_command_from_proto, ingest_response_from_outcome,
+    inspect_query_from_proto, inspect_response_from_result, relabel_command_from_proto,
+    relabel_response_from_outcome, relate_query_from_proto, relate_response_from_result,
+    temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
+    trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
+    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use crate::transport::support::map_application_error;
 use kmp_proto_mapping::v1beta1::recall_projection::{

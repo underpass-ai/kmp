@@ -104,17 +104,19 @@ pub fn admit(
         let named = options.refs.as_ref().map(|refs| refs.contains(node_id));
         match named {
             Some(false) => {
-                result
-                    .states
-                    .insert(node_id.clone(), state_without_body(node_id, options, reusable));
+                result.states.insert(
+                    node_id.clone(),
+                    state_without_body(node_id, options, reusable),
+                );
                 continue;
             }
             // No named expansion, and a compact read asks for cards, not for
             // canonical text.
             None if options.compact.is_some() => {
-                result
-                    .states
-                    .insert(node_id.clone(), state_without_body(node_id, options, reusable));
+                result.states.insert(
+                    node_id.clone(),
+                    state_without_body(node_id, options, reusable),
+                );
                 continue;
             }
             _ => {}
@@ -134,7 +136,9 @@ pub fn admit(
             }
             _ => {
                 result.admitted_record_bytes += descriptor.record_bytes;
-                result.states.insert(node_id.clone(), TraceBodyState::Loaded);
+                result
+                    .states
+                    .insert(node_id.clone(), TraceBodyState::Loaded);
                 result.load.push(node_id.clone());
             }
         }

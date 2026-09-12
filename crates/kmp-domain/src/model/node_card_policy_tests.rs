@@ -120,7 +120,8 @@ fn a_node_of_another_about_is_never_carded_from_this_one() {
     let foreign = entry("question:other");
     let body = descriptor(3, "sha256:three", 40);
 
-    let rejection = admit(&command(), Some(&foreign), Some(&body), None, None).expect_err("refused");
+    let rejection =
+        admit(&command(), Some(&foreign), Some(&body), None, None).expect_err("refused");
 
     assert!(rejection.is_not_found(), "{rejection}");
 }
@@ -131,8 +132,8 @@ fn compare_and_set_refuses_both_directions() {
     let body = descriptor(3, "sha256:three", 40);
     let existing = stored(2, "sha256:three", "2026-09-12T08:00:00Z");
 
-    let declared_absent = admit(&command(), Some(&node), Some(&body), Some(&existing), None)
-        .expect_err("refused");
+    let declared_absent =
+        admit(&command(), Some(&node), Some(&body), Some(&existing), None).expect_err("refused");
     assert_eq!(
         declared_absent,
         NodeCardRejection::CardAlreadyExists {

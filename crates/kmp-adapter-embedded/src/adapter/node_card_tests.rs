@@ -95,7 +95,11 @@ async fn a_refused_card_writes_nothing() {
     let (_dir, store, _digest) = seeded().await;
 
     let rejection = store
-        .author_node_card(command(7, "sha256:never-stored", NodeCardExpectation::Absent))
+        .author_node_card(command(
+            7,
+            "sha256:never-stored",
+            NodeCardExpectation::Absent,
+        ))
         .await
         .expect("store")
         .expect_err("a body at revision 7 was never stored");
@@ -215,7 +219,10 @@ async fn a_repeated_ref_reads_one_card_per_requested_slot() {
     let tx = store.begin_read().expect("read");
     let snapshot = super::super::trace_snapshot::TraceSnapshot(tx.as_ref());
     let cards = snapshot
-        .cards(&[NODE.to_string(), "unknown".into(), NODE.to_string()], "es")
+        .cards(
+            &[NODE.to_string(), "unknown".into(), NODE.to_string()],
+            "es",
+        )
         .expect("card batch");
 
     assert_eq!(cards.len(), 3, "every requested slot is answered");
@@ -224,7 +231,8 @@ async fn a_repeated_ref_reads_one_card_per_requested_slot() {
 }
 
 const SOURCE: &str = "question:cards:evidence:one";
-const SOURCE_BODY: &str = "The shared source body is the largest record on these paths, and every entry leans on it.";
+const SOURCE_BODY: &str =
+    "The shared source body is the largest record on these paths, and every entry leans on it.";
 
 fn source_node() -> ProjectionMutation {
     ProjectionMutation::UpsertNode(NodeProjection {
@@ -284,7 +292,10 @@ async fn a_shared_evidence_source_can_be_condensed_through_the_real_write_path()
     let descriptor = super::super::node_body_descriptor::read_one(tx.as_ref(), SOURCE)
         .expect("descriptor")
         .expect("descriptor");
-    assert!(kmp_domain::node_card_policy::describes(&stored, &descriptor));
+    assert!(kmp_domain::node_card_policy::describes(
+        &stored,
+        &descriptor
+    ));
 }
 
 #[tokio::test]
@@ -313,7 +324,6 @@ async fn a_ref_of_another_about_is_refused_however_it_is_labelled() {
 
     assert!(rejection.is_not_found(), "{rejection}");
 }
-
 
 #[tokio::test]
 async fn a_body_rewritten_under_the_same_public_tokens_is_refused_not_delivered() {

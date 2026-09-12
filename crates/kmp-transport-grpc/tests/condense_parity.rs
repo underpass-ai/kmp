@@ -187,7 +187,13 @@ async fn condense_over_grpc_binds_a_card_to_the_descriptor_the_store_returned()
     assert!(replayed.message().contains("card revision 1"), "{replayed}");
 
     let replaced = client
-        .condense(condense(SOURCE, "Resumen corregido.", &descriptor, false, 1))
+        .condense(condense(
+            SOURCE,
+            "Resumen corregido.",
+            &descriptor,
+            false,
+            1,
+        ))
         .await?
         .into_inner()
         .card

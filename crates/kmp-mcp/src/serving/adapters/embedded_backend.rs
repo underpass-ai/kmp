@@ -9,27 +9,25 @@ use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
 use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
 use kmp_proto_mapping::v1beta1::{
     AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
-    condense_command_from_proto, condense_response_from_card,
-    ingest_command_from_proto, ingest_response_from_outcome, inspect_query_from_proto,
-    inspect_response_from_result, relabel_command_from_proto, relabel_response_from_outcome,
-    relate_query_from_proto, relate_response_from_result, temporal_query_from_move_proto,
-    temporal_query_from_near_proto, temporal_response_from_result, trace_query_from_proto,
-    trace_response_from_result, visual_projection_query_from_proto,
-    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
+    condense_command_from_proto, condense_response_from_card, ingest_command_from_proto,
+    ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
+    relabel_command_from_proto, relabel_response_from_outcome, relate_query_from_proto,
+    relate_response_from_result, temporal_query_from_move_proto, temporal_query_from_near_proto,
+    temporal_response_from_result, trace_query_from_proto, trace_response_from_result,
+    visual_projection_query_from_proto, visual_projection_response_from_result,
+    wake_query_from_proto, wake_response_from_result,
 };
 use serde_json::Value;
 
 use crate::projection::{
     ask_from_response, condense_from_response, enforce_inspect_output_budget,
-    enforce_temporal_output_budget,
-    ingest_from_response, inspect_from_response, relabel_from_response, relate_from_response,
-    temporal_from_response, trace_from_response, visual_projection_from_response,
-    wake_from_response,
+    enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
+    relabel_from_response, relate_from_response, temporal_from_response, trace_from_response,
+    visual_projection_from_response, wake_from_response,
 };
 use crate::serving::adapters::grpc::requests::{
     ask_request_from_arguments, condense_request_from_arguments, ingest_request_from_arguments,
-    inspect_request_from_arguments,
-    relabel_request_from_arguments, relate_request_from_arguments,
+    inspect_request_from_arguments, relabel_request_from_arguments, relate_request_from_arguments,
     temporal_move_request_from_arguments, temporal_near_request_from_arguments,
     trace_request_from_arguments, visual_projection_request_from_arguments,
     wake_request_from_arguments,

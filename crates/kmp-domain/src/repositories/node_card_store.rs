@@ -4,8 +4,9 @@ use std::pin::Pin;
 
 use crate::{AuthorNodeCard, NodeCard, NodeCardRejection, PortError};
 
-pub type NodeCardWriteFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<Result<NodeCard, NodeCardRejection>, PortError>> + Send + 'a>>;
+pub type NodeCardWriteFuture<'a> = Pin<
+    Box<dyn Future<Output = Result<Result<NodeCard, NodeCardRejection>, PortError>> + Send + 'a>,
+>;
 
 /// Writes the derived card view.
 ///

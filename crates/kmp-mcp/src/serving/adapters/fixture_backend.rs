@@ -83,7 +83,9 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
         // compare-and-set is only meaningful against a real store.
         "kmp_condense" => read_fixture_tool_result(
             arguments,
-            &["about", "ref", "language", "scope", "card", "source", "expect"],
+            &[
+                "about", "ref", "language", "scope", "card", "source", "expect",
+            ],
             CONDENSE_RESPONSE_FIXTURE,
         ),
         "kmp_view_read_projection" => {

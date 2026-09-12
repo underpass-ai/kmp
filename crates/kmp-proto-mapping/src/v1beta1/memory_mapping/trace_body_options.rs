@@ -32,8 +32,7 @@ pub(super) fn body_options(options: &TraceSearchOptions) -> Result<TraceBodyOpti
         refs,
         expect_selection: (!options.expect_selection.is_empty())
             .then(|| options.expect_selection.clone()),
-        compact: (!options.compact_language.is_empty())
-            .then(|| options.compact_language.clone()),
+        compact: (!options.compact_language.is_empty()).then(|| options.compact_language.clone()),
     };
     body.validate()
         .map_err(|error| invalid_argument(error.to_string()))?;

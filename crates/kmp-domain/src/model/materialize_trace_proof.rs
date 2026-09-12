@@ -2,9 +2,9 @@ use super::trace_temporal_admission::TraceTemporalAdmission;
 use crate::{
     EvidencePathResult, NodeBodyDescriptor, NodeCard, NodeCardStatus, NodeDetailProjection,
     NodeProjection, PortError, RelationDirection, TemporalCoordinate, TraceBodyAdmission,
-    TraceBodyDelivery, TraceBodyOptions, TraceBodyState, TraceCompactSummary, TraceManifestDigest,
-    TraceProofObject, TraceProofResult, TraceSearchRequest, TraceSearchResult,
-    TraceExpansionPlan, TraceExpansionRefusal, TraceSnapshotReader, node_card_policy,
+    TraceBodyDelivery, TraceBodyOptions, TraceBodyState, TraceCompactSummary, TraceExpansionPlan,
+    TraceExpansionRefusal, TraceManifestDigest, TraceProofObject, TraceProofResult,
+    TraceSearchRequest, TraceSearchResult, TraceSnapshotReader, node_card_policy,
     trace_body_admission,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -294,7 +294,15 @@ fn fetch<R: TraceSnapshotReader>(
         // Descriptors first: identity and size of every selected body, without
         // reading one. Everything below decides delivery from these.
         let descriptors = load_descriptors(reader, &ids)?;
-        let manifest = manifest_id(seed, &ids, &nodes, &descriptors, &coordinates, &result, &missing);
+        let manifest = manifest_id(
+            seed,
+            &ids,
+            &nodes,
+            &descriptors,
+            &coordinates,
+            &result,
+            &missing,
+        );
         // Both refusals are decided here, before a card or a body is read.
         let refusal = options
             .expect_selection
@@ -369,10 +377,13 @@ fn fetch<R: TraceSnapshotReader>(
             verify_against_descriptor(&body, descriptors.get(id))?;
             bodies.insert(id.clone(), body);
         }
-        let mut summary = options.compact.as_ref().map(|language| TraceCompactSummary {
-            language: language.clone(),
-            ..TraceCompactSummary::default()
-        });
+        let mut summary = options
+            .compact
+            .as_ref()
+            .map(|language| TraceCompactSummary {
+                language: language.clone(),
+                ..TraceCompactSummary::default()
+            });
         for ((id, node), mut presented) in nodes.into_iter().zip(presentations) {
             let state = admitted.state(&id);
             let body = bodies.remove(&id);
@@ -409,8 +420,7 @@ fn fetch<R: TraceSnapshotReader>(
                 // claim a saving the response did not make.
                 if state == TraceBodyState::Compact {
                     summary.card_bytes += presented.text_bytes();
-                    summary.body_bytes_omitted +=
-                        descriptors.get(&id).map_or(0, |d| d.body_bytes);
+                    summary.body_bytes_omitted += descriptors.get(&id).map_or(0, |d| d.body_bytes);
                 }
             }
             result.objects.push(TraceProofObject {
@@ -538,7 +548,8 @@ fn verify_against_descriptor(
 ) -> Result<(), PortError> {
     let Some(descriptor) = descriptor else {
         return Err(PortError::InvalidState(format!(
-            "`{}` was loaded without a body descriptor", body.node_id
+            "`{}` was loaded without a body descriptor",
+            body.node_id
         )));
     };
     if body.revision != descriptor.revision
@@ -594,7 +605,11 @@ fn expansion_plan(
         admitted
             .state(id)
             .is_omitted()
-            .then(|| descriptors.get(id).map(|descriptor| descriptor.record_bytes))
+            .then(|| {
+                descriptors
+                    .get(id)
+                    .map(|descriptor| descriptor.record_bytes)
+            })
             .flatten()
     };
     let mut refs = Vec::new();
@@ -617,9 +632,11 @@ fn expansion_plan(
         total += record_bytes;
     }
     let oversized = options.max_record_bytes.and_then(|ceiling| {
-        suffix
-            .iter()
-            .find_map(|id| cost(id).filter(|bytes| *bytes > ceiling).map(|bytes| (id.clone(), bytes)))
+        suffix.iter().find_map(|id| {
+            cost(id)
+                .filter(|bytes| *bytes > ceiling)
+                .map(|bytes| (id.clone(), bytes))
+        })
     });
     let plan = TraceExpansionPlan {
         record_bytes: options.max_record_bytes.unwrap_or(total),

@@ -16,15 +16,17 @@ pub(super) fn project(response: &mut TraceResponse, proof: TraceProofResult) {
         // Nothing of this snapshot is projected: no object, no support, no
         // canonical text and no card.
         let warning = match &refusal {
-            TraceExpansionRefusal::SelectionChanged { .. } =>
+            TraceExpansionRefusal::SelectionChanged { .. } => {
                 "read_selection_changed: the selected proof table moved since the manifest this \
                  call declared. No canonical or card text was returned and nothing may be joined \
                  by ref across the two. Repeat the original read without proof_refs or \
-                 expect_selection to obtain the current manifest.",
-            TraceExpansionRefusal::UnknownRefs(_) =>
+                 expect_selection to obtain the current manifest."
+            }
+            TraceExpansionRefusal::UnknownRefs(_) => {
                 "unknown_expansion_refs: search.proof_refs named refs outside the selected proof \
                  table. The whole batch was refused rather than widening the selection or \
-                 delivering only part of it; expand refs this selection actually contains.",
+                 delivering only part of it; expand refs this selection actually contains."
+            }
         };
         response.expansion_refusal = Some(match refusal {
             TraceExpansionRefusal::SelectionChanged { expected, actual } => ProtoRefusal {
@@ -110,59 +112,60 @@ pub(super) fn project(response: &mut TraceResponse, proof: TraceProofResult) {
             let descriptor = o.descriptor;
             let card = o.card;
             TraceProofObject {
-            status: o.node.status,
-            coordinates: o
-                .coordinates
-                .iter()
-                .map(proto_coordinate_from_domain)
-                .collect(),
-            source_time: super::scalars::timestamp_from_sort_or_rfc3339(
-                o.node.properties.get("payload_time").map(String::as_str),
-            ),
-            support_clocks: persisted_support_clocks(&o.node.properties),
-            object: Some(InspectedObject {
-                r#ref: o.node.node_id,
-                kind: o.node.node_kind,
-                text: canonical_text(&o.body, descriptor_mode, o.node.summary),
-                metadata: persisted_memory_metadata(&o.node.properties),
-                source: persisted_memory_source(&o.node.properties)
-                    .unwrap_or_default()
-                    .into(),
-            }),
-            // Presence in the store, which a descriptor also answers when
-            // the body was withheld. Delivery is body_state, never this.
-            has_body: stored_body,
-            content_hash: o
-                .body
-                .as_ref()
-                .map(|b| b.content_hash.clone())
-                .or_else(|| descriptor.as_ref().map(|d| d.content_hash.clone()))
-                .unwrap_or_default(),
-            revision: o
-                .body
-                .as_ref()
-                .map(|b| b.revision)
-                .or_else(|| descriptor.as_ref().map(|d| d.revision))
-                .unwrap_or_default(),
-            required_record_bytes: required,
-            // Only the descriptor path reports delivery. The legacy read
-            // withholds nothing, so naming a state there would change the
-            // one output the no-option oracle is frozen against.
-            body_state: if descriptor_mode {
-                state.as_str().into()
-            } else {
-                String::new()
-            },
-            descriptor: descriptor.map(|d| NodeBodyDescriptor {
-                r#ref: d.node_id,
-                revision: d.revision,
-                content_hash: d.content_hash,
-                record_bytes: d.record_bytes,
-                body_bytes: d.body_bytes,
-                record_digest: d.record_digest,
-            }),
-            card: card.map(card_view),
-        }})
+                status: o.node.status,
+                coordinates: o
+                    .coordinates
+                    .iter()
+                    .map(proto_coordinate_from_domain)
+                    .collect(),
+                source_time: super::scalars::timestamp_from_sort_or_rfc3339(
+                    o.node.properties.get("payload_time").map(String::as_str),
+                ),
+                support_clocks: persisted_support_clocks(&o.node.properties),
+                object: Some(InspectedObject {
+                    r#ref: o.node.node_id,
+                    kind: o.node.node_kind,
+                    text: canonical_text(&o.body, descriptor_mode, o.node.summary),
+                    metadata: persisted_memory_metadata(&o.node.properties),
+                    source: persisted_memory_source(&o.node.properties)
+                        .unwrap_or_default()
+                        .into(),
+                }),
+                // Presence in the store, which a descriptor also answers when
+                // the body was withheld. Delivery is body_state, never this.
+                has_body: stored_body,
+                content_hash: o
+                    .body
+                    .as_ref()
+                    .map(|b| b.content_hash.clone())
+                    .or_else(|| descriptor.as_ref().map(|d| d.content_hash.clone()))
+                    .unwrap_or_default(),
+                revision: o
+                    .body
+                    .as_ref()
+                    .map(|b| b.revision)
+                    .or_else(|| descriptor.as_ref().map(|d| d.revision))
+                    .unwrap_or_default(),
+                required_record_bytes: required,
+                // Only the descriptor path reports delivery. The legacy read
+                // withholds nothing, so naming a state there would change the
+                // one output the no-option oracle is frozen against.
+                body_state: if descriptor_mode {
+                    state.as_str().into()
+                } else {
+                    String::new()
+                },
+                descriptor: descriptor.map(|d| NodeBodyDescriptor {
+                    r#ref: d.node_id,
+                    revision: d.revision,
+                    content_hash: d.content_hash,
+                    record_bytes: d.record_bytes,
+                    body_bytes: d.body_bytes,
+                    record_digest: d.record_digest,
+                }),
+                card: card.map(card_view),
+            }
+        })
         .collect();
     response.supports = proof
         .supports

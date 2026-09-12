@@ -107,7 +107,8 @@ fn a_refusal_offers_a_fresh_read_without_the_expectation_it_just_refused() {
     assert_eq!(fresh["tool"], "kmp_trace");
     assert_eq!(fresh["arguments"]["search"]["proof_refs"], Value::Null);
     assert_eq!(
-        fresh["arguments"]["search"]["expect_selection"], Value::Null,
+        fresh["arguments"]["search"]["expect_selection"],
+        Value::Null,
         "repeating the refused expectation would repeat the refusal"
     );
     assert_eq!(fresh["arguments"]["search"]["proof"], true);

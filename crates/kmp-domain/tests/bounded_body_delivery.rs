@@ -234,10 +234,11 @@ impl TraceSnapshotReader for Snapshot {
         let next = if exhausted {
             None
         } else {
-            rows.last().map(|((neighbor, relation), _)| RelationPosition {
-                neighbor: neighbor.clone(),
-                relation: relation.clone(),
-            })
+            rows.last()
+                .map(|((neighbor, relation), _)| RelationPosition {
+                    neighbor: neighbor.clone(),
+                    relation: relation.clone(),
+                })
         };
         Ok(AdjacencyPage {
             edges: rows.into_iter().map(|(_, edge)| edge).collect(),
@@ -369,9 +370,15 @@ fn a_ceiling_defers_bodies_without_changing_the_path_or_the_selection() {
     assert_eq!(bounded.supports, unbounded.supports);
     assert_eq!(bounded.missing_refs, unbounded.missing_refs);
     assert_eq!(bounded.missing_bodies, unbounded.missing_bodies);
-    assert_eq!(bounded.clock_unknown_entries, unbounded.clock_unknown_entries);
+    assert_eq!(
+        bounded.clock_unknown_entries,
+        unbounded.clock_unknown_entries
+    );
 
-    assert_eq!(object(&bounded, "source").body_state, TraceBodyState::DeferredBudget);
+    assert_eq!(
+        object(&bounded, "source").body_state,
+        TraceBodyState::DeferredBudget
+    );
     assert_eq!(object(&bounded, "source").body, None);
     assert!(
         !snapshot.read_bodies().contains(&"source".to_string()),
@@ -390,8 +397,7 @@ fn a_ceiling_defers_bodies_without_changing_the_path_or_the_selection() {
     assert_eq!(delivery.deferred_budget, 1);
     assert_eq!(delivery.admitted_record_bytes, ceiling);
     assert_eq!(
-        delivery.selected_body_bytes,
-        unbounded.body_bytes,
+        delivery.selected_body_bytes, unbounded.body_bytes,
         "the descriptor total equals what an unbounded read would load"
     );
     assert!(bounded.body_bytes < unbounded.body_bytes);
@@ -445,7 +451,11 @@ fn a_named_expansion_recovers_the_deferred_body_and_reads_nothing_else() {
     assert_eq!(expansion.refusal, None);
     assert_eq!(snapshot.read_bodies(), vec!["source".to_string()]);
     assert_eq!(
-        object(&expansion, "source").body.as_ref().expect("body").detail,
+        object(&expansion, "source")
+            .body
+            .as_ref()
+            .expect("body")
+            .detail,
         body_text("source")
     );
     for entry in ENTRIES {
@@ -729,8 +739,7 @@ fn an_expansion_naming_a_ref_outside_the_selection_delivers_nothing() {
         },
     );
 
-    let TraceExpansionRefusal::UnknownRefs(unknown) =
-        refused.refusal.as_ref().expect("refused")
+    let TraceExpansionRefusal::UnknownRefs(unknown) = refused.refusal.as_ref().expect("refused")
     else {
         panic!("a ref outside the selection is refused as such");
     };
@@ -755,7 +764,10 @@ fn a_body_the_store_lacks_stays_missing_under_every_option() {
         },
     );
 
-    assert_eq!(object(&bounded, "source").body_state, TraceBodyState::Missing);
+    assert_eq!(
+        object(&bounded, "source").body_state,
+        TraceBodyState::Missing
+    );
     assert_eq!(bounded.missing_bodies, vec!["source".to_string()]);
     assert_eq!(
         bounded.delivery.as_ref().expect("delivery").missing,
@@ -809,7 +821,6 @@ fn the_manifest_ignores_the_ceiling_and_the_requested_subset_but_not_the_selecti
     assert_ne!(wide.manifest_id, after.manifest_id);
 }
 
-
 #[test]
 fn a_changed_cut_over_the_same_selection_is_a_different_manifest() {
     // The refs, the relations and the descriptors are identical; only the
@@ -843,7 +854,6 @@ fn a_changed_cut_over_the_same_selection_is_a_different_manifest() {
         "the bound query is part of the selection's identity, not only its result"
     );
 }
-
 
 /// The seek mode, over the same graph, so the manifest's query binding and
 /// its candidate coverage can be exercised where the review found them thin.
@@ -913,7 +923,10 @@ mod seek {
             ..TraceBodyOptions::default()
         });
         renamed.roles[0].name = "effect".into();
-        assert_ne!(frontier.manifest_id, run_seek(&snapshot, &renamed).manifest_id);
+        assert_ne!(
+            frontier.manifest_id,
+            run_seek(&snapshot, &renamed).manifest_id
+        );
     }
 
     #[test]
@@ -992,14 +1005,16 @@ mod seek {
     }
 }
 
-
 /// The plan the kernel computes over the whole selection, which is what makes
 /// recovery independent of how a response is partitioned.
 mod plan {
     use super::*;
 
     fn plan_of(proof: &TraceProofResult) -> &TraceExpansionPlan {
-        proof.expansion_plan.as_ref().expect("a plan while bodies remain")
+        proof
+            .expansion_plan
+            .as_ref()
+            .expect("a plan while bodies remain")
     }
 
     #[test]
@@ -1018,7 +1033,10 @@ mod plan {
         assert_eq!(plan.refs, vec!["a", "b", "source"]);
         assert_eq!(
             plan.record_bytes,
-            ["a", "b", "source"].iter().map(|id| record_bytes(id)).sum::<u64>(),
+            ["a", "b", "source"]
+                .iter()
+                .map(|id| record_bytes(id))
+                .sum::<u64>(),
             "with no ceiling the plan carries its own exact total"
         );
         assert_eq!(plan.oversized, None);
