@@ -324,7 +324,7 @@ fn fetch<R: TraceSnapshotReader>(
                 // The whole batch is refused. Delivering only the refs that
                 // happened to be inside would answer a different question and
                 // hide the mistake in a successful-looking response.
-                (!unknown.is_empty()).then(|| TraceExpansionRefusal::UnknownRefs(unknown))
+                (!unknown.is_empty()).then_some(TraceExpansionRefusal::UnknownRefs(unknown))
             });
         if let Some(refusal) = refusal {
             return Ok(TraceProofResult {

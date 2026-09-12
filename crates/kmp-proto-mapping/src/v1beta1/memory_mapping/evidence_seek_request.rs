@@ -94,7 +94,7 @@ pub fn evidence_seek_request_from_proto(
     let defaults = TraceSearchLimits::default();
     let or_default = |value, default| if value == 0 { default } else { value };
     let result = EvidencePathRequest {
-        body: super::trace_body_options::body_options(&options)?,
+        body: super::trace_body_options::body_options(options)?,
         proof: options.proof,
         about: request.about.clone(),
         from: request.from.clone(),
