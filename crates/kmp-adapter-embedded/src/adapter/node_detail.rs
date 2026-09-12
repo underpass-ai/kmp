@@ -18,6 +18,22 @@ pub(super) fn read_batch(
         .collect()
 }
 
+/// Stored record bytes for each id, in the requested order, duplicates and
+/// absent slots preserved exactly as `read_batch` reports them. Nothing is
+/// loaded or decoded: the answer counts the stored detail record, envelope
+/// included, which is larger than the canonical body inside it. It bounds what
+/// a later read would fetch from this table, not the memory a request holds.
+#[allow(dead_code)] // Until the #539 admission consumer lands.
+pub(super) fn size_batch(
+    tx: &dyn ReadTx,
+    node_ids: &[String],
+) -> Result<Vec<Option<u64>>, PortError> {
+    node_ids
+        .iter()
+        .map(|id| tx.value_len(Table::Details, Key::Str(id)))
+        .collect()
+}
+
 impl NodeDetailReader for EmbeddedKernelStore {
     async fn load_node_detail(
         &self,
@@ -45,3 +61,7 @@ impl NodeDetailReader for EmbeddedKernelStore {
         .await
     }
 }
+
+#[cfg(test)]
+#[path = "node_detail_size_tests.rs"]
+mod size_tests;
