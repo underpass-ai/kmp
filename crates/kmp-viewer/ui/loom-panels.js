@@ -40,6 +40,21 @@ KMP_APP.panels = (() => {
   const kindColor = (kind) => KMP_APP.scene.kindColor(kind);
   const classColor = (cls) => KMP_APP.scene.classColor(cls);
 
+  /* A list row that acts like a button acts like one for the keyboard too.
+     These rows are <li> so the list keeps its structure for a reader; this
+     gives them the role, the tab stop and the two keys that go with it. */
+  function activateOn(node, run) {
+    node.tabIndex = 0;
+    node.setAttribute("role", "button");
+    node.addEventListener("click", run);
+    node.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      run();
+    });
+    return node;
+  }
+
   /* ---------------- abouts, lanes, legends ---------------- */
 
   function renderAbouts() { KMP_APP.catalogue.renderAbouts(); }
@@ -67,12 +82,13 @@ KMP_APP.panels = (() => {
       dot.style.background = kindColor(kind);
       item.append(dot, el("span", "", `${kind} `), el("span", "muted", String(count)));
       item.title = "click to dim/undim this kind";
-      item.addEventListener("click", () => {
+      activateOn(item, () => {
         if (view.dimmedKinds.has(kind)) view.dimmedKinds.delete(kind);
         else view.dimmedKinds.add(kind);
         renderRail();
         KMP_APP.scene.requestDraw();
       });
+      item.setAttribute("aria-pressed", view.dimmedKinds.has(kind) ? "true" : "false");
       kindList.append(item);
     }
 
@@ -353,15 +369,12 @@ KMP_APP.panels = (() => {
       list.append(el("li", "muted", "none"));
       return;
     }
-    const link = (id) => {
-      const anchor = el("a", "rel-target mono", id);
-      anchor.addEventListener("click", async () => {
+    const link = (id) =>
+      activateOn(el("a", "rel-target mono", id), async () => {
         if (await KMP_APP.selection.selectEntry(id)) {
           KMP_APP.viewport.centerOn(id);
         }
       });
-      return anchor;
-    };
     for (const relation of relations) {
       const item = el("li");
       const head = el("div", "rel-head");
@@ -441,14 +454,21 @@ KMP_APP.panels = (() => {
         };
         if (KMP_LOOM.matchesQuery(query, fields)) view.searchHits.add(m.ref);
       }
+      /* A search that matches nothing is a result too. Saying so beats an
+         empty rail, which reads as "still working" or "nothing loaded". */
+      if (!view.searchHits.size) {
+        results.append(
+          el("li", "empty-hint", "No memory in this window matches that query.")
+        );
+      }
       if (view.searchHits.size > 50) {
-        results.append(el("li", "muted", `${view.searchHits.size} hits · showing 50`));
+        results.append(el("li", "empty-hint", `${view.searchHits.size} hits · showing 50`));
       }
       for (const ref of [...view.searchHits].slice(0, 50)) {
         const m = model.byRef.get(ref);
         const item = el("li", "", m.text.length > 60 ? m.text.slice(0, 59) + "…" : m.text);
         item.append(el("span", "sub mono", ref));
-        item.addEventListener("click", () => {
+        activateOn(item, () => {
           KMP_APP.selection.selectEntry(ref);
           KMP_APP.viewport.centerOn(ref);
         });

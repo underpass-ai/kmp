@@ -594,9 +594,10 @@ test("relation links reveal entries outside the projection and center only succe
     const { app, context } = loom();
     const elements = new Map();
     const element = (tag) => ({
-      tag, children: [], listeners: {}, style: {},
+      tag, children: [], listeners: {}, style: {}, attributes: {},
       append(...children) { this.children.push(...children); },
       addEventListener(event, handler) { this.listeners[event] = handler; },
+      setAttribute(name, value) { this.attributes[name] = value; },
     });
     const get = (id) => {
       if (!elements.has(id)) elements.set(id, element("div"));
