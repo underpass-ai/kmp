@@ -3688,7 +3688,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:bc26d66aa616c5185f2e",
+    "idempotency_key": "ingest:guide-sync:1:person:7b293ab1a6bc65aeed4d",
     "memory": {
       "dimensions": [
         {
@@ -3738,7 +3738,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3769,7 +3769,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3800,7 +3800,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3831,7 +3831,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3862,7 +3862,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3893,11 +3893,11 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Say: show me the memory behind this decision. Your agent retrieves the evidence and guides the same view you see. ChronoLoom names who moved it and why. Take control keeps the current frame; Undo reverses the last memory-view move. Compare abouts as 3D planes or flatten the same scene, filter by labels, and move or resize the shared time window in either camera. A loading indicator stays visible while clocks, layers or evidence update; the content dims and fades back in when ready. Reduced motion keeps the status without animation."
+          "text": "Say: show me the memory behind this decision. Your agent retrieves the evidence and guides the same view you see. ChronoLoom names who moved it and why. Take control keeps the current frame; Undo reverses the last memory-view move. Use the clock chips to choose Occurred, Observed, Ingested or Validity explicitly. Compare abouts as 3D planes or flatten the same scene, filter by labels, and use the grouped controls in the shared time strip to move, resize, focus or revisit the window. If the inspector is empty, pick a memory in the scene, results or picker to see its record, clocks and relations; an empty scene explains whether to widen the window, choose another clock or clear filters. A loading indicator stays visible while clocks, layers or evidence update; the content dims and fades back in when ready. Reduced motion keeps the status without animation."
         },
         {
           "coordinates": [
@@ -3924,7 +3924,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3955,7 +3955,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3986,7 +3986,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4017,7 +4017,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4048,7 +4048,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4079,7 +4079,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4110,7 +4110,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4141,7 +4141,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4172,7 +4172,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4203,7 +4203,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4234,7 +4234,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4265,11 +4265,11 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "The TEMP-4 permit is signed on day one, first observed by a reviewer on day three and recorded by KMP on the real execution day four. It applies from day two until day five, exclusive. Ask the agent to read guide:kmp-agent:example:four-clocks and resolve its calendar before running the isolated example:guide:four-clocks. Start in ChronoLoom at Atlas, narrow the occurred window, then choose Moment to inspect the permit and the signature check that supports it. Change the same window to observed: it is empty until you move to day three. Ingested shows the actual run day; validity on day two shows the applicable permit, not earlier knowledge of it. Follow the support edge and read the separate source and rationale. Moving the viewer does not change a native memory query or rewrite its clocks. The exercise uses a decision, an observation and feedback because the three sources have those roles; it does not measure a new writer LLM."
+          "text": "The TEMP-4 permit is signed on day one, first observed by a reviewer on day three and recorded by KMP on the real execution day four. It applies from day two until day five, exclusive. Ask the agent to read guide:kmp-agent:example:four-clocks and resolve its calendar before running the isolated example:guide:four-clocks. Start in ChronoLoom at Atlas, choose the clock chip for Occurred and narrow the window with the grouped move/size controls, then choose Memories to inspect the permit and the signature check that supports it. Change the same window to Observed: it is empty until you move it to day three. Ingested shows the actual run day; Validity on day two shows the applicable permit, not earlier knowledge of it. An entry without a position on the selected clock stays out of the scene and the clock chips show the missing count; the empty inspector tells you where to select a memory. Follow the support edge and read the separate source and rationale. Moving the viewer does not change a native memory query or rewrite its clocks. The exercise uses a decision, an observation and feedback because the three sources have those roles; it does not measure a new writer LLM."
         },
         {
           "coordinates": [
@@ -4296,7 +4296,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4327,7 +4327,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4358,7 +4358,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4389,7 +4389,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4420,7 +4420,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4451,7 +4451,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "bc26d66aa616c5185f2ef74666da3bd6993db3b4ee28834922d0fe7140b0b939",
+            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
             "guide_version": "1",
             "source": "editorial"
           },
