@@ -48,6 +48,19 @@ pub(super) fn project(response: &mut TraceResponse, proof: TraceProofResult) {
                 .into(),
             ..TraceProofStatus::default()
         });
+        // Nothing of the old selection survives the refusal, not only its
+        // bodies. Relations carry their stored why and evidence, routes carry
+        // the shape of a selection this caller may no longer assume, and a
+        // consumer that joined them to a later response would be reading a
+        // proof nobody selected.
+        response.trace.clear();
+        response.routes.clear();
+        response.candidates.clear();
+        response.groups.clear();
+        response.objects.clear();
+        response.supports.clear();
+        response.gaps.clear();
+        response.seek = None;
         response.warnings.push(warning.into());
         return;
     }
