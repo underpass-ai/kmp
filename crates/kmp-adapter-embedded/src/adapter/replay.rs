@@ -41,6 +41,9 @@ impl EmbeddedKernelStore {
             tx.clear(Table::Relations)?;
             tx.clear(Table::RelationsByTarget)?;
             tx.clear(Table::Details)?;
+            // Cleared and rebuilt with Details, in this same transaction: the
+            // two tables are never observable out of step.
+            tx.clear(Table::DetailHeaders)?;
             tx.clear(Table::Anchors)?;
 
             let mutations_applied = apply_mutations_in_transaction(tx.as_mut(), mutations)?;

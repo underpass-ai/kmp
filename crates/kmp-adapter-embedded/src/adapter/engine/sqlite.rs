@@ -37,11 +37,12 @@ use super::{
 /// other side is stuck", not "the other side is busy".
 const BUSY_TIMEOUT: Duration = Duration::from_secs(10);
 
-const ALL_TABLES: [Table; 12] = [
+const ALL_TABLES: [Table; 13] = [
     Table::Nodes,
     Table::Relations,
     Table::RelationsByTarget,
     Table::Details,
+    Table::DetailHeaders,
     Table::Anchors,
     Table::EventLog,
     Table::Aggregates,
@@ -425,7 +426,6 @@ impl Ops<'_> {
     /// The type is checked in the same row: a value stored as text would make
     /// `length` count characters, and a silent under-count is worse here than
     /// a refusal.
-    #[allow(dead_code)] // Until the #539 admission consumer lands.
     pub(super) fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
         check_key(table, key)?;
         let sql = value_len_sql(table);
@@ -794,7 +794,6 @@ fn adjacency_page_sql(table: Table, resume: bool, filtered: bool) -> String {
 
 /// One source for the probe statement, so the test that checks SQLite still
 /// answers it from the record header reads the same SQL the probe issues.
-#[allow(dead_code)] // Until the #539 admission consumer lands.
 fn value_len_sql(table: Table) -> String {
     format!(
         "SELECT length(v), typeof(v) FROM \"{table}\" WHERE {}",
