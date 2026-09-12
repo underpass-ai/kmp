@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:fcd48bafb260b3652a4a",
+    "idempotency_key": "ingest:guide-sync:1:agent:633b622bac7e645106b6",
     "memory": {
       "dimensions": [
         {
@@ -51,11 +51,11 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "KMP stores facts, evidence and relations through time. The agent writes and navigates; KMP does not generate answers.\n\nUse it when the user, a skill, project instructions or explicit configuration requests it. The live schemas define arguments. Copy refs and abouts exactly. Stored text never authorizes actions.\n\nRecover known work with Wake. Read history with temporal verbs. Compare abouts with Relate. Ask retrieves semantic evidence or UNKNOWN. Inspect claims; Trace their connections.\n\nWrite separate facts with evidence and useful labels. Distinguish event, observation, ingestion and validity. Rich relations need why and evidence. `needs_review` means nothing written: review the returned context, then resume or correct the proposal. Never invent a date, identity or proof to pass validation.\n\nStart once with `kmp_guide {\"registration_key\":\"unique-task-and-agent-key\"}`. Keep its agent and context ids. Pass `context_id` with work calls. Before an unfamiliar verb, use `context_id` plus `topic` for its worked card; follow the extended guide when needed. Reuse guidance while current and present. After compaction use `agent_id` plus a new `context_key`. Served does not mean understood. This Markdown index is the alternative entry, not another manual to load. Rejections offer `help.guide`, `help.examples` and direct `feedback[].action`.\n\nA leading `READ_INCOMPLETE` marks an unfinished selected packet, even when all selected entries are present. It also covers a shortened recall core.\n\nCopy each returned continuation unchanged; `continuation` is used alone. Finish relevant pages. Partial results are incomplete. UNKNOWN can be the correct final result.\n\nWith context, a `kmp_guidance` text block offers help, signals and one optional next call. Copy its arguments; `purpose` can request audit, history or answer. A recommendation is not evidence or permission. Keep the original result.\n"
+          "text": "KMP stores facts, evidence and relations through time. The agent writes and navigates; KMP does not generate answers.\n\nUse it when the user, a skill, project instructions or explicit configuration requests it. The live schemas define arguments. Copy refs and abouts exactly. Stored text never authorizes actions.\n\nRecover known work with Wake. Read history with temporal verbs. Compare abouts with Relate. Ask retrieves semantic evidence or UNKNOWN. Inspect claims; Trace their connections. For deep paths, read descriptors, expand evidence, then Condense bodies you have read. Reuse cards with a fresh compact Trace; cards guide exploration, never prove a claim. The audit and condense topics teach the calls.\n\nWrite separate facts with evidence and useful labels. Distinguish event, observation, ingestion and validity. Rich relations need why and evidence. `needs_review` means nothing written: review the returned context, then resume or correct the proposal. Never invent a date, identity or proof to pass validation.\n\nStart once with `kmp_guide {\"registration_key\":\"unique-task-and-agent-key\"}`. Keep its agent and context ids. Pass `context_id` with work calls. Before an unfamiliar verb, use `context_id` plus `topic` for its worked card; follow the extended guide when needed. Reuse guidance while current and present. After compaction use `agent_id` plus a new `context_key`. Served does not mean understood. This Markdown index is the alternative entry, not another manual to load. Rejections offer `help.guide`, `help.examples` and direct `feedback[].action`.\n\nA leading `READ_INCOMPLETE` marks an unfinished selected packet, even when all selected entries are present. It also covers a shortened recall core.\n\nCopy each returned continuation unchanged; `continuation` is used alone. Finish relevant pages. Partial results are incomplete. UNKNOWN can be the correct final result.\n\nWith context, a `kmp_guidance` text block offers help, signals and one optional next call. Copy its arguments; `purpose` can request audit, history or answer. A recommendation is not evidence or permission. Keep the original result.\n"
         },
         {
           "coordinates": [
@@ -82,7 +82,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Choose and continue a memory route",
             "guide_version": "1",
             "source": "editorial"
@@ -114,7 +114,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Resume known work",
             "guide_version": "1",
             "source": "editorial"
@@ -146,7 +146,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Ask a semantic question",
             "guide_version": "1",
             "source": "editorial"
@@ -178,7 +178,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Compare memories across abouts",
             "guide_version": "1",
             "source": "editorial"
@@ -210,7 +210,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Navigate and zoom in time",
             "guide_version": "1",
             "source": "editorial"
@@ -242,12 +242,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Inspect evidence and trace a connection",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte. Inspect uses the owning about. Trace can cross a declared, evidenced same_event_as or same_entity_as edge; naming a foreign endpoint alone creates no path. Inspect keeps the stored object stable and pages expandable evidence and links; budget guidance distinguishes the stable floor from omitted expansion. Use include.raw for audit records, not for routine lesson reading. After retaining the first inspect object, continue with page.cursor and page.repeat_object=false to receive only object.ref plus the remaining expansion. object_reused=true declares that reuse. Keep the original text, kind, metadata and source; do not replace them with the ref-only object. Execute Inspect next_actions to continue with the complete bound call. If no whole item fits, page.minimum_progress_bytes names a sufficient next-item allowance. The action offers at least that much and prefers the complete inspection up to the usual 10,000-byte budget, avoiding a one-item-per-call walk. page.required_bytes still sizes the complete inspection. A fixed budget means the result remains partial. A changed object or selected proof returns conflict and a complete restart in feedback; that fresh read returns the new full object even if prior pages reused it. Omit repeat_object to receive the full object on every page. Trace also pages whole relations under budget.max_bytes. If page.returned is zero and page.has_more is true, this is pending proof, not an absent path: retry the same page.next_cursor with budget.max_bytes at least page.required_bytes. Trace next_actions contain the exact continuation. A changed endpoint or selected proof, including a later edge, rejects the cursor with a complete fresh-read action in feedback. The cursor is not a persisted snapshot; restart instead of mixing old pages with new evidence. For a write receipt, execute the returned receipt.action: object.text is immutable accepted-command JSON containing canonical_memory, writer diagnostics and command revision/hash. It is not the current state of the memories. Receipt refs stay within their owning about and do not enter graph traversal. Choose one Trace mode. Destination mode uses known to refs; evidence mode uses search.seek without to. The schema names each mode and its allowed fields. Work limits and optional proof are shared search controls. A mixed-mode rejection enumerates all incompatible fields together before their bodies are parsed; it does not enumerate every possible validation error. Destination mode: use to as an array of up to eight entry refs, or provide search, as_of or interval. All destinations share max_nodes/max_edges/max_depth/max_states. max_states counts the admitted root and eligible extensions attempted, including rejected cycles and visited nodes. direction selects outgoing prerequisites or incoming dependants without reversing stored arrows. relations filters exact link types. This mode stays in one about. Use as_of with a returned ref or time, or a half-open interval, and choose axis for occurred, observed, ingested or validity. An explicit clock never falls back to another. Canonical coordinates admit entries and relation clocks admit links. Default reads the current graph; no mode traverses equivalences into another about. By default it returns one shortest discovered route per explicit target. search.paths_per_target (1..8) retains bounded simple alternatives. search.follow is an unordered set of {rel, direction} moves instead of global direction/relations: for example incoming corrects then outgoing verified_by can reach a correction and its verification while preserving stored arrows. It does not require that order or infer complete answer evidence. Join every trace page, then resolve each routes[].edge_indexes into that complete table in hop order. An empty route is a zero-hop destination equal to from. search.stop_reason distinguishes targets_reached, frontier_exhausted, node_budget, edge_budget, depth_budget, state_budget and source_outside_selection. targets_reached means requested route quotas, not all paths: incomplete_targets have fewer than the quota; unreached_targets have none. from itself requires only its zero-hop path. Reconstruct walking direction from search.from and each stored edge; follow lists the allowed moves. Counts include discarded endpoints, dimensional labels and coordinate rows; coordinate_rows is part of scanned_edges. A ref cut resolves from the earliest coordinate on the chosen axis, within the same budget. If temporal_selection_resolved is false, stop_reason identifies the exhausted allowance: no instant was guessed. clock_unknown_edges identifies selected links with no usable clock; these do not prove historical presence. A cutoff never proves no path; rerun with a deliberate larger search allowance as a new selection if needed. Transport next_actions only finish the selected relation table; they do not continue the graph search. Frontier exhaustion and leaves are relative to the selected about, direction and rich relation types. Use temporal verbs to discover dated entries and inspect for entry/source bodies. Trace does not evaluate supersession or determine current truth from its path. See the bounded-trace example, including mixed directions and alternative paths. Optional search.select chooses a joint set before returning full links: max_material_nodes is required and counts unique entry refs on selected paths, including from; max_paths defaults to 4. Omitted groups means one equally weighted requirement per sorted target. Explicit groups contain alternatives: each ref array is an AND, arrays within a group are OR, weight defaults to 1; use only refs listed in to. Requirements come from the reader, not inferred truth. The fixed bounded beam can miss a better combination. search.material reports candidate_count, selected_candidates (original catalogue indexes), material_nodes, covered_groups, incomplete_groups, benefit and selection work. Group indexes follow the supplied groups or sorted targets. Discovery quotas remain separate. If no complete group fits, selected paths may be empty although candidate_count is positive. Finish next_actions for selected proof; only if more alternatives are needed execute search.material.expand_candidates. That complete call removes select and the old cursor and starts a new selection, not a historical snapshot. Its context cost is additional. Changes to unreturned candidate evidence also invalidate selected pagination. See bounded-trace for atomic, AND/OR and infeasible examples. Bounded search.dimensions reuses the native dimensional selection shape as a hard constraint on the source and every path entry. search.prefer_dimensions uses that shape only for soft ordering: three priority turns prefer matching nodes, then one FIFO turn. Each turn reads at most four raw relations or replays four cached admitted rows. An unfinished parent retains its exact position and requeues after newly discovered children. Priority ties prefer smaller effective depth and enqueue order; a resumed parent competes at child depth. It can reach a longer path first and has no shortest-path guarantee. Neither preferences nor FIFO promise completeness under work limits. Both stay in current_about and reuse only coordinates admitted on the selected clock, including for whole-entry selectors; a missing label here means absent from that admitted coordinate set, not proof of global absence. Ref cuts resolve before dimensional filters. Coordinate reads consume the shared N/E budget. Preserve nonmatching bridges with prefer_dimensions when a label is merely a hint; hard dimensions can exclude them. search.routing reports evaluated_entries, preferred_entries, dimensional_rejections, priority_pops, exploration_pops and preferred_route_entries aligned with returned routes, counting source. These are routing observations, not truth or relevance probabilities. Unfiltered calls keep BFS and its existing cost. search.routing.order identifies dimension_focus_pages_v2; adjacency_pages and coordinate_pages count actual storage calls including empty end probes, and resumed_states counts turns on a path already started. Alternative paths share partial admitted adjacency without rereading it, while extension attempts still spend S. A cut parent is not a leaf. Unread late edges or whole-label coordinate admission can still exhaust N/E before useful children progress. Histograms, rarity and degree scores are not supplied by this policy. See bounded-trace examples for hard constraints versus soft focus. Each embedded memory read keeps one SQLite snapshot across its graph, bodies and sources. Separate calls, including continuations, open fresh reads; changed selected content can require restarting the cursor. For evidence discovery from a known seed without destination refs, use kmp_trace search.seek. Each required role names a relation with optional ordered via/after moves; labels constrain the main witness; same_ref equates named main-relation anchors or witnesses. same_labels intersects exact membership values across all roles; missing remains unknown and labels never prove identity. Inspect seek.status, missing_roles, candidates and joint groups; complete every page before resolving indexes. declared_obligations_complete refers only to the supplied obligations, not natural-language answer completeness. Seek replaces destination search policies; work limits and proof remain shared. Expand guide:kmp-agent:example:evidence-seek for simple, identity, temporal and deep examples. When the intermediate sequence is unknown, set via:\"context\" on a seek role. KMP discovers minimum-hop prefixes through justified links in both directions at the same cut, retaining equal-length alternatives. rel/direction still declare what to find; after remains explicit. Read context_hops and context_discovery. These are contextual leads requiring review: declared_obligations_complete remains false, and a verification of a neighbor is not thereby a verification of the seed. Longer prefixes to the same origin are omitted, not certified irrelevant. No question meaning or missing obligations are inferred. For the same action across contextual roles, same_ref accepts {role,at:\"anchor\"} as well as witness role names. Anchor means main-relation traversal start after via/context; incoming authorizes starts at its stored target action. Only equate verification and permission anchors when the question requires the same action. A verified copy and an authorized publication are different actions: adding anchor equality changes that question. Review candidate bindings and original sources after incompatible_obligations; never drop a required equality merely to obtain a group. For known-by questions, explicitly set axis:observed and as_of. A null resolved_as_of does not establish the requested historical cut. as_of means effective at the cut, not timestamp equality; UNKNOWN does not diagnose its cause. A role may join through its anchor and witness separately. Candidate anchor and binding endpoints preserve those identities; context still requires source review. See example:evidence-seek. Optional search.proof:true in either Trace mode fetches selected entry bodies and typed sources under the same snapshot and shared N/E. Join objects/supports/gaps as well as path tables across all pages. Body hash/revision, source metadata/time, admitted coordinates and support declaration clocks remain separate. Missing bodies retain has_body:false; budget exhaustion does not establish absence. proof.complete_groups indexes declared target requirements or seek groups and means fetched declared sources only; preserve unknown obligations, clocks and review_required. Every selected body participates in the cursor fingerprint, including objects not yet paged. Changed evidence requires a fresh selection. body_bytes counts canonical UTF-8 bodies, not response bytes or store allocations."
+          "text": "Use **Inspect** to read one exact ref and its evidence. Use **Trace** to examine\nconnections. Copy returned refs; naming a foreign ref creates no connection.\n\nChoose one Trace mode:\n\n- Known destinations: `about`, `from`, `to`; destination search options can\n  choose directions, alternatives and dimensions.\n- Evidence from a seed: `about`, `from`, `search.seek`; each role names a\n  relation and direction. Do not combine `seek` with `to` or destination options.\n\nSet the task's clock and cut explicitly for historical questions. Unknown\nclocks, missing obligations and `review_required` survive a successful search.\nA route or a compatible group does not establish truth or answer completeness.\n\n**Read selected proof:** set `search.proof:true`. To see descriptors before\nloading bodies, also set `proof_refs:[]`. Finish each operation's page actions,\nthen execute its body expansion calls and join canonical text by ref under one\n`proof.manifest_id`. Body actions are new deliveries, not page continuations.\nCompare selected refs against fetched refs; no remaining action does not prove\nthat an arbitrary sequence of named batches read every body. Changed selection\nrequires a fresh read, never mixing old paths with new bodies.\n\n**Reuse a short view:** after reading a canonical body, use the Condense topic.\nIts card is derived orientation, never fetched proof. A fresh compact Trace\nuses `proof:true,compact:{language:...}` without named expansion or old cursor.\n\nExpand only the detail you need:\n\n- `guide:kmp-agent:example:reader-cards`: descriptors, byte ceilings, exact\n  expansion, Condense and compact reuse, with complete call shapes.\n- `guide:kmp-agent:example:evidence-seek`: roles, contextual discovery, identity\n  joins and historical evidence.\n- `guide:kmp-agent:example:bounded-trace`: destination alternatives, AND/OR\n  requirements, hard dimensions and soft focus.\n- `guide:kmp-agent:advanced:audit-reference`: Inspect object reuse/receipts,\n  pagination, work limits, clocks and detailed search semantics.\n"
         },
         {
           "coordinates": [
@@ -274,12 +274,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Condense: write a compact card bound to one body version",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB condense. Use kmp_condense to write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole record. Minimum input: exact about, exact ref, language, scope node_body, the card text, and the source revision and record_digest copied from the descriptor a trace returned. Never construct a digest. Expect: the stored card with its own card_revision. Next: read the same paths with search.compact and that language. expect is compare-and-set on the card, separate from the body: declare absent for the first one, or the card_revision you read to replace it; a reader who got there first is refused with the stored revision named. A body that moved under you is refused with both versions named, and the record digest decides, not the public content_hash, because a write can change stored text without changing that token. Entries and the evidence sources of the same about can both be condensed; the shared source is usually the largest record on a path. A card is a derived reader view, never canonical memory and never proof: it never closes a proof group, it is never returned when stale, absent, post-cut or in another language, and a historical read shows no card written after the instant you stand at. To read bodies under a ceiling, see search.max_body_record_bytes, proof_refs and expect_selection on kmp_trace; the response carries executable expansion actions and the exact record bytes each pending body needs."
+          "text": "Use **Condense** after reading a canonical body that will be useful again.\nIt stores your phrase for one entry or evidence source, in one language.\nIt does not summarize automatically or verify the phrase's faithfulness.\n\n1. Trace with `search.proof:true,proof_refs:[]` to obtain descriptors and\n   `proof.manifest_id`. Inspect and legacy Trace do not expose the required\n   record digest. Finish the selected pages, then execute body expansion calls.\n2. Read the canonical body. Copy its descriptor `revision` and `record_digest`\n   into `source`; never calculate or substitute `content_hash` for that digest.\n3. Write `about`, `ref`, `language`, `scope:\"node_body\"`, `card`, `source` and\n   `expect`. Use `expect:{absent:true}` first, or the observed `card_revision`\n   to replace an existing card. The text must be nonempty, at most 4096 UTF-8\n   bytes, and strictly shorter in bytes than its body.\n4. Start the same Trace selection afresh with\n   `search.proof:true,compact:{language:...}`. **Remove `proof_refs`,\n   `expect_selection` and the old `page.cursor`.** Otherwise named refs request\n   canonical bodies, taking precedence over compact delivery.\n\nThe card represents only that body, not a neighborhood or path. Changed source\nor card revision refuses the write; read the current state before revising it.\nValid text appears with `body_state:compact`. An absent, stale, wrong-language\nor post-cut card supplies no prose and never silently loads the canonical body.\nExpand it explicitly when needed. Cards never close proof groups.\n\nComplete calls, status meanings and recovery:\n`guide:kmp-agent:example:reader-cards`.\n"
         },
         {
           "coordinates": [
@@ -306,7 +306,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Write evidence or change labels",
             "guide_version": "1",
             "source": "editorial"
@@ -338,7 +338,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Frame and share ChronoLoom",
             "guide_version": "1",
             "source": "editorial"
@@ -370,7 +370,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Synchronize guide assets",
             "guide_version": "1",
             "source": "editorial"
@@ -402,7 +402,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Install an optional lexical bridge",
             "guide_version": "1",
             "source": "editorial"
@@ -434,7 +434,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Cross abouts, labels and selectors",
             "guide_version": "1",
             "source": "editorial"
@@ -466,7 +466,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Choose a relation and justify it",
             "guide_version": "1",
             "source": "editorial"
@@ -498,7 +498,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Retry one logical write",
             "guide_version": "1",
             "source": "editorial"
@@ -530,7 +530,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Complete a bounded read",
             "guide_version": "1",
             "source": "editorial"
@@ -562,7 +562,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Choose a byte ceiling",
             "guide_version": "1",
             "source": "editorial"
@@ -594,7 +594,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Replace, contradict or expire",
             "guide_version": "1",
             "source": "editorial"
@@ -626,7 +626,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Interpret retrieved proof",
             "guide_version": "1",
             "source": "editorial"
@@ -658,7 +658,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Search language and literal evidence",
             "guide_version": "1",
             "source": "editorial"
@@ -690,7 +690,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Write or repair search summaries",
             "guide_version": "1",
             "source": "editorial"
@@ -723,7 +723,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Start here: one decision and its stated reason",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -755,7 +755,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Decision history and past validity",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -786,11 +786,11 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "For a first use, read guide:kmp-agent:example:first-decision: two sources, one decision and its reason. Find a specific tool, kind or relation in guide:kmp-agent:examples:by-capability. Basic cases are grouped in preference-delta, workflow-proof, structure-parts and canonical-ingest; use the exact references in that map. Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Multiple aliases and distinct facets: guide:kmp-agent:example:dimensional-memberships. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added. Budgeted pages and insufficient proof: guide:kmp-agent:example:budget-proof. Its additional prerequisites are guide:kmp-agent:advanced:budgets and guide:kmp-agent:advanced:language. Fresh reader and shared-view review: guide:kmp-agent:example:shared-resumption, also consulting guide:kmp-agent:gate:invocation. It distinguishes durable memory from a process-scoped view and reuses guidance within each fresh session. Execution and its later verification in one source: guide:kmp-agent:example:event-separation."
+          "text": "For a first use, read guide:kmp-agent:example:first-decision: two sources, one decision and its reason. Find a specific tool, kind or relation in guide:kmp-agent:examples:by-capability. Basic cases are grouped in preference-delta, workflow-proof, structure-parts and canonical-ingest; use the exact references in that map. Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Multiple aliases and distinct facets: guide:kmp-agent:example:dimensional-memberships. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added. Budgeted pages and insufficient proof: guide:kmp-agent:example:budget-proof. Its additional prerequisites are guide:kmp-agent:advanced:budgets and guide:kmp-agent:advanced:language. Fresh reader and shared-view review: guide:kmp-agent:example:shared-resumption, also consulting guide:kmp-agent:gate:invocation. It distinguishes durable memory from a process-scoped view and reuses guidance within each fresh session. Execution and its later verification in one source: guide:kmp-agent:example:event-separation. Reader cards, named body expansion and compact reuse: guide:kmp-agent:example:reader-cards."
         },
         {
           "coordinates": [
@@ -818,7 +818,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Aliases, unresolved names and account assignment",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -849,7 +849,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Repository bundles and snapshots",
             "guide_version": "1",
             "source": "editorial"
@@ -881,7 +881,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Diagnose missing tools and errors",
             "guide_version": "1",
             "source": "editorial"
@@ -914,7 +914,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Distributed incident, proposed identity and late reports",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -946,7 +946,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Four clocks, interval boundaries and zoom to proof",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -978,7 +978,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Quantities, corrections, duplicates and exclusions",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1010,7 +1010,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Conflicting assignments and evidence received late",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1042,7 +1042,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Multiple aliases, distinct facets and late memberships",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1074,7 +1074,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Labels, synonyms and negation under explicit conditions",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1106,7 +1106,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1138,11 +1138,11 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Read deep paths under a body budget, then condense what you read",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "# Reading several deep paths without paying for every body twice\n\nA trace over long paths returns the canonical body of every selected entry and\nof every evidence source behind it. On a shared source that is the largest\nrecord on the path, and it comes back on every read of every path that leans\non it. This is how to read those paths under a body budget, and how to write a\ncard so the next read costs less — without ever claiming something the store\ncannot back.\n\nThree moves, in order. None of them changes which paths are selected, how they\nrank, or which refs are in the proof.\n\n## 1. See what the bodies cost before reading any of them\n\nAsk for the proof table with an empty named expansion. This is a\ndescriptor-only read: the whole selection, every ref, every support arrow,\nevery coordinate, and no canonical text at all.\n\n```json\n{\"tool\": \"kmp_trace\", \"arguments\": {\n  \"about\": \"project:kmp\", \"from\": \"project:kmp:decision:cutover\",\n  \"to\": \"project:kmp:claim:rollback-window\",\n  \"search\": {\"proof\": true, \"proof_refs\": []}\n}}\n```\n\nEach object comes back with `body_state: \"not_requested\"`, its `descriptor`\nand its `required_record_bytes`. The response also carries\n`proof.manifest_id`: the identity of this selection, computed before any body\nwas read. Copy it. It is what lets a later call join its bodies to this table.\n\n`proof.delivery.selected_body_bytes` is what the whole selection would cost;\n`proof.body_bytes` is what this response actually loaded, which is zero.\n\n## 2. Take the bodies you want, in bound batches\n\n`proof.expand_bodies` is a complete call: the same bound query, the refs still\npending, the manifest, and an allowance equal to the exact record bytes of\nthat batch. Run it as given.\n\n```json\n{\"tool\": \"kmp_trace\", \"arguments\": {\n  \"about\": \"project:kmp\", \"from\": \"project:kmp:decision:cutover\",\n  \"to\": \"project:kmp:claim:rollback-window\",\n  \"search\": {\"proof\": true, \"proof_refs\": [\"evidence:project:kmp:incident-log\"],\n             \"expect_selection\": \"4694d5c4…\", \"max_body_record_bytes\": 8214}\n}}\n```\n\nSet `max_body_record_bytes` yourself when you want a ceiling of your own. The\nresponse admits a sorted prefix and defers the rest; each deferred object\nnames `required_record_bytes`, and `proof.delivery` reports the two different\nnext-step minimums. `rerun_record_bytes` is what rerunning this whole query\nwould need — it pays for the admitted prefix again. `named_record_bytes` is\nwhat a named batch of that one record needs. They are not the same number and\nneither is \"raise the budget to the total\".\n\nA record larger than your ceiling stays `deferred_budget` with its exact\nprice. It is never reported missing, and it is never read to be discarded.\n\nIf the store moved, the call comes back with\n`expansion_refusal.code = \"read_selection_changed\"`, the expected and actual\nmanifest, no canonical text, no card text, and nothing of the old selection.\nRun the `fresh_read` action it carries and start from the new manifest. The\nstore keeps only current bodies, so there is no old version to recover.\n\n## 3. Write a card, then read the path compactly\n\nCondense the bodies you had to read. A card stands for one body version, and\nthe write declares which one, copied from the descriptor — never constructed.\n\n```json\n{\"tool\": \"kmp_condense\", \"arguments\": {\n  \"about\": \"project:kmp\", \"ref\": \"evidence:project:kmp:incident-log\",\n  \"language\": \"es\", \"scope\": \"node_body\",\n  \"card\": \"Ventana de reversión 30 min; el log del incidente la fija en 14:05Z.\",\n  \"source\": {\"revision\": 3, \"record_digest\": \"sha256:9c3e5a71…\"},\n  \"expect\": {\"absent\": true},\n  \"actor\": \"reader-agent\"\n}}\n```\n\n`expect` is compare-and-set on the card, separate from the body. Declare\n`absent` for the first card; declare the `card_revision` you read to replace\none. Another reader who got there first is refused with the stored revision\nnamed, so you re-read and write again rather than overwrite.\n\nThe write is refused if the body moved under you — the digest, not the public\n`content_hash`, decides, because a write can change the text without changing\nthat token. Sources can be condensed as well as entries, which is the point:\nthe shared record is the expensive one.\n\nThen read the same paths with `search.compact: {\"language\": \"es\"}`. Objects\nwhose card still describes the stored body come back with\n`body_state: \"compact\"` and the card in `card.text`, tagged as derived. A card\nthat is stale, absent, written after your historical cut, or in another\nlanguage returns its state, its descriptor and its expansion price — and no\nprose. Nothing falls back to the canonical record behind your back.\n\n## What a card is not\n\nA card is your derived view. It is not canonical memory, it is not evidence,\nand it never closes a proof group: `complete_groups` counts fetched canonical\nbodies, so a path read compactly stays incomplete until you expand it. Nothing\nverifies that the prose is faithful; the contract fixes only which body\nversion it answers for, and `scope` admits nothing but that body, so a card\ncannot stand on a path, a neighborhood or a clock it never declared.\n\nA compact read is cheaper in canonical bodies, not in everything: support\narrows keep their stored `why` and `evidence`, which is a deliberate residual\ncost of this increment. `max_body_record_bytes` bounds detail records, not the\nwhole response and not memory.\n\nA historical read shows no card written after the instant you stand at, and\nauthorship is stamped by the kernel, so a card cannot be backdated into an\nanswer that could not have seen it.\n"
+          "text": "# Read canonical evidence, then reuse a short card\n\nKeep the graph query, clock, dimensions and work limits. Body delivery changes\nwhat text you read, not which paths or refs were selected. These four calls\nshow the workflow. Replace **every `<placeholder>` and illustrative number**\nwith values from your memory results; digests and manifests are never invented.\n\n## 1. Discover descriptors\n\n```json\n{\"tool\":\"kmp_trace\",\"arguments\":{\n \"about\":\"<about>\",\"from\":\"<from-ref>\",\"to\":\"<to-ref>\",\n \"search\":{\"proof\":true,\"proof_refs\":[]}}}\n```\n\nFinish this operation's `next_actions` pages. Each selected object with a stored body retains its\nref, descriptor and `required_record_bytes`, but no canonical body text.\nMissing bodies remain explicitly missing; they do not acquire descriptors.\nStored relationship `why`/`evidence` remains. Keep `proof.manifest_id` and the\nselected-ref table. Inspect and legacy Trace do not provide `record_digest`;\nTrace requires `proof:true` plus an active body option for descriptors.\n\n## 2. Read bodies against that manifest\n\nExecute the returned `proof.expand_bodies` call without reconstructing it.\nIt retains the query and any supplied record-byte ceiling; without a ceiling,\nit prices the planned batch. Named batches contain at most 64 distinct refs.\nThis is an illustrative complete shape:\n\n```json\n{\"tool\":\"kmp_trace\",\"arguments\":{\n \"about\":\"<about>\",\"from\":\"<from-ref>\",\"to\":\"<to-ref>\",\n \"search\":{\"proof\":true,\"proof_refs\":[\"<selected-ref>\"],\n \"expect_selection\":\"<copied manifest>\",\"max_body_record_bytes\":8214}}}\n```\n\nCopy the actual allowance from the action; `8214` is not a default. If you\nchoose a ceiling yourself, present records are admitted in sorted-prefix order.\nAn oversized record stays deferred with its exact price. Use the explicit\n`expand_oversized_body` action only when that larger read is intended.\n\nFinish **each expansion's pages**, retain canonical bodies by ref under the\nsame manifest, and compare fetched refs with your selected table. Body plans\nadvance a suffix: expanding an arbitrary late subset can leave earlier refs\nunread even when the last result has no body action. Request any remaining refs\nexplicitly, bound to the manifest, rather than declaring completion.\n\nIf `expansion_refusal.code` is `read_selection_changed`, no old-selection body\nor card text is returned. Run its `fresh_read`, then rebuild the table; do not\njoin different manifests. `unknown_expansion_refs` rejects the whole batch,\nincluding otherwise valid refs. Correct the refs from the selected table.\n\n## 3. Condense the body you actually read\n\nCopy `revision` and `record_digest` from that body's descriptor:\n\n```json\n{\"tool\":\"kmp_condense\",\"arguments\":{\n \"about\":\"<owning-about>\",\"ref\":\"<read-ref>\",\"language\":\"en\",\n \"scope\":\"node_body\",\"card\":\"<your faithful phrase about this body only>\",\n \"source\":{\"revision\":3,\"record_digest\":\"<copied digest>\"},\n \"expect\":{\"absent\":true}}}\n```\n\nReplace `3` with the observed revision. Card text must be nonempty, at most\n4096 UTF-8 bytes and strictly shorter than its body. Entries and evidence\nsources can both be condensed. Do not summarize a path or neighborhood into\none body's card. KMP checks the declared dependency, not the prose's truth.\n\n`expect` guards the card separately: use `absent:true` initially, or the observed\n`card_revision` when replacing it. Source changes or concurrent card writes\nrefuse the operation; read the current body/card state before revising. The\npublic `content_hash` is not a substitute for the exact `record_digest`.\n\n## 4. Start a fresh compact read\n\n```json\n{\"tool\":\"kmp_trace\",\"arguments\":{\n \"about\":\"<about>\",\"from\":\"<from-ref>\",\"to\":\"<to-ref>\",\n \"search\":{\"proof\":true,\"compact\":{\"language\":\"en\"}}}}\n```\n\nKeep the original graph selection and task clocks. **Remove `proof_refs`,\n`expect_selection` and the old page cursor.** Named refs take precedence over\ncompact and request canonical bodies, even when a card exists.\n\n| Returned state | Meaning |\n| --- | --- |\n| `loaded` | Canonical body fetched; retain it by ref under the manifest. |\n| `not_requested` | Body intentionally unread; not absent evidence. |\n| `deferred_budget` | Present record did not fit; exact expansion price supplied. |\n| `compact` | Valid derived card in `card.text`; canonical body still unread. |\n| `missing` / `missing_body` | Selected body unavailable in the store. |\n\nAbsent, stale, post-cut or wrong-language cards give status, descriptor and\nprice, **no prose and no automatic body fallback**. Expand canonical evidence\nexplicitly when needed. A card never closes a proof group; fetched groups still\ndo not prove semantic sufficiency. Preserve missing/unknown/review signals.\n\n## Cost and history\n\n- `required_record_bytes` and `max_body_record_bytes`: stored Details records.\n  `rerun_record_bytes` includes the previously admitted prefix;\n  `named_record_bytes` prices the single pending record in a named batch.\n- `selected_body_bytes`: total selected canonical UTF-8 body bytes.\n  `proof.body_bytes`: canonical UTF-8 bytes actually loaded in this operation.\n- Neither count means response bytes, tokens or RAM. Relationship prose and\n  provenance still cost context. Cards can save repeated large-body reads;\n  writing and reusing a small card can cost more overall.\n\nAuthorship is kernel-stamped. A historical read never shows a card written\nafter its cut; a reader cannot backdate new knowledge into past proof.\n"
         },
         {
           "coordinates": [
@@ -1170,7 +1170,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Fresh-session handoff and shared-view revision conflicts",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1202,7 +1202,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Preference and explicit policy delta",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1234,7 +1234,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Authorization, dependency and measured constraints",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1266,7 +1266,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Structure, membership and included contributions",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1298,7 +1298,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Validated canonical ingest and exact retry",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1329,7 +1329,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Find a concrete example for a tool, kind or relation",
             "guide_version": "1",
             "source": "editorial"
@@ -1362,7 +1362,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Atomic semantic packet with local proof links",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1393,7 +1393,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1424,7 +1424,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1455,7 +1455,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1486,7 +1486,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1517,11 +1517,11 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Inspect a returned ref with `kmp_inspect {\"about\":\"<about>\",\"ref\":\"<ref>\"}`.\nCopy actual abouts/refs from memory results; replace every placeholder below.\nInspect returns the current object, evidence and typed links. A receipt instead\ncontains the historical accepted command. For past state, use temporal verbs.\n\nChoose ONE Trace mode:\n\n| Need | Arguments | Search options |\n| --- | --- | --- |\n| Connect known destinations | `from` + `to` | `follow` or `direction`/`relations`, dimensions, `paths_per_target`, `select` |\n| Discover evidence without destinations | `from` + `search.seek` | role relations/sense/via/after/labels; optional `same_labels`, `same_ref` |\n\nWork limits and optional `proof:true` are shared search options.\nNever combine `seek` with destination options or `to`. A mixed-mode error names\nall conflicting fields to remove together; other validation can still fail.\n\nFor evidence known by a given instant, set the observed clock explicitly:\n\n```json\n{\"about\":\"<about>\",\"from\":\"<seed-ref>\",\n \"axis\":\"observed\",\"as_of\":{\"time\":\"2026-09-10T12:00:00Z\"},\n \"search\":{\"seek\":[\n   {\"name\":\"verification\",\"rel\":\"verified_by\",\"via\":\"context\"},\n   {\"name\":\"permission\",\"rel\":\"authorizes\",\"direction\":\"incoming\",\"via\":\"context\"}]}}\n```\n\nChoose the task's clock and cut; this example date is not a default. Omitted\nclock/cut reads the current graph. `as_of` is effectiveness at a cut, not exact\ntimestamp equality. Use Goto for a purely temporal question; UNKNOWN from Ask\ndoes not diagnose its cause.\n\nContext discovers minimum-hop prefixes through justified links, preserving ties\nand stored arrows. Read `context_hops`, candidate `anchor` and `witness`, and\njoint `groups`. These are leads: `review_required` and\n`declared_obligations_complete:false` require source review. A neighbor's\nverification does not verify the seed; work cuts remain partial.\n\nA verified copy and an authorized publication are distinct actions: do not\nadd anchor equality for that question. Only if the question requires the SAME\naction, add `same_ref:[[{\"role\":\"verification\",\"at\":\"anchor\"},{\"role\":\"permission\",\"at\":\"anchor\"}]]`.\nAnchor is the main relation's traversal start after context; incoming permission\nstarts at its stored target action. Witness is the other endpoint. A role string\nin `same_ref` names its witness. `same_labels` intersects witness labels, never\nestablishing identity. On incompatibility, review bindings and the question;\ndo not remove a required equality just to obtain a group.\n\nUse `search.proof:true` to fetch selected entry bodies and their typed sources\nin the same search snapshot. Join `objects`, `supports` and `gaps` across pages.\n`proof.complete_groups` describes fetched declared sources; retain missing\nobligations, unknown clocks and `seek.review_required`. Materialization shares\nN/E with discovery. A body fetched later by Inspect is a new read.\n\nFinish every returned continuation before resolving path indexes or claiming\nproof complete. Page completion is distinct from semantic sufficiency. Preserve\nsource text, link why/evidence and clocks. For the worked cases expand\n`guide:kmp-agent:example:evidence-seek`. Known-destination alternatives, material\nselection and hard/soft dimensions are in `guide:kmp-agent:example:bounded-trace`.\n"
+          "text": "Inspect one returned ref:\n\n```json\n{\"about\":\"<owning-about>\",\"ref\":\"<returned-ref>\"}\n```\n\nReplace placeholders with memory results. Inspect returns the object and its\nproof; a receipt instead contains the historical accepted command.\n\nTrace connections with ONE mode:\n\n| Need | Call shape |\n| --- | --- |\n| Known destination | `about`, `from`, `to`; optional destination search policies |\n| Evidence from seed | `about`, `from`, `search.seek` roles; no `to` or destination policies |\n\nFor example, discover verification from a seed:\n\n```json\n{\"about\":\"<about>\",\"from\":\"<seed-ref>\",\"search\":{\n \"seek\":[{\"name\":\"verification\",\"rel\":\"verified_by\",\"via\":\"context\"}],\n \"proof\":true,\"proof_refs\":[]}}\n```\n\n`via:\"context\"` gives contextual leads; a neighbor's verification does not verify\nthis seed. Review candidates, bindings, groups and original sources. Preserve\n`review_required`, unknown clocks and missing obligations. For known-by\nquestions, add the task's `axis:\"observed\"` and `as_of` cut explicitly.\n\nFinish returned page actions before resolving indexes. With `proof:true`,\n`proof_refs:[]` shows descriptors without bodies; execute body expansion actions\nand join fetched refs under one manifest. Paths and fetched declared groups do\nnot establish answer completeness. A changed selection requires a fresh read.\n\nRead `guide:kmp-agent:example:evidence-seek` for roles/joins;\n`guide:kmp-agent:example:bounded-trace` for destinations and dimensions.\nFor short reusable cards after reading canonical bodies, open topic `condense`;\n`guide:kmp-agent:example:reader-cards` teaches the complete delivery workflow.\n"
         },
         {
           "coordinates": [
@@ -1548,7 +1548,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1579,7 +1579,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1610,7 +1610,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1641,7 +1641,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_title": "Manage agent identity and guidance",
             "guide_version": "1",
             "source": "editorial"
@@ -1674,7 +1674,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "One report, separate execution and verification events",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1706,7 +1706,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Trace several destinations under one work budget",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1738,7 +1738,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Discover compatible evidence paths from a seed",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1764,18 +1764,17 @@
               "sequence": 55
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:advanced:audit-reference",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:ask",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
+            "guide_title": "Audit reference: pagination, routes, dimensions and evidence joins",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
+          "text": "# Audit reference: Inspect and Trace\n\nVERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte. Inspect uses the owning about. Trace can cross a declared, evidenced same_event_as or same_entity_as edge; naming a foreign endpoint alone creates no path. Inspect keeps the stored object stable and pages expandable evidence and links; budget guidance distinguishes the stable floor from omitted expansion. Use include.raw for audit records, not for routine lesson reading. After retaining the first inspect object, continue with page.cursor and page.repeat_object=false to receive only object.ref plus the remaining expansion. object_reused=true declares that reuse. Keep the original text, kind, metadata and source; do not replace them with the ref-only object. Execute Inspect next_actions to continue with the complete bound call. If no whole item fits, page.minimum_progress_bytes names a sufficient next-item allowance. The action offers at least that much and prefers the complete inspection up to the usual 10,000-byte budget, avoiding a one-item-per-call walk. page.required_bytes still sizes the complete inspection. A fixed budget means the result remains partial. A changed object or selected proof returns conflict and a complete restart in feedback; that fresh read returns the new full object even if prior pages reused it. Omit repeat_object to receive the full object on every page. Trace also pages whole relations under budget.max_bytes. If page.returned is zero and page.has_more is true, this is pending proof, not an absent path: retry the same page.next_cursor with budget.max_bytes at least page.required_bytes. Trace next_actions contain the exact continuation. A changed endpoint or selected proof, including a later edge, rejects the cursor with a complete fresh-read action in feedback. The cursor is not a persisted snapshot; restart instead of mixing old pages with new evidence. For a write receipt, execute the returned receipt.action: object.text is immutable accepted-command JSON containing canonical_memory, writer diagnostics and command revision/hash. It is not the current state of the memories. Receipt refs stay within their owning about and do not enter graph traversal. Choose one Trace mode. Destination mode uses known to refs; evidence mode uses search.seek without to. The schema names each mode and its allowed fields. Work limits and optional proof are shared search controls. A mixed-mode rejection enumerates all incompatible fields together before their bodies are parsed; it does not enumerate every possible validation error. Destination mode: use to as an array of up to eight entry refs, or provide search, as_of or interval. All destinations share max_nodes/max_edges/max_depth/max_states. max_states counts the admitted root and eligible extensions attempted, including rejected cycles and visited nodes. direction selects outgoing prerequisites or incoming dependants without reversing stored arrows. relations filters exact link types. This mode stays in one about. Use as_of with a returned ref or time, or a half-open interval, and choose axis for occurred, observed, ingested or validity. An explicit clock never falls back to another. Canonical coordinates admit entries and relation clocks admit links. Default reads the current graph; neither bounded destination search nor evidence seek traverses equivalences into another about. By default it returns one shortest discovered route per explicit target. search.paths_per_target (1..8) retains bounded simple alternatives. search.follow is an unordered set of {rel, direction} moves instead of global direction/relations: for example incoming corrects then outgoing verified_by can reach a correction and its verification while preserving stored arrows. It does not require that order or infer complete answer evidence. Join every trace page, then resolve each routes[].edge_indexes into that complete table in hop order. An empty route is a zero-hop destination equal to from. search.stop_reason distinguishes targets_reached, frontier_exhausted, node_budget, edge_budget, depth_budget, state_budget and source_outside_selection. targets_reached means requested route quotas, not all paths: incomplete_targets have fewer than the quota; unreached_targets have none. from itself requires only its zero-hop path. Reconstruct walking direction from search.from and each stored edge; follow lists the allowed moves. Counts include discarded endpoints, dimensional labels and coordinate rows; coordinate_rows is part of scanned_edges. A ref cut resolves from the earliest coordinate on the chosen axis, within the same budget. If temporal_selection_resolved is false, stop_reason identifies the exhausted allowance: no instant was guessed. clock_unknown_edges identifies selected links with no usable clock; these do not prove historical presence. A cutoff never proves no path; rerun with a deliberate larger search allowance as a new selection if needed. Transport next_actions only finish the selected relation table; they do not continue the graph search. Frontier exhaustion and leaves are relative to the selected about, direction and rich relation types. Use temporal verbs to discover dated entries and inspect for entry/source bodies. Trace does not evaluate supersession or determine current truth from its path. See the bounded-trace example, including mixed directions and alternative paths. Optional search.select chooses a joint set before returning full links: max_material_nodes is required and counts unique entry refs on selected paths, including from; max_paths defaults to 4. Omitted groups means one equally weighted requirement per sorted target. Explicit groups contain alternatives: each ref array is an AND, arrays within a group are OR, weight defaults to 1; use only refs listed in to. Requirements come from the reader, not inferred truth. The fixed bounded beam can miss a better combination. search.material reports candidate_count, selected_candidates (original catalogue indexes), material_nodes, covered_groups, incomplete_groups, benefit and selection work. Group indexes follow the supplied groups or sorted targets. Discovery quotas remain separate. If no complete group fits, selected paths may be empty although candidate_count is positive. Finish next_actions for selected proof; only if more alternatives are needed execute search.material.expand_candidates. That complete call removes select and the old cursor and starts a new selection, not a historical snapshot. Its context cost is additional. Changes to unreturned candidate evidence also invalidate selected pagination. See bounded-trace for atomic, AND/OR and infeasible examples. Bounded search.dimensions reuses the native dimensional selection shape as a hard constraint on the source and every path entry. search.prefer_dimensions uses that shape only for soft ordering: three priority turns prefer matching nodes, then one FIFO turn. Each turn reads at most four raw relations or replays four cached admitted rows. An unfinished parent retains its exact position and requeues after newly discovered children. Priority ties prefer smaller effective depth and enqueue order; a resumed parent competes at child depth. It can reach a longer path first and has no shortest-path guarantee. Neither preferences nor FIFO promise completeness under work limits. Both stay in current_about and reuse only coordinates admitted on the selected clock, including for whole-entry selectors; a missing label here means absent from that admitted coordinate set, not proof of global absence. Ref cuts resolve before dimensional filters. Coordinate reads consume the shared N/E budget. Preserve nonmatching bridges with prefer_dimensions when a label is merely a hint; hard dimensions can exclude them. search.routing reports evaluated_entries, preferred_entries, dimensional_rejections, priority_pops, exploration_pops and preferred_route_entries aligned with returned routes, counting source. These are routing observations, not truth or relevance probabilities. Unfiltered calls keep BFS and its existing cost. search.routing.order identifies dimension_focus_pages_v2; adjacency_pages and coordinate_pages count actual storage calls including empty end probes, and resumed_states counts turns on a path already started. Alternative paths share partial admitted adjacency without rereading it, while extension attempts still spend S. A cut parent is not a leaf. Unread late edges or whole-label coordinate admission can still exhaust N/E before useful children progress. Histograms, rarity and degree scores are not supplied by this policy. See bounded-trace examples for hard constraints versus soft focus. Each embedded memory read keeps one SQLite snapshot across its graph, bodies and sources. Separate calls, including continuations, open fresh reads; changed selected content can require restarting the cursor. For evidence discovery from a known seed without destination refs, use kmp_trace search.seek. Each required role names a relation with optional ordered via/after moves; labels constrain the main witness; same_ref equates named main-relation anchors or witnesses. same_labels intersects exact membership values across all roles; missing remains unknown and labels never prove identity. Inspect seek.status, missing_roles, candidates and joint groups; complete every page before resolving indexes. declared_obligations_complete refers only to the supplied obligations, not natural-language answer completeness. Seek replaces destination search policies; work limits and proof remain shared. Expand guide:kmp-agent:example:evidence-seek for simple, identity, temporal and deep examples. When the intermediate sequence is unknown, set via:\"context\" on a seek role. KMP discovers minimum-hop prefixes through justified links in both directions at the same cut, retaining equal-length alternatives. rel/direction still declare what to find; after remains explicit. Read context_hops and context_discovery. These are contextual leads requiring review: declared_obligations_complete remains false, and a verification of a neighbor is not thereby a verification of the seed. Longer prefixes to the same origin are omitted, not certified irrelevant. No question meaning or missing obligations are inferred. For the same action across contextual roles, same_ref accepts {role,at:\"anchor\"} as well as witness role names. Anchor means main-relation traversal start after via/context; incoming authorizes starts at its stored target action. Only equate verification and permission anchors when the question requires the same action. A verified copy and an authorized publication are different actions: adding anchor equality changes that question. Review candidate bindings and original sources after incompatible_obligations; never drop a required equality merely to obtain a group. For known-by questions, explicitly set axis:observed and as_of. A null resolved_as_of does not establish the requested historical cut. as_of means effective at the cut, not timestamp equality; UNKNOWN does not diagnose its cause. A role may join through its anchor and witness separately. Candidate anchor and binding endpoints preserve those identities; context still requires source review. See example:evidence-seek. Optional search.proof:true in either Trace mode fetches selected entry bodies and typed sources under the same snapshot and shared N/E. Join objects/supports/gaps as well as path tables across all pages. Body hash/revision, source metadata/time, admitted coordinates and support declaration clocks remain separate. Missing bodies retain has_body:false; budget exhaustion does not establish absence. proof.complete_groups indexes declared target requirements or seek groups and means fetched declared sources only; preserve unknown obligations, clocks and review_required. Every selected body participates in the cursor fingerprint, including objects not yet paged. Changed evidence requires a fresh selection. body_bytes counts canonical UTF-8 bodies, not response bytes or store allocations.\n\nFor body descriptors, named expansion and reader cards, read `guide:kmp-agent:example:reader-cards`. Those delivery options require `search.proof:true`. A fresh compact read omits `proof_refs`, `expect_selection` and the old page cursor.\n"
         },
         {
           "coordinates": [
@@ -1793,22 +1792,20 @@
             },
             {
               "dimension": "depth",
-              "scope_id": "depth-advanced",
+              "scope_id": "depth-basic",
               "sequence": 56
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_condense",
-          "kind": "reference",
+          "id": "guide:kmp-agent:card:condense",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
-            "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:condense",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "depth": "basic",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_condense"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_condense. Write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole body. Entries and the evidence sources of the same about can both be condensed, which matters because a source shared by several paths is usually the largest record on them. The card is your derived view, never canonical memory and never proof: it stands only for the body version you declare, and a later write makes it stale rather than wrong. Declare the revision and record digest the read gave you; a body that moved under you is refused with both versions named."
+          "text": "Condense a canonical body you have read; reuse its short phrase on later paths.\n\n1. Obtain descriptors: Trace the selected paths with\n   `search:{proof:true,proof_refs:[]}`. Keep the manifest and finish page actions.\n2. Execute the returned body expansion calls; finish their pages. Read the body\n   before writing, and copy its descriptor `revision` and `record_digest`.\n3. Replace every placeholder below with observed values:\n\n```json\n{\"about\":\"<owning-about>\",\"ref\":\"<read-ref>\",\"language\":\"en\",\n \"scope\":\"node_body\",\"card\":\"<your phrase about this body only>\",\n \"source\":{\"revision\":1,\"record_digest\":\"<copied digest>\"},\n \"expect\":{\"absent\":true}}\n```\n\nCall `kmp_condense`; copy the actual source revision instead of the illustrative\n`1`. For an existing card use its observed `expect:{card_revision:...}`. Text\nmust be at most 4096 UTF-8 bytes and shorter than its body. On conflict, reread.\n\n4. Reuse: start the same Trace with `proof:true,compact:{language:\"en\"}`.\n   **Omit `proof_refs`, `expect_selection` and the old page cursor.**\n\nCard = derived orientation, never proof. Absent/stale/post-cut/wrong-language\ncards return no prose; expand canonical bodies explicitly. Keep selected and\nfetched refs under one manifest; finishing pages alone is not proof completion.\nComplete call shapes: `guide:kmp-agent:example:reader-cards`.\n"
         },
         {
           "coordinates": [
@@ -1830,18 +1827,18 @@
               "sequence": 57
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:ask",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval."
+          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
         },
         {
           "coordinates": [
@@ -1863,18 +1860,18 @@
               "sequence": 58
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_condense",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:condense",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_condense"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it."
+          "text": "LIVE TOOL kmp_condense. Write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole body. Entries and the evidence sources of the same about can both be condensed, which matters because a source shared by several paths is usually the largest record on them. The card is your derived view, never canonical memory and never proof: it stands only for the body version you declare, and a later write makes it stale rather than wrong. Declare the revision and record digest the read gave you; a body that moved under you is refused with both versions named."
         },
         {
           "coordinates": [
@@ -1896,18 +1893,18 @@
               "sequence": 59
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_guide",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:guide",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_guide"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_guide. Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them."
+          "text": "LIVE TOOL kmp_forward. Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval."
         },
         {
           "coordinates": [
@@ -1929,18 +1926,18 @@
               "sequence": 60
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it."
         },
         {
           "coordinates": [
@@ -1962,18 +1959,18 @@
               "sequence": 61
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_guide",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:guide",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_guide"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object."
+          "text": "LIVE TOOL kmp_guide. Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them."
         },
         {
           "coordinates": [
@@ -1995,18 +1992,18 @@
               "sequence": 62
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -2028,18 +2025,18 @@
               "sequence": 63
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_inspect. Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object."
         },
         {
           "coordinates": [
@@ -2061,18 +2058,18 @@
               "sequence": 64
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:relate",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history."
         },
         {
           "coordinates": [
@@ -2094,18 +2091,18 @@
               "sequence": 65
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_rewind. Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -2127,18 +2124,18 @@
               "sequence": 66
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:relate",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_trace. Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -2160,18 +2157,18 @@
               "sequence": 67
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_rewind. Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval."
         },
         {
           "coordinates": [
@@ -2193,18 +2190,18 @@
               "sequence": 68
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_trace. Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing."
         },
         {
           "coordinates": [
@@ -2226,18 +2223,18 @@
               "sequence": 69
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -2259,18 +2256,18 @@
               "sequence": 70
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:wake",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -2292,13 +2289,79 @@
               "sequence": 71
             }
           ],
+          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_view_open"
+          },
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T01:11:00Z",
+              "occurred_at": "2026-08-28T01:11:00Z",
+              "scope_id": "timeline",
+              "sequence": 72
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 72
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 72
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T01:12:00Z",
+              "occurred_at": "2026-08-28T01:12:00Z",
+              "scope_id": "timeline",
+              "sequence": 73
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 73
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 73
+            }
+          ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "fcd48bafb260b3652a4a375cf9cda6750956808cfb8f36684d705f7faedcae24",
+            "guide_revision": "633b622bac7e645106b62df82b48cf3821cb13b944861b5b4b2103475b2cc8fa",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_write_memory"
@@ -2759,7 +2822,7 @@
           "supports": [
             "guide:kmp-agent:example:reader-cards"
           ],
-          "text": "A worked three-step read over one selection: descriptor-only table with its manifest, bound named expansion with the two distinct next-step minimums, and a compare-and-set card write followed by a compact read. It states what a card is not: no proof, no closed group, no relation compression, and no promise beyond the declared body version.",
+          "text": "Four complete call shapes with explicit placeholders: descriptor manifest, bound canonical expansion, compare-and-set Condense, and fresh compact Trace. Distinguishes page completion, per-ref body completion, record bytes, body bytes and derived orientation.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -3007,6 +3070,32 @@
             "guide:kmp-agent:example:evidence-seek"
           ],
           "text": "The native compiler and joint solver preserve witness position, exact label intersections, explicit identity, unknown clocks and complete proof indexes across pages. Frozen small controls compare the MCP result with the independent joint-path reference. Joint materialization controls cover typed shared sources, unknown/missing proof, transport parity, changed-body cursors and complete proof pagination.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:advanced:audit-reference",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:advanced:audit-reference"
+          ],
+          "text": "The live Inspect contract returns executable continuation, minimum-progress and stale-selection restart calls, preserving the about boundary, object reuse and canonical proof. Receipt inspection uses the existing accepted-command index without creating a graph memory. Bounded multi-target Trace exposes actual discovery work and preserves source-backed edge direction in one snapshot. Temporal controls cover all four clocks, subsecond link arrival, canonical coordinate changes, inclusive instants, exclusive interval ends, unknown clocks, shared snapshot and pre-read node/edge budgets.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:card:condense",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:card:condense"
+          ],
+          "text": "The progressive Condense card teaches descriptor-bound canonical reading, source and card compare-and-set, and a fresh compact read without named expansion arguments.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -3653,12 +3742,52 @@
           "why": "The worked lesson shows seed-based joint proof discovery and its uncertainty states."
         },
         {
+          "class": "procedural",
+          "confidence": "high",
+          "evidence": "The source guide names this exact reference; kmp_inspect reads the linked lesson.",
+          "from": "guide:kmp-agent:verb:audit",
+          "rel": "follows",
+          "sequence": 43,
+          "to": "guide:kmp-agent:advanced:audit-reference",
+          "why": "The verb routes detailed pagination, routing and join questions to the retained reference."
+        },
+        {
+          "class": "procedural",
+          "confidence": "high",
+          "evidence": "The source guide names this exact reference; kmp_inspect reads the linked lesson.",
+          "from": "guide:kmp-agent:card:condense",
+          "rel": "follows",
+          "sequence": 44,
+          "to": "guide:kmp-agent:verb:condense",
+          "why": "The starting card links to extended Condense guidance."
+        },
+        {
+          "class": "procedural",
+          "confidence": "high",
+          "evidence": "The source guide names this exact reference; kmp_inspect reads the linked lesson.",
+          "from": "guide:kmp-agent:verb:condense",
+          "rel": "follows",
+          "sequence": 45,
+          "to": "guide:kmp-agent:example:reader-cards",
+          "why": "The example executes the complete descriptor, expansion, card and reuse sequence."
+        },
+        {
+          "class": "procedural",
+          "confidence": "high",
+          "evidence": "The source guide names this exact reference; kmp_inspect reads the linked lesson.",
+          "from": "guide:kmp-agent:verb:audit",
+          "rel": "follows",
+          "sequence": 46,
+          "to": "guide:kmp-agent:example:reader-cards",
+          "why": "Trace body delivery and Condense reuse share one worked lesson."
+        },
+        {
           "class": "evidential",
           "confidence": "high",
           "evidence": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 43,
+          "sequence": 47,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3668,7 +3797,7 @@
           "evidence": "Write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole body. Entries and the evidence sources of the same about can both be condensed, which matters because a source shared by several paths is usually the largest record on them. The card is your derived view, never canonical memory and never proof: it stands only for the body version you declare, and a later write makes it stale rather than wrong. Declare the revision and record digest the read gave you; a body that moved under you is refused with both versions named.",
           "from": "guide:kmp-agent:tool:kmp_condense",
           "rel": "uses_background",
-          "sequence": 44,
+          "sequence": 48,
           "to": "guide:kmp-agent:verb:condense",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3678,7 +3807,7 @@
           "evidence": "Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 45,
+          "sequence": 49,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3688,7 +3817,7 @@
           "evidence": "Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 46,
+          "sequence": 50,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3698,7 +3827,7 @@
           "evidence": "Open the brief capability map and persistent agent context. Start once with a unique registration_key; preserve the returned agent_id and context_id. Resume or expand a topic using context_id. After compaction use agent_id plus a new context_key, retaining the same agent. fold hides a topic without erasing its delivery record. This records served guidance, not understanding or authorization. Missing installed assets return explicit guide-sync repair instructions; preserve the selected store when applying them.",
           "from": "guide:kmp-agent:tool:kmp_guide",
           "rel": "uses_background",
-          "sequence": 47,
+          "sequence": 51,
           "to": "guide:kmp-agent:verb:guide",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3708,7 +3837,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 48,
+          "sequence": 52,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3718,7 +3847,7 @@
           "evidence": "Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 49,
+          "sequence": 53,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3728,7 +3857,7 @@
           "evidence": "Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 50,
+          "sequence": 54,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3738,7 +3867,7 @@
           "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
           "from": "guide:kmp-agent:tool:kmp_relabel",
           "rel": "uses_background",
-          "sequence": 51,
+          "sequence": 55,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3748,7 +3877,7 @@
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 52,
+          "sequence": 56,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3758,7 +3887,7 @@
           "evidence": "Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 53,
+          "sequence": 57,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3768,7 +3897,7 @@
           "evidence": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 54,
+          "sequence": 58,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3778,7 +3907,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 55,
+          "sequence": 59,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3788,7 +3917,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 56,
+          "sequence": 60,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3798,7 +3927,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 57,
+          "sequence": 61,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3808,7 +3937,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 58,
+          "sequence": 62,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -3818,7 +3947,7 @@
           "evidence": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 59,
+          "sequence": 63,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }
@@ -3834,7 +3963,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:7b293ab1a6bc65aeed4d",
+    "idempotency_key": "ingest:guide-sync:1:person:224ac9f5397a8eaefaaa",
     "memory": {
       "dimensions": [
         {
@@ -3884,7 +4013,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3915,7 +4044,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3946,7 +4075,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -3977,7 +4106,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4008,7 +4137,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4039,7 +4168,7 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4070,7 +4199,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4101,7 +4230,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4132,7 +4261,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4163,7 +4292,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4194,7 +4323,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4225,7 +4354,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4256,7 +4385,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4287,7 +4416,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4318,7 +4447,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4349,7 +4478,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4380,7 +4509,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4411,7 +4540,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4442,7 +4571,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4473,7 +4602,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4504,7 +4633,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4535,7 +4664,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4566,7 +4695,7 @@
           "metadata": {
             "audience": "person",
             "depth": "advanced",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -4597,11 +4726,42 @@
           "metadata": {
             "audience": "person",
             "depth": "basic",
-            "guide_revision": "7b293ab1a6bc65aeed4d9a66229b712f8a6eb91e8143042eea42582f18b89374",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
             "guide_version": "1",
             "source": "editorial"
           },
           "text": "Start with two source lines: a journal must accept writes offline, and SQLite is chosen for that reason. Ask your agent to read guide:kmp-agent:example:first-decision, record those two typed memories and show their chosen_because relation in ChronoLoom. The example proves a recorded choice, not a completed offline test. For a particular tool, memory kind or relation, use guide:kmp-agent:examples:by-capability. The other basic cases distinguish preference from requirement, approval from execution, and membership from evidence of a result."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:24:00Z",
+              "occurred_at": "2026-08-28T00:24:00Z",
+              "scope_id": "timeline",
+              "sequence": 25
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 25
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 25
+            }
+          ],
+          "id": "guide:kmp:advanced:reader-cards",
+          "kind": "concept",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_revision": "224ac9f5397a8eaefaaa2809462b226db8a0d511d225830addf3776902932b6a",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "A reader can keep a short phrase for a body it has read, then explore the same paths using that phrase. KMP binds the card to the exact stored body version. It keeps evidence available for deliberate expansion; stale, absent or historically unavailable cards show no substitute prose. Cards help orientation, never prove a claim. Ask your agent for guide:kmp-agent:example:reader-cards. Reuse can save context on large repeated sources; writing a card for a small body can cost more overall."
         }
       ],
       "evidence": [
@@ -4915,6 +5075,19 @@
             "guide:kmp:basic:small-examples"
           ],
           "text": "The first-decision lesson and the indexed basic cases contain explicit sources, native requests and limits; independent LLM learning remains a separate evaluation.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:reader-cards",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:reader-cards"
+          ],
+          "text": "Trace distinguishes canonical body delivery from derived cards. Condense checks source revision/digest and card compare-and-set; source materialization and relations retain their provenance.",
           "time": "2026-08-28T00:00:00Z"
         }
       ],

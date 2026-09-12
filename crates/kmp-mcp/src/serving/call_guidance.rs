@@ -53,7 +53,9 @@ impl CallGuidance {
         if let Some(object) = args.as_object_mut() {
             object.remove("context_id");
             object.remove("purpose");
-            if matches!(tool, "kmp_write_memory" | "kmp_relabel") && !object.contains_key("actor") {
+            if matches!(tool, "kmp_write_memory" | "kmp_relabel" | "kmp_condense")
+                && !object.contains_key("actor")
+            {
                 object.insert("actor".into(), json!(self.context.identity.name));
             }
         }

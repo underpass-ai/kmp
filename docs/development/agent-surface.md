@@ -40,6 +40,7 @@ por qué, no como lista que una CI deba comprobar.
 | `serving/adapters/fixture_backend.rs` y su fixture de respuesta | El backend de ejemplos responde a todo lo que anuncia |
 | `tool_error_help.rs` | Un rechazo devuelve su propio verbo y su propia lección; apuntar a la lección de otro movimiento responde peor que no responder |
 | `guide_request_mapper.rs::tool_verb` | Todo tool público resuelve a un verbo indexado |
+| `guidance/guide_scheme.rs`, `contract/tools/guide.rs`, `guide/cards/` y su relación al verbo | El tema existe en el esquema progresivo y sirve una ficha y ampliación ejecutables; indexar el verbo solo no lo hace descubrible |
 | `guide/editorial.json` más su `text_file` | La fuente canónica de la guía; regenerar con `guide assets write` |
 | `plugins/kmp/capabilities.json` | El generador compara la lista viva contra este inventario y falla si divergen |
 | `distribution/mcpb/manifest.json` | Lo que instala el host |
@@ -331,7 +332,7 @@ historial. El cliente debe recuperar las fichas que necesite de nuevo.
 
 Las fichas breves viven en `guide/cards/`; los verbos extendidos en `verbs/`.
 El mapper estampa el digest del asset en cada nodo: cambiar contenido exige
-regenerar el conjunto. Al añadir un tema, actualizar esquema, schema, ficha,
+regenerar el conjunto. Al añadir un tema, actualizar catálogo progresivo, schema, ficha,
 verbo y relación entre ambos; ejecutar las acciones de ampliación devueltas.
 Initialize y las skills entran por el esquema; el Markdown es la alternativa.
 No duplicar ambas cargas. Reutilizar el target de este checkout para iterar;
@@ -904,3 +905,35 @@ N/E cutoffs, concurrent revisions and transport parity before paired timings.
 `budget.max_bytes` is a response ceiling, not an allocation guarantee. Update
 audit, bounded-trace/evidence-seek lessons and both generated guides together.
 See [contract and limits](joint-evidence-materialization.md).
+
+
+### Lectura, ampliación y tarjetas: comprobar el recorrido
+
+Mantener alineados Trace, Condense, fichas `audit`/`condense`, verbos, ejemplo
+`reader-cards` y ayuda ante rechazos. El verbo audit sirve como mapa; el detalle
+de navegación se consulta en `advanced:audit-reference`. No cargar ambos por
+defecto. Conservar refs al mover prosa y revisar los enlaces regenerados.
+
+El descriptor para Condense procede de Trace con `proof:true` y una opción de
+cuerpos activa, por ejemplo `proof_refs:[]`; Inspect no expone ese digest. El
+lector debe leer el cuerpo canónico correspondiente antes de redactar. El paso
+a compact es una lectura nueva: conservar consulta/relojes, quitar
+`proof_refs`, `expect_selection` y el cursor viejo. Una tarjeta ausente o no
+vigente no provoca fallback canónico. Separar final de páginas, inventario de
+refs leídos y suficiencia semántica; una cola de expansiones vacía no prueba
+que se leyeran refs anteriores omitidos por lotes manuales.
+
+Antes de comprobar aprendizaje con agentes, sembrar guía y caso en un store
+aislado; verificar registro, ficha, verbo y ejemplo con una identidad de
+preparación distinta. Congelar binario, asset y hashes. `GUIDE_UNAVAILABLE`
+invalida una prueba de uso con guía, aunque sí documente respuesta al schema.
+El driver ejecuta las llamadas elegidas por el lector, sin seguir acciones ni
+corregir argumentos a escondidas. Conservar errores y recuperación. Medir por
+separado texto, sobre MCP y catálogo con tokenizer identificado; bytes o palabras
+no se presentan como tokens ni una captura local como coste del host completo.
+
+Al publicar, comprobar el paquete generado y su `tools/list`, además del código.
+La herramienta del binario candidato no aparece automáticamente en una sesión
+que conserva un registro anterior: documentar la versión instalada, la vía de
+actualización y el reinicio necesario. No afirmar activación por haber compilado.
+Estas comprobaciones son evidencia de entrega, sin gates editoriales nuevos.

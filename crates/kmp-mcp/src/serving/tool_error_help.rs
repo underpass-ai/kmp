@@ -38,7 +38,9 @@ impl ToolErrorHelp {
         }
         if examples.is_empty() {
             examples.push(
-                if tool == "kmp_trace" && arguments.pointer("/search/seek").is_some() {
+                if tool == "kmp_trace" && trace_has_body_options(arguments) {
+                    "example:reader-cards"
+                } else if tool == "kmp_trace" && arguments.pointer("/search/seek").is_some() {
                     "example:evidence-seek"
                 } else {
                     default_example
@@ -120,4 +122,20 @@ impl ToolErrorHelp {
             "budget":{"max_bytes":10000}
         }})
     }
+}
+
+fn trace_has_body_options(arguments: &Value) -> bool {
+    arguments
+        .get("search")
+        .and_then(Value::as_object)
+        .is_some_and(|search| {
+            [
+                "max_body_record_bytes",
+                "proof_refs",
+                "expect_selection",
+                "compact",
+            ]
+            .iter()
+            .any(|key| search.contains_key(*key))
+        })
 }
