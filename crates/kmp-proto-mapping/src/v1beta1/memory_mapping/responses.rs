@@ -433,6 +433,14 @@ pub fn ask_response_from_result(
     };
     let unknown = !bears_on_the_question;
     let retrieved = because.len();
+    // How much the proof actually carries, which is not what `retrieved`
+    // counts. The answer core drops every candidate a hop reached, so a packet
+    // built entirely out of bridged or associated memories has a zero there
+    // while `proof.evidence` shows every one of them. Saying nothing was
+    // retrieved over a proof holding related memories is the kernel
+    // contradicting its own evidence, and it is the wrong next move to
+    // suggest: that memory has been written, this question just cannot cite it.
+    let evidence_retained = evidence.len();
     // Citations belong to an answer. Returning five of them beside UNKNOWN is
     // how an unsupported answer looked supported in the first place; what was
     // retrieved is still visible in `proof.evidence`.
@@ -445,7 +453,7 @@ pub fn ask_response_from_result(
         },
         evidence,
         if unknown {
-            vec![if retrieved == 0 {
+            vec![if evidence_retained == 0 {
                 format!("any stored memory for: {question}")
             } else {
                 format!("stored memory that bears on: {question}")
@@ -528,14 +536,18 @@ pub fn ask_response_from_result(
                 format!(
                     "Resolved {semantic_count} semantic candidates; none establishes an answer for: {question}{nearest_outside_note}"
                 )
-            } else if retrieved == 0 {
+            } else if evidence_retained == 0 {
                 format!(
                     "Nothing in this memory was retrieved for: {question}{nearest_outside_note}"
                 )
             } else {
                 format!(
-                    "Retrieved {retrieved} memory {}, none of which bears on: {question}{nearest_outside_note}",
-                    if retrieved == 1 { "item" } else { "items" }
+                    "Retrieved {evidence_retained} memory {}, none of which bears on: {question}{nearest_outside_note}",
+                    if evidence_retained == 1 {
+                        "item"
+                    } else {
+                        "items"
+                    }
                 )
             }
         } else {
@@ -2026,6 +2038,151 @@ mod ask_entry_text_tests {
             "a memory reached through the graph must not be cited as the answer"
         );
         assert_eq!(response.because.len(), 1);
+    }
+
+    /// A packet can hold related memories and answer nothing at all: a hop is
+    /// proof and never a citation, so UNKNOWN with an empty `because` is the
+    /// right result. What it may not do is report that nothing was retrieved
+    /// while the proof beside it lists what was. The two readings lead to
+    /// different next moves — write this memory, or ask a question this
+    /// memory can settle — and only one of them is true here.
+    #[test]
+    fn unknown_over_indirect_evidence_says_what_it_did_retrieve() {
+        let node = |id: &str, kind: &str, summary: &str| {
+            BundleNode::new(id, kind, id, summary, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("project:kmp", "memory_anchor", "KMP memory"),
+            vec![
+                node("timeline:main", "memory_dimension", "Timeline"),
+                node(
+                    "obs:valve",
+                    "observation",
+                    "The reserve valve failed during the night shift.",
+                ),
+            ],
+            vec![BundleRelationship::new(
+                "timeline:main",
+                "obs:valve",
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_sequence(1),
+            )],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let rendered = render_graph_bundle(&bundle);
+        let result = GetContextResult {
+            bundle,
+            rendered,
+            requested_scopes: Vec::new(),
+            served_at: std::time::SystemTime::UNIX_EPOCH,
+            timing: None,
+        };
+
+        // One of the two concepts bridges and the other reaches nothing, so
+        // the valve memory arrives as a hop and no candidate answers.
+        let response = ask_response_from_result(
+            "valvula canteen",
+            None,
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            None,
+            result,
+            &super::super::lexical_bridge::tests::spanish_english_toy(),
+            &kmp_domain::TemporalSelection::Frontier,
+        )
+        .expect("an answer");
+
+        assert_eq!(response.answer, UNANSWERED);
+        assert!(response.because.is_empty());
+        let proof = response.proof.expect("proof");
+        assert_eq!(proof.evidence.len(), 1);
+        assert!(
+            proof.evidence.iter().all(super::was_reached_indirectly),
+            "the reproduction needs every item to be a hop"
+        );
+        assert!(
+            response.summary.contains("Retrieved 1 memory item")
+                && response.summary.contains("none of which bears on"),
+            "unexpected summary: {}",
+            response.summary
+        );
+        assert_eq!(
+            proof.missing,
+            ["stored memory that bears on: valvula canteen"]
+        );
+    }
+
+    /// The real no-retrieval case keeps the diagnostic it always had.
+    #[test]
+    fn unknown_over_no_evidence_still_says_nothing_was_retrieved() {
+        let node = |id: &str, kind: &str, summary: &str| {
+            BundleNode::new(id, kind, id, summary, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("project:kmp", "memory_anchor", "KMP memory"),
+            vec![
+                node("timeline:main", "memory_dimension", "Timeline"),
+                node(
+                    "obs:valve",
+                    "observation",
+                    "The reserve valve failed during the night shift.",
+                ),
+            ],
+            vec![BundleRelationship::new(
+                "timeline:main",
+                "obs:valve",
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_sequence(1),
+            )],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let rendered = render_graph_bundle(&bundle);
+        let result = GetContextResult {
+            bundle,
+            rendered,
+            requested_scopes: Vec::new(),
+            served_at: std::time::SystemTime::UNIX_EPOCH,
+            timing: None,
+        };
+
+        let response = ask_response_from_result(
+            "Which ocean hosts the underwater coral expedition?",
+            None,
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            None,
+            result,
+            &super::super::lexical_bridge::tests::spanish_english_toy(),
+            &kmp_domain::TemporalSelection::Frontier,
+        )
+        .expect("an answer");
+
+        assert_eq!(response.answer, UNANSWERED);
+        let proof = response.proof.expect("proof");
+        assert!(proof.evidence.is_empty());
+        assert!(
+            response
+                .summary
+                .contains("Nothing in this memory was retrieved"),
+            "unexpected summary: {}",
+            response.summary
+        );
+        assert_eq!(
+            proof.missing,
+            ["any stored memory for: Which ocean hosts the underwater coral expedition?"]
+        );
     }
 }
 
