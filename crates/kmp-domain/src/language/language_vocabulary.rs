@@ -46,6 +46,17 @@ impl LanguageVocabulary {
             .get_or_init(|| serde_json::from_str(SOURCE).expect("the shipped function words parse"))
     }
 
+    /// Whether a folded word is a function word of any shipped language.
+    ///
+    /// It is the one dictionary the kernel carries, and every word in it is a
+    /// word a writer does not choose, so a caller asking this is asking
+    /// whether a token is ordinary language rather than something named.
+    pub fn is_function_word(&self, token: &str) -> bool {
+        self.languages
+            .iter()
+            .any(|language| language.function_words.contains(token))
+    }
+
     /// Which language a body of text is written in, or none when it cannot be
     /// read or is too evenly mixed to call.
     ///
