@@ -80,6 +80,7 @@ fn query(axis: TemporalAxis) -> TraceSearchRequest {
         limits: TraceSearchLimits::default(),
         temporal: TemporalSelection::as_of(TemporalCursor::time(CUT).expect("cut"), axis)
             .expect("selection"),
+        body: Default::default(),
     }
 }
 

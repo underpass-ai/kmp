@@ -1634,6 +1634,7 @@ dependencies = [
  "kmp-plugin-api",
  "serde",
  "serde_json",
+ "sha2",
  "unicode-normalization",
 ]
 

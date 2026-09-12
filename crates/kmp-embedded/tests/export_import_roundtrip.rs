@@ -124,6 +124,7 @@ async fn sqlite_import_keeps_sql_and_prompt_shaped_text_inert() {
             include_incoming: false,
             include_outgoing: false,
             include_raw: false,
+            expect_revision: None,
         })
         .await
         .expect("imported memory remains readable");
@@ -231,6 +232,7 @@ async fn export_import_preserves_wake_temporal_and_proof() {
             include_incoming: true,
             include_outgoing: false,
             include_raw: false,
+            expect_revision: None,
         })
         .await
         .expect("inspect succeeds");
@@ -253,6 +255,7 @@ async fn export_import_preserves_wake_temporal_and_proof() {
             include_incoming: true,
             include_outgoing: false,
             include_raw: false,
+            expect_revision: None,
         })
         .await
         .expect("source proof");

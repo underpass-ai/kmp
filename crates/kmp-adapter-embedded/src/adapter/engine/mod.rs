@@ -1,7 +1,7 @@
 //! The storage seam ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 //!
 //! Everything the kernel ports need from a storage engine, and nothing an
-//! engine would need to know about the kernel: eleven key-to-bytes maps,
+//! engine would need to know about the kernel: thirteen key-to-bytes maps,
 //! transactions over them, and four key shapes. Port logic — graph
 //! traversal, revision checks, idempotency — is written once against this
 //! and never sees an engine type.
@@ -38,6 +38,9 @@ pub(crate) enum Table {
     RelationsByTarget,
     /// Node details: `node_id -> DetailRecord`.
     Details,
+    /// Reader-authored compact cards: `(node_id, language) -> CardRecord`.
+    /// A derived view beside the canonical body, never inside it.
+    Cards,
     /// Memory anchor index: `node_id -> ()`.
     Anchors,
     /// Append-only context event log: `sequence -> ContextUpdatedEvent`.
@@ -68,7 +71,9 @@ impl Table {
             | Table::Aggregates
             | Table::Idempotency
             | Table::Migrations => KeyShape::Str,
-            Table::Processed | Table::Checkpoints | Table::Snapshots => KeyShape::Str2,
+            Table::Cards | Table::Processed | Table::Checkpoints | Table::Snapshots => {
+                KeyShape::Str2
+            }
             Table::Relations | Table::RelationsByTarget => KeyShape::Str3,
             Table::EventLog => KeyShape::U64,
         }
@@ -82,6 +87,7 @@ impl fmt::Display for Table {
             Table::Relations => "relations_by_source",
             Table::RelationsByTarget => "relations_by_target",
             Table::Details => "details",
+            Table::Cards => "node_cards",
             Table::Anchors => "memory_anchors",
             Table::EventLog => "event_log",
             Table::Aggregates => "aggregates",

@@ -2169,6 +2169,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let inspect = service
         .inspect(Request::new(InspectRequest {
+            expect_revision: 0,
             about: "node-123".to_string(),
             r#ref: "node-123".to_string(),
             include: Some(InspectInclude {
@@ -2206,6 +2207,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let summary_only = service
         .inspect(Request::new(InspectRequest {
+            expect_revision: 0,
             about: "node-123".to_string(),
             r#ref: "node-123".to_string(),
             include: Some(InspectInclude {
@@ -2227,6 +2229,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let raw = service
         .inspect(Request::new(InspectRequest {
+            expect_revision: 0,
             about: "node-123".to_string(),
             r#ref: "node-123".to_string(),
             include: Some(InspectInclude {

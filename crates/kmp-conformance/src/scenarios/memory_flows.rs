@@ -407,6 +407,7 @@ pub async fn inspect_surfaces_relation_proof(factory: &impl ConformanceBackendFa
             include_incoming: true,
             include_outgoing: true,
             include_raw: true,
+            expect_revision: None,
         })
         .await
         .expect("inspect should succeed");

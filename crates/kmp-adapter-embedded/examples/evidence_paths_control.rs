@@ -72,6 +72,7 @@ fn request(value: &Value) -> Result<EvidencePathRequest, Box<dyn Error>> {
             depth: 1024,
             states: 32768,
         },
+        body: Default::default(),
     })
 }
 

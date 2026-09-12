@@ -35,6 +35,26 @@ impl<'a> TemporalReadWindow<'a> {
         self.selection.is_frontier()
     }
 
+    /// The latest instant at which a derived card may have been authored and
+    /// still be shown by this read.
+    ///
+    /// A frontier read has no cut. A historical one does, and a historical
+    /// read whose cut this kernel could not place gets the impossible instant
+    /// rather than none: a card is never shown into a window nobody could
+    /// resolve. An open-ended span reaches the frontier and is not a cut.
+    pub fn card_cut_nanos(&self) -> Option<i128> {
+        if self.is_frontier() {
+            return None;
+        }
+        match self.boundary {
+            Some((at, inclusive)) => Some(if inclusive { at } else { at - 1 }),
+            None => match self.selection {
+                TemporalSelection::Within { interval, .. } if interval.end().is_none() => None,
+                _ => Some(i128::MIN),
+            },
+        }
+    }
+
     pub fn admits_coordinate(&self, coordinate: &TemporalCoordinate) -> bool {
         let axis = self.selection.axis().unwrap_or_default();
         match self.selection {

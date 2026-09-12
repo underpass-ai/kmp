@@ -1,0 +1,20 @@
+{
+  "summary": "Card revision 1 stored for `service:alpha:decision:rollout-canary` in es, standing for body revision 4.",
+  "ref": "service:alpha:decision:rollout-canary",
+  "language": "es",
+  "card": {
+    "status": "valid",
+    "text": "Canary al 5% durante 24h; se revierte si el error rate supera el 1%.",
+    "source_revision": 4,
+    "source_content_hash": "sha256:2f1c0b8e6d4a39f7c5b21e8a0d6f4c93b7e15a2d8c4f60b93e7a1d5c8f204b6e",
+    "source_record_digest": "sha256:9c3e5a71d8b04f62a95c7e13d06b8f4a2e97c51b3d80a6f24e9b7c05d13a8f62",
+    "source_body_bytes": 412,
+    "card_revision": 1,
+    "authored_by": "reader-agent",
+    "authored_at": "2026-09-12T09:31:04Z",
+    "text_bytes": 67
+  },
+  "warnings": [
+    "A card is a reader's derived view, never canonical memory and never proof. It stands only for the body version it declares; a later write makes it stale, and a stale card is never rendered as prose."
+  ]
+}

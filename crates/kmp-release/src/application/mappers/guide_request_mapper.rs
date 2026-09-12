@@ -272,6 +272,9 @@ impl GuideRequestMapper {
             "kmp_relate" => Ok("verb:relate"),
             "kmp_goto" | "kmp_near" | "kmp_rewind" | "kmp_forward" => Ok("verb:time"),
             "kmp_trace" | "kmp_inspect" => Ok("verb:audit"),
+            // A card is a reader's own write about what it just audited, so it
+            // is taught beside the write verb rather than as a fourth surface.
+            "kmp_condense" => Ok("verb:write"),
             "kmp_view_open" | "kmp_view_apply_intent" | "kmp_view_get_state" => Ok("verb:view"),
             other => Err(ReleaseError::invalid(format!(
                 "cannot place live tool {other:?} in the agent guide"

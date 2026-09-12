@@ -146,12 +146,32 @@ pub(crate) fn trace_request_from_arguments(arguments: &Value) -> Result<TraceReq
     })
 }
 
+/// The body revision a canonical expansion declares.
+///
+/// Zero on the wire means "whatever is current", so a declared revision must
+/// be positive: a caller that means revision zero means nothing.
+fn expect_revision_from_arguments(arguments: &Value) -> Result<u64, String> {
+    let Some(expect) = arguments.get("expect") else {
+        return Ok(0);
+    };
+    let revision = expect
+        .as_object()
+        .and_then(|expect| expect.get("revision"))
+        .and_then(Value::as_u64)
+        .filter(|revision| *revision > 0)
+        .ok_or_else(|| {
+            "expect.revision must be the positive body revision this expansion declares".to_string()
+        })?;
+    Ok(revision)
+}
+
 pub(crate) fn inspect_request_from_arguments(arguments: &Value) -> Result<InspectRequest, String> {
     validate_required_arguments(arguments, &["about", "ref"])?;
     Ok(InspectRequest {
         about: required_string(arguments, "about")?,
         r#ref: required_string(arguments, "ref")?,
         include: inspect_include_from_arguments(arguments)?,
+        expect_revision: expect_revision_from_arguments(arguments)?,
     })
 }
 

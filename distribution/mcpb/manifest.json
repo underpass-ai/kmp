@@ -81,6 +81,10 @@
       "description": "Change the labels a memory stands in without rewriting it"
     },
     {
+      "name": "kmp_condense",
+      "description": "Write your own compact card for one stored entry body, bound to the body version you read"
+    },
+    {
       "name": "kmp_view_open",
       "description": "Open or rehydrate a ChronoLoom view over an about, so a person and an agent look at the same loom. Read-only with respect to memory."
     },

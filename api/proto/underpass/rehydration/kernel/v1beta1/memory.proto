@@ -24,6 +24,35 @@ service KernelMemoryService {
   rpc Inspect(InspectRequest) returns (InspectResponse);
   // Change the labels one entry stands in without rewriting its text.
   rpc Relabel(RelabelRequest) returns (RelabelResponse);
+  // Author or refresh one node's reader-written compact card.
+  rpc Condense(CondenseRequest) returns (CondenseResponse);
+}
+
+// Author or refresh a compact card for one node body, under compare-and-set.
+message CondenseRequest {
+  string about = 1;
+  string ref = 2;
+  string language = 3;
+  // Only `node_body` is accepted. A card declares one dependency and may
+  // claim nothing a path, a neighborhood or a clock would be needed for.
+  string scope = 4;
+  string card = 5;
+  // The body version the reader read, as its descriptor reported it.
+  uint64 source_revision = 6;
+  string source_content_hash = 7;
+  string source_record_digest = 8;
+  // Exactly one: the card revision being replaced, or expect_absent.
+  uint64 expect_card_revision = 9;
+  bool expect_absent = 10;
+  string actor = 11;
+}
+
+message CondenseResponse {
+  string summary = 1;
+  string ref = 2;
+  string language = 3;
+  NodeCardView card = 4;
+  repeated string warnings = 5;
 }
 
 message IngestRequest {
@@ -774,6 +803,21 @@ message TraceSearchOptions {
   TraceSeekOptions seek = 12;
   // Share selected entry bodies and typed supports under the search N/E budget.
   bool proof = 13;
+  // Body delivery only. None of these changes discovery, ranking, which paths
+  // qualify or which refs are selected.
+  //
+  // Positive ceiling on the stored record bytes this response admits. Absent
+  // is the legacy unbounded materialization.
+  uint64 max_body_record_bytes = 14;
+  // Load only these refs of the selected proof table, at most 64. Present with
+  // an empty list is a descriptor-only view, which is why this is a message:
+  // absent and empty are different requests. A nonempty list requires both a
+  // ceiling and expect_selection.
+  TraceBodyRefs proof_refs = 15;
+  // The manifest_id returned by the read that named these refs.
+  string expect_selection = 16;
+  // Language of the reader-authored cards this read may present.
+  string compact_language = 17;
 }
 
 // Find compatible evidence from a seed, without known destination refs.
@@ -940,10 +984,16 @@ message TraceResponse {
   repeated MemoryRelation supports = 13;
   TraceProofStatus proof = 14;
   repeated TraceProofGap gaps = 15;
+  // Set when a named expansion was refused. Objects, supports and every text
+  // are empty: no chunk of two different selections is ever joined, and a
+  // batch naming a ref outside the selection delivers nothing.
+  TraceExpansionRefusal expansion_refusal = 16;
 }
 
 message TraceProofObject {
   InspectedObject object = 1;
+  // Whether the store holds a body. Never whether this response carried one,
+  // and never whether a card exists: read body_state for delivery.
   bool has_body = 2;
   string content_hash = 3;
   uint64 revision = 4;
@@ -952,7 +1002,89 @@ message TraceProofObject {
   EvidenceSupportClocks support_clocks = 7;
   // Canonical object status in this read; not a historical lifecycle derivation.
   string status = 8;
+  // Body identity and size without its text. Absent on the legacy unbounded
+  // read and when the store holds no body.
+  NodeBodyDescriptor descriptor = 9;
+  // loaded | deferred_budget | not_requested | compact | missing
+  string body_state = 10;
+  // Exact stored bytes a named expansion of this one object needs.
+  uint64 required_record_bytes = 11;
+  // Present only when the read asked for a compact presentation.
+  NodeCardView card = 12;
 }
+
+// Named body expansion. A message rather than a bare repeated field so that
+// "every body" and "no body, descriptors only" stay distinguishable.
+message TraceBodyRefs { repeated string refs = 1; }
+
+message NodeBodyDescriptor {
+  string ref = 1;
+  uint64 revision = 2;
+  // The public token, copied verbatim; never a body digest.
+  string content_hash = 3;
+  // Bytes of the record as stored: what a byte ceiling spends.
+  uint64 record_bytes = 4;
+  // Canonical UTF-8 bytes of the body text.
+  uint64 body_bytes = 5;
+  // sha256:<hex> over the exact stored record bytes.
+  string record_digest = 6;
+}
+
+// A reader-authored compact view of one node body. Derived text, never
+// canonical, and never returned unless it stands for the selected version.
+message NodeCardView {
+  // valid | stale | absent | after_cut
+  string status = 1;
+  // Present only for status=valid.
+  string text = 2;
+  uint64 source_revision = 3;
+  string source_content_hash = 4;
+  string source_record_digest = 5;
+  uint64 source_body_bytes = 6;
+  uint64 card_revision = 7;
+  string authored_by = 8;
+  string authored_at = 9;
+  uint64 text_bytes = 10;
+}
+
+message TraceBodyDelivery {
+  uint32 loaded = 1;
+  uint32 deferred_budget = 2;
+  uint32 not_requested = 3;
+  uint32 compact = 4;
+  uint32 missing = 5;
+  uint64 admitted_record_bytes = 6;
+  // Descriptor total of every present body in the selection.
+  uint64 selected_body_bytes = 7;
+  string next_deferred_ref = 8;
+  // Smallest ceiling a whole-query rerun needs for one more record.
+  uint64 rerun_record_bytes = 9;
+  // Smallest ceiling a named expansion of that record needs.
+  uint64 named_record_bytes = 10;
+}
+
+message TraceCompactSummary {
+  string language = 1;
+  uint32 valid = 2;
+  uint32 stale = 3;
+  uint32 absent = 4;
+  uint32 after_cut = 5;
+  uint64 card_bytes = 6;
+  uint64 body_bytes_omitted = 7;
+}
+
+// Why a named body expansion was refused, decided before any body was read.
+message TraceExpansionRefusal {
+  // read_selection_changed | unknown_expansion_refs
+  string code = 1;
+  // Manifest the caller declared, and the one this snapshot has.
+  string expected = 2;
+  string actual = 3;
+  // Refs named for expansion that are not in the selected proof table. The
+  // whole batch is refused rather than widened or partly delivered.
+  repeated string unknown_refs = 4;
+}
+
 
 message TraceProofStatus {
   uint32 missing_refs_count = 1;
@@ -962,7 +1094,13 @@ message TraceProofStatus {
   repeated uint32 complete_groups = 5;
   repeated uint32 incomplete_groups = 6;
   string stop_reason = 7;
+  // Canonical UTF-8 bytes actually loaded. Never a body this response
+  // withheld, and never raised to keep an old equality true.
   uint64 body_bytes = 8;
+  // Identity of the selected proof table, computed before any body loaded.
+  string manifest_id = 9;
+  TraceBodyDelivery delivery = 10;
+  TraceCompactSummary compact = 11;
 }
 
 message TraceProofGap {
@@ -1110,6 +1248,9 @@ message InspectRequest {
   string ref = 1;
   InspectInclude include = 2;
   string about = 3;
+  // Canonical expansion: return exactly this body revision or a conflict
+  // naming the stored one. Zero inspects whatever is current.
+  uint64 expect_revision = 4;
 }
 
 message InspectResponse {

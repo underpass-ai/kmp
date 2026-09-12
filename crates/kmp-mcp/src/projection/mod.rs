@@ -19,7 +19,8 @@ mod temporal_page;
 pub(crate) mod temporal_projection;
 mod test_support;
 mod trace_material_expansion;
-pub(crate) mod trace_projection;
+pub(crate) mod condense_projection;
+mod trace_projection;
 pub(crate) mod visual_projection;
 
 pub(crate) use ingest_projection::ingest_from_response;
@@ -33,6 +34,7 @@ pub(crate) use recall_projection::{
 pub(crate) use relabel_projection::relabel_from_response;
 pub(crate) use relate_projection::relate_from_response;
 pub(crate) use temporal_projection::{enforce_temporal_output_budget, temporal_from_response};
+pub(crate) use condense_projection::condense_from_response;
 pub(crate) use trace_projection::trace_from_response;
 pub(crate) use visual_projection::visual_projection_from_response;
 

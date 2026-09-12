@@ -47,6 +47,7 @@ pub fn trace_search_request_from_proto(
         }
     };
     let query = TraceSearchRequest {
+        body: super::trace_body_options::body_options(&options)?,
         proof: options.proof,
         about: request.about.clone(),
         from: request.from.clone(),

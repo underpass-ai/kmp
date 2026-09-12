@@ -16,11 +16,15 @@ pub struct EvidencePathRequest {
     pub constants: BTreeMap<String, BTreeSet<String>>,
     pub temporal: TemporalSelection,
     pub limits: TraceSearchLimits,
+    /// How this read wants canonical bodies delivered. Delivery only: it
+    /// changes no candidate, no group and no selected ref.
+    pub body: crate::TraceBodyOptions,
 }
 
 impl EvidencePathRequest {
     pub fn validate(&self) -> Result<(), DomainError> {
         self.limits.validate()?;
+        self.body.validate()?;
         let invalid = |message: &str| DomainError::InvalidState(message.into());
         if self.about.trim().is_empty()
             || self.from.trim().is_empty()

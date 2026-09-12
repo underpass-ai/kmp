@@ -97,6 +97,62 @@ pub(super) fn arguments(
                     .unwrap_or_default(),
                 follow,
                 relations: optional_string_array_field(s, "relations", "search.relations")?,
+                max_body_record_bytes: s
+                    .get("max_body_record_bytes")
+                    .map(|value| {
+                        value.as_u64().filter(|bytes| *bytes > 0).ok_or_else(|| {
+                            "search.max_body_record_bytes is a positive byte ceiling; omit it \
+                             for the unbounded read"
+                                .to_string()
+                        })
+                    })
+                    .transpose()?
+                    .unwrap_or(0),
+                // Absent and empty are different requests: absent delivers
+                // every selected body, empty delivers descriptors only.
+                proof_refs: s
+                    .get("proof_refs")
+                    .map(|value| {
+                        value
+                            .as_array()
+                            .ok_or_else(|| "search.proof_refs is an array of refs".to_string())
+                            .and_then(|refs| {
+                                refs.iter()
+                                    .map(|reference| {
+                                        reference
+                                            .as_str()
+                                            .filter(|reference| !reference.trim().is_empty())
+                                            .map(str::to_string)
+                                            .ok_or_else(|| {
+                                                "search.proof_refs takes nonempty refs".to_string()
+                                            })
+                                    })
+                                    .collect::<Result<Vec<_>, String>>()
+                            })
+                    })
+                    .transpose()?
+                    .map(|refs| kmp_proto::v1beta1::TraceBodyRefs { refs }),
+                expect_selection: optional_string_field(
+                    s,
+                    "expect_selection",
+                    "search.expect_selection",
+                )?
+                .unwrap_or_default(),
+                compact_language: s
+                    .get("compact")
+                    .map(|value| {
+                        object(value, "search.compact").and_then(|compact| {
+                            optional_string_field(compact, "language", "search.compact")?
+                                .filter(|language| !language.trim().is_empty())
+                                .ok_or_else(|| {
+                                    "search.compact requires the language its cards were \
+                                     written in"
+                                        .to_string()
+                                })
+                        })
+                    })
+                    .transpose()?
+                    .unwrap_or_default(),
             })
         })
         .transpose()?;

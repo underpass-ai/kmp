@@ -2,9 +2,9 @@ use serde_json::{Value, json};
 
 use crate::contract::handshake::CHRONOLOOM_APP_URI;
 use crate::contract::tools::{
-    app_view_take_control, app_view_undo, app_visual_projection, ask, forward, goto, ingest,
-    inspect, near, relabel, relate, rewind, trace, view_apply_intent, view_get_state, view_open,
-    wake, write_memory,
+    app_view_take_control, app_view_undo, app_visual_projection, ask, condense, forward, goto,
+    ingest, inspect, near, relabel, relate, rewind, trace, view_apply_intent, view_get_state,
+    view_open, wake, write_memory,
 };
 use crate::serving::tool_error_code::ToolErrorCode;
 
@@ -45,7 +45,7 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
             tool["inputSchema"]["properties"]["purpose"] = json!({"type":"string","enum":["continue","audit","history","answer"],"description":"Optional recommendation purpose with context_id. Omitted: continue the selected packet."});
             if matches!(
                 tool["name"].as_str(),
-                Some("kmp_write_memory" | "kmp_relabel")
+                Some("kmp_write_memory" | "kmp_relabel" | "kmp_condense")
             ) {
                 tool["inputSchema"]["required"]
                     .as_array_mut()
@@ -110,6 +110,7 @@ fn tools_list_core() -> Value {
             trace::definition(),
             inspect::definition(),
             relabel::definition(),
+            condense::definition(),
         ]
     })
 }

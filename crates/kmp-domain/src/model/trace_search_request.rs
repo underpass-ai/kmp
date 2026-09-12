@@ -17,11 +17,15 @@ pub struct TraceSearchRequest {
     pub select: Option<crate::TraceMaterialSelection>,
     pub limits: TraceSearchLimits,
     pub temporal: crate::TemporalSelection,
+    /// How this read wants canonical bodies delivered. Delivery only: it
+    /// changes no path, no ordering and no selected ref.
+    pub body: crate::TraceBodyOptions,
 }
 
 impl TraceSearchRequest {
     pub fn validate(&self) -> Result<(), DomainError> {
         self.limits.validate()?;
+        self.body.validate()?;
         self.dimensions.validate()?;
         if let Some(policy) = &self.select {
             policy.validate(&self.targets)?;

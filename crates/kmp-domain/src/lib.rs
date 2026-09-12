@@ -15,7 +15,8 @@ pub use model::{
     TemporalEntry, TemporalEntrySelection, TemporalMemoryTraversal, TemporalTraversalRequest,
     TemporalTraversalResult, Tension, cap_proposals_per_fact, compare_temporal_coordinates,
     compare_temporal_instants, directed_relationship_path, label_resemblances, labels_by_entry,
-    normalized_label_token, relate, temporal_instant_nanos, temporal_instant_rfc3339,
+    normalized_label_token, relate, rfc3339_from_epoch_seconds, temporal_instant_nanos,
+    temporal_instant_rfc3339,
 };
 pub use model::{TemporalReadWindow, temporal_clock_instant};
 pub use model::{
@@ -69,6 +70,17 @@ pub use model::{
     TraceSearchRequest, TraceSearchResult, TraceSearchStop, bounded_trace_search,
 };
 pub use repositories::TraceSnapshotReader;
+pub use repositories::{NodeCardStore, NodeCardWriteFuture};
+pub use model::{AuthorNodeCard, NodeCardExpectation, NodeCardRejection, node_card_policy};
+pub use model::{
+    MAX_EXPANSION_REFS, TraceBodyAdmission, TraceBodyOptions, TraceManifestDigest,
+    trace_body_admission,
+};
+pub use projection::NodeBodyDescriptor;
+pub use value_objects::{
+    NodeCard, NodeCardPresentation, NodeCardStamp, NodeCardStatus, TraceBodyDelivery,
+    TraceBodyState, TraceCompactSummary, TraceExpansionRefusal,
+};
 
 #[cfg(test)]
 mod tests {

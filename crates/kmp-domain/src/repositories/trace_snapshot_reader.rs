@@ -15,6 +15,37 @@ pub trait TraceSnapshotReader {
         ))
     }
 
+    /// Identity and size of each canonical body, in requested order,
+    /// preserving duplicates and missing slots, from the same snapshot as
+    /// `bodies`, `cards` and `adjacency`.
+    ///
+    /// `None` in a slot means the store holds no body for that ref. A stored
+    /// body whose descriptor is missing is an inconsistent projection and must
+    /// fail here: it is never reported as an absent body, and never licenses
+    /// loading the whole record instead. No implementation may read the body
+    /// value to answer this.
+    fn descriptors(
+        &self,
+        _ids: &[String],
+    ) -> Result<Vec<Option<crate::NodeBodyDescriptor>>, PortError> {
+        Err(PortError::Unavailable(
+            "body descriptors are not supported by this snapshot".into(),
+        ))
+    }
+
+    /// Reader-authored cards in requested order, preserving duplicates and
+    /// missing slots, from the same snapshot as bodies and adjacency. A
+    /// snapshot that stores no cards answers every slot `None`, which reads as
+    /// "no card", never as an error: a compact presentation that cannot find a
+    /// card still returns its node.
+    fn cards(
+        &self,
+        _ids: &[String],
+        _language: &str,
+    ) -> Result<Vec<Option<crate::NodeCard>>, PortError> {
+        Ok(vec![None; _ids.len()])
+    }
+
     fn node(&self, id: &str) -> Result<Option<NodeProjection>, PortError>;
     fn adjacency(&self, request: &AdjacencyRequest) -> Result<AdjacencyPage, PortError>;
 }

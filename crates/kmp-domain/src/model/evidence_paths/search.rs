@@ -45,6 +45,7 @@ pub fn search_evidence_paths(
             &request.about,
             &result,
             &mut search.admission,
+            &request.body,
         )?);
         result.discovered_nodes = search.admission.budget.refs.len() as u32;
         result.scanned_edges = search.admission.budget.scanned;

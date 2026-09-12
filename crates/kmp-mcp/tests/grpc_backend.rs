@@ -707,6 +707,13 @@ struct FakeMemoryService {
 
 #[tonic::async_trait]
 impl KernelMemoryService for FakeMemoryService {
+    async fn condense(
+        &self,
+        _request: Request<kmp_proto::v1beta1::CondenseRequest>,
+    ) -> Result<Response<kmp_proto::v1beta1::CondenseResponse>, Status> {
+        Err(Status::unimplemented("condense is not part of this fixture"))
+    }
+
     async fn ingest(
         &self,
         request: Request<IngestRequest>,
@@ -925,6 +932,7 @@ impl KernelMemoryService for FakeMemoryService {
         self.recorded.traces.lock().await.push(request.clone());
 
         Ok(Response::new(TraceResponse {
+            expansion_refusal: None,
             seek: None,
             objects: vec![],
             supports: vec![],

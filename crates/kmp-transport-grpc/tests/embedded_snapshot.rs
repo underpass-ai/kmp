@@ -102,6 +102,7 @@ async fn grpc_inspect_and_trace_proof_keep_graph_body_and_sources_together_durin
     for _ in 0..80 {
         let result = client
             .inspect(InspectRequest {
+                expect_revision: 0,
                 about: ABOUT.into(),
                 r#ref: ENTRY.into(),
                 include: Some(InspectInclude {

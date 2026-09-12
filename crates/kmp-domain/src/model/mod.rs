@@ -28,6 +28,7 @@ pub use relationship_path::directed_relationship_path;
 pub use temporal_memory::{
     TemporalEntry, TemporalEntrySelection, TemporalMemoryTraversal, TemporalTraversalRequest,
     TemporalTraversalResult, compare_temporal_coordinates, compare_temporal_instants,
+    rfc3339_from_epoch_seconds,
     temporal_instant_nanos, temporal_instant_rfc3339,
 };
 
@@ -79,6 +80,20 @@ pub use evidence_paths::{
     EvidencePathGroup, EvidencePathRequest, EvidencePathResult, EvidencePathRole,
     EvidencePathStatus, search_evidence_paths,
 };
+
+mod author_node_card;
+pub mod trace_body_admission;
+mod trace_manifest;
+mod trace_body_options;
+mod node_card_expectation;
+pub mod node_card_policy;
+mod node_card_rejection;
+pub use author_node_card::AuthorNodeCard;
+pub use trace_body_admission::TraceBodyAdmission;
+pub use trace_manifest::TraceManifestDigest;
+pub use trace_body_options::{MAX_EXPANSION_REFS, TraceBodyOptions};
+pub use node_card_expectation::NodeCardExpectation;
+pub use node_card_rejection::NodeCardRejection;
 
 mod materialize_trace_proof;
 mod trace_proof_object;

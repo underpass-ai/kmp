@@ -93,6 +93,7 @@ async fn selected_paths_sources_and_bodies_remain_one_state_after_independent_co
         select: None,
         limits: Default::default(),
         temporal: Default::default(),
+        body: Default::default(),
     };
     let tx = reader.begin_read().expect("valid snapshot fixture");
     let snapshot = TraceSnapshot(tx.as_ref());
@@ -156,6 +157,7 @@ async fn a_body_port_reordering_slots_is_rejected_instead_of_mixing_sources() {
         select: None,
         limits: Default::default(),
         temporal: Default::default(),
+        body: Default::default(),
     };
     let tx = store.begin_read().expect("valid snapshot fixture");
     let error = bounded_trace_search(&WrongBodies(TraceSnapshot(tx.as_ref())), &q)
@@ -209,6 +211,7 @@ async fn independent_writer_between_selected_graph_and_bodies_cannot_mix_either_
             select: None,
             limits: Default::default(),
             temporal: Default::default(),
+            body: Default::default(),
         };
         let e = EvidencePathRequest {
             proof: true,
@@ -226,6 +229,7 @@ async fn independent_writer_between_selected_graph_and_bodies_cannot_mix_either_
             constants: Default::default(),
             temporal: Default::default(),
             limits: Default::default(),
+            body: Default::default(),
         };
         let tx = reader.begin_read().expect("valid proof fixture");
         let (trigger, wait_trigger) = std::sync::mpsc::channel();

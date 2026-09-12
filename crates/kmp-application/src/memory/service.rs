@@ -2,10 +2,12 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use kmp_domain::{
-    BundleNode, BundleRelationship, ContextEventStore, DimensionScopeMode, DimensionSelection,
+    AuthorNodeCard, BundleNode, BundleRelationship, ContextEventStore, DimensionScopeMode,
+    DimensionSelection,
     DimensionSelectionMode, EntryLabels, GraphNeighborhoodReader, KmpBundle, KmpMode,
     LabelSelector, MemoryAboutIndexReader, MemoryDimensionIdentity, MemoryRelationType,
-    NodeDetailReader, NodeRelationshipReader, ProjectionWriter, ResolutionTier, SnapshotStore,
+    NodeCard, NodeCardRejection, NodeCardStore, NodeDetailReader, NodeRelationshipReader,
+    ProjectionWriter, ResolutionTier, SnapshotStore,
     TemporalCoordinate, TemporalMemoryTraversal, TemporalTraversalRequest, labels_by_entry,
 };
 
@@ -31,6 +33,10 @@ const MEMORY_EXISTING_REFS_LOOKUP_DEPTH: u32 = 1;
 pub struct KernelMemoryApplicationService<G, D, S, E, W> {
     query_application: Arc<QueryApplicationService<G, D, S>>,
     command_application: Arc<CommandApplicationService<E, W>>,
+    /// The derived card view, when this kernel has one. Mounted the way read
+    /// snapshots are, as one object-safe port, so a backend that stores no
+    /// cards composes without carrying a generic for a table it never reads.
+    node_cards: Option<Arc<dyn NodeCardStore>>,
 }
 
 impl<G, D, S, E, W> KernelMemoryApplicationService<G, D, S, E, W> {
@@ -41,7 +47,34 @@ impl<G, D, S, E, W> KernelMemoryApplicationService<G, D, S, E, W> {
         Self {
             query_application,
             command_application,
+            node_cards: None,
         }
+    }
+
+    /// Mounts the store that holds reader-authored cards. Without it,
+    /// condensing is refused by name rather than answered with silence.
+    pub fn with_node_cards(mut self, node_cards: Arc<dyn NodeCardStore>) -> Self {
+        self.node_cards = Some(node_cards);
+        self
+    }
+
+    /// Authors or refreshes one node's compact card.
+    ///
+    /// The outer result is this service failing; the inner one is the card
+    /// policy refusing a write the store could have performed. A caller that
+    /// collapses them turns "your card is out of date" into "memory is down".
+    pub async fn condense(
+        &self,
+        command: AuthorNodeCard,
+    ) -> Result<Result<NodeCard, NodeCardRejection>, ApplicationError> {
+        let Some(cards) = &self.node_cards else {
+            return Err(ApplicationError::Validation(
+                "this kernel serves no reader-authored cards; kmp_condense needs a store with \
+                 the card view mounted"
+                    .into(),
+            ));
+        };
+        Ok(cards.author_node_card(command).await?)
     }
 }
 
@@ -553,6 +586,13 @@ where
         query: InspectMemoryQuery,
     ) -> Result<InspectMemoryResult, ApplicationError> {
         if query.ref_id.starts_with("receipt:") {
+            if query.expect_revision.is_some() {
+                return Err(ApplicationError::Validation(
+                    "a receipt is immutable command detail and carries no body revision; \
+                     drop expect to inspect one"
+                        .into(),
+                ));
+            }
             let reference = kmp_domain::MemoryReceiptRef::parse(&query.ref_id)
                 .ok_or_else(|| ApplicationError::Validation("invalid receipt ref".into()))?;
             if reference.about() != query.about {
@@ -580,6 +620,30 @@ where
                 node_id: query.ref_id.clone(),
             })
             .await?;
+        // Canonical expansion. The store keeps one body version per node, so
+        // the only promise it can keep is "exactly the revision you declared,
+        // or a conflict naming the one that is here". It never reconstructs
+        // an older body, and it returns no text when it cannot keep it.
+        if let Some(expected) = query.expect_revision {
+            let actual = detail.detail.as_ref().map(|body| body.revision);
+            if actual != Some(expected) {
+                return Err(ApplicationError::Ports(kmp_domain::PortError::Conflict(
+                    match actual {
+                        Some(actual) => format!(
+                            "`{}` is at body revision {actual}, not the declared {expected}; \
+                             this store keeps one body version per entry, so the declared one \
+                             cannot be shown. Inspect without expect to read revision {actual}",
+                            query.ref_id
+                        ),
+                        None => format!(
+                            "`{}` has no stored body, so body revision {expected} cannot be \
+                             expanded",
+                            query.ref_id
+                        ),
+                    },
+                )));
+            }
+        }
 
         // Evidence is part of Inspect's contract independently of whether the
         // caller asks to render the incoming links. Resolve the direct graph
