@@ -64,7 +64,9 @@ KMP_APP.navigator = (() => {
     // The windowpane.
     const a = xAt(view.t0);
     const b = xAt(view.t1);
-    pen.fillStyle = "rgba(72, 120, 224, 0.16)";
+    // The pane follows the theme accent; it used to be a fixed blue that the
+    // green-cast shell never wore in either theme.
+    pen.fillStyle = p.pane || "rgba(72, 120, 224, 0.16)";
     pen.fillRect(a, 0, Math.max(2, b - a), height);
     pen.fillStyle = p.accent;
     pen.fillRect(a - 1, 0, 2, height);

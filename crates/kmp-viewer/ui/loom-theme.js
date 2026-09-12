@@ -29,6 +29,7 @@ KMP_APP.theme = (() => {
         text: read("--text-primary"),
         textMuted: read("--text-muted"),
         accent: read("--accent"),
+        pane: read("--pane"),
         laneLine: read("--lane-line"),
         halo: read("--halo"),
         danger: read("--danger"),
