@@ -8,18 +8,41 @@
 //! 2. `<store>/lexical-bridge.kmpb`, a table belonging to one store;
 //! 3. `<user data home>/kmp/lexical-bridge.kmpb`, the machine's table.
 //!
+//! That same variable set to `none` says the opposite: run without a table on
+//! purpose. The machine's copy sits behind every store that has none of its
+//! own, so "no table nearby" and "no table wanted" are different answers, and
+//! only the operator can tell them apart.
+//!
 //! The third exists because a store is selected per working directory: a
 //! project `.kernel/` wins over the user default, so a per-store table would
 //! have to be copied into every project that ever opens memory. The shipped
 //! table is several megabytes and identical everywhere, so `setup` installs
 //! one per machine and a store overrides it only when it means to.
 
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use kmp_proto_mapping::v1beta1::LexicalBridge;
 
 pub(crate) const LEXICAL_BRIDGE_ENV: &str = "KMP_LEXICAL_BRIDGE";
 pub(crate) const LEXICAL_BRIDGE_FILE: &str = "lexical-bridge.kmpb";
+/// The one value of [`LEXICAL_BRIDGE_ENV`] that names no table rather than a
+/// file: this installation means to run without one.
+pub(crate) const LEXICAL_BRIDGE_DISABLED: &str = "none";
+
+/// What this installation reads: a table to open, or nothing at all because
+/// an operator said so.
+///
+/// Running without a table is a state a machine can be in deliberately, and
+/// it is not the same state as a table that could not be read. Keeping them
+/// apart here is what lets `info` and `doctor` say which one they mean.
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum BridgeSource {
+    /// `KMP_LEXICAL_BRIDGE=none`: no table, on purpose.
+    Disabled,
+    /// A file to read, and the rule that chose it.
+    File(PathBuf, BridgeOrigin),
+}
 
 /// Where a table was found, so a message can say which one it means.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -50,8 +73,15 @@ impl BridgeOrigin {
 /// malformed is reported and ignored rather than allowed to refuse the
 /// whole store — the table is an aid to retrieval, not a condition of it.
 pub(crate) fn load_lexical_bridge(data_dir: &Path) -> LexicalBridge {
-    let (path, origin) = lexical_bridge_source(data_dir);
-    load_bridge_at(&path, origin)
+    load_from(lexical_bridge_source(data_dir))
+}
+
+/// Read whichever table the rule chose, having already chosen.
+fn load_from(source: BridgeSource) -> LexicalBridge {
+    match source {
+        BridgeSource::Disabled => LexicalBridge::none(),
+        BridgeSource::File(path, origin) => load_bridge_at(&path, origin),
+    }
 }
 
 /// Read one table, having already decided which one.
@@ -79,8 +109,18 @@ fn load_bridge_at(path: &Path, origin: BridgeOrigin) -> LexicalBridge {
 /// One line for `info` and `doctor`: which table this store would read, or
 /// that there is none and what that means for `ask`.
 pub(crate) fn describe_lexical_bridge(data_dir: &Path) -> String {
-    let (path, origin) = lexical_bridge_source(data_dir);
-    describe_bridge_at(&path, origin)
+    describe_source(lexical_bridge_source(data_dir))
+}
+
+/// Say what this installation reads, having already decided.
+fn describe_source(source: BridgeSource) -> String {
+    match source {
+        BridgeSource::Disabled => format!(
+            "lexical bridge: none, turned off by {LEXICAL_BRIDGE_ENV}={LEXICAL_BRIDGE_DISABLED}; \
+             stored text and valid summary_en remain searchable"
+        ),
+        BridgeSource::File(path, origin) => describe_bridge_at(&path, origin),
+    }
 }
 
 /// Say what one table is, having already decided which one.
@@ -116,16 +156,27 @@ fn describe_bridge_at(path: &Path, origin: BridgeOrigin) -> String {
     }
 }
 
-/// The nearest table this store would read, and where it came from.
-fn lexical_bridge_source(data_dir: &Path) -> (PathBuf, BridgeOrigin) {
-    resolve_lexical_bridge(
-        std::env::var_os(LEXICAL_BRIDGE_ENV)
-            .filter(|value| !value.is_empty())
-            .map(PathBuf::from),
+/// The nearest table this store would read, or that it reads none on purpose.
+fn lexical_bridge_source(data_dir: &Path) -> BridgeSource {
+    let named = std::env::var_os(LEXICAL_BRIDGE_ENV).filter(|value| !value.is_empty());
+    if named.as_deref().is_some_and(names_no_table) {
+        return BridgeSource::Disabled;
+    }
+    let (path, origin) = resolve_lexical_bridge(
+        named.map(PathBuf::from),
         data_dir,
         machine_lexical_bridge_path().as_deref(),
         |candidate| candidate.is_file(),
-    )
+    );
+    BridgeSource::File(path, origin)
+}
+
+/// Whether the operator wrote the sentinel rather than a path. Case does not
+/// decide it: `NONE` from a shell script means what `none` means.
+fn names_no_table(value: &OsStr) -> bool {
+    value
+        .to_str()
+        .is_some_and(|value| value.eq_ignore_ascii_case(LEXICAL_BRIDGE_DISABLED))
 }
 
 /// The rule itself, with the environment and the filesystem handed in.
@@ -286,6 +337,51 @@ mod tests {
 
         assert_eq!(path, machine);
         assert_eq!(origin, BridgeOrigin::Machine);
+    }
+
+    /// The sentinel is the difference between a machine that has no table and
+    /// a machine that wants none. Both bridge nothing; only one of them is a
+    /// problem, and `doctor` has to be able to say which.
+    #[test]
+    fn turning_the_bridge_off_bridges_nothing_and_says_it_was_meant() {
+        assert!(load_from(BridgeSource::Disabled).is_silent());
+
+        let disabled = describe_source(BridgeSource::Disabled);
+        assert!(disabled.starts_with("lexical bridge: none"), "{disabled}");
+        assert!(
+            disabled.contains("turned off by KMP_LEXICAL_BRIDGE=none"),
+            "{disabled}"
+        );
+        assert!(
+            !disabled.contains("could not be read"),
+            "a deliberate choice must not read as a failure: {disabled}"
+        );
+        assert!(
+            disabled.contains("valid summary_en remain searchable"),
+            "{disabled}"
+        );
+    }
+
+    #[test]
+    fn only_the_sentinel_names_no_table_and_case_does_not_decide_it() {
+        for spelling in ["none", "None", "NONE"] {
+            assert!(names_no_table(OsStr::new(spelling)), "{spelling}");
+        }
+        for path in ["none.kmpb", "/tables/none", "nothing", ""] {
+            assert!(!names_no_table(OsStr::new(path)), "{path}");
+        }
+    }
+
+    /// A table named and missing is still a failure to report. Only the
+    /// sentinel is a choice.
+    #[test]
+    fn a_named_table_that_is_missing_still_reads_as_a_failure() {
+        let missing = describe_source(BridgeSource::File(
+            PathBuf::from("/named/table.kmpb"),
+            BridgeOrigin::Named,
+        ));
+
+        assert!(missing.contains("could not be read"), "{missing}");
     }
 
     #[test]
