@@ -136,6 +136,7 @@ fn trace() -> TraceSearchRequest {
             nodes: 5,
             ..Default::default()
         },
+        body: Default::default(),
     }
 }
 fn seek() -> EvidencePathRequest {
@@ -155,6 +156,7 @@ fn seek() -> EvidencePathRequest {
         constants: Default::default(),
         temporal: Default::default(),
         limits: trace().limits,
+        body: Default::default(),
     }
 }
 

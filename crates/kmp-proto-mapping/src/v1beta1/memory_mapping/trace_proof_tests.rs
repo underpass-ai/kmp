@@ -8,6 +8,9 @@ fn response() -> TraceResponse {
         &mut response,
         TraceProofResult {
             objects: vec![DomainObject {
+                descriptor: None,
+                body_state: kmp_domain::TraceBodyState::Loaded,
+                card: None,
                 node: NodeProjection {
                     node_id: "source".into(),
                     node_kind: "memory_evidence".into(),

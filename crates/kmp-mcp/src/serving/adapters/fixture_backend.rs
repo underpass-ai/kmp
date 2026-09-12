@@ -35,6 +35,8 @@ const INSPECT_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/inspect.response.json");
 const RELABEL_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/relabel.response.json");
+const CONDENSE_RESPONSE_FIXTURE: &str =
+    include_str!("../../../fixtures/kernel/v1beta1/kmp/condense.response.json");
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FixtureKernelMcpBackend;
@@ -75,6 +77,16 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
             arguments,
             &["about", "ref", "why", "idempotency_key"],
             RELABEL_RESPONSE_FIXTURE,
+        ),
+        // The fixture backend validates the call and answers the reference
+        // example. It stores nothing, so it cannot refuse a stale card: a
+        // compare-and-set is only meaningful against a real store.
+        "kmp_condense" => read_fixture_tool_result(
+            arguments,
+            &[
+                "about", "ref", "language", "scope", "card", "source", "expect",
+            ],
+            CONDENSE_RESPONSE_FIXTURE,
         ),
         "kmp_view_read_projection" => {
             visual_projection_request_from_arguments(arguments)

@@ -78,6 +78,7 @@ fn query() -> TraceSearchRequest {
         dimensions: Default::default(),
         limits: TraceSearchLimits::default(),
         temporal: Default::default(),
+        body: Default::default(),
     }
 }
 async fn open(mutations: Vec<ProjectionMutation>) -> (tempfile::TempDir, EmbeddedKernelStore) {

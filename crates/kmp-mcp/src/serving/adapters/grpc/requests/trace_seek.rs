@@ -55,6 +55,12 @@ pub(super) fn arguments(search: &Map<String, Value>) -> Result<Option<TraceSeekO
             "max_depth",
             "max_states",
             "proof",
+            // Body delivery is shared by both modes: seek materializes the
+            // same proof table and pays for the same bodies.
+            "max_body_record_bytes",
+            "proof_refs",
+            "expect_selection",
+            "compact",
         ]
         .contains(&key.as_str())
         {

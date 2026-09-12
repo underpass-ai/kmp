@@ -1,4 +1,5 @@
 mod common;
+mod condense;
 mod dimensions;
 mod ingest;
 mod queries;
@@ -9,6 +10,7 @@ mod trace_search;
 mod trace_seek;
 mod visual;
 
+pub(crate) use condense::condense_request_from_arguments;
 pub(crate) use ingest::ingest_request_from_arguments;
 pub(crate) use queries::{
     ask_request_from_arguments, inspect_request_from_arguments, relate_request_from_arguments,

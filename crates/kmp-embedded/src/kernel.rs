@@ -79,10 +79,15 @@ impl EmbeddedKernel {
             store.clone(),
             GENERATOR_VERSION,
         ));
-        let service = Arc::new(KernelMemoryApplicationService::new(
-            query_application,
-            Arc::new(CommandApplicationService::new(update_context)),
-        ));
+        let service = Arc::new(
+            KernelMemoryApplicationService::new(
+                query_application,
+                Arc::new(CommandApplicationService::new(update_context)),
+            )
+            // The derived card view lives on the same store as the bodies it
+            // describes, so a card is written and read inside one snapshot.
+            .with_node_cards(Arc::new(store.clone())),
+        );
         let (quality_observer, telemetry_guard, telemetry_writer, quality_telemetry_error) =
             compose_quality_telemetry(data_dir);
 

@@ -3,16 +3,16 @@ use prost::Message;
 use serde_json::Value;
 
 use crate::projection::{
-    ask_from_response, enforce_inspect_output_budget, enforce_temporal_output_budget,
-    ingest_from_response, inspect_from_response, relabel_from_response, relate_from_response,
-    temporal_from_response, trace_from_response, visual_projection_from_response,
-    wake_from_response,
+    ask_from_response, condense_from_response, enforce_inspect_output_budget,
+    enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
+    relabel_from_response, relate_from_response, temporal_from_response, trace_from_response,
+    visual_projection_from_response, wake_from_response,
 };
 use crate::serving::KernelMcpGrpcTlsConfig;
 use crate::serving::adapters::grpc::channel::connect_memory_client;
 use crate::serving::adapters::grpc::requests::{
-    ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
-    relabel_request_from_arguments, relate_request_from_arguments,
+    ask_request_from_arguments, condense_request_from_arguments, ingest_request_from_arguments,
+    inspect_request_from_arguments, relabel_request_from_arguments, relate_request_from_arguments,
     temporal_move_request_from_arguments, temporal_near_request_from_arguments,
     trace_request_from_arguments, visual_projection_request_from_arguments,
     wake_request_from_arguments,
@@ -77,6 +77,7 @@ pub(super) async fn grpc_tool_result(
         "kmp_trace" => grpc_trace(endpoint, tls, arguments).await,
         "kmp_inspect" => grpc_inspect(endpoint, tls, arguments).await,
         "kmp_relabel" => grpc_relabel(endpoint, tls, arguments).await,
+        "kmp_condense" => grpc_condense(endpoint, tls, arguments).await,
         "kmp_view_read_projection" => grpc_visual_projection(endpoint, tls, arguments).await,
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
@@ -141,6 +142,30 @@ async fn grpc_relabel(
         .map_err(grpc_error("Relabel", &subject))?
         .into_inner();
     Ok(tool_success_result(relabel_from_response(response)))
+}
+
+/// Authors one reader card against a live kernel.
+///
+/// The served kernel stamps authorship, so this carries no instant. The card
+/// policy's refusals arrive as gRPC codes and are mapped by `grpc_error` like
+/// every other typed failure; nothing here reads the sentence.
+async fn grpc_condense(
+    endpoint: &str,
+    tls: &KernelMcpGrpcTlsConfig,
+    arguments: &Value,
+) -> Result<Value, ToolError> {
+    let request =
+        condense_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+    let subject = format!("{}/{}", request.about, request.r#ref);
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
+    let response = client
+        .condense(request)
+        .await
+        .map_err(grpc_error("Condense", &subject))?
+        .into_inner();
+    Ok(tool_success_result(condense_from_response(response)))
 }
 
 async fn grpc_wake(

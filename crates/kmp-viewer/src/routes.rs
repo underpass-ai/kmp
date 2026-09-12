@@ -232,6 +232,7 @@ where
             include_incoming: true,
             include_outgoing: true,
             include_raw: request.param("raw") == Some("1"),
+            expect_revision: None,
         };
         match self.service.inspect(query).await {
             Ok(result) => HttpResponse::json(&views::node_inspect_view(&result)),
@@ -272,6 +273,7 @@ where
                 include_incoming: false,
                 include_outgoing: false,
                 include_raw: false,
+                expect_revision: None,
             };
             match self.service.inspect(query).await {
                 Ok(result) => nodes.push(views::NodeView::from_graph_node(&result.detail.node)),

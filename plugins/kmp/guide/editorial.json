@@ -64,6 +64,14 @@
           "guide_title": "Inspect evidence and trace a connection"
         },
         {
+          "id": "verb:condense",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB condense. Use kmp_condense to write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole record. Minimum input: exact about, exact ref, language, scope node_body, the card text, and the source revision and record_digest copied from the descriptor a trace returned. Never construct a digest. Expect: the stored card with its own card_revision. Next: read the same paths with search.compact and that language. expect is compare-and-set on the card, separate from the body: declare absent for the first one, or the card_revision you read to replace it; a reader who got there first is refused with the stored revision named. A body that moved under you is refused with both versions named, and the record digest decides, not the public content_hash, because a write can change stored text without changing that token. Entries and the evidence sources of the same about can both be condensed; the shared source is usually the largest record on a path. A card is a derived reader view, never canonical memory and never proof: it never closes a proof group, it is never returned when stale, absent, post-cut or in another language, and a historical read shows no card written after the instant you stand at. To read bodies under a ceiling, see search.max_body_record_bytes, proof_refs and expect_selection on kmp_trace; the response carries executable expansion actions and the exact record bytes each pending body needs.",
+          "evidence": "The tool contract in crates/kmp-mcp/src/contract/tools/condense.rs and the card policy in crates/kmp-domain/src/model/node_card_policy.rs: scope node_body only, digest-bound validity, compare-and-set on card_revision, kernel-stamped authorship and refusal of a source that moved.",
+          "guide_title": "Condense: write a compact card bound to one body version"
+        },
+        {
           "id": "verb:write",
           "kind": "instruction",
           "depth": "basic",
@@ -269,6 +277,14 @@
           "text_file": "examples/budget-proof.md",
           "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
           "evidence": "Five fictional source records demonstrate actual temporal, trace and inspect continuations, a capped selection and two terminal semantic UNKNOWN reads. The explanation distinguishes remaining passages and relations, repeated core, earlier pages and semantic sufficiency."
+        },
+        {
+          "id": "example:reader-cards",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text_file": "examples/reader-cards.md",
+          "example_title": "Read deep paths under a body budget, then condense what you read",
+          "evidence": "A worked three-step read over one selection: descriptor-only table with its manifest, bound named expansion with the two distinct next-step minimums, and a compare-and-set card write followed by a compact read. It states what a card is not: no proof, no closed group, no relation compression, and no promise beyond the declared body version."
         },
         {
           "id": "example:shared-resumption",

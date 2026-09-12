@@ -94,6 +94,10 @@ impl ToolErrorHelp {
             "kmp_write_memory" => ("verb:write", "example:semantic-batch"),
             "kmp_relabel" => ("verb:write", "example:dimensional-memberships"),
             "kmp_ingest" => ("verb:write", "example:canonical-ingest"),
+            // Its own verb and its own lesson. Pointing a refused card at the
+            // writer's ingest example answered with something that teaches a
+            // different move entirely, which is worse than answering nothing.
+            "kmp_condense" => ("verb:condense", "example:reader-cards"),
             "kmp_wake" => ("verb:wake", "example:shared-resumption"),
             "kmp_ask" => ("verb:ask", "example:decision-history"),
             "kmp_relate" => ("verb:relate", "example:distributed-incident"),

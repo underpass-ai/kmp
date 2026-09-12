@@ -81,6 +81,7 @@ fn query(target: &str) -> TraceSearchRequest {
                 LabelSelector::new("env", LabelSelectorOperator::In, ["prod"]).expect("selector"),
             ])),
         },
+        body: Default::default(),
     }
 }
 

@@ -212,6 +212,7 @@ pub fn inspect_query() -> InspectMemoryQuery {
         include_incoming: true,
         include_outgoing: true,
         include_raw: false,
+        expect_revision: None,
     }
 }
 pub fn temporal_query() -> TemporalMemoryQuery {

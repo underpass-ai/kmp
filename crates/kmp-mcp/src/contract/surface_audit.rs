@@ -131,7 +131,7 @@ mod tests {
             .as_array()
             .expect("tools should be an array");
 
-        assert_eq!(tools.len(), 16, "memory, view and progressive guide tools");
+        assert_eq!(tools.len(), 17, "memory, view and progressive guide tools");
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
@@ -196,7 +196,14 @@ mod tests {
             tools[11]["inputSchema"]["required"],
             serde_json::json!(["about", "ref", "observed_at", "why"])
         );
-        assert_eq!(tools[12]["name"], "kmp_view_open");
+        // The memory tools come first and the view tools after them, so a new
+        // memory verb shifts the view block by one.
+        assert_eq!(tools[12]["name"], "kmp_condense");
+        assert_eq!(
+            tools[12]["inputSchema"]["properties"]["scope"]["const"],
+            "node_body"
+        );
+        assert_eq!(tools[13]["name"], "kmp_view_open");
         assert_eq!(tools[5]["name"], "kmp_goto");
         assert_eq!(tools[5]["inputSchema"]["oneOf"][0]["required"][1], "at");
         for index in [5, 6] {
@@ -337,7 +344,9 @@ mod tests {
         );
         assert_eq!(
             memory_keys("kmp_inspect"),
-            expected(&["about", "budget", "include", "page", "ref"])
+            // `expect` is the canonical expansion: a declared body revision,
+            // carried to the kernel typed rather than resolved by a helper.
+            expected(&["about", "budget", "expect", "include", "page", "ref"])
         );
 
         // These shared shapes are one-to-one with MemoryBudget,

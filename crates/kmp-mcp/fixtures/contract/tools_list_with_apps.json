@@ -6264,9 +6264,12 @@
                 "description": "Requires to at call level. No seek or witness joins.",
                 "propertyNames": {
                   "enum": [
+                    "compact",
                     "dimensions",
                     "direction",
+                    "expect_selection",
                     "follow",
+                    "max_body_record_bytes",
                     "max_depth",
                     "max_edges",
                     "max_nodes",
@@ -6274,6 +6277,7 @@
                     "paths_per_target",
                     "prefer_dimensions",
                     "proof",
+                    "proof_refs",
                     "relations",
                     "select"
                   ]
@@ -6284,11 +6288,15 @@
                 "description": "Requires seek; no to. Relations and constraints live inside roles.",
                 "propertyNames": {
                   "enum": [
+                    "compact",
+                    "expect_selection",
+                    "max_body_record_bytes",
                     "max_depth",
                     "max_edges",
                     "max_nodes",
                     "max_states",
                     "proof",
+                    "proof_refs",
                     "same_labels",
                     "same_ref",
                     "seek"
@@ -6301,6 +6309,21 @@
               }
             ],
             "properties": {
+              "compact": {
+                "additionalProperties": false,
+                "description": "Present reader-authored cards instead of the canonical bodies they still stand for. Presentation only: no path, no ranking and no proof count changes, and a node without a usable card keeps its place with its body. A card is orientation, never fetched proof, so it never closes a group.",
+                "properties": {
+                  "language": {
+                    "description": "Language the cards were written in. A card in another language is absent here, never substituted.",
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "language"
+                ],
+                "type": "object"
+              },
               "dimensions": {
                 "additionalProperties": false,
                 "description": "Destination mode only; not with seek. Hard filter on source and every traversed entry, using only coordinates admitted on the selected clock. It can remove a necessary bridge; use prefer_dimensions for a preference. Reuses native only/except/scopes/selectors. Coordinate work shares N/E.",
@@ -6397,6 +6420,11 @@
                 ],
                 "type": "string"
               },
+              "expect_selection": {
+                "description": "The proof.manifest_id returned by the read that named these refs. Compared before any body is read: an equal manifest means the chunks may be joined by ref; a different one is refused with no canonical or card text, because the store keeps only current bodies and an old graph joined to new text is not a proof anybody selected.",
+                "minLength": 1,
+                "type": "string"
+              },
               "follow": {
                 "description": "Destination mode only; not with seek. Allowed moves instead of direction/relations. Unordered; does not require a sequence of types.",
                 "items": {
@@ -6424,6 +6452,11 @@
                 "minItems": 1,
                 "type": "array",
                 "uniqueItems": true
+              },
+              "max_body_record_bytes": {
+                "description": "Ceiling on the stored record bytes of canonical bodies this response may carry. Body delivery only: discovery, ranking, which paths qualify and which refs are selected are unchanged. A deterministic sorted prefix is admitted; once the next present record does not fit, it and every later one are deferred with their exact requirement, never skipped and never reported absent. Omitted is the unbounded legacy materialization.",
+                "minimum": 1,
+                "type": "integer"
               },
               "max_depth": {
                 "default": 128,
@@ -6550,6 +6583,16 @@
                 "default": false,
                 "description": "Fetch selected path entry bodies and typed sources together in the search snapshot. Shares N/E with discovery; a cutoff leaves explicit gaps. Adds whole objects/supports/gaps to the paged proof. Response max_bytes does not bound store allocations.",
                 "type": "boolean"
+              },
+              "proof_refs": {
+                "description": "Load only these refs of the selected proof table, which must be inside it; a ref outside is refused rather than widening the selection. Present and empty is a descriptor-only view. Nonempty requires both max_body_record_bytes and expect_selection. Named refs affect body delivery only.",
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "type": "array",
+                "uniqueItems": true
               },
               "relations": {
                 "description": "Destination mode only; not with seek. Exact relation types to follow. Omitted/empty admits every non-structural link with stored why and evidence.",
@@ -6827,6 +6870,13 @@
             "description": "Seek paths with stable index, role, anchor, witness, context_hops, nodes and directed trace edge_indexes. Anchor is the main relation traversal start; witness is its other endpoint. Bindings give label/reference domains, roles and explicit endpoints when anchor equality is used; missing names exact witness refs and keys. Paths outside groups cannot jointly satisfy the request. clock_unknown keeps historical presence unproven. Join all pages.",
             "type": "array"
           },
+          "expansion_refusal": {
+            "description": "Present only when a named expansion was refused before any body was read. code is read_selection_changed, with the expected and actual manifest, or unknown_expansion_refs, with the refs named outside this selection. Either way the response has no object, no support and no text: a partly valid batch delivers nothing. Repeat the original read without proof_refs or expect_selection to obtain the current manifest.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
           "gaps": {
             "description": "Per-ref missing_ref, missing_body, incomplete_entry and clock_unknown reasons. A work cutoff is incomplete retrieval, not evidence of absence.",
             "type": "array"
@@ -6877,7 +6927,7 @@
             "type": "object"
           },
           "proof": {
-            "description": "Present with search.proof. Counts missing refs/bodies, incomplete entries and unknown attachment clocks. complete_groups/incomplete_groups index the declared target requirements or seek groups and describe fetched sources, not truth, lifecycle status or semantic sufficiency. Join all pages and retain seek review_required/unknown. stop_reason and body_bytes report joint materialization work; bytes are canonical UTF-8 body bytes, not transport or allocations.",
+            "description": "Present with search.proof. expansion_plan names the next batch of bodies to ask for, decided over the complete selection before this response was paginated, so a page that holds none of the pending refs still carries it; expand_bodies and expand_oversized_body are that plan as complete calls. They continue a suffix of the manifest order and never claim a selection is complete: join responses by ref against one manifest, and read every page before concluding a selection is exhausted. Counts missing refs/bodies, incomplete entries and unknown attachment clocks. complete_groups/incomplete_groups index the declared target requirements or seek groups and describe fetched sources, not truth, lifecycle status or semantic sufficiency; a group whose body was deferred, not requested or shown as a card is not fetched proof. Join all pages and retain seek review_required/unknown. stop_reason and body_bytes report joint materialization work; body_bytes counts canonical UTF-8 bytes actually loaded, never a body this response withheld. With a body option active it also carries manifest_id, delivery counts and, for a compact read, the card summary.",
             "type": "object"
           },
           "quality": {
@@ -7001,6 +7051,21 @@
             "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
+          },
+          "expect": {
+            "additionalProperties": false,
+            "description": "Canonical expansion: return exactly this body revision or a typed conflict naming the one the store holds, with no text. This store keeps one body version per entry, so a revision that has moved cannot be reconstructed and is never guessed at. Use the revision a trace object or an earlier inspection returned. Not valid on a receipt ref, which carries no body revision.",
+            "properties": {
+              "revision": {
+                "description": "The body revision this expansion declares.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "revision"
+            ],
+            "type": "object"
           },
           "include": {
             "additionalProperties": false,
@@ -7397,6 +7462,211 @@
           },
           "summary": {
             "description": "What changed and how many labels the memory stands in now.",
+            "type": "string"
+          },
+          "warnings": {
+            "description": "Non-empty warnings qualify success; retain them.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Write your own compact card for one stored body, so later reads of the same paths can show the card instead of the whole body. Entries and the evidence sources of the same about can both be condensed, which matters because a source shared by several paths is usually the largest record on them. The card is your derived view, never canonical memory and never proof: it stands only for the body version you declare, and a later write makes it stale rather than wrong. Declare the revision and record digest the read gave you; a body that moved under you is refused with both versions named.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "actor"
+            ]
+          },
+          {
+            "required": [
+              "context_id"
+            ]
+          }
+        ],
+        "properties": {
+          "about": {
+            "description": "Memory anchor that owns the ref being condensed.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "actor": {
+            "description": "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "card": {
+            "description": "The compact text. Must be shorter in bytes than the body it stands for, and is itself read on every compact response, so it is bounded.",
+            "maxLength": 4096,
+            "minLength": 1,
+            "type": "string"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "expect": {
+            "additionalProperties": false,
+            "description": "Compare-and-set on the card itself, separate from the body. Exactly one of absent or card_revision.",
+            "oneOf": [
+              {
+                "required": [
+                  "absent"
+                ]
+              },
+              {
+                "required": [
+                  "card_revision"
+                ]
+              }
+            ],
+            "properties": {
+              "absent": {
+                "const": true,
+                "description": "No card is stored for this entry and language yet. Refused, naming the stored revision, if one is.",
+                "type": "boolean"
+              },
+              "card_revision": {
+                "description": "The card revision you are replacing. Refused if another reader replaced it first.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "language": {
+            "description": "Language tag the card is written in. Part of its identity: a card in another language neither replaces nor shadows this one.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
+          "ref": {
+            "description": "Ref whose body this card stands for: an entry of this about, or one of its stored evidence sources. A ref of another about is refused.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "scope": {
+            "const": "node_body",
+            "description": "The only admitted scope. A card declares one dependency — this ref's body — so it may not state anything a path, a neighborhood or a clock would be needed for. Nothing verifies the prose; the contract only fixes which body version it answers for.",
+            "type": "string"
+          },
+          "source": {
+            "additionalProperties": false,
+            "description": "The body version you read, copied from the descriptor a trace or inspect returned. Never constructed.",
+            "properties": {
+              "content_hash": {
+                "description": "Public token of that body version, kept as provenance. Validity is not decided on it: a write can change the text without changing it.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "record_digest": {
+                "description": "Digest over the exact stored record of that body version. This is what a later read compares to decide whether the card still stands.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "revision": {
+                "description": "Body revision the card was written from.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "revision",
+              "record_digest"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "about",
+          "ref",
+          "language",
+          "scope",
+          "card",
+          "source",
+          "expect"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_condense",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "card": {
+            "additionalProperties": false,
+            "properties": {
+              "authored_at": {
+                "description": "Kernel-stamped instant. A historical read at an earlier cut does not show this card.",
+                "type": "string"
+              },
+              "authored_by": {
+                "description": "Writer recorded as author.",
+                "type": "string"
+              },
+              "card_revision": {
+                "description": "This card's own revision. Declare it in expect to replace this card.",
+                "type": "integer"
+              },
+              "source_body_bytes": {
+                "description": "Canonical UTF-8 bytes of the body it stands in for.",
+                "type": "integer"
+              },
+              "source_content_hash": {
+                "description": "Public token of that body version.",
+                "type": "string"
+              },
+              "source_record_digest": {
+                "description": "Record digest this card is bound to.",
+                "type": "string"
+              },
+              "source_revision": {
+                "description": "Body revision this card stands for.",
+                "type": "integer"
+              },
+              "status": {
+                "description": "Always valid for a freshly written card: it describes the body version it was just checked against.",
+                "type": "string"
+              },
+              "text": {
+                "description": "The stored card text.",
+                "type": "string"
+              },
+              "text_bytes": {
+                "description": "Bytes of the stored card text.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "language": {
+            "description": "Language of the stored card.",
+            "type": "string"
+          },
+          "ref": {
+            "description": "Ref this card stands for.",
+            "type": "string"
+          },
+          "summary": {
+            "description": "Which card revision was stored, for which entry, language and body revision.",
             "type": "string"
           },
           "warnings": {

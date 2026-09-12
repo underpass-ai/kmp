@@ -54,7 +54,8 @@ fn v1beta1_kernel_memory_service_surface_is_stable() {
             "ProjectVisual",
             "Trace",
             "Inspect",
-            "Relabel"
+            "Relabel",
+            "Condense"
         ]
     );
     assert_eq!(
@@ -76,6 +77,7 @@ fn v1beta1_kernel_memory_service_surface_is_stable() {
             ("Trace", "TraceRequest", "TraceResponse"),
             ("Inspect", "InspectRequest", "InspectResponse"),
             ("Relabel", "RelabelRequest", "RelabelResponse"),
+            ("Condense", "CondenseRequest", "CondenseResponse"),
         ])
     );
 }

@@ -44,6 +44,7 @@ fn query(from: &str, targets: &[&str]) -> TraceSearchRequest {
         relations: Default::default(),
         limits: TraceSearchLimits::default(),
         temporal: Default::default(),
+        body: Default::default(),
     }
 }
 

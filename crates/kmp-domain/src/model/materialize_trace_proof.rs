@@ -1,7 +1,11 @@
 use super::trace_temporal_admission::TraceTemporalAdmission;
 use crate::{
-    EvidencePathResult, NodeProjection, PortError, RelationDirection, TraceProofObject,
-    TraceProofResult, TraceSearchRequest, TraceSearchResult, TraceSnapshotReader,
+    EvidencePathResult, NodeBodyDescriptor, NodeCard, NodeCardStatus, NodeDetailProjection,
+    NodeProjection, PortError, RelationDirection, TemporalCoordinate, TraceBodyAdmission,
+    TraceBodyDelivery, TraceBodyOptions, TraceBodyState, TraceCompactSummary, TraceExpansionPlan,
+    TraceExpansionRefusal, TraceManifestDigest, TraceProofObject, TraceProofResult,
+    TraceSearchRequest, TraceSearchResult, TraceSnapshotReader, node_card_policy,
+    trace_body_admission,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -31,7 +35,17 @@ pub(super) fn trace<R: TraceSnapshotReader>(
         paths.push((refs, dated));
     }
     let entries = paths.iter().flat_map(|(p, _)| p.iter().cloned()).collect();
-    let mut result = fetch(reader, &request.about, &entries, admission)?;
+    let mut result = fetch(
+        reader,
+        &request.about,
+        &entries,
+        admission,
+        &request.body,
+        &trace_seed(request, search),
+    )?;
+    if result.refusal.is_some() {
+        return Ok(result);
+    }
     let available: BTreeSet<_> = paths
         .iter()
         .filter(|(refs, dated)| *dated && complete(refs, &result))
@@ -64,16 +78,28 @@ pub(super) fn trace<R: TraceSnapshotReader>(
 
 pub(super) fn evidence<R: TraceSnapshotReader>(
     reader: &R,
-    about: &str,
+    request: &crate::EvidencePathRequest,
     search: &EvidencePathResult,
     admission: &mut TraceTemporalAdmission<'_, R>,
+    options: &TraceBodyOptions,
 ) -> Result<TraceProofResult, PortError> {
+    let about = &request.about;
     let entries: BTreeSet<String> = search
         .viable_candidates()
         .iter()
         .flat_map(|&i| search.candidates[i as usize].nodes.iter().cloned())
         .collect();
-    let mut result = fetch(reader, about, &entries, admission)?;
+    let mut result = fetch(
+        reader,
+        about,
+        &entries,
+        admission,
+        options,
+        &seek_seed(request, search),
+    )?;
+    if result.refusal.is_some() {
+        return Ok(result);
+    }
     for (index, group) in search.groups.iter().enumerate() {
         let refs = group
             .candidate_indexes
@@ -92,6 +118,9 @@ pub(super) fn evidence<R: TraceSnapshotReader>(
     Ok(result)
 }
 
+/// A group is complete when its canonical proof was fetched. A body this
+/// response deferred, did not request or replaced with a card was not
+/// fetched, so it cannot close a group — a card is orientation, never proof.
 fn complete(refs: &BTreeSet<String>, proof: &TraceProofResult) -> bool {
     !refs.is_empty()
         && proof.stop.is_none()
@@ -100,6 +129,11 @@ fn complete(refs: &BTreeSet<String>, proof: &TraceProofResult) -> bool {
             .clock_unknown_entries
             .iter()
             .all(|r| !refs.contains(r))
+        && proof
+            .objects
+            .iter()
+            .filter(|object| refs.contains(&object.node.node_id))
+            .all(|object| object.body_state == TraceBodyState::Loaded)
 }
 
 fn group_result(result: &mut TraceProofResult, index: usize, complete: bool) {
@@ -115,6 +149,8 @@ fn fetch<R: TraceSnapshotReader>(
     about: &str,
     entries: &BTreeSet<String>,
     admission: &mut TraceTemporalAdmission<'_, R>,
+    options: &TraceBodyOptions,
+    seed: &str,
 ) -> Result<TraceProofResult, PortError> {
     let mut result = TraceProofResult::default();
     let mut nodes = BTreeMap::<String, NodeProjection>::new();
@@ -230,38 +266,185 @@ fn fetch<R: TraceSnapshotReader>(
             incomplete.insert(entry.clone());
         }
     }
-    let ids: Vec<_> = nodes.keys().cloned().collect();
-    let bodies = if ids.is_empty() {
-        vec![]
-    } else {
-        reader.bodies(&ids)?
-    };
-    if bodies.len() != ids.len()
-        || bodies
-            .iter()
-            .zip(&ids)
-            .any(|(body, id)| body.as_ref().is_some_and(|b| b.node_id != *id))
-    {
-        return Err(PortError::InvalidState(
-            "trace body batch does not preserve requested slots".into(),
-        ));
-    }
+    let ids: Vec<String> = nodes.keys().cloned().collect();
     let mut missing_bodies = BTreeSet::new();
-    for ((id, node), body) in nodes.into_iter().zip(bodies) {
-        if let Some(body) = &body {
-            result.body_bytes += body.detail.len() as u64;
-        } else {
-            missing_bodies.insert(id);
+    let mut omitted = BTreeSet::new();
+
+    if !options.is_active() {
+        // The legacy read, unchanged: every present body is loaded, no
+        // descriptor is consulted and no manifest is computed. This is the
+        // path the no-option oracle froze.
+        let bodies = load_bodies(reader, &ids)?;
+        for ((id, node), body) in nodes.into_iter().zip(bodies) {
+            if let Some(body) = &body {
+                result.body_bytes += body.detail.len() as u64;
+            } else {
+                missing_bodies.insert(id);
+            }
+            result.objects.push(TraceProofObject {
+                coordinates: coordinates.remove(&node.node_id).unwrap_or_default(),
+                node,
+                descriptor: None,
+                body_state: TraceBodyState::Loaded,
+                body,
+                card: None,
+            });
         }
-        result.objects.push(TraceProofObject {
-            coordinates: coordinates.remove(&node.node_id).unwrap_or_default(),
-            node,
-            body,
-        });
+    } else {
+        // Descriptors first: identity and size of every selected body, without
+        // reading one. Everything below decides delivery from these.
+        let descriptors = load_descriptors(reader, &ids)?;
+        let manifest = manifest_id(
+            seed,
+            &ids,
+            &nodes,
+            &descriptors,
+            &coordinates,
+            &result,
+            &missing,
+        );
+        // Both refusals are decided here, before a card or a body is read.
+        let refusal = options
+            .expect_selection
+            .as_ref()
+            .filter(|expected| **expected != manifest)
+            .map(|expected| TraceExpansionRefusal::SelectionChanged {
+                expected: expected.clone(),
+                actual: manifest.clone(),
+            })
+            .or_else(|| {
+                let selected: BTreeSet<&String> = ids.iter().collect();
+                let unknown: Vec<String> = options
+                    .refs
+                    .iter()
+                    .flatten()
+                    .filter(|reference| !selected.contains(reference))
+                    .cloned()
+                    .collect();
+                // The whole batch is refused. Delivering only the refs that
+                // happened to be inside would answer a different question and
+                // hide the mistake in a successful-looking response.
+                (!unknown.is_empty()).then_some(TraceExpansionRefusal::UnknownRefs(unknown))
+            });
+        if let Some(refusal) = refusal {
+            return Ok(TraceProofResult {
+                manifest_id: Some(manifest),
+                refusal: Some(refusal),
+                stop: admission.budget.stop,
+                ..TraceProofResult::default()
+            });
+        }
+        let cut = admission.window().card_cut_nanos();
+        let cards = load_cards(reader, &ids, options.compact.as_deref())?;
+        let presentations: Vec<Option<crate::NodeCardPresentation>> = ids
+            .iter()
+            .zip(&cards)
+            .map(|(id, card)| {
+                options.compact.as_ref().map(|_| {
+                    node_card_policy::presentation(card.as_ref(), descriptors.get(id), cut)
+                })
+            })
+            .collect();
+        let reusable: BTreeSet<String> = ids
+            .iter()
+            .zip(&presentations)
+            .filter(|(_, presented)| {
+                presented
+                    .as_ref()
+                    .is_some_and(|p| p.status == NodeCardStatus::Valid)
+            })
+            .map(|(id, _)| id.clone())
+            .collect();
+        let admitted = trace_body_admission::admit(&ids, &descriptors, options, &reusable);
+        // Only admitted ids reach the body port, and they reach the verifying
+        // one: every byte delivered here is bound to the descriptor a card or
+        // a later expansion was bound to. Nothing deferred, unrequested or
+        // served by a card is read.
+        let loaded = if admitted.load.is_empty() {
+            vec![]
+        } else {
+            let bodies = reader.verified_bodies(&admitted.load)?;
+            check_body_slots(&bodies, &admitted.load)?;
+            bodies
+        };
+        let mut bodies: BTreeMap<String, NodeDetailProjection> = BTreeMap::new();
+        for (id, body) in admitted.load.iter().zip(loaded) {
+            let Some(body) = body else {
+                return Err(PortError::InvalidState(format!(
+                    "`{id}` had a body descriptor and no body; this projection is inconsistent"
+                )));
+            };
+            verify_against_descriptor(&body, descriptors.get(id))?;
+            bodies.insert(id.clone(), body);
+        }
+        let mut summary = options
+            .compact
+            .as_ref()
+            .map(|language| TraceCompactSummary {
+                language: language.clone(),
+                ..TraceCompactSummary::default()
+            });
+        for ((id, node), mut presented) in nodes.into_iter().zip(presentations) {
+            let state = admitted.state(&id);
+            let body = bodies.remove(&id);
+            if state == TraceBodyState::Loaded
+                && let Some(presented) = presented.as_mut()
+            {
+                // The canonical body is in this response, so its card would
+                // be the same thing said twice. The state and provenance stay;
+                // only the redundant prose goes.
+                presented.text = None;
+            }
+            if let Some(body) = &body {
+                result.body_bytes += body.detail.len() as u64;
+            }
+            match state {
+                TraceBodyState::Missing => {
+                    missing_bodies.insert(id.clone());
+                }
+                state if state.is_omitted() => {
+                    omitted.insert(id.clone());
+                }
+                _ => {}
+            }
+            if let (Some(summary), Some(presented)) = (summary.as_mut(), presented.as_ref()) {
+                match presented.status {
+                    NodeCardStatus::Valid => summary.valid += 1,
+                    NodeCardStatus::Stale => summary.stale += 1,
+                    NodeCardStatus::Absent => summary.absent += 1,
+                    NodeCardStatus::AfterCut => summary.after_cut += 1,
+                }
+                // Bytes follow delivery, never card validity. A named
+                // expansion of a ref that also has a valid card loads the
+                // canonical body, and counting that body as omitted would
+                // claim a saving the response did not make.
+                if state == TraceBodyState::Compact {
+                    summary.card_bytes += presented.text_bytes();
+                    summary.body_bytes_omitted += descriptors.get(&id).map_or(0, |d| d.body_bytes);
+                }
+            }
+            result.objects.push(TraceProofObject {
+                coordinates: coordinates.remove(&node.node_id).unwrap_or_default(),
+                node,
+                descriptor: descriptors.get(&id).cloned(),
+                body_state: state,
+                body,
+                card: presented,
+            });
+        }
+        result.compact = summary;
+        result.manifest_id = Some(manifest);
+        result.expansion_plan = expansion_plan(&ids, &admitted, &descriptors, options);
+        result.delivery = Some(delivery(&admitted));
     }
-    incomplete.extend(entries.intersection(&missing_bodies).cloned());
+
+    // A body the store lacks and a body this response withheld are different
+    // facts with the same consequence for completeness: the declared proof was
+    // not fetched. Only the first is `missing_bodies`.
+    let undelivered: BTreeSet<String> = missing_bodies.union(&omitted).cloned().collect();
+    incomplete.extend(entries.intersection(&undelivered).cloned());
     for edge in &result.supports {
-        if missing_bodies.contains(&edge.source_node_id) {
+        if undelivered.contains(&edge.source_node_id) {
             incomplete.insert(edge.target_node_id.clone());
         }
     }
@@ -271,4 +454,398 @@ fn fetch<R: TraceSnapshotReader>(
     result.clock_unknown_entries = unknown.into_iter().collect();
     result.stop = admission.budget.stop;
     Ok(result)
+}
+
+/// Bodies in requested order, with the slot check that keeps a batch honest.
+fn load_bodies<R: TraceSnapshotReader>(
+    reader: &R,
+    ids: &[String],
+) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
+    if ids.is_empty() {
+        return Ok(vec![]);
+    }
+    let bodies = reader.bodies(ids)?;
+    check_body_slots(&bodies, ids)?;
+    Ok(bodies)
+}
+
+fn check_body_slots(
+    bodies: &[Option<NodeDetailProjection>],
+    ids: &[String],
+) -> Result<(), PortError> {
+    if bodies.len() != ids.len()
+        || bodies
+            .iter()
+            .zip(ids)
+            .any(|(body, id)| body.as_ref().is_some_and(|b| b.node_id != *id))
+    {
+        return Err(PortError::InvalidState(
+            "trace body batch does not preserve requested slots".into(),
+        ));
+    }
+    Ok(())
+}
+
+/// Descriptors for the selected manifest, from the same snapshot.
+///
+/// A ref with no descriptor has no stored body. A backend that cannot answer
+/// at all fails the read: an unsupported projection is never absent evidence,
+/// and never a licence to load the whole body instead.
+fn load_descriptors<R: TraceSnapshotReader>(
+    reader: &R,
+    ids: &[String],
+) -> Result<BTreeMap<String, NodeBodyDescriptor>, PortError> {
+    if ids.is_empty() {
+        return Ok(BTreeMap::new());
+    }
+    let descriptors = reader.descriptors(ids)?;
+    if descriptors.len() != ids.len()
+        || descriptors
+            .iter()
+            .zip(ids)
+            .any(|(descriptor, id)| descriptor.as_ref().is_some_and(|d| d.node_id != *id))
+    {
+        return Err(PortError::InvalidState(
+            "trace descriptor batch does not preserve requested slots".into(),
+        ));
+    }
+    Ok(ids
+        .iter()
+        .cloned()
+        .zip(descriptors)
+        .filter_map(|(id, descriptor)| descriptor.map(|descriptor| (id, descriptor)))
+        .collect())
+}
+
+fn load_cards<R: TraceSnapshotReader>(
+    reader: &R,
+    ids: &[String],
+    language: Option<&str>,
+) -> Result<Vec<Option<NodeCard>>, PortError> {
+    let Some(language) = language.filter(|_| !ids.is_empty()) else {
+        return Ok(vec![None; ids.len()]);
+    };
+    let cards = reader.cards(ids, language)?;
+    if cards.len() != ids.len()
+        || cards
+            .iter()
+            .zip(ids)
+            .any(|(card, id)| card.as_ref().is_some_and(|card| card.node_id != *id))
+    {
+        return Err(PortError::InvalidState(
+            "trace card batch does not preserve requested slots".into(),
+        ));
+    }
+    Ok(cards)
+}
+
+/// A loaded body must be the body its descriptor described. Anything else is
+/// a store that moved under one snapshot, and it fails rather than returning
+/// text nobody can place.
+fn verify_against_descriptor(
+    body: &NodeDetailProjection,
+    descriptor: Option<&NodeBodyDescriptor>,
+) -> Result<(), PortError> {
+    let Some(descriptor) = descriptor else {
+        return Err(PortError::InvalidState(format!(
+            "`{}` was loaded without a body descriptor",
+            body.node_id
+        )));
+    };
+    if body.revision != descriptor.revision
+        || body.content_hash != descriptor.content_hash
+        || body.detail.len() as u64 != descriptor.body_bytes
+    {
+        return Err(PortError::InvalidState(format!(
+            "`{}` does not match the descriptor this read admitted: descriptor revision {} \
+             ({} bytes), body revision {} ({} bytes)",
+            body.node_id,
+            descriptor.revision,
+            descriptor.body_bytes,
+            body.revision,
+            body.detail.len()
+        )));
+    }
+    Ok(())
+}
+
+/// What to ask for next, over the complete selection.
+///
+/// The frontier is one ref past the last body this response really loaded, in
+/// manifest order, so a chain advances and never alternates. A ref the caller
+/// asked for and did not get never moves it. Deciding this here, rather than
+/// from a projected page, is what makes the answer independent of how the
+/// response is partitioned: the refs that remain are a fact about the
+/// selection.
+fn expansion_plan(
+    ids: &[String],
+    admitted: &TraceBodyAdmission,
+    descriptors: &BTreeMap<String, NodeBodyDescriptor>,
+    options: &TraceBodyOptions,
+) -> Option<TraceExpansionPlan> {
+    // An empty named set is a descriptor-only view: it requested no body, so
+    // the frontier is the start of the selection rather than its end.
+    let named = options.refs.as_ref().filter(|refs| !refs.is_empty());
+    let considered = |id: &String| named.is_none_or(|named| named.contains(id));
+    let last_loaded = ids
+        .iter()
+        .enumerate()
+        .filter(|(_, id)| admitted.state(id) == TraceBodyState::Loaded && considered(id))
+        .map(|(index, _)| index)
+        .next_back();
+    let frontier = match (last_loaded, named) {
+        (Some(index), _) => index + 1,
+        (None, None) => 0,
+        // Nothing the caller named came back; start again at the first of them
+        // rather than walking past a body that was never delivered.
+        (None, Some(_)) => ids.iter().position(considered).unwrap_or(ids.len()),
+    };
+    let suffix = &ids[frontier.min(ids.len())..];
+    let cost = |id: &String| {
+        admitted
+            .state(id)
+            .is_omitted()
+            .then(|| {
+                descriptors
+                    .get(id)
+                    .map(|descriptor| descriptor.record_bytes)
+            })
+            .flatten()
+    };
+    let mut refs = Vec::new();
+    let mut total = 0;
+    for id in suffix {
+        let Some(record_bytes) = cost(id) else {
+            continue;
+        };
+        if refs.len() == crate::MAX_EXPANSION_REFS {
+            break;
+        }
+        match options.max_record_bytes {
+            // Too large for the ceiling the caller chose: skipped here and
+            // offered on its own below.
+            Some(ceiling) if record_bytes > ceiling => continue,
+            Some(ceiling) if total + record_bytes > ceiling => break,
+            _ => {}
+        }
+        refs.push(id.clone());
+        total += record_bytes;
+    }
+    let oversized = options.max_record_bytes.and_then(|ceiling| {
+        suffix.iter().find_map(|id| {
+            cost(id)
+                .filter(|bytes| *bytes > ceiling)
+                .map(|bytes| (id.clone(), bytes))
+        })
+    });
+    let plan = TraceExpansionPlan {
+        record_bytes: options.max_record_bytes.unwrap_or(total),
+        refs,
+        oversized,
+    };
+    (!plan.is_empty()).then_some(plan)
+}
+
+fn delivery(admitted: &TraceBodyAdmission) -> TraceBodyDelivery {
+    let count = |wanted: TraceBodyState| {
+        admitted
+            .states
+            .values()
+            .filter(|state| **state == wanted)
+            .count() as u32
+    };
+    TraceBodyDelivery {
+        loaded: count(TraceBodyState::Loaded),
+        deferred_budget: count(TraceBodyState::DeferredBudget),
+        not_requested: count(TraceBodyState::NotRequested),
+        compact: count(TraceBodyState::Compact),
+        missing: count(TraceBodyState::Missing),
+        admitted_record_bytes: admitted.admitted_record_bytes,
+        selected_body_bytes: admitted.selected_body_bytes,
+        next_deferred_ref: admitted.next_deferred.as_ref().map(|(id, _)| id.clone()),
+        rerun_record_bytes: admitted.next_rerun_record_bytes(),
+        named_record_bytes: admitted.next_named_record_bytes(),
+    }
+}
+
+/// The identity of this selected proof table, hashed before any body loads.
+///
+/// Covers the bound query through `seed`, then every selected node with its
+/// metadata and clocks, every body descriptor including the absent ones, every
+/// support declaration, and the refs this selection could not resolve.
+fn manifest_id(
+    seed: &str,
+    ids: &[String],
+    nodes: &BTreeMap<String, NodeProjection>,
+    descriptors: &BTreeMap<String, NodeBodyDescriptor>,
+    coordinates: &BTreeMap<String, Vec<TemporalCoordinate>>,
+    result: &TraceProofResult,
+    missing: &BTreeSet<String>,
+) -> String {
+    let mut digest = TraceManifestDigest::new("kmp.trace.manifest.v1");
+    digest.text(seed);
+    digest.number(ids.len() as u64);
+    for id in ids {
+        digest.text(id);
+        if let Some(node) = nodes.get(id) {
+            digest.node(node);
+        }
+        digest.descriptor(descriptors.get(id));
+        digest.coordinates(coordinates.get(id).map_or(&[][..], Vec::as_slice));
+    }
+    // Support enumeration is part of the identity, length included: the same
+    // refs can be reached by a different set of declared arrows, and a
+    // continuation must not join one selection's arrows to another's.
+    digest.number(result.supports.len() as u64);
+    for edge in &result.supports {
+        digest.relation(edge);
+    }
+    digest.texts(missing.iter().map(String::as_str));
+    digest.finish()
+}
+
+/// The part of the manifest that belongs to the bounded target search: the
+/// query as bound, the selected routes and the material selection, including
+/// the fingerprint that already covers candidates this response hides.
+fn trace_seed(request: &TraceSearchRequest, search: &TraceSearchResult) -> String {
+    let mut digest = TraceManifestDigest::new("kmp.trace.selection.target.v2");
+    digest.text(&request.about);
+    digest.text(&request.from);
+    digest.texts(request.targets.iter().map(String::as_str));
+    digest.text(&format!("{:?}", request.direction));
+    digest.texts(request.relations.iter().map(String::as_str));
+    digest.number(request.paths_per_target as u64);
+    digest.number(request.follow.len() as u64);
+    for step in &request.follow {
+        digest.text(step.relation.as_str());
+        digest.text(&format!("{:?}", step.direction));
+    }
+    digest.text(&format!("{:?}", request.temporal));
+    digest.flag(request.proof);
+    digest.text(&format!("{:?}", request.dimensions));
+    digest.text(&format!("{:?}", request.limits));
+    // The material selection policy, not only what it happened to pick.
+    digest.text(&format!("{:?}", request.select));
+    digest.text(&format!("{:?}", search.stop));
+    digest.text(&format!("{:?}", search.temporal_axis));
+    digest.flag(search.temporal_selection_resolved);
+    digest.text(search.resolved_as_of.as_deref().unwrap_or_default());
+    digest.texts(search.unreached.iter().map(String::as_str));
+    digest.texts(search.incomplete_targets.iter().map(String::as_str));
+    digest.number(search.relations.len() as u64);
+    for edge in &search.relations {
+        digest.relation(edge);
+    }
+    digest.number(search.routes.len() as u64);
+    for route in &search.routes {
+        digest.text(&route.target);
+        digest.number(route.edge_indexes.len() as u64);
+        for index in &route.edge_indexes {
+            digest.number(u64::from(*index));
+        }
+    }
+    match &search.material {
+        Some(material) => {
+            digest.flag(true);
+            digest.texts(material.material_refs.iter().map(String::as_str));
+            digest.number(u64::from(material.evaluated));
+            digest.number(u64::from(material.pruned_by_width));
+            digest.number(u64::from(material.benefit));
+            for index in &material.selected_candidates {
+                digest.number(u64::from(*index));
+            }
+            for index in &material.covered_groups {
+                digest.number(u64::from(*index));
+            }
+            for index in &material.incomplete_groups {
+                digest.number(u64::from(*index));
+            }
+        }
+        None => digest.flag(false),
+    }
+    digest.number(search.clock_unknown_edges.len() as u64);
+    for index in &search.clock_unknown_edges {
+        digest.number(u64::from(*index));
+    }
+    digest.finish()
+}
+
+/// The same, for the seek mode.
+///
+/// The bound query belongs here as much as the result does. Two seek calls on
+/// one graph can select the same refs and the same relations under different
+/// clocks, cuts, roles or joins, and a manifest that saw only the result could
+/// not tell them apart — so an expansion of one would be accepted as a
+/// continuation of the other.
+fn seek_seed(request: &crate::EvidencePathRequest, search: &EvidencePathResult) -> String {
+    let mut digest = TraceManifestDigest::new("kmp.trace.selection.seek.v2");
+    digest.text(&request.about);
+    digest.text(&request.from);
+    digest.text(&format!("{:?}", request.temporal));
+    digest.flag(request.proof);
+    digest.number(request.roles.len() as u64);
+    for role in &request.roles {
+        digest.text(&role.name);
+        digest.flag(role.context);
+        digest.number(role.steps.len() as u64);
+        for step in &role.steps {
+            digest.text(step.relation.as_str());
+            digest.text(&format!("{:?}", step.direction));
+        }
+        digest.number(role.bindings.len() as u64);
+        for binding in &role.bindings {
+            digest.text(&format!("{binding:?}"));
+        }
+    }
+    digest.number(request.constants.len() as u64);
+    for (key, values) in &request.constants {
+        digest.text(key);
+        digest.texts(values.iter().map(String::as_str));
+    }
+    digest.text(&format!("{:?}", request.limits));
+    // The search's own outcome, including what it could not resolve.
+    digest.text(&format!("{:?}", search.status));
+    digest.text(&format!("{:?}", search.stop));
+    digest.texts(search.missing_roles.iter().map(String::as_str));
+    digest.flag(search.context_discovery);
+    digest.flag(search.temporal_selection_resolved);
+    digest.text(search.resolved_as_of.as_deref().unwrap_or_default());
+    digest.number(search.clock_unknown_edges.len() as u64);
+    for index in &search.clock_unknown_edges {
+        digest.number(u64::from(*index));
+    }
+    // Every discovered candidate, not only the ones whose bodies were
+    // materialized: a candidate that changed outside the proof table still
+    // changed which alternatives this selection had, and an expansion joined
+    // across that change would describe a choice nobody made.
+    digest.number(search.candidates.len() as u64);
+    for candidate in &search.candidates {
+        digest.number(candidate.role as u64);
+        digest.number(u64::from(candidate.context_hops));
+        digest.texts(candidate.nodes.iter().map(String::as_str));
+        digest.number(candidate.edge_indexes.len() as u64);
+        for index in &candidate.edge_indexes {
+            digest.number(u64::from(*index));
+        }
+        digest.flag(candidate.clock_unknown);
+        // Bindings decide which candidates are compatible, so a binding that
+        // moved outside the materialized set still changes this selection.
+        digest.text(&format!("{:?}", candidate.bindings));
+    }
+    digest.number(search.groups.len() as u64);
+    for group in &search.groups {
+        digest.flag(group.clock_unknown);
+        digest.text(&format!("{:?}", group.bindings));
+        // Framed by length: without it, one group of two candidates and two
+        // groups of one hash the same.
+        digest.number(group.candidate_indexes.len() as u64);
+        for index in &group.candidate_indexes {
+            digest.number(u64::from(*index));
+        }
+    }
+    digest.number(search.relations.len() as u64);
+    for edge in &search.relations {
+        digest.relation(edge);
+    }
+    digest.finish()
 }

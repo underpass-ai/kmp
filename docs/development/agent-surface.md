@@ -27,6 +27,46 @@ Las rutas son relativas a la raíz del repositorio.
 | Cómo se entra desde Codex o Claude | [skills](../../plugins/kmp/skills/), [adaptadores Claude](../../plugins/kmp/claude/commands/) y [capabilities.json](../../plugins/kmp/capabilities.json) | Paridad de capacidades y acceso a la misma entrada; evitar otra copia del manual |
 | Relato público del producto | Bloque `kmp:public-overview` de [plugins/kmp/README.md](../../plugins/kmp/README.md) | Sincronizar README de repositorio y crate; revisar guía humana |
 
+## Añadir un verbo: lo que hizo falta para `kmp_condense`
+
+Un verbo nuevo no termina en `contract/tools/` ni en el registro. Este es el
+recorrido completo del último que se añadió, como referencia de qué se toca y
+por qué, no como lista que una CI deba comprobar.
+
+| Pieza | Por qué |
+| --- | --- |
+| `contract/tools/condense.rs` y `contract/registry.rs` | La herramienta y su sitio en la superficie |
+| `serving/adapters/embedded_backend.rs`, `serving/adapters/grpc/tools.rs` | El verbo existe en los dos backends o no existe |
+| `serving/adapters/fixture_backend.rs` y su fixture de respuesta | El backend de ejemplos responde a todo lo que anuncia |
+| `tool_error_help.rs` | Un rechazo devuelve su propio verbo y su propia lección; apuntar a la lección de otro movimiento responde peor que no responder |
+| `guide_request_mapper.rs::tool_verb` | Todo tool público resuelve a un verbo indexado |
+| `guide/editorial.json` más su `text_file` | La fuente canónica de la guía; regenerar con `guide assets write` |
+| `plugins/kmp/capabilities.json` | El generador compara la lista viva contra este inventario y falla si divergen |
+| `distribution/mcpb/manifest.json` | Lo que instala el host |
+| Bloque `kmp:public-overview` y `readme sync` | Las tres superficies públicas describen la misma superficie |
+| `tests/tool_surface_parity.rs` | Fija definición y respuesta |
+| `plugins/kmp/skills/kmp-moves/SKILL.md` | La skill que enumera los movimientos vivos |
+| Tabla de propiedad y lista de movimientos del README raíz | Describen la misma superficie |
+
+Los recuentos fijos («dieciséis herramientas», «doce de memoria») se han
+retirado de la prosa donde no aportaban nada: cada verbo nuevo los dejaba
+desfasados en cuatro sitios a la vez. Donde el listado sí ayuda —la skill de
+movimientos y la tabla del README— se mantiene la lista y se apunta a
+`tools/list` como autoridad. No hay prueba de recuento ni gate nuevo.
+
+La respuesta de `kmp_condense` no está fijada en ese parity: una tarjeta declara
+el digest del registro que el almacén tiene, y ese valor no se repite entre
+sembrados. La llamada positiva se cubre con descriptor dinámico en
+`kmp-mcp/tests/reader_cards.rs` y `kmp-transport-grpc/tests/condense_parity.rs`,
+que leen el descriptor del store y escriben contra él por MCP y por gRPC. Si
+alguien resuelve el digest en tiempo de llamada dentro del parity, la excepción
+documentada allí sobra; quitar la herramienta del bucle no es la alternativa.
+
+Al medir el ciclo, separar magnitudes: `search.max_body_record_bytes` acota
+registros de `Details`, no el tamaño total de la respuesta ni la memoria del
+proceso. Los bytes de respuesta no son tokens ni pico de RAM, y una tarjeta más
+corta que su cuerpo no garantiza que un ciclo completo amortice.
+
 `guide/AGENT.md`, `guide/guide.requests.json` y `guide/memory.jsonl` son salidas
 generadas. No corregirlas a mano: corregir la fuente y regenerar las tres.
 Los fixtures de contrato son evidencia revisable; no se actualizan sólo para

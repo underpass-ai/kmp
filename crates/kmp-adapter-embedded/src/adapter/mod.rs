@@ -5,6 +5,8 @@ mod engine;
 mod format_version;
 mod graph_read;
 mod migration;
+mod node_body_descriptor;
+mod node_card;
 mod node_detail;
 mod portability;
 mod projection_write;

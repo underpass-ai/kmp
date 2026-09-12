@@ -66,6 +66,7 @@ fn request() -> TraceSearchRequest {
         select: None,
         limits: Default::default(),
         temporal: Default::default(),
+        body: Default::default(),
     }
 }
 
@@ -267,6 +268,7 @@ fn seek_request() -> EvidencePathRequest {
         constants: Default::default(),
         temporal: Default::default(),
         limits: Default::default(),
+        body: Default::default(),
     }
 }
 

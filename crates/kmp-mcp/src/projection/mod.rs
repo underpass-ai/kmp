@@ -2,6 +2,7 @@
 //! reads, held to the byte ceilings the surface publishes. One mapper per
 //! response family; the budgets trim after the mapper has spoken.
 
+pub(crate) mod condense_projection;
 pub(crate) mod ingest_projection;
 pub(crate) mod inspect_budget;
 pub(crate) mod inspect_projection;
@@ -18,10 +19,12 @@ mod temporal_entry_projection;
 mod temporal_page;
 pub(crate) mod temporal_projection;
 mod test_support;
+mod trace_body_actions;
 mod trace_material_expansion;
-pub(crate) mod trace_projection;
+mod trace_projection;
 pub(crate) mod visual_projection;
 
+pub(crate) use condense_projection::condense_from_response;
 pub(crate) use ingest_projection::ingest_from_response;
 pub(crate) use inspect_budget::enforce_inspect_output_budget;
 pub(crate) use inspect_projection::inspect_from_response;

@@ -9,24 +9,25 @@ use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
 use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
 use kmp_proto_mapping::v1beta1::{
     AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
-    ingest_command_from_proto, ingest_response_from_outcome, inspect_query_from_proto,
-    inspect_response_from_result, relabel_command_from_proto, relabel_response_from_outcome,
-    relate_query_from_proto, relate_response_from_result, temporal_query_from_move_proto,
-    temporal_query_from_near_proto, temporal_response_from_result, trace_query_from_proto,
-    trace_response_from_result, visual_projection_query_from_proto,
-    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
+    condense_command_from_proto, condense_response_from_card, ingest_command_from_proto,
+    ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
+    relabel_command_from_proto, relabel_response_from_outcome, relate_query_from_proto,
+    relate_response_from_result, temporal_query_from_move_proto, temporal_query_from_near_proto,
+    temporal_response_from_result, trace_query_from_proto, trace_response_from_result,
+    visual_projection_query_from_proto, visual_projection_response_from_result,
+    wake_query_from_proto, wake_response_from_result,
 };
 use serde_json::Value;
 
 use crate::projection::{
-    ask_from_response, enforce_inspect_output_budget, enforce_temporal_output_budget,
-    ingest_from_response, inspect_from_response, relabel_from_response, relate_from_response,
-    temporal_from_response, trace_from_response, visual_projection_from_response,
-    wake_from_response,
+    ask_from_response, condense_from_response, enforce_inspect_output_budget,
+    enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
+    relabel_from_response, relate_from_response, temporal_from_response, trace_from_response,
+    visual_projection_from_response, wake_from_response,
 };
 use crate::serving::adapters::grpc::requests::{
-    ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
-    relabel_request_from_arguments, relate_request_from_arguments,
+    ask_request_from_arguments, condense_request_from_arguments, ingest_request_from_arguments,
+    inspect_request_from_arguments, relabel_request_from_arguments, relate_request_from_arguments,
     temporal_move_request_from_arguments, temporal_near_request_from_arguments,
     trace_request_from_arguments, visual_projection_request_from_arguments,
     wake_request_from_arguments,
@@ -254,6 +255,7 @@ async fn embedded_tool_result(
         "kmp_trace" => embedded_trace(service, observer, arguments).await,
         "kmp_inspect" => embedded_inspect(service, arguments).await,
         "kmp_relabel" => embedded_relabel(service, arguments).await,
+        "kmp_condense" => embedded_condense(service, arguments).await,
         "kmp_view_read_projection" => embedded_visual_projection(service, arguments).await,
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
@@ -293,6 +295,47 @@ async fn embedded_ingest(
     Ok(tool_success_result(ingest_from_response(
         ingest_response_from_outcome(outcome),
     )))
+}
+
+/// Authors one reader card.
+///
+/// The kernel stamps `authored_at`: a caller-supplied instant could place a
+/// card before a historical cut it never existed at. A refusal by the card
+/// policy is a typed tool error, not a store failure — the store could have
+/// performed the write and the policy said no.
+async fn embedded_condense(
+    service: &EmbeddedMemoryService,
+    arguments: &Value,
+) -> Result<Value, ToolError> {
+    let request =
+        condense_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+    let about = request.about.clone();
+    let command = condense_command_from_proto(request, kernel_now_rfc3339())
+        .map_err(|status| mapping_error(&status))?;
+    let outcome = service
+        .condense(command)
+        .await
+        .map_err(kernel_error("condense", &about))?;
+    match outcome {
+        Ok(card) => Ok(tool_success_result(condense_from_response(
+            condense_response_from_card(card),
+        ))),
+        Err(rejection) => {
+            let message = rejection.to_string();
+            Err(if rejection.is_conflict() {
+                ToolError::conflict(message)
+            } else if rejection.is_not_found() {
+                ToolError::not_found(message)
+            } else {
+                ToolError::invalid_argument(message)
+            })
+        }
+    }
+}
+
+/// The kernel's own clock, formatted the way stored instants are.
+fn kernel_now_rfc3339() -> String {
+    kmp_domain::rfc3339_from_epoch_seconds(crate::clock::now_seconds())
 }
 
 async fn embedded_relabel(
