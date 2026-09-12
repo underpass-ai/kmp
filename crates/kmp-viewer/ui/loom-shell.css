@@ -185,6 +185,11 @@ select {
   flex-wrap: wrap;
   align-items: center;
 }
+.clock-missing {
+  color: var(--muted);
+  font: 10px var(--mono);
+  margin-left: 4px;
+}
 .chip.active {
   background: var(--soft);
   color: var(--accent);

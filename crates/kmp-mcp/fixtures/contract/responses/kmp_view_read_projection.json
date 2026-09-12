@@ -203,6 +203,12 @@
         "value": 6.0
       },
       {
+        "name": "missing_axis_entries",
+        "scope": "selected_source",
+        "unit": "entries",
+        "value": 0.0
+      },
+      {
         "name": "relation_count",
         "scope": "selected_subgraph",
         "unit": "relations",

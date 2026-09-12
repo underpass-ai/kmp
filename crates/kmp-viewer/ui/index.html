@@ -32,7 +32,7 @@
 </section>
 <div id="querybar">
  <label class="search-label">Find memory<input id="search" type="search" placeholder="Text, kind: or id:" autocomplete="off"></label>
- <nav class="chips" id="clock-chips" aria-label="Clock for the time axis"><span class="query-title">CLOCK</span><button class="chip active" data-clock="occurred">Occurred</button><button class="chip" data-clock="observed">Observed</button><button class="chip" data-clock="ingested">Ingested</button><button class="chip" data-clock="validity">Validity</button></nav>
+ <nav class="chips" id="clock-chips" aria-label="Clock for the time axis"><span class="query-title">CLOCK</span><button class="chip active" data-clock="occurred">Occurred</button><button class="chip" data-clock="observed">Observed</button><button class="chip" data-clock="ingested">Ingested</button><button class="chip" data-clock="validity">Validity</button><span id="clock-missing" class="clock-missing" hidden></span></nav>
  <label>Relations<select id="relation-mode"><option value="selection">Of the selection</option><option value="all">All stored relations</option><option value="none">Hidden</option></select></label>
 </div>
 <aside id="rail" aria-label="About layers and label filters">
