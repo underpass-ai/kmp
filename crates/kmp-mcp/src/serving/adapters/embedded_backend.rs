@@ -1,43 +1,18 @@
-use super::embedded_condense::embedded_condense;
+use super::embedded::{
+    EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedIngestTool, EmbeddedInspectTool,
+    EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool, EmbeddedRelateTool,
+    EmbeddedTemporalMoveTool, EmbeddedTraceTool, EmbeddedVisualProjectionTool, EmbeddedWakeTool,
+};
+use super::lexical_bridge_file::load_lexical_bridge;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
-use crate::projection::relation_page_budget::RelationPageBudget;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
+use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture, ToolError};
+use kmp_domain::TemporalDirection;
+use kmp_embedded::{CommitNativeBundle, EmbeddedKernel};
+use kmp_proto_mapping::v1beta1::LexicalBridge;
+use serde_json::Value;
 use std::path::Path;
 use std::sync::Arc;
-
-use kmp_domain::{PortError, QualityMetricsObserver, QualityObservationContext, TemporalDirection};
-use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
-use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
-use kmp_proto_mapping::v1beta1::{
-    AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
-    ingest_command_from_proto, ingest_response_from_outcome, inspect_query_from_proto,
-    inspect_response_from_result, relabel_command_from_proto, relabel_response_from_outcome,
-    relate_query_from_proto, relate_response_from_result, temporal_query_from_move_proto,
-    temporal_query_from_near_proto, temporal_response_from_result, trace_query_from_proto,
-    trace_response_from_result, visual_projection_query_from_proto,
-    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
-};
-use serde_json::Value;
-
-use crate::projection::{
-    ask_from_response, enforce_inspect_output_budget, enforce_temporal_output_budget,
-    ingest_from_response, inspect_from_response, relabel_from_response, relate_from_response,
-    temporal_from_response, trace_from_response, visual_projection_from_response,
-    wake_from_response,
-};
-use crate::serving::adapters::grpc::requests::{
-    ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
-    relabel_request_from_arguments, relate_request_from_arguments,
-    temporal_move_request_from_arguments, temporal_near_request_from_arguments,
-    trace_request_from_arguments, visual_projection_request_from_arguments,
-    wake_request_from_arguments,
-};
-use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture};
-use crate::serving::{ToolError, ToolErrorCode};
-use crate::serving::{app_data_success_result, tool_success_result};
-
-use super::embedded_errors::{kernel_error, mapping_error, temporal_error};
-use super::lexical_bridge_file::load_lexical_bridge;
 
 /// In-process kernel backend: the same JSON argument builders and response
 /// shapes as live mode, with the application service called directly instead
@@ -117,483 +92,67 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         let service = self.kernel.service();
-        let quality_observer = self.kernel.quality_observer();
-        let commit_native = self.commit_native.as_ref();
-        let store = self.kernel.store();
-        let bridge = &self.lexical_bridge;
-        let semantic = &self.semantic;
+        let observer = self.kernel.quality_observer();
         Box::pin(async move {
-            let writes = matches!(
-                name,
-                "kmp_ingest" | "kernel_remember" | "kernel_ingest_context"
-            ) && !arguments
-                .get("dry_run")
-                .and_then(Value::as_bool)
-                .unwrap_or(false);
-            let Some(commit_native) = commit_native.filter(|_| writes) else {
-                return embedded_tool_result(
-                    &service,
-                    quality_observer.as_ref(),
-                    bridge,
-                    semantic,
-                    name,
-                    arguments,
-                )
-                .await;
-            };
-            let pending = commit_native
-                .begin_write(store)
-                .await
-                .map_err(commit_native_preflight_error)?;
-            let result = embedded_tool_result(
-                &service,
-                quality_observer.as_ref(),
-                bridge,
-                semantic,
-                name,
-                arguments,
-            )
-            .await;
-            match result {
-                Ok(result) => {
-                    let header = commit_native.publish(store, &pending).await.map_err(|error| {
-                        ToolError::backend(format!(
-                            "memory write committed, but the commit-native bundle `{}` did not: \
-                             {error}. The pending marker remains; run `kmp-mcp export` before \
-                             trusting or committing this memory.",
-                            commit_native.path().display()
-                        ))
-                    })?;
-                    pending.complete().map_err(|error| {
-                        ToolError::backend(format!(
-                            "memory and bundle {} are current at snapshot {}, but the pending \
-                             marker could not be cleared: {error}",
-                            commit_native.path().display(),
-                            header.snapshot_id
-                        ))
-                    })?;
-                    Ok(result)
+            let telemetry = EmbeddedReadTelemetry::new(observer.as_ref());
+            match name {
+                "kmp_ingest" | "kernel_remember" | "kernel_ingest_context" => {
+                    EmbeddedIngestTool::new(
+                        &service,
+                        self.commit_native.as_ref(),
+                        self.kernel.store(),
+                    )
+                    .call(arguments)
+                    .await
                 }
-                Err(error)
-                    if matches!(
-                        error.code,
-                        ToolErrorCode::InvalidArgument
-                            | ToolErrorCode::NotFound
-                            | ToolErrorCode::Conflict
-                            | ToolErrorCode::UnknownTool
-                    ) =>
-                {
-                    pending.complete().map_err(|marker_error| {
-                        ToolError::backend(format!(
-                            "write was rejected as {}, but its commit-native pending marker \
-                             could not be cleared: {marker_error}",
-                            error.code
-                        ))
-                    })?;
-                    Err(error)
+                "kmp_wake" => {
+                    EmbeddedWakeTool::new(&service, telemetry)
+                        .call(arguments)
+                        .await
                 }
-                Err(error) => Err(error),
+                "kmp_ask" => {
+                    EmbeddedAskTool::new(&service, telemetry, &self.lexical_bridge, &self.semantic)
+                        .call(arguments)
+                        .await
+                }
+                "kmp_goto" => {
+                    EmbeddedTemporalMoveTool::new(&service, TemporalDirection::Goto, "goto")
+                        .call(arguments)
+                        .await
+                }
+                "kmp_near" => EmbeddedNearTool::new(&service).call(arguments).await,
+                "kmp_rewind" => {
+                    EmbeddedTemporalMoveTool::new(&service, TemporalDirection::Rewind, "rewind")
+                        .call(arguments)
+                        .await
+                }
+                "kmp_forward" => {
+                    EmbeddedTemporalMoveTool::new(&service, TemporalDirection::Forward, "forward")
+                        .call(arguments)
+                        .await
+                }
+                "kmp_relate" => {
+                    EmbeddedRelateTool::new(&service, telemetry, &self.lexical_bridge)
+                        .call(arguments)
+                        .await
+                }
+                "kmp_trace" => {
+                    EmbeddedTraceTool::new(&service, telemetry)
+                        .call(arguments)
+                        .await
+                }
+                "kmp_inspect" => EmbeddedInspectTool::new(&service).call(arguments).await,
+                "kmp_relabel" => EmbeddedRelabelTool::new(&service).call(arguments).await,
+                "kmp_condense" => EmbeddedCondenseTool::new(&service).call(arguments).await,
+                "kmp_view_read_projection" => {
+                    EmbeddedVisualProjectionTool::new(&service)
+                        .call(arguments)
+                        .await
+                }
+                other => Err(ToolError::unknown_tool(format!(
+                    "unknown KMP tool `{other}`"
+                ))),
             }
         })
     }
-}
-
-fn commit_native_preflight_error(error: PortError) -> ToolError {
-    let message = format!(
-        "memory write was refused before changing the store because its committed bundle could \
-         not be guarded: {error}"
-    );
-    match error {
-        PortError::Conflict(_) => ToolError::conflict(message),
-        PortError::Unavailable(_) => ToolError::unavailable(message),
-        PortError::InvalidState(_) => ToolError::backend(message),
-    }
-}
-
-fn observe_quality(
-    observer: &dyn QualityMetricsObserver,
-    rpc: &str,
-    root_node_id: &str,
-    role: &str,
-    revision: u64,
-    quality: &kmp_domain::BundleQualityMetrics,
-) {
-    observer.observe(
-        quality,
-        &QualityObservationContext {
-            rpc: rpc.to_string(),
-            root_node_id: root_node_id.to_string(),
-            role: role.to_string(),
-            revision: Some(revision),
-        },
-    );
-}
-
-async fn embedded_tool_result(
-    service: &EmbeddedMemoryService,
-    observer: &dyn QualityMetricsObserver,
-    bridge: &LexicalBridge,
-    semantic: &Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
-    name: &str,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    match name {
-        "kmp_ingest" | "kernel_remember" | "kernel_ingest_context" => {
-            embedded_ingest(service, arguments).await
-        }
-        "kmp_wake" => embedded_wake(service, observer, arguments).await,
-        "kmp_ask" => embedded_ask(service, observer, bridge, semantic, arguments).await,
-        "kmp_goto" => embedded_temporal(service, TemporalDirection::Goto, "goto", arguments).await,
-        "kmp_near" => embedded_near(service, arguments).await,
-        "kmp_rewind" => {
-            embedded_temporal(service, TemporalDirection::Rewind, "rewind", arguments).await
-        }
-        "kmp_forward" => {
-            embedded_temporal(service, TemporalDirection::Forward, "forward", arguments).await
-        }
-        "kmp_relate" => embedded_relate(service, observer, bridge, arguments).await,
-        "kmp_trace" => embedded_trace(service, observer, arguments).await,
-        "kmp_inspect" => embedded_inspect(service, arguments).await,
-        "kmp_relabel" => embedded_relabel(service, arguments).await,
-        "kmp_condense" => embedded_condense(service, arguments).await,
-        "kmp_view_read_projection" => embedded_visual_projection(service, arguments).await,
-        other => Err(ToolError::unknown_tool(format!(
-            "unknown KMP tool `{other}`"
-        ))),
-    }
-}
-
-async fn embedded_visual_projection(
-    service: &EmbeddedMemoryService,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request =
-        visual_projection_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    let about = request.about.clone();
-    let query =
-        visual_projection_query_from_proto(request).map_err(|status| mapping_error(&status))?;
-    let result = service
-        .visual_projection(query)
-        .await
-        .map_err(kernel_error("project_visual", &about))?;
-    Ok(app_data_success_result(visual_projection_from_response(
-        visual_projection_response_from_result(result),
-    )))
-}
-
-async fn embedded_ingest(
-    service: &EmbeddedMemoryService,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request = ingest_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    let command = ingest_command_from_proto(request).map_err(|status| mapping_error(&status))?;
-    let about = command.about.clone();
-    let outcome = service
-        .ingest(command)
-        .await
-        .map_err(kernel_error("ingest", &about))?;
-    Ok(tool_success_result(ingest_from_response(
-        ingest_response_from_outcome(outcome),
-    )))
-}
-
-/// Authors one reader card.
-///
-/// The kernel stamps `authored_at`: a caller-supplied instant could place a
-/// card before a historical cut it never existed at. A refusal by the card
-/// policy is a typed tool error, not a store failure — the store could have
-/// performed the write and the policy said no.
-async fn embedded_relabel(
-    service: &EmbeddedMemoryService,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request = relabel_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    let command = relabel_command_from_proto(request);
-    let about = command.about.clone();
-    let outcome = service
-        .relabel(command)
-        .await
-        .map_err(kernel_error("relabel", &about))?;
-    Ok(tool_success_result(relabel_from_response(
-        relabel_response_from_outcome(outcome),
-    )))
-}
-
-async fn embedded_wake(
-    service: &EmbeddedMemoryService,
-    observer: &dyn QualityMetricsObserver,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request = wake_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    let query = wake_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
-    let intent = query.intent.clone();
-    let max_entries = query.max_entries;
-    let temporal = query.temporal.clone();
-    let about = query.about.clone();
-    let result = service
-        .wake(query)
-        .await
-        .map_err(kernel_error("wake", &about))?;
-    observe_quality(
-        observer,
-        "kmp_wake",
-        result.bundle.root_node_id().as_str(),
-        result.bundle.role().as_str(),
-        result.bundle.metadata().revision,
-        &result.rendered.quality,
-    );
-    let response = project_wake_response(
-        wake_response_from_result(&intent, max_entries, result, &temporal)
-            .map_err(|status| mapping_error(&status))?,
-        &request,
-    )
-    .map_err(crate::projection::recall_error::projection)?;
-    Ok(tool_success_result(wake_from_response(response)))
-}
-
-async fn embedded_ask(
-    service: &EmbeddedMemoryService,
-    observer: &dyn QualityMetricsObserver,
-    bridge: &LexicalBridge,
-    semantic: &Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request = ask_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    let query = ask_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
-    let question = query.question.clone();
-    let asked_as = query.asked_as.clone();
-    let policy = query.answer_policy;
-    let max_entries = query.max_entries;
-    let temporal = query.temporal.clone();
-    let about = query.about.clone();
-    let result = service
-        .ask(query)
-        .await
-        .map_err(kernel_error("ask", &about))?;
-    observe_quality(
-        observer,
-        "kmp_ask",
-        result.bundle.root_node_id().as_str(),
-        result.bundle.role().as_str(),
-        result.bundle.metadata().revision,
-        &result.rendered.quality,
-    );
-    let mut retrieval = AskRetrievalContext::from(result);
-    let mut warning = None;
-    match semantic {
-        Ok(Some(provider)) => {
-            let sources = retrieval
-                .semantic_sources(&temporal)
-                .map_err(|status| mapping_error(&status))?;
-            let outcome = provider
-                .rank(
-                    &question,
-                    &sources,
-                    arguments
-                        .get("page")
-                        .and_then(|p| p.get("cursor"))
-                        .is_some(),
-                )
-                .await
-                .map_err(ToolError::invalid_argument)?;
-            if let Some(ranking) = outcome.ranking {
-                retrieval = retrieval.with_semantic_candidates(ranking);
-            }
-            warning = outcome.warning;
-        }
-        Err(error) => warning = Some(format!("semantic retrieval disabled: {error}")),
-        Ok(None) => {}
-    }
-    let mut response = ask_response_from_result(
-        &question,
-        asked_as.as_deref(),
-        policy,
-        max_entries,
-        retrieval,
-        bridge,
-        &temporal,
-    )
-    .map_err(|status| mapping_error(&status))?;
-    if let Some(warning) = warning {
-        response.warnings.push(warning);
-    }
-    let response = project_ask_response(response, &request)
-        .map_err(crate::projection::recall_error::projection)?;
-    Ok(tool_success_result(ask_from_response(response)))
-}
-
-async fn embedded_temporal(
-    service: &EmbeddedMemoryService,
-    direction: TemporalDirection,
-    direction_name: &str,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request = temporal_move_request_from_arguments(arguments, direction_name)
-        .map_err(ToolError::invalid_argument)?;
-    let requested_cursor = request.cursor.clone().unwrap_or_default();
-    let query = temporal_query_from_move_proto(request, direction)
-        .map_err(|status| mapping_error(&status))?;
-    let about = query.about.clone();
-    let result = service
-        .temporal(query)
-        .await
-        .map_err(temporal_error(direction_name, &about))?;
-    // Structured temporal responses compute selection quality during mapping.
-    // Do not render a discarded prompt merely to journal its token metrics.
-    Ok(tool_success_result(enforce_temporal_output_budget(
-        temporal_from_response(temporal_response_from_result(
-            requested_cursor,
-            direction,
-            result,
-        )),
-        arguments,
-    )?))
-}
-
-async fn embedded_near(
-    service: &EmbeddedMemoryService,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request =
-        temporal_near_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    let requested_cursor = request.around.clone().unwrap_or_default();
-    let query = temporal_query_from_near_proto(request).map_err(|status| mapping_error(&status))?;
-    let about = query.about.clone();
-    let result = service
-        .temporal(query)
-        .await
-        .map_err(temporal_error("near", &about))?;
-    // Structured temporal responses compute selection quality during mapping.
-    // Do not render a discarded prompt merely to journal its token metrics.
-    Ok(tool_success_result(enforce_temporal_output_budget(
-        temporal_from_response(temporal_response_from_result(
-            requested_cursor,
-            TemporalDirection::Near,
-            result,
-        )),
-        arguments,
-    )?))
-}
-
-async fn embedded_relate(
-    service: &EmbeddedMemoryService,
-    observer: &dyn QualityMetricsObserver,
-    bridge: &LexicalBridge,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request = relate_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    let query = relate_query_from_proto(request).map_err(|status| mapping_error(&status))?;
-    let about = query.about.clone();
-    let result = service
-        .relate(query.clone())
-        .await
-        .map_err(kernel_error("relate", &about))?;
-    observe_quality(
-        observer,
-        "kmp_relate",
-        result.bundle.root_node_id().as_str(),
-        result.bundle.role().as_str(),
-        result.bundle.metadata().revision,
-        &result.rendered.quality,
-    );
-    let response = relate_response_from_result(result, &query, bridge)
-        .map_err(|status| mapping_error(&status))?;
-    let fingerprint = response.selection_fingerprint.clone();
-    Ok(tool_success_result(RelationPageBudget::Relate.apply(
-        relate_from_response(response),
-        arguments,
-        &fingerprint,
-    )?))
-}
-
-async fn embedded_trace(
-    service: &EmbeddedMemoryService,
-    observer: &dyn QualityMetricsObserver,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request = trace_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    if let Some(query) = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)
-        .map_err(|s| mapping_error(&s))?
-    {
-        let page = trace_query_from_proto(request.clone())
-            .map_err(|s| mapping_error(&s))?
-            .page;
-        let result = service
-            .evidence_paths(query.clone())
-            .await
-            .map_err(kernel_error("trace", "evidence seek"))?;
-        let seek = request
-            .search
-            .as_ref()
-            .and_then(|s| s.seek.as_ref())
-            .expect("compiled seek");
-        let response = kmp_proto_mapping::v1beta1::evidence_seek_response_from_result(
-            result, &query, seek, page,
-        );
-        let fingerprint = response.selection_fingerprint.clone();
-        return Ok(tool_success_result(RelationPageBudget::Trace.apply(
-            trace_from_response(response),
-            arguments,
-            &fingerprint,
-        )?));
-    }
-    if let Some(search) = kmp_proto_mapping::v1beta1::trace_search_request_from_proto(&request)
-        .map_err(|s| mapping_error(&s))?
-    {
-        let direction = search.direction;
-        let page = trace_query_from_proto(request)
-            .map_err(|s| mapping_error(&s))?
-            .page;
-        let result = service
-            .trace_search(search)
-            .await
-            .map_err(kernel_error("trace", "bounded search"))?;
-        let response =
-            kmp_proto_mapping::v1beta1::trace_search_response_from_result(result, direction, page);
-        let fingerprint = response.selection_fingerprint.clone();
-        return Ok(tool_success_result(RelationPageBudget::Trace.apply(
-            trace_from_response(response),
-            arguments,
-            &fingerprint,
-        )?));
-    }
-    let query = trace_query_from_proto(request).map_err(|status| mapping_error(&status))?;
-    let page = query.page.clone();
-    let from = query.from.clone();
-    let result = service
-        .trace(query)
-        .await
-        .map_err(kernel_error("trace", &from))?;
-    observe_quality(
-        observer,
-        "kmp_trace",
-        result.path_bundle.root_node_id().as_str(),
-        result.path_bundle.role().as_str(),
-        result.path_bundle.metadata().revision,
-        &result.rendered.quality,
-    );
-    let response = trace_response_from_result(result, page);
-    let fingerprint = response.selection_fingerprint.clone();
-    Ok(tool_success_result(RelationPageBudget::Trace.apply(
-        trace_from_response(response),
-        arguments,
-        &fingerprint,
-    )?))
-}
-
-async fn embedded_inspect(
-    service: &EmbeddedMemoryService,
-    arguments: &Value,
-) -> Result<Value, ToolError> {
-    let request = inspect_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    let query = inspect_query_from_proto(request).map_err(|status| mapping_error(&status))?;
-    let ref_id = query.ref_id.clone();
-    let result = service
-        .inspect(query)
-        .await
-        .map_err(kernel_error("inspect", &ref_id))?;
-    Ok(tool_success_result(enforce_inspect_output_budget(
-        inspect_from_response(inspect_response_from_result(result)),
-        arguments,
-    )?))
 }

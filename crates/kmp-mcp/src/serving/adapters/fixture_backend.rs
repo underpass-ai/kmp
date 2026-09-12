@@ -3,7 +3,7 @@ use serde_json::Value;
 use crate::contract::validate_required_arguments;
 use crate::projection::try_enforce_recall_output_budget;
 use crate::serving::ToolError;
-use crate::serving::adapters::grpc::requests::visual_projection_request_from_arguments;
+use crate::serving::adapters::tool_request_mapping::VisualProjectionRequestMapper;
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::serving::{app_data_success_result, tool_success_result};
 use crate::write::build_ingest_plan;
@@ -89,7 +89,7 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
             CONDENSE_RESPONSE_FIXTURE,
         ),
         "kmp_view_read_projection" => {
-            visual_projection_request_from_arguments(arguments)
+            VisualProjectionRequestMapper::from_arguments(arguments)
                 .map_err(ToolError::invalid_argument)?;
             Ok(app_data_success_result(serde_json::json!({
                 "contract": "kmp.visual.projection.v1",
