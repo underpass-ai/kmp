@@ -1026,7 +1026,7 @@ message NodeBodyDescriptor {
   uint64 record_bytes = 4;
   // Canonical UTF-8 bytes of the body text.
   uint64 body_bytes = 5;
-  // sha256:<hex> over the exact stored record bytes.
+  // `sha256:<hex>` over the exact stored record bytes.
   string record_digest = 6;
 }
 
