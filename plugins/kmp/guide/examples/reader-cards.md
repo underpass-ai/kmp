@@ -1,116 +1,112 @@
-# Reading several deep paths without paying for every body twice
+# Read canonical evidence, then reuse a short card
 
-A trace over long paths returns the canonical body of every selected entry and
-of every evidence source behind it. On a shared source that is the largest
-record on the path, and it comes back on every read of every path that leans
-on it. This is how to read those paths under a body budget, and how to write a
-card so the next read costs less — without ever claiming something the store
-cannot back.
+Keep the graph query, clock, dimensions and work limits. Body delivery changes
+what text you read, not which paths or refs were selected. These four calls
+show the workflow. Replace **every `<placeholder>` and illustrative number**
+with values from your memory results; digests and manifests are never invented.
 
-Three moves, in order. None of them changes which paths are selected, how they
-rank, or which refs are in the proof.
-
-## 1. See what the bodies cost before reading any of them
-
-Ask for the proof table with an empty named expansion. This is a
-descriptor-only read: the whole selection, every ref, every support arrow,
-every coordinate, and no canonical text at all.
+## 1. Discover descriptors
 
 ```json
-{"tool": "kmp_trace", "arguments": {
-  "about": "project:kmp", "from": "project:kmp:decision:cutover",
-  "to": "project:kmp:claim:rollback-window",
-  "search": {"proof": true, "proof_refs": []}
-}}
+{"tool":"kmp_trace","arguments":{
+ "about":"<about>","from":"<from-ref>","to":"<to-ref>",
+ "search":{"proof":true,"proof_refs":[]}}}
 ```
 
-Each object comes back with `body_state: "not_requested"`, its `descriptor`
-and its `required_record_bytes`. The response also carries
-`proof.manifest_id`: the identity of this selection, computed before any body
-was read. Copy it. It is what lets a later call join its bodies to this table.
+Finish this operation's `next_actions` pages. Each selected object with a stored body retains its
+ref, descriptor and `required_record_bytes`, but no canonical body text.
+Missing bodies remain explicitly missing; they do not acquire descriptors.
+Stored relationship `why`/`evidence` remains. Keep `proof.manifest_id` and the
+selected-ref table. Inspect and legacy Trace do not provide `record_digest`;
+Trace requires `proof:true` plus an active body option for descriptors.
 
-`proof.delivery.selected_body_bytes` is what the whole selection would cost;
-`proof.body_bytes` is what this response actually loaded, which is zero.
+## 2. Read bodies against that manifest
 
-## 2. Take the bodies you want, in bound batches
-
-`proof.expand_bodies` is a complete call: the same bound query, the refs still
-pending, the manifest, and an allowance equal to the exact record bytes of
-that batch. Run it as given.
+Execute the returned `proof.expand_bodies` call without reconstructing it.
+It retains the query and any supplied record-byte ceiling; without a ceiling,
+it prices the planned batch. Named batches contain at most 64 distinct refs.
+This is an illustrative complete shape:
 
 ```json
-{"tool": "kmp_trace", "arguments": {
-  "about": "project:kmp", "from": "project:kmp:decision:cutover",
-  "to": "project:kmp:claim:rollback-window",
-  "search": {"proof": true, "proof_refs": ["evidence:project:kmp:incident-log"],
-             "expect_selection": "4694d5c4…", "max_body_record_bytes": 8214}
-}}
+{"tool":"kmp_trace","arguments":{
+ "about":"<about>","from":"<from-ref>","to":"<to-ref>",
+ "search":{"proof":true,"proof_refs":["<selected-ref>"],
+ "expect_selection":"<copied manifest>","max_body_record_bytes":8214}}}
 ```
 
-Set `max_body_record_bytes` yourself when you want a ceiling of your own. The
-response admits a sorted prefix and defers the rest; each deferred object
-names `required_record_bytes`, and `proof.delivery` reports the two different
-next-step minimums. `rerun_record_bytes` is what rerunning this whole query
-would need — it pays for the admitted prefix again. `named_record_bytes` is
-what a named batch of that one record needs. They are not the same number and
-neither is "raise the budget to the total".
+Copy the actual allowance from the action; `8214` is not a default. If you
+choose a ceiling yourself, present records are admitted in sorted-prefix order.
+An oversized record stays deferred with its exact price. Use the explicit
+`expand_oversized_body` action only when that larger read is intended.
 
-A record larger than your ceiling stays `deferred_budget` with its exact
-price. It is never reported missing, and it is never read to be discarded.
+Finish **each expansion's pages**, retain canonical bodies by ref under the
+same manifest, and compare fetched refs with your selected table. Body plans
+advance a suffix: expanding an arbitrary late subset can leave earlier refs
+unread even when the last result has no body action. Request any remaining refs
+explicitly, bound to the manifest, rather than declaring completion.
 
-If the store moved, the call comes back with
-`expansion_refusal.code = "read_selection_changed"`, the expected and actual
-manifest, no canonical text, no card text, and nothing of the old selection.
-Run the `fresh_read` action it carries and start from the new manifest. The
-store keeps only current bodies, so there is no old version to recover.
+If `expansion_refusal.code` is `read_selection_changed`, no old-selection body
+or card text is returned. Run its `fresh_read`, then rebuild the table; do not
+join different manifests. `unknown_expansion_refs` rejects the whole batch,
+including otherwise valid refs. Correct the refs from the selected table.
 
-## 3. Write a card, then read the path compactly
+## 3. Condense the body you actually read
 
-Condense the bodies you had to read. A card stands for one body version, and
-the write declares which one, copied from the descriptor — never constructed.
+Copy `revision` and `record_digest` from that body's descriptor:
 
 ```json
-{"tool": "kmp_condense", "arguments": {
-  "about": "project:kmp", "ref": "evidence:project:kmp:incident-log",
-  "language": "es", "scope": "node_body",
-  "card": "Ventana de reversión 30 min; el log del incidente la fija en 14:05Z.",
-  "source": {"revision": 3, "record_digest": "sha256:9c3e5a71…"},
-  "expect": {"absent": true},
-  "actor": "reader-agent"
-}}
+{"tool":"kmp_condense","arguments":{
+ "about":"<owning-about>","ref":"<read-ref>","language":"en",
+ "scope":"node_body","card":"<your faithful phrase about this body only>",
+ "source":{"revision":3,"record_digest":"<copied digest>"},
+ "expect":{"absent":true}}}
 ```
 
-`expect` is compare-and-set on the card, separate from the body. Declare
-`absent` for the first card; declare the `card_revision` you read to replace
-one. Another reader who got there first is refused with the stored revision
-named, so you re-read and write again rather than overwrite.
+Replace `3` with the observed revision. Card text must be nonempty, at most
+4096 UTF-8 bytes and strictly shorter than its body. Entries and evidence
+sources can both be condensed. Do not summarize a path or neighborhood into
+one body's card. KMP checks the declared dependency, not the prose's truth.
 
-The write is refused if the body moved under you — the digest, not the public
-`content_hash`, decides, because a write can change the text without changing
-that token. Sources can be condensed as well as entries, which is the point:
-the shared record is the expensive one.
+`expect` guards the card separately: use `absent:true` initially, or the observed
+`card_revision` when replacing it. Source changes or concurrent card writes
+refuse the operation; read the current body/card state before revising. The
+public `content_hash` is not a substitute for the exact `record_digest`.
 
-Then read the same paths with `search.compact: {"language": "es"}`. Objects
-whose card still describes the stored body come back with
-`body_state: "compact"` and the card in `card.text`, tagged as derived. A card
-that is stale, absent, written after your historical cut, or in another
-language returns its state, its descriptor and its expansion price — and no
-prose. Nothing falls back to the canonical record behind your back.
+## 4. Start a fresh compact read
 
-## What a card is not
+```json
+{"tool":"kmp_trace","arguments":{
+ "about":"<about>","from":"<from-ref>","to":"<to-ref>",
+ "search":{"proof":true,"compact":{"language":"en"}}}}
+```
 
-A card is your derived view. It is not canonical memory, it is not evidence,
-and it never closes a proof group: `complete_groups` counts fetched canonical
-bodies, so a path read compactly stays incomplete until you expand it. Nothing
-verifies that the prose is faithful; the contract fixes only which body
-version it answers for, and `scope` admits nothing but that body, so a card
-cannot stand on a path, a neighborhood or a clock it never declared.
+Keep the original graph selection and task clocks. **Remove `proof_refs`,
+`expect_selection` and the old page cursor.** Named refs take precedence over
+compact and request canonical bodies, even when a card exists.
 
-A compact read is cheaper in canonical bodies, not in everything: support
-arrows keep their stored `why` and `evidence`, which is a deliberate residual
-cost of this increment. `max_body_record_bytes` bounds detail records, not the
-whole response and not memory.
+| Returned state | Meaning |
+| --- | --- |
+| `loaded` | Canonical body fetched; retain it by ref under the manifest. |
+| `not_requested` | Body intentionally unread; not absent evidence. |
+| `deferred_budget` | Present record did not fit; exact expansion price supplied. |
+| `compact` | Valid derived card in `card.text`; canonical body still unread. |
+| `missing` / `missing_body` | Selected body unavailable in the store. |
 
-A historical read shows no card written after the instant you stand at, and
-authorship is stamped by the kernel, so a card cannot be backdated into an
-answer that could not have seen it.
+Absent, stale, post-cut or wrong-language cards give status, descriptor and
+price, **no prose and no automatic body fallback**. Expand canonical evidence
+explicitly when needed. A card never closes a proof group; fetched groups still
+do not prove semantic sufficiency. Preserve missing/unknown/review signals.
+
+## Cost and history
+
+- `required_record_bytes` and `max_body_record_bytes`: stored Details records.
+  `rerun_record_bytes` includes the previously admitted prefix;
+  `named_record_bytes` prices the single pending record in a named batch.
+- `selected_body_bytes`: total selected canonical UTF-8 body bytes.
+  `proof.body_bytes`: canonical UTF-8 bytes actually loaded in this operation.
+- Neither count means response bytes, tokens or RAM. Relationship prose and
+  provenance still cost context. Cards can save repeated large-body reads;
+  writing and reusing a small card can cost more overall.
+
+Authorship is kernel-stamped. A historical read never shows a card written
+after its cut; a reader cannot backdate new knowledge into past proof.

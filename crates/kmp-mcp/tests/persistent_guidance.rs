@@ -17,6 +17,18 @@ async fn success(server: &KernelMcpServer, args: Value) -> Value {
     result["structuredContent"].clone()
 }
 
+fn work_guidance(result: &Value) -> Value {
+    let blocks = result["content"]
+        .as_array()
+        .expect("content")
+        .iter()
+        .filter_map(|item| serde_json::from_str::<Value>(item["text"].as_str()?).ok())
+        .filter_map(|body| body.get("kmp_guidance").cloned())
+        .collect::<Vec<_>>();
+    assert_eq!(blocks.len(), 1, "exactly one guidance block: {result}");
+    blocks.into_iter().next().expect("guidance")
+}
+
 async fn sync(server: &KernelMcpServer, revision: Option<&str>) {
     let mut requests: Vec<Value> = serde_json::from_str(include_str!(
         "../../../plugins/kmp/guide/guide.requests.json"
@@ -47,7 +59,7 @@ async fn native_identity_survives_restart_and_guidance_does_not_enter_memory() {
         let before = store.export_bundle().await.expect("before");
         let first = success(&server, json!({"registration_key":"native-agent-a"})).await;
         assert_eq!(first["durable"], true);
-        assert_eq!(first["scheme"].as_array().expect("scheme").len(), 8);
+        assert_eq!(first["scheme"].as_array().expect("scheme").len(), 9);
         let replay = success(&server, json!({"registration_key":"native-agent-a"})).await;
         assert_eq!(first["agent"], replay["agent"]);
         assert_eq!(first["context_id"], replay["context_id"]);
@@ -126,6 +138,139 @@ async fn shared_mcp_connection_distinguishes_agents_and_context_resets() {
 }
 
 #[tokio::test]
+async fn condense_help_opens_a_reusable_topic_and_records_work_across_fold() {
+    const ABOUT: &str = "project:condense-guidance";
+    const SOURCE: &str = "project:condense-guidance:source";
+    const TARGET: &str = "project:condense-guidance:target";
+
+    let dir = tempfile::tempdir().expect("store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    sync(&server, None).await;
+    let agent = success(&server, json!({"registration_key":"condense-reader"})).await;
+    assert!(agent["scheme"].as_array().expect("scheme").iter().any(
+        |row| row == &json!({"topic":"condense","purpose":"Write a compact card for one stored body"})
+    ));
+
+    let seeded = call(
+        &server,
+        "kmp_ingest",
+        json!({
+            "about": ABOUT,
+            "idempotency_key": "condense-guidance:seed",
+            "memory": {
+                "dimensions": [{"id": "conversation:condense-guidance", "kind": "conversation"}],
+                "entries": [
+                    {"id": SOURCE, "kind": "observation", "text": "A long source body whose repeated delivery is worth replacing with a concise reader card.",
+                     "coordinates": [{"dimension":"conversation","scope_id":"conversation:condense-guidance","sequence":1}]},
+                    {"id": TARGET, "kind": "claim", "text": "The target depends on the source.",
+                     "coordinates": [{"dimension":"conversation","scope_id":"conversation:condense-guidance","sequence":2}]}
+                ],
+                "relations": [{
+                    "from": SOURCE, "to": TARGET, "rel": "supports",
+                    "class": "evidential", "confidence": "high",
+                    "why": "The source directly supports the target.",
+                    "evidence": "Native condense guidance fixture."
+                }]
+            }
+        }),
+    )
+    .await;
+    assert_eq!(seeded["isError"], false, "{seeded}");
+    let traced = call(
+        &server,
+        "kmp_trace",
+        json!({
+            "about": ABOUT, "from": SOURCE, "to": TARGET,
+            "search": {"proof": true, "proof_refs": []},
+            "budget": {"max_bytes": 40000}
+        }),
+    )
+    .await;
+    assert_eq!(traced["isError"], false, "{traced}");
+    let descriptor = traced["structuredContent"]["objects"]
+        .as_array()
+        .expect("proof objects")
+        .iter()
+        .find(|object| object["ref"] == SOURCE)
+        .expect("source descriptor")["descriptor"]
+        .clone();
+    let mut condense = json!({
+        "about": ABOUT,
+        "ref": SOURCE,
+        "language": "en",
+        "scope": "node_body",
+        "card": "Source supports target.",
+        "source": {
+            "revision": descriptor["revision"],
+            "record_digest": descriptor["record_digest"]
+        },
+        "expect": {"absent": true},
+        "context_id": agent["context_id"]
+    });
+    let first_work = call(&server, "kmp_condense", condense.clone()).await;
+    assert_eq!(first_work["isError"], false, "{first_work}");
+    assert_eq!(
+        first_work["structuredContent"]["card"]["authored_by"],
+        agent["agent"]["name"]
+    );
+    let first_guidance = work_guidance(&first_work);
+    assert_eq!(first_guidance["usage"]["attempts"], 1);
+    assert_eq!(first_guidance["topic_served_in_context"], false);
+    assert_eq!(first_guidance["help"]["tool"], "kmp_guide");
+    assert_eq!(first_guidance["help"]["arguments"]["topic"], "condense");
+
+    let opened = success(&server, first_guidance["help"]["arguments"].clone()).await;
+    assert_eq!(opened["card"]["ref"], "guide:kmp-agent:card:condense");
+    assert_eq!(opened["expanded"], json!(["condense"]));
+    let extended = call(
+        &server,
+        opened["next_actions"][0]["tool"].as_str().expect("tool"),
+        opened["next_actions"][0]["arguments"].clone(),
+    )
+    .await;
+    assert_eq!(extended["isError"], false, "{extended}");
+
+    condense["card"] = json!("Source supports the target claim.");
+    condense["expect"] = json!({
+        "card_revision": first_work["structuredContent"]["card"]["card_revision"]
+    });
+    let repeated_work = call(&server, "kmp_condense", condense).await;
+    assert_eq!(repeated_work["isError"], false, "{repeated_work}");
+    let repeated_guidance = work_guidance(&repeated_work);
+    assert_eq!(repeated_guidance["usage"]["attempts"], 2);
+    assert_eq!(repeated_guidance["topic_served_in_context"], true);
+    assert!(repeated_guidance["help"].is_null());
+
+    let repeated_topic = success(
+        &server,
+        json!({"context_id":agent["context_id"],"topic":"condense"}),
+    )
+    .await;
+    assert_eq!(repeated_topic["card"], opened["card"]);
+    let folded = success(
+        &server,
+        json!({"context_id":agent["context_id"],"topic":"condense","fold":true}),
+    )
+    .await;
+    assert_eq!(folded["expanded"], json!([]));
+    assert_eq!(
+        folded["served"],
+        json!(["condense", "guide:kmp-agent:verb:condense"])
+    );
+    assert_eq!(
+        folded["used"],
+        json!([{"tool":"kmp_condense","attempts":2,"rejected":0,"unknown":0},
+               {"tool":"kmp_inspect","attempts":1,"rejected":0,"unknown":0}])
+    );
+    drop(server);
+    let restarted = KernelMcpServer::embedded(dir.path()).expect("restart");
+    let resumed = success(&restarted, json!({"context_id":agent["context_id"]})).await;
+    assert_eq!(resumed["expanded"], folded["expanded"]);
+    assert_eq!(resumed["served"], folded["served"]);
+    assert_eq!(resumed["used"], folded["used"]);
+}
+
+#[tokio::test]
 async fn changed_guide_is_rediscovered_and_invalid_identity_does_not_register() {
     let dir = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
@@ -160,7 +305,7 @@ async fn scheme_cards_link_to_live_verbs_and_their_json_examples_execute() {
     let agent = success(&server, json!({"registration_key":"card-execution"})).await;
     // Start with the write card so the later examples have actual memory.
     for topic in [
-        "write", "wake", "ask", "time", "audit", "relate", "view", "guide",
+        "write", "wake", "ask", "time", "audit", "condense", "relate", "view", "guide",
     ] {
         let card = success(
             &server,

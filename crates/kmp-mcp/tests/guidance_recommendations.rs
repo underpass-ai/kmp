@@ -168,3 +168,65 @@ async fn recall_audit_uses_the_canonical_claim_ref_from_both_evidence_shapes() {
         assert_eq!(inspected["isError"], false, "{inspected}");
     }
 }
+
+#[tokio::test]
+async fn trace_body_option_refusals_offer_reader_card_help_without_replacing_other_lessons() {
+    let dir = tempfile::tempdir().expect("store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    let agent = open(&server, "trace-help-reader").await;
+    let context = &agent["context_id"];
+
+    let body_option = call(
+        &server,
+        "kmp_trace",
+        json!({
+            "about": ABOUT, "from": "source", "to": "target",
+            "search": {"proof": true, "max_body_record_bytes": 0},
+            "context_id": context
+        }),
+    )
+    .await;
+    assert_eq!(body_option["isError"], true, "{body_option}");
+    let reader_cards = &body_option["structuredContent"]["help"]["examples"][0];
+    assert_eq!(
+        reader_cards["arguments"]["ref"],
+        "guide:kmp-agent:example:reader-cards"
+    );
+    let lesson = call(
+        &server,
+        reader_cards["tool"].as_str().expect("tool"),
+        reader_cards["arguments"].clone(),
+    )
+    .await;
+    assert_eq!(lesson["isError"], false, "{lesson}");
+
+    let destination = call(
+        &server,
+        "kmp_trace",
+        json!({
+            "about": ABOUT, "from": "source", "to": "target",
+            "search": {"max_states": 0}, "context_id": context
+        }),
+    )
+    .await;
+    assert_eq!(destination["isError"], true, "{destination}");
+    assert_eq!(
+        destination["structuredContent"]["help"]["examples"][0]["arguments"]["ref"],
+        "guide:kmp-agent:example:decision-history"
+    );
+
+    let seek = call(
+        &server,
+        "kmp_trace",
+        json!({
+            "about": ABOUT, "from": "source", "search": {"seek": []},
+            "context_id": context
+        }),
+    )
+    .await;
+    assert_eq!(seek["isError"], true, "{seek}");
+    assert_eq!(
+        seek["structuredContent"]["help"]["examples"][0]["arguments"]["ref"],
+        "guide:kmp-agent:example:evidence-seek"
+    );
+}

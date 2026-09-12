@@ -6311,7 +6311,7 @@
             "properties": {
               "compact": {
                 "additionalProperties": false,
-                "description": "Present reader-authored cards instead of the canonical bodies they still stand for. Presentation only: no path, no ranking and no proof count changes, and a node without a usable card keeps its place with its body. A card is orientation, never fetched proof, so it never closes a group.",
+                "description": "With proof:true, show valid reader-authored cards as orientation, never fetched proof or a closed group. Absent, stale, post-cut or wrong-language cards keep their ref, status, descriptor and expansion price but no prose; no canonical fallback. Named proof_refs take precedence. For fresh compact reuse, omit proof_refs, expect_selection and the old page cursor; keep the graph selection.",
                 "properties": {
                   "language": {
                     "description": "Language the cards were written in. A card in another language is absent here, never substituted.",
@@ -6454,7 +6454,7 @@
                 "uniqueItems": true
               },
               "max_body_record_bytes": {
-                "description": "Ceiling on the stored record bytes of canonical bodies this response may carry. Body delivery only: discovery, ranking, which paths qualify and which refs are selected are unchanged. A deterministic sorted prefix is admitted; once the next present record does not fit, it and every later one are deferred with their exact requirement, never skipped and never reported absent. Omitted is the unbounded legacy materialization.",
+                "description": "With proof:true, ceiling on stored record bytes of canonical bodies this response may carry. Body delivery only: discovery, ranking, which paths qualify and which refs are selected are unchanged. A deterministic sorted prefix is admitted; once the next present record does not fit, it and every later one are deferred with their exact requirement, never skipped and never reported absent. Omitted is the unbounded legacy materialization.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -6585,7 +6585,7 @@
                 "type": "boolean"
               },
               "proof_refs": {
-                "description": "Load only these refs of the selected proof table, which must be inside it; a ref outside is refused rather than widening the selection. Present and empty is a descriptor-only view. Nonempty requires both max_body_record_bytes and expect_selection. Named refs affect body delivery only.",
+                "description": "With proof:true, load only these refs of the selected proof table, which must be inside it; a ref outside is refused rather than widening the selection. Present and empty is a descriptor-only view. Nonempty requires both max_body_record_bytes and expect_selection. Named refs affect body delivery only.",
                 "items": {
                   "minLength": 1,
                   "type": "string"
@@ -7506,7 +7506,7 @@
             "type": "string"
           },
           "card": {
-            "description": "The compact text. Must be shorter in bytes than the body it stands for, and is itself read on every compact response, so it is bounded.",
+            "description": "Nonempty text, at most 4096 UTF-8 bytes and strictly shorter in bytes than the canonical body. maxLength alone counts characters; the byte limit also applies.",
             "maxLength": 4096,
             "minLength": 1,
             "type": "string"
@@ -7533,7 +7533,7 @@
             "properties": {
               "absent": {
                 "const": true,
-                "description": "No card is stored for this entry and language yet. Refused, naming the stored revision, if one is.",
+                "description": "No card is stored for this ref and language yet. Refused, naming the stored revision, if one is.",
                 "type": "boolean"
               },
               "card_revision": {
@@ -7571,7 +7571,7 @@
           },
           "source": {
             "additionalProperties": false,
-            "description": "The body version you read, copied from the descriptor a trace or inspect returned. Never constructed.",
+            "description": "Copy revision and record_digest from Trace with search.proof:true and a body option such as proof_refs:[]. Read that canonical body before writing; Inspect and legacy Trace do not expose this descriptor. Never construct a digest.",
             "properties": {
               "content_hash": {
                 "description": "Public token of that body version, kept as provenance. Validity is not decided on it: a write can change the text without changing it.",
@@ -8219,6 +8219,7 @@
               "ask",
               "time",
               "audit",
+              "condense",
               "relate",
               "view",
               "guide"

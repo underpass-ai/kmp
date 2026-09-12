@@ -10,7 +10,7 @@ pub(crate) fn definition() -> Value {
             "context_id":{"type":"string","minLength":1,"description":"Exact active context returned by KMP; enough to resume that agent."},
             "agent_id":{"type":"string","minLength":1,"description":"Stable identity, used with context_key to start a fresh context after compaction or a task change."},
             "context_key":{"type":"string","minLength":1,"description":"Unique logical context reset for this agent; reuse on retry."},
-            "topic":{"type":"string","enum":["wake","write","ask","time","audit","relate","view","guide"],"description":"Expand one small worked card; extended guidance remains linked."},
+            "topic":{"type":"string","enum":["wake","write","ask","time","audit","condense","relate","view","guide"],"description":"Expand one small worked card; extended guidance remains linked."},
             "fold":{"type":"boolean","description":"Hide topic from the expanded scheme. Prior deliveries remain recorded."}
         }}),
         json!({"type":"object","additionalProperties":false,"properties":{

@@ -40,6 +40,10 @@
         "topic": "audit"
       },
       {
+        "purpose": "Write a compact card for one stored body",
+        "topic": "condense"
+      },
+      {
         "purpose": "Compare explicitly selected abouts",
         "topic": "relate"
       },

@@ -29,13 +29,13 @@ pub(crate) fn definition() -> Value {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 4096,
-                    "description": "The compact text. Must be shorter in bytes than the body it stands for, and is itself read on every compact response, so it is bounded."
+                    "description": "Nonempty text, at most 4096 UTF-8 bytes and strictly shorter in bytes than the canonical body. maxLength alone counts characters; the byte limit also applies."
                 },
                 "source": {
                     "type": "object",
                     "additionalProperties": false,
                     "required": ["revision", "record_digest"],
-                    "description": "The body version you read, copied from the descriptor a trace or inspect returned. Never constructed.",
+                    "description": "Copy revision and record_digest from Trace with search.proof:true and a body option such as proof_refs:[]. Read that canonical body before writing; Inspect and legacy Trace do not expose this descriptor. Never construct a digest.",
                     "properties": {
                         "revision": {"type": "integer", "minimum": 1, "description": "Body revision the card was written from."},
                         "content_hash": string_schema("Public token of that body version, kept as provenance. Validity is not decided on it: a write can change the text without changing it."),
@@ -51,7 +51,7 @@ pub(crate) fn definition() -> Value {
                         {"required": ["card_revision"]}
                     ],
                     "properties": {
-                        "absent": {"type": "boolean", "const": true, "description": "No card is stored for this entry and language yet. Refused, naming the stored revision, if one is."},
+                        "absent": {"type": "boolean", "const": true, "description": "No card is stored for this ref and language yet. Refused, naming the stored revision, if one is."},
                         "card_revision": {"type": "integer", "minimum": 1, "description": "The card revision you are replacing. Refused if another reader replaced it first."}
                     }
                 },
