@@ -12,11 +12,11 @@ pub use model::{
     DECLARED_FROM_RELATE_METHOD, DeclaredEdge, FactState, INTENDED_NEW_LABEL_METADATA_KEY,
     KmpBundle, KmpStats, LabelResemblance, MAX_COORDINATE_RELATIONS, MAX_PROPOSALS_PER_FACT,
     ProofDependencyGroup, ProposalSignal, ProposedLink, RelatedFact, Relations, ResemblanceKind,
-    TemporalEntry, TemporalEntrySelection, TemporalMemoryTraversal, TemporalTraversalRequest,
-    TemporalTraversalResult, Tension, cap_proposals_per_fact, compare_temporal_coordinates,
-    compare_temporal_instants, directed_relationship_path, label_resemblances, labels_by_entry,
-    normalized_label_token, relate, rfc3339_from_epoch_seconds, temporal_instant_nanos,
-    temporal_instant_rfc3339,
+    TemporalEntry, TemporalEntrySelection, TemporalMemoryTraversal, TemporalProofPlan,
+    TemporalTraversalRequest, TemporalTraversalResult, Tension, cap_proposals_per_fact,
+    compare_temporal_coordinates, compare_temporal_instants, directed_relationship_path,
+    label_resemblances, labels_by_entry, normalized_label_token, relate,
+    rfc3339_from_epoch_seconds, temporal_instant_nanos, temporal_instant_rfc3339,
 };
 pub use model::{TemporalReadWindow, temporal_clock_instant};
 pub use model::{

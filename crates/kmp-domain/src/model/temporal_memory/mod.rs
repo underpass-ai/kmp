@@ -3,6 +3,7 @@ mod entry_selection;
 mod extract;
 mod position;
 mod proof_memberships;
+mod proof_selection;
 mod request;
 
 pub use entry_selection::TemporalEntrySelection;
@@ -158,7 +159,7 @@ impl TemporalMemoryTraversal {
     ) -> Result<TemporalTraversalResult, DomainError> {
         request.validate()?;
         let nodes = bundle_nodes_by_id(bundle);
-        let mut all_positions = temporal_positions(bundle, &nodes, request.axis())?;
+        let mut all_positions = temporal_positions(bundle, request.axis())?;
         all_positions.sort();
         // Lanes resolve the anchor; entry predicates apply only after the
         // temporal cut, using every admitted lane of the same entry (#560).
@@ -297,14 +298,19 @@ const SEQUENCE_WARNING_NAMED_LABELS: usize = 5;
 
 fn build_entries(
     selected_ref_ids: Vec<String>,
-    nodes: &BTreeMap<String, (String, String)>,
+    nodes: &BTreeMap<&str, &crate::BundleNode>,
     coordinates_by_ref: &BTreeMap<String, Vec<TemporalCoordinate>>,
     dimensions: &DimensionSelection,
 ) -> Vec<TemporalEntry> {
     selected_ref_ids
         .into_iter()
         .filter_map(|ref_id| {
-            let (kind, text) = nodes.get(&ref_id)?;
+            let node = nodes.get(ref_id.as_str())?;
+            let text = if node.summary().trim().is_empty() {
+                node.title()
+            } else {
+                node.summary()
+            };
             let coordinates = coordinates_by_ref
                 .get(&ref_id)
                 .cloned()
@@ -317,8 +323,8 @@ fn build_entries(
 
             Some(TemporalEntry {
                 ref_id,
-                kind: kind.clone(),
-                text: text.clone(),
+                kind: node.node_kind().to_string(),
+                text: text.to_string(),
                 coordinates,
             })
         })

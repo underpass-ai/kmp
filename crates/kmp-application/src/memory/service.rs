@@ -386,8 +386,31 @@ where
         &self,
         query: TemporalMemoryQuery,
     ) -> Result<TemporalMemoryResult, ApplicationError> {
-        let read = self.temporal_read(&query).await?;
-        temporal_result(query, read)
+        let read = self.temporal_read(&query, false).await?;
+        let mut result = temporal_result(query, read)?;
+        let selected = if result.include.evidence || result.include.dependencies {
+            kmp_domain::TemporalProofPlan::select(
+                &result.source_bundle,
+                &result.traversal,
+                result.include.dependencies,
+            )?
+            .body_refs()
+            .clone()
+        } else if result.include.raw_refs {
+            result
+                .traversal
+                .entries()
+                .iter()
+                .map(|entry| entry.ref_id().to_string())
+                .collect()
+        } else {
+            BTreeSet::new()
+        };
+        result.source_bundle = self
+            .query_application
+            .materialize_selected_details(result.source_bundle, &selected)
+            .await?;
+        Ok(result)
     }
 
     /// The context a temporal read traverses, as the graph returned it:
@@ -396,6 +419,7 @@ where
     async fn temporal_read(
         &self,
         query: &TemporalMemoryQuery,
+        include_details: bool,
     ) -> Result<TemporalRead, ApplicationError> {
         let dimensions = query.dimensions.resolve_current_about(&query.about);
         let roots = self.memory_context_roots(&query.about, &dimensions).await?;
@@ -407,11 +431,15 @@ where
                 crate::queries::clamp_native_graph_traversal_depth(query.depth),
             )
             .with_scopes(scopes.clone());
-            bundles.push(
+            bundles.push(if include_details {
                 self.query_application
                     .read_context_bundle(&request, "temporal-reader")
-                    .await?,
-            );
+                    .await?
+            } else {
+                self.query_application
+                    .read_context_catalogue(&request, "temporal-reader")
+                    .await?
+            });
         }
         Ok(TemporalRead {
             bundle: super::merge_memory_bundles::merge(bundles)?,
@@ -442,7 +470,7 @@ where
         query: VisualProjectionQuery,
     ) -> Result<VisualProjectionResult, ApplicationError> {
         let temporal_query = query.temporal_query()?;
-        let read = self.temporal_read(&temporal_query).await?;
+        let read = self.temporal_read(&temporal_query, true).await?;
         // The catalogue is read before the filter: a renderer draws the
         // about's labels, and says which are empty in this range. Under
         // `scope_ids` the graph read itself is narrowed to those scopes, so

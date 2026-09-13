@@ -352,6 +352,8 @@ pub struct TemporalIncludeOptions {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TemporalMemoryResult {
     pub traversal: kmp_domain::TemporalTraversalResult,
+    /// Scoped graph metadata plus bodies selected for this page's evidence,
+    /// dependencies and raw refs. Other canonical bodies are not materialized.
     pub source_bundle: kmp_domain::KmpBundle,
     pub include: TemporalIncludeOptions,
 }

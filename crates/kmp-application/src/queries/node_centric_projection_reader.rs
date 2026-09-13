@@ -74,6 +74,27 @@ where
         role: &str,
         generator_version: &str,
     ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
+        self.load_bundle_parts_for(request, role, generator_version, true)
+            .await
+    }
+
+    pub(crate) async fn load_catalogue_for(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+        generator_version: &str,
+    ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
+        self.load_bundle_parts_for(request, role, generator_version, false)
+            .await
+    }
+
+    async fn load_bundle_parts_for(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+        generator_version: &str,
+        include_details: bool,
+    ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
         let root_node_id = request.root_node_id();
         let graph_start = Instant::now();
         let Some(neighborhood) = self.graph_reader.load_scoped_neighborhood(request).await? else {
@@ -88,7 +109,11 @@ where
         let batch_size = 1 + neighborhood.neighbors.len();
 
         let detail_start = Instant::now();
-        let node_details = load_node_details(&self.detail_reader, &neighborhood).await?;
+        let node_details = if include_details {
+            load_node_details(&self.detail_reader, &neighborhood).await?
+        } else {
+            Vec::new()
+        };
         let detail_load = detail_start.elapsed();
 
         let assembly_start = Instant::now();
