@@ -25,6 +25,7 @@ pub(crate) mod tool_error_code;
 mod tool_error_help;
 pub(crate) mod tool_result;
 pub(crate) mod unhonored_projection;
+pub(crate) mod unhonored_refs;
 mod view_dispatch;
 pub(crate) mod view_tools;
 mod write_dispatch;

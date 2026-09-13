@@ -11,12 +11,12 @@ pub(crate) fn view_output_schema() -> Value {
             "additionalProperties": true,
             "description": "The semantic view state: about, clock, focus, projection, selection, trace, search, and the provenance of the last change."
         },
-        "applied": described("boolean", "Whether this call is the one that moved the view. A replayed idempotency key answers false."),
+        "applied": described("boolean", "Whether this call is the one that moved the view. A replayed idempotency key answers false, and so does an intent none of whose named refs are in this store — `unhonored` then says so first and names every one of them."),
         "opened": described("boolean", "Whether a view was opened or rehydrated."),
         "unhonored": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "Parts of the intent this build recorded but cannot render yet."
+            "description": "What this call could not honor, in the caller's words: parts of the intent this build cannot render yet, and the refs it named that this store does not hold. Absence is always named here and never silently drawn, so read it even when the call succeeded."
         },
         "clocks": {"type": "array", "items": {"type": "string"}, "description": "The clocks the axis can read."},
         "semantic_zoom_ladder": {"type": "array", "items": {"type": "string"}, "description": "The rungs, coarse to fine."},

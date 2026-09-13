@@ -2504,6 +2504,8 @@ async fn view_intents_validate_refs_in_new_and_retained_about_layers() {
         retained["state"]["projection"]["abouts"],
         json!(["question:e3-layer"])
     );
+    // A ref whose owner is not among the planes the intent projects is a
+    // scope mistake, not an absence, and it still refuses.
     for (key, patch) in [
         (
             "outside",
@@ -2516,10 +2518,6 @@ async fn view_intents_validate_refs_in_new_and_retained_about_layers() {
         (
             "replaced",
             json!({"projection":{"semantic_zoom":"moment"}, "selection":"question:e3-layer:claim:e3"}),
-        ),
-        (
-            "missing",
-            json!({"projection":{"abouts":["no-such-about"]}}),
         ),
     ] {
         let mut args = patch;
@@ -2536,6 +2534,33 @@ async fn view_intents_validate_refs_in_new_and_retained_about_layers() {
         .await;
         assert_eq!(unchanged["state"], retained["state"], "{key}");
     }
+    // An about that is simply not in the store is an absence, and since #443
+    // an absence degrades: it is the only plane the intent named, so nothing
+    // of the intent is honored, the view does not move, and the result says
+    // so by name.
+    let degraded = call(
+        &server,
+        9,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": view_id,
+            "idempotency_key": "missing-layer",
+            "projection": {"abouts": ["no-such-about"]}
+        }),
+    )
+    .await;
+    assert!(degraded.get("error").is_none(), "{degraded}");
+    assert_eq!(degraded["applied"], false, "{degraded}");
+    assert_eq!(degraded["state"], retained["state"], "{degraded}");
+    assert_eq!(
+        degraded["unhonored"],
+        json!([
+            "no part of this intent was honored: every ref it names is absent from this store, \
+             so the view did not move and its state is unchanged",
+            "`no-such-about` is not in this store; it is dropped from projection.abouts"
+        ]),
+        "{degraded}"
+    );
     let stale = call(
         &server,
         11,
@@ -2555,6 +2580,191 @@ async fn view_intents_validate_refs_in_new_and_retained_about_layers() {
     )
     .await;
     assert_eq!(after, original, "View moves must not mutate memory");
+}
+
+/// #443 asked whether the two view tools should answer the same absence the
+/// same way and split them deliberately, so both halves are pinned here.
+///
+/// `kmp_view_open` still fails on an about this store does not hold: every
+/// pane of the loom it would draw is that about, so an empty view would be
+/// the whole answer. `kmp_view_apply_intent` degrades instead, because it
+/// moves a loom already open over memory that is really there — it applies
+/// what it can and names each ref it could not honor through the same
+/// `unhonored` channel its dimensions and overlays already use.
+#[tokio::test]
+async fn absence_fails_a_view_open_and_degrades_a_view_intent() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+    let view_id = "degrading";
+
+    // Half one: an open onto memory that is not there still refuses, and
+    // still says why.
+    let refused = call(
+        &server,
+        2,
+        "kmp_view_open",
+        json!({"view_id": view_id, "about": "question:nowhere"}),
+    )
+    .await;
+    assert_eq!(refused["error"]["code"], "not_found", "{refused}");
+    assert!(
+        refused["error"]["message"]
+            .as_str()
+            .expect("message")
+            .contains("empty loom"),
+        "the refusal must keep carrying its reason: {refused}"
+    );
+
+    let opened = call(
+        &server,
+        3,
+        "kmp_view_open",
+        json!({"view_id": view_id, "about": "question:e3"}),
+    )
+    .await;
+
+    // Half two, partially: the refs that exist are framed and selected, the
+    // one that does not is dropped and named.
+    let partial = call(
+        &server,
+        4,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": view_id,
+            "expected_revision": opened["view_revision"],
+            "idempotency_key": "degrading-partial",
+            "focus": {"refs": ["question:e3:claim:e3", "question:e3:claim:nowhere"]},
+            "selection": "question:e3:claim:e3"
+        }),
+    )
+    .await;
+    assert_eq!(partial["applied"], true, "{partial}");
+    assert_eq!(
+        partial["state"]["focus"]["refs"],
+        json!(["question:e3:claim:e3"]),
+        "{partial}"
+    );
+    assert_eq!(partial["state"]["selection"], "question:e3:claim:e3");
+    assert_eq!(
+        partial["unhonored"],
+        json!(["`question:e3:claim:nowhere` is not in this store; it is dropped from focus.refs"]),
+        "a dropped ref must be named, never silently omitted: {partial}"
+    );
+
+    // A trace needs both ends, so one absent end leaves the trace alone —
+    // while the rest of the same intent still applies.
+    let half_trace = call(
+        &server,
+        5,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": view_id,
+            "expected_revision": partial["view_revision"],
+            "idempotency_key": "degrading-trace",
+            "trace": {"from": "question:e3:claim:e3", "to": "question:e3:claim:nowhere"},
+            "projection": {"semantic_zoom": "moment"}
+        }),
+    )
+    .await;
+    assert_eq!(half_trace["applied"], true, "{half_trace}");
+    assert_eq!(half_trace["state"]["trace"], Value::Null, "{half_trace}");
+    assert_eq!(
+        half_trace["state"]["projection"]["semantic_zoom"], "moment",
+        "what it could honor is still applied: {half_trace}"
+    );
+    assert_eq!(
+        half_trace["unhonored"],
+        json!([
+            "`question:e3:claim:nowhere` is not in this store; a trace needs both ends, so the \
+             trace is unchanged"
+        ]),
+        "{half_trace}"
+    );
+
+    // Every ref absent: the view does not move at all. Honoring the clock and
+    // the window while honoring none of their subjects would frame a stretch
+    // of time nobody asked to see. The emptiness is named first, then every
+    // missing ref, and `applied` is false.
+    let nothing = call(
+        &server,
+        6,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": view_id,
+            "expected_revision": half_trace["view_revision"],
+            "idempotency_key": "degrading-nothing",
+            "focus": {
+                "refs": ["question:e3:claim:nowhere"],
+                "time_range": {
+                    "axis": "observed",
+                    "from": "2026-07-01T00:00:00Z",
+                    "to": "2026-07-31T00:00:00Z"
+                }
+            },
+            "selection": "question:e3:claim:elsewhere"
+        }),
+    )
+    .await;
+    assert_eq!(nothing["applied"], false, "{nothing}");
+    assert_eq!(
+        nothing["view_revision"], half_trace["view_revision"],
+        "a wholly unhonorable intent must not advance the revision: {nothing}"
+    );
+    assert_eq!(
+        nothing["state"], half_trace["state"],
+        "not the clock, not the window, not the selection: {nothing}"
+    );
+    assert_eq!(
+        nothing["unhonored"],
+        json!([
+            "no part of this intent was honored: every ref it names is absent from this store, \
+             so the view did not move and its state is unchanged",
+            "`question:e3:claim:nowhere` is not in this store; focus.refs named nothing this \
+             store holds, so the focus keeps the refs it had",
+            "`question:e3:claim:elsewhere` is not in this store; the selection is unchanged"
+        ]),
+        "{nothing}"
+    );
+
+    // Retargeting onto an about this store does not hold is the same story:
+    // the loom stays where it was, and the zoom rung asked for beside it is
+    // not applied to an about nobody asked to look at.
+    let retarget = call(
+        &server,
+        7,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": view_id,
+            "expected_revision": half_trace["view_revision"],
+            "idempotency_key": "degrading-retarget",
+            "target": {"about": "question:nowhere"},
+            "projection": {"semantic_zoom": "atlas"}
+        }),
+    )
+    .await;
+    assert_eq!(retarget["applied"], false, "{retarget}");
+    assert_eq!(retarget["state"]["about"], "question:e3", "{retarget}");
+    assert_eq!(
+        retarget["state"]["projection"]["semantic_zoom"], "moment",
+        "{retarget}"
+    );
+    assert_eq!(
+        retarget["unhonored"][1],
+        "`question:nowhere` is not in this store; the loom stays on the about it was weaving",
+        "{retarget}"
+    );
+
+    // The view is still the one the person is looking at, and memory never
+    // moved underneath any of this.
+    let state = call(
+        &server,
+        8,
+        "kmp_view_get_state",
+        json!({"view_id": view_id}),
+    )
+    .await;
+    assert_eq!(state["state"], half_trace["state"], "{state}");
 }
 
 #[tokio::test]

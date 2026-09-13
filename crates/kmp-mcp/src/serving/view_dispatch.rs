@@ -1,6 +1,11 @@
 //! The view tools' dispatch: they never reach the backend's write path —
 //! a view is a camera position, not a record — but every ref an intent
 //! names is checked against the store through the same read an agent uses.
+//!
+//! What the two tools do with that answer differs on purpose. An open onto
+//! an about this store does not hold fails; an intent naming a ref it does
+//! not hold degrades around it. See [`crate::serving::view_tools::open`] for
+//! why ([#443](https://github.com/underpass-ai/kmp/issues/443)).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
@@ -15,9 +20,9 @@ use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 
 impl KernelMcpServer {
-    /// Moves a view, after checking that every ref the intent names is
-    /// really in this store. A view that points at memory which is not there
-    /// would draw an empty loom that looks like an answer.
+    /// Opens, reads or moves a view, after checking every about and ref the
+    /// call names against this store. An open refuses what it cannot find;
+    /// an intent degrades around it and reports it.
     pub(super) async fn handle_view_tool(
         &self,
         id: Value,
@@ -42,54 +47,19 @@ impl KernelMcpServer {
                     Err(error) => Err(error),
                 }
             }
-            "kmp_view_apply_intent" => {
-                let mut missing = Vec::new();
-                let mut failure = None;
-                let abouts = crate::serving::view_tools::abouts_for_intent(arguments);
-                for reference in crate::serving::view_tools::refs_named(arguments) {
-                    if abouts.is_empty() {
-                        break;
-                    }
-                    match self.memory_ref_exists_in_abouts(&abouts, &reference).await {
-                        Ok(true) => {}
-                        Ok(false) => missing.push(reference),
-                        Err(error) => {
-                            failure = Some(error);
-                            break;
-                        }
-                    }
-                }
-                if let Some(layers) = arguments
-                    .pointer("/projection/abouts")
-                    .and_then(Value::as_array)
-                {
-                    for layer in layers {
-                        let Some(name) = layer.as_str() else {
-                            failure = Some(ToolError::invalid_argument(
-                                "projection.abouts holds about identifiers",
-                            ));
-                            break;
-                        };
-                        match self.memory_ref_exists(name, name).await {
-                            Ok(true) => {}
-                            Ok(false) => missing.push(name.to_string()),
-                            Err(error) => {
-                                failure = Some(error);
-                                break;
-                            }
-                        }
-                    }
-                }
-                match failure {
-                    Some(error) => Err(error),
-                    None => match self.unhonored_projection(arguments).await {
+            "kmp_view_apply_intent" => match self.unhonored_refs(arguments).await {
+                Err(error) => Err(error),
+                Ok(missing) => {
+                    let abouts =
+                        crate::serving::view_tools::honored_abouts(arguments, missing.as_slice());
+                    match self.unhonored_projection(arguments, &abouts).await {
                         Ok(unhonored) => {
                             crate::serving::view_tools::apply_intent(arguments, &missing, unhonored)
                         }
                         Err(error) => Err(error),
-                    },
+                    }
                 }
-            }
+            },
             other => Err(ToolError::unknown_tool(format!(
                 "unknown view tool `{other}`"
             ))),
@@ -121,6 +91,69 @@ impl KernelMcpServer {
                 jsonrpc_result(id, tool_error_result(name, arguments, &error))
             }
         }
+    }
+
+    /// Every ref the intent names that this store does not hold, asked
+    /// through the same read an agent would use. Collecting the whole answer
+    /// rather than stopping at the first absence is what lets
+    /// [`crate::serving::view_tools::apply_intent`] degrade around them and
+    /// name each one, instead of collapsing the call
+    /// ([#443](https://github.com/underpass-ai/kmp/issues/443)). A ref whose
+    /// owner is not among the planes the intent projects is still an error:
+    /// that is a scope mistake, not an absence.
+    async fn unhonored_refs(
+        &self,
+        arguments: &Value,
+    ) -> Result<crate::serving::view_tools::UnhonoredRefs, ToolError> {
+        let mut missing = Vec::new();
+        // An about is checked as an anchor, exactly as kmp_view_open checks
+        // it, never as a ref inside some other about's scope.
+        let target = arguments
+            .pointer("/target/about")
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        if let Some(about) = target.as_deref()
+            && !self.memory_ref_exists(about, about).await?
+        {
+            missing.push(about.to_string());
+        }
+        if let Some(layers) = arguments
+            .pointer("/projection/abouts")
+            .and_then(Value::as_array)
+        {
+            for layer in layers {
+                let Some(name) = layer.as_str() else {
+                    return Err(ToolError::invalid_argument(
+                        "projection.abouts holds about identifiers",
+                    ));
+                };
+                if !self.memory_ref_exists(name, name).await? {
+                    missing.push(name.to_string());
+                }
+            }
+        }
+
+        let abouts = crate::serving::view_tools::honored_abouts(arguments, &missing);
+        for reference in crate::serving::view_tools::refs_named(arguments) {
+            // Without an owner this read cannot reach, nothing is checked and
+            // nothing is claimed absent; the aggregate answers an intent on a
+            // view that was never opened.
+            if abouts.is_empty() {
+                break;
+            }
+            if target.as_deref() == Some(reference.as_str())
+                || missing.iter().any(|absent| absent == &reference)
+            {
+                continue;
+            }
+            if !self
+                .memory_ref_exists_in_abouts(&abouts, &reference)
+                .await?
+            {
+                missing.push(reference);
+            }
+        }
+        Ok(crate::serving::view_tools::UnhonoredRefs::new(missing))
     }
 
     /// Whether one ref is in this store, asked through the same read the
@@ -186,13 +219,16 @@ impl KernelMcpServer {
         }
     }
 
+    /// What the intent asked the projection for that its owners cannot show.
+    /// `abouts` are the owners the degraded intent will really have, so an
+    /// about this store does not hold never scopes this read.
     async fn unhonored_projection(
         &self,
         arguments: &Value,
+        abouts: &[String],
     ) -> Result<crate::serving::view_tools::UnhonoredProjection, ToolError> {
         let requested = crate::serving::view_tools::projection_names(arguments);
         let mut unhonored = crate::serving::view_tools::UnhonoredProjection::default();
-        let abouts = crate::serving::view_tools::abouts_for_intent(arguments);
 
         if !requested.dimensions.is_empty() || !requested.labels.is_empty() {
             let Some(about) = abouts.first() else {

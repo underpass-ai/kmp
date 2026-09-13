@@ -13,7 +13,7 @@ use crate::contract::schema::view_family::view_output_schema;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_view_apply_intent",
-        "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
+        "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase. Absence degrades rather than failing: a ref this store does not hold is dropped from the part that named it and listed in `unhonored`, and if none of the refs an intent names exist the view does not move at all and `applied` is false. Read `unhonored` — what is missing is always named there, never silently drawn.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -31,7 +31,7 @@ pub(crate) fn definition() -> Value {
                 "target": {
                     "type": "object",
                     "additionalProperties": false,
-                    "properties": {"about": string_schema("Weave a different about.")}
+                    "properties": {"about": string_schema("Weave a different about. One this store does not hold is not honored: the loom stays on the about it was weaving and the ref is listed in `unhonored`.")}
                 },
                 "focus": {
                     "type": "object",
@@ -53,7 +53,7 @@ pub(crate) fn definition() -> Value {
                         "refs": {
                             "type": "array",
                             "items": string_schema("Memory ref to bring into focus."),
-                            "description": "Refs the view should frame. Each must exist; the loom does not draw placeholders that look like data."
+                            "description": "Refs the view should frame. A ref this store does not hold is dropped and listed in `unhonored` — the loom never draws a placeholder that looks like data. If none of them exist the focus keeps the refs it had."
                         }
                     }
                 },
@@ -66,7 +66,7 @@ pub(crate) fn definition() -> Value {
                             "enum": ["atlas", "episode", "moment"],
                             "description": "Which rung of the ladder to show. The zoom changes representation, not just size."
                         },
-                        "abouts": {"type": "array", "maxItems": 5, "items": string_schema("Additional about to compare as a plane beside target.about; must exist in the store."), "description": "Explicit additional contexts, at most five. Omit for the primary about alone."},
+                        "abouts": {"type": "array", "maxItems": 5, "items": string_schema("Additional about to compare as a plane beside target.about; one this store does not hold is dropped and listed in `unhonored`."), "description": "Explicit additional contexts, at most five. Omit for the primary about alone."},
                         "dimensions": {"type": "array", "items": string_schema("Memory dimension to keep as a lane.")},
                         "labels": {
                             "type": "array",
@@ -81,10 +81,11 @@ pub(crate) fn definition() -> Value {
                         }
                     }
                 },
-                "selection": {"type": ["string", "null"], "description": "Ref to select, or null to clear."},
+                "selection": {"type": ["string", "null"], "description": "Ref to select, or null to clear. A ref this store does not hold leaves the selection as it was and is listed in `unhonored`."},
                 "trace": {
                     "type": ["object", "null"],
                     "additionalProperties": false,
+                    "description": "The two ends of one claim, or null to clear. A trace needs both: if either end is not in this store the trace is left as it was and the absent end is listed in `unhonored`.",
                     "properties": {
                         "from": string_schema("Where the claim starts."),
                         "to": string_schema("Where it should lead.")
