@@ -28,8 +28,11 @@ Run from the repository root with the normal shared Cargo configuration:
 
 ```sh
 cargo build --locked -p kmp-viewer --example node_batch_benchmark
-python3 artifacts/performance-539/measure.py
+python3 artifacts/performance-539/measure.py artifacts/performance-539-reproduction
 ```
+
+Choose a new output directory for every run; the script refuses to overwrite
+existing evidence and removes only its own temporary stores.
 
 The runner compares complete node metadata and raw coordinates to individual
 Inspect on four quiescent synthetic stores before recording timings. The code
