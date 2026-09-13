@@ -41,6 +41,23 @@ which refuses any file that does not account for every byte.
 Similarity is `dot / sqrt(‖a‖² · ‖b‖²)` over exact integers, so the same
 table yields the same number on every platform.
 
+The runtime owns the file buffer that it read and validates every section in
+place. It does not copy the words or vectors, and it decodes little-endian word
+offsets from the validated buffer during lookup. Integer vector norms are
+computed on first use per word and cached in a table shared by cloned bridge
+handles. Concurrent readers may calculate the same norm at the same time, but
+they store the same exact integer and never change the dot product or floating
+point operation order.
+
+This keeps format and packaging unchanged. For the shipped 13,326,412-byte
+table, retained section and norm storage is 14,745,575 bytes plus container
+metadata, 77 bytes more than the former copied representation because the
+59-byte provenance and 18-byte header remain in the owned file buffer. Peak
+parser storage no longer includes both that whole input buffer and copied word
+and vector sections at once. Memory mapping and a second packaged layout would
+add platform and release contracts without removing meaningful retained data,
+so the portable owned-buffer path remains the release format.
+
 ## Building one
 
 ```bash

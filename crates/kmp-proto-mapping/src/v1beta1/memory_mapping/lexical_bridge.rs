@@ -1,6 +1,8 @@
 use std::collections::BTreeSet;
+use std::sync::Arc;
 
 use super::bridged_term::BridgedTerm;
+use super::lexical_bridge_table::LexicalBridgeTable;
 
 /// A table of whole words and the direction each one points in, so a question
 /// can reach a memory that says the same thing in another language.
@@ -38,23 +40,10 @@ use super::bridged_term::BridgedTerm;
 ///
 /// Absent by default. A store with no table beside it behaves exactly as it
 /// did, the same way a memory whose language cannot be read stems nothing.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct LexicalBridge {
-    dims: usize,
-    /// Byte offsets into `words`, one more than there are words.
-    offsets: Vec<u32>,
-    /// Every word, folded and sorted by bytes, concatenated.
-    words: Vec<u8>,
-    /// `count × dims` signed bytes, each row a unit vector scaled to 127.
-    vectors: Vec<i8>,
-    /// The squared integer norm of each row, so a similarity is one dot product.
-    norms: Vec<u64>,
-    /// Which model wrote the vectors, so a hit can say where its opinion came from.
-    provenance: String,
+    table: Option<Arc<LexicalBridgeTable>>,
 }
-
-const MAGIC: &[u8; 8] = b"KMPBRIDG";
-const VERSION: u16 = 1;
 
 /// Below this two words are related, not the same word in two languages.
 ///
@@ -75,14 +64,7 @@ impl LexicalBridge {
     /// No table at all. What every store gets until one is installed beside
     /// it, and what a malformed one degrades to.
     pub const fn none() -> Self {
-        Self {
-            dims: 0,
-            offsets: Vec::new(),
-            words: Vec::new(),
-            vectors: Vec::new(),
-            norms: Vec::new(),
-            provenance: String::new(),
-        }
+        Self { table: None }
     }
 
     /// Reads a table in its own format, refusing anything that does not
@@ -93,71 +75,16 @@ impl LexicalBridge {
     /// it in a screenful of code is the point — the artifact is ours and so
     /// is the code that reads it.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
-        let mut cursor = bytes;
-        if take(&mut cursor, MAGIC.len())? != MAGIC {
-            return Err("not a lexical bridge table: bad magic".to_string());
-        }
-        let version = u16_le(&mut cursor)?;
-        if version != VERSION {
-            return Err(format!("lexical bridge version {version} is not {VERSION}"));
-        }
-        let dims = usize::from(u16_le(&mut cursor)?);
-        if dims == 0 {
-            return Err("lexical bridge vectors have no dimensions".to_string());
-        }
-        let count = u32_le(&mut cursor)? as usize;
-        let provenance_len = usize::from(u16_le(&mut cursor)?);
-        let provenance = std::str::from_utf8(take(&mut cursor, provenance_len)?)
-            .map_err(|_| "lexical bridge provenance is not UTF-8".to_string())?
-            .to_string();
+        Self::from_owned_bytes(bytes.to_vec())
+    }
 
-        let mut offsets = Vec::with_capacity(count + 1);
-        for _ in 0..=count {
-            offsets.push(u32_le(&mut cursor)?);
-        }
-        if offsets.first() != Some(&0) || offsets.windows(2).any(|pair| pair[0] > pair[1]) {
-            return Err("lexical bridge word offsets are not increasing".to_string());
-        }
-        let words_len = offsets.last().copied().unwrap_or(0) as usize;
-        let words = take(&mut cursor, words_len)?.to_vec();
-        let vectors = take(&mut cursor, count.saturating_mul(dims))?
-            .iter()
-            .map(|byte| *byte as i8)
-            .collect::<Vec<_>>();
-        if !cursor.is_empty() {
-            return Err(format!(
-                "lexical bridge has {} trailing bytes",
-                cursor.len()
-            ));
-        }
-
-        let table = Self {
-            dims,
-            offsets,
-            words,
-            vectors,
-            norms: Vec::new(),
-            provenance,
-        };
-        for index in 0..count {
-            let word = table.word(index);
-            if std::str::from_utf8(word).is_err() {
-                return Err(format!("lexical bridge word {index} is not UTF-8"));
-            }
-            if index > 0 && table.word(index - 1) >= word {
-                return Err(format!("lexical bridge words are not sorted at {index}"));
-            }
-        }
-        let norms = (0..count)
-            .map(|index| {
-                table
-                    .vector(index)
-                    .iter()
-                    .map(|value| u64::from(value.unsigned_abs()).pow(2))
-                    .sum()
-            })
-            .collect();
-        Ok(Self { norms, ..table })
+    /// Reads and takes ownership of a table without copying its word and
+    /// vector sections. File adapters should prefer this entry point after
+    /// `std::fs::read`; callers with borrowed fixtures can use [`Self::from_bytes`].
+    pub fn from_owned_bytes(bytes: Vec<u8>) -> Result<Self, String> {
+        Ok(Self {
+            table: Some(Arc::new(LexicalBridgeTable::parse(bytes)?)),
+        })
     }
 
     /// Whether there is nothing to bridge with. The behaviour it gates is
@@ -168,7 +95,7 @@ impl LexicalBridge {
     }
 
     pub fn len(&self) -> usize {
-        self.offsets.len().saturating_sub(1)
+        self.table.as_deref().map_or(0, LexicalBridgeTable::len)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -177,7 +104,9 @@ impl LexicalBridge {
 
     /// The model whose opinion the vectors carry.
     pub fn provenance(&self) -> &str {
-        &self.provenance
+        self.table
+            .as_deref()
+            .map_or("", LexicalBridgeTable::provenance)
     }
 
     /// The pairs the table vouches for between a question and a vocabulary.
@@ -245,27 +174,7 @@ impl LexicalBridge {
     }
 
     fn index_of(&self, word: &str) -> Option<usize> {
-        let count = self.len();
-        let (mut low, mut high) = (0usize, count);
-        while low < high {
-            let middle = low + (high - low) / 2;
-            match self.word(middle).cmp(word.as_bytes()) {
-                std::cmp::Ordering::Less => low = middle + 1,
-                std::cmp::Ordering::Greater => high = middle,
-                std::cmp::Ordering::Equal => return Some(middle),
-            }
-        }
-        None
-    }
-
-    fn word(&self, index: usize) -> &[u8] {
-        let start = self.offsets[index] as usize;
-        let end = self.offsets[index + 1] as usize;
-        &self.words[start..end]
-    }
-
-    fn vector(&self, index: usize) -> &[i8] {
-        &self.vectors[index * self.dims..(index + 1) * self.dims]
+        self.table.as_deref()?.index_of(word)
     }
 
     /// Cosine over integers. The dot product and both norms are exact
@@ -273,40 +182,10 @@ impl LexicalBridge {
     /// square root and the division are each correctly rounded and the
     /// result cannot differ between machines.
     fn similarity_between(&self, left: usize, right: usize) -> f64 {
-        let dot = self
-            .vector(left)
-            .iter()
-            .zip(self.vector(right))
-            .map(|(a, b)| i64::from(*a) * i64::from(*b))
-            .sum::<i64>();
-        let norms = self.norms[left] * self.norms[right];
-        if norms == 0 {
-            return 0.0;
-        }
-        dot as f64 / (norms as f64).sqrt()
+        self.table
+            .as_deref()
+            .map_or(0.0, |table| table.similarity_between(left, right))
     }
-}
-
-fn take<'a>(cursor: &mut &'a [u8], len: usize) -> Result<&'a [u8], String> {
-    if cursor.len() < len {
-        return Err(format!(
-            "lexical bridge is truncated: needed {len} bytes, {} left",
-            cursor.len()
-        ));
-    }
-    let (head, tail) = cursor.split_at(len);
-    *cursor = tail;
-    Ok(head)
-}
-
-fn u16_le(cursor: &mut &[u8]) -> Result<u16, String> {
-    let bytes = take(cursor, 2)?;
-    Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
-}
-
-fn u32_le(cursor: &mut &[u8]) -> Result<u32, String> {
-    let bytes = take(cursor, 4)?;
-    Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
 }
 
 #[cfg(test)]
@@ -320,8 +199,8 @@ pub(crate) mod tests {
         entries.sort_by(|left, right| left.0.as_bytes().cmp(right.0.as_bytes()));
         let dims = entries.first().map(|(_, vector)| vector.len()).unwrap_or(1);
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(MAGIC);
-        bytes.extend_from_slice(&VERSION.to_le_bytes());
+        bytes.extend_from_slice(super::super::lexical_bridge_table::MAGIC);
+        bytes.extend_from_slice(&super::super::lexical_bridge_table::VERSION.to_le_bytes());
         bytes.extend_from_slice(&(dims as u16).to_le_bytes());
         bytes.extend_from_slice(&(entries.len() as u32).to_le_bytes());
         bytes.extend_from_slice(&(provenance.len() as u16).to_le_bytes());
@@ -363,6 +242,24 @@ pub(crate) mod tests {
 
     fn words(list: &[&str]) -> Vec<String> {
         list.iter().map(|word| (*word).to_string()).collect()
+    }
+
+    fn integer_cosine_oracle(left: &[i8], right: &[i8]) -> f64 {
+        let dot = left.iter().zip(right).fold(0i64, |sum, (left, right)| {
+            sum + i64::from(*left) * i64::from(*right)
+        });
+        let norm = |vector: &[i8]| {
+            vector.iter().fold(0u64, |sum, value| {
+                let magnitude = u64::from(value.unsigned_abs());
+                sum + magnitude * magnitude
+            })
+        };
+        let product = norm(left) * norm(right);
+        if product == 0 {
+            0.0
+        } else {
+            dot as f64 / (product as f64).sqrt()
+        }
     }
 
     #[test]
@@ -509,10 +406,46 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn impossible_section_lengths_are_refused_before_allocation() {
+        let mut impossible_offsets = Vec::new();
+        impossible_offsets.extend_from_slice(super::super::lexical_bridge_table::MAGIC);
+        impossible_offsets
+            .extend_from_slice(&super::super::lexical_bridge_table::VERSION.to_le_bytes());
+        impossible_offsets.extend_from_slice(&u16::MAX.to_le_bytes());
+        impossible_offsets.extend_from_slice(&u32::MAX.to_le_bytes());
+        impossible_offsets.extend_from_slice(&0u16.to_le_bytes());
+
+        let error = LexicalBridge::from_owned_bytes(impossible_offsets)
+            .expect_err("the declared offset section is absent");
+        assert!(
+            error.contains("truncated") || error.contains("too large"),
+            "{error}"
+        );
+
+        let mut impossible_words = table("toy", &[("valve", &[127, 0])]);
+        // Header and provenance occupy 21 bytes for `toy`; the second offset
+        // starts four bytes later and claims a word section the file lacks.
+        impossible_words[25..29].copy_from_slice(&u32::MAX.to_le_bytes());
+        let error = LexicalBridge::from_owned_bytes(impossible_words)
+            .expect_err("the declared word section is absent");
+        assert!(error.contains("truncated"), "{error}");
+    }
+
+    #[test]
+    fn malformed_utf8_is_refused_before_the_table_can_be_searched() {
+        let mut bytes = table("toy", &[("a", &[127])]);
+        // Header (18), provenance (3), two offsets (8), then the one word.
+        bytes[29] = 0xff;
+
+        let error = LexicalBridge::from_owned_bytes(bytes).expect_err("word is not UTF-8");
+        assert!(error.contains("not UTF-8"), "{error}");
+    }
+
+    #[test]
     fn words_out_of_order_are_refused_because_lookup_would_lie() {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(MAGIC);
-        bytes.extend_from_slice(&VERSION.to_le_bytes());
+        bytes.extend_from_slice(super::super::lexical_bridge_table::MAGIC);
+        bytes.extend_from_slice(&super::super::lexical_bridge_table::VERSION.to_le_bytes());
         bytes.extend_from_slice(&2u16.to_le_bytes());
         bytes.extend_from_slice(&2u32.to_le_bytes());
         bytes.extend_from_slice(&0u16.to_le_bytes());
@@ -533,5 +466,121 @@ pub(crate) mod tests {
                 .expect("the fixture is valid");
 
         assert_eq!(bridge.similarity("void", "valve"), Some(0.0));
+    }
+
+    #[test]
+    fn owned_and_borrowed_tables_return_identical_scores() {
+        let bytes = table(
+            "toy",
+            &[
+                ("night", &[0, 127, 0]),
+                ("noche", &[10, 125, 0]),
+                ("valve", &[127, 0, 0]),
+                ("valvula", &[120, 40, 0]),
+            ],
+        );
+        let borrowed = LexicalBridge::from_bytes(&bytes).expect("borrowed table");
+        let owned = LexicalBridge::from_owned_bytes(bytes).expect("owned table");
+
+        for (left, right) in [("night", "noche"), ("valve", "valvula"), ("night", "valve")] {
+            assert_eq!(
+                borrowed.similarity(left, right),
+                owned.similarity(left, right)
+            );
+        }
+    }
+
+    #[test]
+    fn lazy_norms_preserve_the_integer_cosine_bits_on_first_and_warm_use() {
+        let negative_left = [-128, 127, -7, 0];
+        let negative_right = [127, -128, 7, 1];
+        let zero = [0, 0, 0, 0];
+        let bridge = LexicalBridge::from_owned_bytes(table(
+            "arithmetic-oracle",
+            &[
+                ("negative-left", &negative_left),
+                ("negative-right", &negative_right),
+                ("zero", &zero),
+            ],
+        ))
+        .expect("arithmetic fixture");
+
+        let expected = integer_cosine_oracle(&negative_left, &negative_right).to_bits();
+        let first = bridge
+            .similarity("negative-left", "negative-right")
+            .expect("fixture words")
+            .to_bits();
+        let warm = bridge
+            .similarity("negative-left", "negative-right")
+            .expect("fixture words")
+            .to_bits();
+        assert_eq!(first, expected);
+        assert_eq!(warm, expected);
+        assert_eq!(
+            bridge.similarity("negative-left", "zero"),
+            Some(integer_cosine_oracle(&negative_left, &zero))
+        );
+
+        let near_left = [127, 0];
+        let near_right = [57, 113];
+        let near = LexicalBridge::from_owned_bytes(table(
+            "threshold-oracle",
+            &[("near-left", &near_left), ("near-right", &near_right)],
+        ))
+        .expect("threshold fixture");
+        let expected = integer_cosine_oracle(&near_left, &near_right);
+        assert!(
+            expected >= MINIMUM_SIMILARITY && expected < 0.451,
+            "{expected}"
+        );
+        assert_eq!(
+            near.similarity("near-left", "near-right")
+                .expect("fixture words")
+                .to_bits(),
+            expected.to_bits()
+        );
+
+        let max_dims = usize::from(u16::MAX);
+        let max_left = vec![-128; max_dims];
+        let max_right = (0..max_dims)
+            .map(|index| if index % 2 == 0 { -128 } else { 127 })
+            .collect::<Vec<i8>>();
+        let maximum = LexicalBridge::from_owned_bytes(table(
+            "maximum-dimensions",
+            &[("max-left", &max_left), ("max-right", &max_right)],
+        ))
+        .expect("maximum format-v1 dimensions remain in bounds");
+        let expected = integer_cosine_oracle(&max_left, &max_right).to_bits();
+        assert_eq!(
+            maximum
+                .similarity("max-left", "max-right")
+                .expect("fixture words")
+                .to_bits(),
+            expected
+        );
+    }
+
+    #[test]
+    fn cloned_tables_share_safe_concurrent_lazy_norms() {
+        let left = [120, 40, -8, -128];
+        let right = [127, 0, -4, -120];
+        let expected = Some(integer_cosine_oracle(&left, &right));
+        let bridge = LexicalBridge::from_owned_bytes(table(
+            "concurrent-cold-norms",
+            &[("cold-left", &left), ("cold-right", &right)],
+        ))
+        .expect("concurrency fixture");
+
+        std::thread::scope(|scope| {
+            for _ in 0..8 {
+                let bridge = bridge.clone();
+                scope.spawn(move || {
+                    for _ in 0..1_000 {
+                        assert_eq!(bridge.similarity("cold-left", "cold-right"), expected);
+                        assert_eq!(bridge.similarity("void", "missing"), None);
+                    }
+                });
+            }
+        });
     }
 }

@@ -87,7 +87,7 @@ fn load_from(source: BridgeSource) -> LexicalBridge {
 /// Read one table, having already decided which one.
 fn load_bridge_at(path: &Path, origin: BridgeOrigin) -> LexicalBridge {
     match std::fs::read(path) {
-        Ok(bytes) => match LexicalBridge::from_bytes(&bytes) {
+        Ok(bytes) => match LexicalBridge::from_owned_bytes(bytes) {
             Ok(bridge) => bridge,
             Err(reason) => {
                 tracing::warn!(path = %path.display(), reason, "lexical bridge table ignored");
@@ -127,7 +127,7 @@ fn describe_source(source: BridgeSource) -> String {
 fn describe_bridge_at(path: &Path, origin: BridgeOrigin) -> String {
     let named = origin.qualifier();
     match std::fs::read(path) {
-        Ok(bytes) => match LexicalBridge::from_bytes(&bytes) {
+        Ok(bytes) => match LexicalBridge::from_owned_bytes(bytes) {
             Ok(bridge) if !bridge.is_silent() => format!(
                 "lexical bridge: {} words, {} ({}{named})",
                 bridge.len(),
