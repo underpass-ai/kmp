@@ -1,0 +1,22 @@
+{
+  "accepted": {
+    "results": "measurement-final/results.json",
+    "environment_sha256": "517b08a07306b0c1b3e6496f53acefc5a7023e86b0e0c9f9690d4a1084d83baf",
+    "candidate_binary_sha256": "1133c861ab6d1a76d759126a089493fc2013efee83550f37cdc710b87a1738df",
+    "source_hashes": "source-hashes.sha256",
+    "connection_policy": "one request per connection; Connection: close"
+  },
+  "rejected_keep_alive": {
+    "results": "measurement-keep-alive-rejected/results.json",
+    "environment_sha256": "ee164f9e1962cd4fab4b3be35f2dd07161096ce43c59e65e8e812fd7107a3338",
+    "candidate_binary_sha256": "18efe5df47ab1ea6e898e152723f8b305281a652f0994f807c8744f12e499a65",
+    "source_delta_from_accepted": "rejected-keep-alive.patch.gz",
+    "source_delta_sha256": "8e86ad0a2089b8aaef157751250929bf6aa1bfd9cfd4bce0a7da027e958e2d77",
+    "http_rs_sha256": "ba6983cf5a117079e9e19706f7be5874b61f0f347a5238b278f509af295f0d37",
+    "http_rs_git_blob": "7aee0d53f17497c37e3f6a364dae478251d31158",
+    "lib_rs_sha256": "5ffe9fc481af17a690a1280340b269c0f95e9575dadca35a74debd8922ec8df4",
+    "lib_rs_git_blob": "2351789ff9b0e6317fea5785d8bc7b79a148f24e",
+    "unchanged_sources": "Every other executable source is identical to the accepted source-hashes.sha256 set.",
+    "connection_policy": "HTTP/1.1 keep-alive with a bounded buffered parser"
+  }
+}

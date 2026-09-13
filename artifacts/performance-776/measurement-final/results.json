@@ -1,0 +1,402 @@
+{
+  "baseline": {
+    "browser": {
+      "cold": {
+        "first_scene_ms": {
+          "samples": 8,
+          "p50": 780.4092455,
+          "p95": 878.625731,
+          "min": 718.186252,
+          "max": 878.625731
+        },
+        "requests": {
+          "samples": 8,
+          "p50": 41.0,
+          "p95": 41,
+          "min": 41,
+          "max": 41
+        },
+        "static_requests": {
+          "samples": 8,
+          "p50": 31.0,
+          "p95": 31,
+          "min": 31,
+          "max": 31
+        },
+        "dynamic_requests": {
+          "samples": 8,
+          "p50": 10.0,
+          "p95": 10,
+          "min": 10,
+          "max": 10
+        },
+        "connections": {
+          "samples": 8,
+          "p50": 40.0,
+          "p95": 40,
+          "min": 40,
+          "max": 40
+        },
+        "encoded_bytes": {
+          "samples": 8,
+          "p50": 993273.0,
+          "p95": 993273,
+          "min": 993273,
+          "max": 993273
+        },
+        "static_encoded_bytes": {
+          "samples": 8,
+          "p50": 940641.0,
+          "p95": 940641,
+          "min": 940641,
+          "max": 940641
+        },
+        "dynamic_encoded_bytes": {
+          "samples": 8,
+          "p50": 52632.0,
+          "p95": 52632,
+          "min": 52632,
+          "max": 52632
+        },
+        "disk_cache_hits": {
+          "samples": 8,
+          "p50": 0.0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "warm": {
+        "first_scene_ms": {
+          "samples": 8,
+          "p50": 714.55353,
+          "p95": 772.371557,
+          "min": 673.14723,
+          "max": 772.371557
+        },
+        "requests": {
+          "samples": 8,
+          "p50": 40.0,
+          "p95": 40,
+          "min": 40,
+          "max": 40
+        },
+        "static_requests": {
+          "samples": 8,
+          "p50": 31.0,
+          "p95": 31,
+          "min": 31,
+          "max": 31
+        },
+        "dynamic_requests": {
+          "samples": 8,
+          "p50": 9.0,
+          "p95": 9,
+          "min": 9,
+          "max": 9
+        },
+        "connections": {
+          "samples": 8,
+          "p50": 39.0,
+          "p95": 39,
+          "min": 39,
+          "max": 39
+        },
+        "encoded_bytes": {
+          "samples": 8,
+          "p50": 1013871.0,
+          "p95": 1013871,
+          "min": 1013871,
+          "max": 1013871
+        },
+        "static_encoded_bytes": {
+          "samples": 8,
+          "p50": 940641.0,
+          "p95": 940641,
+          "min": 940641,
+          "max": 940641
+        },
+        "dynamic_encoded_bytes": {
+          "samples": 8,
+          "p50": 73230.0,
+          "p95": 73230,
+          "min": 73230,
+          "max": 73230
+        },
+        "disk_cache_hits": {
+          "samples": 8,
+          "p50": 0.0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "browser_peak_rss_kib": {
+      "samples": 8,
+      "p50": 37892.0,
+      "p95": 38000,
+      "min": 37676,
+      "max": 38000
+    },
+    "browser_allocation_requests": {
+      "samples": 8,
+      "p50": 135872.5,
+      "p95": 135877,
+      "min": 135867,
+      "max": 135877
+    },
+    "browser_requested_allocation_bytes": {
+      "samples": 8,
+      "p50": 25511319.0,
+      "p95": 25511831,
+      "min": 25511063,
+      "max": 25511831
+    },
+    "mcp_first_read_ms": {
+      "samples": 8,
+      "p50": 69.3801015,
+      "p95": 78.143287,
+      "min": 63.979841,
+      "max": 78.143287
+    },
+    "mcp_warm_read_ms": {
+      "samples": 8,
+      "p50": 22.56125,
+      "p95": 23.439653,
+      "min": 21.781086,
+      "max": 23.439653
+    },
+    "mcp_response_bytes": {
+      "samples": 8,
+      "p50": 980010.0,
+      "p95": 980010,
+      "min": 980010,
+      "max": 980010
+    },
+    "mcp_peak_rss_kib": {
+      "samples": 8,
+      "p50": 29806.0,
+      "p95": 29940,
+      "min": 29688,
+      "max": 29940
+    },
+    "mcp_allocation_requests": {
+      "samples": 8,
+      "p50": 3315.0,
+      "p95": 3316,
+      "min": 3314,
+      "max": 3316
+    },
+    "mcp_requested_allocation_bytes": {
+      "samples": 8,
+      "p50": 96282614.0,
+      "p95": 96283126,
+      "min": 96282358,
+      "max": 96283126
+    },
+    "mcp_body_sha256": [
+      "4caffc43c1b42c5b749c16c08c158ea8ec1a668684584fddfd1594c47fe5bee8"
+    ]
+  },
+  "candidate": {
+    "browser": {
+      "cold": {
+        "first_scene_ms": {
+          "samples": 8,
+          "p50": 751.3386555,
+          "p95": 775.049387,
+          "min": 722.020563,
+          "max": 775.049387
+        },
+        "requests": {
+          "samples": 8,
+          "p50": 41.0,
+          "p95": 41,
+          "min": 41,
+          "max": 41
+        },
+        "static_requests": {
+          "samples": 8,
+          "p50": 31.0,
+          "p95": 31,
+          "min": 31,
+          "max": 31
+        },
+        "dynamic_requests": {
+          "samples": 8,
+          "p50": 10.0,
+          "p95": 10,
+          "min": 10,
+          "max": 10
+        },
+        "connections": {
+          "samples": 8,
+          "p50": 40.0,
+          "p95": 40,
+          "min": 40,
+          "max": 40
+        },
+        "encoded_bytes": {
+          "samples": 8,
+          "p50": 317242.0,
+          "p95": 317242,
+          "min": 317242,
+          "max": 317242
+        },
+        "static_encoded_bytes": {
+          "samples": 8,
+          "p50": 262513.0,
+          "p95": 262513,
+          "min": 262513,
+          "max": 262513
+        },
+        "dynamic_encoded_bytes": {
+          "samples": 8,
+          "p50": 54729.0,
+          "p95": 54729,
+          "min": 54729,
+          "max": 54729
+        },
+        "disk_cache_hits": {
+          "samples": 8,
+          "p50": 0.0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "warm": {
+        "first_scene_ms": {
+          "samples": 8,
+          "p50": 690.1090015,
+          "p95": 720.989194,
+          "min": 629.732351,
+          "max": 720.989194
+        },
+        "requests": {
+          "samples": 8,
+          "p50": 40.0,
+          "p95": 40,
+          "min": 40,
+          "max": 40
+        },
+        "static_requests": {
+          "samples": 8,
+          "p50": 31.0,
+          "p95": 31,
+          "min": 31,
+          "max": 31
+        },
+        "dynamic_requests": {
+          "samples": 8,
+          "p50": 9.0,
+          "p95": 9,
+          "min": 9,
+          "max": 9
+        },
+        "connections": {
+          "samples": 8,
+          "p50": 39.0,
+          "p95": 39,
+          "min": 39,
+          "max": 39
+        },
+        "encoded_bytes": {
+          "samples": 8,
+          "p50": 75318.0,
+          "p95": 75318,
+          "min": 75318,
+          "max": 75318
+        },
+        "static_encoded_bytes": {
+          "samples": 8,
+          "p50": 0.0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "dynamic_encoded_bytes": {
+          "samples": 8,
+          "p50": 75318.0,
+          "p95": 75318,
+          "min": 75318,
+          "max": 75318
+        },
+        "disk_cache_hits": {
+          "samples": 8,
+          "p50": 0.0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "browser_peak_rss_kib": {
+      "samples": 8,
+      "p50": 36092.0,
+      "p95": 36260,
+      "min": 36032,
+      "max": 36260
+    },
+    "browser_allocation_requests": {
+      "samples": 8,
+      "p50": 135664.0,
+      "p95": 135666,
+      "min": 135657,
+      "max": 135666
+    },
+    "browser_requested_allocation_bytes": {
+      "samples": 8,
+      "p50": 22608315.0,
+      "p95": 22608699,
+      "min": 22607931,
+      "max": 22608699
+    },
+    "mcp_first_read_ms": {
+      "samples": 8,
+      "p50": 29.3492785,
+      "p95": 42.143827,
+      "min": 22.639337,
+      "max": 42.143827
+    },
+    "mcp_warm_read_ms": {
+      "samples": 8,
+      "p50": 22.9796395,
+      "p95": 26.190839,
+      "min": 22.145901,
+      "max": 26.190839
+    },
+    "mcp_response_bytes": {
+      "samples": 8,
+      "p50": 980010.0,
+      "p95": 980010,
+      "min": 980010,
+      "max": 980010
+    },
+    "mcp_peak_rss_kib": {
+      "samples": 8,
+      "p50": 27612.0,
+      "p95": 27692,
+      "min": 27336,
+      "max": 27692
+    },
+    "mcp_allocation_requests": {
+      "samples": 8,
+      "p50": 3098.0,
+      "p95": 3098,
+      "min": 3096,
+      "max": 3098
+    },
+    "mcp_requested_allocation_bytes": {
+      "samples": 8,
+      "p50": 13272975.0,
+      "p95": 13272975,
+      "min": 13272207,
+      "max": 13272975
+    },
+    "mcp_body_sha256": [
+      "4caffc43c1b42c5b749c16c08c158ea8ec1a668684584fddfd1594c47fe5bee8"
+    ]
+  }
+}

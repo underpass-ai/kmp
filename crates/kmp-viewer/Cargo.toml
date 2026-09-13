@@ -15,7 +15,6 @@ publish = true
 workspace = true
 
 [dependencies]
-flate2.workspace = true
 getrandom.workspace = true
 kmp-application.workspace = true
 kmp-domain.workspace = true
@@ -26,7 +25,9 @@ tokio.workspace = true
 
 [build-dependencies]
 flate2.workspace = true
+sha2.workspace = true
 
 [dev-dependencies]
+flate2.workspace = true
 kmp-embedded.workspace = true
 tempfile = "3.26.0"
