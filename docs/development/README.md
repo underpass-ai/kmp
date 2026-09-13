@@ -5,6 +5,7 @@ should start with [Embedded KMP](../embedded/README.md).
 
 - [ChronoLoom scene performance](chronoloom-scene-performance.md) — retained rendering, interaction semantics and reproducible browser controls.
 - [Testing](testing.md) — the maintained local and CI verification paths.
+- [Visual projection performance](visual-projection-performance.md) — snapshot-bound ChronoLoom reuse, correctness and reproducible measurements.
 - [Releasing](releasing.md) — version, artifact and tag flow.
 - [Agent-facing surface](agent-surface.md) — maintenance procedure for people and agents, including ownership, generation, validation and context cost.
 - [Guide examples](../../plugins/kmp/guide/README.md) — authored lessons and isolated MCP replays.

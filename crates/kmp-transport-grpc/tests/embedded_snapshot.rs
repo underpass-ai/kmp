@@ -73,6 +73,65 @@ fn packet(version: usize) -> MemoryIngestCommand {
 }
 
 #[tokio::test]
+async fn visual_projection_cache_preserves_real_grpc_results_after_peer_edits()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use kmp_proto::v1beta1::{ProjectVisualRequest, VisualLevelOfDetail};
+    use kmp_proto_mapping::v1beta1::{
+        visual_projection_query_from_proto, visual_projection_response_from_result,
+    };
+    let dir = tempfile::tempdir()?;
+    let kernel = EmbeddedKernel::open(dir.path())?;
+    kernel.service().ingest(packet(0)).await?;
+    let listener = TcpListener::bind("127.0.0.1:0").await?;
+    let endpoint = format!("http://{}", listener.local_addr()?);
+    let server = tokio::spawn(
+        tonic::transport::Server::builder()
+            .add_service(KernelMemoryServiceServer::new(MemoryGrpcService::new(
+                kernel.service(),
+            )))
+            .serve_with_incoming(TcpListenerStream::new(listener)),
+    );
+    let mut client = KernelMemoryServiceClient::connect(endpoint).await?;
+    let peer = EmbeddedKernel::open(dir.path())?;
+    let mut previous = None;
+    for version in 0..3 {
+        if version > 0 {
+            peer.service().ingest(packet(version)).await?;
+        }
+        for lod in [
+            VisualLevelOfDetail::Atlas,
+            VisualLevelOfDetail::Episode,
+            VisualLevelOfDetail::Moment,
+        ] {
+            let request = ProjectVisualRequest {
+                about: ABOUT.into(),
+                from: Some("2026-09-01T00:00:00Z".parse()?),
+                to: Some("2026-10-01T00:00:00Z".parse()?),
+                level_of_detail: lod as i32,
+                ..Default::default()
+            };
+            let expected = visual_projection_response_from_result(
+                peer.service()
+                    .visual_projection(
+                        visual_projection_query_from_proto(request.clone()).map_err(|e| *e)?,
+                    )
+                    .await?,
+            );
+            let first = client.project_visual(request.clone()).await?.into_inner();
+            assert_eq!(first, expected);
+            assert_eq!(client.project_visual(request).await?.into_inner(), expected);
+            if lod == VisualLevelOfDetail::Moment
+                && let Some(before) = previous.replace(first.clone())
+            {
+                assert_ne!(before, first);
+            }
+        }
+    }
+    server.abort();
+    Ok(())
+}
+
+#[tokio::test]
 async fn grpc_inspect_and_trace_proof_keep_graph_body_and_sources_together_during_peer_writes()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let dir = tempfile::tempdir()?;

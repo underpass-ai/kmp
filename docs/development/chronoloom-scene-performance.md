@@ -82,7 +82,43 @@ GPU frame rates. The original reported 333/286/144 ms tasks were hypotheses;
 the reproduced controls independently show main-thread work in the hundreds of
 milliseconds. Results are informational and add no absolute CI timing gate.
 
-The final measurement table is recorded below after validation. Early controls
+Two fresh processes per implementation ran in before/after/after/before order,
+without a concurrent build, on 2026-09-13. Each scenario contributes 12 samples;
+p50 is their median and p95 their nearest-rank 95th percentile. With this small
+sample, tails describe the control rather than a population estimate.
+
+| Scenario | Before CPU p50 / p95 (ms) | After CPU p50 / p95 (ms) | Before frame p50 / p95 (ms) | After frame p50 / p95 (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| opacity | 202.70 / 212.80 | 12.50 / 16.40 | 658.30 / 683.30 | 200.00 / 216.70 |
+| selection | 195.00 / 237.60 | 16.95 / 23.50 | 750.00 / 783.40 | 216.70 / 333.30 |
+| window | 201.40 / 255.80 | 20.00 / 37.40 | 750.00 / 816.70 | 216.70 / 233.40 |
+| mode | 215.85 / 270.10 | 9.55 / 13.00 | 1016.65 / 1083.30 | 216.60 / 216.70 |
+| relations | 170.75 / 216.00 | 33.30 / 60.80 | 700.00 / 766.60 | 233.35 / 283.30 |
+
+A dense opacity update creates **zero** replacement scene objects, materials or
+geometries, versus 6,157 objects/materials and 4,109 geometries before. Draw calls
+fall from 6,158 to 2,063. A fully populated selected scene retains 19 registered
+geometries rather than 4,112; shared glyph geometry remains across `clear`, and
+explicit disposal leaves zero geometries, textures and DOM labels. Eight
+clear/repopulate cycles remain at 20 geometries in the behavior fixture. Both
+controlled candidate runs pass the behavior checks, including buffer growth and
+shrinkage.
+
+The number of observed long tasks is **33 per run for both implementations**.
+Their maxima change from 1,083/1,061 ms to 663/693 ms. First construction changes
+from 276.1/282.7 ms to 147.1/147.2 ms. Final CDP heap observations are
+170,163,576/57,268,416 bytes before and 70,049,796/69,852,456 bytes after: collection
+timing varies substantially, so these samples do **not** establish a lower live
+heap bound. The identity allocation counts and GPU lifetime observations are the
+more direct evidence for removed resource churn.
+
+Raw outputs live in `artifacts/performance-778/controlled-{before,after}-{1,2}`
+in the measurement checkout. These are ignored local evidence, not required CI
+artifacts; the committed runner recreates the fixtures and trace. The measured
+renderer modules match commit `18704470`; subsequent projection-cache integration
+and guide/report edits do not change those JavaScript sources.
+
+Early controls
 under `baseline-*`, `candidate-*`, `final-*` and `measured-*` include concurrent
 local gate activity or evolving instrumentation; retain them as development
 observations rather than treating them as the final controlled comparison.

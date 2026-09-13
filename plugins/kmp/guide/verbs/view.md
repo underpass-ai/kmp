@@ -70,6 +70,13 @@ does not load canonical bodies or certify proof completeness; use Trace's bounde
 proof expansion and Inspect for the actual evidence. Older in-flight focus reads
 cannot overwrite a newer focus, about or clock.
 
+Repeated identical projections may reuse a bounded application cache. Each call
+opens a fresh read snapshot first; writes to any about, bodies, labels or relations
+prevent reuse of the earlier projection. The full clock, range, scope, label and
+page selection stays part of its identity. A backend without a certified complete
+revision recomputes the projection. This reuse does not change authorization,
+pagination or proof completeness and does not make a stored view a current audit.
+
 Rapid human drags and sliders follow the latest position; release keeps the final
 interval. Search waits for a short typing pause, while explicit view intents and
 Escape apply immediately. Selection, direction, labels and the chosen clock keep
