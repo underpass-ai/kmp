@@ -1,0 +1,16 @@
+{
+  "cargo_fmt_check": "passed",
+  "cargo_clippy_kmp_mcp_lib_tests_d_warnings": "passed",
+  "cargo_test_kmp_mcp_lib": {
+    "status": "passed",
+    "tests": 433
+  },
+  "cargo_test_kmp_proto_mapping_recall_projection": {
+    "status": "passed",
+    "tests": 28
+  },
+  "architecture_gate": "passed",
+  "paired_recall_control": "passed; fixture backend, three trials x Wake/Ask, fresh-process first-use plus 20 warm samples, complete response equality",
+  "allocation_control": "passed; fixture backend, one-versus-five query parity",
+  "allocation_observation": "Five-query process totals, including startup and first use: 2,169,377 to 485,161 requests; cumulative requested bytes 161,033,717 to 39,106,082. Marginal warm cost is obtained by subtracting each side's one-query control."
+}

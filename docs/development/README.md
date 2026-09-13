@@ -4,6 +4,7 @@ This section is for contributors to KMP itself. Users installing local memory
 should start with [Embedded KMP](../embedded/README.md).
 
 - [ChronoLoom scene performance](chronoloom-scene-performance.md) — retained rendering, interaction semantics and reproducible browser controls.
+- [ChronoLoom asset delivery](chronoloom-asset-performance.md) — versioned precompressed browser assets, MCP App assembly and real HTTP controls.
 - [Testing](testing.md) — the maintained local and CI verification paths.
 - [Visual projection performance](visual-projection-performance.md) — snapshot-bound ChronoLoom reuse, correctness and reproducible measurements.
 - [Releasing](releasing.md) — version, artifact and tag flow.

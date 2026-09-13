@@ -18,7 +18,6 @@ use crate::query_params::{
     axis_param, budget_param, cursor_param, depth_param, dimension_selection, direction_param,
     max_edges_param, numeric_param, tier_param, window_param,
 };
-use crate::renderer_asset::renderer_source;
 use crate::{MemoryViewerServer, view, views};
 
 /// Unwraps a parameter, or returns its refusal from the enclosing handler.
@@ -42,63 +41,7 @@ const MAX_BATCH_IDS: usize = 64;
 const DEFAULT_VISUAL_FROM: &str = "1900-01-01T00:00:00Z";
 const DEFAULT_VISUAL_TO: &str = "2100-01-01T00:00:00Z";
 
-pub(crate) const INDEX_HTML: &str = include_str!("../ui/index.html");
-pub(crate) const LOOM_CSS: &str = include_str!("../ui/loom.css");
-/// The composition root: wires the loom's modules and starts it.
-pub(crate) const LOOM_JS: &str = include_str!("../ui/loom.js");
-/// The loom's pure algorithmic half — clocks, lanes, bins, prisms, axes —
-/// kept free of DOM and renderer so it can be reasoned about alone.
-pub(crate) const LOOM_CORE_JS: &str = include_str!("../ui/loom-core.js");
-/// The script-tag modules of the browser application, in the exact order
-/// `index.html` loads them and `mcp_app` inlines them: state, the backend
-/// port, the use cases, then the adapters, with the composition root last.
-pub(crate) const LOOM_MODULES: [(&str, &str); 25] = [
-    (
-        "loom-provenance.js",
-        include_str!("../ui/loom-provenance.js"),
-    ),
-    ("loom-evidence.js", include_str!("../ui/loom-evidence.js")),
-    (
-        "loom-observability.js",
-        include_str!("../ui/loom-observability.js"),
-    ),
-    ("loom-theme.js", include_str!("../ui/loom-theme.js")),
-    ("loom-navigator.js", include_str!("../ui/loom-navigator.js")),
-    ("loom-camera.js", include_str!("../ui/loom-camera.js")),
-    ("loom-planes.js", include_str!("../ui/loom-planes.js")),
-    (
-        "loom-relation-lines.js",
-        include_str!("../ui/loom-relation-lines.js"),
-    ),
-    ("loom-three.js", include_str!("../ui/loom-three.js")),
-    (
-        "loom-scene-model.js",
-        include_str!("../ui/loom-scene-model.js"),
-    ),
-    ("loom-layers.js", include_str!("../ui/loom-layers.js")),
-    ("loom-control.js", include_str!("../ui/loom-control.js")),
-    ("loom-catalogue.js", include_str!("../ui/loom-catalogue.js")),
-    (
-        "loom-time-controls.js",
-        include_str!("../ui/loom-time-controls.js"),
-    ),
-    ("loom-state.js", include_str!("../ui/loom-state.js")),
-    ("loom-loading.js", include_str!("../ui/loom-loading.js")),
-    (
-        "loom-loading-view.js",
-        include_str!("../ui/loom-loading-view.js"),
-    ),
-    ("loom-api.js", include_str!("../ui/loom-api.js")),
-    ("loom-panels.js", include_str!("../ui/loom-panels.js")),
-    ("loom-viewport.js", include_str!("../ui/loom-viewport.js")),
-    ("loom-data.js", include_str!("../ui/loom-data.js")),
-    ("loom-selection.js", include_str!("../ui/loom-selection.js")),
-    ("loom-sync.js", include_str!("../ui/loom-sync.js")),
-    ("loom-scene.js", include_str!("../ui/loom-scene.js")),
-    ("loom-gestures.js", include_str!("../ui/loom-gestures.js")),
-];
-pub(crate) const LOOM_LOADING_CSS: &str = include_str!("../ui/loom-loading.css");
-pub(crate) const LOOM_SHELL_CSS: &str = include_str!("../ui/loom-shell.css");
+pub(crate) const INDEX_HTML: &str = include_str!(concat!(env!("OUT_DIR"), "/index.html"));
 
 impl<G, D, S, E, W> MemoryViewerServer<G, D, S, E, W>
 where
@@ -149,19 +92,8 @@ where
     }
 
     async fn answer(&self, request: &HttpRequest) -> HttpResponse {
-        if let Some(name) = request.path.strip_prefix("/assets/")
-            && let Some((_, source)) = LOOM_MODULES.iter().find(|(module, _)| *module == name)
-        {
-            return HttpResponse::javascript(source);
-        }
         match request.path.as_str() {
             "/" | "/index.html" => HttpResponse::html(INDEX_HTML),
-            "/assets/loom.css" => HttpResponse::css(LOOM_CSS),
-            "/assets/loom.js" => HttpResponse::javascript(LOOM_JS),
-            "/assets/loom-core.js" => HttpResponse::javascript(LOOM_CORE_JS),
-            "/assets/three.min.js" => HttpResponse::javascript(renderer_source()),
-            "/assets/loom-loading.css" => HttpResponse::css(LOOM_LOADING_CSS),
-            "/assets/loom-shell.css" => HttpResponse::css(LOOM_SHELL_CSS),
             "/api/info" => self.info(),
             "/api/abouts" => self.abouts().await,
             "/api/graph" => self.graph(request).await,

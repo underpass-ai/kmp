@@ -1,0 +1,9 @@
+ ██╗  ██╗███╗   ███╗██████╗
+ ██║ ██╔╝████╗ ████║██╔══██╗   Kernel Memory Protocol
+ █████╔╝ ██╔████╔██║██████╔╝   time travel over a graph, proofs attached
+ ██╔═██╗ ██║╚██╔╝██║██╔═══╝    temporal · multidimensional · auditable
+ ██║  ██╗██║ ╚═╝ ██║██║        embedded database + event store
+ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝        no external services
+
+kmp-mcp: using embedded backend (kernel in-process, sqlite engine)
+{"native_allocation_control":true,"requests":2916,"requested_bytes":33295425,"frees":2567}

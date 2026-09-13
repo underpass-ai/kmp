@@ -1,0 +1,31 @@
+2026-09-14T00:28:46+02:00
+0f4b73023378388a42458c602d8909e3d1c1dc3c
+643ad2db01ad587fd52f34711acaffc8623f96c80493df792fc3d6f444f61c11  crates/kmp-mcp/src/projection/recall_projection.rs
+b42f109e8ad349ceb8d030b68fa3cb7b6a1f1f23e15502f526d41ab030e7209d  crates/kmp-application/src/queries/cl100k_estimator.rs
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+binary: rustc
+commit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452
+commit-date: 2026-07-14
+host: aarch64-unknown-linux-gnu
+release: 1.97.1
+LLVM version: 22.1.6
+cargo 1.97.1 (c980f4866 2026-06-30)
+Linux gx10-ff95 6.17.0-1029-nvidia #29-Ubuntu SMP PREEMPT_DYNAMIC Wed Jul  1 00:13:52 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux
+Architecture:                            aarch64
+CPU op-mode(s):                          64-bit
+Byte Order:                              Little Endian
+CPU(s):                                  20
+On-line CPU(s) list:                     0-19
+Vendor ID:                               ARM
+Model name:                              Cortex-X925
+Model:                                   1
+Thread(s) per core:                      1
+Core(s) per socket:                      10
+Socket(s):                               1
+Stepping:                                r0p1
+Frequency boost:                         disabled
+CPU(s) scaling MHz:                      100%
+CPU max MHz:                             3900.0000
+CPU min MHz:                             1378.0000
+BogoMIPS:                                2000.00
+Flags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt

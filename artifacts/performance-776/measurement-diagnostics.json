@@ -1,0 +1,17 @@
+{
+  "excluded_attempts": [
+    {
+      "attempt": 1,
+      "status": "excluded",
+      "reason": "The synthetic fixture populated observed_at only while the browser defaults to the occurred clock. The exact first-scene observable timed out after 60000 ms because the occurred projection was empty.",
+      "retained_samples": 0
+    },
+    {
+      "attempt": 2,
+      "status": "excluded",
+      "reason": "The run was manually interrupted after two baseline browser timing samples when review found that all deterministic fixture clocks were required. Partial samples were not written to the final raw results.",
+      "retained_samples": 0
+    }
+  ],
+  "final_run_policy": "Only a fresh run with deterministic occurred_at, observed_at, and ingested_at values and exact 32-memory scene-state invariants is included in the reported measurements."
+}

@@ -273,6 +273,7 @@ mod tests {
                 .collect(),
             host: None,
             cookie: None,
+            accept_encoding: None,
         }
     }
 

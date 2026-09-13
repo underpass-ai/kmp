@@ -1,0 +1,63 @@
+{
+  "timing": {
+    "cold": {
+      "before": {
+        "samples": 20,
+        "first_ms": 259.140454,
+        "p50_ms": 275.265349,
+        "p95_ms": 281.785345,
+        "rss_kib_p50": 39396.0,
+        "peak_rss_kib_max": 51780
+      },
+      "after": {
+        "samples": 20,
+        "first_ms": 52.735423,
+        "p50_ms": 66.6848435,
+        "p95_ms": 78.398784,
+        "rss_kib_p50": 39624.0,
+        "peak_rss_kib_max": 39624
+      }
+    },
+    "warm": {
+      "before": {
+        "samples": 20,
+        "first_ms": 259.351302,
+        "p50_ms": 264.365367,
+        "p95_ms": 274.968214,
+        "rss_kib_p50": 39372.0,
+        "peak_rss_kib_max": 51780
+      },
+      "after": {
+        "samples": 20,
+        "first_ms": 48.204556,
+        "p50_ms": 65.57639950000001,
+        "p95_ms": 70.679928,
+        "rss_kib_p50": 39622.0,
+        "peak_rss_kib_max": 39624
+      }
+    }
+  },
+  "allocations": {
+    "before": {
+      "native_allocation_control": true,
+      "requests": 2916,
+      "requested_bytes": 33295425,
+      "frees": 2567
+    },
+    "after": {
+      "native_allocation_control": true,
+      "requests": 2912,
+      "requested_bytes": 19968206,
+      "frees": 2565
+    }
+  },
+  "parity": {
+    "questions": [
+      "valve factory night",
+      "customer meeting",
+      "night valve customer"
+    ],
+    "responses_identical": true,
+    "response_sha256": "20571d8bf60b91f43bc5870168958ba574d6662249e0f29e2423548c02b5f405"
+  }
+}
