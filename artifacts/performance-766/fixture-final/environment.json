@@ -1,0 +1,19 @@
+{
+  "baseline_sha256": "9fd441eaf496f9864e06676cd4f8333f571040024daf1e5699a45a9733eaa7ae",
+  "candidate_sha256": "f941caa99e263e1820783439bf47b15041ccfe04e212bbd56ded47c77f3efce8",
+  "runner_sha256": "c0dced2834a3d103601f229322065676398b7148cd9a5169207c71c6722cbf08",
+  "transport_runner_sha256": "433d453d39102a69fa1e9065bfbe7f98b9d1872daaf188dd880233ce2257c912",
+  "profile": "dev, workspace Cargo config",
+  "trials": [
+    "trial-1",
+    "trial-2",
+    "trial-3"
+  ],
+  "fixture_backend_ignores_seeded_corpus": true,
+  "warm_samples": 20,
+  "warmups": 3,
+  "startup_included_in_query_latency": false,
+  "concurrency": 1,
+  "backend": "fixture",
+  "model_calls": 0
+}

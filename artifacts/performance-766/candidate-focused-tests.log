@@ -1,0 +1,11 @@
+   Compiling kmp-mcp v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-mcp)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.72s
+     Running unittests src/lib.rs (target/debug/deps/kmp_mcp-0283efb74c963c43)
+
+running 4 tests
+test projection::recall_projection::tests::maps_wake_and_ignores_transport_budget_types ... ok
+test projection::recall_projection::tests::maps_typed_ask_response_without_inventing_null_answer ... ok
+test projection::recall_projection::tests::three_reason_packet_serializes_each_evidence_body_once ... ok
+test projection::recall_projection::tests::shared_estimator_keeps_parallel_projection_results_identical ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 429 filtered out; finished in 0.47s
