@@ -27,12 +27,12 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9591
+        "used_bytes": 9751
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
-      "excluded_by_detail": 22,
+      "excluded_by_detail": 23,
       "next_action": {
         "arguments": {
           "about": "question:parity",
@@ -43,7 +43,7 @@
             "tokens": 1600
           },
           "page": {
-            "cursor": "kmp1:16:<stamped at call time>"
+            "cursor": "kmp1:17:<stamped at call time>"
           }
         },
         "tool": "kmp_wake"
@@ -51,10 +51,10 @@
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:16:<stamped at call time>",
+        "next_cursor": "kmp1:17:<stamped at call time>",
         "offset": 0,
-        "returned": 16,
-        "total": 44
+        "returned": 17,
+        "total": 48
       },
       "sections": {
         "labels": {
@@ -66,17 +66,17 @@
         },
         "proof.evidence": {
           "core": 0,
-          "eligible": 14,
-          "remaining": 14,
+          "eligible": 15,
+          "remaining": 15,
           "returned_on_page": 0,
-          "total": 14
+          "total": 15
         },
         "proof.path": {
           "core": 0,
-          "eligible": 17,
-          "remaining": 14,
-          "returned_on_page": 3,
-          "total": 39
+          "eligible": 20,
+          "remaining": 16,
+          "returned_on_page": 4,
+          "total": 43
         },
         "wake.causal_spine": {
           "core": 1,
@@ -182,6 +182,24 @@
           "sequence": 1,
           "to": "question:parity:claim:denver",
           "why": "The decision was taken while reading this claim back."
+        },
+        {
+          "class": "evidential",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
+          "confidence": "high",
+          "evidence_refs": [
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
+            "detail:question:parity:claim:denver",
+            "detail:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
+          ],
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+          "rel": "supersedes",
+          "sequence": 1,
+          "to": "question:parity:claim:denver",
+          "why": "The corrected city replaces the first one while the first stays readable as history."
         }
       ],
       "superseded": [
@@ -225,10 +243,10 @@
       "byte_limit": 10000,
       "omitted": {
         "core_text_shortened": false,
-        "excluded_by_detail": 22,
-        "page_items": 28,
+        "excluded_by_detail": 23,
+        "page_items": 31,
         "prior_page_items": 0,
-        "remaining_page_items": 28,
+        "remaining_page_items": 31,
         "selection_items": 0
       },
       "token_limit": 1600,
@@ -243,23 +261,18 @@
         },
         {
           "because": "Evidence supports this memory entry.",
+          "claim": "evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91 -> question:parity:claim:boulder-current",
+          "evidence_ref": "Both statements came from the same conversation."
+        },
+        {
+          "because": "Evidence supports this memory entry.",
+          "claim": "evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91 -> question:parity:claim:denver",
+          "evidence_ref": "Both statements came from the same conversation."
+        },
+        {
+          "because": "Evidence supports this memory entry.",
           "claim": "evidence:question:parity:denver -> question:parity:claim:denver",
           "evidence_ref": "Rachel named Denver twice in the same conversation."
-        },
-        {
-          "because": "Evidence supports this memory entry.",
-          "claim": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current -> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
-          "evidence_ref": "A refactor that preserves schemas can still change answers."
-        },
-        {
-          "because": "Evidence supports this memory entry.",
-          "claim": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1 -> question:parity:claim:denver",
-          "evidence_ref": "The claim is the store's only prior entry."
-        },
-        {
-          "because": "Evidence supports this memory entry.",
-          "claim": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1 -> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
-          "evidence_ref": "The claim is the store's only prior entry."
         },
         {
           "because": "The corrected city replaces the first one while the first stays readable as history.",
@@ -272,17 +285,22 @@
           "evidence_ref": "Both statements are hers, minutes apart."
         },
         {
+          "because": "The standing start date is what makes the earlier move claim concrete enough to act on.",
+          "claim": "question:parity:claim:boulder-current -> question:parity:claim:denver",
+          "evidence_ref": "Both statements came from the same conversation."
+        },
+        {
           "because": "The start date is what makes the move concrete.",
           "claim": "question:parity:claim:denver-detail -> question:parity:claim:denver",
           "evidence_ref": "Both statements came from the same conversation."
         }
       ],
       "current_state": [
+        "Relationship evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91 --supports--> question:parity:claim:boulder-current [evidential] because Evidence supports this memory entry.",
+        "Relationship evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91 --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry.",
         "Relationship evidence:question:parity:denver --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry.",
         "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current --supports--> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151 [evidential] because Evidence supports this memory entry.",
-        "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1 --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry.",
-        "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1 --supports--> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151 [evidential] because Evidence supports this memory entry.",
-        "Relationship evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current --supports--> question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631 [evidential] because Evidence supports this memory entry."
+        "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1 --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry."
       ],
       "guardrails": [],
       "next_actions": [

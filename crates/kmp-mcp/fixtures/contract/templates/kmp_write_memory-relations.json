@@ -1,0 +1,118 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "accepted": "boolean",
+    "attachment": {
+      "created": {
+        "evidence": [
+          "string"
+        ],
+        "relations": [
+          {
+            "class": "string",
+            "confidence": "string",
+            "evidence_ref": "string",
+            "from": "string",
+            "observed_at": "string",
+            "rel": "string",
+            "to": "string"
+          }
+        ]
+      },
+      "unchanged_sources": [
+        "string"
+      ]
+    },
+    "clocks": {
+      "entries": "integer",
+      "ingested": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "string"
+      },
+      "observed": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "null"
+      },
+      "occurred": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "null"
+      },
+      "relations": {
+        "ingested": "integer",
+        "observed": "integer",
+        "occurred": "integer",
+        "relations": "integer",
+        "valid_from": "integer",
+        "valid_until": "integer"
+      },
+      "scope": "string",
+      "valid_from": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "string"
+      },
+      "valid_until": {
+        "distinct_values": "integer",
+        "entries": "integer",
+        "single_value": "null"
+      }
+    },
+    "coverage": {
+      "complete": "boolean",
+      "evidence": "integer",
+      "label_memberships": "integer",
+      "memories": "integer",
+      "preserved_memberships": "integer",
+      "relations": "integer",
+      "scope": "string",
+      "search_summaries": "integer",
+      "source_coverage": "string"
+    },
+    "diagnostics": [
+      "string"
+    ],
+    "dry_run": "boolean",
+    "generated_refs": [],
+    "labels": {
+      "created": [],
+      "resembling": [],
+      "written": []
+    },
+    "read_after_write_ready": "boolean",
+    "receipt": {
+      "action": {
+        "arguments": {
+          "about": "string",
+          "include": {
+            "details": "boolean",
+            "incoming": "boolean",
+            "outgoing": "boolean",
+            "raw": "boolean"
+          },
+          "ref": "string"
+        },
+        "tool": "string"
+      },
+      "ref": "string"
+    },
+    "relations": [
+      {
+        "from": "string",
+        "rel": "string",
+        "to": "string"
+      }
+    ],
+    "status": "string",
+    "summary": "string",
+    "warnings": []
+  }
+}

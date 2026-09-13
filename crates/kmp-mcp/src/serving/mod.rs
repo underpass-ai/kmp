@@ -17,6 +17,7 @@ pub(crate) mod ports;
 pub(crate) mod projection_names;
 mod read_continuations;
 mod relabel_dispatch;
+mod relation_packet;
 mod rpc_dispatch;
 pub(crate) mod semantic_retrieval_outcome;
 pub(crate) mod telemetry;

@@ -212,6 +212,33 @@ fn calls() -> Vec<(&'static str, Value)> {
                 ]
             }),
         ),
+        // The third writer shape: a link between two memories that already
+        // exist. Nothing else in this surface answers with `attachment`, and
+        // an output field with no pinned answer is exactly the drift these
+        // fixtures exist to catch (#663).
+        (
+            "kmp_write_memory:relations",
+            json!({
+                "about": ABOUT,
+                "actor": "parity-test",
+                "source_kind": "agent",
+                "observed_at": "2026-04-12T19:00:00Z",
+                "read_context": {
+                    "inspected_refs": [CLAIM, CURRENT]
+                },
+                "relations": [
+                    {
+                        "from": CURRENT,
+                        "to": CLAIM,
+                        "rel": "supports",
+                        "confidence": "high",
+                        "why": "The standing start date is what makes the earlier move claim \
+            concrete enough to act on.",
+                        "evidence": "Both statements came from the same conversation."
+                    }
+                ]
+            }),
+        ),
         ("kmp_wake", json!({"about": ABOUT})),
         (
             "kmp_ask",

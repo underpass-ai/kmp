@@ -1,4 +1,4 @@
-//! Reading a memory back before `search_summaries` attaches to it.
+//! Reading a memory back before a write attaches to it.
 //!
 //! The pre-read asks `kmp_inspect` for exactly what the write needs — the
 //! stable object and the raw record — and for nothing that can crowd them
@@ -20,11 +20,13 @@ use crate::write::existing_entry::ExistingEntry;
 /// The smallest ceiling `kmp_inspect` accepts.
 const MINIMUM_INSPECT_BUDGET_BYTES: u64 = 512;
 
-/// Reads `reference` out of the store as `search_summaries` needs it: the
+/// Reads `reference` out of the store as an attaching write needs it: the
 /// stored text, kind, coordinates and metadata, from the object and its raw
-/// record, with links left out of the inspection.
+/// record, with links left out of the inspection. `operation` names the
+/// caller's shape so a failed pre-read says which write could not proceed.
 pub(crate) async fn read_existing_entry(
     backend: &dyn KernelMcpToolBackend,
+    operation: &str,
     about: &str,
     reference: &str,
 ) -> Result<ExistingEntry, ToolError> {
@@ -33,20 +35,21 @@ pub(crate) async fn read_existing_entry(
         "ref": reference,
         "include": {"details": true, "raw": true, "incoming": false, "outgoing": false}
     });
-    let mut inspected = inspect(backend, reference, &arguments).await?;
+    let mut inspected = inspect(backend, operation, reference, &arguments).await?;
     if !carries_raw_record(&inspected, reference)
         && let Some(required_bytes) = inspected["page"]["required_bytes"].as_u64()
     {
         arguments["budget"] = json!({
             "max_bytes": required_bytes.max(MINIMUM_INSPECT_BUDGET_BYTES)
         });
-        inspected = inspect(backend, reference, &arguments).await?;
+        inspected = inspect(backend, operation, reference, &arguments).await?;
     }
     ExistingEntry::from_inspect(reference, &inspected).map_err(ToolError::backend)
 }
 
 async fn inspect(
     backend: &dyn KernelMcpToolBackend,
+    operation: &str,
     reference: &str,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
@@ -55,7 +58,7 @@ async fn inspect(
         .await
         .map_err(|mut error| {
             error.message = format!(
-                "search_summaries could not read `{reference}` before attaching to it: {}",
+                "{operation} could not read `{reference}` before attaching to it: {}",
                 error.message
             );
             error

@@ -32,6 +32,7 @@ pub(crate) fn write_dry_run_result(
     if !plan.local_refs.is_empty() {
         result["local_refs"] = json!(plan.local_refs);
     }
+    describe_the_change(plan, &mut result);
     result
 }
 
@@ -56,7 +57,14 @@ pub(crate) fn write_commit_result(
         "clocks": ingest_result["memory"]["clocks"],
         "dry_run": false,
         "coverage": super::coverage::write_coverage(plan),
-        "summary": ingest_result["summary"],
+        // The kernel counts what it ingested. For a relation-only packet
+        // that is "2 entries", which is exactly the confusion this shape
+        // exists to end: those entries are the sources it left alone.
+        "summary": if plan.operation == super::operation::WriteOperation::Relations {
+            json!(write_summary(plan))
+        } else {
+            ingest_result["summary"].clone()
+        },
         "read_after_write_ready": ingest_result["memory"]["read_after_write_ready"],
         "warnings": ingest_result.get("warnings").cloned().unwrap_or_else(|| json!([])),
         "generated_refs": plan.generated_refs,
@@ -87,6 +95,7 @@ pub(crate) fn write_commit_result(
     if !plan.local_refs.is_empty() {
         result["local_refs"] = json!(plan.local_refs);
     }
+    describe_the_change(plan, &mut result);
     if let Some(url) = viewer_url {
         result["viewer"] = viewer_invitation(url);
     }
@@ -94,6 +103,18 @@ pub(crate) fn write_commit_result(
         result["durability"] = orphaned_bundle_notice(orphaned);
     }
     result
+}
+
+/// Say which of the two changes this was. An attachment leaves its sources
+/// alone; a replacement writes over the ref it names. A result that reported
+/// only entries, relations and evidence let the second read as the first.
+fn describe_the_change(plan: &KernelWritePlan, result: &mut Value) {
+    if let Some(attachment) = super::attachment_view::attachment(plan) {
+        result["attachment"] = attachment;
+    }
+    if !plan.replaced.is_empty() {
+        result["replacement"] = json!({"memories": plan.replaced});
+    }
 }
 
 /// The labels of the plan the kernel declared for the first time, read off
@@ -174,6 +195,18 @@ pub(super) fn write_summary(plan: &KernelWritePlan) -> String {
         .as_array()
         .map(Vec::len)
         .unwrap_or_default();
+    // A relation-only packet prepared no memory: its entries are the stored
+    // sources it wrote back untouched, and saying "prepared 2 entries" would
+    // describe them as this write's work.
+    if plan.operation == super::operation::WriteOperation::Relations {
+        return format!(
+            "Attached {relation_count} {} and {evidence_count} {} to {entry_count} unchanged {} in {}.",
+            plural(relation_count, "relation", "relations"),
+            plural(evidence_count, "evidence item", "evidence items"),
+            plural(entry_count, "memory", "memories"),
+            plan.about
+        );
+    }
     format!(
         "Prepared {entry_count} {}, {relation_count} {}, and {evidence_count} {} for {}.",
         plural(entry_count, "entry", "entries"),

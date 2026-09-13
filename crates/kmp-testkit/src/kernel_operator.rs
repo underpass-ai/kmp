@@ -376,6 +376,8 @@ fn validate_write_memory_arguments(arguments: &Value) -> Result<(), String> {
         &[
             "memories",
             "search_summaries",
+            "relations",
+            "review_token",
             "labels",
             "read_context",
             "idempotency_key",
@@ -393,8 +395,12 @@ fn validate_write_memory_arguments(arguments: &Value) -> Result<(), String> {
     if let Some(options) = arguments.get("options") {
         validate_write_options(options, "action.arguments.options")?;
     }
-    match (arguments.get("memories"), arguments.get("search_summaries")) {
-        (Some(memories), None) => {
+    match (
+        arguments.get("memories"),
+        arguments.get("search_summaries"),
+        arguments.get("relations"),
+    ) {
+        (Some(memories), None, None) => {
             let records = non_empty_array(memories, "action.arguments.memories")?;
             let mut local_refs = Vec::new();
             let mut ids = std::collections::BTreeSet::new();
@@ -440,7 +446,7 @@ fn validate_write_memory_arguments(arguments: &Value) -> Result<(), String> {
                 }
             }
         }
-        (None, Some(summaries)) => {
+        (None, Some(summaries), None) => {
             for (index, record) in non_empty_array(summaries, "action.arguments.search_summaries")?
                 .iter()
                 .enumerate()
@@ -451,9 +457,18 @@ fn validate_write_memory_arguments(arguments: &Value) -> Result<(), String> {
                 required_non_empty_string(record, "summary_en", &context)?;
             }
         }
+        (None, None, Some(relations)) => {
+            let read_refs = arguments
+                .get("read_context")
+                .map(|value| read_context_refs(value, "action.arguments.read_context"))
+                .transpose()?
+                .unwrap_or_default();
+            validate_declared_relations(relations, "action.arguments.relations", &read_refs)?;
+        }
         _ => {
             return Err(
-                "action.arguments requires exactly one of memories or search_summaries".to_string(),
+                "action.arguments requires exactly one of memories, search_summaries or relations"
+                    .to_string(),
             );
         }
     }
@@ -755,6 +770,74 @@ fn validate_connect_to(
             return Err(format!(
                 "{link_context}.ref `{target_ref}` uses a rich relation without read_context proof"
             ));
+        }
+    }
+    Ok(())
+}
+
+/// The relation-only shape: a link between memories that already exist. Both
+/// endpoints are stored, so nothing in the packet vouches for either — the
+/// rich-relation proof is `read_context`, and `why` and `evidence` are always
+/// required because this shape declares no structural link.
+fn validate_declared_relations(
+    value: &Value,
+    context: &str,
+    read_context_refs: &[String],
+) -> Result<(), String> {
+    let links = non_empty_array(value, context)?;
+    for (index, link) in links.iter().enumerate() {
+        let link_context = format!("{context}[{index}]");
+        exact_keys(
+            link,
+            &link_context,
+            &["from", "to", "rel", "why", "evidence"],
+            &["class", "confidence", "observed_at"],
+        )?;
+        let from = required_non_empty_string(link, "from", &link_context)?;
+        let to = required_non_empty_string(link, "to", &link_context)?;
+        if from == to {
+            return Err(format!("{link_context} links `{from}` to itself"));
+        }
+        let rel = required_non_empty_string(link, "rel", &link_context)?;
+        let relation_type = MemoryRelationType::new(rel)
+            .map_err(|error| format!("{link_context}.rel is invalid: {error}"))?;
+        let Some(spec) = relation_type.writer_spec() else {
+            return Err(format!("{link_context}.rel is outside writer vocabulary"));
+        };
+        let class = match (link.get("class"), spec.allowed_classes()) {
+            (None, [class]) => class.as_str(),
+            _ => required_non_empty_string(link, "class", &link_context)?,
+        };
+        let semantic_class = RelationSemanticClass::parse(class)
+            .map_err(|error| format!("{link_context}.class is invalid: {error}"))?;
+        if !spec.allows_class(&semantic_class) {
+            return Err(format!(
+                "{link_context}.class `{class}` is not allowed for relation `{rel}`"
+            ));
+        }
+        if semantic_class == RelationSemanticClass::Structural {
+            return Err(format!(
+                "{link_context}.rel `{rel}` is structural; change memberships with kmp_relabel"
+            ));
+        }
+        required_non_empty_string(link, "why", &link_context)?;
+        required_non_empty_string(link, "evidence", &link_context)?;
+        if let Some(confidence) = link.get("confidence").and_then(Value::as_str) {
+            validate_confidence(confidence, &format!("{link_context}.confidence"))?;
+        }
+        if let Some(observed_at) = link.get("observed_at")
+            && !observed_at.is_null()
+        {
+            required_non_empty_string(link, "observed_at", &link_context)?;
+        }
+        for (field, endpoint) in [("from", from), ("to", to)] {
+            if spec.quality() == MemoryRelationQuality::Rich
+                && !read_context_refs.iter().any(|read| read == endpoint)
+            {
+                return Err(format!(
+                    "{link_context}.{field} `{endpoint}` uses a rich relation without read_context proof"
+                ));
+            }
         }
     }
     Ok(())

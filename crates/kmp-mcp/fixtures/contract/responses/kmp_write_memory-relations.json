@@ -1,0 +1,119 @@
+{
+  "content": [
+    {
+      "text": "Attached 1 relation and 1 evidence item to 2 unchanged memories in question:parity.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "accepted": true,
+    "attachment": {
+      "created": {
+        "evidence": [
+          "evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91"
+        ],
+        "relations": [
+          {
+            "class": "evidential",
+            "confidence": "high",
+            "evidence_ref": "evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
+            "from": "question:parity:claim:boulder-current",
+            "observed_at": "2026-04-12T19:00:00Z",
+            "rel": "supports",
+            "to": "question:parity:claim:denver"
+          }
+        ]
+      },
+      "unchanged_sources": [
+        "question:parity:claim:boulder-current",
+        "question:parity:claim:denver"
+      ]
+    },
+    "clocks": {
+      "entries": 2,
+      "ingested": {
+        "distinct_values": 1,
+        "entries": 2,
+        "single_value": "<stamped at call time>"
+      },
+      "observed": {
+        "distinct_values": 0,
+        "entries": 0,
+        "single_value": null
+      },
+      "occurred": {
+        "distinct_values": 2,
+        "entries": 2,
+        "single_value": null
+      },
+      "relations": {
+        "ingested": 1,
+        "observed": 1,
+        "occurred": 0,
+        "relations": 1,
+        "valid_from": 0,
+        "valid_until": 0
+      },
+      "scope": "accepted_command",
+      "valid_from": {
+        "distinct_values": 1,
+        "entries": 1,
+        "single_value": "2026-04-12T18:00:00Z"
+      },
+      "valid_until": {
+        "distinct_values": 0,
+        "entries": 0,
+        "single_value": null
+      }
+    },
+    "coverage": {
+      "complete": true,
+      "evidence": 1,
+      "label_memberships": 0,
+      "memories": 0,
+      "preserved_memberships": 2,
+      "relations": 1,
+      "scope": "submitted_packet",
+      "search_summaries": 0,
+      "source_coverage": "not_assessed"
+    },
+    "diagnostics": [
+      "attached `supports` from `question:parity:claim:boulder-current` to `question:parity:claim:denver`; both sources keep their stored text, coordinates, labels, metadata and earlier evidence"
+    ],
+    "dry_run": false,
+    "generated_refs": [],
+    "labels": {
+      "created": [],
+      "resembling": [],
+      "written": []
+    },
+    "read_after_write_ready": true,
+    "receipt": {
+      "action": {
+        "arguments": {
+          "about": "question:parity",
+          "include": {
+            "details": true,
+            "incoming": false,
+            "outgoing": false,
+            "raw": false
+          },
+          "ref": "receipt:v1:question%3Aparity:write%3Afdaff88a9166243c"
+        },
+        "tool": "kmp_inspect"
+      },
+      "ref": "receipt:v1:question%3Aparity:write%3Afdaff88a9166243c"
+    },
+    "relations": [
+      {
+        "from": "question:parity:claim:boulder-current",
+        "rel": "supports",
+        "to": "question:parity:claim:denver"
+      }
+    ],
+    "status": "committed",
+    "summary": "Attached 1 relation and 1 evidence item to 2 unchanged memories in question:parity.",
+    "warnings": []
+  }
+}

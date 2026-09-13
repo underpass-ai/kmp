@@ -12,15 +12,23 @@ pub(crate) fn write_coverage(plan: &KernelWritePlan) -> Value {
         .map(|entry| entry["coordinates"].as_array().map_or(0, Vec::len))
         .sum();
     let is_memory_packet = plan.operation == WriteOperation::Memories;
+    // A relation-only packet declares links; its entries are the stored
+    // sources it wrote back untouched, so they count as preserved and never
+    // as declared memories or summaries.
+    let preserves_sources = plan.operation != WriteOperation::Memories;
     json!({
         "scope": "submitted_packet",
         "complete": true,
         "source_coverage": "not_assessed",
         "memories": if is_memory_packet { entries.len() } else { 0 },
-        "search_summaries": if is_memory_packet { 0 } else { entries.len() },
+        "search_summaries": if plan.operation == WriteOperation::SearchSummaries {
+            entries.len()
+        } else {
+            0
+        },
         "relations": memory["relations"].as_array().map_or(0, Vec::len),
         "evidence": memory["evidence"].as_array().map_or(0, Vec::len),
         "label_memberships": if is_memory_packet { memberships } else { 0 },
-        "preserved_memberships": if is_memory_packet { 0 } else { memberships }
+        "preserved_memberships": if preserves_sources { memberships } else { 0 }
     })
 }

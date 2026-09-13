@@ -1367,68 +1367,186 @@
     },
     "write_memory_request": {
       "additionalProperties": false,
-      "else": {
-        "not": {
-          "anyOf": [
-            {
-              "required": [
-                "labels"
-              ]
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "memories"
+            ]
+          },
+          "then": {
+            "if": {
+              "not": {
+                "properties": {
+                  "options": {
+                    "properties": {
+                      "strict": {
+                        "const": false
+                      }
+                    },
+                    "required": [
+                      "strict"
+                    ]
+                  }
+                },
+                "required": [
+                  "options"
+                ]
+              }
             },
-            {
-              "required": [
-                "occurred_at"
-              ]
-            },
-            {
-              "required": [
-                "valid_from"
-              ]
-            },
-            {
-              "required": [
-                "valid_until"
-              ]
-            },
-            {
-              "required": [
-                "rank"
-              ]
-            },
-            {
-              "required": [
-                "read_context"
-              ]
+            "then": {
+              "properties": {
+                "memories": {
+                  "items": {
+                    "required": [
+                      "evidence"
+                    ]
+                  }
+                }
+              }
             }
-          ]
+          }
         },
-        "properties": {
-          "options": {
+        {
+          "if": {
+            "required": [
+              "search_summaries"
+            ]
+          },
+          "then": {
             "not": {
               "anyOf": [
                 {
                   "required": [
-                    "sequence"
+                    "labels"
                   ]
                 },
                 {
                   "required": [
-                    "labels_new"
+                    "occurred_at"
+                  ]
+                },
+                {
+                  "required": [
+                    "valid_from"
+                  ]
+                },
+                {
+                  "required": [
+                    "valid_until"
+                  ]
+                },
+                {
+                  "required": [
+                    "rank"
+                  ]
+                },
+                {
+                  "required": [
+                    "read_context"
+                  ]
+                },
+                {
+                  "required": [
+                    "review_token"
                   ]
                 }
               ]
+            },
+            "properties": {
+              "options": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "sequence"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "labels_new"
+                      ]
+                    }
+                  ]
+                }
+              }
             }
           }
         },
-        "required": [
-          "search_summaries"
-        ]
-      },
-      "if": {
-        "required": [
-          "memories"
-        ]
-      },
+        {
+          "if": {
+            "required": [
+              "relations"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "labels"
+                  ]
+                },
+                {
+                  "required": [
+                    "occurred_at"
+                  ]
+                },
+                {
+                  "required": [
+                    "valid_from"
+                  ]
+                },
+                {
+                  "required": [
+                    "valid_until"
+                  ]
+                },
+                {
+                  "required": [
+                    "rank"
+                  ]
+                }
+              ]
+            },
+            "properties": {
+              "options": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "sequence"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "labels_new"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "memories"
+          ]
+        },
+        {
+          "required": [
+            "search_summaries"
+          ]
+        },
+        {
+          "required": [
+            "relations"
+          ]
+        }
+      ],
       "properties": {
         "about": {
           "description": "Exact about receiving this one transaction. Never inferred or changed by a default.",
@@ -1786,6 +1904,133 @@
           },
           "type": "object"
         },
+        "relations": {
+          "description": "Evidenced links between memories that already exist in this about, separately from memories. KMP reads both endpoints first and writes them back unchanged, so adding a link never rewrites a source. Each link and its evidence carry their own observation. Labels, occurrence, validity and rank cannot accompany it; use memories to record a new fact and kmp_relabel to change memberships.",
+          "items": {
+            "additionalProperties": false,
+            "if": {
+              "properties": {
+                "rel": {
+                  "enum": [
+                    "chosen_because",
+                    "authorizes",
+                    "confirms_selection"
+                  ]
+                }
+              },
+              "required": [
+                "rel"
+              ]
+            },
+            "properties": {
+              "class": {
+                "description": "Omit when rel allows exactly one class: KMP completes that class. Required for chosen_because, authorizes, confirms_selection. An explicit class is validated, never replaced. What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                "enum": [
+                  "structural",
+                  "causal",
+                  "motivational",
+                  "procedural",
+                  "evidential",
+                  "constraint"
+                ],
+                "type": "string"
+              },
+              "confidence": {
+                "enum": [
+                  "high",
+                  "medium",
+                  "low",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              "evidence": {
+                "description": "The concrete observation or source supporting the rationale. Stored as its own evidence node beside both memories; it never replaces the evidence they already carry.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "from": {
+                "description": "Existing memory of this about that asserts the link. Its stored text, evidence, coordinates, labels, metadata and ingestion history are preserved; a canonical ref returned by a read, never a local id.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "observed_at": {
+                "description": "When this link was asserted, with its true RFC3339 UTC offset. Omit for the packet observation; null for the exact ingestion time. The endpoints' own clocks never date the link, so an old source linked today is linked today.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "rel": {
+                "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; source -> relation -> target / when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; approval -> authorizes -> permitted action; permission alone does not prove execution). verified_by (rich; evidential; claim or outcome -> verified_by -> actual verifying check; approval or an earlier failure is not verification). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement -> supersedes -> entire old memory; marks the whole target SUPERSEDED, so separate independent facts first). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; excluded value or exclusion record -> excluded_from -> total or set; the target is not the excluded item). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; corrected fact -> corrects -> earlier fact; explain the specific correction without superseding the whole target). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                "enum": [
+                  "follows",
+                  "answers",
+                  "uses_background",
+                  "depends_on",
+                  "chosen_because",
+                  "triggers",
+                  "authorizes",
+                  "verified_by",
+                  "semantic_delta_from",
+                  "updates_state",
+                  "supports",
+                  "supersedes",
+                  "contradicts",
+                  "satisfies_constraint",
+                  "violates_constraint",
+                  "contributes_to",
+                  "excluded_from",
+                  "checked_against",
+                  "derived_from",
+                  "confirms_selection",
+                  "restates",
+                  "corrects",
+                  "component_of",
+                  "total_of",
+                  "same_event_as",
+                  "same_entity_as",
+                  "qualifies_as",
+                  "matches_requirement",
+                  "contains",
+                  "member_of",
+                  "scoped_to"
+                ],
+                "type": "string"
+              },
+              "to": {
+                "description": "Existing target, also preserved. Only same_event_as/same_entity_as may name a ref of another about, with the returned kmp_relate proposal in read_context.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "why": {
+                "description": "Why this specific semantic connection holds and what a later reader should understand. Always required here: a relation-only write declares no structural link.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "rel",
+              "why",
+              "evidence"
+            ],
+            "then": {
+              "required": [
+                "class"
+              ]
+            },
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "review_token": {
+          "description": "Returned neighborhood token, bound to this exact packet and context. Prefer the returned continuation. Omit on a new or corrected proposal; stale tokens refresh context without writing.",
+          "minLength": 1,
+          "type": "string"
+        },
         "search_summaries": {
           "description": "Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
           "items": {
@@ -1836,43 +2081,6 @@
         "actor",
         "observed_at"
       ],
-      "then": {
-        "if": {
-          "not": {
-            "properties": {
-              "options": {
-                "properties": {
-                  "strict": {
-                    "const": false
-                  }
-                },
-                "required": [
-                  "strict"
-                ]
-              }
-            },
-            "required": [
-              "options"
-            ]
-          }
-        },
-        "not": {
-          "required": [
-            "search_summaries"
-          ]
-        },
-        "then": {
-          "properties": {
-            "memories": {
-              "items": {
-                "required": [
-                  "evidence"
-                ]
-              }
-            }
-          }
-        }
-      },
       "type": "object"
     },
     "write_memory_response": {
@@ -1881,6 +2089,36 @@
         "accepted": {
           "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
           "type": "boolean"
+        },
+        "attachment": {
+          "additionalProperties": false,
+          "properties": {
+            "created": {
+              "additionalProperties": false,
+              "properties": {
+                "evidence": {
+                  "description": "Evidence nodes created by this write. Their ids are derived from the logical write identity and the triple, so an exact retry replays onto the same node and a later link to the same pair adds a new one instead of overwriting it.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "relations": {
+                  "description": "Links this relation-only write brought into existence: from, rel, to, class, confidence, the observation the link itself carries, and the evidence node created with it. Absent observed_at means the kernel stamped its ingestion instant, never an endpoint's clock.",
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            },
+            "unchanged_sources": {
+              "description": "The stored memories this write read and wrote back untouched: same text, evidence, coordinates, labels, metadata and ingestion history. Present only for a relations packet.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
         },
         "diagnostics": {
           "description": "Planner diagnostics that qualify the write.",
@@ -1951,6 +2189,16 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "replacement": {
+          "additionalProperties": false,
+          "properties": {
+            "memories": {
+              "description": "Memories this packet wrote at a ref the caller supplied, each with the evidence this write put on it and the observation it now carries. A supplied ref replaces whatever that entry held; use relations to add a link without replacing a source.",
+              "type": "array"
+            }
+          },
+          "type": "object"
         },
         "summary": {
           "description": "Counts and scope of the semantic write the planner prepared.",
