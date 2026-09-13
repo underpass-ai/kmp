@@ -1,0 +1,54 @@
+{
+  "issue": 772,
+  "measurement": {
+    "artifact": "lifecycle.json",
+    "warm_samples_per_shape": 21,
+    "shapes": [
+      {"name": "empty", "seed_events": 0, "payload_bytes_per_event": 0},
+      {"name": "medium", "seed_events": 128, "payload_bytes_per_event": 32768},
+      {"name": "large", "seed_events": 512, "payload_bytes_per_event": 32768}
+    ],
+    "cold_open_is_separate": true,
+    "percentile": "nearest-rank",
+    "latency_threshold": false
+  },
+  "checks": {
+    "focused_lifecycle": {
+      "command": "cargo test --locked -p kmp-adapter-embedded --features sqlite --test sqlite_lifecycle",
+      "status": "passed",
+      "tests_passed": 2,
+      "log": "sqlite-lifecycle-test.log"
+    },
+    "production_safety": {
+      "command": "cargo test --locked -p kmp-adapter-embedded --features sqlite --test telemetry_journal --test two_writers_one_store --test crash_recovery",
+      "status": "passed",
+      "tests_passed": 11,
+      "log": "production-safety-tests.log"
+    },
+    "full_adapter_crate": {
+      "command": "cargo test --locked -p kmp-adapter-embedded --features sqlite",
+      "status": "passed",
+      "log": "full-adapter-tests.log"
+    },
+    "format": {
+      "command": "cargo fmt --all -- --check",
+      "status": "passed",
+      "log": "fmt.log"
+    },
+    "clippy": {
+      "command": "cargo clippy --locked -p kmp-adapter-embedded --features sqlite --test sqlite_lifecycle -- -D warnings",
+      "status": "passed",
+      "log": "clippy.log"
+    },
+    "architecture_gate": {
+      "command": "bash scripts/ci/kmp-mcp-architecture-gate.sh",
+      "status": "passed",
+      "log": "architecture.log"
+    }
+  },
+  "policy_decision": {
+    "status": "retain_existing_lifecycle",
+    "reason": "FULL kernel durability, quick_check coverage, reader/writer coexistence, and checkpoint progress are preserved; measurements do not justify a new checkpoint or cache policy.",
+    "quality_telemetry": "Existing connection-local NORMAL with periodic FULL remains unchanged."
+  }
+}

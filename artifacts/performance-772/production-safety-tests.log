@@ -1,0 +1,40 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running tests/crash_recovery.rs (target/debug/deps/crash_recovery-783011cbcfdf8115)
+
+running 3 tests
+test kill_nine_during_atomic_commit_leaves_no_unprojected_event ... ok
+test kill_nine_mid_write_loses_at_most_the_inflight_event_and_replays_cleanly ... ok
+test kill_nine_mid_write_on_sqlite_loses_at_most_the_inflight_event_and_replays_cleanly ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/telemetry_journal.rs (target/debug/deps/telemetry_journal-21f024008f269450)
+
+running 5 tests
+test telemetry_process_worker ... ok
+
+running 1 test
+
+running 1 test
+test observability_projection_filters_the_about_and_keeps_revision_exemplars ... ok
+test two_independent_writers_share_one_quality_journal ... ok
+test telemetry_process_worker ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.01s
+
+test observations_persist_survive_reopen_and_respect_retention ... ok
+test telemetry_process_worker ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.01s
+
+test two_processes_keep_the_same_observability_pulse ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/two_writers_one_store.rs (target/debug/deps/two_writers_one_store-66cd447847f771d0)
+
+running 2 tests
+test two_processes_creating_the_same_sqlite_store_at_once_both_get_in ... ok
+test two_processes_write_the_same_sqlite_store_and_no_event_is_lost ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.67s
