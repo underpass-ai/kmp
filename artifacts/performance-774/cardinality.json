@@ -1,9 +1,9 @@
 {
   "issue": 774,
   "runner": "scripts/performance/store_lease_cardinality.py",
-  "runner_sha256": "65b9908b14ffe8d5296020da056b297840a21094546eac5ee6244e2d43a7b928",
+  "runner_sha256": "02a194e4f9d8554a6ba197eaddb66f35a32257fd065ce4256040a1f2453f2ebd",
   "runner_binary_sha256": "0dec7b2c57971ad97fbe1d581dc9fc9168abc94f9833484f5ae2802659bd59a7",
-  "git_commit": "0f4b73023378388a42458c602d8909e3d1c1dc3c",
+  "git_commit": "531761ead49d50f60d0b259f2a127ba1d3115dee",
   "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
   "cargo_profile": "dev, workspace .cargo/config.toml",
   "host": {
@@ -19,39 +19,168 @@
   },
   "method": "direct StoreSessionLease::acquire for one canonical store; unrelated files are empty and never opened",
   "warm_samples_requested": 23,
+  "percentile_method": "nearest rank: ceil(n * fraction) - 1, zero-based",
+  "raw_samples": [
+    {
+      "cold_process": {
+        "cold_acquire_ns": 38928,
+        "directory_metadata_bytes": 4096,
+        "file_count_after": 1,
+        "stale_files": 0,
+        "warm_acquire_ns": [],
+        "warm_total_ns": 32
+      },
+      "warm_process": {
+        "cold_acquire_ns": 30864,
+        "directory_metadata_bytes": 4096,
+        "file_count_after": 1,
+        "stale_files": 0,
+        "warm_acquire_ns": [
+          14912,
+          14208,
+          13840,
+          21184,
+          13568,
+          12512,
+          12640,
+          12816,
+          12544,
+          12720,
+          12784,
+          12560,
+          12799,
+          12480,
+          12560,
+          12592,
+          12656,
+          12512,
+          12448,
+          12448,
+          12672,
+          12416,
+          12512
+        ],
+        "warm_total_ns": 319023
+      }
+    },
+    {
+      "cold_process": {
+        "cold_acquire_ns": 35231,
+        "directory_metadata_bytes": 36864,
+        "file_count_after": 1001,
+        "stale_files": 1000,
+        "warm_acquire_ns": [],
+        "warm_total_ns": 48
+      },
+      "warm_process": {
+        "cold_acquire_ns": 77087,
+        "directory_metadata_bytes": 36864,
+        "file_count_after": 1001,
+        "stale_files": 1000,
+        "warm_acquire_ns": [
+          29856,
+          25168,
+          42656,
+          26128,
+          24784,
+          24208,
+          24751,
+          24736,
+          24384,
+          24512,
+          24192,
+          24112,
+          24288,
+          24096,
+          24624,
+          23968,
+          23776,
+          24287,
+          24288,
+          24112,
+          24272,
+          23824,
+          24208
+        ],
+        "warm_total_ns": 610318
+      }
+    },
+    {
+      "cold_process": {
+        "cold_acquire_ns": 44240,
+        "directory_metadata_bytes": 335872,
+        "file_count_after": 10001,
+        "stale_files": 10000,
+        "warm_acquire_ns": [],
+        "warm_total_ns": 112
+      },
+      "warm_process": {
+        "cold_acquire_ns": 47648,
+        "directory_metadata_bytes": 335872,
+        "file_count_after": 10001,
+        "stale_files": 10000,
+        "warm_acquire_ns": [
+          13952,
+          14656,
+          12768,
+          12864,
+          12768,
+          12512,
+          12880,
+          12735,
+          12720,
+          12608,
+          12624,
+          12608,
+          12576,
+          12448,
+          12624,
+          12512,
+          12560,
+          12576,
+          12560,
+          12352,
+          12528,
+          12544,
+          12496
+        ],
+        "warm_total_ns": 307567
+      }
+    }
+  ],
   "results": [
     {
       "stale_files": 0,
       "file_count_after": 1,
       "directory_metadata_bytes": 4096,
-      "cold_acquire_ms": 0.051183,
+      "cold_acquire_ms": 0.038928,
       "warm_samples": 23,
-      "warm_p50_ms": 0.023408,
-      "warm_p95_ms": 0.026768,
-      "warm_min_ms": 0.022928,
-      "warm_max_ms": 0.036336
+      "warm_p50_ms": 0.01264,
+      "warm_p95_ms": 0.014912,
+      "warm_min_ms": 0.012416,
+      "warm_max_ms": 0.021184
     },
     {
       "stale_files": 1000,
       "file_count_after": 1001,
       "directory_metadata_bytes": 36864,
-      "cold_acquire_ms": 0.037104,
+      "cold_acquire_ms": 0.035231,
       "warm_samples": 23,
-      "warm_p50_ms": 0.012704,
-      "warm_p95_ms": 0.013296,
-      "warm_min_ms": 0.0124,
-      "warm_max_ms": 0.022912
+      "warm_p50_ms": 0.024288,
+      "warm_p95_ms": 0.029856,
+      "warm_min_ms": 0.023776,
+      "warm_max_ms": 0.042656
     },
     {
       "stale_files": 10000,
       "file_count_after": 10001,
       "directory_metadata_bytes": 335872,
-      "cold_acquire_ms": 0.051792,
+      "cold_acquire_ms": 0.04424,
       "warm_samples": 23,
-      "warm_p50_ms": 0.012432,
-      "warm_p95_ms": 0.01456,
-      "warm_min_ms": 0.012192,
-      "warm_max_ms": 0.015616
+      "warm_p50_ms": 0.012608,
+      "warm_p95_ms": 0.013952,
+      "warm_min_ms": 0.012352,
+      "warm_max_ms": 0.014656
     }
   ]
 }

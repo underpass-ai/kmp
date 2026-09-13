@@ -22,15 +22,22 @@ repeated claims for one canonical store. The timed claim results were:
 
 | unrelated files | files after setup | directory metadata | cold (ms) | warm p50 (ms) | warm p95 (ms) |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0 | 1 | 4,096 B | 0.051183 | 0.023408 | 0.026768 |
-| 1,000 | 1,001 | 36,864 B | 0.037104 | 0.012704 | 0.013296 |
-| 10,000 | 10,001 | 335,872 B | 0.051792 | 0.012432 | 0.014560 |
+| 0 | 1 | 4,096 B | 0.038928 | 0.012640 | 0.014912 |
+| 1,000 | 1,001 | 36,864 B | 0.035231 | 0.024288 | 0.029856 |
+| 10,000 | 10,001 | 335,872 B | 0.044240 | 0.012608 | 0.013952 |
 
-The run used 23 warm samples per cardinality on commit
-`0f4b73023378388a42458c602d8909e3d1c1dc3c`, with runner SHA
-`65b9908b14ffe8d5296020da056b297840a21094546eac5ee6244e2d43a7b928` and
-locked runner binary SHA
-`0dec7b2c57971ad97fbe1d581dc9fc9168abc94f9833484f5ae2802659bd59a7`.
+The audited run used 23 warm samples per cardinality with runner source based
+on `531761ead49d50f60d0b259f2a127ba1d3115dee` plus the raw-sample/percentile
+fix in this PR. Its runner SHA is `02a194e4f9d8554a6ba197eaddb66f35a32257fd065ce4256040a1f2453f2ebd`;
+the locked runner binary SHA remains
+`0dec7b2c57971ad97fbe1d581dc9fc9168abc94f9833484f5ae2802659bd59a7`, built from
+`0f4b73023378388a42458c602d8909e3d1c1dc3c` (lease runtime unchanged).
+
+`cardinality.json` retains all raw nanosecond samples and computes nearest-rank
+percentiles. `cardinality-initial-summary.json` preserves the earlier run,
+which omitted raw samples and used a floor-index percentile; it is excluded
+from the table above. The rerun changes the measurement report, not lease
+behavior.
 
 These are direct `StoreSessionLease::acquire` timings, with directory setup
 outside the timed region. They establish the per-store lookup cost and the

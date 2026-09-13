@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import platform
 import subprocess
@@ -98,7 +99,7 @@ def hardware_fingerprint() -> tuple[str, str]:
 
 def percentile(values: list[int], fraction: float) -> float:
     ordered = sorted(values)
-    index = min(len(ordered) - 1, int((len(ordered) - 1) * fraction))
+    index = max(0, min(len(ordered) - 1, math.ceil(len(ordered) * fraction) - 1))
     return ordered[index] / 1_000_000
 
 
@@ -110,6 +111,8 @@ def main() -> int:
     parser.add_argument("--build-only", action="store_true")
     parser.add_argument("--runner-binary", type=Path)
     args = parser.parse_args()
+    if args.warm_samples < 1:
+        parser.error("--warm-samples must be positive")
     env = dict(os.environ)
     if args.runner_binary:
         args.scratch.mkdir(parents=True, exist_ok=True)
@@ -135,6 +138,7 @@ def main() -> int:
         print(binary)
         return 0
     rows = []
+    raw_samples = []
     for stale in (0, 1_000, 10_000):
         case = args.scratch / f"case-{stale}"
         case.mkdir()
@@ -156,6 +160,7 @@ def main() -> int:
         )
         cold_row = json.loads(cold.stdout)
         warm_row = json.loads(warm.stdout)
+        raw_samples.append({"cold_process": cold_row, "warm_process": warm_row})
         samples = warm_row["warm_acquire_ns"]
         rows.append({
             "stale_files": stale,
@@ -196,6 +201,8 @@ def main() -> int:
         },
         "method": "direct StoreSessionLease::acquire for one canonical store; unrelated files are empty and never opened",
         "warm_samples_requested": args.warm_samples,
+        "percentile_method": "nearest rank: ceil(n * fraction) - 1, zero-based",
+        "raw_samples": raw_samples,
         "results": rows,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
