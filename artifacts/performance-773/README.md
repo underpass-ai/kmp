@@ -54,12 +54,13 @@ The first three phase samples are warmups and the next 20 form this summary:
 | validate UTF-8 and sort order | 8.27 | 8.36 |
 | eagerly normalize all vectors | 173.38 | 174.34 |
 
-The reported approximately 45 ms is reproduced here as the vector-copy phase,
-not as the whole old reader. On this unoptimized development profile, eager
-normalization dominates. The candidate preserves required header, offset,
-UTF-8, ordering, exact-length and version validation, owns the original bytes
-without word/vector copies, and computes an integer norm only when a queried
-row is first used.
+The report's approximately 45 ms total came from an unknown profile and host,
+so this control does not verify that original number. On this host and
+unoptimized development profile, the old reader's measured startup is instead
+attributed chiefly to eager normalization, followed by vector copy/conversion.
+The candidate preserves required header, offset, UTF-8, ordering, exact-length
+and version validation, owns the original bytes without word/vector copies,
+and computes an integer norm only when a queried row is first used.
 
 ## Parity, ownership and packaging
 
