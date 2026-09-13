@@ -2,17 +2,37 @@
   "gzip": "gzip -n; lossless DEFLATE with timestamp and original-name fields omitted",
   "files": [
     {
+      "compressed": "adapter-tests.log.gz",
+      "original_sha256": "b0a112ec1e8de359f1762c7048b43df8ee7053792191756cbedfb1b7f7b95847",
+      "compressed_sha256": "952f101b1b1afd7f03b2ae1e8d5ce68cc942a3e53b37224c723bd91d2da3e714"
+    },
+    {
       "compressed": "baseline-graph_read.rs.gz",
       "original_sha256": "cb98647e48b42d96bf27a76a4a47c62c821a0fbec7095f1336daf1530517386b",
       "compressed_sha256": "8687ba3a00f044aba231ef375a63e5b3cec7766a95e79c33f58d1183acadf784"
     },
     {
       "compressed": "measured-source.patch.gz",
+      "original_sha256": "48e8ee2e43d7b1e3b8242f41eef674397ec527e55bf8777414b3d6fe11ca8795",
+      "compressed_sha256": "5a802d5497f7d4976b5decc84dcb6d5e434dbda7137c3a38ea7de3c0cf5ffab2"
+    },
+    {
+      "compressed": "measured-outward-neighborhood.rs.gz",
+      "original_sha256": "addd29f246416f6789c851580ffa6aa48345823d6257dd069e1aeeb163664573",
+      "compressed_sha256": "3a95018802ebdd6b93f7d4b517bee8f17547cb33db6e2f500d546edeb3d86c8c"
+    },
+    {
+      "compressed": "native/runs.jsonl.gz",
+      "original_sha256": "c5dff451bcfce21125a8ff4c4bb4d4ed30334fbbbb0d419444caa34650f7192d",
+      "compressed_sha256": "bf0a7278b0176d18545854386a9cd05cc7a0f668a4d73249ed6811989a3c4157"
+    },
+    {
+      "compressed": "pre-corner-fix-source.patch.gz",
       "original_sha256": "6acb83d48593a46c141bd01124524bbb734d65eb56dee0d82642de87c0d49c84",
       "compressed_sha256": "26d6c23f1698ca0cf8bfad10b007af50e14c74efdff14f9f11351b6f85fdfa44"
     },
     {
-      "compressed": "native/runs.jsonl.gz",
+      "compressed": "native-pre-corner-fix/runs.jsonl.gz",
       "original_sha256": "e093307187f9246342919a0bca073ab1a2accde7e0992d21f4104205340fc3d1",
       "compressed_sha256": "d361e431e061dc972704729b6e34f8de0ca66dc2c1244b52e57c768559f5fad6"
     }

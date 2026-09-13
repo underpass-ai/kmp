@@ -3,17 +3,20 @@
   "source": {
     "baseline": "0f4b73023378388a42458c602d8909e3d1c1dc3c",
     "harness": "642d70057aff376a7d906866b41e9936735b9294",
-    "measured_candidate": "65b9b3983ea6193ea93c872f665e199a3541733c"
+    "measured_candidate": "03eb1131f5c5843901a87e861aaee90bb2467e6c",
+    "final_source": "2a58a397a245bd17e04ffa01f4c8ace7bd3cc0f7",
+    "measured_to_final": "rustfmt line wrapping only; normalized measured source is byte-identical to final source",
+    "preserved_pre_corner_fix_candidate": "65b9b3983ea6193ea93c872f665e199a3541733c"
   },
   "checks": [
     {
       "command": "cargo test -p kmp-adapter-embedded outward_neighborhood -- --nocapture",
-      "result": "pass: 4 focused unit tests",
-      "coverage": "independent legacy parity, one scan per selected source, decoded row/byte counts, malformed discarded and retained explanations, depth zero, pinned snapshot across peer commit"
+      "result": "pass: 5 focused unit tests",
+      "coverage": "independent legacy parity, one scan per selected source, decoded row/byte counts, malformed discarded and retained explanations, malformed isolated self-loop, depth zero with no adjacency scan, pinned snapshot across peer commit"
     },
     {
       "command": "cargo test -p kmp-adapter-embedded",
-      "result": "pass: 76 unit tests and every non-ignored integration test; store_scale remained intentionally ignored"
+      "result": "pass: 77 unit tests and every non-ignored integration test; store_scale remained intentionally ignored"
     },
     {
       "command": "cargo test -p kmp-conformance --features sqlite --test embedded_sqlite_conformance neighborhood_traversal_is_depth_bounded_and_directed -- --nocapture",
@@ -36,7 +39,7 @@
       "result": "pass"
     },
     {
-      "command": "python3 scripts/performance/graph_adjacency.py tmp/graph_adjacency_baseline tmp/graph_adjacency_candidate artifacts/performance-767/native 30",
+      "command": "python3 scripts/performance/graph_adjacency.py tmp/graph_adjacency_baseline tmp/graph_adjacency_candidate_fixed artifacts/performance-767/native-fixed 30",
       "result": "pass in serialized quiet slot: exact complete-result digests and counts matched for all four shapes"
     }
   ],
@@ -63,6 +66,7 @@
     "memory": "whole-process peak RSS includes fixture writes; transient retained payload is bounded by exact response relation bytes and keys",
     "allocations": "not measured",
     "physical_io": "not measured",
+    "pre_corner_fix_control": "preserved losslessly because review found an isolated-root validation difference after the first run; it is not the canonical result",
     "models": "no model or paid API calls"
   }
 }

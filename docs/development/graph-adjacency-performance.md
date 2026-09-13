@@ -57,6 +57,8 @@ per selected source and reports rows and stored explanation bytes.
 
 A malformed scoped-out explanation proves discarded payloads are not decoded;
 the same malformed bytes on a retained edge must still fail validation. A
+malformed self-loop on an isolated catalogue root is scanned but does not
+change the former empty result, and depth zero performs no adjacency scan. A
 pinned read transaction is held across an independent writer commit to prove
 that relation membership and explanation text stay on the old snapshot, while
 a new transaction observes the new explanation. Embedded conformance remains
@@ -87,28 +89,38 @@ every shape.
 
 | shape | selected entries / retained / discarded degree | former warm p50 / p95 | operation-scoped warm p50 / p95 | change at p50 / p95 |
 | --- | --- | ---: | ---: | ---: |
-| small | 8 / 1 / 1 | 0.357 / 1.034 ms | 0.707 / 1.059 ms | +97.9% / +2.4% |
-| medium | 128 / 2 / 4 | 16.000 / 16.555 ms | 10.140 / 10.742 ms | -36.6% / -35.1% |
-| high degree | 256 / 8 / 16 | 66.397 / 67.215 ms | 41.274 / 41.908 ms | -37.8% / -37.7% |
-| large payload | 64 / 2 / 8 | 107.618 / 109.466 ms | 37.401 / 38.034 ms | -65.2% / -65.3% |
+| small | 8 / 1 / 1 | 0.840 / 1.496 ms | 0.777 / 1.175 ms | -7.5% / -21.5% |
+| medium | 128 / 2 / 4 | 15.833 / 16.739 ms | 10.186 / 10.670 ms | -35.7% / -36.3% |
+| high degree | 256 / 8 / 16 | 66.377 / 66.632 ms | 41.047 / 41.736 ms | -38.2% / -37.4% |
+| large payload | 64 / 2 / 8 | 106.752 / 107.364 ms | 38.140 / 38.642 ms | -64.3% / -64.0% |
 
-The two first-read observations in shape order were 0.456/0.453 versus
-0.725/0.356 ms, 15.688/16.359 versus 10.083/10.325 ms, 65.802/67.389 versus
-40.806/41.786 ms, and 110.709/108.429 versus 38.283/39.387 ms. They are
+The two first-read observations in shape order were 0.451/0.879 versus
+0.367/0.728 ms, 15.847/16.581 versus 10.470/9.981 ms, 66.909/66.759 versus
+40.899/40.855 ms, and 108.139/108.634 versus 39.717/40.050 ms. They are
 descriptive cold-process controls; the OS page cache was not evicted.
 
-The small fixture is an unfavorable case. Its total work is below a
-millisecond, and both revisions showed scheduling outliers during later warm
-samples; the candidate still raised the pooled median by about 0.35 ms. The
-ordered retained map and final decode add fixed work that the removed scan
-does not repay at this size. No absolute latency assertion is based on this
-control.
+The small fixture is inconclusive and includes an unfavorable repeat. Its
+total work is around a millisecond and both revisions showed scheduling
+outliers during later warm samples. The final run favored the candidate by
+0.063 ms at p50, while the preserved pre-corner-fix run, whose nonempty hot
+path has the same algorithm, measured 0.357 versus 0.707 ms at p50. The
+ordered retained map and final decode add fixed work that one removed tiny
+scan may not repay. No small-graph speedup or absolute latency assertion is
+claimed.
 
 Whole-process peak RSS was mixed and effectively flat at this resolution:
-5,472–5,540 KiB versus 5,472–5,632 KiB for small, 10,648–10,656 versus
-10,584–10,856 KiB for medium, 21,480–21,500 versus 21,612–21,760 KiB for high
-degree, and 48,244–48,412 versus 48,172–48,400 KiB for large payload. This
+5,380–5,428 KiB versus 5,428–5,764 KiB for small, 10,432–10,700 versus
+10,672–10,820 KiB for medium, 21,436–21,536 versus 21,756–21,792 KiB for high
+degree, and 48,252–48,304 versus 47,908–48,368 KiB for large payload. This
 does not demonstrate a resident-memory improvement. Whole-process CPU
 (fixture writes plus 31 reads) decreased on the three substantive shapes:
-1.29–1.33 to 1.14–1.15 seconds, 4.53 to 3.79–3.80 seconds, and 11.04–11.12 to
-8.68–8.75 seconds. Small ranged from 0.03–0.05 to 0.04–0.06 seconds.
+1.31–1.32 to 1.16–1.17 seconds, 4.55–4.58 to 3.79–3.82 seconds, and
+10.94–11.00 to 8.73–8.84 seconds. Small increased from 0.04–0.05 to 0.06
+seconds.
+
+The canonical native control measured commit `03eb1131` and candidate binary
+SHA-256 `8f7851f9…`. The final source commit `2a58a397` applies `rustfmt` line
+wrapping only; formatting the archived measured source produces a byte-exact
+match with the final source. The earlier pre-corner-fix source, binary and
+native run remain archived separately rather than being presented as final
+evidence.

@@ -4,18 +4,18 @@
     "result_digest": "8db20b95baf4cfaece87b4b8deb7eb5732969e4dcdddf3af8a94f3f68d55695b",
     "before": {
       "first_read_us": [
-        451,
-        879
+        456,
+        453
       ],
-      "warm_p50_us": 840.0,
-      "warm_p95_us": 1496,
+      "warm_p50_us": 357.0,
+      "warm_p95_us": 1034,
       "process_cpu_seconds": [
-        0.05,
-        0.04
+        0.03,
+        0.05
       ],
       "process_peak_rss_kib": [
-        5428,
-        5380
+        5472,
+        5540
       ],
       "neighbors": [
         9
@@ -26,18 +26,18 @@
     },
     "after": {
       "first_read_us": [
-        367,
-        728
+        725,
+        356
       ],
-      "warm_p50_us": 777.0,
-      "warm_p95_us": 1175,
+      "warm_p50_us": 706.5,
+      "warm_p95_us": 1059,
       "process_cpu_seconds": [
-        0.060000000000000005,
-        0.06
+        0.04,
+        0.060000000000000005
       ],
       "process_peak_rss_kib": [
-        5428,
-        5764
+        5472,
+        5632
       ],
       "neighbors": [
         9
@@ -52,18 +52,18 @@
     "result_digest": "85070832fe8367a7ddfa54bdd7e4986c10873ef908beecc718c5582fac6108d5",
     "before": {
       "first_read_us": [
-        15847,
-        16581
+        15688,
+        16359
       ],
-      "warm_p50_us": 15832.5,
-      "warm_p95_us": 16739,
+      "warm_p50_us": 16000.0,
+      "warm_p95_us": 16555,
       "process_cpu_seconds": [
-        1.32,
-        1.31
+        1.29,
+        1.33
       ],
       "process_peak_rss_kib": [
-        10432,
-        10700
+        10648,
+        10656
       ],
       "neighbors": [
         129
@@ -74,18 +74,18 @@
     },
     "after": {
       "first_read_us": [
-        10470,
-        9981
+        10083,
+        10325
       ],
-      "warm_p50_us": 10185.5,
-      "warm_p95_us": 10670,
+      "warm_p50_us": 10139.5,
+      "warm_p95_us": 10742,
       "process_cpu_seconds": [
-        1.1700000000000002,
-        1.1600000000000001
+        1.1500000000000001,
+        1.1400000000000001
       ],
       "process_peak_rss_kib": [
-        10820,
-        10672
+        10584,
+        10856
       ],
       "neighbors": [
         129
@@ -100,18 +100,18 @@
     "result_digest": "6a5645b88afc0712d9674ad5994c2d5c97f7f2d50fb0abc88dd2737470c0b5cc",
     "before": {
       "first_read_us": [
-        66909,
-        66759
+        65802,
+        67389
       ],
-      "warm_p50_us": 66377.0,
-      "warm_p95_us": 66632,
+      "warm_p50_us": 66397.0,
+      "warm_p95_us": 67215,
       "process_cpu_seconds": [
-        4.550000000000001,
-        4.58
+        4.529999999999999,
+        4.53
       ],
       "process_peak_rss_kib": [
-        21436,
-        21536
+        21480,
+        21500
       ],
       "neighbors": [
         257
@@ -122,18 +122,18 @@
     },
     "after": {
       "first_read_us": [
-        40899,
-        40855
+        40806,
+        41786
       ],
-      "warm_p50_us": 41046.5,
-      "warm_p95_us": 41736,
+      "warm_p50_us": 41274.0,
+      "warm_p95_us": 41908,
       "process_cpu_seconds": [
-        3.79,
-        3.82
+        3.8000000000000003,
+        3.79
       ],
       "process_peak_rss_kib": [
-        21792,
-        21756
+        21612,
+        21760
       ],
       "neighbors": [
         257
@@ -148,18 +148,18 @@
     "result_digest": "a67b955e875c19804aa26043690f7a2b89e8c7fd42344f7dcbd37314f6b79018",
     "before": {
       "first_read_us": [
-        108139,
-        108634
+        110709,
+        108429
       ],
-      "warm_p50_us": 106751.5,
-      "warm_p95_us": 107364,
+      "warm_p50_us": 107618.0,
+      "warm_p95_us": 109466,
       "process_cpu_seconds": [
-        11.0,
-        10.940000000000001
+        11.12,
+        11.04
       ],
       "process_peak_rss_kib": [
-        48252,
-        48304
+        48244,
+        48412
       ],
       "neighbors": [
         65
@@ -170,18 +170,18 @@
     },
     "after": {
       "first_read_us": [
-        39717,
-        40050
+        38283,
+        39387
       ],
-      "warm_p50_us": 38140.0,
-      "warm_p95_us": 38642,
+      "warm_p50_us": 37400.5,
+      "warm_p95_us": 38034,
       "process_cpu_seconds": [
-        8.84,
-        8.73
+        8.75,
+        8.680000000000001
       ],
       "process_peak_rss_kib": [
-        47908,
-        48368
+        48400,
+        48172
       ],
       "neighbors": [
         65
