@@ -373,6 +373,7 @@ fn lifecycle_changes_and_bridge_reconfiguration_do_not_reuse_query_decisions() {
     .expect("lifecycle fixture");
     changed.rendered = render_graph_bundle(&changed.bundle);
     changed.read_revision = Some(GraphReadRevision::new("store:1:revision:2").expect("revision"));
+    assert!(MemoryLifecycle::read(&changed.bundle).is_superseded("entry:3"));
     let table = super::lexical_bridge::tests::table(
         "test-bridge",
         &[
@@ -416,7 +417,17 @@ fn lifecycle_changes_and_bridge_reconfiguration_do_not_reuse_query_decisions() {
                     if std::ptr::eq(result, &changed) && selection.is_frontier() {
                         let proof = cached.proof.as_ref().expect("proof");
                         assert!(proof.expired.iter().any(|item| item.r#ref == "entry:0"));
-                        assert!(proof.superseded.iter().any(|item| item.r#ref == "entry:3"));
+                        assert!(
+                            cached
+                                .because
+                                .iter()
+                                .all(|reason| reason.claim != "entry:3")
+                        );
+                        // Supersession markers follow the retained relation
+                        // path. The invoice questions need not reach it.
+                        if question == "cache valkey rollout" {
+                            assert!(proof.superseded.iter().any(|item| item.r#ref == "entry:3"));
+                        }
                     }
                 }
             }
