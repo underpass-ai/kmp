@@ -1018,6 +1018,60 @@ fn loopback_binding_refuses_public_addresses() {
 }
 
 #[tokio::test]
+async fn warm_projection_rechecks_capabilities_and_peer_writes() {
+    let dir = tempfile::tempdir().expect("temporary store");
+    let kernel = EmbeddedKernel::open(dir.path()).expect("kernel");
+    kernel.service().ingest(corpus()).await.expect("seed");
+    let mut ports = vec![];
+    let mut servers = vec![];
+    // Both capabilities reach the same service/cache; authorization must stay
+    // at the HTTP boundary even after another viewer has populated the cache.
+    for _ in 0..2 {
+        let viewer = Arc::new(MemoryViewerServer::new(kernel.service(), None).expect("viewer"));
+        let listener = bind_loopback("127.0.0.1:0").await.expect("bind");
+        let port = listener.local_addr().expect("address").port();
+        let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
+        servers.push(tokio::spawn(viewer.serve(listener)));
+        authorize(port, &invitation).await;
+        ports.push(port);
+    }
+    let path = format!(
+        "/api/projection?about={ABOUT}&axis=occurred&from=2026-07-01T00:00:00Z&to=2026-07-03T00:00:00Z&lod=moment&limit=8"
+    );
+    let (status, before) = get(ports[0], &path).await;
+    assert_eq!(status, 200);
+    assert_eq!(get(ports[0], &path).await, (200, before.clone()));
+    assert_eq!(get(ports[1], &path).await, (200, before.clone()));
+    for cookie in [String::new(), auth_cookie(ports[1])] {
+        let port = ports[0];
+        let refused = raw_request(port, &format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n")).await;
+        assert!(refused.starts_with("HTTP/1.1 401"));
+        assert!(!refused.contains("Choose local storage."));
+    }
+    let port = ports[0];
+    let raw = raw_request(port, &format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {}\r\nIf-None-Match: *\r\nConnection: close\r\n\r\n", auth_cookie(port))).await;
+    assert!(raw.starts_with("HTTP/1.1 200"));
+    assert!(raw.to_ascii_lowercase().contains("cache-control: no-store"));
+    let peer = EmbeddedKernel::open(dir.path()).expect("peer");
+    let mut edited = corpus();
+    edited.idempotency_key = "projection-peer-edit".into();
+    edited.memory.entries[0].text = "A correction from the independent writer.".into();
+    peer.service().ingest(edited).await.expect("peer edit");
+    let (status, after) = get(port, &path).await;
+    assert_eq!(status, 200);
+    assert_ne!(before, after);
+    assert!(
+        after
+            .to_string()
+            .contains("A correction from the independent writer.")
+    );
+    assert_eq!(get(port, &path).await, (200, after));
+    for server in servers {
+        server.abort();
+    }
+}
+
+#[tokio::test]
 async fn observability_unavailability_reports_its_actual_reason() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
