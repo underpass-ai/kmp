@@ -23,10 +23,13 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
         .and_then(Value::as_object)
         .ok_or_else(|| "missing required object argument `memory`".to_string())?;
 
-    let dimensions = required_array(memory.get("dimensions"), "memory.dimensions")?;
-    let entries = required_array(memory.get("entries"), "memory.entries")?;
+    let dimensions = required_array_allow_empty(memory.get("dimensions"), "memory.dimensions")?;
+    let entries = required_array_allow_empty(memory.get("entries"), "memory.entries")?;
     let relations = optional_array(memory.get("relations"), "memory.relations")?;
     let evidence = optional_array(memory.get("evidence"), "memory.evidence")?;
+    if entries.is_empty() && relations.is_empty() {
+        return Err("memory must contain at least one entry or relation".into());
+    }
     let provenance = arguments.get("provenance").and_then(Value::as_object);
     if let Some(provenance) = provenance {
         validate_provenance(

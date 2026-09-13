@@ -75,7 +75,7 @@ pub(super) fn build_neighborhood(
         .flat_map(|link| [&link.source_ref, &link.target_ref])
         .cloned()
         .collect::<BTreeSet<_>>();
-    let labels = EntryLabels::from_coordinates(
+    let declared_labels = EntryLabels::from_coordinates(
         command
             .memory
             .entries
@@ -88,6 +88,27 @@ pub(super) fn build_neighborhood(
     for bundle in bundles {
         let owner = bundle.root_node_id().as_str();
         let catalogue = labels_by_entry(bundle);
+        // A relation-only command carries no source coordinates. Its review
+        // still includes constraints in the endpoints' stored memberships;
+        // read them here without turning them into entry writes or identity.
+        let labels = if command.memory.entries.is_empty() {
+            EntryLabels::from_pairs(
+                catalogue
+                    .iter()
+                    .filter(|(reference, _)| endpoints.contains(*reference))
+                    .flat_map(|(_, labels)| {
+                        labels.keys().flat_map(move |key| {
+                            labels
+                                .values(key)
+                                .into_iter()
+                                .flatten()
+                                .map(move |value| (key, value.clone()))
+                        })
+                    }),
+            )
+        } else {
+            declared_labels.clone()
+        };
         let related = bundle
             .relationships()
             .iter()

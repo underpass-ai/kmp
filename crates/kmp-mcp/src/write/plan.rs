@@ -16,6 +16,10 @@ pub(crate) struct KernelWritePlan {
     pub(crate) relations: Vec<String>,
     pub(crate) relation_quality: Vec<Value>,
     pub(crate) relation_quality_metrics: Value,
+    /// The memories this write puts at a ref the caller chose, each with the
+    /// evidence and observation it now carries. Empty unless the caller
+    /// supplied `memories[].ref`.
+    pub(crate) replaced: Vec<Value>,
     pub(crate) diagnostics: Vec<String>,
     pub(crate) next_suggested_reads: Vec<Value>,
 }

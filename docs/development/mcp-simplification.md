@@ -82,8 +82,12 @@ all claimed rich relations retain proof requirements. Per-record observation,
 occurrence and validity remain distinct from the packet's provenance and the
 kernel's actual ingestion clock.
 
-The unified public writer accepts `memories` or the separate `search_summaries`
-operation. The former `current`/`intent`/`scope` fields are rejected; semantic deltas
+The unified public writer accepts `memories`, the separate `search_summaries`
+operation, or `relations`: evidenced links between memories that already exist,
+validated by canonical ingest, which writes only links and evidence so source
+updates are preserved and retries do not depend on endpoint snapshots. Each
+link and its evidence carry their own supplied observation, and the accepted
+result separates created relation and evidence from unchanged sources. The former `current`/`intent`/`scope` fields are rejected; semantic deltas
 are explicit packet members with justified relations. Compact recoverable
 receipts, declared coverage and structured repair signals complete the native writer contract.
 A native packet replay is not independent agent evaluation and does not resume a reader awaiting human review.

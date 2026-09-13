@@ -126,6 +126,7 @@ pub(crate) fn build_summary_plan(
         relations: Vec::new(),
         relation_quality: Vec::new(),
         relation_quality_metrics: relation_quality_metrics(&[]),
+        replaced: Vec::new(),
         diagnostics,
         next_suggested_reads: vec![json!({
             "tool": "kmp_inspect",

@@ -207,9 +207,9 @@ fn namespaced_memory(
                 .to_string(),
         ));
     }
-    if memory.entries.is_empty() {
+    if memory.entries.is_empty() && memory.relations.is_empty() {
         return Err(ApplicationError::Validation(
-            "memory.entries must not be empty".to_string(),
+            "memory must contain at least one entry or relation".to_string(),
         ));
     }
 
@@ -773,6 +773,52 @@ mod tests {
     };
 
     use super::translate_memory_ingest;
+
+    #[test]
+    fn relation_only_ingest_validates_stored_endpoints_without_entry_changes() {
+        let mut command = sample_command();
+        let source = command.memory.entries[0].id.clone();
+        let target = "question:830ce83f:claim:another".to_owned();
+        command.memory.entries.clear();
+        command.memory.dimensions.clear();
+        let relation = &mut command.memory.relations[0];
+        relation.source_ref = source.clone();
+        relation.target_ref = target.clone();
+        relation.rel = "follows".into();
+        relation.semantic_class = "procedural".into();
+        relation.confidence = Some("high".into());
+        relation.why = Some("The second statement follows the first in the transcript.".into());
+        let mut existing = ExistingMemoryRefs {
+            refs: [source, target.clone()].into_iter().collect(),
+            dimensions: [
+                "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12".into(),
+            ]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        };
+        let (update, outcome) = translate_memory_ingest(&command, &existing).expect("attachment");
+        assert_eq!(outcome.accepted.entries, 0);
+        assert_eq!(outcome.accepted.relations, 1);
+        assert_eq!(
+            update
+                .changes
+                .iter()
+                .map(|change| change.entity_kind.as_str())
+                .collect::<Vec<_>>(),
+            ["memory_relation", "memory_evidence"]
+        );
+        existing.refs.remove(&target);
+        assert_validation_contains(
+            translate_memory_ingest(&command, &existing).expect_err("unknown endpoint"),
+            "unknown refs",
+        );
+        command.memory.relations.clear();
+        assert_validation_contains(
+            translate_memory_ingest(&command, &existing).expect_err("empty write"),
+            "at least one entry or relation",
+        );
+    }
 
     #[test]
     fn translate_memory_ingest_creates_internal_memory_update_command() {

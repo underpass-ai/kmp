@@ -212,13 +212,13 @@
         "name": "relation_count",
         "scope": "selected_subgraph",
         "unit": "relations",
-        "value": 17.0
+        "value": 20.0
       },
       {
         "name": "causal_density",
         "scope": "selected_subgraph",
         "unit": "ratio",
-        "value": 0.1176470588235294
+        "value": 0.1
       }
     ],
     "missing": [],
@@ -233,6 +233,19 @@
       "to": "2026-04-13T00:00:00Z"
     },
     "relations": [
+      {
+        "class": "evidential",
+        "clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T19:00:00Z"
+        },
+        "confidence": "high",
+        "evidence": "Both statements came from the same conversation.",
+        "from": "question:parity:claim:boulder-current",
+        "rel": "supports",
+        "to": "question:parity:claim:denver",
+        "why": "The standing start date is what makes the earlier move claim concrete enough to act on."
+      },
       {
         "class": "evidential",
         "clocks": {
@@ -284,6 +297,32 @@
         "rel": "updates_state",
         "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "why": "The later statement corrects the earlier one."
+      },
+      {
+        "class": "evidential",
+        "clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T19:00:00Z"
+        },
+        "confidence": "unknown",
+        "evidence": "Both statements came from the same conversation.",
+        "from": "evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
+        "rel": "supports",
+        "to": "question:parity:claim:boulder-current",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T19:00:00Z"
+        },
+        "confidence": "unknown",
+        "evidence": "Both statements came from the same conversation.",
+        "from": "evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
+        "rel": "supports",
+        "to": "question:parity:claim:denver",
+        "why": "Evidence supports this memory entry."
       },
       {
         "class": "evidential",

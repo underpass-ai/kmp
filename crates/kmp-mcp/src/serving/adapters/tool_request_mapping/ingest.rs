@@ -74,7 +74,7 @@ impl IngestRequestMapper {
 
 fn memory_from_object(memory: &Map<String, Value>) -> Result<Memory, String> {
     let dimensions = required_array_field_allow_empty(memory, "dimensions", "memory.dimensions")?;
-    let entries = JsonFieldReader::required_array_field(memory, "entries", "memory.entries")?;
+    let entries = required_array_field_allow_empty(memory, "entries", "memory.entries")?;
     let relations = JsonFieldReader::optional_array_field(memory, "relations", "memory.relations")?;
     let evidence = JsonFieldReader::optional_array_field(memory, "evidence", "memory.evidence")?;
 
