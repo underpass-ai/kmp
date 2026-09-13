@@ -1,0 +1,8 @@
+[
+  {
+    "native_allocation_control": true,
+    "requests": 15593296,
+    "requested_bytes": 1382878638,
+    "frees": 13014935
+  }
+]

@@ -44,7 +44,7 @@ mod tests {
             )),
         });
         assert_eq!(conflict.status, 409);
-        let body = String::from_utf8(conflict.body).expect("utf8 body");
+        let body = String::from_utf8(conflict.body.as_slice().to_vec()).expect("utf8 body");
         assert!(body.contains("expected revision 3"), "{body}");
         assert!(body.contains("it is at 5"), "{body}");
 

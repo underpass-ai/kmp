@@ -1,0 +1,17 @@
+{
+  "baseline_sha256": "50d56fe04b6db7cbb2ed578b524cd83e5e14913d2d221dc4ee2af84dadc8ee3f",
+  "candidate_sha256": "af35ef242ac6067242c96a7c0c96c2e88dcdb550952db2ac2b713bc6dac91629",
+  "bridge_sha256": "556e2ba9657f702f8a33f1b1d4bb402eb5a5bf8c7b65fe5df4b937e5b0bd6712",
+  "bridge_bytes": 13326412,
+  "counter_sha256": "48ff2cb21b1905e2e3b0b882fe2048107ed3fc8fbad2c5761eaeef6f6d1be989",
+  "runner_sha256": "26a5efd0643bd0f91fc60c9e4777a525c5e5952fb6a3bb29543ce1245c92cda1",
+  "profile": "Cargo dev profile under workspace .cargo/config.toml",
+  "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+  "cpu_count": 20,
+  "warmups_per_condition": 3,
+  "samples_per_condition": 20,
+  "timing_scope": "process spawn through MCP initialize response",
+  "allocation_scope": "process startup and one initialize; all glibc allocation entry points",
+  "allocation_metric": "request count and cumulative requested bytes, not live heap",
+  "model_calls": 0
+}

@@ -170,11 +170,12 @@ mod tests {
                 .collect(),
             host: None,
             cookie: None,
+            accept_encoding: None,
         }
     }
 
     fn body(response: HttpResponse) -> serde_json::Value {
-        serde_json::from_slice(&response.body).expect("a JSON body")
+        serde_json::from_slice(response.body.as_slice()).expect("a JSON body")
     }
 
     #[tokio::test]

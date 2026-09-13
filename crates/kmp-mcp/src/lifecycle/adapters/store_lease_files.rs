@@ -10,6 +10,9 @@ use sha2::{Digest, Sha256};
 use crate::lifecycle::domain::store_leases_dir::store_leases_dir;
 
 pub(crate) fn store_lease_path(data_home: &Path, store: &Path) -> PathBuf {
+    // This is an exact lookup, not a directory-backed lease registry. Keep
+    // the pathname and inode stable: an older host may still have opened the
+    // same lock file without knowing this process's maintenance policy.
     let identity = std::fs::canonicalize(store).unwrap_or_else(|_| store.to_path_buf());
     let digest = Sha256::digest(identity.to_string_lossy().as_bytes());
     store_leases_dir(data_home).join(format!("{digest:x}.lock"))

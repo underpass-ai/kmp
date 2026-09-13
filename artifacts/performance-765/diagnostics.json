@@ -1,0 +1,36 @@
+{
+  "smoke-01": {
+    "interpretation": "Incomplete: writes lacked required labels; browser completed, write acceptance assertion failed. Fixed required labels.",
+    "failure": {
+      "type": "AssertionError",
+      "message": "{'content': [{'text': 'labels must declare at least one key/value membership for temporal navigation\\nUsage help: {\"examples\":[{\"arguments\":{\"about\":\"guide:kmp-agent\",\"budget\":{\"max_bytes\":10000},\"include\":{\"details\":false,\"incoming\":false,\"outgoing\":false,\"raw\":false},\"ref\":\"guide:kmp-agent:example:dimensional-memberships\"},\"tool\":\"kmp_inspect\"}],\"guide\":{\"arguments\":{\"about\":\"guide:kmp-agent\",\"budget\":{\"max_bytes\":10000},\"include\":{\"details\":false,\"incoming\":false,\"outgoing\":false,\"raw\":false},\"ref\":\"guide:kmp-agent:verb:write\"},\"tool\":\"kmp_inspect\"}}', 'type': 'text'}], 'isError': True, 'structuredContent': {'error': {'code': 'invalid_argument', 'message': 'labels must declare at least one key/value membership for temporal navigation'}, 'feedback': [{'action': None, 'code': 'INVALID_LABELS', 'field': 'memories[0].labels', 'reason': 'labels must declare at least one key/value membership for temporal navigation', 'severity': 'error'}], 'help': {'examples': [{'arguments': {'about': 'guide:kmp-agent', 'budget': {'max_bytes': 10000}, 'include': {'details': False, 'incoming': False, 'outgoing': False, 'raw': False}, 'ref': 'guide:kmp-agent:example:dimensional-memberships'}, 'tool': 'kmp_inspect'}], 'guide': {'arguments': {'about': 'guide:kmp-agent', 'budget': {'max_bytes': 10000}, 'include': {'details': False, 'incoming': False, 'outgoing': False, 'raw': False}, 'ref': 'guide:kmp-agent:verb:write'}, 'tool': 'kmp_inspect'}}, 'status': 'rejected'}}",
+      "interpretation": "incomplete diagnostic run; excluded from performance comparison"
+    },
+    "environment_sha256": "7e3d8163bd6e2fe195809c6eac26a1bbe39947a129ce44e7cbe0935fbdc6a8ce"
+  },
+  "smoke-02": {
+    "interpretation": "Small smoke passed; excluded from campaign.",
+    "environment_sha256": "0958c3abf509536bfc963a7b0cded5a7f832cfe993a2ab208cb19b77aff11f7d"
+  },
+  "smoke-03": {
+    "interpretation": "Small phase-tracing smoke passed using then-uncommitted tracing source; excluded.",
+    "environment_sha256": "a8d499b8bb895dbd087ed69b7eb28c455a8720764b87093fd6d73c012061ef9b"
+  },
+  "smoke-04": {
+    "interpretation": "Incomplete: high-degree recall 64-KB first page filled with proof relations and contained no evidence; positive-fixture assertion stopped run. Raised byte ceiling to 2 MB; no result truncation bypass.",
+    "failure": {
+      "type": "AssertionError",
+      "message": "positive fixture returned no evidence",
+      "interpretation": "incomplete diagnostic run; excluded from performance comparison"
+    },
+    "environment_sha256": "1c6d660fe50c7d9ded64a8e71e16a482c5682ab7dfd17f841fb726711c583deb"
+  },
+  "smoke-05": {
+    "interpretation": "All shapes passed after fixed clocks/budget under concurrent builds; excluded timings.",
+    "environment_sha256": "fffd1181b1f1c21f0826c16406f2bcf8b8aae1d8a107d36689c98b26a4eca99a"
+  },
+  "smoke-06": {
+    "interpretation": "Independent reference small seed/read parity passed; excluded timings.",
+    "environment_sha256": "fb2e421f0afebce71c8956ec61bce9ea148adb4203522158e46f028cb126ebc2"
+  }
+}

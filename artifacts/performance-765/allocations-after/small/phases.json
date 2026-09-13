@@ -1,0 +1,58 @@
+[
+  {
+    "timestamp": "2026-09-13T23:23:23.675590Z",
+    "level": "DEBUG",
+    "fields": {
+      "message": "embedded query phases",
+      "rpc": "kmp_wake",
+      "graph_load_us": 4737,
+      "detail_load_us": 388,
+      "bundle_assembly_us": 520,
+      "role_count": 1,
+      "batch_size": 19
+    },
+    "target": "kmp_mcp::query_phases"
+  },
+  {
+    "timestamp": "2026-09-13T23:23:23.785409Z",
+    "level": "DEBUG",
+    "fields": {
+      "message": "embedded query phases",
+      "rpc": "kmp_wake",
+      "graph_load_us": 5385,
+      "detail_load_us": 512,
+      "bundle_assembly_us": 333,
+      "role_count": 1,
+      "batch_size": 19
+    },
+    "target": "kmp_mcp::query_phases"
+  },
+  {
+    "timestamp": "2026-09-13T23:23:23.912497Z",
+    "level": "DEBUG",
+    "fields": {
+      "message": "embedded query phases",
+      "rpc": "kmp_ask",
+      "graph_load_us": 4866,
+      "detail_load_us": 614,
+      "bundle_assembly_us": 342,
+      "role_count": 1,
+      "batch_size": 19
+    },
+    "target": "kmp_mcp::query_phases"
+  },
+  {
+    "timestamp": "2026-09-13T23:23:24.072049Z",
+    "level": "DEBUG",
+    "fields": {
+      "message": "embedded query phases",
+      "rpc": "kmp_ask",
+      "graph_load_us": 5097,
+      "detail_load_us": 606,
+      "bundle_assembly_us": 333,
+      "role_count": 1,
+      "batch_size": 19
+    },
+    "target": "kmp_mcp::query_phases"
+  }
+]

@@ -13,6 +13,7 @@ mod dimensions;
 mod hybrid_evidence;
 mod ingest;
 mod lexical_bridge;
+mod lexical_bridge_table;
 mod lexical_collection;
 mod lexical_field;
 mod lexical_index_cache;

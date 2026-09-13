@@ -1,0 +1,8 @@
+{
+  "observed_at": "2026-09-13T23:10:23.908692+00:00",
+  "path": "/home/gx10a/.local/share/kmp/store-leases",
+  "lock_files": 10045,
+  "payload_bytes": 0,
+  "directory_metadata_bytes": 1175552,
+  "read_only": true
+}

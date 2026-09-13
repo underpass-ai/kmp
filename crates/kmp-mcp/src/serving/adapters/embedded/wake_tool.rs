@@ -37,6 +37,8 @@ impl<'a> EmbeddedWakeTool<'a> {
             .await
             .map_err(kernel_error("wake", &about))?;
         self.telemetry
+            .trace_timing("kmp_wake", result.timing.as_ref());
+        self.telemetry
             .observe("kmp_wake", &result.bundle, &result.rendered.quality);
         let response = project_wake_response(
             wake_response_from_result(&intent, max_entries, result, &temporal)
