@@ -1,5 +1,6 @@
-//! Compile one semantic or search-summary packet, then validate and commit
-//! through canonical ingest. Explicit previews perform validation without writes.
+//! Compile one semantic, search-summary or relation-only packet, then
+//! validate and commit through canonical ingest. Explicit previews perform
+//! validation without writes.
 
 use std::time::Instant;
 
@@ -16,7 +17,8 @@ use crate::write::existing_entry::ExistingEntry;
 use crate::write::validation_error::WriteValidationError;
 use crate::write::validation_errors::WriteValidationErrors;
 use crate::write::{
-    build_batch_plan, build_summary_plan, write_commit_result, write_dry_run_result,
+    build_batch_plan, build_relation_plan, build_summary_plan, write_commit_result,
+    write_dry_run_result,
 };
 
 impl KernelMcpServer {
@@ -26,11 +28,20 @@ impl KernelMcpServer {
         arguments: &Value,
         start: Instant,
     ) -> String {
-        let planned = match (arguments.get("memories"), arguments.get("search_summaries")) {
-            (Some(_), None) => build_batch_plan(arguments).map_err(ToolError::from),
-            (None, Some(_)) => self.plan_search_summary_packet(arguments).await,
+        // Three shapes, one envelope. `relations` is the shape a writer
+        // reaches for when both memories already exist and only the link is
+        // new; without it, saying "J01 supports J03" cost J01 its prose
+        // (#663).
+        let planned = match (
+            arguments.get("memories"),
+            arguments.get("search_summaries"),
+            arguments.get("relations"),
+        ) {
+            (Some(_), None, None) => build_batch_plan(arguments).map_err(ToolError::from),
+            (None, Some(_), None) => self.plan_search_summary_packet(arguments).await,
+            (None, None, Some(_)) => build_relation_plan(arguments).map_err(ToolError::from),
             _ => Err(WriteValidationError::new(
-                "provide exactly one of memories or search_summaries",
+                "provide exactly one of memories, search_summaries or relations",
             )
             .code("WRITE_OPERATION_REQUIRED")
             .into()),
@@ -62,7 +73,9 @@ impl KernelMcpServer {
 
         let mut ingest_arguments = plan.ingest_arguments.clone();
         ingest_arguments["receipt_context"] = crate::write::receipt::receipt_context(&plan);
-        if arguments.get("memories").is_some() {
+        // A declared link is reviewed before it commits, whichever shape
+        // declared it. Only a search rendering writes no relation at all.
+        if plan.operation != crate::write::operation::WriteOperation::SearchSummaries {
             ingest_arguments["neighborhood_review"] = serde_json::json!(
                 arguments
                     .get("review_token")
@@ -196,7 +209,9 @@ impl KernelMcpServer {
                 .code("DUPLICATE_TARGET")
                 .into());
             }
-            let existing = read_existing_entry(self.backend.as_ref(), &about, reference).await?;
+            let existing =
+                read_existing_entry(self.backend.as_ref(), "search_summaries", &about, reference)
+                    .await?;
             source_bindings.push(summary_source_binding(&existing));
             prepared.push((index, record.clone(), existing));
         }

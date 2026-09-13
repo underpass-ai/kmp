@@ -228,10 +228,15 @@ there. It separates them:
 - **binary** — installed, on `PATH`, and its version;
 - **backend** — embedded, grpc or fixture. It flags `fixture` loudly: those
   responses look real and are canned;
-- **data directory** — which one wins under the ADR-012 resolution order
-  (`KMP_MCP_DATA_DIR` → project `.kernel/` → XDG fallback), and why;
+- **data directory** — which one wins under the resolution order
+  (`KMP_MCP_DATA_DIR` → the selection saved with `kmp-mcp config
+  memory-store` → project `.kernel/` → XDG fallback), and why;
 - **tool surface** — a real `tools/list` over stdio, counting what answers;
-- **host registration** — whether Claude Code and Codex actually have it.
+- **host registration** — three separate facts, never collapsed into one: the
+  plugin is installed and enabled, the engine binary declares its tools when
+  run directly, and a host reports a live MCP connection. Where no live probe
+  ran, it says *unverified* rather than usable — a registration in an
+  inventory is not a conversation that can call a tool.
 
 For Codex it also detects obsolete global wiring. If an enabled plugin and a
 global `mcp_servers.kmp` table both claim the server, Doctor names both owners

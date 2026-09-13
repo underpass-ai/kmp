@@ -1,1 +1,1 @@
-Usage: kmp-mcp config [memory-routing <on-request|always>]
+Usage: kmp-mcp config [memory-routing <on-request|always> | memory-store <absolute-path> | memory-store --clear]
