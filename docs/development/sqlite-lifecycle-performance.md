@@ -41,3 +41,9 @@ The evidence is used to decide whether any bounded checkpoint or cache policy
 has a measured benefit. It does not justify changing durability PRAGMAs,
 removing startup integrity checks, or checkpointing every write without a
 measured reason and recovery proof.
+
+The companion `sqlite_clients.py` control measures one and two independent
+client processes against each database, with per-operation latency, per-client
+VmHWM, WAL growth and exact acknowledgement counts checked after reopening.
+Its 40-operation samples, process barriers, native quality writer cadence and
+measurement limits are documented alongside `artifacts/performance-772/clients.json`.

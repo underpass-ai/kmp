@@ -68,5 +68,22 @@
     "cache_size_correction": "Historical cache_size_pages=-2000 is KiB; current runner uses cache_size_raw plus explicit unit and connection scope. All diagnostic PRAGMAs are fresh-connection observations.",
     "percentiles": "Verified all reported p50/p95 from raw n=21 arrays; current helper implements nearest rank for other sample counts too.",
     "runner_metadata_build": "Current embedded Rust runner rebuilt successfully after output-only metadata changes; production timing operations unchanged."
+  },
+  "multi_process_control": {
+    "artifact": "clients.json",
+    "cases": 4,
+    "writes_per_client": 40,
+    "reads_per_client": 40,
+    "samples_pooled_one_or_two_clients": [
+      40,
+      80
+    ],
+    "all_reopened_counts_verified": true,
+    "all_per_client_acknowledgements_verified": true,
+    "uninstrumented": true,
+    "rust_source_sha256": "d32cefa9af6f940b4b2ae4b599bf2a47809893c500969d8515f7867279186cdc",
+    "binary_sha256": "a8f56aa41f37241ff5697ddae94ac758c9fc20b8819038c405b3348687600e2f",
+    "source_commit": "ac5bc05ea4033965a3d15f496290e74b598143ae",
+    "smoke": "32-operation development smoke excluded from timing table"
   }
 }

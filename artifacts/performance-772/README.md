@@ -77,3 +77,51 @@ python3 scripts/performance/sqlite_lifecycle.py \
 
 All synthetic files are disposable scratch below `tmp/`; no active user store
 was opened, checkpointed, tuned, or deleted.
+
+## One and two independent client processes
+
+`clients.json` supplements the single-client lifecycle with two processes
+sharing each database. Each case is prepared in a separate seed process with
+128 events (kernel: 4-KiB payloads) or 128 quality observations. Each client
+opens the production adapter, waits at a common start barrier, and performs 40
+acknowledged writes and 40 reads. Kernel clients use distinct logical roots in
+one database, exercising the normal SQLite writer serialization. Quality
+clients use independent reader connections, one observation per batch, the
+existing FULL cadence every 16 batches, and a durable tail flush.
+
+| Database / clients | Write p50 / p95 ms | Read p50 / p95 ms | Per-client VmHWM KiB | Maximum observed WAL bytes |
+| --- | ---: | ---: | --- | ---: |
+| kernel / 1 | 1.011 / 1.560 | 0.151 / 0.400 | 6272 | 379,072 |
+| kernel / 2 | 1.657 / 3.693 | 0.220 / 0.382 | 5812, 5812 | 758,112 |
+| quality / 1 | 0.038 / 0.568 | 0.162 / 0.173 | 5668 | 510,912 |
+| quality / 2 | 0.130 / 0.712 | 0.363 / 0.386 | 5672, 5652 | 1,030,032 |
+
+The two-client percentiles pool 80 operations; per-process arrays remain in the
+artifact. Pacing sleeps of 1 ms, barriers, fixture construction, WAL reads and
+RSS observation are outside operation timings. First-open times and quality
+tail-flush times are recorded separately per client. OS caches are not flushed.
+VmHWM is each process's lifetime peak, not simultaneous aggregate memory or
+live heap. The run is a bounded contention control, not a sustained-load or
+starvation forecast; WAL growth during acknowledged writes is expected.
+
+Every case reopens in a new process and verifies all per-client acknowledgements:
+168 stored events/observations for one client, 208 for two. The two-client
+kernel write tail rose to 3.69 ms versus 1.56 ms; quality write p95 was 0.71 ms
+versus 0.57 ms. The observed costs do not justify changing the existing
+checkpoint or durability policy. Existing interruption and pinned-reader tests
+remain the recovery/coexistence controls.
+
+Reproduce after building separately from the quiet measurement:
+
+```sh
+python3 scripts/performance/sqlite_clients.py --build-only \
+  --scratch tmp/sqlite-clients-build --output tmp/unused.json
+python3 scripts/performance/sqlite_clients.py \
+  --runner-binary target/debug/sqlite-clients-runner \
+  --scratch tmp/sqlite-clients-run --output artifacts/performance-772/clients-new.json
+```
+
+The current Rust/Python runner hashes and measured source commit are in
+`clients.json`; production adapter source is unchanged from the earlier
+lifecycle measurement. The 32-sample smoke ran during development and is
+excluded; its semantic assertions passed before the final 40-sample run.
