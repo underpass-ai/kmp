@@ -1,0 +1,12 @@
+   Compiling kmp-mcp v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-774/crates/kmp-mcp)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.54s
+     Running tests/store_lease_safety.rs (target/debug/deps/store_lease_safety-726e6e64d5d697a1)
+
+running 5 tests
+test child_holds_old_store_file ... ok
+test child_terminates_without_drop ... ok
+test child_holds_shared_lease ... ok
+test lease_identity_and_directory_cardinality_are_bounded_per_store ... ok
+test live_old_and_current_owners_block_removal_but_crash_releases_the_lock ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s

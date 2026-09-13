@@ -1,0 +1,57 @@
+{
+  "issue": 774,
+  "runner": "scripts/performance/store_lease_cardinality.py",
+  "runner_sha256": "65b9908b14ffe8d5296020da056b297840a21094546eac5ee6244e2d43a7b928",
+  "runner_binary_sha256": "0dec7b2c57971ad97fbe1d581dc9fc9168abc94f9833484f5ae2802659bd59a7",
+  "git_commit": "0f4b73023378388a42458c602d8909e3d1c1dc3c",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "cargo_profile": "dev, workspace .cargo/config.toml",
+  "host": {
+    "system": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+    "machine": "aarch64",
+    "cpu_model": "0xd87",
+    "hardware_sha256": "4d6c2eeb5df6e23c1f48767d92a655930827437db5e51af6bc0b4667e3d8c022"
+  },
+  "source_hashes": {
+    "crates/kmp-mcp/src/lifecycle/adapters/store_lease_files.rs": "f0c5157ab010a895e57082f9d7b48e1cd0dede40768c224f6908c36f6af21a19",
+    "crates/kmp-mcp/src/lifecycle/adapters/store_session_lease.rs": "26ff58f77d3f96e6dcc224a607f3cbc3c046802172e53d76183296ed36cf558e",
+    "crates/kmp-mcp/src/lifecycle/adapters/store_removal_guard.rs": "7e2bae0062a729432bffb0b447d60b402ea23ec0125058bbe3ec7fdd49485ca3"
+  },
+  "method": "direct StoreSessionLease::acquire for one canonical store; unrelated files are empty and never opened",
+  "warm_samples_requested": 23,
+  "results": [
+    {
+      "stale_files": 0,
+      "file_count_after": 1,
+      "directory_metadata_bytes": 4096,
+      "cold_acquire_ms": 0.051183,
+      "warm_samples": 23,
+      "warm_p50_ms": 0.023408,
+      "warm_p95_ms": 0.026768,
+      "warm_min_ms": 0.022928,
+      "warm_max_ms": 0.036336
+    },
+    {
+      "stale_files": 1000,
+      "file_count_after": 1001,
+      "directory_metadata_bytes": 36864,
+      "cold_acquire_ms": 0.037104,
+      "warm_samples": 23,
+      "warm_p50_ms": 0.012704,
+      "warm_p95_ms": 0.013296,
+      "warm_min_ms": 0.0124,
+      "warm_max_ms": 0.022912
+    },
+    {
+      "stale_files": 10000,
+      "file_count_after": 10001,
+      "directory_metadata_bytes": 335872,
+      "cold_acquire_ms": 0.051792,
+      "warm_samples": 23,
+      "warm_p50_ms": 0.012432,
+      "warm_p95_ms": 0.01456,
+      "warm_min_ms": 0.012192,
+      "warm_max_ms": 0.015616
+    }
+  ]
+}

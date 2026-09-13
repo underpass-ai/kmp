@@ -1,0 +1,34 @@
+{
+  "issue": 774,
+  "checks": {
+    "cargo_fmt": {
+      "command": "cargo fmt --all -- --check",
+      "status": "passed"
+    },
+    "focused_safety_tests": {
+      "command": "cargo test --locked -p kmp-mcp --test store_lease_safety",
+      "status": "passed",
+      "tests_passed": 5,
+      "tests_failed": 0,
+      "log": "safety-test.log"
+    },
+    "focused_clippy": {
+      "command": "cargo clippy --locked -p kmp-mcp --test store_lease_safety -- -D warnings",
+      "status": "passed",
+      "log": "clippy.log"
+    },
+    "architecture_gate": {
+      "command": "bash scripts/ci/kmp-mcp-architecture-gate.sh",
+      "status": "passed",
+      "log": "architecture.log"
+    }
+  },
+  "measurement": {
+    "artifact": "cardinality.json",
+    "warm_samples_per_cardinality": 23,
+    "cardinalities": [0, 1000, 10000],
+    "timing_scope": "direct StoreSessionLease::acquire; directory setup outside timed region",
+    "ci_threshold": false
+  },
+  "policy": "retain stable lease pathnames; no unlink/recreate cleanup"
+}
