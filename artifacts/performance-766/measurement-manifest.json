@@ -1,0 +1,41 @@
+{
+  "issue": 766,
+  "baseline_commit": "0f4b73023378388a42458c602d8909e3d1c1dc3c",
+  "candidate_commits": ["14c59de5", "01897ce3"],
+  "baseline_binary_sha256": "9fd441eaf496f9864e06676cd4f8333f571040024daf1e5699a45a9733eaa7ae",
+  "candidate_binary_sha256": "f941caa99e263e1820783439bf47b15041ccfe04e212bbd56ded47c77f3efce8",
+  "source_sha256": {
+    "crates/kmp-mcp/src/projection/recall_projection.rs": "787d27a0ce24a7fd6345d6abeaa920be7d275e0519af87b311c48baa82f462ee"
+  },
+  "host": {
+    "os": "Linux 6.17.0-1029-nvidia",
+    "arch": "aarch64",
+    "cpu": "Cortex-X925",
+    "cpu_count": 20,
+    "rustc": "1.97.1",
+    "cargo_profile": "dev, workspace .cargo/config.toml"
+  },
+  "latency": {
+    "runner": "scripts/performance/fixture_tokenizer_control.py",
+    "runner_sha256": "c0dced2834a3d103601f229322065676398b7148cd9a5169207c71c6722cbf08",
+    "trials": ["trial-1", "trial-2", "trial-3"],
+    "tools": ["kmp_wake", "kmp_ask"],
+    "warm_samples": 20,
+    "warmups": 3,
+    "concurrency": 1,
+    "startup_included_in_query_latency": false,
+    "model_calls": 0,
+    "response_parity": true,
+    "response_bytes_equal": true
+  },
+  "allocations": {
+    "runner": "scripts/performance/fixture_tokenizer_allocations.py",
+    "runner_sha256": "00d4c341c7940c4a602ef97dc9e6f0bbe8171f2e516a53ea4a21fe694317aeb3",
+    "counter": "scripts/performance/native_allocation_counter.c",
+    "queries": [1, 5],
+    "metric": "native allocation request count and cumulative requested bytes, not live heap",
+    "response_parity": true,
+    "instrumented_latency_interpreted": false,
+    "fixture_backend_ignores_seeded_corpus": true
+  }
+}
