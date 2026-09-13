@@ -78,6 +78,28 @@ from per-query time; first-query results are recorded separately. OS caches are
 not flushed. Only one benchmark process runs at a time, with no overlapping
 builds. Process peak RSS includes initialization and all reads, not just the index.
 
+| Entries / source bytes / extra vocabulary | Warm p50 before / after (ms) | Warm p95 before / after (ms) | Peak RSS before / after (KiB) |
+| --- | ---: | ---: | ---: |
+| 8 / 256 / 4 | 142.672 / 139.170 | 144.245 / 140.549 | 60,512 / 60,460 |
+| 64 / 1,024 / 16 | 1654.664 / 1644.107 | 1663.030 / 1646.508 | 67,696 / 67,756 |
+| 256 / 1,024 / 64 | 8453.836 / 8006.452 | 8519.667 / 8021.502 | 93,428 / 91,004 |
+| 32 / 32,768 / 16 | 17137.613 / 17094.712 | 17210.197 / 17179.686 | 121,900 / 122,124 |
+
+For the wide-vocabulary native fixture this is a 5.3% warm p50 reduction.
+Cold first-query ranges before/after were 372.296–373.066 / 361.632–367.153 ms
+(small), 1882.547–1907.249 / 1876.826–1882.373 ms (medium), and
+8649.948–8702.292 / 8680.777–8766.079 ms (wide vocabulary), and
+17441.512–17446.122 / 17275.158–17436.361 ms (large sources). The first read still
+builds the index; two observations per side do not establish a cold-read gain.
+The large-source case is effectively flat (0.25% p50 difference): vocabulary
+construction reuse cannot remove preparation of the full source bodies.
+All complete response fields and lengths are unchanged. The small variation in
+wire byte counts within each side comes from the JSON-RPC request id.
+
+The recorded forty warm reads consumed 5.660 / 5.520, 65.930 / 65.490,
+338.300 / 319.350 and 685.390 / 683.870 CPU seconds before/after respectively.
+CPU time uses Linux clock ticks; it is not an instruction count.
+
 The earlier `native/` attempt inherited expired fixture entries and returned
 `UNKNOWN`. It was stopped after inspecting that evidence; its partial samples
 remain diagnostic and are excluded from the final comparison. `native-final/`
@@ -94,20 +116,63 @@ bodies and its exported revision remain the complete previous state; the next
 read observes the new revision. Existing lifecycle, graph, language, scope and
 transport tests remain required.
 
-The separate native replay checks policies, UNKNOWN, temporal cutoffs and
+The separate native replay passed 64 complete results per binary, including
+all nine continuation pages of a historical Ask. It checks policies, UNKNOWN, temporal cutoffs and
 intervals across five clocks, whole-entry selectors, cross-about scope, repeated
 queries and response budgeting against the original binary. Allocation counting
 uses the existing Linux/glibc interposer separately, never for latency claims.
 It measures cumulative allocation requests/bytes for startup plus one or five
 queries, not live heap or physical disk I/O.
 
+| Allocation fixture | Startup + first query requests before / after | Startup + five queries requests before / after | Additional warm-query requested bytes before / after |
+| --- | ---: | ---: | ---: |
+| 8 entries, vocabulary 4 | 713,227 / 713,725 | 1,639,302 / 1,637,116 | 22,742,549 / 22,678,069 |
+| 256 entries, vocabulary 64 | 11,554,399 / 11,605,092 | 55,843,527 / 55,645,655 | 948,118,174 / 943,208,429 |
+
+The final column subtracts the one-query process from the five-query process
+and divides by four; it is an estimate from separate process runs. The first
+query pays for the equality witness. Marginal warm-query allocation requests
+were 231,518.75 / 230,847.75 and 11,072,282 / 11,010,140.75 respectively.
+The allocation fixtures retain the shared source/control vocabulary and are
+separate from the latency fixtures, so their values are not paired latency
+measurements. All their complete responses also matched.
+
+The write control uses ABBA processes over copies of one closed seed. Each
+process replaces one entry twelve times and follows each write with a first and
+a repeated Ask. Both responses must match the corresponding baseline result,
+and each new entry marker must appear. Read-only SQL dump hashes and page counts
+of every kernel table, taken outside the timed calls, must stay equal across
+the reads. This checks zero additional kernel mutations by Ask, separately from
+the quality journal. It does not infer physical write I/O from database size.
+
+The control passed all 24 edits and 48 post-edit reads per side, with exact
+baseline/candidate results and zero kernel table changes during reads. Write
+p50/p95 was 775.190/787.364 ms before and 771.198/775.801 ms after. The first
+read after an edit was 791.829/799.502 ms before and 793.734/797.139 ms after;
+the repeated read was 791.031/799.880 ms before and 788.378/792.818 ms after.
+These small differences do not establish a write-speed improvement. The cache
+adds no write-time index maintenance, and rebuilds normally on the next read.
+
 ## Reproduction
+
+The complete local `scripts/ci/quality-gate.sh` passed on the v0.18.3 tree:
+2,358 Rust tests passed, five were ignored (including the informational phase
+control), and no tests failed. Contracts, architecture, viewer tests, formatting,
+workspace Clippy and rustdoc with warnings denied, and the MCP build passed.
+The same executable code and regression tests also passed the full remote CI,
+including embedded SQLite/binary gates, external adapter integrations, CodeQL,
+container and Windows launcher checks. See `validation.json` and the CI records
+in the evidence directory. Performance results are not CI latency gates.
 
 Build the baseline MCP from `fdb2020f` and the candidate with the same toolchain
 and Cargo settings. Save the baseline binary outside a target path that the
 candidate build overwrites. The runners require Python 3, Linux `/proc`, and no
 model, network service or token encoder. Raw JSONL traces, summaries, source and
 binary hashes are kept in [performance-771](../../artifacts/performance-771).
+The branch was subsequently rebased over the v0.18.3 release-only commit
+`65063cea`; the measured binaries use v0.18.2 and identical optimization logic.
+The evidence includes the measured Rust patch and SHA-256 manifests. Large
+traces are stored losslessly as `.gz`; use `gzip -dc` to read them.
 
 ```bash
 cargo build --locked -p kmp-mcp
@@ -125,6 +190,9 @@ cc -shared -fPIC -O2 -Wall -Wextra -Werror \
 python3 scripts/performance/lexical_index_allocations.py \
   /absolute/baseline-kmp-mcp target/debug/kmp-mcp tmp/performance-771-counter.so \
   artifacts/performance-771/allocation-reproduction tmp/performance-771-allocations
+python3 scripts/performance/lexical_index_writes.py \
+  /absolute/baseline-kmp-mcp target/debug/kmp-mcp \
+  artifacts/performance-771/write-reproduction tmp/performance-771-writes
 bash scripts/ci/quality-gate.sh
 ```
 

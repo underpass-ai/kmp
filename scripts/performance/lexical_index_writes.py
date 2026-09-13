@@ -28,11 +28,12 @@ def main():
     before, after, out, scratch = [Path(p).resolve() for p in sys.argv[1:]]
     out.mkdir(parents=True, exist_ok=False)
     scratch.mkdir(parents=True, exist_ok=False)
-    seed, refs = fixture(32, 1024)
+    seed, _ = fixture(32, 1024)
     for entry in seed['memory']['entries']:
         for coordinate in entry['coordinates']:
             coordinate.pop('valid_until', None)
     rows = []
+    expected = []
     try:
         with (out / 'seed.jsonl').open('w') as trace:
             client = Client(before, scratch / 'seed', trace)
@@ -60,6 +61,10 @@ def main():
                         first, first_sample = client.call('kmp_ask', query)
                         warm, warm_sample = client.call('kmp_ask', query)
                         assert first == warm, (side, n, 'warm response differs after mutation')
+                        if round_index == 0:
+                            expected.append(first)
+                        else:
+                            assert first == expected[n], (side, n, 'complete result differs from baseline after mutation')
                         assert marker in json.dumps(first), (side, n, 'new source text missing')
                         assert kernel_state(store) == committed, (side, n, 'Ask changed the kernel store')
                         observations.append({'write': write_sample, 'first_read': first_sample, 'warm_read': warm_sample, 'kernel_state': committed})
@@ -70,7 +75,7 @@ def main():
             rows.append(row)
             dump(out / 'results.json', rows)
             print(json.dumps({k:v for k,v in row.items() if k != 'samples'}), flush=True)
-        dump(out / 'environment.json', {'baseline_sha256': sha(before), 'candidate_sha256': sha(after), 'runner_sha256': sha(Path(__file__)), 'concurrency': 1, 'scope': '24 writes and 48 post-write reads per side; SQL dump hashing excluded from call times', 'correctness': 'each fresh/warm result pair exactly equal; all kernel tables unchanged by reads; each replacement marker visible', 'timing': 'dev synthetic control, no latency thresholds; startup excluded'})
+        dump(out / 'environment.json', {'baseline_sha256': sha(before), 'candidate_sha256': sha(after), 'runner_sha256': sha(Path(__file__)), 'concurrency': 1, 'scope': '24 writes and 48 post-write reads per side; SQL dump hashing excluded from call times', 'correctness': 'all fresh/warm results exactly equal across both binaries; all kernel tables unchanged by reads; each replacement marker visible', 'timing': 'dev synthetic control, no latency thresholds; startup excluded'})
     finally:
         shutil.rmtree(scratch)
 

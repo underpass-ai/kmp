@@ -1,0 +1,40 @@
+[
+  {
+    "fixture": "small",
+    "entries": 8,
+    "body_bytes": 256,
+    "vocabulary_per_entry": 4,
+    "first_query_ms": {
+      "before": [
+        368.809777,
+        380.481091
+      ],
+      "after": [
+        371.495193,
+        365.283978
+      ]
+    },
+    "before": {
+      "samples": 40,
+      "p50_ms": 135.6978875,
+      "p95_ms": 139.422838,
+      "cpu_ms": 5370.0,
+      "peak_rss_kib": 60508,
+      "response_bytes": [
+        1868,
+        1869
+      ]
+    },
+    "after": {
+      "samples": 40,
+      "p50_ms": 133.550813,
+      "p95_ms": 136.194046,
+      "cpu_ms": 5270.0,
+      "peak_rss_kib": 60444,
+      "response_bytes": [
+        1868,
+        1869
+      ]
+    }
+  }
+]

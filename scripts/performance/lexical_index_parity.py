@@ -29,8 +29,9 @@ def main():
             for question in ['quantity 17 excludes B', 'unrelated zeppelin silver', 'cantidad excluye']:
                 cases.append({**base, 'question': question, 'answer_policy': policy})
         for axis in ['occurred', 'observed', 'ingested', 'validity', 'default']:
-            cases.append({**base, 'axis': axis, 'as_of': {'time': '2026-09-10T10:00:14Z'}})
-            cases.append({**base, 'axis': axis, 'interval': {'start': '2026-09-10T10:00:01Z', 'end': '2026-09-10T10:00:25Z'}})
+            clock = {} if axis == 'default' else {'axis': axis}
+            cases.append({**base, **clock, 'as_of': {'time': '2026-09-10T10:00:14Z'}})
+            cases.append({**base, **clock, 'interval': {'start': '2026-09-10T10:00:01Z', 'end': '2026-09-10T10:00:25Z'}})
         for dimensions in [{'mode': 'only', 'include': ['task']}, {'mode': 'except', 'exclude': ['topic']},
             {'selectors': [{'key': 'topic', 'op': 'in', 'values': ['shared']}]},
             {'selectors': [{'key': 'topic', 'op': 'notexists'}]},

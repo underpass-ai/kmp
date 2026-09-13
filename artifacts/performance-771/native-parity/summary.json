@@ -1,0 +1,327 @@
+{
+  "exact_complete_results": 64,
+  "continuation_pages_per_side": 9,
+  "queries": [
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "evidence_or_unknown"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "unrelated zeppelin silver",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "evidence_or_unknown"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "cantidad excluye",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "evidence_or_unknown"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "best_effort"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "unrelated zeppelin silver",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "best_effort"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "cantidad excluye",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "best_effort"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "show_conflicts"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "unrelated zeppelin silver",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "show_conflicts"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "cantidad excluye",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "answer_policy": "show_conflicts"
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "axis": "occurred",
+      "as_of": {
+        "time": "2026-09-10T10:00:14Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "axis": "occurred",
+      "interval": {
+        "start": "2026-09-10T10:00:01Z",
+        "end": "2026-09-10T10:00:25Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "axis": "observed",
+      "as_of": {
+        "time": "2026-09-10T10:00:14Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "axis": "observed",
+      "interval": {
+        "start": "2026-09-10T10:00:01Z",
+        "end": "2026-09-10T10:00:25Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "axis": "ingested",
+      "as_of": {
+        "time": "2026-09-10T10:00:14Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "axis": "ingested",
+      "interval": {
+        "start": "2026-09-10T10:00:01Z",
+        "end": "2026-09-10T10:00:25Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "axis": "validity",
+      "as_of": {
+        "time": "2026-09-10T10:00:14Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "axis": "validity",
+      "interval": {
+        "start": "2026-09-10T10:00:01Z",
+        "end": "2026-09-10T10:00:25Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "as_of": {
+        "time": "2026-09-10T10:00:14Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "interval": {
+        "start": "2026-09-10T10:00:01Z",
+        "end": "2026-09-10T10:00:25Z"
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "dimensions": {
+        "mode": "only",
+        "include": [
+          "task"
+        ]
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "dimensions": {
+        "mode": "except",
+        "exclude": [
+          "topic"
+        ]
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "dimensions": {
+        "selectors": [
+          {
+            "key": "topic",
+            "op": "in",
+            "values": [
+              "shared"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "dimensions": {
+        "selectors": [
+          {
+            "key": "topic",
+            "op": "notexists"
+          }
+        ]
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "project:other-lexical",
+          "project:temporal-perf"
+        ]
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 2000000,
+        "detail": "full"
+      },
+      "dimensions": {
+        "scope": "all_abouts",
+        "selectors": [
+          {
+            "key": "task",
+            "op": "exists"
+          }
+        ]
+      }
+    },
+    {
+      "about": "project:temporal-perf",
+      "question": "quantity 17 excludes B",
+      "budget": {
+        "max_bytes": 24000,
+        "detail": "full",
+        "max_entries": 3
+      }
+    }
+  ],
+  "baseline_sha256": "8879894d444fcffabcb39b4886c37be19d26815e7bd642c5de06b42f78b5a171",
+  "candidate_sha256": "4bacdeedbbb08f258cc0d72078fa12c55d7c86009a84c1bac12db9649ef0171d",
+  "runner_sha256": "b692ff0d803c00943c180a33dcdc96a429475fd9ad8d821efac01351d08983ff",
+  "timing": "correctness only, do not interpret timings",
+  "normalized_fields": []
+}

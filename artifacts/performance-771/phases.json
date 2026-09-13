@@ -1,0 +1,602 @@
+[
+  {
+    "candidate_count": 8,
+    "entries": 8,
+    "extra_vocabulary_per_entry": 4,
+    "first_build_us": 105,
+    "preparation_us": 2896,
+    "retained_allowance_bytes": 33374,
+    "samples_us": [
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 4385,
+        "fresh_rank": 4416,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 48,
+        "cached_rank": 5536,
+        "fresh_rank": 5555,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 4375,
+        "fresh_rank": 4448,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 46,
+        "cached_rank": 5573,
+        "fresh_rank": 5562,
+        "hit": 19
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 4421,
+        "fresh_rank": 4404,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 5542,
+        "fresh_rank": 5568,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 44,
+        "cached_rank": 4379,
+        "fresh_rank": 4410,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 46,
+        "cached_rank": 5717,
+        "fresh_rank": 5599,
+        "hit": 19
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 4429,
+        "fresh_rank": 4405,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 5587,
+        "fresh_rank": 5620,
+        "hit": 19
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 4375,
+        "fresh_rank": 4429,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 5559,
+        "fresh_rank": 5555,
+        "hit": 19
+      },
+      {
+        "association": 0,
+        "bm25": 44,
+        "cached_rank": 4384,
+        "fresh_rank": 4447,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 5554,
+        "fresh_rank": 5567,
+        "hit": 19
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 4403,
+        "fresh_rank": 4407,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 5549,
+        "fresh_rank": 5581,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 4378,
+        "fresh_rank": 4410,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 5568,
+        "fresh_rank": 5552,
+        "hit": 19
+      },
+      {
+        "association": 0,
+        "bm25": 44,
+        "cached_rank": 4436,
+        "fresh_rank": 4414,
+        "hit": 20
+      },
+      {
+        "association": 0,
+        "bm25": 45,
+        "cached_rank": 5624,
+        "fresh_rank": 5635,
+        "hit": 19
+      }
+    ]
+  },
+  {
+    "candidate_count": 64,
+    "entries": 64,
+    "extra_vocabulary_per_entry": 16,
+    "first_build_us": 10989,
+    "preparation_us": 39840,
+    "retained_allowance_bytes": 452254,
+    "samples_us": [
+      {
+        "association": 9487,
+        "bm25": 749,
+        "cached_rank": 72242,
+        "fresh_rank": 82176,
+        "hit": 370
+      },
+      {
+        "association": 9543,
+        "bm25": 751,
+        "cached_rank": 89456,
+        "fresh_rank": 99188,
+        "hit": 308
+      },
+      {
+        "association": 9514,
+        "bm25": 764,
+        "cached_rank": 72039,
+        "fresh_rank": 82562,
+        "hit": 337
+      },
+      {
+        "association": 9505,
+        "bm25": 759,
+        "cached_rank": 89723,
+        "fresh_rank": 99171,
+        "hit": 311
+      },
+      {
+        "association": 9523,
+        "bm25": 770,
+        "cached_rank": 72241,
+        "fresh_rank": 82203,
+        "hit": 387
+      },
+      {
+        "association": 9522,
+        "bm25": 757,
+        "cached_rank": 88947,
+        "fresh_rank": 98977,
+        "hit": 306
+      },
+      {
+        "association": 9495,
+        "bm25": 749,
+        "cached_rank": 72084,
+        "fresh_rank": 82118,
+        "hit": 317
+      },
+      {
+        "association": 9533,
+        "bm25": 762,
+        "cached_rank": 89180,
+        "fresh_rank": 99381,
+        "hit": 311
+      },
+      {
+        "association": 9526,
+        "bm25": 754,
+        "cached_rank": 72109,
+        "fresh_rank": 82198,
+        "hit": 315
+      },
+      {
+        "association": 9514,
+        "bm25": 752,
+        "cached_rank": 89174,
+        "fresh_rank": 99755,
+        "hit": 309
+      },
+      {
+        "association": 9482,
+        "bm25": 753,
+        "cached_rank": 72300,
+        "fresh_rank": 82694,
+        "hit": 325
+      },
+      {
+        "association": 9499,
+        "bm25": 755,
+        "cached_rank": 89247,
+        "fresh_rank": 99229,
+        "hit": 307
+      },
+      {
+        "association": 9502,
+        "bm25": 746,
+        "cached_rank": 72114,
+        "fresh_rank": 82184,
+        "hit": 316
+      },
+      {
+        "association": 9500,
+        "bm25": 748,
+        "cached_rank": 89200,
+        "fresh_rank": 99545,
+        "hit": 306
+      },
+      {
+        "association": 9474,
+        "bm25": 750,
+        "cached_rank": 72076,
+        "fresh_rank": 82309,
+        "hit": 330
+      },
+      {
+        "association": 9520,
+        "bm25": 750,
+        "cached_rank": 89651,
+        "fresh_rank": 99490,
+        "hit": 306
+      },
+      {
+        "association": 9561,
+        "bm25": 749,
+        "cached_rank": 71988,
+        "fresh_rank": 82193,
+        "hit": 308
+      },
+      {
+        "association": 9480,
+        "bm25": 755,
+        "cached_rank": 89084,
+        "fresh_rank": 99046,
+        "hit": 306
+      },
+      {
+        "association": 9576,
+        "bm25": 753,
+        "cached_rank": 72076,
+        "fresh_rank": 82512,
+        "hit": 328
+      },
+      {
+        "association": 9529,
+        "bm25": 755,
+        "cached_rank": 89380,
+        "fresh_rank": 99692,
+        "hit": 309
+      }
+    ]
+  },
+  {
+    "candidate_count": 256,
+    "entries": 256,
+    "extra_vocabulary_per_entry": 64,
+    "first_build_us": 374338,
+    "preparation_us": 473946,
+    "retained_allowance_bytes": 5234774,
+    "samples_us": [
+      {
+        "association": 357136,
+        "bm25": 10254,
+        "cached_rank": 749664,
+        "fresh_rank": 1113835,
+        "hit": 3760
+      },
+      {
+        "association": 356780,
+        "bm25": 10393,
+        "cached_rank": 1046290,
+        "fresh_rank": 1408785,
+        "hit": 3667
+      },
+      {
+        "association": 358967,
+        "bm25": 10292,
+        "cached_rank": 755862,
+        "fresh_rank": 1116136,
+        "hit": 3734
+      },
+      {
+        "association": 357548,
+        "bm25": 10279,
+        "cached_rank": 1046789,
+        "fresh_rank": 1412132,
+        "hit": 3874
+      },
+      {
+        "association": 357264,
+        "bm25": 10226,
+        "cached_rank": 751365,
+        "fresh_rank": 1118065,
+        "hit": 4043
+      },
+      {
+        "association": 357471,
+        "bm25": 10437,
+        "cached_rank": 1048121,
+        "fresh_rank": 1414439,
+        "hit": 3708
+      },
+      {
+        "association": 356951,
+        "bm25": 10308,
+        "cached_rank": 756120,
+        "fresh_rank": 1115148,
+        "hit": 3751
+      },
+      {
+        "association": 356992,
+        "bm25": 10478,
+        "cached_rank": 1045216,
+        "fresh_rank": 1409935,
+        "hit": 3699
+      },
+      {
+        "association": 358598,
+        "bm25": 10343,
+        "cached_rank": 753223,
+        "fresh_rank": 1118534,
+        "hit": 3794
+      },
+      {
+        "association": 357347,
+        "bm25": 10321,
+        "cached_rank": 1049047,
+        "fresh_rank": 1413639,
+        "hit": 3945
+      },
+      {
+        "association": 358010,
+        "bm25": 10466,
+        "cached_rank": 755997,
+        "fresh_rank": 1119615,
+        "hit": 3773
+      },
+      {
+        "association": 357596,
+        "bm25": 10527,
+        "cached_rank": 1048849,
+        "fresh_rank": 1417604,
+        "hit": 3724
+      },
+      {
+        "association": 358446,
+        "bm25": 10614,
+        "cached_rank": 754120,
+        "fresh_rank": 1118909,
+        "hit": 3806
+      },
+      {
+        "association": 357759,
+        "bm25": 10377,
+        "cached_rank": 1048366,
+        "fresh_rank": 1412906,
+        "hit": 3704
+      },
+      {
+        "association": 357551,
+        "bm25": 10439,
+        "cached_rank": 753377,
+        "fresh_rank": 1120840,
+        "hit": 3791
+      },
+      {
+        "association": 357255,
+        "bm25": 10319,
+        "cached_rank": 1047555,
+        "fresh_rank": 1414294,
+        "hit": 3930
+      },
+      {
+        "association": 356916,
+        "bm25": 10283,
+        "cached_rank": 755171,
+        "fresh_rank": 1120180,
+        "hit": 4001
+      },
+      {
+        "association": 358267,
+        "bm25": 10353,
+        "cached_rank": 1048040,
+        "fresh_rank": 1415931,
+        "hit": 3998
+      },
+      {
+        "association": 359276,
+        "bm25": 10421,
+        "cached_rank": 753742,
+        "fresh_rank": 1119708,
+        "hit": 4019
+      },
+      {
+        "association": 357443,
+        "bm25": 10383,
+        "cached_rank": 1050078,
+        "fresh_rank": 1413160,
+        "hit": 3712
+      }
+    ]
+  },
+  {
+    "candidate_count": 32,
+    "entries": 32,
+    "extra_vocabulary_per_entry": 256,
+    "first_build_us": 667984,
+    "preparation_us": 222830,
+    "retained_allowance_bytes": 2458798,
+    "samples_us": [
+      {
+        "association": 662178,
+        "bm25": 5293,
+        "cached_rank": 343636,
+        "fresh_rank": 1009097,
+        "hit": 1770
+      },
+      {
+        "association": 660315,
+        "bm25": 5339,
+        "cached_rank": 468270,
+        "fresh_rank": 1131511,
+        "hit": 1777
+      },
+      {
+        "association": 661336,
+        "bm25": 5236,
+        "cached_rank": 344183,
+        "fresh_rank": 1008537,
+        "hit": 1741
+      },
+      {
+        "association": 658368,
+        "bm25": 5322,
+        "cached_rank": 468824,
+        "fresh_rank": 1137146,
+        "hit": 1689
+      },
+      {
+        "association": 659194,
+        "bm25": 5237,
+        "cached_rank": 343717,
+        "fresh_rank": 1007212,
+        "hit": 1766
+      },
+      {
+        "association": 661216,
+        "bm25": 5386,
+        "cached_rank": 467133,
+        "fresh_rank": 1132851,
+        "hit": 1709
+      },
+      {
+        "association": 660519,
+        "bm25": 5239,
+        "cached_rank": 343288,
+        "fresh_rank": 1008410,
+        "hit": 1755
+      },
+      {
+        "association": 659488,
+        "bm25": 5320,
+        "cached_rank": 468406,
+        "fresh_rank": 1133839,
+        "hit": 1695
+      },
+      {
+        "association": 664696,
+        "bm25": 5271,
+        "cached_rank": 344791,
+        "fresh_rank": 1011495,
+        "hit": 1749
+      },
+      {
+        "association": 659786,
+        "bm25": 5359,
+        "cached_rank": 468292,
+        "fresh_rank": 1132187,
+        "hit": 1786
+      },
+      {
+        "association": 660399,
+        "bm25": 5271,
+        "cached_rank": 343173,
+        "fresh_rank": 1006937,
+        "hit": 1917
+      },
+      {
+        "association": 659183,
+        "bm25": 5330,
+        "cached_rank": 468077,
+        "fresh_rank": 1132436,
+        "hit": 1803
+      },
+      {
+        "association": 661097,
+        "bm25": 5247,
+        "cached_rank": 343487,
+        "fresh_rank": 1008461,
+        "hit": 1741
+      },
+      {
+        "association": 659902,
+        "bm25": 5287,
+        "cached_rank": 468778,
+        "fresh_rank": 1133684,
+        "hit": 1699
+      },
+      {
+        "association": 660057,
+        "bm25": 5255,
+        "cached_rank": 345842,
+        "fresh_rank": 1008516,
+        "hit": 1742
+      },
+      {
+        "association": 660823,
+        "bm25": 5276,
+        "cached_rank": 469117,
+        "fresh_rank": 1133118,
+        "hit": 1706
+      },
+      {
+        "association": 662223,
+        "bm25": 5266,
+        "cached_rank": 343343,
+        "fresh_rank": 1008218,
+        "hit": 1917
+      },
+      {
+        "association": 661225,
+        "bm25": 5304,
+        "cached_rank": 469031,
+        "fresh_rank": 1134630,
+        "hit": 1690
+      },
+      {
+        "association": 660555,
+        "bm25": 5266,
+        "cached_rank": 344204,
+        "fresh_rank": 1009076,
+        "hit": 1750
+      },
+      {
+        "association": 660066,
+        "bm25": 5322,
+        "cached_rank": 468229,
+        "fresh_rank": 1131747,
+        "hit": 1702
+      }
+    ]
+  }
+]
