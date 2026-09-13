@@ -62,6 +62,42 @@ RSS includes the whole process, fixture creation, oracle reads and all LODs.
 New-process reads have uncontrolled OS caches and are not OS-cold measurements.
 There is no model generation or absolute latency gate.
 
+## Measured result, 2026-09-13
+
+The final control uses the development profile on the local aarch64 host, with
+40 warm samples per fixture/LOD/path. These are application timings, not HTTP
+latency or production guarantees. In Moment, where the full result still has
+to be cloned and serialized, the measured milliseconds are:
+
+| Fixture | Uncached p50 / p95 | Cached p50 / p95 | Changed-view miss p50, uncached / cached |
+| --- | ---: | ---: | ---: |
+| 16 entries, 2 labels, degree 1 | 7.444 / 8.873 | 0.506 / 0.818 | 7.545 / 7.214 |
+| 256 entries, 4 labels, degree 2 | 108.679 / 109.937 | 0.900 / 1.510 | 109.010 / 109.106 |
+| 2,048 entries, 8 labels, degree 8 | 1759.216 / 1765.434 | 8.153 / 8.912 | 1762.975 / 1768.678 |
+| 256 entries, 16 KiB text each | 181.058 / 183.292 | 1.311 / 1.763 | 180.505 / 182.598 |
+
+All twelve fixture/LOD comparisons reduce warm graph and body reads to zero.
+For the dense fixture, 40 repeated calls avoid 40 neighborhood reads and 82,280
+body-reference loads per LOD. The dense Moment response remains 9,785,354 JSON
+bytes. Atlas p50 changes from 1709.457 to 0.043 ms and Episode from 1724.161 to
+1.022 ms on the same fixture. Calls and response bytes do not decrease.
+
+Misses still pay the original read/project cost plus cache admission and copying;
+the medium, dense and large-body Moment miss medians above are slightly slower.
+Process peak RSS also increases: dense runs are 211,524–225,020 KiB uncached and
+268,432–272,924 KiB cached; large-body runs are 90,028–90,120 and 123,632–123,708 KiB.
+These peaks include fixture creation, all LODs, verification reads, caller copies
+and allocator retention. They must not be interpreted as cache-owned bytes or
+as a 32 MiB process-memory guarantee.
+
+Full samples, equivalence results, compiler/binary/source hashes and process
+measurements are preserved locally in `artifacts/performance-779/native-final/`.
+The earlier `native/` trial is retained but is not the source of this table:
+its extra synthetic label edges lacked dimension nodes. The final fixture writes
+real dimensions and coordinates and asserts their counts before timing.
+The checked-in runner reproduces the final experiment; source hashes identify
+the measured implementation independently of the worktree's commit at capture.
+
 ## Correctness coverage
 
 Native tests compare full cached/uncached results for five clocks, three LODs,
