@@ -129,7 +129,7 @@ async fn client(kind: &str, path: &Path, id: &str, n: usize, barrier: &Path) -> 
             let start = Instant::now();
             let stats = store.event_log_stats().await.expect("native reader");
             reads.push(start.elapsed().as_secs_f64() * 1000.0);
-            assert!(stats.0 >= SEED as u64 + i as u64 + 1);
+            assert!(stats.0 > SEED as u64 + i as u64);
             wal.push(wal_bytes(kind, path));
             std::thread::sleep(Duration::from_millis(1));
         }
