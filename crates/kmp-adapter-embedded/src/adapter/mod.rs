@@ -1,9 +1,11 @@
 mod bounded_adjacency;
 mod context_events;
 mod detail_header;
+mod dimension_lookup_header;
 mod engine;
 mod format_version;
 mod graph_read;
+mod memory_about_index;
 mod migration;
 mod node_body_descriptor;
 mod node_card;

@@ -710,6 +710,13 @@ impl SqliteRead<'_> {
 }
 
 impl ReadTx for SqliteRead<'_> {
+    fn scan_linked_json(
+        &self,
+        request: &super::LinkedJsonScan<'_>,
+    ) -> Result<Vec<super::LinkedJsonRow>, PortError> {
+        super::sqlite_linked_json::scan(&self.connection, request)
+    }
+
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         self.ops().get(table, key)
     }
@@ -768,6 +775,13 @@ impl SqliteWrite<'_> {
 }
 
 impl ReadTx for SqliteWrite<'_> {
+    fn scan_linked_json(
+        &self,
+        request: &super::LinkedJsonScan<'_>,
+    ) -> Result<Vec<super::LinkedJsonRow>, PortError> {
+        super::sqlite_linked_json::scan(&self.connection, request)
+    }
+
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         self.ops().get(table, key)
     }
@@ -1013,3 +1027,7 @@ mod value_len_tests;
 #[cfg(test)]
 #[path = "sqlite_json_projection_tests.rs"]
 mod json_projection_tests;
+
+#[cfg(test)]
+#[path = "sqlite_linked_json_tests.rs"]
+mod linked_json_tests;

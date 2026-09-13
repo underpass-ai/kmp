@@ -1,13 +1,11 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use kmp_domain::{
-    ContextPathNeighborhood, GraphNeighborhoodReader, MemoryAboutIndexReader, NeighborhoodRequest,
-    NodeNeighborhood, NodeProjection, NodeRelationProjection, NodeRelationshipReader,
-    NodeRelationships, PortError,
+    ContextPathNeighborhood, GraphNeighborhoodReader, NeighborhoodRequest, NodeNeighborhood,
+    NodeProjection, NodeRelationProjection, NodeRelationshipReader, NodeRelationships, PortError,
 };
 
 use super::engine::{Key, ReadTx, Table};
-use super::projection_write::MEMORY_ANCHOR_KIND;
 use super::serdes::{NodeRecord, decode, decode_explanation};
 use super::store::EmbeddedKernelStore;
 #[path = "node_admission_header.rs"]
@@ -371,67 +369,6 @@ impl NodeRelationshipReader for EmbeddedKernelStore {
                 incoming,
                 outgoing: outgoing_rows(tx, &node_id)?,
             }))
-        })
-        .await
-    }
-}
-
-impl MemoryAboutIndexReader for EmbeddedKernelStore {
-    async fn list_memory_abouts(&self) -> Result<Vec<String>, PortError> {
-        self.run(|store| {
-            let tx = store.begin_read()?;
-            Ok(tx
-                .scan_str(Table::Anchors)?
-                .into_iter()
-                .map(|(anchor, _)| anchor)
-                .collect())
-        })
-        .await
-    }
-
-    async fn list_memory_abouts_by_dimensions(
-        &self,
-        dimension_ids: &[String],
-    ) -> Result<Vec<String>, PortError> {
-        let dimension_ids = dimension_ids.to_vec();
-        self.run(move |store| {
-            let tx = store.begin_read()?;
-            let tx = tx.as_ref();
-
-            let mut abouts = BTreeSet::new();
-            for (anchor, _) in tx.scan_str(Table::Anchors)? {
-                let is_anchor = load_node(tx, &anchor)?
-                    .is_some_and(|node| node.node_kind == MEMORY_ANCHOR_KIND);
-                if !is_anchor {
-                    continue;
-                }
-                for relation in outgoing_rows(tx, &anchor)? {
-                    if relation.relation_type != "has_dimension" {
-                        continue;
-                    }
-                    let matches =
-                        load_node(tx, &relation.target_node_id)?.is_some_and(|dimension| {
-                            dimension.node_kind == "memory_dimension"
-                                && dimension_ids.iter().any(|dimension_id| {
-                                    dimension.node_id == *dimension_id
-                                        || kmp_domain::MemoryDimensionIdentity::parse(&dimension.node_id)
-                                            .is_some_and(|identity| identity.dimension_id() == dimension_id)
-                                        // A selection names dimensions by kind
-                                        // (`incident`) as readily as by id
-                                        // (`incident:north-outage`); the filter
-                                        // that follows reads kinds, so the
-                                        // index that picks the abouts must too.
-                                        || dimension.properties.get("dimension_kind")
-                                            == Some(dimension_id)
-                                })
-                        });
-                    if matches {
-                        abouts.insert(anchor.clone());
-                        break;
-                    }
-                }
-            }
-            Ok(abouts.into_iter().collect())
         })
         .await
     }
