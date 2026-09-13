@@ -1,13 +1,18 @@
 use super::release_version::ReleaseVersion;
 
-/// What a convergence did to the cached releases beside the one it installed.
+/// What a process start did to the cached releases beside the installed one.
 ///
 /// A host's plugin cache only ever grew: twenty version directories and 69M
 /// on a machine that had been updated twenty times, with nothing shipped that
-/// removed or even mentioned them (#451). A proved convergence is the moment
-/// that can be fixed — the new release is installed, its tools answered, and
-/// every host points at it — so what came before is dead weight, except the
-/// one release immediately before it, which is the rollback.
+/// removed or even mentioned them (#451). A proved convergence decides what
+/// is dead weight — the new release is installed, its tools answered, and
+/// every host points at it, so everything older goes except the one release
+/// immediately before it, which is the rollback.
+///
+/// It is not the moment to act on that. A session open while the update runs
+/// still reads its skills out of the directory it started in, so the removal
+/// waits for the next start (#521): what is superseded is unchanged, only
+/// when it goes.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CachePruning {
     removed: Vec<ReleaseVersion>,

@@ -1,6 +1,7 @@
 pub mod bridge_choice;
 pub mod bridge_install_dir;
 pub mod bridge_installation;
+pub mod cache_deferral;
 pub mod cache_pruning;
 pub mod convergence_status;
 pub mod diagnosis_verdict;
@@ -28,6 +29,7 @@ pub mod memory_record;
 pub mod piece;
 pub mod piece_hold;
 pub mod piece_kind;
+pub mod plugin_cache_roots;
 pub mod plugin_engine_candidate;
 pub mod plugin_engine_resolution;
 pub mod plugin_engine_role;

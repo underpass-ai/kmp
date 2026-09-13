@@ -4,7 +4,8 @@ use serde::Serialize;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct LifecycleCacheDto {
     pub host: String,
-    pub removed: Vec<String>,
-    /// Superseded, but this machine would not let go of it.
-    pub kept: Vec<String>,
+    /// Superseded and still on disk. A session that was already open keeps
+    /// reading its skills from one of these until it restarts; the next
+    /// process start removes them.
+    pub deferred: Vec<String>,
 }

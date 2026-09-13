@@ -3,10 +3,16 @@ use crate::lifecycle::domain::plugin_root::PluginRoot;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
 use crate::lifecycle::ports::plugin_cache::PluginCache;
 
-/// Use case: remove the cached releases a proved convergence superseded.
+/// Use case: remove the cached releases a convergence superseded, at a
+/// process start rather than during the convergence itself.
 ///
-/// Housekeeping never decides whether the convergence succeeded, so nothing
-/// here can fail the update. A release this machine will not let go of is
+/// An update no longer calls this. It names what it superseded and leaves it
+/// on disk, because a session that is open right now captured its skill
+/// paths inside one of those directories (#521); `PruneDeferredCaches` runs
+/// this at the next start instead, when nothing can still be reading them.
+///
+/// Housekeeping never decides whether anything succeeded, so nothing here
+/// can fail its caller. A release this machine will not let go of is
 /// reported as kept rather than raised: on Windows a running engine holds its
 /// own file, and the honest answer is to say which one stayed.
 pub struct PrunePluginCache<'a> {
@@ -62,7 +68,7 @@ mod tests {
     }
 
     #[test]
-    fn a_proved_convergence_leaves_the_installed_release_and_one_rollback() {
+    fn a_start_leaves_the_installed_release_and_one_rollback() {
         // The cache of #451: twenty version directories, 69M, and nothing
         // shipped that removed or even mentioned them.
         let base = tempfile::tempdir().expect("temp");

@@ -17,6 +17,9 @@ use fake_engine_store::FakeEngineStore;
 use fake_host_gateway::FakeHostGateway;
 use fake_plugin_cache::FakePluginCache;
 use fake_release_repository::FakeReleaseRepository;
+use kmp_mcp::lifecycle::FilesystemPluginCache;
+use kmp_mcp::lifecycle::PluginCacheRoots;
+use kmp_mcp::lifecycle::PruneDeferredCaches;
 use kmp_mcp::lifecycle::SetupKmp;
 use kmp_mcp::lifecycle::UpdateKmp;
 use kmp_mcp::lifecycle::domain::bridge_choice::BridgeChoice;
@@ -354,9 +357,11 @@ fn setup_refreshes_a_disabled_plugin_even_when_its_version_matches() {
 }
 
 #[test]
-fn a_proved_convergence_prunes_superseded_cache_versions_and_says_which() {
+fn a_proved_convergence_names_superseded_cache_versions_and_removes_none_of_them() {
     // Twenty releases in, the cache held twenty version directories and 69M,
-    // because update only ever added (#451).
+    // because update only ever added (#451). Removing them the moment the new
+    // release is proved is the opposite mistake: a session open right now is
+    // still reading its skills out of one of those directories (#521).
     let hosts = FakeHostGateway::with_installations(vec![
         installation(Host::Claude, "0.6.0", "/tmp/claude"),
         installation(Host::Codex, "0.6.0", "/tmp/codex"),
@@ -380,18 +385,25 @@ fn a_proved_convergence_prunes_superseded_cache_versions_and_says_which() {
     ))
     .expect("converged update");
 
-    // 0.6.1 is installed and 0.6.0 is the rollback; the rest is dead weight.
-    assert_eq!(cache.removed(), ["0.5.2", "0.5.0", "0.4.2"]);
     assert!(
-        !receipt.pruned_caches().is_empty(),
-        "a convergence that removed three releases has to say so"
+        cache.removed().is_empty(),
+        "an update deletes no cached release: {:?}",
+        cache.removed()
     );
-    assert!(
-        receipt
-            .pruned_caches()
-            .iter()
-            .all(|(_, pruning)| pruning.kept().is_empty())
-    );
+    // 0.6.1 is installed and 0.6.0 is the rollback; the rest is dead weight,
+    // named here and collected by the next start.
+    for (host, deferral) in receipt.deferred_caches() {
+        assert_eq!(
+            deferral
+                .deferred()
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+            ["0.5.2", "0.5.0", "0.4.2"],
+            "{host}"
+        );
+    }
+    assert_eq!(receipt.deferred_caches().len(), 2);
 }
 
 #[test]
@@ -424,7 +436,117 @@ fn a_dry_run_removes_nothing_from_any_cache() {
 
     assert!(receipt.is_dry_run());
     assert!(cache.removed().is_empty(), "a plan removes nothing");
-    assert!(receipt.pruned_caches().is_empty());
+    assert!(receipt.deferred_caches().is_empty());
+}
+
+// ---------------------------------------------------------------------------
+// A live session and the cache under it (#521). A Codex session captures its
+// skill catalog once, at the start, and every path it captured points inside
+// the version directory it started from. These two run against a real cache
+// tree, because the whole question is whether a file is still there.
+// ---------------------------------------------------------------------------
+
+/// A host plugin cache holding each release, with the skill a session
+/// dispatches by path.
+fn cache_holding(base: &Path, releases: &[&str]) -> PathBuf {
+    let versions = base.join("codex/plugins/cache/underpass/kmp");
+    for release in releases {
+        let skill = versions.join(release).join("skills/kmp-doctor");
+        std::fs::create_dir_all(&skill).expect("skill directory");
+        std::fs::write(skill.join("SKILL.md"), b"# kmp-doctor\n").expect("skill");
+    }
+    versions
+}
+
+fn update_to(versions: &Path, installed: &str, target: &ReleaseVersion) {
+    let hosts = FakeHostGateway::with_installations(vec![HostInstallation::discovered(
+        Host::Codex,
+        version(installed),
+        PluginRoot::new(versions.join(installed)).expect("plugin root"),
+        true,
+    )]);
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    UpdateKmp::new(
+        &hosts,
+        &releases,
+        &FakeEngineStore::empty(),
+        &FilesystemPluginCache,
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(
+        LifecycleAction::Update,
+        BTreeSet::from([Host::Codex]),
+        Some(target.clone()),
+    ))
+    .expect("converged update");
+}
+
+#[test]
+fn a_session_started_on_an_older_release_can_still_read_its_captured_skill() {
+    // The session of #521: it started on 0.11.0 and holds that skill root.
+    // While it is open, 0.12.1 is installed. Invoking the captured skill
+    // failed with "No such file or directory" because the update had already
+    // deleted the directory the session was still pointing at.
+    let base = tempfile::tempdir().expect("temp");
+    let versions = cache_holding(base.path(), &["0.11.0", "0.12.0", "0.12.1"]);
+    let captured = versions.join("0.11.0/skills/kmp-doctor/SKILL.md");
+    assert!(
+        captured.is_file(),
+        "the session's catalog before the update"
+    );
+
+    update_to(&versions, "0.11.0", &version("0.12.1"));
+
+    assert!(
+        std::fs::read_to_string(&captured).is_ok(),
+        "a live session must still dispatch the skill it captured: {}",
+        captured.display()
+    );
+}
+
+#[test]
+fn the_next_start_collects_the_release_the_update_left_behind() {
+    // The other half of the deferral: without this the cache only grows, and
+    // #451 comes back as twenty directories nobody removes.
+    let base = tempfile::tempdir().expect("temp");
+    let versions = cache_holding(base.path(), &["0.11.0", "0.12.0", "0.12.1"]);
+    let target = version("0.12.1");
+    update_to(&versions, "0.11.0", &target);
+
+    let collected = PruneDeferredCaches::new(&FilesystemPluginCache).execute(
+        &PluginCacheRoots {
+            home: base.path().join("home"),
+            codex_home: base.path().join("codex"),
+        },
+        &target,
+    );
+
+    assert_eq!(
+        collected
+            .iter()
+            .map(|(host, pruning)| (
+                host.to_string(),
+                pruning
+                    .removed()
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+            ))
+            .collect::<Vec<_>>(),
+        vec![("codex".to_string(), vec!["0.11.0".to_string()])]
+    );
+    assert!(
+        !versions.join("0.11.0").exists(),
+        "superseded, and now gone"
+    );
+    assert!(
+        versions.join("0.12.0/skills/kmp-doctor/SKILL.md").is_file(),
+        "the rollback stays"
+    );
+    assert!(
+        versions.join("0.12.1/skills/kmp-doctor/SKILL.md").is_file(),
+        "the installed release stays"
+    );
 }
 
 // ---------------------------------------------------------------------------

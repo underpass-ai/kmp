@@ -13,6 +13,7 @@ use tracing_subscriber::{EnvFilter, Layer};
 /// on stderr — stdout is the protocol — and answer line by line until EOF.
 pub(crate) async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let _log_guard = init_tracing();
+    collect_deferred_plugin_cache_releases();
 
     let configured = server_from_env().await.and_then(|server| {
         server
@@ -107,6 +108,46 @@ pub(crate) async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+/// The cached plugin releases an earlier update superseded and left behind.
+///
+/// An update cannot remove them: a session that is already open dispatches
+/// its skills out of the version directory it started in, and deleting that
+/// directory breaks the session until its host restarts (#521). A start is
+/// the moment that removal is safe, and doing it here is what keeps the
+/// deferral from becoming a cache that only grows.
+///
+/// Never a gate. Nothing about a plugin cache decides whether this process
+/// can serve memory, so a cache that will not tidy up is logged and left.
+fn collect_deferred_plugin_cache_releases() {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let codex_home = std::env::var_os("CODEX_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| home.join(".codex"));
+    let roots = kmp_mcp::lifecycle::PluginCacheRoots { home, codex_home };
+    let collected =
+        kmp_mcp::lifecycle::PruneDeferredCaches::new(&kmp_mcp::lifecycle::FilesystemPluginCache)
+            .execute(&roots, &kmp_mcp::lifecycle::ReleaseVersion::current());
+    for (host, pruning) in collected {
+        tracing::info!(
+            host = %host,
+            removed = %joined(pruning.removed()),
+            kept = %joined(pruning.kept()),
+            "collected plugin cache releases an earlier update deferred"
+        );
+    }
+}
+
+fn joined(releases: &[kmp_mcp::lifecycle::ReleaseVersion]) -> String {
+    releases
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// Why a start failed, and whether choosing a backend would fix it.

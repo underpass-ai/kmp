@@ -1,7 +1,7 @@
+use crate::lifecycle::application::use_cases::defer_plugin_cache_pruning::DeferPluginCachePruning;
 use crate::lifecycle::application::use_cases::install_lexical_bridge::InstallLexicalBridge;
-use crate::lifecycle::application::use_cases::prune_plugin_cache::PrunePluginCache;
 use crate::lifecycle::domain::bridge_installation::BridgeInstallation;
-use crate::lifecycle::domain::cache_pruning::CachePruning;
+use crate::lifecycle::domain::cache_deferral::CacheDeferral;
 use crate::lifecycle::domain::engine_install_dir::EngineInstallDir;
 use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::host_convergence::HostConvergence;
@@ -117,8 +117,11 @@ impl<'a> ConvergeLifecycle<'a> {
         let plugin_tree = self.require_equal_plugin_trees(&converged)?;
         // Only now: the release is installed, its tools answered, every host
         // points at it, and both trees agree. Before that moment a superseded
-        // version is still a rollback (#451).
-        let pruning = self.prune_superseded(&converged, plan.target());
+        // version is still a rollback (#451). It is still not the moment to
+        // delete one — a session opened before this update is reading its
+        // skills out of exactly that directory (#521) — so the convergence
+        // says what it superseded and the next process start collects it.
+        let deferred = self.defer_superseded(&converged, plan.target());
 
         // PATH is the final mutation only when a converged host actually
         // consumes it. If a prior gate failed, the previous shared engine is
@@ -145,7 +148,7 @@ impl<'a> ConvergeLifecycle<'a> {
             host_results,
             proofs,
             plugin_tree,
-            pruning,
+            deferred,
             lexical_bridge,
         ))
     }
@@ -169,19 +172,21 @@ impl<'a> ConvergeLifecycle<'a> {
         )
     }
 
-    /// Housekeeping, never a gate: a cache that will not tidy up does not
-    /// undo a convergence that is already proved.
-    fn prune_superseded(
+    /// Housekeeping, never a gate, and never immediate: a cache that will not
+    /// tidy up does not undo a convergence that is already proved, and a
+    /// convergence that removed a live session's skill root would not be
+    /// tidying up at all (#521).
+    fn defer_superseded(
         &self,
         converged: &[HostInstallation],
         target: &ReleaseVersion,
-    ) -> Vec<(Host, CachePruning)> {
-        let prune = PrunePluginCache::new(self.caches);
+    ) -> Vec<(Host, CacheDeferral)> {
+        let defer = DeferPluginCachePruning::new(self.caches);
         converged
             .iter()
             .filter_map(|installation| {
-                let pruning = prune.execute(installation.root(), target);
-                (!pruning.is_empty()).then(|| (installation.host(), pruning))
+                let deferral = defer.execute(installation.root(), target);
+                (!deferral.is_empty()).then(|| (installation.host(), deferral))
             })
             .collect()
     }

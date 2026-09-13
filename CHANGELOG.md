@@ -9,6 +9,15 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- An update no longer removes the plugin-cache versions it supersedes. A
+  session that was already open dispatches its skills out of the version
+  directory it started in, so deleting that directory left it invoking skills
+  at paths that no longer existed until its host restarted. The update names
+  what it superseded under `plugin_caches` as `deferred`, and the next engine
+  start removes it. The cache holds an extra version or two in between.
+
 ## [0.18.0] - 2026-09-12
 
 ### Added
