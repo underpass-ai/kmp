@@ -9,6 +9,24 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- ChronoLoom now exposes batched memory-node reads and retains certified visual
+  projections across compatible interactions, reducing repeated graph and scene
+  work while preserving snapshot and revision boundaries.
+
+### Changed
+
+- ChronoLoom framing, scene retention and projection caching now share explicit
+  revision-aware contracts, with benchmark controls and performance notes for
+  the viewer path.
+
+### Fixed
+
+- Viewer interactions no longer rebuild compatible visual projections or
+  discard retained scenes unnecessarily, while embedded and gRPC memory-node
+  reads remain parity-tested.
+
 ## [0.18.1] - 2026-09-13
 
 ### Added
