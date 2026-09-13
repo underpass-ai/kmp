@@ -1,0 +1,81 @@
+{
+  "_meta": {
+    "kmp/modelContext": "string",
+    "ui": {
+      "resourceUri": "string"
+    }
+  },
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "structuredContent": {
+    "coordinates": {
+      "question:parity:claim:boulder-current": [
+        {
+          "dimension": "string",
+          "ingested_at": "string",
+          "occurred_at": "string",
+          "scope_id": "string",
+          "sequence": "integer",
+          "valid_from": "string"
+        }
+      ],
+      "question:parity:claim:denver": [
+        {
+          "dimension": "string",
+          "ingested_at": "string",
+          "occurred_at": "string",
+          "scope_id": "string",
+          "sequence": "integer"
+        }
+      ]
+    },
+    "incomplete_coordinates": [],
+    "missing": [],
+    "nodes": [
+      {
+        "id": "string",
+        "kind": "string",
+        "labels": [
+          "string"
+        ],
+        "properties": {
+          "entry_kind": "string",
+          "memory_about": "string",
+          "memory_change_reason": "string",
+          "memory_entity_kind": "string",
+          "memory_payload_json": {
+            "coordinates": [
+              {
+                "dimension": "string",
+                "ingested_at": "string",
+                "occurred_at": "string",
+                "scope_id": "string",
+                "sequence": "integer"
+              }
+            ],
+            "id": "string",
+            "kind": "string",
+            "text": "string"
+          },
+          "memory_role": "string",
+          "memory_work_item_id": "string",
+          "payload_coordinates": "string",
+          "payload_id": "string",
+          "payload_kind": "string",
+          "payload_text": "string"
+        },
+        "status": "string",
+        "summary": "string",
+        "title": "string"
+      }
+    ],
+    "omitted": [],
+    "scanned_edges": "integer",
+    "snapshot": "string",
+    "stop_reason": "string"
+  }
+}

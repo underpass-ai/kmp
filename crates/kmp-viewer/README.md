@@ -89,6 +89,24 @@ runtime. Three.js and OrbitControls are vendored as one pinned bundle. The rende
 Memory reads use GET. Explicit POST routes mutate only the shared view aggregate,
 including human handoff and undo; the viewer cannot write memory.
 
+The `/api/nodes` read accepts 1–64 refs in `ids` and an optional `max_edges`:
+zero or absent selects 2,048 and larger values are clamped to 32,768. It returns
+node headers, a `coordinates` table, `missing`, `omitted`, `incomplete_coordinates`,
+`stop_reason` and `scanned_edges`. A batch also stops with `node_budget` after
+touching 4,096 distinct nodes, counting the requested refs and every coordinate
+scope reached through them; the refs it left unread are `omitted`.
+Duplicate refs share work and appear once, in first-requested order. Missing also
+includes refs outside the requested about, without exposing foreign metadata.
+The entire read uses one store snapshot and loads no canonical bodies or sources.
+The response includes an opaque `snapshot`. Subsequent batches send it as
+`expect_snapshot`; any intervening commit or reopened observer produces a conflict.
+ChronoLoom frames up to 4,096 refs in batches of 64 with one shared 32,768-edge
+budget and applies the new window only after every batch succeeds.
+A work cutoff is explicit; the browser refuses incomplete framing. Unsupported
+adapters return an error instead of synthesizing consistency from separate reads.
+The negotiated MCP App uses `kmp_view_read_nodes` / gRPC `ReadNodes` for the same
+operation; the tool is absent from the model-facing catalogue.
+
 See the [architecture and verification map](../../docs/architecture/chronoloom-shared-scene.md).
 
 ## License

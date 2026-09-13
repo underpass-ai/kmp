@@ -14,6 +14,7 @@ KMP_APP.sync = (() => {
   const api = (...args) => KMP_APP.api.call(...args);
 
   const VIEW_ID = "default";
+  let frameGeneration = 0;
 
   async function viewOpen() {
     try {
@@ -63,15 +64,25 @@ KMP_APP.sync = (() => {
         // Any revision that is not ours is news — including a *lower* one,
         // which means the view server restarted and began counting again.
         // Waiting only for a higher number left the browser deaf for good.
-        if (state.view_revision !== sync.revision) {
-          sync.revision = state.view_revision;
-          await applyAgentState(state);
-          KMP_APP.panels.renderProvenance(state);
-        }
+        if (state.view_revision !== sync.revision) await adoptAgentState(state);
       } catch (error) {
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
+  }
+
+  /* A revision the loom has not seen is the agent's move. It is consumed
+     whether or not the loom can obey it: an intent the store refused or the
+     budget cut short is said to the person, never dropped in silence and
+     never replayed on every poll. */
+  async function adoptAgentState(state) {
+    sync.revision = state.view_revision;
+    try {
+      await applyAgentState(state);
+    } catch (error) {
+      KMP_APP.dom.showError(`The agent's view intent could not be applied: ${error.message}`);
+    }
+    KMP_APP.panels.renderProvenance(state);
   }
 
   /* An intent is meaning, not geometry: this is where meaning becomes a
@@ -180,28 +191,72 @@ KMP_APP.sync = (() => {
     }
   }
 
+  /* Whether a failed batch means the store moved under the focus rather than
+     that the request was wrong: the loom's own mismatch, the HTTP conflict or
+     the MCP App's conflict code. */
+  const isFocusConflict = (error) =>
+    error.focusConflict === true || error.status === 409 || error.code === "conflict";
+
+  /* One pass over a focus: batches of 64 refs, every batch after the first
+     bound to the first batch's snapshot, one shared edge budget. Null when a
+     newer focus, about or clock superseded this one while it read. */
+  async function readFocus(selected, about, clock, generation) {
+    const stamps = [], missing = [];
+    let snapshot = null, remainingEdges = 32768;
+    for (let offset = 0; offset < selected.length; offset += 64) {
+      if (remainingEdges < 1) throw new Error("The focus coordinates exceed the read budget; select fewer memories.");
+      const batch = await api("/api/nodes", {
+        about, ids: selected.slice(offset, offset + 64).join(","), max_edges: remainingEdges,
+        ...(snapshot ? { expect_snapshot: snapshot } : {}),
+      });
+      if (generation !== frameGeneration || about !== model.about || clock !== view.clock) return null;
+      if (!batch.snapshot || (snapshot && snapshot !== batch.snapshot)) {
+        const conflict = new Error("The focus snapshot changed; retry the focus.");
+        conflict.focusConflict = true;
+        throw conflict;
+      }
+      snapshot = batch.snapshot;
+      if ((batch.omitted || []).length || (batch.incomplete_coordinates || []).length)
+        throw new Error("The focus coordinates exceed the read budget; select fewer memories.");
+      remainingEdges -= batch.scanned_edges || 0;
+      missing.push(...(batch.missing || []));
+      for (const node of batch.nodes || []) {
+        const entry = KMP_LOOM.entryModel({
+          ref_id: node.id, kind: node.kind, text: node.summary || node.title || "",
+          coordinates: (batch.coordinates || {})[node.id] || [],
+        });
+        const stamp = KMP_LOOM.strictMs(entry, clock);
+        if (stamp !== null) stamps.push(stamp);
+      }
+    }
+    return { stamps, missing };
+  }
+
   /* "Frame these refs" — the canonical intent. The window becomes the span
      they occupy on the current clock, with room to breathe. */
   async function frameRefs(refs) {
-    const stamps = [];
-    for (const ref of refs) {
-      let entry = model.byRef.get(ref);
-      if (!entry) {
-        const inspect = await api("/api/node", {
-          about: model.about,
-          id: ref,
-          raw: "1",
-        });
-        entry = KMP_LOOM.entryModel({
-          ref_id: inspect.node.id,
-          kind: inspect.node.kind,
-          text: inspect.node.summary || inspect.node.title || "",
-          coordinates: inspect.raw_coordinates || [],
-        });
-      }
-      const stamp = KMP_LOOM.strictMs(entry, view.clock);
-      if (stamp !== null) stamps.push(stamp);
+    // Re-read the whole focus together: cached scene entries may precede a
+    // write, and mixing their clocks with fresh per-node reads invents a state.
+    const generation = ++frameGeneration;
+    const about = model.about, clock = view.clock;
+    const selected = [...new Set(refs)];
+    if (!selected.length) return false;
+    if (selected.length > 4096) throw new Error("The focus exceeds 4096 memories; select fewer memories.");
+    let focus;
+    try {
+      focus = await readFocus(selected, about, clock, generation);
+    } catch (error) {
+      // A store that moved under a multi-batch focus is news about the store,
+      // not a fault in the request: read the focus once more from the new
+      // revision before telling anyone it could not be framed.
+      if (!isFocusConflict(error)) throw error;
+      if (generation !== frameGeneration) return false;
+      focus = await readFocus(selected, about, clock, generation);
     }
+    if (!focus) return false;
+    const { stamps, missing } = focus;
+    if (missing.length)
+      KMP_APP.dom.showError(`Some focus memories are unavailable: ${missing.join(", ")}`);
     if (!stamps.length) return false;
     const lo = Math.min(...stamps);
     const hi = Math.max(...stamps);
@@ -290,6 +345,7 @@ KMP_APP.sync = (() => {
     VIEW_ID,
     viewOpen,
     startViewPolling,
+    adoptAgentState,
     applyAgentState,
     frameRefs,
     reportView,

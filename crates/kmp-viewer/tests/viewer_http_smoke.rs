@@ -250,6 +250,38 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     assert_eq!(status, 200, "nodes failed: {batch}");
     assert_eq!(batch["nodes"].as_array().expect("batch nodes").len(), 2);
     assert_eq!(batch["missing"][0], "project:viewer-smoke:node:unknown");
+    assert_eq!(batch["stop_reason"], "complete");
+    assert!(batch["omitted"].as_array().expect("omitted").is_empty());
+    assert!(
+        batch["incomplete_coordinates"]
+            .as_array()
+            .expect("incomplete")
+            .is_empty()
+    );
+    // The batch spells a header and its coordinates exactly as the single
+    // node read does: one viewer wire format, whichever route served it.
+    assert_eq!(batch["nodes"][0], node["node"]);
+    assert_eq!(
+        batch["coordinates"]["project:viewer-smoke:decision:first"],
+        node["raw_coordinates"]
+    );
+    // A bound is a policy, not a mistake: an oversized edge budget is clamped
+    // and zero selects the default, as the gRPC contract reads it.
+    for max_edges in ["99999", "0"] {
+        let (status, bounded) = get(
+            port,
+            &format!(
+                "/api/nodes?about={}&ids={}&max_edges={max_edges}",
+                urlencode(ABOUT),
+                urlencode("project:viewer-smoke:decision:first")
+            ),
+        )
+        .await;
+        assert_eq!(status, 200, "max_edges={max_edges}: {bounded}");
+        assert_eq!(bounded["stop_reason"], "complete");
+        assert_eq!(bounded["nodes"].as_array().expect("nodes").len(), 1);
+        assert_eq!(bounded["nodes"][0], batch["nodes"][0]);
+    }
 
     let (status, timeline) = get(
         port,

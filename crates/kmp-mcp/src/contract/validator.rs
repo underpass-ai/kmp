@@ -18,6 +18,12 @@ pub(crate) fn reject_unknown_arguments(tool: &str, arguments: &Value) -> Result<
 /// Rebuilding a document that cannot change, per call, to read one field of
 /// it, is a cost with nothing on the other side of it.
 fn tool_input_schema(tool: &str) -> Option<&'static Value> {
+    if tool == "kmp_view_read_nodes" {
+        static SCHEMA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+        return Some(SCHEMA.get_or_init(|| {
+            crate::contract::tools::app_memory_nodes::definition()["inputSchema"].clone()
+        }));
+    }
     if tool == "kmp_view_read_projection" {
         static APP_VISUAL_SCHEMA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
         return Some(APP_VISUAL_SCHEMA.get_or_init(app_visual_projection::input_schema));

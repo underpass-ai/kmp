@@ -61,6 +61,19 @@ pub trait GraphNeighborhoodReader {
         }
     }
 
+    /// Bounded headers and coordinates from one consistent snapshot. An adapter
+    /// that cannot guarantee that snapshot must refuse; no split-read fallback.
+    fn load_memory_nodes(
+        &self,
+        _request: &crate::MemoryNodesRequest,
+    ) -> impl Future<Output = Result<crate::MemoryNodesResult, PortError>> + Send {
+        async {
+            Err(PortError::Unavailable(
+                "consistent memory node batches are not supported by this adapter".into(),
+            ))
+        }
+    }
+
     /// Admission-only graph catalogue. Source prose and node metadata may be
     /// absent; consumers must point-read admitted nodes before returning them.
     /// Memberships, relation explanations, entry summaries and placeholder
@@ -108,6 +121,13 @@ impl<T> GraphNeighborhoodReader for Arc<T>
 where
     T: GraphNeighborhoodReader + Send + Sync + ?Sized,
 {
+    async fn load_memory_nodes(
+        &self,
+        request: &crate::MemoryNodesRequest,
+    ) -> Result<crate::MemoryNodesResult, PortError> {
+        self.as_ref().load_memory_nodes(request).await
+    }
+
     async fn graph_read_revision(&self) -> Result<Option<crate::GraphReadRevision>, PortError> {
         self.as_ref().graph_read_revision().await
     }
@@ -171,6 +191,13 @@ impl<T> GraphNeighborhoodReader for &T
 where
     T: GraphNeighborhoodReader + Send + Sync + ?Sized,
 {
+    async fn load_memory_nodes(
+        &self,
+        request: &crate::MemoryNodesRequest,
+    ) -> Result<crate::MemoryNodesResult, PortError> {
+        (*self).load_memory_nodes(request).await
+    }
+
     async fn graph_read_revision(&self) -> Result<Option<crate::GraphReadRevision>, PortError> {
         (*self).graph_read_revision().await
     }

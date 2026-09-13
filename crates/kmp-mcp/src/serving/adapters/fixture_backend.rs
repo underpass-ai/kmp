@@ -96,6 +96,16 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
         "kmp_summaries_audit" => {
             read_fixture_tool_result(arguments, &["about"], SUMMARIES_AUDIT_RESPONSE_FIXTURE)
         }
+        "kmp_view_read_nodes" => {
+            let request =
+                super::tool_request_mapping::MemoryNodesRequestMapper::from_arguments(arguments)
+                    .map_err(ToolError::invalid_argument)?;
+            kmp_proto_mapping::v1beta1::memory_nodes_request_from_proto(request.clone())
+                .map_err(|e| ToolError::invalid_argument(e.to_string()))?;
+            Ok(app_data_success_result(
+                serde_json::json!({"snapshot":"fixture","nodes":[],"coordinates":{},"missing":request.refs,"omitted":[],"incomplete_coordinates":[],"stop_reason":"complete","scanned_edges":0}),
+            ))
+        }
         "kmp_view_read_projection" => {
             VisualProjectionRequestMapper::from_arguments(arguments)
                 .map_err(ToolError::invalid_argument)?;

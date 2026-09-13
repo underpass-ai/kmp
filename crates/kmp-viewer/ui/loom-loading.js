@@ -55,6 +55,7 @@ KMP_APP.loading = (() => {
       case "/api/observability":
         label = "Loading activity…";
         break;
+      case "/api/nodes":
       case "/api/node":
         region = "detail";
         label = "Loading evidence…";

@@ -220,6 +220,39 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
         .await
     }
 
+    async fn load_memory_nodes(
+        &self,
+        request: &kmp_domain::MemoryNodesRequest,
+    ) -> Result<kmp_domain::MemoryNodesResult, PortError> {
+        let request = request.clone();
+        self.run(move |store| {
+            let pinned = store.pin_snapshot()?;
+            let revision = pinned.read_revision().ok_or_else(|| {
+                PortError::Conflict(
+                    "store changed while pinning the node batch; retry the original read".into(),
+                )
+            })?;
+            if request
+                .expect_snapshot
+                .as_ref()
+                .is_some_and(|expected| expected != &revision)
+            {
+                return Err(PortError::Conflict(
+                    "node batch snapshot changed; discard previous batches and restart the focus"
+                        .into(),
+                ));
+            }
+            let tx = pinned.begin_read()?;
+            let mut result = kmp_domain::read_memory_nodes(
+                &super::trace_snapshot::TraceSnapshot(tx.as_ref()),
+                &request,
+            )?;
+            result.snapshot = Some(revision);
+            Ok(result)
+        })
+        .await
+    }
+
     async fn load_evidence_paths(
         &self,
         request: &kmp_domain::EvidencePathRequest,

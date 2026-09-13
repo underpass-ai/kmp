@@ -102,3 +102,12 @@ mod trace_proof_object;
 mod trace_proof_result;
 pub use trace_proof_object::TraceProofObject;
 pub use trace_proof_result::TraceProofResult;
+
+mod memory_node_header;
+mod memory_nodes_request;
+mod memory_nodes_result;
+mod read_memory_nodes;
+pub use memory_node_header::MemoryNodeHeader;
+pub use memory_nodes_request::MemoryNodesRequest;
+pub use memory_nodes_result::MemoryNodesResult;
+pub use read_memory_nodes::read_memory_nodes;

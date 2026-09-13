@@ -13,8 +13,8 @@ use kmp_application::{
     VisualProjectionResult,
 };
 use kmp_domain::{
-    BundleNode, BundleQualityMetrics, BundleRelationship, RelationExplanation, TemporalCoordinate,
-    TemporalDirection,
+    BundleNode, BundleQualityMetrics, BundleRelationship, MemoryNodesResult, NodeProjection,
+    RelationExplanation, TemporalCoordinate, TemporalDirection, TraceSearchStop,
 };
 use serde::Serialize;
 
@@ -43,6 +43,18 @@ impl NodeView {
     }
 
     pub fn from_graph_node(node: &GraphNodeView) -> Self {
+        Self {
+            id: node.node_id.clone(),
+            kind: node.node_kind.clone(),
+            title: node.title.clone(),
+            summary: node.summary.clone(),
+            status: node.status.clone(),
+            labels: node.labels.clone(),
+            properties: node.properties.clone(),
+        }
+    }
+
+    fn from_node_projection(node: &NodeProjection) -> Self {
         Self {
             id: node.node_id.clone(),
             kind: node.node_kind.clone(),
@@ -440,12 +452,62 @@ fn detail_view(result: &GetNodeDetailResult) -> Option<DetailView> {
     })
 }
 
-/// Batch of node summaries; ids the kernel does not know go to `missing`
-/// instead of failing the ones it does.
+/// Batch of node headers and their coordinates, read from one store snapshot.
+/// Ids the kernel does not know go to `missing` instead of failing the ones
+/// it does; ids left unread by the work budget go to `omitted`, which is not
+/// the same claim. No canonical body travels here.
 #[derive(Debug, Clone, Serialize)]
 pub struct NodeBatchView {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snapshot: Option<String>,
     pub nodes: Vec<NodeView>,
+    pub coordinates: BTreeMap<String, Vec<CoordinateView>>,
     pub missing: Vec<String>,
+    pub omitted: Vec<String>,
+    pub incomplete_coordinates: Vec<String>,
+    pub stop_reason: String,
+    pub scanned_edges: u32,
+}
+
+pub fn node_batch_view(result: &MemoryNodesResult) -> NodeBatchView {
+    NodeBatchView {
+        snapshot: result
+            .snapshot
+            .as_ref()
+            .map(|revision| revision.as_str().to_string()),
+        nodes: result
+            .nodes
+            .iter()
+            .map(|header| NodeView::from_node_projection(&header.node))
+            .collect(),
+        coordinates: result
+            .nodes
+            .iter()
+            .map(|header| {
+                (
+                    header.node.node_id.clone(),
+                    header
+                        .coordinates
+                        .iter()
+                        .map(CoordinateView::from_coordinate)
+                        .collect(),
+                )
+            })
+            .collect(),
+        missing: result.missing.clone(),
+        omitted: result.omitted.clone(),
+        incomplete_coordinates: result
+            .nodes
+            .iter()
+            .filter(|header| !header.coordinates_complete)
+            .map(|header| header.node.node_id.clone())
+            .collect(),
+        stop_reason: result
+            .stop
+            .map_or("complete", TraceSearchStop::as_str)
+            .to_string(),
+        scanned_edges: result.scanned_edges,
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]

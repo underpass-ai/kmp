@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package underpass.rehydration.kernel.v1beta1;
 
+import "underpass/rehydration/kernel/v1beta1/common.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/underpass-ai/kmp/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
@@ -22,6 +23,7 @@ service KernelMemoryService {
   rpc ProjectVisual(ProjectVisualRequest) returns (ProjectVisualResponse);
   rpc Trace(TraceRequest) returns (TraceResponse);
   rpc Inspect(InspectRequest) returns (InspectResponse);
+  rpc ReadNodes(ReadNodesRequest) returns (ReadNodesResponse);
   // Change the labels one entry stands in without rewriting its text.
   rpc Relabel(RelabelRequest) returns (RelabelResponse);
   // Author or refresh one node's reader-written compact card.
@@ -1666,4 +1668,32 @@ enum AnswerPolicy {
   ANSWER_POLICY_EVIDENCE_OR_UNKNOWN = 1;
   ANSWER_POLICY_SHOW_CONFLICTS = 2;
   ANSWER_POLICY_BEST_EFFORT = 3;
+}
+
+// Scoped headers and coordinate metadata in one snapshot; no canonical bodies.
+message ReadNodesRequest {
+  string about = 1;
+  // 1..64 refs; duplicates share work and retain first-requested order.
+  repeated string refs = 2;
+  // Zero selects 2048; otherwise 1..32768.
+  uint32 max_edges = 3;
+  // Omit for the first batch. A changed/reopened store returns ABORTED.
+  string expect_snapshot = 4;
+}
+message MemoryNodeHeader {
+  GraphNode node = 1;
+  repeated TemporalCoordinate coordinates = 2;
+  bool coordinates_complete = 3;
+}
+message ReadNodesResponse {
+  repeated MemoryNodeHeader nodes = 1;
+  // Absent or outside about, without foreign metadata.
+  repeated string missing = 2;
+  // Unread due to the work budget; these are not known to be missing.
+  repeated string omitted = 3;
+  // `complete`; `edge_budget` once max_edges is spent; `node_budget` once
+  // 4096 distinct nodes (requested refs plus coordinate scopes) were touched.
+  string stop_reason = 4;
+  uint32 scanned_edges = 5;
+  string snapshot = 6;
 }

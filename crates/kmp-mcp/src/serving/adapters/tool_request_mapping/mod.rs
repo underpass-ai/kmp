@@ -33,3 +33,6 @@ pub(crate) use temporal_move::TemporalMoveRequestMapper;
 pub(crate) use trace::TraceRequestMapper;
 pub(crate) use visual_projection::VisualProjectionRequestMapper;
 pub(crate) use wake::WakeRequestMapper;
+
+mod memory_nodes;
+pub(crate) use memory_nodes::MemoryNodesRequestMapper;

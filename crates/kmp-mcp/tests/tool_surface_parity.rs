@@ -418,6 +418,10 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "to": "2026-04-13T00:00:00Z"
             }),
         ),
+        (
+            "kmp_view_read_nodes",
+            json!({"about": ABOUT,"refs":[CLAIM,CURRENT]}),
+        ),
         ("kmp_view_take_control", json!({"expected_revision": 2})),
         ("kmp_view_undo", json!({})),
         // Last, so the reads above pin the store as the writes left it and
@@ -629,7 +633,10 @@ fn redact_interpolated_byte_count(text: &mut String) {
 }
 
 fn redact_embedded_text(text: &mut String) {
-    if !matches!(serde_json::from_str::<Value>(text), Ok(value) if value.is_object()) {
+    // Header properties also contain coordinate arrays encoded as JSON strings.
+    // Mask only their known wall-clock fields; preserve every other byte.
+    if !matches!(serde_json::from_str::<Value>(text), Ok(value) if value.is_object() || value.is_array())
+    {
         return;
     }
     for key in VOLATILE_KEYS {
@@ -706,7 +713,7 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
     let backend = EmbeddedKernelMcpBackend::open(store.path()).expect("embedded backend");
     let server = KernelMcpServer::with_embedded_backend(backend);
 
-    // Negotiate MCP Apps, so the two app-only tools are callable and the
+    // Negotiate MCP Apps, so the app-only tools are callable and the
     // surface under test is the full negotiated surface rather than the public one a
     // plain host sees.
     server
@@ -773,6 +780,16 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
             result = serde_json::from_str::<Value>(&reply).expect("JSON")["result"].clone();
             assert_eq!(result["structuredContent"]["accepted"], true, "{result}");
         }
+        if tool == "kmp_view_read_nodes" {
+            // Opaque store incarnation changes on restart. Its rejection
+            // behavior is tested with real revisions in read_nodes_parity.
+            assert!(
+                result["structuredContent"]["snapshot"]
+                    .as_str()
+                    .is_some_and(|s| s.starts_with("sqlite-observer:"))
+            );
+            result["structuredContent"]["snapshot"] = json!("<SNAPSHOT>");
+        }
         if tool == "kmp_guide" {
             // Random identities and content revisions are tested across real
             // restarts in persistent_guidance; pin their fields here.
@@ -828,7 +845,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 21, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 22, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         // `kmp_condense` is the one tool whose successful call cannot be

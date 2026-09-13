@@ -707,6 +707,15 @@ struct FakeMemoryService {
 
 #[tonic::async_trait]
 impl KernelMemoryService for FakeMemoryService {
+    async fn read_nodes(
+        &self,
+        _request: Request<kmp_proto::v1beta1::ReadNodesRequest>,
+    ) -> Result<Response<kmp_proto::v1beta1::ReadNodesResponse>, Status> {
+        Err(Status::unimplemented(
+            "node batches are not part of this fixture",
+        ))
+    }
+
     async fn condense(
         &self,
         _request: Request<kmp_proto::v1beta1::CondenseRequest>,

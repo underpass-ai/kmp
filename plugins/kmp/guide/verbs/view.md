@@ -56,3 +56,16 @@ Following an entry relation in the inspector selects its recorded memory even ou
 Following a relation can reveal a memory written after the view was opened.
 ChronoLoom extends the time window from the target's stored clock and keeps
 the current about and label filters; a filtered target stays unavailable.
+
+A focus containing several refs reads their current headers and coordinates together
+from one store snapshot. Each batch accepts at most 64 refs and touches at most
+4096 distinct nodes, including the refs and their coordinate scopes. Larger foci
+use several bounded batches with one shared 32768-edge budget, tied to the
+same revision. If the store changes between batches, ChronoLoom retries the whole
+focus once from the new revision. A second conflict or an incomplete coordinate
+budget preserves the previous window and displays the refusal; an agent intent
+that could not be applied is reported and is not replayed on every poll.
+ChronoLoom keeps missing refs visible as unavailable. This framing read
+does not load canonical bodies or certify proof completeness; use Trace's bounded
+proof expansion and Inspect for the actual evidence. Older in-flight focus reads
+cannot overwrite a newer focus, about or clock.

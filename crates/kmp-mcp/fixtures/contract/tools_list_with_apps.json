@@ -9109,6 +9109,57 @@
       },
       "annotations": {
         "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Read bounded node headers and coordinates from one snapshot for ChronoLoom framing. No canonical bodies or evidence are loaded. Available only to the MCP App.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "expect_snapshot": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "max_edges": {
+            "default": 2048,
+            "maximum": 32768,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "refs": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "about",
+          "refs"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_view_read_nodes"
+    },
+    {
+      "_meta": {
+        "ui": {
+          "resourceUri": "ui://kmp/chronoloom.html",
+          "visibility": [
+            "app"
+          ]
+        }
+      },
+      "annotations": {
+        "destructiveHint": false,
         "idempotentHint": false,
         "openWorldHint": false,
         "readOnlyHint": false

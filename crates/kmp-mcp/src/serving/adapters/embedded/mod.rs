@@ -26,3 +26,6 @@ pub(super) use temporal_move_tool::EmbeddedTemporalMoveTool;
 pub(super) use trace_tool::EmbeddedTraceTool;
 pub(super) use visual_projection_tool::EmbeddedVisualProjectionTool;
 pub(super) use wake_tool::EmbeddedWakeTool;
+
+mod memory_nodes_tool;
+pub(crate) use memory_nodes_tool::EmbeddedMemoryNodesTool;

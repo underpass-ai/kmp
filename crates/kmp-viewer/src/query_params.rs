@@ -16,6 +16,8 @@ const DEFAULT_TOKEN_BUDGET: u32 = 16_384;
 const MAX_TOKEN_BUDGET: u32 = 262_144;
 const DEFAULT_WINDOW_ENTRIES: usize = 8;
 const MAX_WINDOW_ENTRIES: usize = 256;
+const DEFAULT_NODE_BATCH_EDGES: u32 = 2048;
+const MAX_NODE_BATCH_EDGES: u32 = 32_768;
 
 /// A number a caller sent, or a refusal naming what was wrong with it.
 ///
@@ -53,6 +55,18 @@ pub(crate) fn budget_param(request: &HttpRequest) -> Result<u32, HttpResponse> {
 
 pub(crate) fn window_param(request: &HttpRequest, key: &str) -> Result<usize, HttpResponse> {
     Ok(numeric_param(request, key, DEFAULT_WINDOW_ENTRIES)?.min(MAX_WINDOW_ENTRIES))
+}
+
+/// The edge budget of one node batch. Zero or absent selects the default, as
+/// the gRPC contract reads it; a larger request is clamped like every other
+/// bound here.
+pub(crate) fn max_edges_param(request: &HttpRequest) -> Result<u32, HttpResponse> {
+    Ok(
+        match numeric_param(request, "max_edges", DEFAULT_NODE_BATCH_EDGES)? {
+            0 => DEFAULT_NODE_BATCH_EDGES,
+            edges => edges.min(MAX_NODE_BATCH_EDGES),
+        },
+    )
 }
 
 /// One label predicate as a query parameter spells it: `key op value|value`,

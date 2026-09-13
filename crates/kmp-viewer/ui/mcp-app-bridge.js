@@ -82,7 +82,12 @@
     const result = await request("tools/call", { name, arguments: args });
     if (result && result.isError) {
       const text = result.content && result.content[0] && result.content[0].text;
-      throw new Error(text || `${name} failed`);
+      const error = new Error(text || `${name} failed`);
+      // The kernel's own error code travels with the message, so the loom can
+      // tell a store that moved (`conflict`) from a request that was wrong.
+      const detail = result.structuredContent && result.structuredContent.error;
+      if (detail && detail.code) error.code = detail.code;
+      throw error;
     }
     return (result && result.structuredContent) || {};
   }
@@ -172,15 +177,14 @@
       };
     }
     if (path === "/api/nodes") {
-      const ids = String(params.ids || "").split(",").filter(Boolean);
-      const nodes = [];
-      const missing = [];
-      for (const id of ids) {
-        try { nodes.push((await appApi("/api/node", { about: params.about, id })).node); }
-        catch (_) { missing.push(id); }
-      }
-      return { nodes, missing };
+      const ids = String(params.ids || "").split(",").map(id => id.trim()).filter(Boolean);
+      return callTool("kmp_view_read_nodes", {
+        about: params.about || await about(), refs: ids,
+        ...(params.expect_snapshot ? { expect_snapshot: params.expect_snapshot } : {}),
+        ...(params.max_edges ? { max_edges: Number(params.max_edges) } : {}),
+      });
     }
+
     if (path === "/api/trace") {
       const activeAbout = params.about || await about();
       const trace = await callTool("kmp_trace", { about: activeAbout, from: params.from, to: params.to });

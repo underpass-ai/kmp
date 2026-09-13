@@ -308,3 +308,87 @@ async fn independent_writer_between_selected_graph_and_bodies_cannot_mix_either_
 // Keep the heavyweight contract fixture separate from snapshot-race controls.
 #[path = "trace_large_body_tests.rs"]
 mod large_body;
+
+#[tokio::test]
+async fn node_batch_keeps_headers_and_coordinates_on_the_pinned_revision() {
+    let dir = tempfile::tempdir().expect("temporary fixture");
+    let reader = EmbeddedKernelStore::open(dir.path()).expect("reader");
+    let writer = EmbeddedKernelStore::open(dir.path()).expect("writer");
+    writer.apply_mutations(changes("old")).await.expect("old");
+    let request = MemoryNodesRequest {
+        expect_snapshot: None,
+        about: "project:proof".into(),
+        refs: vec!["a".into(), "b".into()],
+        max_edges: 2048,
+    };
+    let tx = reader.begin_read().expect("read transaction");
+    let snapshot = TraceSnapshot(tx.as_ref());
+    let before = read_memory_nodes(&snapshot, &request).expect("old batch");
+    writer
+        .apply_mutations(changes("new"))
+        .await
+        .expect("peer write");
+    assert_eq!(
+        read_memory_nodes(&snapshot, &request).expect("pinned"),
+        before
+    );
+    let after = reader.load_memory_nodes(&request).await.expect("new batch");
+    assert_ne!(before, after);
+    assert!(after.nodes.iter().all(|n| {
+        n.node.summary == "new"
+            && n.coordinates
+                .iter()
+                .all(|c| c.observed_at() == Some("2026-09-02T10:00:00Z"))
+    }));
+}
+
+#[tokio::test]
+async fn node_batch_continuation_rejects_body_only_changes_and_reopened_observers() {
+    let dir = tempfile::tempdir().expect("temporary fixture");
+    let reader = EmbeddedKernelStore::open(dir.path()).expect("reader");
+    let writer = EmbeddedKernelStore::open(dir.path()).expect("writer");
+    writer.apply_mutations(changes("old")).await.expect("old");
+    let mut request = MemoryNodesRequest {
+        expect_snapshot: None,
+        about: "project:proof".into(),
+        refs: vec!["a".into()],
+        max_edges: 2048,
+    };
+    let first = reader
+        .load_memory_nodes(&request)
+        .await
+        .expect("first batch");
+    request.expect_snapshot = first.snapshot;
+    request.refs = vec!["b".into()];
+    reader
+        .load_memory_nodes(&request)
+        .await
+        .expect("unchanged revision");
+    let reopened = EmbeddedKernelStore::open(dir.path()).expect("reopened reader");
+    assert!(matches!(
+        reopened.load_memory_nodes(&request).await,
+        Err(PortError::Conflict(_))
+    ));
+    writer
+        .apply_mutations(vec![ProjectionMutation::UpsertNodeDetail(
+            NodeDetailProjection {
+                node_id: "a".into(),
+                detail: "body-only change".into(),
+                content_hash: "new".into(),
+                revision: 2,
+            },
+        )])
+        .await
+        .expect("peer body write");
+    assert!(matches!(
+        reader.load_memory_nodes(&request).await,
+        Err(PortError::Conflict(_))
+    ));
+    request.expect_snapshot = None;
+    let restarted = reader
+        .load_memory_nodes(&request)
+        .await
+        .expect("restart batch");
+    assert_eq!(restarted.nodes[0].node.summary, "old");
+    assert!(restarted.snapshot.is_some());
+}

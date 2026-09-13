@@ -9,7 +9,11 @@ function bridge(respond) {
     if (!message.id) return;
     calls.push(message);
     queueMicrotask(async()=>{
-      const result=message.method==="ui/initialize"?{}:{structuredContent:await respond(message.params.name,message.params.arguments)};
+      let result={};
+      if (message.method!=="ui/initialize") {
+        const answer=await respond(message.params.name,message.params.arguments);
+        result=answer&&answer.isError?answer:{structuredContent:answer};
+      }
       listener({source:parent,data:{jsonrpc:"2.0",id:message.id,result}});
     });
   }};
@@ -55,4 +59,21 @@ test("MCP App preserves independent relation clocks in the shared viewer shape",
   assert.equal(trace.edges[0].observed_at,clocks.observed_at);
   assert.equal(trace.edges[0].ingested_at,clocks.ingested_at);
   assert.equal(trace.edges[0].occurred_at,undefined);
+});
+
+test("MCP App resolves a focus batch in one native call and preserves partial status",async()=>{
+  const coordinate={dimension:"task",scope_id:"task:batch",observed_at:"2026-09-13T10:00:00Z"};
+  const result={nodes:[{id:"a",kind:"decision"}],coordinates:{a:[coordinate]},missing:["gone"],omitted:["b"],incomplete_coordinates:[],stop_reason:"edge_budget",scanned_edges:3};
+  const {api,calls}=bridge((name,args)=>{
+    assert.equal(name,"kmp_view_read_nodes");
+    assert.deepEqual(plain(args),{about:"project:x",refs:["a","b","gone"],max_edges:3});
+    return result;
+  });
+  assert.deepEqual(plain(await api("/api/nodes",{about:"project:x",ids:"a,b,gone",max_edges:3})),result);
+  assert.equal(calls.filter(c=>c.method==="tools/call").length,1);
+});
+
+test("MCP App keeps the kernel's conflict code on a refused focus batch so the loom can retry it",async()=>{
+  const {api}=bridge(()=>({isError:true,content:[{type:"text",text:"node batch snapshot changed; discard previous batches and restart the focus"}],structuredContent:{error:{code:"conflict",message:"node batch snapshot changed"}}}));
+  await assert.rejects(()=>api("/api/nodes",{about:"project:x",ids:"a"}),error=>error.code==="conflict"&&/snapshot changed/.test(error.message));
 });
