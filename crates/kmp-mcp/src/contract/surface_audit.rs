@@ -131,7 +131,7 @@ mod tests {
             .as_array()
             .expect("tools should be an array");
 
-        assert_eq!(tools.len(), 17, "memory, view and progressive guide tools");
+        assert_eq!(tools.len(), 18, "memory, view and progressive guide tools");
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
@@ -203,7 +203,8 @@ mod tests {
             tools[12]["inputSchema"]["properties"]["scope"]["const"],
             "node_body"
         );
-        assert_eq!(tools[13]["name"], "kmp_view_open");
+        assert_eq!(tools[13]["name"], "kmp_summaries_audit");
+        assert_eq!(tools[14]["name"], "kmp_view_open");
         assert_eq!(tools[5]["name"], "kmp_goto");
         assert_eq!(tools[5]["inputSchema"]["oneOf"][0]["required"][1], "at");
         for index in [5, 6] {

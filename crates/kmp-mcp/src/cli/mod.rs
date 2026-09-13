@@ -8,6 +8,7 @@ mod document;
 mod guide_verb;
 mod lifecycle_verbs;
 mod memory_store_config;
+mod pending_summary;
 mod plugin_verb;
 mod snapshot_verb;
 mod summaries_verb;
@@ -76,7 +77,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `document <about> [--out FILE]` / \
                  `snapshot create|list|verify|read|merge ...` / \
-                 `summaries pending [<about>] [--json]` / \
+                 `summaries pending [<about>…] [--json]` / \
                  `config [memory-routing <mode> | memory-store <absolute-path>]` / \
                  `guide sync --plugin-root DIR [--dry-run]` / \
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
@@ -156,7 +157,7 @@ fn subcommand_usage(command: &str) -> &'static str {
              [--lexical-bridge FILE | --no-lexical-bridge] [--dry-run]"
         }
         "snapshot" => "kmp-mcp snapshot create|list|verify|read|merge ...",
-        "summaries" => "kmp-mcp summaries pending [<about>] [--json]",
+        "summaries" => "kmp-mcp summaries pending [<about>…] [--json]",
         "uninstall" => {
             "kmp-mcp uninstall [--store <absolute-path> | --engine <absolute-path>] [--apply] \
              [--purge] [--keep-memory]"

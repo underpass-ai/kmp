@@ -1,0 +1,91 @@
+{
+  "summary": "2 of 5 memories in `service:alpha` owe an English search summary; 1 of the rest carries one that stands and still retrieves little",
+  "scope": {
+    "selection": "current_about",
+    "abouts": [
+      "service:alpha"
+    ]
+  },
+  "totals": {
+    "entries": 5,
+    "missing": 1,
+    "refused": 1,
+    "stands": 2,
+    "not_required": 1,
+    "weak": 1,
+    "owed": 2
+  },
+  "abouts": [
+    {
+      "about": "service:alpha",
+      "totals": {
+        "entries": 5,
+        "missing": 1,
+        "refused": 1,
+        "stands": 2,
+        "not_required": 1,
+        "weak": 1,
+        "owed": 2
+      }
+    }
+  ],
+  "entries": [
+    {
+      "about": "service:alpha",
+      "ref": "service:alpha:decision:valkey",
+      "kind": "decision",
+      "state": "missing",
+      "text": "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018)."
+    },
+    {
+      "about": "service:alpha",
+      "ref": "service:alpha:observation:meeting",
+      "kind": "observation",
+      "state": "not_required"
+    },
+    {
+      "about": "service:alpha",
+      "ref": "service:alpha:decision:ventana",
+      "kind": "decision",
+      "state": "stands",
+      "summary_en": "The rollout window moved to Tuesday afternoon (#469).",
+      "summary_en_by": "agent:backfill"
+    },
+    {
+      "about": "service:alpha",
+      "ref": "service:alpha:observation:auditores",
+      "kind": "observation",
+      "state": "refused",
+      "text": "Los auditores pidieron el registro completo antes del jueves.",
+      "summary_en": "the record",
+      "summary_en_by": "agent:backfill",
+      "faults": [
+        "carries 1 informative word, at least 2 are needed"
+      ]
+    },
+    {
+      "about": "service:alpha",
+      "ref": "service:alpha:observation:acta",
+      "kind": "observation",
+      "state": "stands",
+      "text": "El acta de la reunión se firmó el viernes por la mañana.",
+      "summary_en": "The meeting record is awaiting signature.",
+      "summary_en_by": "agent:backfill",
+      "weaknesses": [
+        {
+          "signal": "stale",
+          "says": "was written against an earlier version of this text, which has been rewritten since; render the text as it now stands"
+        }
+      ]
+    }
+  ],
+  "page": {
+    "offset": 0,
+    "returned": 5,
+    "total": 5,
+    "has_more": false,
+    "next_cursor": null
+  },
+  "next_actions": [],
+  "warnings": []
+}

@@ -3,8 +3,8 @@ use serde_json::{Value, json};
 use crate::contract::handshake::CHRONOLOOM_APP_URI;
 use crate::contract::tools::{
     app_view_take_control, app_view_undo, app_visual_projection, ask, condense, forward, goto,
-    ingest, inspect, near, relabel, relate, rewind, trace, view_apply_intent, view_get_state,
-    view_open, wake, write_memory,
+    ingest, inspect, near, relabel, relate, rewind, summaries_audit, trace, view_apply_intent,
+    view_get_state, view_open, wake, write_memory,
 };
 use crate::serving::tool_error_code::ToolErrorCode;
 
@@ -111,6 +111,7 @@ fn tools_list_core() -> Value {
             inspect::definition(),
             relabel::definition(),
             condense::definition(),
+            summaries_audit::definition(),
         ]
     })
 }

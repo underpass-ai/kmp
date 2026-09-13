@@ -85,6 +85,10 @@
       "description": "Write your own compact card for one stored entry body, bound to the body version you read"
     },
     {
+      "name": "kmp_summaries_audit",
+      "description": "Read which memories lack an English search summary or carry a weak one, with the reasons"
+    },
+    {
       "name": "kmp_view_open",
       "description": "Open or rehydrate a ChronoLoom view over an about, so a person and an agent look at the same loom. Read-only with respect to memory."
     },

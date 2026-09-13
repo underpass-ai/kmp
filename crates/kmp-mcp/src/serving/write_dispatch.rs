@@ -4,7 +4,8 @@
 
 use std::time::Instant;
 
-use serde_json::Value;
+use kmp_domain::SearchSummary;
+use serde_json::{Map, Value, json};
 
 use crate::serving::existing_entry_read::read_existing_entry;
 use crate::serving::json_rpc::jsonrpc_result;
@@ -12,6 +13,7 @@ use crate::serving::kernel_mcp_server::KernelMcpServer;
 use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
+use crate::write::existing_entry::ExistingEntry;
 use crate::write::validation_error::WriteValidationError;
 use crate::write::validation_errors::WriteValidationErrors;
 use crate::write::{
@@ -181,15 +183,9 @@ impl KernelMcpServer {
                 WriteValidationError::new("search_summaries must be a non-empty array")
                     .at("search_summaries")
             })?;
-        let identity = object
-            .get("idempotency_key")
-            .and_then(Value::as_str)
-            .filter(|key| !key.trim().is_empty())
-            .map(str::to_owned)
-            .unwrap_or_else(|| crate::write::generated_ref::stable_idempotency_key(object));
         let mut targets = std::collections::BTreeSet::new();
-        let mut plans = Vec::new();
-        let mut errors = Vec::new();
+        let mut prepared = Vec::new();
+        let mut source_bindings = Vec::new();
         for (index, record) in records.iter().enumerate() {
             let record = record.as_object().ok_or_else(|| {
                 WriteValidationError::new(format!("search_summaries[{index}] must be an object"))
@@ -216,10 +212,46 @@ impl KernelMcpServer {
             let existing =
                 read_existing_entry(self.backend.as_ref(), "search_summaries", &about, reference)
                     .await?;
+            source_bindings.push(summary_source_binding(&existing));
+            prepared.push((index, record.clone(), existing));
+        }
+        let explicit_identity = object
+            .get("idempotency_key")
+            .and_then(Value::as_str)
+            .filter(|key| !key.trim().is_empty())
+            .map(str::to_owned);
+        let implicit_declaration = explicit_identity
+            .is_none()
+            .then(|| summary_packet_declaration(object));
+        let implicit_identity = implicit_declaration.as_ref().map(|declaration| {
+            reusable_summary_packet_identity(object, &prepared, declaration)
+                .unwrap_or_else(|| derived_summary_packet_identity(object, source_bindings))
+        });
+        let identity = explicit_identity
+            .as_ref()
+            .or(implicit_identity.as_ref())
+            .expect("one summary identity always exists");
+        let mut plans = Vec::new();
+        let mut errors = Vec::new();
+        for (index, record, existing) in prepared {
             let mut request = object.clone();
             request.remove("search_summaries");
-            request.insert("current".into(), Value::Object(record.clone()));
+            request.insert("current".into(), Value::Object(record));
             request.insert("idempotency_key".into(), serde_json::json!(identity));
+            if let Some(implicit_identity) = &implicit_identity {
+                request.insert(
+                    "summary_validation_identity".into(),
+                    serde_json::json!(implicit_identity),
+                );
+                request.insert(
+                    "summary_validation_declaration".into(),
+                    serde_json::json!(
+                        implicit_declaration
+                            .as_ref()
+                            .expect("identity has declaration")
+                    ),
+                );
+            }
             let mut plan = match build_summary_plan(&Value::Object(request), &existing) {
                 Ok(plan) => plan,
                 Err(error) => {
@@ -251,4 +283,73 @@ impl KernelMcpServer {
         }
         Ok(result)
     }
+}
+
+/// A new implicit summary packet binds to the current source revision and
+/// text. Its stored identity becomes the retry identity only when all targets
+/// still carry the exact actor, summary, and source fingerprint it validated.
+fn derived_summary_packet_identity(
+    arguments: &Map<String, Value>,
+    source_bindings: Vec<Value>,
+) -> String {
+    let mut source_bound = arguments.clone();
+    source_bound.insert(
+        "summary_source_bindings".to_string(),
+        json!(source_bindings),
+    );
+    crate::write::generated_ref::stable_idempotency_key(&source_bound)
+}
+
+fn summary_packet_declaration(arguments: &Map<String, Value>) -> String {
+    crate::write::generated_ref::stable_idempotency_key(arguments)
+}
+
+fn reusable_summary_packet_identity(
+    arguments: &Map<String, Value>,
+    prepared: &[(usize, Map<String, Value>, ExistingEntry)],
+    declaration: &str,
+) -> Option<String> {
+    let actor = arguments.get("actor")?.as_str()?;
+    let mut identities = prepared.iter().map(|(_, record, existing)| {
+        let summary = record.get("summary_en")?.as_str()?;
+        let fingerprint = SearchSummary::source_fingerprint(&existing.text);
+        let identity = existing
+            .metadata
+            .get(SearchSummary::VALIDATION_IDENTITY_METADATA_KEY)?
+            .as_str()?;
+        (existing
+            .metadata
+            .get(SearchSummary::METADATA_KEY)?
+            .as_str()?
+            == summary
+            && existing
+                .metadata
+                .get(SearchSummary::SUMMARY_WRITER_METADATA_KEY)?
+                .as_str()?
+                == actor
+            && existing
+                .metadata
+                .get(SearchSummary::SOURCE_FINGERPRINT_METADATA_KEY)?
+                .as_str()?
+                == fingerprint
+            && existing
+                .metadata
+                .get(SearchSummary::VALIDATION_DECLARATION_METADATA_KEY)?
+                .as_str()?
+                == declaration)
+            .then_some(identity.to_string())
+    });
+    let identity = identities.next()??;
+    identities
+        .all(|candidate| candidate.as_deref() == Some(identity.as_str()))
+        .then_some(identity)
+}
+
+fn summary_source_binding(existing: &ExistingEntry) -> Value {
+    let fingerprint = SearchSummary::source_fingerprint(&existing.text);
+    json!({
+        "ref": existing.reference.as_str(),
+        "source_revision": existing.revision,
+        "source_sha256": fingerprint
+    })
 }

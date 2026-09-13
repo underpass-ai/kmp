@@ -10,6 +10,7 @@
 
 use super::validation_error::WriteValidationError;
 
+use kmp_domain::SearchSummary;
 use serde_json::{Value, json};
 
 use super::coordinates::observation_time;
@@ -75,7 +76,37 @@ pub(crate) fn build_summary_plan(
 
     let mut metadata = existing.metadata.clone();
     metadata.insert("summary_en".to_string(), json!(stored));
-    metadata.insert("summary_en_by".to_string(), json!(actor));
+    metadata.insert(
+        SearchSummary::SUMMARY_WRITER_METADATA_KEY.to_string(),
+        json!(actor),
+    );
+    metadata.insert(
+        SearchSummary::SOURCE_FINGERPRINT_METADATA_KEY.to_string(),
+        json!(SearchSummary::source_fingerprint(&existing.text)),
+    );
+    match arguments
+        .get("summary_validation_identity")
+        .and_then(Value::as_str)
+    {
+        Some(identity) => {
+            metadata.insert(
+                SearchSummary::VALIDATION_IDENTITY_METADATA_KEY.to_string(),
+                json!(identity),
+            );
+            let declaration = arguments
+                .get("summary_validation_declaration")
+                .and_then(Value::as_str)
+                .expect("implicit validation identity has its declaration");
+            metadata.insert(
+                SearchSummary::VALIDATION_DECLARATION_METADATA_KEY.to_string(),
+                json!(declaration),
+            );
+        }
+        None => {
+            metadata.remove(SearchSummary::VALIDATION_IDENTITY_METADATA_KEY);
+            metadata.remove(SearchSummary::VALIDATION_DECLARATION_METADATA_KEY);
+        }
+    }
     let idempotency_key = optional_string(arguments.get("idempotency_key"))
         .map(ToString::to_string)
         .unwrap_or_else(|| stable_idempotency_key(arguments));
@@ -144,6 +175,7 @@ mod tests {
     fn existing() -> ExistingEntry {
         ExistingEntry {
             reference: "project:kmp:decision:valkey".to_string(),
+            revision: 7,
             kind: "decision".to_string(),
             text: "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018).".to_string(),
             coordinates: vec![json!({
@@ -189,6 +221,12 @@ mod tests {
             "Valkey 7.2 was adopted for the shared store (ADR-018)."
         );
         assert_eq!(entry["metadata"]["summary_en_by"], "agent:b");
+        assert_eq!(
+            entry["metadata"]["summary_en_source_sha256"],
+            SearchSummary::source_fingerprint(
+                "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018)."
+            )
+        );
         assert_eq!(entry["metadata"]["writer_actor"], "agent:a");
         assert!(plan.generated_refs.is_empty());
         assert!(plan.relations.is_empty());

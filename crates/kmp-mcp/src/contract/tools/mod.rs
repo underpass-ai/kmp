@@ -12,6 +12,7 @@ pub(crate) mod near;
 pub(crate) mod relabel;
 pub(crate) mod relate;
 pub(crate) mod rewind;
+pub(crate) mod summaries_audit;
 pub(crate) mod trace;
 mod trace_seek;
 pub(crate) mod view_apply_intent;

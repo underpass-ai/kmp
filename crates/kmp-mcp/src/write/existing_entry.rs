@@ -9,6 +9,7 @@ use serde_json::{Map, Value};
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ExistingEntry {
     pub(crate) reference: String,
+    pub(crate) revision: u64,
     pub(crate) kind: String,
     pub(crate) text: String,
     pub(crate) coordinates: Vec<Value>,
@@ -50,8 +51,14 @@ impl ExistingEntry {
             .as_object()
             .cloned()
             .unwrap_or_default();
+        let revision = raw["revision"].as_u64().ok_or_else(|| {
+            format!(
+                "`{reference}` has no current revision; a summary refresh cannot bind its source"
+            )
+        })?;
         Ok(Self {
             reference: reference.to_string(),
+            revision,
             kind,
             text,
             coordinates,

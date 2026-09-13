@@ -15,6 +15,8 @@ pub(crate) mod relation_cursor;
 pub(crate) mod relation_page_budget;
 mod rendering;
 mod serialized_size;
+pub(crate) mod summaries_audit_page;
+mod summaries_audit_projection;
 mod temporal_entry_projection;
 mod temporal_page;
 pub(crate) mod temporal_projection;
@@ -35,6 +37,7 @@ pub(crate) use recall_projection::{
 };
 pub(crate) use relabel_projection::relabel_from_response;
 pub(crate) use relate_projection::relate_from_response;
+pub(crate) use summaries_audit_page::summaries_audit_page;
 pub(crate) use temporal_projection::{enforce_temporal_output_budget, temporal_from_response};
 pub(crate) use trace_projection::trace_from_response;
 pub(crate) use visual_projection::visual_projection_from_response;
