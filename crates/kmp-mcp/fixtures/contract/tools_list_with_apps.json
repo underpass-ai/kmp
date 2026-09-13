@@ -7695,7 +7695,7 @@
         "additionalProperties": false,
         "properties": {
           "about": {
-            "description": "Memory anchor the loom should weave. It must exist; a view onto absent memory would render an empty loom that looks like an answer.",
+            "description": "Memory anchor the loom should weave. It must exist: a view onto absent memory would render an empty loom that looks like an answer, so this is the one view call that fails on absence instead of degrading. Once a view is open, kmp_view_apply_intent drops what it cannot honor and names it in `unhonored`.",
             "minLength": 1,
             "type": "string"
           },
@@ -7734,7 +7734,7 @@
         "additionalProperties": false,
         "properties": {
           "applied": {
-            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false.",
+            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false, and so does an intent none of whose named refs are in this store — `unhonored` then says so first and names every one of them.",
             "type": "boolean"
           },
           "clocks": {
@@ -7769,7 +7769,7 @@
             "type": "object"
           },
           "unhonored": {
-            "description": "Parts of the intent this build recorded but cannot render yet.",
+            "description": "What this call could not honor, in the caller's words: parts of the intent this build cannot render yet, and the refs it named that this store does not hold. Absence is always named here and never silently drawn, so read it even when the call succeeded.",
             "items": {
               "type": "string"
             },
@@ -7799,7 +7799,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
+      "description": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase. Absence degrades rather than failing: a ref this store does not hold is dropped from the part that named it and listed in `unhonored`, and if none of the refs an intent names exist the view does not move at all and `applied` is false. Read `unhonored` — what is missing is always named there, never silently drawn.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -7826,7 +7826,7 @@
             "additionalProperties": false,
             "properties": {
               "refs": {
-                "description": "Refs the view should frame. Each must exist; the loom does not draw placeholders that look like data.",
+                "description": "Refs the view should frame. A ref this store does not hold is dropped and listed in `unhonored` — the loom never draws a placeholder that looks like data. If none of them exist the focus keeps the refs it had.",
                 "items": {
                   "description": "Memory ref to bring into focus.",
                   "minLength": 1,
@@ -7874,7 +7874,7 @@
               "abouts": {
                 "description": "Explicit additional contexts, at most five. Omit for the primary about alone.",
                 "items": {
-                  "description": "Additional about to compare as a plane beside target.about; must exist in the store.",
+                  "description": "Additional about to compare as a plane beside target.about; one this store does not hold is dropped and listed in `unhonored`.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -7980,7 +7980,7 @@
             ]
           },
           "selection": {
-            "description": "Ref to select, or null to clear.",
+            "description": "Ref to select, or null to clear. A ref this store does not hold leaves the selection as it was and is listed in `unhonored`.",
             "type": [
               "string",
               "null"
@@ -7990,7 +7990,7 @@
             "additionalProperties": false,
             "properties": {
               "about": {
-                "description": "Weave a different about.",
+                "description": "Weave a different about. One this store does not hold is not honored: the loom stays on the about it was weaving and the ref is listed in `unhonored`.",
                 "minLength": 1,
                 "type": "string"
               }
@@ -7999,6 +7999,7 @@
           },
           "trace": {
             "additionalProperties": false,
+            "description": "The two ends of one claim, or null to clear. A trace needs both: if either end is not in this store the trace is left as it was and the absent end is listed in `unhonored`.",
             "properties": {
               "from": {
                 "description": "Where the claim starts.",
@@ -8032,7 +8033,7 @@
         "additionalProperties": false,
         "properties": {
           "applied": {
-            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false.",
+            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false, and so does an intent none of whose named refs are in this store — `unhonored` then says so first and names every one of them.",
             "type": "boolean"
           },
           "clocks": {
@@ -8067,7 +8068,7 @@
             "type": "object"
           },
           "unhonored": {
-            "description": "Parts of the intent this build recorded but cannot render yet.",
+            "description": "What this call could not honor, in the caller's words: parts of the intent this build cannot render yet, and the refs it named that this store does not hold. Absence is always named here and never silently drawn, so read it even when the call succeeded.",
             "items": {
               "type": "string"
             },
@@ -8124,7 +8125,7 @@
         "additionalProperties": false,
         "properties": {
           "applied": {
-            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false.",
+            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false, and so does an intent none of whose named refs are in this store — `unhonored` then says so first and names every one of them.",
             "type": "boolean"
           },
           "clocks": {
@@ -8159,7 +8160,7 @@
             "type": "object"
           },
           "unhonored": {
-            "description": "Parts of the intent this build recorded but cannot render yet.",
+            "description": "What this call could not honor, in the caller's words: parts of the intent this build cannot render yet, and the refs it named that this store does not hold. Absence is always named here and never silently drawn, so read it even when the call succeeded.",
             "items": {
               "type": "string"
             },

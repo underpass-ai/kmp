@@ -10,6 +10,7 @@ mod surface_audit;
 pub(crate) mod temporal_entry_field;
 pub(crate) mod tools;
 pub(crate) mod validator;
+mod view_absence_audit;
 mod writer_audit;
 pub(crate) mod writer_memory_kinds;
 

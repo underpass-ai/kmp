@@ -13,6 +13,7 @@
 
 pub(crate) use crate::serving::projection_names::ProjectionNames;
 pub(crate) use crate::serving::unhonored_projection::UnhonoredProjection;
+pub(crate) use crate::serving::unhonored_refs::UnhonoredRefs;
 use serde_json::{Value, json};
 
 use kmp_viewer::{
@@ -77,6 +78,19 @@ fn view_error(error: ViewError) -> ToolError {
 
 /// Opens or rehydrates a view. The `about` must exist: a view onto memory
 /// that is not there would render an empty loom that looks like an answer.
+///
+/// [#443](https://github.com/underpass-ai/kmp/issues/443) asked whether this
+/// refusal and `apply_intent`'s should be one rule, since both answer the
+/// same kind of absence, and split them deliberately. They are not the same
+/// situation. An open *is* the claim that there is memory here to look at,
+/// and it has nothing to fall back on: everything the resulting loom shows is
+/// the about, so an absent about leaves a window that is empty in every
+/// pane — precisely the false impression this guard exists to prevent, and
+/// no warning riding alongside it un-renders a screen a person is already
+/// reading as an answer. An intent, by contrast, moves a loom that is already
+/// open over memory that is really there, so a ref it cannot frame costs the
+/// view one element and not its honesty; that verb degrades and names what it
+/// dropped. Do not collapse the two: the asymmetry is the decision.
 pub(crate) fn open(
     arguments: &Value,
     about_exists: bool,
@@ -340,16 +354,48 @@ pub(crate) fn projection_names(arguments: &Value) -> ProjectionNames {
 }
 
 pub(crate) fn about_for_intent(arguments: &Value) -> Option<String> {
+    target_about(arguments).or_else(|| retained_about(arguments))
+}
+
+/// The about this intent asks the loom to weave, if it asks for one at all.
+fn target_about(arguments: &Value) -> Option<String> {
     arguments
         .pointer("/target/about")
         .and_then(Value::as_str)
         .map(str::to_string)
-        .or_else(|| {
-            ViewRegistry::shared()
-                .view_state(Some(&view_id_of(arguments)))
-                .and_then(|state| state.about)
-                .map(|about| about.as_str().to_string())
-        })
+}
+
+/// The about the view already has, which is where the loom stays when an
+/// intent names one this store does not hold.
+fn retained_about(arguments: &Value) -> Option<String> {
+    ViewRegistry::shared()
+        .view_state(Some(&view_id_of(arguments)))
+        .and_then(|state| state.about)
+        .map(|about| about.as_str().to_string())
+}
+
+/// The owners the intent will really have once the refs this store does not
+/// hold are dropped: the target it can reach, else the about the view already
+/// has, plus the layers that exist.
+///
+/// Its remaining refs are checked against exactly these, because these are
+/// the planes the loom will actually draw. Checking them against an owner the
+/// store does not hold would report every one of them absent for the wrong
+/// reason, and reading a projection scoped to one would fail the call that
+/// [#443](https://github.com/underpass-ai/kmp/issues/443) asked to degrade.
+pub(crate) fn honored_abouts(arguments: &Value, missing: &[String]) -> Vec<String> {
+    let absent = |about: &String| missing.iter().any(|reference| reference == about);
+    let mut abouts = abouts_for_intent(arguments)
+        .into_iter()
+        .filter(|about| !absent(about))
+        .collect::<Vec<_>>();
+    if target_about(arguments).as_ref().is_some_and(absent)
+        && let Some(retained) = retained_about(arguments)
+        && !abouts.contains(&retained)
+    {
+        abouts.insert(0, retained);
+    }
+    abouts
 }
 
 /// Primary and additional owners after this intent. A supplied projection
@@ -420,11 +466,17 @@ fn omit_unhonored_projection(intent: &mut ViewIntentDto, unavailable: &Unhonored
     }
 }
 
-fn has_explicit_time_range(arguments: &Value) -> bool {
-    arguments.pointer("/focus/time_range").is_some_and(|range| {
-        range.get("from").and_then(Value::as_str).is_some()
-            && range.get("to").and_then(Value::as_str).is_some()
-    })
+/// Whether what is left of the intent frames a window with both ends, which
+/// is what takes priority over a trace's own framing. It is asked of the
+/// degraded intent, not of the arguments, so the note describes what the view
+/// is actually about to do.
+fn frames_an_explicit_window(intent: &ViewIntentDto) -> bool {
+    intent
+        .focus
+        .as_ref()
+        .and_then(|focus| focus.time_range.as_ref())
+        .or(intent.focus_window.as_ref())
+        .is_some_and(|range| range.from.is_some() && range.to.is_some())
 }
 
 /// The refs an intent names, so the caller can check they exist before the
@@ -437,9 +489,17 @@ pub(crate) fn refs_named(arguments: &Value) -> Vec<String> {
 
 /// Applies one intent atomically: focus, clock, filters, selection, trace —
 /// under optimistic concurrency and idempotency.
+///
+/// Absence degrades here, it does not collapse the call. A ref this store
+/// does not hold is dropped from the facet that named it and reported through
+/// the same `unhonored` channel an unrenderable dimension or overlay already
+/// uses; if nothing the intent named survives, the view does not move and the
+/// first note says so. `kmp_view_open` deliberately answers the same absence
+/// the other way — see [`open`] for why the two differ
+/// ([#443](https://github.com/underpass-ai/kmp/issues/443)).
 pub(crate) fn apply_intent(
     arguments: &Value,
-    missing_refs: &[String],
+    missing_refs: &UnhonoredRefs,
     unavailable: UnhonoredProjection,
 ) -> Result<Value, ToolError> {
     let view_id = view_id_of(arguments);
@@ -453,28 +513,21 @@ pub(crate) fn apply_intent(
              intent, not a second one",
         ));
     };
-    if !missing_refs.is_empty() {
-        return Err(ToolError::not_found(format!(
-            "these refs are not in this store: {}. The loom points at memory that exists; it \
-             does not draw placeholders that look like data.",
-            missing_refs.join(", ")
-        )));
-    }
     let (mut intent, _) = intent_from(arguments)?;
     // The digest is taken before store-local names are omitted, so a retry
     // remains the same intent even if the mounted catalog changed.
     let intent_digest = logical_digest(&intent);
+    let mut unhonored = missing_refs.omit_from(&mut intent);
     omit_unhonored_projection(&mut intent, &unavailable);
     let label_notes = unavailable.label_notes();
-    let mut unhonored: Vec<String> = unavailable
-        .dimensions
-        .into_iter()
-        .chain(unavailable.overlays)
-        .chain(label_notes)
-        .collect();
-    if arguments.get("trace").is_some_and(|trace| !trace.is_null())
-        && has_explicit_time_range(arguments)
-    {
+    unhonored.extend(
+        unavailable
+            .dimensions
+            .into_iter()
+            .chain(unavailable.overlays)
+            .chain(label_notes),
+    );
+    if intent.trace.as_ref().is_some_and(Option::is_some) && frames_an_explicit_window(&intent) {
         unhonored.push("trace framing (explicit focus.time_range has priority)".to_string());
     }
     let command = ApplyIntentCommand {

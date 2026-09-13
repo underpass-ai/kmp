@@ -19,7 +19,7 @@ pub(crate) fn definition() -> Value {
             "additionalProperties": false,
             "required": ["about"],
             "properties": {
-                "about": string_schema("Memory anchor the loom should weave. It must exist; a view onto absent memory would render an empty loom that looks like an answer."),
+                "about": string_schema("Memory anchor the loom should weave. It must exist: a view onto absent memory would render an empty loom that looks like an answer, so this is the one view call that fails on absence instead of degrading. Once a view is open, kmp_view_apply_intent drops what it cannot honor and names it in `unhonored`."),
                 "view_id": string_schema("Which view to open. Omit for the one window a local viewer shows."),
                 "expected_revision": {
                     "type": "integer",
