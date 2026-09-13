@@ -9,6 +9,18 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- Embedded dimensional reads now batch anchor lookups under one consistent
+  SQLite snapshot, reducing repeated scans while preserving read parity and
+  clock-aware filtering across memory dimensions.
+
+### Fixed
+
+- Large dimensional reads no longer repeat linked-JSON work for each about;
+  the optimized path keeps embedded behavior aligned with the native parity
+  contract and its snapshot boundaries.
+
 ## [0.18.2] - 2026-09-13
 
 ### Added
