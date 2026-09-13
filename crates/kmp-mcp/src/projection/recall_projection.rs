@@ -384,14 +384,23 @@ mod tests {
 
     #[test]
     fn shared_estimator_keeps_parallel_projection_results_identical() {
-        let value = recall_budget_fixture();
+        let mut value = recall_budget_fixture();
+        value["summary"] = json!("Unicode evidence: café 🚀; escaped quote: \"exact\"; line\nnext");
+        value["proof"]["evidence"][0]["text"] =
+            json!("Canonical Unicode: mañana — 東京; escaped \\\"quote\\\" and line\nnext.");
         let arguments = json!({
             "about": "project:kmp",
             "question": "Which evidence is current?",
             "budget": {"max_bytes": 4_000, "detail": "full"}
         });
-        let expected = try_enforce_recall_output_budget(value.clone(), &arguments, 2_400)
-            .expect("baseline projection");
+        let fresh_estimator = Cl100kEstimator::new();
+        let expected = try_enforce_recall_output_budget_with_estimator(
+            value.clone(),
+            &arguments,
+            2_400,
+            &fresh_estimator,
+        )
+        .expect("fresh-estimator projection");
 
         std::thread::scope(|scope| {
             let workers = (0..24)
