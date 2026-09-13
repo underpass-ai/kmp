@@ -57,9 +57,7 @@ pub(crate) fn write_commit_result(
         "clocks": ingest_result["memory"]["clocks"],
         "dry_run": false,
         "coverage": super::coverage::write_coverage(plan),
-        // The kernel counts what it ingested. For a relation-only packet
-        // that is "2 entries", which is exactly the confusion this shape
-        // exists to end: those entries are the sources it left alone.
+        // Name an attachment and its untouched sources explicitly.
         "summary": if plan.operation == super::operation::WriteOperation::Relations {
             json!(write_summary(plan))
         } else {
@@ -195,15 +193,13 @@ pub(super) fn write_summary(plan: &KernelWritePlan) -> String {
         .as_array()
         .map(Vec::len)
         .unwrap_or_default();
-    // A relation-only packet prepared no memory: its entries are the stored
-    // sources it wrote back untouched, and saying "prepared 2 entries" would
-    // describe them as this write's work.
     if plan.operation == super::operation::WriteOperation::Relations {
+        let source_count = super::attachment_view::unchanged_sources(plan).len();
         return format!(
-            "Attached {relation_count} {} and {evidence_count} {} to {entry_count} unchanged {} in {}.",
+            "Attached {relation_count} {} and {evidence_count} {} to {source_count} unchanged {} in {}.",
             plural(relation_count, "relation", "relations"),
             plural(evidence_count, "evidence item", "evidence items"),
-            plural(entry_count, "memory", "memories"),
+            plural(source_count, "memory", "memories"),
             plan.about
         );
     }

@@ -84,7 +84,8 @@ kernel's actual ingestion clock.
 
 The unified public writer accepts `memories`, the separate `search_summaries`
 operation, or `relations`: evidenced links between memories that already exist,
-read and written back unchanged so adding a link never rewrites a source. Each
+validated by canonical ingest, which writes only links and evidence so source
+updates are preserved and retries do not depend on endpoint snapshots. Each
 link and its evidence carry their own supplied observation, and the accepted
 result separates created relation and evidence from unchanged sources. The former `current`/`intent`/`scope` fields are rejected; semantic deltas
 are explicit packet members with justified relations. Compact recoverable

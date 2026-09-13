@@ -15,7 +15,8 @@ use crate::serving::tool_result::{tool_error_result, tool_success_result};
 use crate::write::validation_error::WriteValidationError;
 use crate::write::validation_errors::WriteValidationErrors;
 use crate::write::{
-    build_batch_plan, build_summary_plan, write_commit_result, write_dry_run_result,
+    build_batch_plan, build_relation_plan, build_summary_plan, write_commit_result,
+    write_dry_run_result,
 };
 
 impl KernelMcpServer {
@@ -36,9 +37,7 @@ impl KernelMcpServer {
         ) {
             (Some(_), None, None) => build_batch_plan(arguments).map_err(ToolError::from),
             (None, Some(_), None) => self.plan_search_summary_packet(arguments).await,
-            (None, None, Some(_)) => {
-                super::relation_packet::plan_relation_packet(self.backend.as_ref(), arguments).await
-            }
+            (None, None, Some(_)) => build_relation_plan(arguments).map_err(ToolError::from),
             _ => Err(WriteValidationError::new(
                 "provide exactly one of memories, search_summaries or relations",
             )

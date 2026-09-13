@@ -34,7 +34,7 @@
       "ingested": {
         "distinct_values": "integer",
         "entries": "integer",
-        "single_value": "string"
+        "single_value": "null"
       },
       "observed": {
         "distinct_values": "integer",
@@ -58,7 +58,7 @@
       "valid_from": {
         "distinct_values": "integer",
         "entries": "integer",
-        "single_value": "string"
+        "single_value": "null"
       },
       "valid_until": {
         "distinct_values": "integer",
@@ -71,7 +71,6 @@
       "evidence": "integer",
       "label_memberships": "integer",
       "memories": "integer",
-      "preserved_memberships": "integer",
       "relations": "integer",
       "scope": "string",
       "search_summaries": "integer",

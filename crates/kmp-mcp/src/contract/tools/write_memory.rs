@@ -14,7 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_write_memory",
-        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Use relations to link memories that already exist: both sources are read and written back unchanged, and only the link and its evidence are new. Never resubmit a stored memory as a record just to connect it. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Use relations to link memories that already exist: the kernel validates the stored endpoints and writes only the link and its evidence. Never resubmit a stored memory as a record just to connect it. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
         write_memory_schema(),
         write_memory_output_schema(),
     )
@@ -92,7 +92,7 @@ pub(crate) fn write_memory_schema() -> Value {
     });
     let relations = json!({
         "type":"array","minItems":1,
-        "description":"Evidenced links between memories that already exist in this about, separately from memories. KMP reads both endpoints first and writes them back unchanged, so adding a link never rewrites a source. Each link and its evidence carry their own observation. Labels, occurrence, validity and rank cannot accompany it; use memories to record a new fact and kmp_relabel to change memberships.",
+        "description":"Evidenced links between memories that already exist in this about, separately from memories. KMP validates the stored endpoints and commits only links and evidence, so concurrent source updates remain intact. Each link and its evidence carry their own observation. Labels, occurrence, validity and rank cannot accompany it; use memories to record a new fact and kmp_relabel to change memberships.",
         "items":link
     });
     json!({
@@ -266,7 +266,7 @@ fn write_memory_output_schema() -> Value {
             "relations": described("integer", "Declared semantic links."),
             "evidence": described("integer", "Compiled evidence objects."),
             "label_memberships": described("integer", "Declared per-memory key/value pairs after shared-label union."),
-            "preserved_memberships": described("integer", "Existing memberships preserved by search_summaries.")
+            "preserved_memberships": described("integer", "Existing memberships preserved by search_summaries. Omitted for relations, which do not enumerate or rewrite source coordinates; attachment.unchanged_sources names the untouched endpoints.")
         })),
         "receipt": output_object(json!({
             "ref": described("string", "Immutable accepted-command audit ref. Absent for previews and simulated backends."),
@@ -300,7 +300,7 @@ fn write_memory_output_schema() -> Value {
                 "relations": described("array", "Links this relation-only write brought into existence: from, rel, to, class, confidence, the observation the link itself carries, and the evidence node created with it. Absent observed_at means the kernel stamped its ingestion instant, never an endpoint's clock."),
                 "evidence": string_array("Evidence nodes created by this write. Their ids are derived from the logical write identity and the triple, so an exact retry replays onto the same node and a later link to the same pair adds a new one instead of overwriting it.")
             })),
-            "unchanged_sources": string_array("The stored memories this write read and wrote back untouched: same text, evidence, coordinates, labels, metadata and ingestion history. Present only for a relations packet.")
+            "unchanged_sources": string_array("The endpoint refs this relation-only write leaves untouched. Source text, evidence, coordinates, labels, metadata and ingestion history are not rewritten.")
         })),
         "replacement": output_object(json!({
             "memories": described("array", "Memories this packet wrote at a ref the caller supplied, each with the evidence this write put on it and the observation it now carries. A supplied ref replaces whatever that entry held; use relations to add a link without replacing a source.")

@@ -90,7 +90,11 @@ where
         command: MemoryIngestCommand,
     ) -> Result<MemoryIngestOutcome, ApplicationError> {
         let reviewing = super::write_neighborhood::requires_review(&command);
-        let read_guard = if reviewing {
+        // An attachment has no entries of its own: its endpoint admission
+        // depends on stored refs, including for fallback links that need no
+        // semantic review. Bind that read to the atomic commit as well.
+        let consistent_read = reviewing || command.memory.entries.is_empty();
+        let read_guard = if consistent_read {
             Some(self.command_application.projection_read().await)
         } else {
             None
@@ -99,7 +103,7 @@ where
         // about before and after reading rejects a mixed-version neighborhood
         // even when another process commits between the individual queries.
         let mut revisions = BTreeMap::new();
-        if reviewing {
+        if consistent_read {
             revisions.insert(
                 command.about.clone(),
                 self.command_application
@@ -135,7 +139,7 @@ where
                 .await
             {
                 Ok(detail) => {
-                    if reviewing {
+                    if consistent_read {
                         let owner =
                             detail.node.properties.get("memory_about").ok_or_else(|| {
                                 ApplicationError::Validation(

@@ -7,21 +7,20 @@
 //! and a record carries its text, its evidence, its coordinates, its labels
 //! and its metadata with it. The link arrived; J01's prose left with it.
 //!
-//! This path takes the link and nothing else. Both endpoints are read from
-//! the store and written back byte for byte: same ref, same kind, same text,
-//! same coordinates, same metadata. What the caller supplies is the relation
-//! — its direction, its class, its why, its evidence and the observation at
+//! This path takes the link and nothing else. The kernel validates the stored
+//! endpoints and commits only the relation and its evidence. Neither source
+//! is submitted as an entry, so an attachment cannot overwrite it. The caller
+//! supplies the relation — its direction, class, why, evidence and observation at
 //! which it is asserted — and that assertion carries its own clock, so an
 //! old source is not backdated into a link declared today.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use serde_json::{Map, Value, json};
 
 use kmp_application::{validate_ref_token, validate_supplied_entry_ref};
 use kmp_domain::MemoryRelationType;
 
-use super::existing_entry::ExistingEntry;
 use super::generated_ref::{short_hash, stable_idempotency_key};
 use super::json_value_type::JsonValueType;
 use super::plan::KernelWritePlan;
@@ -56,49 +55,10 @@ const FOREIGN_FIELDS: [&str; 7] = [
     "scope",
 ];
 
-/// The about and the stored memories a relation-only packet must be read
-/// against before it can be planned: every endpoint this about owns.
-///
-/// This is a reading list, not the validation. The planner remains the
-/// authority on every field; it simply cannot read storage itself.
-pub(crate) fn declared_sources(
-    arguments: &Value,
-) -> Result<(String, Vec<String>), WriteValidationErrors> {
-    let object = arguments
-        .as_object()
-        .ok_or("tool arguments must be an object")?;
-    let about = required_string(object, "about")?;
-    validate_ref_token("about", &about)?;
-    let mut refs = Vec::new();
-    for (index, link) in declared_relations(object)?.iter().enumerate() {
-        let link = relation_object(link, index)?;
-        let from = required_map_string(link, "from", &format!("relations[{index}].from"))?;
-        validate_supplied_entry_ref(&about, &format!("relations[{index}].from"), from).map_err(
-            |error| {
-                WriteValidationError::new(error)
-                    .at(format!("relations[{index}].from"))
-                    .code("INVALID_REF")
-            },
-        )?;
-        let to = required_map_string(link, "to", &format!("relations[{index}].to"))?;
-        for endpoint in [from, to] {
-            // A cross-about equivalence names a ref this about does not own.
-            // It is admitted by the kernel against the other about and is
-            // never rewritten from here, so it is not read back.
-            if validate_supplied_entry_ref(&about, "relations[].to", endpoint).is_ok()
-                && !refs.iter().any(|known| known == endpoint)
-            {
-                refs.push(endpoint.to_owned());
-            }
-        }
-    }
-    Ok((about, refs))
-}
-
-/// Compiles the packet against the stored endpoints `declared_sources` named.
+/// Compile only caller declarations. Endpoint existence belongs to the
+/// kernel's validated commit, and endpoint contents never enter replay identity.
 pub(crate) fn build_relation_plan(
     arguments: &Value,
-    sources: &BTreeMap<String, ExistingEntry>,
 ) -> Result<KernelWritePlan, WriteValidationErrors> {
     let object = arguments
         .as_object()
@@ -129,7 +89,6 @@ pub(crate) fn build_relation_plan(
     // target: prior context is what `read_context` declares and what the
     // served neighborhood shows, never "the current request".
     let no_local_refs = BTreeSet::new();
-    let mut preserved: Vec<&ExistingEntry> = Vec::new();
     let mut relations = Vec::new();
     let mut relation_names = Vec::new();
     let mut relation_quality = Vec::new();
@@ -141,6 +100,9 @@ pub(crate) fn build_relation_plan(
         let compiled = (|| {
             let link = relation_object(link, index)?;
             let from = required_map_string(link, "from", "from")?;
+            validate_supplied_entry_ref(&about, "from", from).map_err(|error| {
+                WriteValidationError::new(error).at("from").code("INVALID_REF")
+            })?;
             let to = required_map_string(link, "to", "to")?;
             let rel = MemoryRelationType::new(required_map_string(link, "rel", "rel")?)
                 .map_err(|error| {
@@ -228,15 +190,6 @@ pub(crate) fn build_relation_plan(
         .map_err(|error: WriteValidationError| error.within(&format!("relations[{index}]")));
         match compiled {
             Ok(compiled) => {
-                for endpoint in [&compiled.from, &compiled.to] {
-                    if let Some(source) = sources.get(endpoint.as_str())
-                        && !preserved
-                            .iter()
-                            .any(|kept| kept.reference == source.reference)
-                    {
-                        preserved.push(source);
-                    }
-                }
                 let clocks = compiled.value["clocks"].clone();
                 evidence.push(json!({
                     "id": relation_evidence_ref(&compiled, &identity, index),
@@ -265,18 +218,6 @@ pub(crate) fn build_relation_plan(
         return Err(errors);
     }
 
-    let entries = preserved
-        .iter()
-        .map(|source| {
-            json!({
-                "id": source.reference,
-                "kind": source.kind,
-                "text": source.text,
-                "coordinates": source.coordinates,
-                "metadata": source.metadata
-            })
-        })
-        .collect::<Vec<_>>();
     let mut ingest_arguments = json!({
         "about": about.clone(),
         "idempotency_key": identity.clone(),
@@ -287,7 +228,7 @@ pub(crate) fn build_relation_plan(
             // The about already holds every dimension these coordinates
             // stand in; declaring one here would be a membership change.
             "dimensions": [],
-            "entries": entries,
+            "entries": [],
             "relations": relations,
             "evidence": evidence
         },

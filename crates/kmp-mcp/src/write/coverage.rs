@@ -12,11 +12,8 @@ pub(crate) fn write_coverage(plan: &KernelWritePlan) -> Value {
         .map(|entry| entry["coordinates"].as_array().map_or(0, Vec::len))
         .sum();
     let is_memory_packet = plan.operation == WriteOperation::Memories;
-    // A relation-only packet declares links; its entries are the stored
-    // sources it wrote back untouched, so they count as preserved and never
-    // as declared memories or summaries.
     let preserves_sources = plan.operation != WriteOperation::Memories;
-    json!({
+    let mut coverage = json!({
         "scope": "submitted_packet",
         "complete": true,
         "source_coverage": "not_assessed",
@@ -30,5 +27,15 @@ pub(crate) fn write_coverage(plan: &KernelWritePlan) -> Value {
         "evidence": memory["evidence"].as_array().map_or(0, Vec::len),
         "label_memberships": if is_memory_packet { memberships } else { 0 },
         "preserved_memberships": if preserves_sources { memberships } else { 0 }
-    })
+    });
+    // An attachment does not enumerate source coordinates. Its endpoint refs
+    // are reported in attachment.unchanged_sources, without inventing a count
+    // of memberships that this command neither read nor wrote.
+    if plan.operation == WriteOperation::Relations {
+        coverage
+            .as_object_mut()
+            .expect("coverage")
+            .remove("preserved_memberships");
+    }
+    coverage
 }

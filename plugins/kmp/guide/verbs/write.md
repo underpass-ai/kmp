@@ -319,10 +319,10 @@ metadata, so that route replaces the source it was only meant to cite — and a
 read at the source's own observation afterwards returns prose about something
 that had not happened yet.
 
-KMP reads every endpoint this about owns before compiling, and writes it back
-byte for byte: same ref, same kind, same text, same coordinates, same metadata.
-A ref that is not in the store fails that pre-read and the whole packet is
-refused. `from` must be a canonical ref of this about, never a local id and
+KMP validates the stored endpoints and atomically commits only the links and
+their evidence. It does not rewrite source entries, so a concurrent source
+correction keeps its text, coordinates, labels and metadata. An unknown endpoint
+refuses the whole packet before any link or evidence is written. `from` must be a canonical ref of this about, never a local id and
 never the about anchor; `to` may name another about only for `same_event_as`
 or `same_entity_as`, with the returned `kmp_relate` proposal in `read_context`.
 `why` and `evidence` are always required here, because this shape declares no
@@ -343,9 +343,13 @@ separates the two halves in `attachment`: `created.relations` and
 `created.evidence` are what this write brought into existence, and
 `unchanged_sources` the memories it left alone. Each evidence id is derived
 from the logical write identity and the triple, so an exact retry replays onto
-the same node while a second, later link to the same pair adds its own evidence
+the same node even after an endpoint is corrected or relabelled. A second,
+later link to the same pair adds its own evidence
 beside the first instead of overwriting it. Reusing an accepted
 `idempotency_key` with a different link is a `conflict`, not a second write.
+`coverage` counts only the declaration. `preserved_memberships` is omitted
+for relations because this operation does not enumerate source coordinates;
+`attachment.unchanged_sources` names the untouched endpoints.
 
 A `memories` record that supplies `ref` is the other move, and the result says
 so in `replacement`: the ref, the evidence this write put on it and the

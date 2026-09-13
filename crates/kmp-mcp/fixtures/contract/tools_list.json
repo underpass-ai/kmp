@@ -94,8 +94,28 @@
           },
           "memory": {
             "additionalProperties": true,
+            "anyOf": [
+              {
+                "properties": {
+                  "entries": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "relations": {
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "relations"
+                ]
+              }
+            ],
             "properties": {
               "dimensions": {
+                "description": "Declare new dimensions, or leave empty when the about already holds the required dimensions.",
                 "items": {
                   "additionalProperties": true,
                   "properties": {
@@ -127,10 +147,10 @@
                   ],
                   "type": "object"
                 },
-                "minItems": 1,
                 "type": "array"
               },
               "entries": {
+                "description": "Entries this command creates or replaces. Leave empty to attach relations and evidence to existing refs without rewriting them.",
                 "items": {
                   "additionalProperties": true,
                   "properties": {
@@ -228,7 +248,6 @@
                   ],
                   "type": "object"
                 },
-                "minItems": 1,
                 "type": "array"
               },
               "evidence": {
@@ -791,7 +810,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Use relations to link memories that already exist: both sources are read and written back unchanged, and only the link and its evidence are new. Never resubmit a stored memory as a record just to connect it. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+      "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Use relations to link memories that already exist: the kernel validates the stored endpoints and writes only the link and its evidence. Never resubmit a stored memory as a record just to connect it. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
       "inputSchema": {
         "additionalProperties": false,
         "oneOf": [
@@ -1408,7 +1427,7 @@
             "type": "object"
           },
           "relations": {
-            "description": "Evidenced links between memories that already exist in this about, separately from memories. KMP reads both endpoints first and writes them back unchanged, so adding a link never rewrites a source. Each link and its evidence carry their own observation. Labels, occurrence, validity and rank cannot accompany it; use memories to record a new fact and kmp_relabel to change memberships.",
+            "description": "Evidenced links between memories that already exist in this about, separately from memories. KMP validates the stored endpoints and commits only links and evidence, so concurrent source updates remain intact. Each link and its evidence carry their own observation. Labels, occurrence, validity and rank cannot accompany it; use memories to record a new fact and kmp_relabel to change memberships.",
             "items": {
               "additionalProperties": false,
               "if": {
@@ -1610,7 +1629,7 @@
                 "type": "object"
               },
               "unchanged_sources": {
-                "description": "The stored memories this write read and wrote back untouched: same text, evidence, coordinates, labels, metadata and ingestion history. Present only for a relations packet.",
+                "description": "The endpoint refs this relation-only write leaves untouched. Source text, evidence, coordinates, labels, metadata and ingestion history are not rewritten.",
                 "items": {
                   "type": "string"
                 },
@@ -1822,7 +1841,7 @@
                 "type": "integer"
               },
               "preserved_memberships": {
-                "description": "Existing memberships preserved by search_summaries.",
+                "description": "Existing memberships preserved by search_summaries. Omitted for relations, which do not enumerate or rewrite source coordinates; attachment.unchanged_sources names the untouched endpoints.",
                 "type": "integer"
               },
               "relations": {

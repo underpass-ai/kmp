@@ -486,14 +486,12 @@
       "properties": {
         "dimensions": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "$ref": "#/$defs/dimension"
           }
         },
         "entries": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "$ref": "#/$defs/entry"
           }
@@ -510,7 +508,26 @@
             "$ref": "#/$defs/evidence_item"
           }
         }
-      }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "entries": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": [
+            "relations"
+          ],
+          "properties": {
+            "relations": {
+              "minItems": 1
+            }
+          }
+        }
+      ]
     },
     "accepted_counts": {
       "type": "object",
@@ -1905,7 +1922,7 @@
           "type": "object"
         },
         "relations": {
-          "description": "Evidenced links between memories that already exist in this about, separately from memories. KMP reads both endpoints first and writes them back unchanged, so adding a link never rewrites a source. Each link and its evidence carry their own observation. Labels, occurrence, validity and rank cannot accompany it; use memories to record a new fact and kmp_relabel to change memberships.",
+          "description": "Evidenced links between memories that already exist in this about, separately from memories. KMP validates the stored endpoints and commits only links and evidence, so concurrent source updates remain intact. Each link and its evidence carry their own observation. Labels, occurrence, validity and rank cannot accompany it; use memories to record a new fact and kmp_relabel to change memberships.",
           "items": {
             "additionalProperties": false,
             "if": {
@@ -2111,7 +2128,7 @@
               "type": "object"
             },
             "unchanged_sources": {
-              "description": "The stored memories this write read and wrote back untouched: same text, evidence, coordinates, labels, metadata and ingestion history. Present only for a relations packet.",
+              "description": "The endpoint refs this relation-only write leaves untouched. Source text, evidence, coordinates, labels, metadata and ingestion history are not rewritten.",
               "items": {
                 "type": "string"
               },

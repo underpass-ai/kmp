@@ -3,8 +3,8 @@
 //! A caller reading `accepted: true` cannot otherwise tell an attachment
 //! from a replacement: both answer with entries, relations and evidence. So
 //! this names the two halves out loud — the relation and the evidence node
-//! this write brought into existence, and the source memories it wrote back
-//! unchanged — and refuses to guess for any other operation.
+//! this write brought into existence, and the source memories it left
+//! untouched — and refuses to guess for any other operation.
 
 use serde_json::{Value, json};
 
@@ -43,10 +43,24 @@ pub(crate) fn attachment(plan: &KernelWritePlan) -> Option<Value> {
                 .map(|item| item["id"].clone())
                 .collect::<Vec<_>>()
         },
-        "unchanged_sources": memory["entries"]
-            .as_array()?
-            .iter()
-            .map(|entry| entry["id"].clone())
-            .collect::<Vec<_>>()
+        "unchanged_sources": unchanged_sources(plan)
     }))
+}
+
+/// Source identities come from the declared links. No source snapshot is
+/// needed to say what this write leaves untouched.
+pub(crate) fn unchanged_sources(plan: &KernelWritePlan) -> Vec<Value> {
+    let mut sources = Vec::new();
+    for relation in plan.ingest_arguments["memory"]["relations"]
+        .as_array()
+        .into_iter()
+        .flatten()
+    {
+        for endpoint in [&relation["from"], &relation["to"]] {
+            if !sources.contains(endpoint) {
+                sources.push(endpoint.clone());
+            }
+        }
+    }
+    sources
 }

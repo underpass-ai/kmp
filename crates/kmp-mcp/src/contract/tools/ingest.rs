@@ -26,10 +26,14 @@ pub(crate) fn definition() -> Value {
                     "type": "object",
                     "additionalProperties": true,
                     "required": ["dimensions", "entries"],
+                    "anyOf": [
+                        {"properties":{"entries":{"minItems":1}}},
+                        {"required":["relations"],"properties":{"relations":{"minItems":1}}}
+                    ],
                     "properties": {
                         "dimensions": {
                             "type": "array",
-                            "minItems": 1,
+                            "description": "Declare new dimensions, or leave empty when the about already holds the required dimensions.",
                             "items": {
                                 "type": "object",
                                 "additionalProperties": true,
@@ -44,7 +48,7 @@ pub(crate) fn definition() -> Value {
                         },
                         "entries": {
                             "type": "array",
-                            "minItems": 1,
+                            "description": "Entries this command creates or replaces. Leave empty to attach relations and evidence to existing refs without rewriting them.",
                             "items": {
                                 "type": "object",
                                 "additionalProperties": true,

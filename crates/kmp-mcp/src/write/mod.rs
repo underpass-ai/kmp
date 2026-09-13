@@ -52,6 +52,6 @@ pub(crate) use ingest_planner::build_ingest_plan;
 pub(crate) use ingest_validation::reject_refs_outside_about;
 pub(crate) use relabel_planner::build_relabel_plan;
 pub(crate) use relabel_results::relabel_result;
-pub(crate) use relation_planner::{build_relation_plan, declared_sources};
+pub(crate) use relation_planner::build_relation_plan;
 pub(crate) use results::{write_commit_result, write_dry_run_result};
 pub(crate) use summary_planner::build_summary_plan;
