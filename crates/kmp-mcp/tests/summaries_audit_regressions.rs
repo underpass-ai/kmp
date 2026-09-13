@@ -359,3 +359,88 @@ async fn a_later_implicit_summary_refresh_remains_replayable() {
         revision
     );
 }
+
+/// The declaration binding covers the whole public packet. A subset and a
+/// changed observation are new writes even when one target's actor, summary,
+/// and source bytes are otherwise unchanged.
+#[tokio::test]
+async fn implicit_summary_reuse_requires_the_complete_normalized_declaration() {
+    let (_store, server) = seeded().await;
+    let ventana_summary = "The rollout window moved to Tuesday afternoon (#469).";
+    let valkey_summary = "Valkey 7.2 was adopted for the shared store (ADR-018).";
+    let packet = json!({
+        "about": ABOUT,
+        "actor": "agent:older",
+        "search_summaries": [
+            {"ref": format!("{ABOUT}:decision:ventana"), "summary_en": ventana_summary},
+            {"ref": format!("{ABOUT}:decision:valkey"), "summary_en": valkey_summary}
+        ]
+    });
+    let accepted = call(&server, "kmp_write_memory", packet).await;
+    assert_eq!(
+        accepted["structuredContent"]["accepted"], true,
+        "{accepted}"
+    );
+    let after_packet = call(
+        &server,
+        "kmp_inspect",
+        json!({"about": ABOUT, "ref": format!("{ABOUT}:decision:ventana"), "include": {"raw": true}}),
+    )
+    .await;
+    let packet_revision = after_packet["structuredContent"]["raw"][0]["revision"].clone();
+
+    let subset = call(
+        &server,
+        "kmp_write_memory",
+        json!({
+            "about": ABOUT,
+            "actor": "agent:older",
+            "search_summaries": [{
+                "ref": format!("{ABOUT}:decision:ventana"),
+                "summary_en": ventana_summary
+            }]
+        }),
+    )
+    .await;
+    assert_eq!(subset["structuredContent"]["accepted"], true, "{subset}");
+    let after_subset = call(
+        &server,
+        "kmp_inspect",
+        json!({"about": ABOUT, "ref": format!("{ABOUT}:decision:ventana"), "include": {"raw": true}}),
+    )
+    .await;
+    let subset_revision = after_subset["structuredContent"]["raw"][0]["revision"].clone();
+    assert_ne!(
+        subset_revision, packet_revision,
+        "a subset is a new declaration"
+    );
+
+    let observed = call(
+        &server,
+        "kmp_write_memory",
+        json!({
+            "about": ABOUT,
+            "actor": "agent:older",
+            "observed_at": "2026-05-08T10:00:00Z",
+            "search_summaries": [{
+                "ref": format!("{ABOUT}:decision:ventana"),
+                "summary_en": ventana_summary
+            }]
+        }),
+    )
+    .await;
+    assert_eq!(
+        observed["structuredContent"]["accepted"], true,
+        "{observed}"
+    );
+    let after_observed = call(
+        &server,
+        "kmp_inspect",
+        json!({"about": ABOUT, "ref": format!("{ABOUT}:decision:ventana"), "include": {"raw": true}}),
+    )
+    .await;
+    assert_ne!(
+        after_observed["structuredContent"]["raw"][0]["revision"], subset_revision,
+        "an observation change is a new declaration"
+    );
+}

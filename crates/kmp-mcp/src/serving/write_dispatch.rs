@@ -205,8 +205,11 @@ impl KernelMcpServer {
             .and_then(Value::as_str)
             .filter(|key| !key.trim().is_empty())
             .map(str::to_owned);
-        let implicit_identity = explicit_identity.is_none().then(|| {
-            reusable_summary_packet_identity(object, &prepared)
+        let implicit_declaration = explicit_identity
+            .is_none()
+            .then(|| summary_packet_declaration(object));
+        let implicit_identity = implicit_declaration.as_ref().map(|declaration| {
+            reusable_summary_packet_identity(object, &prepared, declaration)
                 .unwrap_or_else(|| derived_summary_packet_identity(object, source_bindings))
         });
         let identity = explicit_identity
@@ -224,6 +227,14 @@ impl KernelMcpServer {
                 request.insert(
                     "summary_validation_identity".into(),
                     serde_json::json!(implicit_identity),
+                );
+                request.insert(
+                    "summary_validation_declaration".into(),
+                    serde_json::json!(
+                        implicit_declaration
+                            .as_ref()
+                            .expect("identity has declaration")
+                    ),
                 );
             }
             let mut plan = match build_summary_plan(&Value::Object(request), &existing) {
@@ -274,9 +285,14 @@ fn derived_summary_packet_identity(
     crate::write::generated_ref::stable_idempotency_key(&source_bound)
 }
 
+fn summary_packet_declaration(arguments: &Map<String, Value>) -> String {
+    crate::write::generated_ref::stable_idempotency_key(arguments)
+}
+
 fn reusable_summary_packet_identity(
     arguments: &Map<String, Value>,
     prepared: &[(usize, Map<String, Value>, ExistingEntry)],
+    declaration: &str,
 ) -> Option<String> {
     let actor = arguments.get("actor")?.as_str()?;
     let mut identities = prepared.iter().map(|(_, record, existing)| {
@@ -300,7 +316,12 @@ fn reusable_summary_packet_identity(
                 .metadata
                 .get(SearchSummary::SOURCE_FINGERPRINT_METADATA_KEY)?
                 .as_str()?
-                == fingerprint)
+                == fingerprint
+            && existing
+                .metadata
+                .get(SearchSummary::VALIDATION_DECLARATION_METADATA_KEY)?
+                .as_str()?
+                == declaration)
             .then_some(identity.to_string())
     });
     let identity = identities.next()??;

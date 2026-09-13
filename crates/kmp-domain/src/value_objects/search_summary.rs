@@ -55,6 +55,11 @@ impl SearchSummary {
     /// conflating a later source revision with the old validation.
     pub const VALIDATION_IDENTITY_METADATA_KEY: &'static str = "summary_en_validation_identity";
 
+    /// Digest of the complete normalized `search_summaries` declaration that
+    /// produced the implicit validation identity.
+    pub const VALIDATION_DECLARATION_METADATA_KEY: &'static str =
+        "summary_en_validation_declaration";
+
     /// Stable fingerprint of the stored source text a rendering was checked
     /// against. The source itself remains canonical; this only binds the
     /// validation event to that exact body.

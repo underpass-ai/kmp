@@ -93,9 +93,18 @@ pub(crate) fn build_summary_plan(
                 SearchSummary::VALIDATION_IDENTITY_METADATA_KEY.to_string(),
                 json!(identity),
             );
+            let declaration = arguments
+                .get("summary_validation_declaration")
+                .and_then(Value::as_str)
+                .expect("implicit validation identity has its declaration");
+            metadata.insert(
+                SearchSummary::VALIDATION_DECLARATION_METADATA_KEY.to_string(),
+                json!(declaration),
+            );
         }
         None => {
             metadata.remove(SearchSummary::VALIDATION_IDENTITY_METADATA_KEY);
+            metadata.remove(SearchSummary::VALIDATION_DECLARATION_METADATA_KEY);
         }
     }
     let idempotency_key = optional_string(arguments.get("idempotency_key"))
