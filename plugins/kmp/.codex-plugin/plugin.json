@@ -18,7 +18,10 @@
   "skills": "./skills/",
   "mcpServers": {
     "kmp": {
-      "command": "kmp-mcp"
+      "command": "kmp-mcp",
+      "env_vars": [
+        "KMP_MCP_DATA_DIR"
+      ]
     }
   },
   "interface": {

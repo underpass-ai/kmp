@@ -98,6 +98,19 @@ manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text(encoding=
 if manifest.get("skills") != "./skills/":
     fail("Codex manifest does not expose the native skills directory")
 
+# The plugin is the single MCP owner, and the engine it wires is the one on
+# PATH. Codex builds a local stdio child's environment from its default set
+# plus the variable names in `env_vars`, read from the app-server process
+# (codex-rs/rmcp-client/src/utils.rs `create_env_for_mcp_server`, over
+# `McpServerEnvVar::Name`, which is a plain JSON string). Declaring the
+# explicit override forwards it when the desktop application carries it and
+# changes nothing about ordinary selection when it does not.
+kmp_server = manifest.get("mcpServers", {}).get("kmp", {})
+if kmp_server.get("command") != "kmp-mcp":
+    fail("Codex manifest does not wire the kmp-mcp engine")
+if kmp_server.get("env_vars") != ["KMP_MCP_DATA_DIR"]:
+    fail("Codex manifest does not forward the explicit KMP_MCP_DATA_DIR override")
+
 codex_assets = [
     *(PLUGIN / "skills").glob("**/*"),
     PLUGIN / ".codex-plugin/plugin.json",

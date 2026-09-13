@@ -840,8 +840,8 @@
           "id": "basic:local",
           "kind": "concept",
           "depth": "basic",
-          "text": "Embedded KMP runs on your machine. Codex and Claude Code can use the same local SQLite store; no KMP account or hosted memory service is required.",
-          "evidence": "The embedded engine selects SQLite in WAL mode and the viewer binds to loopback."
+          "text": "Embedded KMP runs on your machine. Codex and Claude Code can use the same local SQLite store; no KMP account or hosted memory service is required. Which store that is follows one order: the KMP_MCP_DATA_DIR environment variable, then the selection you save with kmp-mcp config memory-store, then the nearest project root, then the per-user default. A saved selection lives in your config file, so it survives restarts with no environment variable and no launcher script, and kmp-mcp config shows the saved selection, the effective one and which rule won. KMP never migrates, converts or overwrites a store it cannot open: it refuses the selection, says why, and leaves every file where it was.",
+          "evidence": "The embedded engine selects SQLite in WAL mode and the viewer binds to loopback. Selection is proved end to end through the binary: the environment override beats a saved selection, a saved selection beats project discovery and the per-user default, and an incompatible store is refused with its old bytes intact."
         },
         {
           "id": "basic:crossing-languages",

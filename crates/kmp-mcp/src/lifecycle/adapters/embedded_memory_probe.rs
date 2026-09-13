@@ -4,6 +4,7 @@ use kmp_embedded::{ResolvedDataDir, StorageEngine};
 
 use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
+use crate::lifecycle::domain::memory_selection_repair::MEMORY_SELECTION_REPAIR;
 
 // The embedded layout, read and never prepared: what this binary is,
 // which store this shell would open, and what is actually on its disk.
@@ -46,9 +47,29 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
         )
         .with_detail(format!("data dir: {}", path.display()))
         .with_detail(error.to_string())
-        .with_detail("the diagnostic left every store file untouched"),
+        .with_detail("the diagnostic left every store file untouched")
+        .with_detail(MEMORY_SELECTION_REPAIR),
     }
-    .with_detail(format!("chosen by: {}", resolved.rule_name()));
+    .with_detail(format!(
+        "chosen by: {} — {}",
+        resolved.rule_name(),
+        resolved.rule_sentence()
+    ))
+    .with_detail(kmp_embedded::memory_selection::PRECEDENCE);
+
+    // A selection that exists and did not win is the question a reader is
+    // actually holding — "why is my memory not the one open here?" — so the
+    // report answers it instead of leaving the precedence to be applied by
+    // hand.
+    if let Ok(Some(selection)) = kmp_embedded::memory_selection::saved_selection()
+        && selection.path() != path
+    {
+        finding = finding.with_detail(format!(
+            "saved selection: {} — not in use here, because {} won",
+            selection.path().display(),
+            resolved.rule_name()
+        ));
+    }
 
     match layout {
         Ok(Some(engine)) => {
@@ -154,6 +175,13 @@ mod tests {
                     .iter()
                     .all(|line| !line.contains("no store yet")),
                 "{finding:?}"
+            );
+            assert!(
+                finding
+                    .detail()
+                    .iter()
+                    .any(|line| line.contains("kmp-mcp config memory-store <absolute-path>")),
+                "a store that will not open has to name the repair: {finding:?}"
             );
             assert!(store.exists(), "diagnosis must preserve the memory file");
         }
