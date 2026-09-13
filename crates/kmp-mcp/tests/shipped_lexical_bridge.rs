@@ -19,7 +19,7 @@ fn shipped() -> PathBuf {
 
 fn table() -> LexicalBridge {
     let bytes = std::fs::read(shipped()).expect("the shipped table is committed");
-    LexicalBridge::from_bytes(&bytes).expect("the shipped table is one this kernel reads")
+    LexicalBridge::from_owned_bytes(bytes).expect("the shipped table is one this kernel reads")
 }
 
 #[test]

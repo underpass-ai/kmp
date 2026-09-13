@@ -1,0 +1,15 @@
+{
+  "base_commit": "0f4b73023378388a42458c602d8909e3d1c1dc3c",
+  "base_source_sha256": "f8115a0d1a0635c8d87647a4188210a5cd8afa8a623fb8865d46e4c088bac292",
+  "base_source_archive_sha256": "f754bbd6d7e1c039786ebcf003738bc10342935c9e9c6bddee4bf68c430fd3d3",
+  "phase_runner_source_sha256": "b1d96a4c8656cebb60eb26ab871f9020803dfcd7a14a6e69480d3de53a2c66d5",
+  "phase_runner_binary_sha256": "53e6ea6047cad8b5af1f09ec15ce1186ef9341f06c10714ca3260d66cdc7a38d",
+  "bridge_sha256": "556e2ba9657f702f8a33f1b1d4bb402eb5a5bf8c7b65fe5df4b937e5b0bd6712",
+  "bridge_bytes": 13326412,
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "target": "aarch64-unknown-linux-gnu",
+  "profile": "opt-level=0, line-tables-only, incremental disabled",
+  "cpu": "20 logical cores, Cortex-X925 and Cortex-A725, frequency boost disabled",
+  "scope": "legacy format-v1 reader phases mirrored from the archived base source",
+  "model_calls": 0
+}
