@@ -69,3 +69,10 @@ ChronoLoom keeps missing refs visible as unavailable. This framing read
 does not load canonical bodies or certify proof completeness; use Trace's bounded
 proof expansion and Inspect for the actual evidence. Older in-flight focus reads
 cannot overwrite a newer focus, about or clock.
+
+Repeated identical projections may reuse a bounded application cache. Each call
+opens a fresh read snapshot first; writes to any about, bodies, labels or relations
+prevent reuse of the earlier projection. The full clock, range, scope, label and
+page selection stays part of its identity. A backend without a certified complete
+revision recomputes the projection. This reuse does not change authorization,
+pagination or proof completeness and does not make a stored view a current audit.

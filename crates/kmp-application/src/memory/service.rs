@@ -41,6 +41,12 @@ mod temporal_index_identity;
 mod temporal_index_read;
 #[path = "temporal_support_read.rs"]
 mod temporal_support_read;
+#[path = "visual_projection_cache.rs"]
+mod visual_projection_cache;
+#[path = "visual_projection_identity.rs"]
+mod visual_projection_identity;
+#[path = "visual_projection_retention.rs"]
+mod visual_projection_retention;
 
 pub struct KernelMemoryApplicationService<G, D, S, E, W> {
     query_application: Arc<QueryApplicationService<G, D, S>>,
@@ -50,6 +56,7 @@ pub struct KernelMemoryApplicationService<G, D, S, E, W> {
     /// cards composes without carrying a generic for a table it never reads.
     node_cards: Option<Arc<dyn NodeCardStore>>,
     temporal_index_cache: Arc<std::sync::Mutex<temporal_index_cache::TemporalIndexCache>>,
+    visual_projection_cache: Arc<std::sync::Mutex<visual_projection_cache::VisualProjectionCache>>,
 }
 
 impl<G, D, S, E, W> KernelMemoryApplicationService<G, D, S, E, W> {
@@ -62,6 +69,7 @@ impl<G, D, S, E, W> KernelMemoryApplicationService<G, D, S, E, W> {
             command_application,
             node_cards: None,
             temporal_index_cache: Arc::new(std::sync::Mutex::new(Default::default())),
+            visual_projection_cache: Arc::new(std::sync::Mutex::new(Default::default())),
         }
     }
 
@@ -325,6 +333,7 @@ where
         Ok(self.query_application.read_snapshot().await?.map(|query| {
             let mut snapshot = Self::new(Arc::new(query), Arc::clone(&self.command_application));
             snapshot.temporal_index_cache = Arc::clone(&self.temporal_index_cache);
+            snapshot.visual_projection_cache = Arc::clone(&self.visual_projection_cache);
             snapshot
         }))
     }
@@ -509,6 +518,27 @@ where
         query: VisualProjectionQuery,
     ) -> Result<VisualProjectionResult, ApplicationError> {
         let temporal_query = query.temporal_query()?;
+        let identity = self
+            .query_application
+            .graph_read_revision()
+            .await?
+            .map(
+                |revision| visual_projection_identity::VisualProjectionIdentity {
+                    revision,
+                    query: query.clone(),
+                },
+            );
+        if let Some(identity) = &identity {
+            // Drop the cache lock before cloning the caller's owned result.
+            let cached = self
+                .visual_projection_cache
+                .lock()
+                .ok()
+                .and_then(|mut cache| cache.get(identity));
+            if let Some(cached) = cached {
+                return Ok(cached.as_ref().clone());
+            }
+        }
         let read = self.temporal_read(&temporal_query, true).await?;
         // The catalogue is read before the filter: a renderer draws the
         // about's labels, and says which are empty in this range. Under
@@ -523,6 +553,11 @@ where
         let temporal = temporal_result(temporal_query, read)?;
         let mut projection = build_visual_projection(&query, temporal, catalogue)?;
         super::visual_projection::include_owned_declarations(&mut projection, declarations);
+        if let Some(identity) = identity
+            && let Ok(mut cache) = self.visual_projection_cache.lock()
+        {
+            cache.put(identity, &projection);
+        }
         Ok(projection)
     }
 
