@@ -76,3 +76,8 @@ prevent reuse of the earlier projection. The full clock, range, scope, label and
 page selection stays part of its identity. A backend without a certified complete
 revision recomputes the projection. This reuse does not change authorization,
 pagination or proof completeness and does not make a stored view a current audit.
+
+Rapid human drags and sliders follow the latest position; release keeps the final
+interval. Search waits for a short typing pause, while explicit view intents and
+Escape apply immediately. Selection, direction, labels and the chosen clock keep
+their meaning as existing scene objects are updated.

@@ -379,20 +379,27 @@ const KMP_LOOM = (() => {
         compressed: compressedGaps[index],
       };
     });
-    const locateTime = (time) =>
-      segments.find((segment) => time <= segment.t1) || segments[segments.length - 1];
-    const locateRatio = (ratio) =>
-      segments.find((segment) => ratio <= segment.u1) || segments[segments.length - 1];
+    // First inclusive upper boundary, matching the former linear search.
+    const locate = (value, field) => {
+      let lo = 0, hi = segments.length - 1;
+      while (lo < hi) {
+        const mid = lo + Math.floor((hi - lo) / 2);
+        if (value <= segments[mid][field]) hi = mid;
+        else lo = mid + 1;
+      }
+      return segments[lo];
+    };
+    const locateTime = time => locate(time, "t1");
+    const locateRatio = ratio => locate(ratio, "u1");
     return {
       mode,
       segments,
-      breaks: [
+      breaks: [...new Set([
         ...segments
           .filter((segment) => segment.compressed)
           .flatMap((segment) => [segment.t0, segment.t1]),
         ...(hasFocus ? [focusFrom, focusTo] : []),
-      ]
-        .filter((time, index, all) => time > start && time < end && all.indexOf(time) === index),
+      ])].filter(time => time > start && time < end),
       toRatio(time) {
         const t = Math.max(start, Math.min(end, time));
         const segment = locateTime(t);
