@@ -7682,6 +7682,339 @@
     },
     {
       "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Read where this store's memories stand with respect to their English search summaries, so the one writer that can produce a summary can see what to repair. Deterministic and repeatable: it reads the store's own event log, generates no text, changes nothing and never rejects a memory. Each entry returns a state — missing, refused, stands, not_required — with the lint's own faults when a summary is refused, and deterministic weakness signals when one stands and still retrieves little. Both feed kmp_write_memory search_summaries unchanged: render the text again and attach it. Scope defaults to one about; dimensions.scope abouts reads a named set and all_abouts sweeps every anchor, at a real cost. Page with page.cursor and the same bound arguments; totals describe the whole selection, not the page. It judges form, never meaning: a fluent, wrong summary passes, exactly as the lint does.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "The about to audit. Required for the default scope; omit it only with dimensions.scope all_abouts, which names no single anchor.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "max_bytes": {
+                "default": 10000,
+                "description": "Compact-JSON structuredContent byte ceiling. The totals and the per-about counts are the stable core; the memories page under it. One memory larger than the whole ceiling is still returned, with a warning, so a continuation always advances.",
+                "minimum": 512,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "description": "Which abouts this reading covers, in the same words kmp_ask reads several abouts together.",
+            "properties": {
+              "abouts": {
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "scope": {
+                "description": "Default current_about audits the named about alone. abouts reads the list in dimensions.abouts. all_abouts sweeps every anchor and is the explicit opt-in to that cost on a large store; it is never a default.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque cursor returned by page.next_cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Optional maximum memories on this page; the byte ceiling still applies, and a page always carries at least one memory so a continuation cannot stall.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
+          "states": {
+            "description": "Keep only these states. Omitted: every memory of the selection, which is what an audit is. Narrow to missing and refused for the debt alone, or add stands to read the weakness signals with it. Totals always describe the unfiltered selection, so a narrowed read still says how much of the about it covered.",
+            "items": {
+              "enum": [
+                "missing",
+                "refused",
+                "stands",
+                "not_required"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "type": "object"
+      },
+      "name": "kmp_summaries_audit",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "abouts": {
+            "description": "The same counts per about, in the order the store met them.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "about": {
+                  "description": "The about these counts are for.",
+                  "type": "string"
+                },
+                "totals": {
+                  "additionalProperties": false,
+                  "description": "Counts over this about's memories.",
+                  "properties": {
+                    "entries": {
+                      "description": "Memories read.",
+                      "type": "integer"
+                    },
+                    "missing": {
+                      "description": "With no summary, whose text an English question cannot reach.",
+                      "type": "integer"
+                    },
+                    "not_required": {
+                      "description": "With no summary and no need of one.",
+                      "type": "integer"
+                    },
+                    "owed": {
+                      "description": "missing plus refused: the memories `kmp-mcp summaries pending` lists and the doctor counts.",
+                      "type": "integer"
+                    },
+                    "refused": {
+                      "description": "Carrying a summary the lint refuses.",
+                      "type": "integer"
+                    },
+                    "stands": {
+                      "description": "Carrying a summary the lint accepts.",
+                      "type": "integer"
+                    },
+                    "weak": {
+                      "description": "Of those that stand, how many carry at least one weakness signal. Never counted as owing a summary.",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "entries": {
+            "description": "One memory per item, in the order the store met them, filtered by states and cut by the page.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "about": {
+                  "description": "The about that owns this memory.",
+                  "type": "string"
+                },
+                "faults": {
+                  "description": "Why the lint refuses this summary, in the lint's own words — the same sentences kmp_ingest and kmp_write_memory put in front of a writer. Present only in the refused state.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "description": "What the memory records.",
+                  "type": "string"
+                },
+                "ref": {
+                  "description": "The memory ref. Pass it back in kmp_write_memory search_summaries[].ref, byte for byte.",
+                  "type": "string"
+                },
+                "state": {
+                  "description": "missing: no summary and an English question cannot reach the text. refused: a summary the lint will not accept, so it carries no retrieval. stands: the lint accepts it. not_required: no summary and none is needed, because the text is already in the kernel's search language.",
+                  "type": "string"
+                },
+                "summary_en": {
+                  "description": "The stored English rendering, when there is one.",
+                  "type": "string"
+                },
+                "summary_en_by": {
+                  "description": "Who wrote that rendering, when the store knows. This is what makes \"regenerate everything an older writer produced\" answerable.",
+                  "type": "string"
+                },
+                "text": {
+                  "description": "The stored text, byte for byte, present only when this memory needs a rendering written — a debt, or a summary that stands weakly. Render this; never alter it to fit a summary.",
+                  "type": "string"
+                },
+                "weaknesses": {
+                  "description": "Deterministic signals that this accepted summary still carries little retrieval. Warnings, never refusals: the memory is intact and the fix is a better rendering.",
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "says": {
+                        "description": "What to change, in one sentence.",
+                        "type": "string"
+                      },
+                      "signal": {
+                        "description": "thin: it clears the lint's floor and little more, for a much longer text. repeated: other memories of this about carry it word for word. undiscriminating: every informative word of it already reaches most of this about's other memories. stale: the text was rewritten after the summary was last written.",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "next_actions": {
+            "description": "The complete call that continues this reading. Execute it and retain the earlier pages; empty when the reading is complete.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "The complete call, with every bound argument preserved and page.cursor set.",
+                  "type": "object"
+                },
+                "tool": {
+                  "const": "kmp_summaries_audit",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "has_more": {
+                "description": "More items remain; this page is incomplete.",
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "description": "Opaque audit cursor for page.cursor, or null. Repeat every bound argument unchanged; only page.entries and budget.max_bytes may vary. A changed selection rejects the cursor rather than paging a different reading.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "offset": {
+                "description": "Memories already read by earlier pages of this continuation.",
+                "type": "integer"
+              },
+              "required_bytes": {
+                "description": "Present only when one memory alone exceeded the byte ceiling and was returned anyway. Raise budget.max_bytes to this to read the page without that overrun.",
+                "type": "integer"
+              },
+              "returned": {
+                "description": "Items returned on this page.",
+                "type": "integer"
+              },
+              "total": {
+                "description": "Total memories in the selection after the states filter in the selection.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "scope": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "The abouts the selection named. Empty for all_abouts, which names none.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "selection": {
+                "description": "current_about, abouts or all_abouts — the scope this reading applied.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "summary": {
+            "description": "What this reading covered and how much of it owes a summary.",
+            "type": "string"
+          },
+          "totals": {
+            "additionalProperties": false,
+            "description": "Counts over the whole selection, before any states filter and independent of paging. The doctor prints these, from this same reading.",
+            "properties": {
+              "entries": {
+                "description": "Memories read.",
+                "type": "integer"
+              },
+              "missing": {
+                "description": "With no summary, whose text an English question cannot reach.",
+                "type": "integer"
+              },
+              "not_required": {
+                "description": "With no summary and no need of one.",
+                "type": "integer"
+              },
+              "owed": {
+                "description": "missing plus refused: the memories `kmp-mcp summaries pending` lists and the doctor counts.",
+                "type": "integer"
+              },
+              "refused": {
+                "description": "Carrying a summary the lint refuses.",
+                "type": "integer"
+              },
+              "stands": {
+                "description": "Carrying a summary the lint accepts.",
+                "type": "integer"
+              },
+              "weak": {
+                "description": "Of those that stand, how many carry at least one weakness signal. Never counted as owing a summary.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "warnings": {
+            "description": "Non-empty warnings qualify success; retain them.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
         "ui": {
           "resourceUri": "ui://kmp/chronoloom.html",
           "visibility": [

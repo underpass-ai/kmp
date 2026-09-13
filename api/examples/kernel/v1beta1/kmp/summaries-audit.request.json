@@ -1,0 +1,9 @@
+{
+  "about": "service:alpha",
+  "page": {
+    "entries": 50
+  },
+  "budget": {
+    "max_bytes": 10000
+  }
+}

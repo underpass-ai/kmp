@@ -49,6 +49,14 @@ por qué, no como lista que una CI deba comprobar.
 | `plugins/kmp/skills/kmp-moves/SKILL.md` | La skill que enumera los movimientos vivos |
 | Tabla de propiedad y lista de movimientos del README raíz | Describen la misma superficie |
 
+No todo verbo tiene enlace gRPC. `kmp_summaries_audit` se lee del propio log
+de eventos del almacén —incluidas las revisiones anteriores de cada entrada—
+y el servicio tipado no expone ese flujo: en modo gRPC vivo devuelve
+`unavailable` diciéndolo, y su descripción y la tabla del README del crate lo
+declaran. Un verbo así sigue necesitando backend de ejemplos, fixture de
+respuesta y paridad; lo que no debe hacer es responder desde las proyecciones
+una lectura más débil con el mismo nombre.
+
 Los recuentos fijos («dieciséis herramientas», «doce de memoria») se han
 retirado de la prosa donde no aportaban nada: cada verbo nuevo los dejaba
 desfasados en cuatro sitios a la vez. Donde el listado sí ayuda —la skill de

@@ -41,6 +41,13 @@ Transport bindings:
   added, labels taken off, and why — without rewriting its text. It binds to
   `KernelMemoryService.Relabel`; the kernel reads the entry's coordinates and
   the about's catalogue itself, so the caller names pairs, never coordinates.
+- `kmp_summaries_audit` reads where an about's memories stand with respect to
+  their English search summaries — missing, refused by the lint, standing, or
+  needing none — with the lint's own faults and deterministic weakness signals.
+  It is deliberately not bound to a gRPC method: it is read off the store's own
+  event log, including the earlier revisions of each entry, and the typed
+  `KernelMemoryService` exposes no such stream. `summaries-audit.request.json`
+  and `summaries-audit.response.json` are its reference pair.
 - `kmp_write_memory` is a writer helper, not a parallel memory model. It
   validates writer intent and relation quality, then compiles to the canonical
   `kmp_ingest` payload. With `dry_run=true` it returns that payload as

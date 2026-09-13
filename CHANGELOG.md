@@ -9,6 +9,14 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `kmp_summaries_audit` returns, in one call, where every memory of an about or a named set stands with respect to its English search summary: missing, refused by the lint with its own faults, standing, or needing none. A summary that stands and still retrieves little carries deterministic weakness signals — thin, repeated across the about, undiscriminating, stale after a later rewrite — which are warnings and never refusals. The reading generates no text, changes nothing and pages under the usual byte ceiling. This adds a fourteenth memory tool to every host's catalogue, which is a real context cost and pulls against the tool-surface reduction tracked in #544; the read half of the summary backfill was otherwise reachable only from a terminal.
+
+### Changed
+
+- The doctor's summary count, `kmp-mcp summaries pending` and `kmp_summaries_audit` are three projections of one reading, so they cannot disagree. `summaries pending` now accepts several abouts instead of refusing the second.
+
 ### Fixed
 
 - An update no longer removes the plugin-cache versions it supersedes. A

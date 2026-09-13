@@ -100,6 +100,10 @@ impl ToolErrorHelp {
             // writer's ingest example answered with something that teaches a
             // different move entirely, which is worse than answering nothing.
             "kmp_condense" => ("verb:condense", "example:reader-cards"),
+            // The audit is the read half of the summary loop; its repair
+            // is a write with search_summaries, which the write verb
+            // teaches beside the lint that refused the summary.
+            "kmp_summaries_audit" => ("verb:write", "example:semantic-batch"),
             "kmp_wake" => ("verb:wake", "example:shared-resumption"),
             "kmp_ask" => ("verb:ask", "example:decision-history"),
             "kmp_relate" => ("verb:relate", "example:distributed-incident"),

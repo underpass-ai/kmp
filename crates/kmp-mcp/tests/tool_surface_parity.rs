@@ -410,6 +410,13 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "idempotency_key": "parity:relabel:1"
             }),
         ),
+        // Read last among the memory verbs, so the reading covers the
+        // store exactly as the writes above left it. It takes no clock and
+        // writes nothing, so its answer is a pure function of that store.
+        (
+            "kmp_summaries_audit",
+            json!({"about": ABOUT, "page": {"entries": 3}}),
+        ),
         ("kmp_guide", json!({"registration_key":"parity-guide"})),
     ]
 }
@@ -794,7 +801,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 20, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 21, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         // `kmp_condense` is the one tool whose successful call cannot be

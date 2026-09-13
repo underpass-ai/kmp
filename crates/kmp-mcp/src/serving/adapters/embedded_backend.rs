@@ -1,7 +1,8 @@
 use super::embedded::{
     EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedIngestTool, EmbeddedInspectTool,
     EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool, EmbeddedRelateTool,
-    EmbeddedTemporalMoveTool, EmbeddedTraceTool, EmbeddedVisualProjectionTool, EmbeddedWakeTool,
+    EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool, EmbeddedTraceTool,
+    EmbeddedVisualProjectionTool, EmbeddedWakeTool,
 };
 use super::lexical_bridge_file::load_lexical_bridge;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
@@ -144,6 +145,14 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 "kmp_inspect" => EmbeddedInspectTool::new(&service).call(arguments).await,
                 "kmp_relabel" => EmbeddedRelabelTool::new(&service).call(arguments).await,
                 "kmp_condense" => EmbeddedCondenseTool::new(&service).call(arguments).await,
+                // The one read that is made off the event log rather than
+                // the projections: a summary's earlier revisions are what
+                // say whether the text moved after it was written.
+                "kmp_summaries_audit" => {
+                    EmbeddedSummariesAuditTool::new(self.kernel.store())
+                        .call(arguments)
+                        .await
+                }
                 "kmp_view_read_projection" => {
                     EmbeddedVisualProjectionTool::new(&service)
                         .call(arguments)

@@ -10,6 +10,7 @@
 
 use super::validation_error::WriteValidationError;
 
+use kmp_domain::SearchSummary;
 use serde_json::{Value, json};
 
 use super::coordinates::observation_time;
@@ -75,7 +76,10 @@ pub(crate) fn build_summary_plan(
 
     let mut metadata = existing.metadata.clone();
     metadata.insert("summary_en".to_string(), json!(stored));
-    metadata.insert("summary_en_by".to_string(), json!(actor));
+    metadata.insert(
+        SearchSummary::SUMMARY_WRITER_METADATA_KEY.to_string(),
+        json!(actor),
+    );
     let idempotency_key = optional_string(arguments.get("idempotency_key"))
         .map(ToString::to_string)
         .unwrap_or_else(|| stable_idempotency_key(arguments));

@@ -1,0 +1,69 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "abouts": [
+      {
+        "about": "string",
+        "totals": {
+          "entries": "integer",
+          "missing": "integer",
+          "not_required": "integer",
+          "owed": "integer",
+          "refused": "integer",
+          "stands": "integer",
+          "weak": "integer"
+        }
+      }
+    ],
+    "entries": [
+      {
+        "about": "string",
+        "kind": "string",
+        "ref": "string",
+        "state": "string"
+      }
+    ],
+    "next_actions": [
+      {
+        "arguments": {
+          "about": "string",
+          "page": {
+            "cursor": "string",
+            "entries": "integer"
+          }
+        },
+        "tool": "string"
+      }
+    ],
+    "page": {
+      "has_more": "boolean",
+      "next_cursor": "string",
+      "offset": "integer",
+      "returned": "integer",
+      "total": "integer"
+    },
+    "scope": {
+      "abouts": [
+        "string"
+      ],
+      "selection": "string"
+    },
+    "summary": "string",
+    "totals": {
+      "entries": "integer",
+      "missing": "integer",
+      "not_required": "integer",
+      "owed": "integer",
+      "refused": "integer",
+      "stands": "integer",
+      "weak": "integer"
+    },
+    "warnings": []
+  }
+}

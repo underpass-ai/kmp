@@ -14,6 +14,8 @@ const TOOLS_ADDED_LATER: &[(&str, &str)] = &[
     // Condense landed after the published 0.17.0 release. The current-build
     // override below still holds this development build to its full surface.
     ("kmp_condense", "0.17.0"),
+    // The summaries audit landed after the published 0.17.0 release too.
+    ("kmp_summaries_audit", "0.17.0"),
 ];
 
 /// The tool surface an engine of `target` is held to.

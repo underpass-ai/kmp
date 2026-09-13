@@ -39,6 +39,11 @@ impl SearchSummary {
     /// The entry metadata key the summary travels under.
     pub const METADATA_KEY: &'static str = "summary_en";
 
+    /// The entry metadata key naming who wrote the summary. Stored beside it
+    /// so "regenerate everything an older writer produced" is answerable
+    /// without a second record.
+    pub const SUMMARY_WRITER_METADATA_KEY: &'static str = "summary_en_by";
+
     /// How many informative words a summary must carry to be worth
     /// searching. One word is a tag, not a rendering.
     pub const MINIMUM_INFORMATIVE_TERMS: usize = 2;
