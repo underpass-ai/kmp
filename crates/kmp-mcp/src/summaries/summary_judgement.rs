@@ -121,6 +121,7 @@ mod tests {
             text: text.to_string(),
             summary: summary.map(str::to_string),
             summary_by: None,
+            summary_source_fingerprint: None,
         }
     }
 

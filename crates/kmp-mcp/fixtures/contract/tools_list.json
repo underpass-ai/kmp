@@ -7698,7 +7698,7 @@
             "properties": {
               "max_bytes": {
                 "default": 10000,
-                "description": "Compact-JSON structuredContent byte ceiling. The totals and the per-about counts are the stable core; the memories page under it. One memory larger than the whole ceiling is still returned, with a warning, so a continuation always advances.",
+                "description": "Compact-JSON structuredContent byte ceiling, measured over the complete response including page metadata and next_actions. The totals and per-about counts are the stable core; the memories page lies under it. If that stable core or the next whole memory cannot fit, it is returned with an exact page.required_bytes warning so the reading can still advance.",
                 "minimum": 512,
                 "type": "integer"
               }
@@ -7744,7 +7744,7 @@
                 "type": "string"
               },
               "entries": {
-                "description": "Optional maximum memories on this page; the byte ceiling still applies, and a page always carries at least one memory so a continuation cannot stall.",
+                "description": "Optional maximum memories on this page; the byte ceiling still applies, and each page with an eligible memory carries at least one so a continuation cannot stall.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -7932,7 +7932,7 @@
                 "type": "integer"
               },
               "required_bytes": {
-                "description": "Present only when one memory alone exceeded the byte ceiling and was returned anyway. Raise budget.max_bytes to this to read the page without that overrun.",
+                "description": "Present only when the stable response floor or its next whole memory exceeded the byte ceiling and was returned anyway. It is the exact serialized size of this complete structuredContent response; raise budget.max_bytes to it to avoid that overrun.",
                 "type": "integer"
               },
               "returned": {

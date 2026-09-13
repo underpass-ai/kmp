@@ -276,7 +276,11 @@ deterministic `weaknesses` when one stands and still retrieves little: `thin`,
 `repeated` across the about, `undiscriminating`, `stale` after a later rewrite.
 Weaknesses are warnings and never refusals. `totals` describes the whole
 selection and never the page; continue with `page.cursor` and the same bound
-arguments. `kmp-mcp summaries pending [<about>…] [--json]` prints the debt half
+arguments. `budget.max_bytes` covers the complete structured response,
+including its cursor and next action. If the stable core or next whole memory
+cannot fit, `page.required_bytes` is the exact sufficient size of the returned
+qualified page; raise the budget to it before continuing. `kmp-mcp summaries
+pending [<about>…] [--json]` prints the debt half
 of the same reading and `kmp-mcp doctor` counts it.
 
 Attach one or more with `kmp_write_memory`, using `search_summaries` records

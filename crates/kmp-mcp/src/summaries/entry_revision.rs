@@ -13,6 +13,7 @@ pub(crate) struct EntryRevision {
     pub(crate) text: String,
     pub(crate) summary: Option<String>,
     pub(crate) summary_by: Option<String>,
+    pub(crate) summary_source_fingerprint: Option<String>,
 }
 
 impl EntryRevision {
@@ -28,6 +29,9 @@ impl EntryRevision {
                 .as_str()
                 .map(str::to_string),
             summary_by: metadata[SearchSummary::SUMMARY_WRITER_METADATA_KEY]
+                .as_str()
+                .map(str::to_string),
+            summary_source_fingerprint: metadata[SearchSummary::SOURCE_FINGERPRINT_METADATA_KEY]
                 .as_str()
                 .map(str::to_string),
         }
@@ -60,5 +64,6 @@ mod tests {
         assert_eq!(revision.kind, "decision");
         assert_eq!(revision.summary.as_deref(), Some("Valkey 7.2 was adopted."));
         assert_eq!(revision.summary_by.as_deref(), Some("agent:backfill"));
+        assert_eq!(revision.summary_source_fingerprint, None);
     }
 }

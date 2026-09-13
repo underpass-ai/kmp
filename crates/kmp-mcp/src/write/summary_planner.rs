@@ -80,6 +80,10 @@ pub(crate) fn build_summary_plan(
         SearchSummary::SUMMARY_WRITER_METADATA_KEY.to_string(),
         json!(actor),
     );
+    metadata.insert(
+        SearchSummary::SOURCE_FINGERPRINT_METADATA_KEY.to_string(),
+        json!(SearchSummary::source_fingerprint(&existing.text)),
+    );
     let idempotency_key = optional_string(arguments.get("idempotency_key"))
         .map(ToString::to_string)
         .unwrap_or_else(|| stable_idempotency_key(arguments));
@@ -192,6 +196,12 @@ mod tests {
             "Valkey 7.2 was adopted for the shared store (ADR-018)."
         );
         assert_eq!(entry["metadata"]["summary_en_by"], "agent:b");
+        assert_eq!(
+            entry["metadata"]["summary_en_source_sha256"],
+            SearchSummary::source_fingerprint(
+                "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018)."
+            )
+        );
         assert_eq!(entry["metadata"]["writer_actor"], "agent:a");
         assert!(plan.generated_refs.is_empty());
         assert!(plan.relations.is_empty());

@@ -35,6 +35,8 @@ impl EntryHistory {
     ///
     /// Deterministic and derived only from the log: the last revision that
     /// changed the summary, against the last revision that changed the text.
+    /// An explicit writer validation carries the source fingerprint it read;
+    /// that is stronger than inferring freshness from who wrote a rendering.
     /// A text that moved later describes a memory the summary never saw. An
     /// entry whose summary was attached by the same write that wrote its
     /// text is never stale, however many times it was rewritten since with
@@ -42,6 +44,10 @@ impl EntryHistory {
     pub(crate) fn text_outlived_its_summary(&self) -> bool {
         if self.latest().summary.is_none() {
             return false;
+        }
+        if let Some(validated_source) = &self.latest().summary_source_fingerprint {
+            return validated_source
+                != &kmp_domain::SearchSummary::source_fingerprint(&self.latest().text);
         }
         self.last_change(|before, after| before.text != after.text)
             > self.last_change(|before, after| before.summary != after.summary)
@@ -74,6 +80,7 @@ mod tests {
             text: text.to_string(),
             summary: summary.map(str::to_string),
             summary_by: None,
+            summary_source_fingerprint: None,
         }
     }
 
@@ -126,6 +133,22 @@ mod tests {
         ));
 
         assert!(!history.text_outlived_its_summary());
+    }
+
+    #[test]
+    fn copied_validation_metadata_does_not_freshen_a_later_text() {
+        let source = "La válvula se congeló.";
+        let mut first = revision(source, Some("The valve froze."));
+        first.summary_source_fingerprint =
+            Some(kmp_domain::SearchSummary::source_fingerprint(source));
+        let mut history =
+            EntryHistory::new("project:a".to_string(), "project:a:e1".to_string(), first);
+        let mut copied = revision("La válvula se congeló!", Some("The valve froze."));
+        copied.summary_source_fingerprint =
+            Some(kmp_domain::SearchSummary::source_fingerprint(source));
+        history.record(copied);
+
+        assert!(history.text_outlived_its_summary());
     }
 
     #[test]

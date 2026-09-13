@@ -28,7 +28,7 @@ pub(crate) fn definition() -> Value {
                     "items": {"type": "string", "enum": ["missing", "refused", "stands", "not_required"]}
                 },
                 "budget": summaries_audit_budget_schema(),
-                "page": page_schema("Optional maximum memories on this page; the byte ceiling still applies, and a page always carries at least one memory so a continuation cannot stall.")
+                "page": page_schema("Optional maximum memories on this page; the byte ceiling still applies, and each page with an eligible memory carries at least one so a continuation cannot stall.")
             }
         }),
         summaries_audit_output_schema(),
@@ -69,7 +69,7 @@ fn summaries_audit_budget_schema() -> Value {
                 "type": "integer",
                 "minimum": 512,
                 "default": 10_000,
-                "description": "Compact-JSON structuredContent byte ceiling. The totals and the per-about counts are the stable core; the memories page under it. One memory larger than the whole ceiling is still returned, with a warning, so a continuation always advances."
+                "description": "Compact-JSON structuredContent byte ceiling, measured over the complete response including page metadata and next_actions. The totals and per-about counts are the stable core; the memories page lies under it. If that stable core or the next whole memory cannot fit, it is returned with an exact page.required_bytes warning so the reading can still advance."
             }
         }
     })
@@ -163,7 +163,7 @@ fn summaries_audit_page_schema() -> Value {
     );
     page["properties"]["required_bytes"] = described(
         "integer",
-        "Present only when one memory alone exceeded the byte ceiling and was returned anyway. Raise budget.max_bytes to this to read the page without that overrun.",
+        "Present only when the stable response floor or its next whole memory exceeded the byte ceiling and was returned anyway. It is the exact serialized size of this complete structuredContent response; raise budget.max_bytes to it to avoid that overrun.",
     );
     page
 }

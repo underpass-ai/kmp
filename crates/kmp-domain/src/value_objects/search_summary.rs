@@ -1,6 +1,7 @@
 use crate::language::{
     KERNEL_LANGUAGE, LanguageVocabulary, dropped_identifiers, informative_tokens,
 };
+use sha2::{Digest, Sha256};
 
 use super::search_summary_fault::SearchSummaryFault;
 
@@ -43,6 +44,18 @@ impl SearchSummary {
     /// so "regenerate everything an older writer produced" is answerable
     /// without a second record.
     pub const SUMMARY_WRITER_METADATA_KEY: &'static str = "summary_en_by";
+
+    /// The exact source text an explicit summary validation read. It lets an
+    /// audit distinguish a writer's deliberate refresh from a later ingest
+    /// that happened to preserve old summary metadata.
+    pub const SOURCE_FINGERPRINT_METADATA_KEY: &'static str = "summary_en_source_sha256";
+
+    /// Stable fingerprint of the stored source text a rendering was checked
+    /// against. The source itself remains canonical; this only binds the
+    /// validation event to that exact body.
+    pub fn source_fingerprint(text: &str) -> String {
+        format!("sha256:{:x}", Sha256::digest(text.as_bytes()))
+    }
 
     /// How many informative words a summary must carry to be worth
     /// searching. One word is a tag, not a rendering.
@@ -103,6 +116,19 @@ impl SearchSummary {
 
     pub fn as_str(&self) -> &str {
         &self.summary
+    }
+}
+
+#[cfg(test)]
+mod source_fingerprint_tests {
+    use super::SearchSummary;
+
+    #[test]
+    fn the_fingerprint_binds_exact_utf8_source_bytes() {
+        assert_ne!(
+            SearchSummary::source_fingerprint("La válvula se congeló."),
+            SearchSummary::source_fingerprint("La válvula se congeló!"),
+        );
     }
 }
 

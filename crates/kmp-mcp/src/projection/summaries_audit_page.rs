@@ -1,7 +1,7 @@
 //! One concept: summaries-audit pagination.
 //!
 //! The totals and the per-about counts are the stable core; the memories page
-//! beneath them under the byte ceiling the caller named, behind a cursor
+//! beneath them stays under the byte ceiling the caller named, behind a cursor
 //! bound to the selection. No reader state is stored, and the cursor's hash
 //! covers the bound arguments and every memory in the reading, so a store
 //! that moved rejects a continuation rather than paging a different reading
@@ -38,48 +38,82 @@ pub(crate) fn summaries_audit_page(
                 .as_ref()
                 .is_none_or(|states| states.contains(&entry.state))
         })
-        .map(|entry| {
-            let value = audited_summary_json(entry);
-            let bytes = serialized_len(&value);
-            (value, bytes)
-        })
+        .map(audited_summary_json)
         .collect::<Vec<_>>();
 
-    let mut core = core_response(audit, scope);
+    let core = core_response(audit, scope);
     let selection_hash = selection_hash(&core, &items, arguments);
     let offset = page_offset(arguments, &selection_hash, items.len())?;
 
-    let entries_cap = arguments
-        .pointer("/page/entries")
-        .and_then(Value::as_u64)
-        .map(|entries| entries as usize)
-        .unwrap_or(usize::MAX);
-    let core_bytes = serialized_len(&core);
-    let mut used = core_bytes;
-    let mut page = Vec::new();
-    let mut overran = None;
-    for (value, bytes) in items.iter().skip(offset) {
-        if page.len() >= entries_cap {
-            break;
-        }
-        if used + bytes > limit {
-            if page.is_empty() {
-                // A memory larger than the whole ceiling still has to be
-                // readable, or the continuation stalls at it forever.
-                overran = Some(core_bytes + bytes);
-                page.push(value.clone());
-            }
-            break;
-        }
-        used += bytes;
-        page.push(value.clone());
+    let entries_cap = requested_entries_cap(arguments)?;
+    let available = items.len().saturating_sub(offset).min(entries_cap);
+    let baseline = render_page(&core, arguments, &items, offset, 0, &selection_hash, None);
+    if serialized_len(&baseline) > limit {
+        return Ok(overrun_page(
+            &core,
+            arguments,
+            &items,
+            offset,
+            usize::from(available > 0),
+            &selection_hash,
+            limit,
+        ));
     }
 
-    let returned = page.len();
+    let mut returned = 0;
+    while returned < available {
+        let candidate = render_page(
+            &core,
+            arguments,
+            &items,
+            offset,
+            returned + 1,
+            &selection_hash,
+            None,
+        );
+        if serialized_len(&candidate) > limit {
+            break;
+        }
+        returned += 1;
+    }
+    if returned == 0 && available > 0 {
+        return Ok(overrun_page(
+            &core,
+            arguments,
+            &items,
+            offset,
+            1,
+            &selection_hash,
+            limit,
+        ));
+    }
+    Ok(render_page(
+        &core,
+        arguments,
+        &items,
+        offset,
+        returned,
+        &selection_hash,
+        None,
+    ))
+}
+
+/// Renders a complete response before its size is considered. The cursor and
+/// complete continuation call are part of the caller's context cost too.
+fn render_page(
+    core: &Value,
+    arguments: &Value,
+    items: &[Value],
+    offset: usize,
+    returned: usize,
+    selection_hash: &str,
+    required_bytes: Option<usize>,
+) -> Value {
+    let mut page = core.clone();
     let read = offset + returned;
     let has_more = read < items.len();
     let next_cursor = has_more.then(|| format!("{AUDIT_CURSOR_VERSION}:{read}:{selection_hash}"));
-    core["entries"] = Value::Array(page);
+    page["entries"] = Value::Array(items[offset..read].to_vec());
     let mut page_report = json!({
         "offset": offset,
         "returned": returned,
@@ -87,22 +121,59 @@ pub(crate) fn summaries_audit_page(
         "has_more": has_more,
         "next_cursor": next_cursor
     });
-    if let Some(required_bytes) = overran {
+    if let Some(required_bytes) = required_bytes {
         page_report["required_bytes"] = json!(required_bytes);
-        core["warnings"] = json!([format!(
-            "one memory needed {required_bytes} bytes, more than the {limit}-byte ceiling this \
-             call named; it was returned anyway so the reading can advance"
+        page["warnings"] = json!([format!(
+            "the audit's stable envelope{} needs {required_bytes} bytes, more than the byte \
+             ceiling this call named; it was returned anyway so the reading can advance",
+            if returned == 0 {
+                ""
+            } else {
+                " and next memory"
+            }
         )]);
     }
-    core["page"] = page_report;
-    core["next_actions"] = match &core["page"]["next_cursor"] {
+    page["page"] = page_report;
+    page["next_actions"] = match &page["page"]["next_cursor"] {
         Value::String(cursor) => json!([{
             "tool": "kmp_summaries_audit",
             "arguments": continuation_arguments(arguments, cursor)
         }]),
         _ => json!([]),
     };
-    Ok(core)
+    page
+}
+
+/// A stable response floor or a next whole memory may exceed the named limit.
+/// The exact returned size is reported so callers can raise the next budget
+/// without guessing. Re-render until the number embedded in the warning no
+/// longer changes its own serialization size.
+fn overrun_page(
+    core: &Value,
+    arguments: &Value,
+    items: &[Value],
+    offset: usize,
+    returned: usize,
+    selection_hash: &str,
+    limit: usize,
+) -> Value {
+    let mut required_bytes = limit;
+    loop {
+        let page = render_page(
+            core,
+            arguments,
+            items,
+            offset,
+            returned,
+            selection_hash,
+            Some(required_bytes),
+        );
+        let measured = serialized_len(&page);
+        if measured == required_bytes {
+            return page;
+        }
+        required_bytes = measured;
+    }
 }
 
 /// The states a caller kept, or every state when it named none.
@@ -144,9 +215,20 @@ fn requested_byte_limit(arguments: &Value) -> Result<usize, ToolError> {
     Ok(requested as usize)
 }
 
+fn requested_entries_cap(arguments: &Value) -> Result<usize, ToolError> {
+    let Some(entries) = arguments.pointer("/page/entries") else {
+        return Ok(usize::MAX);
+    };
+    entries
+        .as_u64()
+        .filter(|entries| *entries > 0)
+        .and_then(|entries| usize::try_from(entries).ok())
+        .ok_or_else(|| ToolError::invalid_argument("page.entries is a positive integer"))
+}
+
 /// Binds the cursor to the arguments that selected this reading and to every
 /// memory in it.
-fn selection_hash(core: &Value, items: &[(Value, usize)], arguments: &Value) -> String {
+fn selection_hash(core: &Value, items: &[Value], arguments: &Value) -> String {
     let mut bound = arguments.clone();
     if let Some(bound) = bound.as_object_mut() {
         bound.remove("page");
@@ -167,7 +249,7 @@ fn selection_hash(core: &Value, items: &[(Value, usize)], arguments: &Value) -> 
     hasher.update(serde_json::to_vec(&bound).expect("audit arguments serialize"));
     hasher.update(b"\0");
     hasher.update(serde_json::to_vec(&core["totals"]).expect("audit totals serialize"));
-    for (value, _) in items {
+    for value in items {
         hasher.update(b"\0");
         hasher.update(serde_json::to_vec(value).expect("audited memory serializes"));
     }
@@ -426,6 +508,77 @@ mod tests {
                 .as_str()
                 .expect("a warning")
                 .contains("returned anyway")
+        );
+        assert_eq!(
+            serialized_len(&rendered),
+            rendered["page"]["required_bytes"].as_u64().expect("bytes") as usize
+        );
+    }
+
+    #[test]
+    fn an_all_abouts_stable_core_over_the_ceiling_reports_its_exact_floor() {
+        let bundle = (0..12)
+            .map(|number| {
+                event(
+                    &format!("project:{number}"),
+                    &format!("project:{number}:e1"),
+                    "El despliegue quedó pendiente de aprobación.",
+                    None,
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let audit = SummaryAudit::read(&bundle, &AuditScope::AllAbouts).expect("bundle parses");
+
+        let rendered = summaries_audit_page(
+            &audit,
+            &AuditScope::AllAbouts,
+            &json!({"dimensions": {"scope": "all_abouts"}, "budget": {"max_bytes": 512}}),
+        )
+        .expect("the stable core is a qualified response");
+
+        assert_eq!(rendered["page"]["returned"], 1);
+        assert_eq!(
+            serialized_len(&rendered),
+            rendered["page"]["required_bytes"].as_u64().expect("bytes") as usize
+        );
+        assert!(rendered["page"]["next_cursor"].is_string());
+    }
+
+    #[test]
+    fn an_all_abouts_core_over_the_ceiling_without_an_eligible_memory_stays_complete() {
+        let bundle = (0..12)
+            .map(|number| {
+                event(
+                    &format!("project:{number}"),
+                    &format!("project:{number}:e1"),
+                    "El despliegue quedó pendiente de aprobación.",
+                    None,
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let audit = SummaryAudit::read(&bundle, &AuditScope::AllAbouts).expect("bundle parses");
+
+        let rendered = summaries_audit_page(
+            &audit,
+            &AuditScope::AllAbouts,
+            &json!({
+                "dimensions": {"scope": "all_abouts"},
+                "states": ["stands"],
+                "budget": {"max_bytes": 512}
+            }),
+        )
+        .expect("the stable core is a qualified empty response");
+
+        assert_eq!(rendered["entries"], json!([]));
+        assert_eq!(rendered["page"]["returned"], 0);
+        assert_eq!(rendered["page"]["has_more"], false);
+        assert!(rendered["page"]["next_cursor"].is_null());
+        assert_eq!(rendered["next_actions"], json!([]));
+        assert_eq!(
+            serialized_len(&rendered),
+            rendered["page"]["required_bytes"].as_u64().expect("bytes") as usize
         );
     }
 
