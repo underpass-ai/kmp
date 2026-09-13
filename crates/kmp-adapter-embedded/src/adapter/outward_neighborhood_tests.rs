@@ -276,6 +276,15 @@ async fn zero_depth_keeps_the_empty_result_without_reading_adjacency() {
     let dir = tempfile::tempdir().expect("dir");
     let (store, request) = parity_store(dir.path()).await.expect("fixture");
     let request = NeighborhoodRequest::new(request.root_node_id(), 0);
+    let mut write = store.begin_write().expect("write");
+    write
+        .insert(
+            Table::Relations,
+            Key::Str3(request.root_node_id(), request.root_node_id(), "self"),
+            b"not relation JSON",
+        )
+        .expect("malformed depth-zero self-loop");
+    write.commit().expect("commit");
     let tx = store.begin_read().expect("snapshot");
     let recording = RecordingRead {
         inner: tx.as_ref(),
@@ -285,9 +294,41 @@ async fn zero_depth_keeps_the_empty_result_without_reading_adjacency() {
     let result = OutwardNeighborhoodRead::new(&recording, &request)
         .catalogue()
         .expect("zero-depth read");
+    let expected = legacy_read(tx.as_ref(), &request).expect("legacy oracle");
 
+    assert_eq!(result, expected);
     assert_eq!(result, (BTreeSet::new(), Vec::new()));
     assert_eq!(recording.totals(), ScanCount::default());
+}
+
+#[tokio::test]
+async fn isolated_root_does_not_decode_a_malformed_self_loop() {
+    let dir = tempfile::tempdir().expect("dir");
+    let store = EmbeddedKernelStore::open(dir.path()).expect("store");
+    let mut write = store.begin_write().expect("write");
+    write
+        .insert(
+            Table::Relations,
+            Key::Str3("isolated", "isolated", "self"),
+            b"not relation JSON",
+        )
+        .expect("malformed self-loop");
+    write.commit().expect("commit");
+    let request = NeighborhoodRequest::new("isolated", 1);
+    let tx = store.begin_read().expect("snapshot");
+    let recording = RecordingRead {
+        inner: tx.as_ref(),
+        scans: RefCell::default(),
+    };
+
+    let actual = OutwardNeighborhoodRead::new(&recording, &request)
+        .catalogue()
+        .expect("isolated root ignores relations");
+    let expected = legacy_read(tx.as_ref(), &request).expect("legacy oracle");
+
+    assert_eq!(actual, expected);
+    assert_eq!(actual, (BTreeSet::new(), Vec::new()));
+    assert_eq!(recording.count("isolated").calls, 1);
 }
 
 #[tokio::test]

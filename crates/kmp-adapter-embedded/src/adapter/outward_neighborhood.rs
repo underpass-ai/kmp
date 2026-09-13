@@ -8,6 +8,8 @@ use super::{
 };
 
 type RelationKey = (String, String, String);
+type RawRelations = BTreeMap<RelationKey, Vec<u8>>;
+type ReadResult = (BTreeSet<String>, RawRelations);
 
 /// One outward traversal and its retained relations over one read transaction.
 ///
@@ -31,7 +33,7 @@ impl<'a> OutwardNeighborhoodRead<'a> {
             return Ok((BTreeSet::new(), Vec::new()));
         }
         let root = self.request.root_node_id().to_string();
-        let (selected, relations) = self.read(BTreeSet::from([root.clone()]))?;
+        let (selected, retained) = self.read(BTreeSet::from([root.clone()]))?;
         let mut reachable = selected;
         reachable.remove(&root);
         if reachable.is_empty() {
@@ -39,7 +41,7 @@ impl<'a> OutwardNeighborhoodRead<'a> {
             // catalogue relations are empty when there are no neighbors.
             return Ok((reachable, Vec::new()));
         }
-        Ok((reachable, relations))
+        Ok((reachable, Self::decode(retained)?))
     }
 
     pub(super) fn extending(
@@ -47,18 +49,16 @@ impl<'a> OutwardNeighborhoodRead<'a> {
         mut selected: BTreeSet<String>,
     ) -> Result<(BTreeSet<String>, Vec<NodeRelationProjection>), PortError> {
         selected.insert(self.request.root_node_id().to_string());
-        self.read(selected)
+        let (selected, retained) = self.read(selected)?;
+        Ok((selected, Self::decode(retained)?))
     }
 
-    fn read(
-        self,
-        mut selected: BTreeSet<String>,
-    ) -> Result<(BTreeSet<String>, Vec<NodeRelationProjection>), PortError> {
+    fn read(self, mut selected: BTreeSet<String>) -> Result<ReadResult, PortError> {
         let root = self.request.root_node_id();
         let mut visited = BTreeSet::from([root.to_string()]);
         let mut frontier = VecDeque::from([(root.to_string(), 0u32)]);
         let mut scanned = BTreeSet::new();
-        let mut retained = BTreeMap::<RelationKey, Vec<u8>>::new();
+        let mut retained = RawRelations::new();
 
         while let Some((source, hops)) = frontier.pop_front() {
             if hops == self.request.depth() {
@@ -91,7 +91,11 @@ impl<'a> OutwardNeighborhoodRead<'a> {
             }
         }
 
-        let relations = retained
+        Ok((selected, retained))
+    }
+
+    fn decode(retained: RawRelations) -> Result<Vec<NodeRelationProjection>, PortError> {
+        retained
             .into_iter()
             .map(|((source_node_id, target_node_id, relation_type), raw)| {
                 Ok(NodeRelationProjection {
@@ -101,8 +105,7 @@ impl<'a> OutwardNeighborhoodRead<'a> {
                     explanation: decode_explanation(&raw)?,
                 })
             })
-            .collect::<Result<Vec<_>, PortError>>()?;
-        Ok((selected, relations))
+            .collect()
     }
 }
 
