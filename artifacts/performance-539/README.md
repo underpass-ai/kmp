@@ -61,6 +61,9 @@ measurements, without release, production, WAN or OS-cold-cache claims.
 
 ## Results
 
+The initial observations below are retained. [Final 0.18.1 measurements after the
+timestamp-format fix](../performance-539-final/README.md) are the current PR figures.
+
 ### Native application + serialization
 
 | Fixture | p50 ms before → after | p95 ms before → after | Response bytes before → after | Calls before → after |

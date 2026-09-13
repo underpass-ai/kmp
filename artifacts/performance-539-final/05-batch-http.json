@@ -1,0 +1,250 @@
+[
+  {
+    "body_bytes_each": 128,
+    "first_read_us": 1622,
+    "labels_each": 2,
+    "mode": "batch-http",
+    "p50_us": 856,
+    "p95_us": 904,
+    "refs": 1,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 1388,
+        "open_us": 1629,
+        "read_us": 1427
+      },
+      {
+        "bytes": 1388,
+        "open_us": 1393,
+        "read_us": 1097
+      },
+      {
+        "bytes": 1388,
+        "open_us": 1363,
+        "read_us": 1407
+      },
+      {
+        "bytes": 1388,
+        "open_us": 1327,
+        "read_us": 998
+      },
+      {
+        "bytes": 1388,
+        "open_us": 1386,
+        "read_us": 1290
+      }
+    ],
+    "response_bytes": 1388,
+    "shape": "small",
+    "shared_sources": 1,
+    "transport_trips": 1,
+    "warm_us": [
+      890,
+      666,
+      910,
+      617,
+      856,
+      636,
+      887,
+      626,
+      904,
+      627,
+      884,
+      612,
+      885,
+      591,
+      898,
+      598,
+      873,
+      625,
+      881,
+      584
+    ]
+  },
+  {
+    "body_bytes_each": 4096,
+    "first_read_us": 5106,
+    "labels_each": 4,
+    "mode": "batch-http",
+    "p50_us": 4543,
+    "p95_us": 5203,
+    "refs": 8,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 12190,
+        "open_us": 1615,
+        "read_us": 4206
+      },
+      {
+        "bytes": 12190,
+        "open_us": 1477,
+        "read_us": 5044
+      },
+      {
+        "bytes": 12190,
+        "open_us": 1500,
+        "read_us": 3885
+      },
+      {
+        "bytes": 12190,
+        "open_us": 1427,
+        "read_us": 5062
+      },
+      {
+        "bytes": 12190,
+        "open_us": 1484,
+        "read_us": 3934
+      }
+    ],
+    "response_bytes": 12190,
+    "shape": "medium",
+    "shared_sources": 4,
+    "transport_trips": 1,
+    "warm_us": [
+      4044,
+      4819,
+      3428,
+      5304,
+      3945,
+      5119,
+      3732,
+      4988,
+      3417,
+      4670,
+      4043,
+      5138,
+      4040,
+      4543,
+      3649,
+      4862,
+      3700,
+      5203,
+      3356,
+      4653
+    ]
+  },
+  {
+    "body_bytes_each": 256,
+    "first_read_us": 118952,
+    "labels_each": 32,
+    "mode": "batch-http",
+    "p50_us": 117834,
+    "p95_us": 147730,
+    "refs": 64,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 601201,
+        "open_us": 8706,
+        "read_us": 146915
+      },
+      {
+        "bytes": 601201,
+        "open_us": 9489,
+        "read_us": 117698
+      },
+      {
+        "bytes": 601201,
+        "open_us": 9616,
+        "read_us": 117903
+      },
+      {
+        "bytes": 601201,
+        "open_us": 9852,
+        "read_us": 116807
+      },
+      {
+        "bytes": 601201,
+        "open_us": 9494,
+        "read_us": 117761
+      }
+    ],
+    "response_bytes": 601201,
+    "shape": "high_degree",
+    "shared_sources": 64,
+    "transport_trips": 1,
+    "warm_us": [
+      147730,
+      147865,
+      117883,
+      118052,
+      117926,
+      117335,
+      117419,
+      118116,
+      117834,
+      118427,
+      117654,
+      116604,
+      117620,
+      118670,
+      117533,
+      117628,
+      117443,
+      118427,
+      117631,
+      117286
+    ]
+  },
+  {
+    "body_bytes_each": 262144,
+    "first_read_us": 3194,
+    "labels_each": 4,
+    "mode": "batch-http",
+    "p50_us": 2759,
+    "p95_us": 2947,
+    "refs": 8,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 12190,
+        "open_us": 4046,
+        "read_us": 3187
+      },
+      {
+        "bytes": 12190,
+        "open_us": 3406,
+        "read_us": 2958
+      },
+      {
+        "bytes": 12190,
+        "open_us": 3130,
+        "read_us": 2975
+      },
+      {
+        "bytes": 12190,
+        "open_us": 2999,
+        "read_us": 3082
+      },
+      {
+        "bytes": 12190,
+        "open_us": 2912,
+        "read_us": 3207
+      }
+    ],
+    "response_bytes": 12190,
+    "shape": "large_body",
+    "shared_sources": 8,
+    "transport_trips": 1,
+    "warm_us": [
+      4059,
+      2947,
+      2833,
+      2804,
+      2781,
+      2785,
+      2757,
+      2753,
+      2524,
+      2747,
+      2773,
+      2733,
+      2757,
+      2744,
+      2757,
+      2458,
+      2740,
+      2767,
+      2759,
+      2769
+    ]
+  }
+]

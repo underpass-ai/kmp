@@ -1,0 +1,250 @@
+[
+  {
+    "body_bytes_each": 128,
+    "first_read_us": 715,
+    "labels_each": 2,
+    "mode": "batch",
+    "p50_us": 271,
+    "p95_us": 310,
+    "refs": 1,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 1084,
+        "open_us": 1565,
+        "read_us": 540
+      },
+      {
+        "bytes": 1084,
+        "open_us": 1369,
+        "read_us": 592
+      },
+      {
+        "bytes": 1084,
+        "open_us": 1289,
+        "read_us": 491
+      },
+      {
+        "bytes": 1084,
+        "open_us": 1290,
+        "read_us": 476
+      },
+      {
+        "bytes": 1084,
+        "open_us": 1301,
+        "read_us": 479
+      }
+    ],
+    "response_bytes": 1084,
+    "shape": "small",
+    "shared_sources": 1,
+    "transport_trips": 1,
+    "warm_us": [
+      312,
+      280,
+      277,
+      310,
+      276,
+      270,
+      272,
+      276,
+      271,
+      265,
+      276,
+      268,
+      267,
+      269,
+      271,
+      271,
+      270,
+      270,
+      270,
+      270
+    ]
+  },
+  {
+    "body_bytes_each": 4096,
+    "first_read_us": 2972,
+    "labels_each": 4,
+    "mode": "batch",
+    "p50_us": 3466,
+    "p95_us": 4029,
+    "refs": 8,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 11885,
+        "open_us": 1839,
+        "read_us": 3610
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1386,
+        "read_us": 3419
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1376,
+        "read_us": 3173
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1397,
+        "read_us": 3292
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1370,
+        "read_us": 3223
+      }
+    ],
+    "response_bytes": 11885,
+    "shape": "medium",
+    "shared_sources": 4,
+    "transport_trips": 1,
+    "warm_us": [
+      2671,
+      2676,
+      2730,
+      2659,
+      3552,
+      3511,
+      3199,
+      3058,
+      3466,
+      4218,
+      4029,
+      3284,
+      3460,
+      3839,
+      3637,
+      3629,
+      3285,
+      3769,
+      3754,
+      3368
+    ]
+  },
+  {
+    "body_bytes_each": 256,
+    "first_read_us": 109882,
+    "labels_each": 32,
+    "mode": "batch",
+    "p50_us": 83395,
+    "p95_us": 84594,
+    "refs": 64,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 600895,
+        "open_us": 5563,
+        "read_us": 82469
+      },
+      {
+        "bytes": 600895,
+        "open_us": 5287,
+        "read_us": 82639
+      },
+      {
+        "bytes": 600895,
+        "open_us": 5271,
+        "read_us": 82250
+      },
+      {
+        "bytes": 600895,
+        "open_us": 5240,
+        "read_us": 82429
+      },
+      {
+        "bytes": 600895,
+        "open_us": 5443,
+        "read_us": 82413
+      }
+    ],
+    "response_bytes": 600895,
+    "shape": "high_degree",
+    "shared_sources": 64,
+    "transport_trips": 1,
+    "warm_us": [
+      83981,
+      82713,
+      84594,
+      83919,
+      83395,
+      83051,
+      83974,
+      83780,
+      82713,
+      83061,
+      84056,
+      82413,
+      83979,
+      82374,
+      84700,
+      83136,
+      83293,
+      82168,
+      83651,
+      83395
+    ]
+  },
+  {
+    "body_bytes_each": 262144,
+    "first_read_us": 2969,
+    "labels_each": 4,
+    "mode": "batch",
+    "p50_us": 2679,
+    "p95_us": 3191,
+    "refs": 8,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 11885,
+        "open_us": 2403,
+        "read_us": 2397
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1697,
+        "read_us": 2601
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1602,
+        "read_us": 2269
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1656,
+        "read_us": 2278
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1546,
+        "read_us": 2293
+      }
+    ],
+    "response_bytes": 11885,
+    "shape": "large_body",
+    "shared_sources": 8,
+    "transport_trips": 1,
+    "warm_us": [
+      2800,
+      2679,
+      2821,
+      2586,
+      2783,
+      2226,
+      2075,
+      2874,
+      2295,
+      2673,
+      2773,
+      2608,
+      3268,
+      3191,
+      2019,
+      2429,
+      2733,
+      2178,
+      2793,
+      2403
+    ]
+  }
+]

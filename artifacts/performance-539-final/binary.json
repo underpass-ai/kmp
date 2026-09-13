@@ -1,0 +1,10 @@
+{
+  "sha256": "610f3ac3b59909e2ea144ee64785914f92fdb7f7e4b6a08f2cedb8a02a1356cf",
+  "source_commit": "a44d8a0bbb574e3d36346024fe51718d7121e524",
+  "profile": "dev; rebuild with the current shared Cargo configuration before running",
+  "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "source_dirty": true,
+  "source_patch_sha256": "36137de07f319bf28a7f6c54bc03d23d2a1ca4ad7032e657704fb503eb96eaf0",
+  "workspace_version": "0.18.1"
+}
