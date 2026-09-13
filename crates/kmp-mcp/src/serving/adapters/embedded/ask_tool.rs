@@ -55,6 +55,8 @@ impl<'a> EmbeddedAskTool<'a> {
             .await
             .map_err(kernel_error("ask", &about))?;
         self.telemetry
+            .trace_timing("kmp_ask", result.timing.as_ref());
+        self.telemetry
             .observe("kmp_ask", &result.bundle, &result.rendered.quality);
         let mut retrieval =
             AskRetrievalContext::from(result).with_lexical_cache(Arc::clone(self.lexical_cache));
