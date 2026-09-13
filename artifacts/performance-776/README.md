@@ -20,6 +20,7 @@ its exact source and Git blob hashes reconstructs the executable Rust delta.
 and why neither contributed a retained sample.
 
 `baseline-commit.txt`, the binary hashes, `runner-hashes.sha256`,
-`source-hashes.sha256` and `measurement-manifest.sha256` identify the measured
-inputs and evidence. No executable, store, credential, target directory or
+`source-hashes.sha256`, `binary-sizes.json` and
+`measurement-manifest.sha256` identify the measured inputs, executable-size
+tradeoff and evidence. No executable, store, credential, target directory or
 scratch data is committed.

@@ -77,6 +77,11 @@ Values are local informational controls and add no absolute timing gate.
 | MCP App requested allocation bytes | 96,282,614 / 96,283,126 | 13,272,975 / 13,272,975 | -86.2% |
 | MCP App peak RSS (KiB) | 29,806 / 29,940 | 27,612 / 27,692 | -7.4% |
 
+The Cargo dev executable grows from 106,708,376 to 107,199,000 bytes: a
+490,624-byte or 0.46% increase. The build stores both HTTP representations and
+the inlined MCP HTML so each process avoids runtime decompression and assembly;
+the table reports the resulting allocation and RSS tradeoff.
+
 Cold and warm request counts remain 41 and 40; the change optimizes their
 static payloads rather than claiming fewer requests. Candidate cold static
 transfer is 262,513 bytes, and warm static transfer is zero. Dynamic transfer

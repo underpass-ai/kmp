@@ -1,0 +1,9 @@
+{
+  "profile": "Cargo dev; shared workspace configuration; no profile overrides",
+  "units": "bytes",
+  "baseline": 106708376,
+  "candidate": 107199000,
+  "difference": 490624,
+  "percent_change": 0.4597755534880989,
+  "tradeoff": "The candidate embeds identity and gzip HTTP representations plus the build-time inlined MCP App resource to reduce runtime allocation and transfer work."
+}
