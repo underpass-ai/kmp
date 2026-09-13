@@ -56,17 +56,38 @@ nothing and must never be mistaken for a real memory.
 The data directory is selected in this order:
 
 1. `KMP_MCP_DATA_DIR`, when explicitly set;
-2. `.kernel/` at the nearest git root;
-3. the per-user local data directory: `$XDG_DATA_HOME/kmp/default` or
+2. the selection saved with `kmp-mcp config memory-store`;
+3. `.kernel/` at the nearest git root;
+4. the per-user local data directory: `$XDG_DATA_HOME/kmp/default` or
    `~/.local/share/kmp/default` on Unix, and `%LOCALAPPDATA%\kmp\default`
    on Windows (with `APPDATA` and `USERPROFILE` fallbacks).
 
-KMP creates and opens SQLite format-2 stores only. Unsupported store formats
+The environment variable stays first because it is the most explicit and most
+local thing anyone can say, and tests, baselines and reproduction scripts
+depend on it meaning exactly one process. A saved selection then beats
+automatic discovery, which is the point of saving one: a workspace with no git
+root reaches the memory its operator chose rather than whatever the per-user
+default happens to hold.
+
+KMP creates and opens SQLite format-3 stores only. Unsupported store formats
 are detected and rejected before their bytes are opened, so an upgrade never
 substitutes empty SQLite memory for an older store.
 
 To change the store used by a project, point `KMP_MCP_DATA_DIR` at the intended
-directory and verify the selection with `kmp-mcp info` before writing.
+directory and verify the selection with `kmp-mcp info` before writing. To
+change the memory this machine opens when nothing more local applies:
+
+```bash
+kmp-mcp config memory-store /absolute/path/to/memory   # save it
+kmp-mcp config                                         # saved, effective, and which rule won
+kmp-mcp config memory-store --clear                    # back to automatic selection
+```
+
+The selection is one line in the user config file, so it survives restarts of
+the desktop application without any environment. It starts no host and creates
+no store. A directory holding memory this engine cannot open is refused with
+the reason and the repair: KMP never migrates, moves, converts or overwrites an
+existing store, and the refused directory keeps every byte it had.
 
 SQLite permits multiple local agent hosts to share one store. To recover a
 format-1 store, stop its writers and preserve the directory. Use an explicitly

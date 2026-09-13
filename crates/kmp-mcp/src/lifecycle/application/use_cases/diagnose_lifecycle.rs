@@ -1,4 +1,5 @@
 use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
+use crate::lifecycle::domain::host_connection_verification::HostConnectionVerification;
 use crate::lifecycle::domain::host_installation::HostInstallation;
 use crate::lifecycle::domain::lifecycle_diagnosis::LifecycleDiagnosis;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
@@ -110,15 +111,22 @@ impl<'a> DiagnoseLifecycle<'a> {
             .runtime_engine(installation)
             .and_then(|engine| self.engines.prove(&engine, target))
         {
+            // What this proves is the executable's own surface. It is run
+            // directly, against a scratch directory, with no host in the
+            // loop — so it is reported as a declaration, not a connection.
             Ok(proof) => findings.push(
                 LifecycleFinding::new(
                     DiagnosticSeverity::Ok,
                     format!(
-                        "{host}: effective engine answers all {} tools",
+                        "{host}: effective engine binary declares all {} tools",
                         proof.tool_count()
                     ),
                 )
-                .with_detail(proof.executable().as_path().display().to_string()),
+                .with_detail(proof.executable().as_path().display().to_string())
+                .with_detail(
+                    "proved by running this executable directly; it is not evidence of a host \
+                     connection",
+                ),
             ),
             Err(error) => findings.push(
                 LifecycleFinding::new(
@@ -131,20 +139,26 @@ impl<'a> DiagnoseLifecycle<'a> {
         }
 
         match self.hosts.runtime_status(host) {
-            Ok(status) if status.is_usable() => findings.push(
-                LifecycleFinding::new(
-                    DiagnosticSeverity::Ok,
-                    format!("{host}: effective MCP registration is usable"),
-                )
-                .with_detail(status.description()),
-            ),
-            Ok(status) => findings.push(
-                LifecycleFinding::new(
-                    DiagnosticSeverity::Fail,
-                    format!("{host}: effective MCP registration is not usable"),
-                )
-                .with_detail(status.description()),
-            ),
+            Ok(status) => {
+                let verification = status.verification();
+                let severity = match verification {
+                    HostConnectionVerification::Verified => DiagnosticSeverity::Ok,
+                    // Unverified is a warning, not an approval: the reader
+                    // has to know nothing connected (#680).
+                    HostConnectionVerification::Unverified => DiagnosticSeverity::Warn,
+                    HostConnectionVerification::Broken => DiagnosticSeverity::Fail,
+                };
+                let mut finding =
+                    LifecycleFinding::new(severity, format!("{host}: {}", verification.headline()))
+                        .with_detail(status.description());
+                if verification == HostConnectionVerification::Unverified {
+                    finding = finding.with_detail(
+                        "no live MCP probe ran here; ask this host for a kmp tool to verify the \
+                         connection, and check the selected memory with `kmp-mcp config`",
+                    );
+                }
+                findings.push(finding);
+            }
             Err(error) => findings.push(
                 LifecycleFinding::new(
                     DiagnosticSeverity::Fail,

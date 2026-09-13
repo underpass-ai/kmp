@@ -5,6 +5,9 @@ use std::path::{Path, PathBuf};
 use kmp_adapter_embedded::validate_store_layout;
 use kmp_domain::PortError;
 
+use crate::memory_selection::{self, SelectedMemory};
+use crate::memory_selection_refusal::SelectionRefusal;
+
 /// Explicit data directory override (ADR-012 rule 1).
 pub const DATA_DIR_ENV: &str = "KMP_MCP_DATA_DIR";
 
@@ -29,6 +32,8 @@ pub const PROJECT_BUNDLE_PATH: &str = ".kmp/memory.jsonl";
 pub enum ResolvedDataDir {
     /// `KMP_MCP_DATA_DIR` was set.
     Explicit(PathBuf),
+    /// The operator saved this selection in the user config file.
+    Saved(PathBuf),
     /// `<project-root>/.kernel/`, project root found by walking up to `.git`.
     Project(PathBuf),
     /// Per-user fallback under the platform data dir.
@@ -56,7 +61,10 @@ pub struct OrphanedProjectBundle {
 impl ResolvedDataDir {
     pub fn path(&self) -> &Path {
         match self {
-            Self::Explicit(path) | Self::Project(path) | Self::UserDefault(path) => path,
+            Self::Explicit(path)
+            | Self::Saved(path)
+            | Self::Project(path)
+            | Self::UserDefault(path) => path,
             Self::UserFallback { path, .. } => path,
         }
     }
@@ -64,9 +72,27 @@ impl ResolvedDataDir {
     pub fn rule_name(&self) -> &'static str {
         match self {
             Self::Explicit(_) => "env",
+            Self::Saved(_) => "saved",
             Self::Project(_) => "project",
             Self::UserDefault(_) => "user",
             Self::UserFallback { .. } => "user fallback",
+        }
+    }
+
+    /// The rule in the words a person reads, naming what actually decided.
+    pub fn rule_sentence(&self) -> &'static str {
+        match self {
+            Self::Explicit(_) => {
+                "the KMP_MCP_DATA_DIR environment variable, which overrides everything for this \
+                 process"
+            }
+            Self::Saved(_) => "the selection saved in the user config file",
+            Self::Project(_) => "the nearest project root above the working directory",
+            Self::UserDefault(_) => "the per-user default, because nothing more specific applied",
+            Self::UserFallback { .. } => {
+                "the per-user default, because the project store beside a committed bundle could \
+                 not be opened"
+            }
         }
     }
 
@@ -75,26 +101,41 @@ impl ResolvedDataDir {
             Self::UserFallback {
                 orphaned_bundle, ..
             } => Some(orphaned_bundle),
-            Self::Explicit(_) | Self::Project(_) | Self::UserDefault(_) => None,
+            Self::Explicit(_) | Self::Saved(_) | Self::Project(_) | Self::UserDefault(_) => None,
         }
     }
 }
 
-/// ADR-012 resolution: env override > project `.kernel/` > per-user default.
+/// Resolution order: the environment override, then the saved selection,
+/// then the project `.kernel/`, then the per-user default.
+///
+/// `KMP_MCP_DATA_DIR` stays first because it is the most explicit and most
+/// local thing anyone can say, and every test, baseline and reproduction
+/// script depends on that override meaning exactly one process. A saved
+/// selection then beats automatic discovery, which is the whole point of
+/// saving one: a workspace with no project marker must reach the memory the
+/// operator chose, not whatever the per-user default happens to hold.
+///
 /// Pure function for testability; `resolve_data_dir_from_env` feeds it from
-/// the process environment.
+/// the process environment and the user config file.
 pub fn resolve_data_dir(
     env_override: Option<&str>,
+    saved: Option<&SelectedMemory>,
     working_dir: &Path,
     user_data_home: &Path,
 ) -> ResolvedDataDir {
-    resolve_with_project_marker(env_override, working_dir, user_data_home, |candidate| {
-        candidate.join(".git").exists()
-    })
+    resolve_with_project_marker(
+        env_override,
+        saved,
+        working_dir,
+        user_data_home,
+        |candidate| candidate.join(".git").exists(),
+    )
 }
 
 fn resolve_with_project_marker(
     env_override: Option<&str>,
+    saved: Option<&SelectedMemory>,
     working_dir: &Path,
     user_data_home: &Path,
     is_project_root: impl Fn(&Path) -> bool,
@@ -109,6 +150,10 @@ fn resolve_with_project_marker(
         } else {
             working_dir.join(path)
         });
+    }
+
+    if let Some(saved) = saved {
+        return ResolvedDataDir::Saved(saved.path().to_path_buf());
     }
 
     let mut current = Some(working_dir);
@@ -157,6 +202,7 @@ pub fn project_bundle_path(resolved: &ResolvedDataDir) -> Option<PathBuf> {
             .parent()
             .map(|project_root| project_root.join(PROJECT_BUNDLE_PATH)),
         ResolvedDataDir::Explicit(_)
+        | ResolvedDataDir::Saved(_)
         | ResolvedDataDir::UserDefault(_)
         | ResolvedDataDir::UserFallback { .. } => None,
     }
@@ -192,8 +238,21 @@ pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
         )
     })?;
     reject_unexpanded_home_override(env_override.as_deref())?;
+    // A saved selection that cannot be read is an error, never a silent
+    // fall-through: landing on a different store without saying so is the
+    // defect this selection exists to end.
+    let saved = memory_selection::saved_selection().map_err(|error| {
+        PortError::InvalidState(format!(
+            "the saved user memory selection is unusable: {error}"
+        ))
+    })?;
 
-    let resolved = resolve_data_dir(env_override.as_deref(), &working_dir, &user_data_home);
+    let resolved = resolve_data_dir(
+        env_override.as_deref(),
+        saved.as_ref(),
+        &working_dir,
+        &user_data_home,
+    );
     Ok(fallback_from_unopenable_project(resolved, &user_data_home))
 }
 
@@ -242,22 +301,9 @@ fn reject_unexpanded_home_override(env_override: Option<&str>) -> Result<(), Por
         return Ok(());
     }
 
-    let suggestion = user_home()
-        .and_then(|home| path.strip_prefix("~").ok().map(|suffix| home.join(suffix)))
-        .map(|path| format!("; use `{}`", path.display()))
-        .unwrap_or_else(|| "; use an absolute path instead".to_string());
-    Err(PortError::InvalidState(format!(
-        "{DATA_DIR_ENV} value `{explicit}` starts with `~`, but MCP host configuration does not \
-         expand shell paths{suggestion}"
-    )))
-}
-
-fn user_home() -> Option<PathBuf> {
-    ["HOME", "USERPROFILE"]
-        .into_iter()
-        .find_map(std::env::var_os)
-        .map(PathBuf::from)
-        .filter(|path| !path.as_os_str().is_empty())
+    Err(PortError::InvalidState(
+        SelectionRefusal::unexpanded(format!("{DATA_DIR_ENV} value"), explicit).to_string(),
+    ))
 }
 
 fn prepare_data_dir(resolved: &ResolvedDataDir) -> Result<(), PortError> {
@@ -322,10 +368,15 @@ mod tests {
         );
     }
 
+    fn saved(path: &str) -> SelectedMemory {
+        SelectedMemory::parse(path).expect("an absolute test selection")
+    }
+
     #[test]
     fn env_override_wins_over_everything() {
         let resolved = resolve_data_dir(
             Some("/explicit/dir"),
+            Some(&saved("/saved/dir")),
             Path::new("/some/project"),
             Path::new("/home/u/.local/share"),
         );
@@ -334,12 +385,64 @@ mod tests {
             ResolvedDataDir::Explicit(PathBuf::from("/explicit/dir"))
         );
         assert_eq!(resolved.rule_name(), "env");
+        assert!(resolved.rule_sentence().contains("KMP_MCP_DATA_DIR"));
+    }
+
+    /// The whole precedence, one rule removed at a time: environment, then
+    /// the saved selection, then the project, then the per-user default.
+    #[test]
+    fn every_rule_wins_exactly_over_the_ones_below_it() {
+        let selection = saved("/saved/dir");
+        let in_a_project = |env, saved| {
+            resolve_with_project_marker(
+                env,
+                saved,
+                Path::new("/workspace/project"),
+                Path::new("/home/u/.local/share"),
+                |candidate| candidate == Path::new("/workspace/project"),
+            )
+        };
+
+        assert_eq!(
+            in_a_project(Some("/explicit/dir"), Some(&selection)),
+            ResolvedDataDir::Explicit(PathBuf::from("/explicit/dir"))
+        );
+        assert_eq!(
+            in_a_project(None, Some(&selection)),
+            ResolvedDataDir::Saved(PathBuf::from("/saved/dir")),
+            "a saved selection beats project discovery, which is the point of saving one"
+        );
+        assert_eq!(
+            in_a_project(None, None),
+            ResolvedDataDir::Project(PathBuf::from("/workspace/project/.kernel"))
+        );
+
+        // The reproduction in #680: a workspace with no project marker and a
+        // saved selection must reach the chosen memory, not the old default.
+        let outside_a_project = |saved| {
+            resolve_with_project_marker(
+                None,
+                saved,
+                Path::new("/workspace/not-a-repository"),
+                Path::new("/home/u/.local/share"),
+                |_| false,
+            )
+        };
+        let chosen = outside_a_project(Some(&selection));
+        assert_eq!(chosen, ResolvedDataDir::Saved(PathBuf::from("/saved/dir")));
+        assert_eq!(chosen.rule_name(), "saved");
+        assert!(chosen.rule_sentence().contains("saved in the user config"));
+        assert_eq!(
+            outside_a_project(None),
+            ResolvedDataDir::UserDefault(PathBuf::from("/home/u/.local/share/kmp/default"))
+        );
     }
 
     #[test]
     fn a_relative_override_is_reported_as_the_path_that_will_actually_open() {
         let resolved = resolve_data_dir(
             Some("memory/kmp"),
+            None,
             Path::new("/workspace/project"),
             Path::new("/home/u/.local/share"),
         );
@@ -353,11 +456,21 @@ mod tests {
     fn blank_env_override_is_ignored() {
         let resolved = resolve_with_project_marker(
             Some("  "),
+            None,
             Path::new("/anywhere"),
             Path::new("/data"),
             |_| false,
         );
         assert_eq!(resolved.rule_name(), "user");
+
+        let with_selection = resolve_with_project_marker(
+            Some("  "),
+            Some(&saved("/saved/dir")),
+            Path::new("/anywhere"),
+            Path::new("/data"),
+            |_| false,
+        );
+        assert_eq!(with_selection.rule_name(), "saved");
     }
 
     #[test]
@@ -367,7 +480,7 @@ mod tests {
         std::fs::create_dir_all(&nested).expect("nested dirs");
         std::fs::create_dir_all(temp.path().join("workspace").join(".git")).expect("git dir");
 
-        let resolved = resolve_data_dir(None, &nested, Path::new("/data"));
+        let resolved = resolve_data_dir(None, None, &nested, Path::new("/data"));
         assert_eq!(
             resolved,
             ResolvedDataDir::Project(temp.path().join("workspace").join(".kernel"))
@@ -378,6 +491,7 @@ mod tests {
     fn no_project_falls_back_to_user_data_dir() {
         let resolved = resolve_with_project_marker(
             None,
+            None,
             Path::new("/anywhere/nested"),
             Path::new("/home/u/.local/share"),
             |_| false,
@@ -386,6 +500,16 @@ mod tests {
             resolved,
             ResolvedDataDir::UserDefault(PathBuf::from("/home/u/.local/share/kmp/default"))
         );
+    }
+
+    /// A saved selection is not a project store: it has no repository to be
+    /// committed to, so guessing a bundle path for it would put memory
+    /// somewhere nobody chose.
+    #[test]
+    fn a_saved_selection_has_no_conventional_bundle() {
+        let selected = ResolvedDataDir::Saved(PathBuf::from("/saved/dir"));
+        assert_eq!(project_bundle_path(&selected), None);
+        assert_eq!(selected.orphaned_bundle(), None);
     }
 
     #[test]

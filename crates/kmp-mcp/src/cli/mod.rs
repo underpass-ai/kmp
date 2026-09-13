@@ -7,6 +7,7 @@ mod context_verb;
 mod document;
 mod guide_verb;
 mod lifecycle_verbs;
+mod memory_store_config;
 mod plugin_verb;
 mod snapshot_verb;
 mod summaries_verb;
@@ -76,7 +77,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  stdio mode, or use `document <about> [--out FILE]` / \
                  `snapshot create|list|verify|read|merge ...` / \
                  `summaries pending [<about>] [--json]` / \
-                 `config [memory-routing <mode>]` / \
+                 `config [memory-routing <mode> | memory-store <absolute-path>]` / \
                  `guide sync --plugin-root DIR [--dry-run]` / \
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
                  `setup|update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] \
@@ -138,7 +139,10 @@ fn subcommand_usage(command: &str) -> &'static str {
     match command {
         "info" => "kmp-mcp info",
         "doctor" => "kmp-mcp doctor",
-        "config" => "kmp-mcp config [memory-routing <on-request|always>]",
+        "config" => {
+            "kmp-mcp config [memory-routing <on-request|always> | memory-store <absolute-path> \
+             | memory-store --clear]"
+        }
         "document" => "kmp-mcp document <about> [--out FILE]",
         "context" => "kmp-mcp context project|expand [FILE|-]",
         "guide" => "kmp-mcp guide sync --plugin-root DIR [--dry-run]",
@@ -195,8 +199,10 @@ kmp-mcp info                    What this binary is and which memory it opens\n 
 kmp-mcp doctor                  Diagnose the setup and name the one thing to fix\n  \
 kmp-mcp setup                   Align installed native plugins and engines\n  \
 kmp-mcp update                  Update every installed KMP host as one convergence\n  \
-kmp-mcp config                  Show the agent orchestration policy\n  \
+kmp-mcp config                  Show the agent policy and the user memory selection\n  \
 kmp-mcp config memory-routing <on-request|always>\n  \
+kmp-mcp config memory-store <absolute-path>|--clear\n  \
+                                Select the user memory persistently, or stop selecting one\n  \
 kmp-mcp guide sync --plugin-root DIR\n  \
                                 Converge the two immutable shipped guides\n  \
 kmp-mcp plugin resolve-engine  Select the engine matching both host manifests\n  \

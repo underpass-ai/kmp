@@ -8,7 +8,21 @@ and fixable, and `/kmp:doctor` distinguishes them:
 - the session started before the binary, plugin, or MCP registration changed,
   so it is still carrying the old tool inventory — restart the session;
 - the configured binary or data directory no longer exists — run
-  `/kmp:doctor` to identify the stale path.
+  `/kmp:doctor` to identify the stale path;
+- the host has the MCP registered and enabled and has never connected to it.
+  A registration in a host's inventory is not a conversation that can call a
+  tool. `/kmp:doctor` reports that state as *unverified* rather than usable,
+  and reports it separately from the plugin being installed and from the
+  engine binary declaring its tools when run directly.
+
+Which memory opens is a separate question from whether the tools are there,
+and it has one order: the `KMP_MCP_DATA_DIR` environment variable, then the
+selection saved with `kmp-mcp config memory-store <absolute-path>`, then the
+nearest project root, then the per-user default. `kmp-mcp config` prints the
+saved selection, the effective one and which rule won, without starting a host
+or creating a store. Memory this engine cannot open is refused with its reason:
+never migrate, move or overwrite such a store, and never propose that a user
+do so as a repair. Selecting another directory is their decision.
 
 ## Errors
 

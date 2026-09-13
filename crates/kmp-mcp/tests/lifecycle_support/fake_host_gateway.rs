@@ -1,3 +1,7 @@
+//! A shared lifecycle fixture: setup, update and diagnosis each use the
+//! part of it their question needs.
+#![allow(dead_code)]
+
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -14,6 +18,7 @@ pub struct FakeHostGateway {
     provisions: Mutex<Vec<Host>>,
     refreshes: Mutex<Vec<Host>>,
     refreshed_version: Option<ReleaseVersion>,
+    runtime_status: Option<HostRuntimeStatus>,
 }
 
 impl FakeHostGateway {
@@ -23,7 +28,15 @@ impl FakeHostGateway {
             provisions: Mutex::new(Vec::new()),
             refreshes: Mutex::new(Vec::new()),
             refreshed_version: None,
+            runtime_status: None,
         }
+    }
+
+    /// Makes every host report the same runtime status, so a diagnosis can be
+    /// held to one state at a time.
+    pub fn reporting(mut self, status: HostRuntimeStatus) -> Self {
+        self.runtime_status = Some(status);
+        self
     }
 
     pub fn returning_version(mut self, version: ReleaseVersion) -> Self {
@@ -85,6 +98,9 @@ impl HostGateway for FakeHostGateway {
     }
 
     fn runtime_status(&self, host: Host) -> Result<HostRuntimeStatus, LifecycleError> {
+        if let Some(status) = self.runtime_status.clone() {
+            return Ok(status);
+        }
         Ok(match host {
             Host::Claude => HostRuntimeStatus::Connected,
             Host::Codex => HostRuntimeStatus::Registered,

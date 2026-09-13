@@ -8,7 +8,10 @@ mod data_dir;
 mod engine;
 mod kernel;
 mod memory_api;
+pub mod memory_selection;
+mod memory_selection_refusal;
 mod migration;
+pub mod user_config_file;
 
 pub use commit_bundle::{
     CommitNativeBundle, PENDING_EXPORT_DIR, PendingBundleExport, clear_pending_bundle_exports,
@@ -30,4 +33,6 @@ pub use kmp_adapter_embedded::{
     bundle_excluding_abouts, format_version_path, merge_bundles, quality_telemetry_path,
     read_stamped_version, store_file_path_for, validate_store_layout, verify_bundle,
 };
+pub use memory_selection::SelectedMemory;
+pub use memory_selection_refusal::SelectionRefusal;
 pub use migration::{migrate_data_dir, migrate_data_dir_to, open_or_migrate_data_dir};

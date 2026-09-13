@@ -36,7 +36,27 @@ the explicit ownership repair for the requested setup.
 Standalone Codex wiring is retired. The native plugin is the single MCP owner;
 reject `--standalone` and diagnose any old global registration as a collision.
 
-Show the active agent policy with `kmp-mcp config`. It reports two settings.
+Show the active configuration with `kmp-mcp config`. It reports the agent
+policy and the user memory selection, and starts no host.
+
+`memory store` is which memory KMP opens. Selection runs in one order:
+`KMP_MCP_DATA_DIR`, then the saved selection, then the nearest project root,
+then the per-user default. `kmp-mcp config` prints the saved selection, the
+effective one, and which of those rules won, so a workspace that is not a
+repository never reaches a store nobody chose without saying so.
+
+Save a selection with `kmp-mcp config memory-store <absolute-path>`, and undo
+it with `kmp-mcp config memory-store --clear`. The selection is one line in
+the user config file, so it survives a normal desktop restart with no
+environment variable and no launcher script. It creates no store: the first
+write does. A relative or `~` path is refused, because a saved selection has
+to mean one directory from every working directory.
+
+A directory holding memory this engine cannot open is refused with the reason
+and the repair. Never present that as a reason to migrate: KMP does not
+migrate, move, convert or overwrite an existing store, and setup and update
+must not select or write one. Selecting a fresh store is the user's explicit
+decision, and the old store stays exactly where it is.
 
 `memory routing` decides whether an agent enters KMP unasked. The default is
 `on request`: memory is called when the user asks for KMP, when a kmp skill or

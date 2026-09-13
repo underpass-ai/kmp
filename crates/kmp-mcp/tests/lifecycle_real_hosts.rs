@@ -100,14 +100,17 @@ impl RealHostLifecycleHarness {
 
         let doctor = self.host(self.path(&self.shared_binary()), &["doctor"]);
         let diagnosis = String::from_utf8_lossy(&doctor.stdout);
-        let answers_all = format!(
-            "effective engine answers all {} tools",
+        let declares_all = format!(
+            "effective engine binary declares all {} tools",
             kmp_mcp::tool_names().len()
         );
         for clause in [
-            "claude: effective MCP registration is usable",
-            "codex: effective MCP registration is usable",
-            answers_all.as_str(),
+            // Claude Code reports a live connection; Codex's inventory only
+            // reports a registration, and the doctor must not round that up
+            // to a working one (#680).
+            "claude: live MCP connection verified",
+            "codex: MCP registration installed and enabled, live connection unverified",
+            declares_all.as_str(),
             "plugin trees are byte-for-byte identical",
         ] {
             assert!(
