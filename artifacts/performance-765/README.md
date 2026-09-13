@@ -69,7 +69,7 @@ subtracted from total latency to invent a precise attribution of the remainder.
 
 Times are before → after p50 milliseconds. Open has one sample; reload and
 focus/trace have five. Raw per-journey p95, response bytes, timing and browser
-metrics are in each shape's `journeys.json`.
+metrics are in each shape's `journeys.json.gz`.
 
 | Shape | Open | Reload | Agent focus/trace | After HTTP requests open/reload/focus |
 | --- | ---: | ---: | ---: | --- |

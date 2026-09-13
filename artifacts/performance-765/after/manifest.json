@@ -24,8 +24,8 @@
     "uncompressed_bytes": 401884
   },
   {
-    "file": "high-degree/journeys.json",
-    "sha256": "1ec25c579a191bbafb9d401ac6e638fa7a66207079cf2bfdc2ee0962dea79d55",
+    "file": "high-degree/journeys.json.gz",
+    "sha256": "34709f16e76b9b0342dfc09bc8ec9e46ab34f72c23c1f3136f05e7c30bc34975",
     "uncompressed_sha256": "1ec25c579a191bbafb9d401ac6e638fa7a66207079cf2bfdc2ee0962dea79d55",
     "uncompressed_bytes": 308564
   },
@@ -84,8 +84,8 @@
     "uncompressed_bytes": 276193
   },
   {
-    "file": "large-body/journeys.json",
-    "sha256": "bcf9867d7ae13b33295e70269bd4b56314791e36788782baf05c4839501f6bcb",
+    "file": "large-body/journeys.json.gz",
+    "sha256": "0e50dc36d32bb7abec55f803662f9ab98c6d6d34a84414135524f54045cf7909",
     "uncompressed_sha256": "bcf9867d7ae13b33295e70269bd4b56314791e36788782baf05c4839501f6bcb",
     "uncompressed_bytes": 309743
   },
@@ -144,8 +144,8 @@
     "uncompressed_bytes": 105773
   },
   {
-    "file": "medium/journeys.json",
-    "sha256": "8bab8272a16aa2caabc3768833b053ea0f86de4abc2b1bbc9ed19cc50fd76aec",
+    "file": "medium/journeys.json.gz",
+    "sha256": "c2fa0e6462c7e82c34490db8311bbc00e466f4cb12fd7dc8c080dbb60d67f122",
     "uncompressed_sha256": "8bab8272a16aa2caabc3768833b053ea0f86de4abc2b1bbc9ed19cc50fd76aec",
     "uncompressed_bytes": 308766
   },
@@ -210,8 +210,8 @@
     "uncompressed_bytes": 16097
   },
   {
-    "file": "small/journeys.json",
-    "sha256": "3595cf68709fd9101574987aa4dccf062071fb3560629236171054941966fbeb",
+    "file": "small/journeys.json.gz",
+    "sha256": "c4d5fd83ce8d156ea72232275053a2302ec271844f624052e694f513b995c580",
     "uncompressed_sha256": "3595cf68709fd9101574987aa4dccf062071fb3560629236171054941966fbeb",
     "uncompressed_bytes": 309670
   },
