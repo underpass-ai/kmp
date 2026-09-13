@@ -1,0 +1,1832 @@
+{
+  "about": "project:temporal-perf",
+  "idempotency_key": "fixture-v1",
+  "memory": {
+    "dimensions": [
+      {
+        "id": "proof",
+        "kind": "task"
+      },
+      {
+        "id": "shared",
+        "kind": "topic"
+      }
+    ],
+    "entries": [
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0000",
+        "kind": "observation",
+        "text": "Fact 0: quantity 17 excludes B. Fact 0: quantity 17 excludes B. Fact 0: quantity 17 excludes B. Fact 0: quantity 17 excludes B. Fact 0: quantity 17 excludes B. Fact 0: quantity 17 excludes B. Fact 0: quantity 17 excludes B. Fact 0: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 1,
+            "observed_at": "2026-09-10T10:00:00Z",
+            "ingested_at": "2026-09-10T10:00:00Z",
+            "valid_from": "2026-09-10T10:00:00Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 1,
+            "observed_at": "2026-09-10T10:00:00Z",
+            "ingested_at": "2026-09-10T10:00:00Z",
+            "valid_from": "2026-09-10T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0001",
+        "kind": "observation",
+        "text": "Fact 1: quantity 17 excludes B. Fact 1: quantity 17 excludes B. Fact 1: quantity 17 excludes B. Fact 1: quantity 17 excludes B. Fact 1: quantity 17 excludes B. Fact 1: quantity 17 excludes B. Fact 1: quantity 17 excludes B. Fact 1: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 2,
+            "observed_at": "2026-09-10T10:00:01Z",
+            "ingested_at": "2026-09-10T10:00:01Z",
+            "valid_from": "2026-09-10T10:00:01Z",
+            "occurred_at": "2026-09-10T10:00:01Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0002",
+        "kind": "observation",
+        "text": "Fact 2: quantity 17 excludes B. Fact 2: quantity 17 excludes B. Fact 2: quantity 17 excludes B. Fact 2: quantity 17 excludes B. Fact 2: quantity 17 excludes B. Fact 2: quantity 17 excludes B. Fact 2: quantity 17 excludes B. Fact 2: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 3,
+            "observed_at": "2026-09-10T10:00:01Z",
+            "ingested_at": "2026-09-10T10:00:02Z",
+            "valid_from": "2026-09-10T10:00:02Z",
+            "occurred_at": "2026-09-10T10:00:02Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0003",
+        "kind": "observation",
+        "text": "Fact 3: quantity 17 excludes B. Fact 3: quantity 17 excludes B. Fact 3: quantity 17 excludes B. Fact 3: quantity 17 excludes B. Fact 3: quantity 17 excludes B. Fact 3: quantity 17 excludes B. Fact 3: quantity 17 excludes B. Fact 3: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 4,
+            "observed_at": "2026-09-10T10:00:03Z",
+            "ingested_at": "2026-09-10T10:00:03Z",
+            "valid_from": "2026-09-10T10:00:03Z",
+            "occurred_at": "2026-09-10T10:00:03Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 4,
+            "observed_at": "2026-09-10T10:00:03Z",
+            "ingested_at": "2026-09-10T10:00:03Z",
+            "valid_from": "2026-09-10T10:00:03Z",
+            "occurred_at": "2026-09-10T10:00:03Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0004",
+        "kind": "observation",
+        "text": "Fact 4: quantity 17 excludes B. Fact 4: quantity 17 excludes B. Fact 4: quantity 17 excludes B. Fact 4: quantity 17 excludes B. Fact 4: quantity 17 excludes B. Fact 4: quantity 17 excludes B. Fact 4: quantity 17 excludes B. Fact 4: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 5,
+            "observed_at": "2026-09-10T10:00:04Z",
+            "ingested_at": "2026-09-10T10:00:04Z",
+            "valid_from": "2026-09-10T10:00:04Z",
+            "occurred_at": "2026-09-10T10:00:04Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0005",
+        "kind": "observation",
+        "text": "Fact 5: quantity 17 excludes B. Fact 5: quantity 17 excludes B. Fact 5: quantity 17 excludes B. Fact 5: quantity 17 excludes B. Fact 5: quantity 17 excludes B. Fact 5: quantity 17 excludes B. Fact 5: quantity 17 excludes B. Fact 5: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 6,
+            "observed_at": "2026-09-10T10:00:05Z",
+            "ingested_at": "2026-09-10T10:00:05Z",
+            "valid_from": "2026-09-10T10:00:05Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0006",
+        "kind": "observation",
+        "text": "Fact 6: quantity 17 excludes B. Fact 6: quantity 17 excludes B. Fact 6: quantity 17 excludes B. Fact 6: quantity 17 excludes B. Fact 6: quantity 17 excludes B. Fact 6: quantity 17 excludes B. Fact 6: quantity 17 excludes B. Fact 6: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 7,
+            "observed_at": "2026-09-10T10:00:06Z",
+            "ingested_at": "2026-09-10T10:00:06Z",
+            "valid_from": "2026-09-10T10:00:06Z",
+            "occurred_at": "2026-09-10T10:00:06Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 7,
+            "observed_at": "2026-09-10T10:00:06Z",
+            "ingested_at": "2026-09-10T10:00:06Z",
+            "valid_from": "2026-09-10T10:00:06Z",
+            "occurred_at": "2026-09-10T10:00:06Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0007",
+        "kind": "observation",
+        "text": "Fact 7: quantity 17 excludes B. Fact 7: quantity 17 excludes B. Fact 7: quantity 17 excludes B. Fact 7: quantity 17 excludes B. Fact 7: quantity 17 excludes B. Fact 7: quantity 17 excludes B. Fact 7: quantity 17 excludes B. Fact 7: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 8,
+            "observed_at": "2026-09-10T10:00:07Z",
+            "ingested_at": "2026-09-10T10:00:07Z",
+            "valid_from": "2026-09-10T10:00:07Z",
+            "occurred_at": "2026-09-10T10:00:07Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0008",
+        "kind": "observation",
+        "text": "Fact 8: quantity 17 excludes B. Fact 8: quantity 17 excludes B. Fact 8: quantity 17 excludes B. Fact 8: quantity 17 excludes B. Fact 8: quantity 17 excludes B. Fact 8: quantity 17 excludes B. Fact 8: quantity 17 excludes B. Fact 8: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 9,
+            "observed_at": "2026-09-10T10:00:08Z",
+            "ingested_at": "2026-09-10T10:00:08Z",
+            "valid_from": "2026-09-10T10:00:08Z",
+            "occurred_at": "2026-09-10T10:00:08Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0009",
+        "kind": "observation",
+        "text": "Fact 9: quantity 17 excludes B. Fact 9: quantity 17 excludes B. Fact 9: quantity 17 excludes B. Fact 9: quantity 17 excludes B. Fact 9: quantity 17 excludes B. Fact 9: quantity 17 excludes B. Fact 9: quantity 17 excludes B. Fact 9: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 10,
+            "observed_at": "2026-09-10T10:00:09Z",
+            "ingested_at": "2026-09-10T10:00:09Z",
+            "valid_from": "2026-09-10T10:00:09Z",
+            "occurred_at": "2026-09-10T10:00:09Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 10,
+            "observed_at": "2026-09-10T10:00:09Z",
+            "ingested_at": "2026-09-10T10:00:09Z",
+            "valid_from": "2026-09-10T10:00:09Z",
+            "occurred_at": "2026-09-10T10:00:09Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0010",
+        "kind": "observation",
+        "text": "Fact 10: quantity 17 excludes B. Fact 10: quantity 17 excludes B. Fact 10: quantity 17 excludes B. Fact 10: quantity 17 excludes B. Fact 10: quantity 17 excludes B. Fact 10: quantity 17 excludes B. Fact 10: quantity 17 excludes B. Fact 10: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 11,
+            "observed_at": "2026-09-10T10:00:10Z",
+            "ingested_at": "2026-09-10T10:00:10Z",
+            "valid_from": "2026-09-10T10:00:10Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0011",
+        "kind": "observation",
+        "text": "Fact 11: quantity 17 excludes B. Fact 11: quantity 17 excludes B. Fact 11: quantity 17 excludes B. Fact 11: quantity 17 excludes B. Fact 11: quantity 17 excludes B. Fact 11: quantity 17 excludes B. Fact 11: quantity 17 excludes B. Fact 11: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 12,
+            "observed_at": "2026-09-10T10:00:11Z",
+            "ingested_at": "2026-09-10T10:00:11Z",
+            "valid_from": "2026-09-10T10:00:11Z",
+            "occurred_at": "2026-09-10T10:00:11Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0012",
+        "kind": "observation",
+        "text": "Fact 12: quantity 17 excludes B. Fact 12: quantity 17 excludes B. Fact 12: quantity 17 excludes B. Fact 12: quantity 17 excludes B. Fact 12: quantity 17 excludes B. Fact 12: quantity 17 excludes B. Fact 12: quantity 17 excludes B. Fact 12: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 13,
+            "observed_at": "2026-09-10T10:00:12Z",
+            "ingested_at": "2026-09-10T10:00:12Z",
+            "valid_from": "2026-09-10T10:00:12Z",
+            "occurred_at": "2026-09-10T10:00:12Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 13,
+            "observed_at": "2026-09-10T10:00:12Z",
+            "ingested_at": "2026-09-10T10:00:12Z",
+            "valid_from": "2026-09-10T10:00:12Z",
+            "occurred_at": "2026-09-10T10:00:12Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0013",
+        "kind": "observation",
+        "text": "Fact 13: quantity 17 excludes B. Fact 13: quantity 17 excludes B. Fact 13: quantity 17 excludes B. Fact 13: quantity 17 excludes B. Fact 13: quantity 17 excludes B. Fact 13: quantity 17 excludes B. Fact 13: quantity 17 excludes B. Fact 13: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 14,
+            "observed_at": "2026-09-10T10:00:13Z",
+            "ingested_at": "2026-09-10T10:00:13Z",
+            "valid_from": "2026-09-10T10:00:13Z",
+            "occurred_at": "2026-09-10T10:00:13Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0014",
+        "kind": "observation",
+        "text": "Fact 14: quantity 17 excludes B. Fact 14: quantity 17 excludes B. Fact 14: quantity 17 excludes B. Fact 14: quantity 17 excludes B. Fact 14: quantity 17 excludes B. Fact 14: quantity 17 excludes B. Fact 14: quantity 17 excludes B. Fact 14: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 15,
+            "observed_at": "2026-09-10T10:00:14Z",
+            "ingested_at": "2026-09-10T10:00:14Z",
+            "valid_from": "2026-09-10T10:00:14Z",
+            "occurred_at": "2026-09-10T10:00:14Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0015",
+        "kind": "observation",
+        "text": "Fact 15: quantity 17 excludes B. Fact 15: quantity 17 excludes B. Fact 15: quantity 17 excludes B. Fact 15: quantity 17 excludes B. Fact 15: quantity 17 excludes B. Fact 15: quantity 17 excludes B. Fact 15: quantity 17 excludes B. Fact 15: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 16,
+            "observed_at": "2026-09-10T10:00:15Z",
+            "ingested_at": "2026-09-10T10:00:15Z",
+            "valid_from": "2026-09-10T10:00:15Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 16,
+            "observed_at": "2026-09-10T10:00:15Z",
+            "ingested_at": "2026-09-10T10:00:15Z",
+            "valid_from": "2026-09-10T10:00:15Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0016",
+        "kind": "observation",
+        "text": "Fact 16: quantity 17 excludes B. Fact 16: quantity 17 excludes B. Fact 16: quantity 17 excludes B. Fact 16: quantity 17 excludes B. Fact 16: quantity 17 excludes B. Fact 16: quantity 17 excludes B. Fact 16: quantity 17 excludes B. Fact 16: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 17,
+            "observed_at": "2026-09-10T10:00:16Z",
+            "ingested_at": "2026-09-10T10:00:16Z",
+            "valid_from": "2026-09-10T10:00:16Z",
+            "occurred_at": "2026-09-10T10:00:16Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0017",
+        "kind": "observation",
+        "text": "Fact 17: quantity 17 excludes B. Fact 17: quantity 17 excludes B. Fact 17: quantity 17 excludes B. Fact 17: quantity 17 excludes B. Fact 17: quantity 17 excludes B. Fact 17: quantity 17 excludes B. Fact 17: quantity 17 excludes B. Fact 17: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 18,
+            "observed_at": "2026-09-10T10:00:17Z",
+            "ingested_at": "2026-09-10T10:00:17Z",
+            "valid_from": "2026-09-10T10:00:17Z",
+            "occurred_at": "2026-09-10T10:00:17Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0018",
+        "kind": "observation",
+        "text": "Fact 18: quantity 17 excludes B. Fact 18: quantity 17 excludes B. Fact 18: quantity 17 excludes B. Fact 18: quantity 17 excludes B. Fact 18: quantity 17 excludes B. Fact 18: quantity 17 excludes B. Fact 18: quantity 17 excludes B. Fact 18: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 19,
+            "observed_at": "2026-09-10T10:00:18Z",
+            "ingested_at": "2026-09-10T10:00:18Z",
+            "valid_from": "2026-09-10T10:00:18Z",
+            "occurred_at": "2026-09-10T10:00:18Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 19,
+            "observed_at": "2026-09-10T10:00:18Z",
+            "ingested_at": "2026-09-10T10:00:18Z",
+            "valid_from": "2026-09-10T10:00:18Z",
+            "occurred_at": "2026-09-10T10:00:18Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0019",
+        "kind": "observation",
+        "text": "Fact 19: quantity 17 excludes B. Fact 19: quantity 17 excludes B. Fact 19: quantity 17 excludes B. Fact 19: quantity 17 excludes B. Fact 19: quantity 17 excludes B. Fact 19: quantity 17 excludes B. Fact 19: quantity 17 excludes B. Fact 19: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 20,
+            "observed_at": "2026-09-10T10:00:19Z",
+            "ingested_at": "2026-09-10T10:00:19Z",
+            "valid_from": "2026-09-10T10:00:19Z",
+            "occurred_at": "2026-09-10T10:00:19Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0020",
+        "kind": "observation",
+        "text": "Fact 20: quantity 17 excludes B. Fact 20: quantity 17 excludes B. Fact 20: quantity 17 excludes B. Fact 20: quantity 17 excludes B. Fact 20: quantity 17 excludes B. Fact 20: quantity 17 excludes B. Fact 20: quantity 17 excludes B. Fact 20: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 21,
+            "observed_at": "2026-09-10T10:00:20Z",
+            "ingested_at": "2026-09-10T10:00:20Z",
+            "valid_from": "2026-09-10T10:00:20Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0021",
+        "kind": "observation",
+        "text": "Fact 21: quantity 17 excludes B. Fact 21: quantity 17 excludes B. Fact 21: quantity 17 excludes B. Fact 21: quantity 17 excludes B. Fact 21: quantity 17 excludes B. Fact 21: quantity 17 excludes B. Fact 21: quantity 17 excludes B. Fact 21: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 22,
+            "observed_at": "2026-09-10T10:00:21Z",
+            "ingested_at": "2026-09-10T10:00:21Z",
+            "valid_from": "2026-09-10T10:00:21Z",
+            "occurred_at": "2026-09-10T10:00:21Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 22,
+            "observed_at": "2026-09-10T10:00:21Z",
+            "ingested_at": "2026-09-10T10:00:21Z",
+            "valid_from": "2026-09-10T10:00:21Z",
+            "occurred_at": "2026-09-10T10:00:21Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0022",
+        "kind": "observation",
+        "text": "Fact 22: quantity 17 excludes B. Fact 22: quantity 17 excludes B. Fact 22: quantity 17 excludes B. Fact 22: quantity 17 excludes B. Fact 22: quantity 17 excludes B. Fact 22: quantity 17 excludes B. Fact 22: quantity 17 excludes B. Fact 22: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 23,
+            "observed_at": "2026-09-10T10:00:22Z",
+            "ingested_at": "2026-09-10T10:00:22Z",
+            "valid_from": "2026-09-10T10:00:22Z",
+            "occurred_at": "2026-09-10T10:00:22Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0023",
+        "kind": "observation",
+        "text": "Fact 23: quantity 17 excludes B. Fact 23: quantity 17 excludes B. Fact 23: quantity 17 excludes B. Fact 23: quantity 17 excludes B. Fact 23: quantity 17 excludes B. Fact 23: quantity 17 excludes B. Fact 23: quantity 17 excludes B. Fact 23: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 24,
+            "observed_at": "2026-09-10T10:00:23Z",
+            "ingested_at": "2026-09-10T10:00:23Z",
+            "valid_from": "2026-09-10T10:00:23Z",
+            "occurred_at": "2026-09-10T10:00:23Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0024",
+        "kind": "observation",
+        "text": "Fact 24: quantity 17 excludes B. Fact 24: quantity 17 excludes B. Fact 24: quantity 17 excludes B. Fact 24: quantity 17 excludes B. Fact 24: quantity 17 excludes B. Fact 24: quantity 17 excludes B. Fact 24: quantity 17 excludes B. Fact 24: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 25,
+            "observed_at": "2026-09-10T10:00:24Z",
+            "ingested_at": "2026-09-10T10:00:24Z",
+            "valid_from": "2026-09-10T10:00:24Z",
+            "occurred_at": "2026-09-10T10:00:24Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 25,
+            "observed_at": "2026-09-10T10:00:24Z",
+            "ingested_at": "2026-09-10T10:00:24Z",
+            "valid_from": "2026-09-10T10:00:24Z",
+            "occurred_at": "2026-09-10T10:00:24Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0025",
+        "kind": "observation",
+        "text": "Fact 25: quantity 17 excludes B. Fact 25: quantity 17 excludes B. Fact 25: quantity 17 excludes B. Fact 25: quantity 17 excludes B. Fact 25: quantity 17 excludes B. Fact 25: quantity 17 excludes B. Fact 25: quantity 17 excludes B. Fact 25: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 26,
+            "observed_at": "2026-09-10T10:00:25Z",
+            "ingested_at": "2026-09-10T10:00:25Z",
+            "valid_from": "2026-09-10T10:00:25Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0026",
+        "kind": "observation",
+        "text": "Fact 26: quantity 17 excludes B. Fact 26: quantity 17 excludes B. Fact 26: quantity 17 excludes B. Fact 26: quantity 17 excludes B. Fact 26: quantity 17 excludes B. Fact 26: quantity 17 excludes B. Fact 26: quantity 17 excludes B. Fact 26: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 27,
+            "observed_at": "2026-09-10T10:00:26Z",
+            "ingested_at": "2026-09-10T10:00:26Z",
+            "valid_from": "2026-09-10T10:00:26Z",
+            "occurred_at": "2026-09-10T10:00:26Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0027",
+        "kind": "observation",
+        "text": "Fact 27: quantity 17 excludes B. Fact 27: quantity 17 excludes B. Fact 27: quantity 17 excludes B. Fact 27: quantity 17 excludes B. Fact 27: quantity 17 excludes B. Fact 27: quantity 17 excludes B. Fact 27: quantity 17 excludes B. Fact 27: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 28,
+            "observed_at": "2026-09-10T10:00:27Z",
+            "ingested_at": "2026-09-10T10:00:27Z",
+            "valid_from": "2026-09-10T10:00:27Z",
+            "occurred_at": "2026-09-10T10:00:27Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 28,
+            "observed_at": "2026-09-10T10:00:27Z",
+            "ingested_at": "2026-09-10T10:00:27Z",
+            "valid_from": "2026-09-10T10:00:27Z",
+            "occurred_at": "2026-09-10T10:00:27Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0028",
+        "kind": "observation",
+        "text": "Fact 28: quantity 17 excludes B. Fact 28: quantity 17 excludes B. Fact 28: quantity 17 excludes B. Fact 28: quantity 17 excludes B. Fact 28: quantity 17 excludes B. Fact 28: quantity 17 excludes B. Fact 28: quantity 17 excludes B. Fact 28: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 29,
+            "observed_at": "2026-09-10T10:00:28Z",
+            "ingested_at": "2026-09-10T10:00:28Z",
+            "valid_from": "2026-09-10T10:00:28Z",
+            "occurred_at": "2026-09-10T10:00:28Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0029",
+        "kind": "observation",
+        "text": "Fact 29: quantity 17 excludes B. Fact 29: quantity 17 excludes B. Fact 29: quantity 17 excludes B. Fact 29: quantity 17 excludes B. Fact 29: quantity 17 excludes B. Fact 29: quantity 17 excludes B. Fact 29: quantity 17 excludes B. Fact 29: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 30,
+            "observed_at": "2026-09-10T10:00:29Z",
+            "ingested_at": "2026-09-10T10:00:29Z",
+            "valid_from": "2026-09-10T10:00:29Z",
+            "occurred_at": "2026-09-10T10:00:29Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0030",
+        "kind": "observation",
+        "text": "Fact 30: quantity 17 excludes B. Fact 30: quantity 17 excludes B. Fact 30: quantity 17 excludes B. Fact 30: quantity 17 excludes B. Fact 30: quantity 17 excludes B. Fact 30: quantity 17 excludes B. Fact 30: quantity 17 excludes B. Fact 30: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 31,
+            "observed_at": "2026-09-10T10:00:30Z",
+            "ingested_at": "2026-09-10T10:00:30Z",
+            "valid_from": "2026-09-10T10:00:30Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 31,
+            "observed_at": "2026-09-10T10:00:30Z",
+            "ingested_at": "2026-09-10T10:00:30Z",
+            "valid_from": "2026-09-10T10:00:30Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0031",
+        "kind": "observation",
+        "text": "Fact 31: quantity 17 excludes B. Fact 31: quantity 17 excludes B. Fact 31: quantity 17 excludes B. Fact 31: quantity 17 excludes B. Fact 31: quantity 17 excludes B. Fact 31: quantity 17 excludes B. Fact 31: quantity 17 excludes B. Fact 31: quantity 17 excludes B. ",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 32,
+            "observed_at": "2026-09-10T10:00:31Z",
+            "ingested_at": "2026-09-10T10:00:31Z",
+            "valid_from": "2026-09-10T10:00:31Z",
+            "occurred_at": "2026-09-10T10:00:31Z"
+          }
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "id": "evidence:project:temporal-perf:source-0000",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0000"
+        ],
+        "text": "Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. SouX",
+        "source": "fixture:S0",
+        "time": "2026-09-10T10:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:00Z",
+          "ingested_at": "2026-09-10T10:00:00Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0001",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0001"
+        ],
+        "text": "Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. SouX",
+        "source": "fixture:S1",
+        "time": "2026-09-10T10:00:01Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0002",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0002"
+        ],
+        "text": "Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. SouX",
+        "source": "fixture:S2",
+        "time": "2026-09-10T10:00:02Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:02Z",
+          "ingested_at": "2026-09-10T10:00:02Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0003",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0003"
+        ],
+        "text": "Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. SouX",
+        "source": "fixture:S3",
+        "time": "2026-09-10T10:00:03Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:03Z",
+          "ingested_at": "2026-09-10T10:00:03Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0004",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0004"
+        ],
+        "text": "Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. SouX",
+        "source": "fixture:S4",
+        "time": "2026-09-10T10:00:04Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:04Z",
+          "ingested_at": "2026-09-10T10:00:04Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0005",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0005"
+        ],
+        "text": "Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. SouX",
+        "source": "fixture:S5",
+        "time": "2026-09-10T10:00:05Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:05Z",
+          "ingested_at": "2026-09-10T10:00:05Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0006",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0006"
+        ],
+        "text": "Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. SouX",
+        "source": "fixture:S6",
+        "time": "2026-09-10T10:00:06Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:06Z",
+          "ingested_at": "2026-09-10T10:00:06Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0007",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0007"
+        ],
+        "text": "Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. SouX",
+        "source": "fixture:S7",
+        "time": "2026-09-10T10:00:07Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:07Z",
+          "ingested_at": "2026-09-10T10:00:07Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0008",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0008"
+        ],
+        "text": "Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. Source 8: quantity 17 excludes B. SouX",
+        "source": "fixture:S8",
+        "time": "2026-09-10T10:00:08Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:08Z",
+          "ingested_at": "2026-09-10T10:00:08Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0009",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0009"
+        ],
+        "text": "Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. Source 9: quantity 17 excludes B. SouX",
+        "source": "fixture:S9",
+        "time": "2026-09-10T10:00:09Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:09Z",
+          "ingested_at": "2026-09-10T10:00:09Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0010",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0010"
+        ],
+        "text": "Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 10: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S10",
+        "time": "2026-09-10T10:00:10Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:10Z",
+          "ingested_at": "2026-09-10T10:00:10Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0011",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0011"
+        ],
+        "text": "Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 11: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S11",
+        "time": "2026-09-10T10:00:11Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:11Z",
+          "ingested_at": "2026-09-10T10:00:11Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0012",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0012"
+        ],
+        "text": "Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 12: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S12",
+        "time": "2026-09-10T10:00:12Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:12Z",
+          "ingested_at": "2026-09-10T10:00:12Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0013",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0013"
+        ],
+        "text": "Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 13: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S13",
+        "time": "2026-09-10T10:00:13Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:13Z",
+          "ingested_at": "2026-09-10T10:00:13Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0014",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0014"
+        ],
+        "text": "Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 14: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S14",
+        "time": "2026-09-10T10:00:14Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:14Z",
+          "ingested_at": "2026-09-10T10:00:14Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0015",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0015"
+        ],
+        "text": "Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 15: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S15",
+        "time": "2026-09-10T10:00:15Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:15Z",
+          "ingested_at": "2026-09-10T10:00:15Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0016",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0016"
+        ],
+        "text": "Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 16: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S16",
+        "time": "2026-09-10T10:00:16Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:16Z",
+          "ingested_at": "2026-09-10T10:00:16Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0017",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0017"
+        ],
+        "text": "Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 17: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S17",
+        "time": "2026-09-10T10:00:17Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:17Z",
+          "ingested_at": "2026-09-10T10:00:17Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0018",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0018"
+        ],
+        "text": "Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 18: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S18",
+        "time": "2026-09-10T10:00:18Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:18Z",
+          "ingested_at": "2026-09-10T10:00:18Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0019",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0019"
+        ],
+        "text": "Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 19: quantity 17 excludes B. Source 1X",
+        "source": "fixture:S19",
+        "time": "2026-09-10T10:00:19Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:19Z",
+          "ingested_at": "2026-09-10T10:00:19Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0020",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0020"
+        ],
+        "text": "Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 20: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S20",
+        "time": "2026-09-10T10:00:20Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:20Z",
+          "ingested_at": "2026-09-10T10:00:20Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0021",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0021"
+        ],
+        "text": "Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 21: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S21",
+        "time": "2026-09-10T10:00:21Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:21Z",
+          "ingested_at": "2026-09-10T10:00:21Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0022",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0022"
+        ],
+        "text": "Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 22: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S22",
+        "time": "2026-09-10T10:00:22Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:22Z",
+          "ingested_at": "2026-09-10T10:00:22Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0023",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0023"
+        ],
+        "text": "Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 23: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S23",
+        "time": "2026-09-10T10:00:23Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:23Z",
+          "ingested_at": "2026-09-10T10:00:23Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0024",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0024"
+        ],
+        "text": "Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 24: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S24",
+        "time": "2026-09-10T10:00:24Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:24Z",
+          "ingested_at": "2026-09-10T10:00:24Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0025",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0025"
+        ],
+        "text": "Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 25: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S25",
+        "time": "2026-09-10T10:00:25Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:25Z",
+          "ingested_at": "2026-09-10T10:00:25Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0026",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0026"
+        ],
+        "text": "Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 26: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S26",
+        "time": "2026-09-10T10:00:26Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:26Z",
+          "ingested_at": "2026-09-10T10:00:26Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0027",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0027"
+        ],
+        "text": "Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 27: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S27",
+        "time": "2026-09-10T10:00:27Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:27Z",
+          "ingested_at": "2026-09-10T10:00:27Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0028",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0028"
+        ],
+        "text": "Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 28: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S28",
+        "time": "2026-09-10T10:00:28Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:28Z",
+          "ingested_at": "2026-09-10T10:00:28Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0029",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0029"
+        ],
+        "text": "Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 29: quantity 17 excludes B. Source 2X",
+        "source": "fixture:S29",
+        "time": "2026-09-10T10:00:29Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:29Z",
+          "ingested_at": "2026-09-10T10:00:29Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0030",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0030"
+        ],
+        "text": "Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 30: quantity 17 excludes B. Source 3X",
+        "source": "fixture:S30",
+        "time": "2026-09-10T10:00:30Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:30Z",
+          "ingested_at": "2026-09-10T10:00:30Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0031",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0031"
+        ],
+        "text": "Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 31: quantity 17 excludes B. Source 3X",
+        "source": "fixture:S31",
+        "time": "2026-09-10T10:00:31Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:31Z",
+          "ingested_at": "2026-09-10T10:00:31Z"
+        }
+      }
+    ],
+    "relations": [
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0001",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0002",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0002",
+        "to": "project:temporal-perf:entry:observation:fact-0001",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0003",
+        "to": "project:temporal-perf:entry:observation:fact-0001",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0003",
+        "to": "project:temporal-perf:entry:observation:fact-0002",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0004",
+        "to": "project:temporal-perf:entry:observation:fact-0002",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0004",
+        "to": "project:temporal-perf:entry:observation:fact-0003",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0005",
+        "to": "project:temporal-perf:entry:observation:fact-0003",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0005",
+        "to": "project:temporal-perf:entry:observation:fact-0004",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0006",
+        "to": "project:temporal-perf:entry:observation:fact-0004",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0006",
+        "to": "project:temporal-perf:entry:observation:fact-0005",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0007",
+        "to": "project:temporal-perf:entry:observation:fact-0005",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0007",
+        "to": "project:temporal-perf:entry:observation:fact-0006",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0008",
+        "to": "project:temporal-perf:entry:observation:fact-0006",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0008",
+        "to": "project:temporal-perf:entry:observation:fact-0007",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0009",
+        "to": "project:temporal-perf:entry:observation:fact-0007",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0009",
+        "to": "project:temporal-perf:entry:observation:fact-0008",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0010",
+        "to": "project:temporal-perf:entry:observation:fact-0008",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0010",
+        "to": "project:temporal-perf:entry:observation:fact-0009",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0011",
+        "to": "project:temporal-perf:entry:observation:fact-0009",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0011",
+        "to": "project:temporal-perf:entry:observation:fact-0010",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0012",
+        "to": "project:temporal-perf:entry:observation:fact-0010",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0012",
+        "to": "project:temporal-perf:entry:observation:fact-0011",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0013",
+        "to": "project:temporal-perf:entry:observation:fact-0011",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0013",
+        "to": "project:temporal-perf:entry:observation:fact-0012",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0014",
+        "to": "project:temporal-perf:entry:observation:fact-0012",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0014",
+        "to": "project:temporal-perf:entry:observation:fact-0013",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0015",
+        "to": "project:temporal-perf:entry:observation:fact-0013",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0015",
+        "to": "project:temporal-perf:entry:observation:fact-0014",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0016",
+        "to": "project:temporal-perf:entry:observation:fact-0014",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0016",
+        "to": "project:temporal-perf:entry:observation:fact-0015",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0017",
+        "to": "project:temporal-perf:entry:observation:fact-0015",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0017",
+        "to": "project:temporal-perf:entry:observation:fact-0016",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0018",
+        "to": "project:temporal-perf:entry:observation:fact-0016",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0018",
+        "to": "project:temporal-perf:entry:observation:fact-0017",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0019",
+        "to": "project:temporal-perf:entry:observation:fact-0017",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0019",
+        "to": "project:temporal-perf:entry:observation:fact-0018",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0020",
+        "to": "project:temporal-perf:entry:observation:fact-0018",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0020",
+        "to": "project:temporal-perf:entry:observation:fact-0019",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0021",
+        "to": "project:temporal-perf:entry:observation:fact-0019",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0021",
+        "to": "project:temporal-perf:entry:observation:fact-0020",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0022",
+        "to": "project:temporal-perf:entry:observation:fact-0020",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0022",
+        "to": "project:temporal-perf:entry:observation:fact-0021",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0023",
+        "to": "project:temporal-perf:entry:observation:fact-0021",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0023",
+        "to": "project:temporal-perf:entry:observation:fact-0022",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0024",
+        "to": "project:temporal-perf:entry:observation:fact-0022",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0024",
+        "to": "project:temporal-perf:entry:observation:fact-0023",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0025",
+        "to": "project:temporal-perf:entry:observation:fact-0023",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0025",
+        "to": "project:temporal-perf:entry:observation:fact-0024",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0026",
+        "to": "project:temporal-perf:entry:observation:fact-0024",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0026",
+        "to": "project:temporal-perf:entry:observation:fact-0025",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0027",
+        "to": "project:temporal-perf:entry:observation:fact-0025",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0027",
+        "to": "project:temporal-perf:entry:observation:fact-0026",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0028",
+        "to": "project:temporal-perf:entry:observation:fact-0026",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0028",
+        "to": "project:temporal-perf:entry:observation:fact-0027",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0029",
+        "to": "project:temporal-perf:entry:observation:fact-0027",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0029",
+        "to": "project:temporal-perf:entry:observation:fact-0028",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0030",
+        "to": "project:temporal-perf:entry:observation:fact-0028",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0030",
+        "to": "project:temporal-perf:entry:observation:fact-0029",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0031",
+        "to": "project:temporal-perf:entry:observation:fact-0029",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0031",
+        "to": "project:temporal-perf:entry:observation:fact-0030",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      }
+    ]
+  }
+}
