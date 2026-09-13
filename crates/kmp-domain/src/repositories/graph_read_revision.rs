@@ -5,6 +5,11 @@
 pub struct GraphReadRevision(String);
 
 impl GraphReadRevision {
+    /// Opaque snapshot identity, never an authorization capability.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
     pub fn new(identity: impl Into<String>) -> Result<Self, crate::DomainError> {
         let identity = identity.into();
         if identity.is_empty() {

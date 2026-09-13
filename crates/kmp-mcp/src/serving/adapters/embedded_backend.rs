@@ -153,6 +153,11 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         .call(arguments)
                         .await
                 }
+                "kmp_view_read_nodes" => {
+                    super::embedded::EmbeddedMemoryNodesTool::new(&service)
+                        .call(arguments)
+                        .await
+                }
                 "kmp_view_read_projection" => {
                     EmbeddedVisualProjectionTool::new(&service)
                         .call(arguments)

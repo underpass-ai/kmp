@@ -76,6 +76,7 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
         }
         if apps {
             tools.push(app_visual_projection::definition());
+            tools.push(crate::contract::tools::app_memory_nodes::definition());
             tools.push(app_view_undo::definition());
             tools.push(app_view_take_control::definition());
         }

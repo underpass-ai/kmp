@@ -56,6 +56,13 @@ impl<G: kmp_domain::GraphNeighborhoodReader + Send + Sync, D, S> QueryApplicatio
         Ok(self.graph_reader.graph_read_revision().await?)
     }
 
+    pub async fn read_nodes(
+        &self,
+        request: &kmp_domain::MemoryNodesRequest,
+    ) -> Result<kmp_domain::MemoryNodesResult, crate::ApplicationError> {
+        Ok(self.graph_reader.load_memory_nodes(request).await?)
+    }
+
     pub async fn evidence_paths(
         &self,
         request: &kmp_domain::EvidencePathRequest,

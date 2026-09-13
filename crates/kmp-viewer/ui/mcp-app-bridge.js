@@ -172,15 +172,14 @@
       };
     }
     if (path === "/api/nodes") {
-      const ids = String(params.ids || "").split(",").filter(Boolean);
-      const nodes = [];
-      const missing = [];
-      for (const id of ids) {
-        try { nodes.push((await appApi("/api/node", { about: params.about, id })).node); }
-        catch (_) { missing.push(id); }
-      }
-      return { nodes, missing };
+      const ids = String(params.ids || "").split(",").map(id => id.trim()).filter(Boolean);
+      return callTool("kmp_view_read_nodes", {
+        about: params.about || await about(), refs: ids,
+        ...(params.expect_snapshot ? { expect_snapshot: params.expect_snapshot } : {}),
+        ...(params.max_edges ? { max_edges: Number(params.max_edges) } : {}),
+      });
     }
+
     if (path === "/api/trace") {
       const activeAbout = params.about || await about();
       const trace = await callTool("kmp_trace", { about: activeAbout, from: params.from, to: params.to });

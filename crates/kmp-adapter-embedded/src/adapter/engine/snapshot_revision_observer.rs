@@ -1,9 +1,5 @@
-use std::sync::atomic::{AtomicU64, Ordering};
-
 use kmp_domain::{GraphReadRevision, PortError};
 use rusqlite::Connection;
-
-static NEXT_OBSERVER: AtomicU64 = AtomicU64::new(1);
 
 /// A connection used only to observe commits. SQLite's data_version is local
 /// to a connection, so it must never be compared across pooled connections.
@@ -12,7 +8,7 @@ static NEXT_OBSERVER: AtomicU64 = AtomicU64::new(1);
 #[derive(Debug)]
 pub(super) struct SnapshotRevisionObserver {
     connection: Connection,
-    incarnation: u64,
+    incarnation: String,
 }
 
 impl SnapshotRevisionObserver {
@@ -20,11 +16,11 @@ impl SnapshotRevisionObserver {
         connection
             .execute_batch("PRAGMA query_only=ON")
             .map_err(error)?;
-        let incarnation = NEXT_OBSERVER
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
-                next.checked_add(1)
-            })
-            .map_err(|_| PortError::Unavailable("snapshot observer identities exhausted".into()))?;
+        // This identity can bind a transport read across calls. A process-local
+        // counter can repeat after restart, so give every observer a fresh nonce.
+        let incarnation: String = connection
+            .query_row("SELECT lower(hex(randomblob(16)))", [], |row| row.get(0))
+            .map_err(error)?;
         Ok(Self {
             connection,
             incarnation,

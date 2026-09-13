@@ -263,25 +263,18 @@ where
                 &format!("parameter `ids` holds more than {MAX_BATCH_IDS} ids"),
             );
         }
-        let mut nodes = Vec::with_capacity(ids.len());
-        let mut missing = Vec::new();
-        for id in ids {
-            let query = InspectMemoryQuery {
-                about: about.to_string(),
-                ref_id: id.to_string(),
-                include_details: false,
-                include_incoming: false,
-                include_outgoing: false,
-                include_raw: false,
-                expect_revision: None,
-            };
-            match self.service.inspect(query).await {
-                Ok(result) => nodes.push(views::NodeView::from_graph_node(&result.detail.node)),
-                Err(ApplicationError::NotFound(_)) => missing.push(id.to_string()),
-                Err(error) => return application_error_response(&error),
-            }
+        let query = kmp_domain::MemoryNodesRequest {
+            expect_snapshot: request.param("expect_snapshot").map(str::to_string),
+            about: about.to_string(),
+            refs: ids.into_iter().map(str::to_string).collect(),
+            max_edges: param_or_refuse!(numeric_param(request, "max_edges", 2048)),
+        };
+        match self.service.read_nodes(query).await {
+            Ok(result) => HttpResponse::json(&kmp_proto_mapping::v1beta1::memory_nodes_json(
+                kmp_proto_mapping::v1beta1::memory_nodes_response_from_result(result),
+            )),
+            Err(error) => application_error_response(&error),
         }
-        HttpResponse::json(&views::NodeBatchView { nodes, missing })
     }
 
     async fn timeline(&self, request: &HttpRequest) -> HttpResponse {

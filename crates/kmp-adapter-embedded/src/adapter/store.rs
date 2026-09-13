@@ -69,12 +69,13 @@ impl EmbeddedKernelStore {
     /// Freeze all cloned read ports at one SQLite snapshot for this operation.
     /// Dropping the last clone releases it; it cannot be used for writes.
     pub async fn read_snapshot(&self) -> Result<Self, PortError> {
-        self.run(|store| {
-            Ok(Self {
-                engine: store.engine.read_snapshot()?,
-            })
+        self.run(Self::pin_snapshot).await
+    }
+
+    pub(crate) fn pin_snapshot(&self) -> Result<Self, PortError> {
+        Ok(Self {
+            engine: self.engine.read_snapshot()?,
         })
-        .await
     }
 
     pub(crate) fn read_revision(&self) -> Option<kmp_domain::GraphReadRevision> {

@@ -945,3 +945,26 @@ La herramienta del binario candidato no aparece automáticamente en una sesión
 que conserva un registro anterior: documentar la versión instalada, la vía de
 actualización y el reinicio necesario. No afirmar activación por haber compilado.
 Estas comprobaciones son evidencia de entrega, sin gates editoriales nuevos.
+
+### Selected-node framing in ChronoLoom
+
+The app-only `kmp_view_read_nodes` uses the same `ReadNodes` operation as HTTP
+`/api/nodes`. Keep the protocol copies, request validation, shared JSON mapper,
+app negotiation gate and both browser transports aligned. Model-only tool lists
+do not gain this data tool. A node header with incomplete coordinates must not
+be used to frame an exact focus; omitted refs are not missing refs. Framing reads
+all named refs together instead of combining cached scene coordinates with new
+inspections. Foci larger than 64 refs send the returned `snapshot` as
+`expect_snapshot` in each following batch; they share a 32,768-edge ceiling and
+reject any intervening commit, including body-only writes. Observer identities
+include a random incarnation, so a server restart cannot reuse a prior identity.
+No snapshot is retained between calls. Check late responses after a changed
+focus/about/clock and preserve the old window on a conflict or incomplete batch.
+
+The operation reuses the bounded snapshot adjacency port and loads no canonical
+bodies or proof sources. It does not replace bounded Trace proof materialization,
+change historical admission, or promise a snapshot across the later projection
+request. Validate headers and complete coordinates against individual Inspect on
+one quiescent fixture before measuring, retain empty/missing/foreign cases and
+real concurrent snapshot tests, and report complete framing journeys separately
+from storage latency. See `kmp-viewer/examples/node_batch_benchmark.rs`.

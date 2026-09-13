@@ -1,0 +1,250 @@
+[
+  {
+    "body_bytes_each": 128,
+    "first_read_us": 985,
+    "labels_each": 2,
+    "mode": "batch",
+    "p50_us": 348,
+    "p95_us": 395,
+    "refs": 1,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 1084,
+        "open_us": 807,
+        "read_us": 883
+      },
+      {
+        "bytes": 1084,
+        "open_us": 658,
+        "read_us": 897
+      },
+      {
+        "bytes": 1084,
+        "open_us": 595,
+        "read_us": 904
+      },
+      {
+        "bytes": 1084,
+        "open_us": 573,
+        "read_us": 625
+      },
+      {
+        "bytes": 1084,
+        "open_us": 627,
+        "read_us": 632
+      }
+    ],
+    "response_bytes": 1084,
+    "shape": "small",
+    "shared_sources": 1,
+    "transport_trips": 1,
+    "warm_us": [
+      397,
+      395,
+      354,
+      369,
+      368,
+      349,
+      348,
+      376,
+      347,
+      347,
+      348,
+      345,
+      347,
+      343,
+      348,
+      344,
+      350,
+      347,
+      351,
+      341
+    ]
+  },
+  {
+    "body_bytes_each": 4096,
+    "first_read_us": 2100,
+    "labels_each": 4,
+    "mode": "batch",
+    "p50_us": 1830,
+    "p95_us": 2123,
+    "refs": 8,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 11885,
+        "open_us": 937,
+        "read_us": 2265
+      },
+      {
+        "bytes": 11885,
+        "open_us": 859,
+        "read_us": 2316
+      },
+      {
+        "bytes": 11885,
+        "open_us": 676,
+        "read_us": 2202
+      },
+      {
+        "bytes": 11885,
+        "open_us": 946,
+        "read_us": 2257
+      },
+      {
+        "bytes": 11885,
+        "open_us": 850,
+        "read_us": 2251
+      }
+    ],
+    "response_bytes": 11885,
+    "shape": "medium",
+    "shared_sources": 4,
+    "transport_trips": 1,
+    "warm_us": [
+      1830,
+      1564,
+      1544,
+      1543,
+      1539,
+      1540,
+      1811,
+      2055,
+      2058,
+      2123,
+      2127,
+      2087,
+      2059,
+      2060,
+      1813,
+      1788,
+      1775,
+      1819,
+      2072,
+      2117
+    ]
+  },
+  {
+    "body_bytes_each": 256,
+    "first_read_us": 82910,
+    "labels_each": 32,
+    "mode": "batch",
+    "p50_us": 82621,
+    "p95_us": 84185,
+    "refs": 64,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 600895,
+        "open_us": 5170,
+        "read_us": 82437
+      },
+      {
+        "bytes": 600895,
+        "open_us": 5487,
+        "read_us": 82272
+      },
+      {
+        "bytes": 600895,
+        "open_us": 5406,
+        "read_us": 82273
+      },
+      {
+        "bytes": 600895,
+        "open_us": 5776,
+        "read_us": 82465
+      },
+      {
+        "bytes": 600895,
+        "open_us": 5684,
+        "read_us": 82335
+      }
+    ],
+    "response_bytes": 600895,
+    "shape": "high_degree",
+    "shared_sources": 64,
+    "transport_trips": 1,
+    "warm_us": [
+      82796,
+      82669,
+      81950,
+      82556,
+      82888,
+      81743,
+      82730,
+      81739,
+      81919,
+      82621,
+      82520,
+      81940,
+      83584,
+      82156,
+      82709,
+      82264,
+      81592,
+      83357,
+      84354,
+      84185
+    ]
+  },
+  {
+    "body_bytes_each": 262144,
+    "first_read_us": 2431,
+    "labels_each": 4,
+    "mode": "batch",
+    "p50_us": 2271,
+    "p95_us": 3005,
+    "refs": 8,
+    "reopened_same_process_os_cache_uncontrolled": [
+      {
+        "bytes": 11885,
+        "open_us": 2446,
+        "read_us": 2369
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1981,
+        "read_us": 2599
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1941,
+        "read_us": 2272
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1971,
+        "read_us": 2350
+      },
+      {
+        "bytes": 11885,
+        "open_us": 1974,
+        "read_us": 2236
+      }
+    ],
+    "response_bytes": 11885,
+    "shape": "large_body",
+    "shared_sources": 8,
+    "transport_trips": 1,
+    "warm_us": [
+      2044,
+      2469,
+      1997,
+      3021,
+      2422,
+      2092,
+      2139,
+      2175,
+      2880,
+      3005,
+      2682,
+      1949,
+      2271,
+      2520,
+      2287,
+      2093,
+      2114,
+      2459,
+      2213,
+      1885
+    ]
+  }
+]

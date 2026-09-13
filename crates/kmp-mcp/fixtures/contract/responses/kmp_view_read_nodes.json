@@ -1,0 +1,108 @@
+{
+  "_meta": {
+    "kmp/modelContext": "receipt-only",
+    "ui": {
+      "resourceUri": "ui://kmp/chronoloom.html"
+    }
+  },
+  "content": [
+    {
+      "text": "ChronoLoom visual data chunk ready (0 detailed entries).",
+      "type": "text"
+    }
+  ],
+  "structuredContent": {
+    "coordinates": {
+      "question:parity:claim:boulder-current": [
+        {
+          "dimension": "conversation",
+          "ingested_at": "<stamped at call time>",
+          "method": "",
+          "motivation": "",
+          "observed_at": null,
+          "occurred_at": "2026-04-12T18:00:00Z",
+          "rank": null,
+          "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
+          "sequence": 3,
+          "valid_from": "2026-04-12T18:00:00Z",
+          "valid_until": null,
+          "why": ""
+        }
+      ],
+      "question:parity:claim:denver": [
+        {
+          "dimension": "conversation",
+          "ingested_at": "<stamped at call time>",
+          "method": "",
+          "motivation": "",
+          "observed_at": null,
+          "occurred_at": "2026-04-12T15:00:00Z",
+          "rank": null,
+          "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
+          "sequence": 1,
+          "valid_from": null,
+          "valid_until": null,
+          "why": ""
+        }
+      ]
+    },
+    "incomplete_coordinates": [],
+    "missing": [],
+    "nodes": [
+      {
+        "id": "question:parity:claim:denver",
+        "kind": "claim",
+        "labels": [
+          "memory",
+          "entry",
+          "claim"
+        ],
+        "properties": {
+          "entry_kind": "claim",
+          "memory_about": "question:parity",
+          "memory_change_reason": "KMP memory entry ingest",
+          "memory_entity_kind": "memory_entry",
+          "memory_payload_json": "{\"coordinates\":[{\"dimension\":\"conversation\",\"ingested_at\":\"<stamped at call time>\",\"occurred_at\":\"unix:101776006000:000000000\",\"scope_id\":\"label:v1:question%3Aparity:conversation:conversation%3Arachel\",\"sequence\":1}],\"id\":\"question:parity:claim:denver\",\"kind\":\"claim\",\"text\":\"Rachel said she was moving to Denver.\"}",
+          "memory_role": "memory",
+          "memory_work_item_id": "parity:ingest:1",
+          "payload_coordinates": "[{\"dimension\":\"conversation\",\"ingested_at\":\"<stamped at call time>\",\"occurred_at\":\"unix:101776006000:000000000\",\"scope_id\":\"label:v1:question%3Aparity:conversation:conversation%3Arachel\",\"sequence\":1}]",
+          "payload_id": "question:parity:claim:denver",
+          "payload_kind": "claim",
+          "payload_text": "Rachel said she was moving to Denver."
+        },
+        "status": "SUPERSEDED",
+        "summary": "Rachel said she was moving to Denver.",
+        "title": "Rachel said she was moving to Denver."
+      },
+      {
+        "id": "question:parity:claim:boulder-current",
+        "kind": "claim",
+        "labels": [
+          "memory",
+          "entry",
+          "claim"
+        ],
+        "properties": {
+          "entry_kind": "claim",
+          "memory_about": "question:parity",
+          "memory_change_reason": "KMP memory entry ingest",
+          "memory_entity_kind": "memory_entry",
+          "memory_payload_json": "{\"coordinates\":[{\"dimension\":\"conversation\",\"ingested_at\":\"<stamped at call time>\",\"occurred_at\":\"unix:101776016800:000000000\",\"scope_id\":\"label:v1:question%3Aparity:conversation:conversation%3Arachel\",\"sequence\":3,\"valid_from\":\"unix:101776016800:000000000\"}],\"id\":\"question:parity:claim:boulder-current\",\"kind\":\"claim\",\"text\":\"The Boulder start date is the one that stands.\"}",
+          "memory_role": "memory",
+          "memory_work_item_id": "parity:ingest:1",
+          "payload_coordinates": "[{\"dimension\":\"conversation\",\"ingested_at\":\"<stamped at call time>\",\"occurred_at\":\"unix:101776016800:000000000\",\"scope_id\":\"label:v1:question%3Aparity:conversation:conversation%3Arachel\",\"sequence\":3,\"valid_from\":\"unix:101776016800:000000000\"}]",
+          "payload_id": "question:parity:claim:boulder-current",
+          "payload_kind": "claim",
+          "payload_text": "The Boulder start date is the one that stands."
+        },
+        "status": "ACTIVE",
+        "summary": "The Boulder start date is the one that stands.",
+        "title": "The Boulder start date is the one that stands."
+      }
+    ],
+    "omitted": [],
+    "scanned_edges": 2,
+    "snapshot": "<SNAPSHOT>",
+    "stop_reason": "complete"
+  }
+}

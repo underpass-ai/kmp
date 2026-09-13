@@ -20,3 +20,5 @@ pub(crate) mod view_get_state;
 pub(crate) mod view_open;
 pub(crate) mod wake;
 pub(crate) mod write_memory;
+
+pub(crate) mod app_memory_nodes;

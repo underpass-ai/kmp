@@ -76,6 +76,7 @@ pub(super) async fn grpc_tool_result(
         "kmp_inspect" => grpc_inspect(endpoint, tls, arguments).await,
         "kmp_relabel" => grpc_relabel(endpoint, tls, arguments).await,
         "kmp_condense" => grpc_condense(endpoint, tls, arguments).await,
+        "kmp_view_read_nodes" => grpc_memory_nodes(endpoint, tls, arguments).await,
         "kmp_view_read_projection" => grpc_visual_projection(endpoint, tls, arguments).await,
         // The audit is read off the store's own event log, including the
         // earlier revisions of every entry, and the kernel's gRPC surface
@@ -352,4 +353,28 @@ async fn grpc_inspect(
         inspect_from_response(response),
         arguments,
     )?))
+}
+
+async fn grpc_memory_nodes(
+    endpoint: &str,
+    tls: &KernelMcpGrpcTlsConfig,
+    arguments: &Value,
+) -> Result<Value, ToolError> {
+    let request =
+        crate::serving::adapters::tool_request_mapping::MemoryNodesRequestMapper::from_arguments(
+            arguments,
+        )
+        .map_err(ToolError::invalid_argument)?;
+    let about = request.about.clone();
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
+    let response = client
+        .read_nodes(request)
+        .await
+        .map_err(grpc_error("ReadNodes", &about))?
+        .into_inner();
+    Ok(app_data_success_result(
+        kmp_proto_mapping::v1beta1::memory_nodes_json(response),
+    ))
 }

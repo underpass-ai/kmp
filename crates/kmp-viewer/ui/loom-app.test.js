@@ -111,6 +111,15 @@ const entryAt = (core, ref, occurredAt) =>
     coordinates: [{ dimension: "d", scope_id: "s", occurred_at: occurredAt }],
   });
 
+function nodeBatchStub(app) {
+  app.api.call = async (path, params) => {
+    assert.equal(path, "/api/nodes");
+    const entries = params.ids.split(",").map(id => app.state.model.byRef.get(id));
+    return { snapshot: "fixture:1", nodes: entries.map(e => ({ id: e.ref, kind: e.kind, summary: e.text })),
+      coordinates: Object.fromEntries(entries.map(e => [e.ref, e.coords.map(c => ({ dimension: c.dimension, scope_id: c.scope, occurred_at: c.occurred === null ? null : new Date(c.occurred).toISOString() }))])), missing: [], omitted: [], incomplete_coordinates: [] };
+  };
+}
+
 test("clampWindow honors the extent and the one-second floor", () => {
   const { app } = loom();
   const full = { t0: 0, t1: 100000 };
@@ -207,6 +216,7 @@ test("an agent snapshot moves clock, frames refs and applies the trace", async (
   app.data.cancelScheduledProjection = () => {};
   app.selection.runTrace = async (options) => calls.push({ name: "selection.runTrace", args: [options] });
 
+  nodeBatchStub(app);
   await app.sync.applyAgentState({
     view_id: "default",
     view_revision: 42,
@@ -242,6 +252,7 @@ test("a snapshot with cleared facets clears the stale browser filters (#463)", a
   app.data.loadProjection = async () => {};
   app.data.cancelScheduledProjection = () => {};
 
+  nodeBatchStub(app);
   await app.sync.applyAgentState({
     view_revision: 42,
     about: "project:x",
@@ -281,6 +292,7 @@ test("frameRefs reaches refs ingested after the cached extent probe", async () =
   app.data.loadProjection = async () => {};
   app.data.cancelScheduledProjection = () => {};
 
+  nodeBatchStub(app);
   const framed = await app.sync.frameRefs(["decision:new", "success:old"]);
 
   assert.equal(framed, true);
@@ -326,7 +338,7 @@ test("an explicit agent search lands in the input and re-runs it", async () => {
 
 test("frameRefs is honest when no ref carries the clock", async () => {
   const { app } = loom({
-    api: { call: async () => ({ node: { id: "x", kind: "decision" }, raw_coordinates: [] }) },
+    api: { call: async () => ({ snapshot: "fixture:1", nodes: [{ id: "x", kind: "decision" }], coordinates: { x: [] } }) },
   });
   app.state.model.about = "project:x";
   app.state.view.full = { t0: 0, t1: 10 };
@@ -946,4 +958,59 @@ test("changing a populated clock re-probes its own extent before reporting", asy
   app.sync.reportView=()=>calls.push({name:"clock.report"});
   await app.viewport.setClock("observed",false);
   assert.deepEqual(calls.filter(call=>call.name.startsWith("clock.")).map(call=>call.name),["clock.probe","clock.report"]);
+});
+
+test("focus uses one fresh batch even for cached refs and never frames incomplete coordinates",async()=>{
+  const {app,core,calls}=loom();
+  const {model,view}=app.state;
+  model.about="project:x"; view.clock="observed"; view.full={t0:0,t1:Date.parse("2026-10-01")};
+  model.byRef.set("a",entryAt(core,"a","2020-01-01T00:00:00Z"));
+  let reads=0;
+  app.api.call=async(path,params)=>{
+    reads++;
+    assert.equal(path,"/api/nodes"); assert.equal(params.ids,"a,b");
+    return {snapshot:"fixture:1",nodes:[{id:"a"},{id:"b"}],coordinates:{a:[{observed_at:"2026-09-13T10:00:00Z"}],b:[{observed_at:"2026-09-13T11:00:00Z"}]},missing:[],omitted:[],incomplete_coordinates:[]};
+  };
+  app.data.loadProjection=async()=>{};app.data.cancelScheduledProjection=()=>{};app.sync.reportView=()=>{};
+  assert.equal(await app.sync.frameRefs(["a","b","a"]),true);
+  assert.equal(reads,1);assert.ok(view.t0 > Date.parse("2026-09-12"));
+  const old=[view.t0,view.t1];
+  app.api.call=async()=>({snapshot:"fixture:1",nodes:[{id:"a"}],coordinates:{a:[{observed_at:"2020-01-01T00:00:00Z"}]},omitted:["b"],incomplete_coordinates:["a"]});
+  await assert.rejects(()=>app.sync.frameRefs(["a","b"]),/exceed the read budget/);
+  assert.deepEqual([view.t0,view.t1],old);
+});
+
+test("a late batch cannot overwrite a newer focus or a changed about",async()=>{
+  const {app}=loom();const {model,view}=app.state;
+  model.about="project:x";view.clock="occurred";view.full={t0:0,t1:Date.parse("2026-10-01")};
+  const waiting=[];app.api.call=()=>new Promise(resolve=>waiting.push(resolve));
+  app.data.loadProjection=async()=>{};app.data.cancelScheduledProjection=()=>{};app.sync.reportView=()=>{};
+  const batch=(id,date)=>({snapshot:"fixture:1",nodes:[{id}],coordinates:{[id]:[{occurred_at:date}]}});
+  const older=app.sync.frameRefs(["old"]),newer=app.sync.frameRefs(["new"]);
+  waiting[1](batch("new","2026-09-13T12:00:00Z"));assert.equal(await newer,true);
+  const latest=[view.t0,view.t1];
+  waiting[0](batch("old","2020-01-01T00:00:00Z"));assert.equal(await older,false);
+  assert.deepEqual([view.t0,view.t1],latest);
+  const changed=app.sync.frameRefs(["old"]);model.about="project:y";
+  waiting[2](batch("old","2020-01-01T00:00:00Z"));assert.equal(await changed,false);
+  assert.deepEqual([view.t0,view.t1],latest);
+});
+
+test("long focuses bind every batch to the first snapshot before moving the window",async()=>{
+  const {app}=loom();const {model,view}=app.state;
+  model.about="project:x";view.clock="occurred";view.full={t0:0,t1:Date.parse("2026-10-01")};
+  const refs=Array.from({length:130},(_,i)=>`n${i}`),requests=[];
+  app.api.call=async(path,params)=>{
+    requests.push(params);const ids=params.ids.split(",");
+    assert.equal(params.expect_snapshot,requests.length===1?undefined:"fixture:1");
+    return {snapshot:"fixture:1",nodes:ids.map(id=>({id})),coordinates:Object.fromEntries(ids.map(id=>[id,[{occurred_at:"2026-09-13T12:00:00Z"}]])),scanned_edges:ids.length};
+  };
+  app.data.loadProjection=async()=>{};app.data.cancelScheduledProjection=()=>{};app.sync.reportView=()=>{};
+  assert.equal(await app.sync.frameRefs(refs),true);
+  assert.deepEqual(requests.map(r=>r.ids.split(",").length),[64,64,2]);
+  assert.deepEqual(requests.map(r=>r.max_edges),[32768,32704,32640]);
+  const before=[view.t0,view.t1];let reads=0;
+  app.api.call=async()=>({snapshot:++reads===1?"fixture:1":"fixture:2",nodes:[],coordinates:{}});
+  await assert.rejects(()=>app.sync.frameRefs(refs),/snapshot changed/);
+  assert.deepEqual([view.t0,view.t1],before);
 });

@@ -128,7 +128,10 @@ impl KernelMcpServer {
 
         if matches!(
             name,
-            "kmp_view_read_projection" | "kmp_view_undo" | "kmp_view_take_control"
+            "kmp_view_read_projection"
+                | "kmp_view_read_nodes"
+                | "kmp_view_undo"
+                | "kmp_view_take_control"
         ) && !self.apps_negotiated.load(Ordering::SeqCst)
         {
             return jsonrpc_result(

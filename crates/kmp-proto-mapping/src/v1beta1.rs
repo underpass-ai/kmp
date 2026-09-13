@@ -37,3 +37,7 @@ pub use memory_mapping::{
 pub use memory_mapping::{trace_search_request_from_proto, trace_search_response_from_result};
 
 pub use memory_mapping::{evidence_seek_request_from_proto, evidence_seek_response_from_result};
+
+pub use memory_mapping::{
+    memory_nodes_json, memory_nodes_request_from_proto, memory_nodes_response_from_result,
+};

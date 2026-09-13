@@ -56,3 +56,15 @@ test("MCP App preserves independent relation clocks in the shared viewer shape",
   assert.equal(trace.edges[0].ingested_at,clocks.ingested_at);
   assert.equal(trace.edges[0].occurred_at,undefined);
 });
+
+test("MCP App resolves a focus batch in one native call and preserves partial status",async()=>{
+  const coordinate={dimension:"task",scope_id:"task:batch",observed_at:"2026-09-13T10:00:00Z"};
+  const result={nodes:[{id:"a",kind:"decision"}],coordinates:{a:[coordinate]},missing:["gone"],omitted:["b"],incomplete_coordinates:[],stop_reason:"edge_budget",scanned_edges:3};
+  const {api,calls}=bridge((name,args)=>{
+    assert.equal(name,"kmp_view_read_nodes");
+    assert.deepEqual(plain(args),{about:"project:x",refs:["a","b","gone"],max_edges:3});
+    return result;
+  });
+  assert.deepEqual(plain(await api("/api/nodes",{about:"project:x",ids:"a,b,gone",max_edges:3})),result);
+  assert.equal(calls.filter(c=>c.method==="tools/call").length,1);
+});

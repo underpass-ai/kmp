@@ -1,0 +1,4 @@
+{
+  "sha256": "8e20ca39e02712895c0d578e23b5076156d6819faccd7d5d4693ae2bfbd55f45",
+  "profile": "dev, unoptimized; shared workspace Cargo config in environment.json"
+}

@@ -639,6 +639,15 @@ where
             .await
     }
 
+    /// Resolve the selected headers and coordinates together without loading proof bodies.
+    pub async fn read_nodes(
+        &self,
+        request: kmp_domain::MemoryNodesRequest,
+    ) -> Result<kmp_domain::MemoryNodesResult, ApplicationError> {
+        request.validate()?;
+        self.query_application.read_nodes(&request).await
+    }
+
     pub async fn inspect(
         &self,
         query: InspectMemoryQuery,

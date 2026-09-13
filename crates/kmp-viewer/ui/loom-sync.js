@@ -14,6 +14,7 @@ KMP_APP.sync = (() => {
   const api = (...args) => KMP_APP.api.call(...args);
 
   const VIEW_ID = "default";
+  let frameGeneration = 0;
 
   async function viewOpen() {
     try {
@@ -183,25 +184,40 @@ KMP_APP.sync = (() => {
   /* "Frame these refs" — the canonical intent. The window becomes the span
      they occupy on the current clock, with room to breathe. */
   async function frameRefs(refs) {
-    const stamps = [];
-    for (const ref of refs) {
-      let entry = model.byRef.get(ref);
-      if (!entry) {
-        const inspect = await api("/api/node", {
-          about: model.about,
-          id: ref,
-          raw: "1",
+    // Re-read the whole focus together: cached scene entries may precede a
+    // write, and mixing their clocks with fresh per-node reads invents a state.
+    const generation = ++frameGeneration;
+    const about = model.about, clock = view.clock;
+    const selected = [...new Set(refs)];
+    if (!selected.length) return false;
+    if (selected.length > 4096) throw new Error("The focus exceeds 4096 memories; select fewer memories.");
+    const stamps = [], missing = [];
+    let snapshot = null, remainingEdges = 32768;
+    for (let offset = 0; offset < selected.length; offset += 64) {
+      if (remainingEdges < 1) throw new Error("The focus coordinates exceed the read budget; select fewer memories.");
+      const batch = await api("/api/nodes", {
+        about, ids: selected.slice(offset, offset + 64).join(","), max_edges: remainingEdges,
+        ...(snapshot ? { expect_snapshot: snapshot } : {}),
+      });
+      if (generation !== frameGeneration || about !== model.about || clock !== view.clock) return false;
+      if (!batch.snapshot || (snapshot && snapshot !== batch.snapshot))
+        throw new Error("The focus snapshot changed; retry the focus.");
+      snapshot = batch.snapshot;
+      if ((batch.omitted || []).length || (batch.incomplete_coordinates || []).length)
+        throw new Error("The focus coordinates exceed the read budget; select fewer memories.");
+      remainingEdges -= batch.scanned_edges || 0;
+      missing.push(...(batch.missing || []));
+      for (const node of batch.nodes || []) {
+        const entry = KMP_LOOM.entryModel({
+          ref_id: node.id, kind: node.kind, text: node.summary || node.title || "",
+          coordinates: (batch.coordinates || {})[node.id] || [],
         });
-        entry = KMP_LOOM.entryModel({
-          ref_id: inspect.node.id,
-          kind: inspect.node.kind,
-          text: inspect.node.summary || inspect.node.title || "",
-          coordinates: inspect.raw_coordinates || [],
-        });
+        const stamp = KMP_LOOM.strictMs(entry, clock);
+        if (stamp !== null) stamps.push(stamp);
       }
-      const stamp = KMP_LOOM.strictMs(entry, view.clock);
-      if (stamp !== null) stamps.push(stamp);
     }
+    if (missing.length)
+      KMP_APP.dom.showError(`Some focus memories are unavailable: ${missing.join(", ")}`);
     if (!stamps.length) return false;
     const lo = Math.min(...stamps);
     const hi = Math.max(...stamps);

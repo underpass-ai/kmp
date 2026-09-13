@@ -83,6 +83,8 @@ pub use value_objects::{
     TraceBodyState, TraceCompactSummary, TraceExpansionPlan, TraceExpansionRefusal,
 };
 
+pub use model::{MemoryNodeHeader, MemoryNodesRequest, MemoryNodesResult, read_memory_nodes};
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;

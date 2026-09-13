@@ -1,0 +1,32 @@
+{
+  "date_utc": "2026-09-13T15:39:57Z",
+  "base_commit": "92854853fc69170c8b06beb63d5c3defa52f8d2a",
+  "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+  "lscpu": "Architecture:                            aarch64\nCPU op-mode(s):                          64-bit\nByte Order:                              Little Endian\nCPU(s):                                  20\nOn-line CPU(s) list:                     0-19\nVendor ID:                               ARM\nModel name:                              Cortex-X925\nModel:                                   1\nThread(s) per core:                      1\nCore(s) per socket:                      10\nSocket(s):                               1\nStepping:                                r0p1\nFrequency boost:                         disabled\nCPU(s) scaling MHz:                      100%\nCPU max MHz:                             3900.0000\nCPU min MHz:                             1378.0000\nBogoMIPS:                                2000.00\nFlags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt\nModel name:                              Cortex-A725\nModel:                                   1\nThread(s) per core:                      1\nCore(s) per socket:                      10\nSocket(s):                               1\nStepping:                                r0p1\nCPU(s) scaling MHz:                      100%\nCPU max MHz:                             2808.0000\nCPU min MHz:                             338.0000\nBogoMIPS:                                2000.00\nFlags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt\nL1d cache:                               1.3 MiB (20 instances)\nL1i cache:                               1.3 MiB (20 instances)\nL2 cache:                                25 MiB (20 instances)\nL3 cache:                                24 MiB (2 instances)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-19\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Not affected\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; CSV2, BHB\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected\n",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "memory_total": "MemTotal:       127535148 kB",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "cargo_config": "# Configuraci\u00f3n de build com\u00fan a todos los proyectos Rust de ~/Documents/ai.\n#\n# Cargo descubre los config.toml subiendo por los directorios padre desde el\n# directorio donde se lanza el build, as\u00ed que este fichero aplica a todo lo que\n# cuelga de aqu\u00ed y a nada de fuera. Los perfiles declarados en un config.toml\n# tienen precedencia sobre los del Cargo.toml de cada proyecto, de modo que esto\n# gobierna los ~30 repos del workspace sin tocar ni un fichero versionado.\n#\n# Motivo: el 22-08-2026 los directorios target/ del workspace sumaban 155 GB.\n# El grueso de eso era debuginfo de dependencias, que nadie depura.\n\n# --- Dependencias: sin debuginfo ---------------------------------------------\n# Es la palanca grande. Las dependencias son la mayor parte de un target/ y su\n# debuginfo no se usa: se depura c\u00f3digo propio, no serde ni tokio.\n[profile.dev.package.\"*\"]\ndebug = false\n\n[profile.test.package.\"*\"]\ndebug = false\n\n# --- C\u00f3digo propio: s\u00f3lo tablas de l\u00edneas ------------------------------------\n# \"line-tables-only\" conserva fichero:l\u00ednea en los backtraces y en la cobertura\n# de l\u00edneas (cargo-llvm-cov sigue funcionando, incluido el gate del 90 % de\n# foundry). Lo que tira es la informaci\u00f3n de tipos y variables locales, que es\n# lo que engorda. Si alguna vez hace falta un depurador paso a paso con\n# inspecci\u00f3n de variables:  cargo build --config 'profile.dev.debug=2'\n[profile.dev]\ndebug = \"line-tables-only\"\n# target/debug/incremental/ es cach\u00e9 de recompilaci\u00f3n, no artefacto. Con builds\n# de agentes en clones de un solo uso es basura pura. Si molesta en el bucle\n# interactivo de kmp/made, poner true aqu\u00ed y ya.\nincremental = false\n\n[profile.test]\ndebug = \"line-tables-only\"\nincremental = false\n\n[profile.bench]\ndebug = \"line-tables-only\"\n\n# --- Release -----------------------------------------------------------------\n[profile.release]\ndebug = false\nstrip = \"debuginfo\"\n",
+  "concurrency": "One serial benchmark process at a time. Default Tokio runtime. No CPU affinity override. Compilation and tests complete before measurements. OS cache uncontrolled."
+}

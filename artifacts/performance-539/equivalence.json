@@ -1,0 +1,18 @@
+[
+  {
+    "equivalent": true,
+    "shape": "small"
+  },
+  {
+    "equivalent": true,
+    "shape": "medium"
+  },
+  {
+    "equivalent": true,
+    "shape": "high_degree"
+  },
+  {
+    "equivalent": true,
+    "shape": "large_body"
+  }
+]

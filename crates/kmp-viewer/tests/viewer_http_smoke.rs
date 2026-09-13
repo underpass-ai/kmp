@@ -250,6 +250,27 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     assert_eq!(status, 200, "nodes failed: {batch}");
     assert_eq!(batch["nodes"].as_array().expect("batch nodes").len(), 2);
     assert_eq!(batch["missing"][0], "project:viewer-smoke:node:unknown");
+    assert_eq!(batch["stop_reason"], "complete");
+    assert!(batch["omitted"].as_array().expect("omitted").is_empty());
+    assert!(
+        batch["incomplete_coordinates"]
+            .as_array()
+            .expect("incomplete")
+            .is_empty()
+    );
+    let normalize = |mut coordinates: serde_json::Value| {
+        for coordinate in coordinates.as_array_mut().expect("coordinates") {
+            coordinate
+                .as_object_mut()
+                .expect("coordinate")
+                .retain(|_, value| !value.is_null() && value != "");
+        }
+        coordinates
+    };
+    assert_eq!(
+        normalize(batch["coordinates"]["project:viewer-smoke:decision:first"].clone()),
+        normalize(node["raw_coordinates"].clone())
+    );
 
     let (status, timeline) = get(
         port,

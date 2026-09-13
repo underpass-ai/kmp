@@ -281,6 +281,41 @@ where
         .map(|response| Response::new(forward_response_from_temporal(response)))
     }
 
+    #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.ReadNodes"))]
+    async fn read_nodes(
+        &self,
+        request: Request<kmp_proto::v1beta1::ReadNodesRequest>,
+    ) -> Result<Response<kmp_proto::v1beta1::ReadNodesResponse>, Status> {
+        let start = Instant::now();
+        let request =
+            kmp_proto_mapping::v1beta1::memory_nodes_request_from_proto(request.into_inner())
+                .map_err(|e| map_proto_error("KernelMemoryService.ReadNodes", &start, *e))?;
+        let result = self
+            .application
+            .read_nodes(request)
+            .await
+            .map_err(|error| {
+                map_application_error_with_log("KernelMemoryService.ReadNodes", &start, error)
+            })?;
+        tracing::info!(
+            rpc = "KernelMemoryService.ReadNodes",
+            nodes = result.nodes.len(),
+            missing = result.missing.len(),
+            omitted = result.omitted.len(),
+            scanned_edges = result.scanned_edges,
+            "kernel node batch grpc response"
+        );
+        record_kmp_grpc_rpc(
+            "KernelMemoryService.ReadNodes",
+            "success",
+            "none",
+            start.elapsed(),
+        );
+        Ok(Response::new(
+            kmp_proto_mapping::v1beta1::memory_nodes_response_from_result(result),
+        ))
+    }
+
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.ProjectVisual"))]
     async fn project_visual(
         &self,

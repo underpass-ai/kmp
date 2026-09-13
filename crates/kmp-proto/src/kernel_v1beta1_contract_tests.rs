@@ -54,6 +54,7 @@ fn v1beta1_kernel_memory_service_surface_is_stable() {
             "ProjectVisual",
             "Trace",
             "Inspect",
+            "ReadNodes",
             "Relabel",
             "Condense"
         ]
@@ -76,6 +77,7 @@ fn v1beta1_kernel_memory_service_surface_is_stable() {
             ),
             ("Trace", "TraceRequest", "TraceResponse"),
             ("Inspect", "InspectRequest", "InspectResponse"),
+            ("ReadNodes", "ReadNodesRequest", "ReadNodesResponse"),
             ("Relabel", "RelabelRequest", "RelabelResponse"),
             ("Condense", "CondenseRequest", "CondenseResponse"),
         ])
