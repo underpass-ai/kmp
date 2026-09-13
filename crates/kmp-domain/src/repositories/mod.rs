@@ -50,3 +50,6 @@ mod trace_snapshot_reader;
 pub use trace_snapshot_reader::TraceSnapshotReader;
 pub mod read_snapshot_provider;
 pub use read_snapshot_provider::{ReadSnapshotFuture, ReadSnapshotProvider};
+
+mod graph_read_revision;
+pub use graph_read_revision::GraphReadRevision;

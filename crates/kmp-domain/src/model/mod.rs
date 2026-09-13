@@ -28,9 +28,10 @@ pub use relate::{
 };
 pub use relationship_path::directed_relationship_path;
 pub use temporal_memory::{
-    TemporalEntry, TemporalEntrySelection, TemporalMemoryTraversal, TemporalTraversalRequest,
-    TemporalTraversalResult, compare_temporal_coordinates, compare_temporal_instants,
-    rfc3339_from_epoch_seconds, temporal_instant_nanos, temporal_instant_rfc3339,
+    TemporalEntry, TemporalEntrySelection, TemporalMemoryIndex, TemporalMemoryTraversal,
+    TemporalTraversalRequest, TemporalTraversalResult, compare_temporal_coordinates,
+    compare_temporal_instants, rfc3339_from_epoch_seconds, temporal_instant_nanos,
+    temporal_instant_rfc3339,
 };
 
 mod bounded_trace_search;

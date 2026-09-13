@@ -29,6 +29,19 @@ use crate::queries::{
 
 const MEMORY_EXISTING_REFS_LOOKUP_DEPTH: u32 = 1;
 
+#[path = "recall_read.rs"]
+mod recall_read;
+#[path = "temporal_catalogue.rs"]
+mod temporal_catalogue;
+#[path = "temporal_index_cache.rs"]
+mod temporal_index_cache;
+#[path = "temporal_index_identity.rs"]
+mod temporal_index_identity;
+#[path = "temporal_index_read.rs"]
+mod temporal_index_read;
+#[path = "temporal_support_read.rs"]
+mod temporal_support_read;
+
 pub struct KernelMemoryApplicationService<G, D, S, E, W> {
     query_application: Arc<QueryApplicationService<G, D, S>>,
     command_application: Arc<CommandApplicationService<E, W>>,
@@ -36,6 +49,7 @@ pub struct KernelMemoryApplicationService<G, D, S, E, W> {
     /// snapshots are, as one object-safe port, so a backend that stores no
     /// cards composes without carrying a generic for a table it never reads.
     node_cards: Option<Arc<dyn NodeCardStore>>,
+    temporal_index_cache: Arc<std::sync::Mutex<temporal_index_cache::TemporalIndexCache>>,
 }
 
 impl<G, D, S, E, W> KernelMemoryApplicationService<G, D, S, E, W> {
@@ -47,6 +61,7 @@ impl<G, D, S, E, W> KernelMemoryApplicationService<G, D, S, E, W> {
             query_application,
             command_application,
             node_cards: None,
+            temporal_index_cache: Arc::new(std::sync::Mutex::new(Default::default())),
         }
     }
 
@@ -307,11 +322,11 @@ where
     }
 
     async fn read_snapshot(&self) -> Result<Option<Self>, ApplicationError> {
-        Ok(self
-            .query_application
-            .read_snapshot()
-            .await?
-            .map(|query| Self::new(Arc::new(query), Arc::clone(&self.command_application))))
+        Ok(self.query_application.read_snapshot().await?.map(|query| {
+            let mut snapshot = Self::new(Arc::new(query), Arc::clone(&self.command_application));
+            snapshot.temporal_index_cache = Arc::clone(&self.temporal_index_cache);
+            snapshot
+        }))
     }
 
     pub async fn wake(&self, query: WakeMemoryQuery) -> Result<GetContextResult, ApplicationError> {
@@ -330,16 +345,14 @@ where
             EndpointHint::Neighborhood,
         );
         let dimensions = query.dimensions.resolve_current_about(&query.about);
-        let result = self
-            .memory_context(
-                &query.about,
-                &query.role,
-                query.depth,
-                &dimensions,
-                &render_options,
-            )
-            .await?;
-        apply_dimension_selection(result, &dimensions, &render_options)
+        self.selected_recall_context(
+            &query.about,
+            &query.role,
+            query.depth,
+            &dimensions,
+            &render_options,
+        )
+        .await
     }
 
     pub async fn ask(&self, query: AskMemoryQuery) -> Result<GetContextResult, ApplicationError> {
@@ -358,16 +371,14 @@ where
             EndpointHint::Neighborhood,
         );
         let dimensions = query.dimensions.resolve_current_about(&query.about);
-        let result = self
-            .memory_context(
-                &query.about,
-                "answerer",
-                query.depth,
-                &dimensions,
-                &render_options,
-            )
-            .await?;
-        apply_dimension_selection(result, &dimensions, &render_options)
+        self.selected_recall_context(
+            &query.about,
+            "answerer",
+            query.depth,
+            &dimensions,
+            &render_options,
+        )
+        .await
     }
 
     pub async fn temporal(
@@ -386,8 +397,36 @@ where
         &self,
         query: TemporalMemoryQuery,
     ) -> Result<TemporalMemoryResult, ApplicationError> {
-        let read = self.temporal_read(&query, false).await?;
-        let mut result = temporal_result(query, read)?;
+        let (index, dimensions) = self.temporal_index_read(&query).await?;
+        let request = temporal_request(&query, &dimensions)?;
+        let traversal = index.traverse(&request)?;
+        let source_bundle = filter_bundle_by_memory_dimensions_with_labels(
+            index.bundle(),
+            &dimensions,
+            &traversal.proof_labels(index.bundle())?,
+        )?;
+        // Source-node metadata (including receipt clocks) can affect a
+        // relation even when its body was not requested. Admit all selected
+        // proof nodes before projecting paths, lifecycle and evidence.
+        let node_refs = kmp_domain::TemporalProofPlan::select(
+            &source_bundle,
+            &traversal,
+            query.include.dependencies,
+        )?
+        .body_refs()
+        .clone();
+        let source_bundle = self
+            .query_application
+            .materialize_selected_nodes(source_bundle, &node_refs)
+            .await?;
+        let source_bundle = self
+            .materialize_temporal_supports(source_bundle, &node_refs)
+            .await?;
+        let mut result = TemporalMemoryResult {
+            traversal,
+            source_bundle,
+            include: query.include,
+        };
         let selected = if result.include.evidence || result.include.dependencies {
             kmp_domain::TemporalProofPlan::select(
                 &result.source_bundle,
@@ -898,13 +937,32 @@ fn temporal_result(
 ) -> Result<TemporalMemoryResult, ApplicationError> {
     let TemporalRead { bundle, dimensions } = read;
 
-    let request = TemporalTraversalRequest::new(query.direction, query.cursor)
-        .with_entry_selection(query.entry_selection)
+    let request = temporal_request(&query, &dimensions)?;
+
+    let traversal = TemporalMemoryTraversal::traverse(&bundle, &request)?;
+    let source_bundle = filter_bundle_by_memory_dimensions_with_labels(
+        &bundle,
+        &dimensions,
+        &traversal.proof_labels(&bundle)?,
+    )?;
+    Ok(TemporalMemoryResult {
+        traversal,
+        source_bundle,
+        include: query.include,
+    })
+}
+
+fn temporal_request(
+    query: &TemporalMemoryQuery,
+    dimensions: &DimensionSelection,
+) -> Result<TemporalTraversalRequest, ApplicationError> {
+    let request = TemporalTraversalRequest::new(query.direction, query.cursor.clone())
+        .with_entry_selection(query.entry_selection.clone())
         .with_axis(query.axis)
         .with_dimensions(dimensions.clone())
         .with_requested_dimensions(query.dimensions.clone())
         .with_window(query.window);
-    let request = if let Some(interval) = query.interval {
+    let request = if let Some(interval) = query.interval.clone() {
         request.with_interval(interval)
     } else {
         request
@@ -915,20 +973,7 @@ fn temporal_result(
         request
     };
 
-    // Apply temporal membership admission before entry predicates and lanes.
-    // Proof can include older antecedents, but no labels beyond its upper cut.
-    let traversal = TemporalMemoryTraversal::traverse(&bundle, &request)?;
-    let source_bundle = filter_bundle_by_memory_dimensions_with_labels(
-        &bundle,
-        &dimensions,
-        &traversal.proof_labels(&bundle)?,
-    )?;
-
-    Ok(TemporalMemoryResult {
-        traversal,
-        source_bundle,
-        include: query.include,
-    })
+    Ok(request)
 }
 
 fn bundle_node_ids(bundle: &KmpBundle) -> BTreeSet<String> {

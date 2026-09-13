@@ -20,6 +20,8 @@ pub struct Reads {
     pub resume: Arc<Notify>,
     pub opened: Arc<AtomicUsize>,
     pub fail_snapshot: bool,
+    pub cache_revisions: bool,
+    pub catalogue_reads: Arc<AtomicUsize>,
     pub detail_ids: Arc<std::sync::Mutex<Vec<String>>>,
 }
 impl Reads {
@@ -31,6 +33,8 @@ impl Reads {
             resume: Arc::new(Notify::new()),
             opened: Arc::new(AtomicUsize::new(0)),
             fail_snapshot: false,
+            cache_revisions: false,
+            catalogue_reads: Arc::new(AtomicUsize::new(0)),
             detail_ids: Arc::new(std::sync::Mutex::new(Vec::new())),
         }
     }
@@ -55,6 +59,24 @@ impl ReadSnapshotProvider<Reads, Reads> for Reads {
     }
 }
 impl GraphNeighborhoodReader for Reads {
+    async fn graph_read_revision(&self) -> Result<Option<GraphReadRevision>, PortError> {
+        if self.cache_revisions {
+            self.store.graph_read_revision().await
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn load_neighborhood_headers(
+        &self,
+        request: &NeighborhoodRequest,
+    ) -> Result<Option<NodeNeighborhood>, PortError> {
+        self.catalogue_reads.fetch_add(1, Ordering::SeqCst);
+        let result = self.store.load_neighborhood_headers(request).await;
+        self.after_graph().await;
+        result
+    }
+
     async fn load_nodes_batch(
         &self,
         ids: Vec<String>,
@@ -69,6 +91,7 @@ impl GraphNeighborhoodReader for Reads {
         root: &str,
         depth: u32,
     ) -> Result<Option<NodeNeighborhood>, PortError> {
+        self.catalogue_reads.fetch_add(1, Ordering::SeqCst);
         let result = self.store.load_neighborhood(root, depth).await;
         self.after_graph().await;
         result
@@ -77,6 +100,7 @@ impl GraphNeighborhoodReader for Reads {
         &self,
         request: &NeighborhoodRequest,
     ) -> Result<Option<NodeNeighborhood>, PortError> {
+        self.catalogue_reads.fetch_add(1, Ordering::SeqCst);
         let result = self.store.load_scoped_neighborhood(request).await;
         self.after_graph().await;
         result

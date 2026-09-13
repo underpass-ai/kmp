@@ -11,14 +11,14 @@ use super::position::{ResolvedTemporalCursor, TemporalPosition};
 
 const DEFAULT_GOTO_ENTRIES: usize = 50;
 
-pub(super) struct TemporalSelection {
-    pub positions: Vec<TemporalPosition>,
+pub(super) struct TemporalSelection<'a> {
+    pub positions: Vec<&'a TemporalPosition>,
     pub total_unique_refs: usize,
     pub next_cursor: Option<String>,
 }
 
 pub(super) fn resolve_cursor(
-    positions: &[TemporalPosition],
+    positions: &[&TemporalPosition],
     cursor: &TemporalCursor,
     requested_axis: TemporalAxis,
 ) -> Result<ResolvedTemporalCursor, DomainError> {
@@ -60,11 +60,11 @@ pub(super) fn resolve_cursor(
     }
 }
 
-pub(super) fn select_positions(
-    positions: &[TemporalPosition],
+pub(super) fn select_positions<'a>(
+    positions: &'a [TemporalPosition],
     cursor: Option<&ResolvedTemporalCursor>,
     request: &TemporalTraversalRequest,
-) -> TemporalSelection {
+) -> TemporalSelection<'a> {
     if cursor.is_some_and(|cursor| cursor.axis_key.is_none()) {
         return TemporalSelection {
             positions: Vec::new(),
@@ -73,12 +73,25 @@ pub(super) fn select_positions(
         };
     }
     let cursor_axis_key = cursor.and_then(|cursor| cursor.axis_key.as_ref());
-    let mut comparable = positions
+    let kind = cursor_axis_key.map_or(TemporalKeyKind::Time, TemporalAxisKey::axis);
+    let first = positions.partition_point(|position| position.axis_key.axis() < kind);
+    let end = positions.partition_point(|position| position.axis_key.axis() <= kind);
+    let mut indexed = &positions[first..end];
+    if request.axis() != TemporalAxis::Validity
+        && let Some(interval) = request.interval()
+    {
+        let first = interval.start().map_or(0, |start| {
+            let start = TemporalAxisKey::time(start);
+            indexed.partition_point(|position| position.axis_key < start)
+        });
+        let end = interval.end().map_or(indexed.len(), |end| {
+            let end = TemporalAxisKey::time(end);
+            indexed.partition_point(|position| position.axis_key < end)
+        });
+        indexed = &indexed[first..end];
+    }
+    let mut comparable = indexed
         .iter()
-        .filter(|position| {
-            position.axis_key.axis()
-                == cursor_axis_key.map_or(TemporalKeyKind::Time, TemporalAxisKey::axis)
-        })
         .filter(|position| {
             request.interval().is_none_or(|interval| {
                 if request.axis() == TemporalAxis::Validity {
@@ -91,11 +104,10 @@ pub(super) fn select_positions(
                 }
             })
         })
-        .cloned()
         .collect::<Vec<_>>();
 
     let Some(cursor_axis_key) = cursor_axis_key else {
-        let labels = labels_for_positions(comparable.iter());
+        let labels = labels_for_positions(comparable.iter().copied());
         comparable.retain(|position| entry_selected(position, request, &labels));
         // A direct interval starts at the selected range itself. Do not invent
         // a time just before its start or lose memories tied at that boundary.
@@ -126,7 +138,7 @@ pub(super) fn select_positions(
             .into_iter()
             .filter(|position| validity_contains(&position.coordinate, cursor_axis_key))
             .collect();
-        let labels = labels_for_positions(active.iter());
+        let labels = labels_for_positions(active.iter().copied());
         active.retain(|position| entry_selected(position, request, &labels));
         return select_limited(
             active,
@@ -162,7 +174,8 @@ pub(super) fn select_positions(
                     request.direction(),
                     TemporalDirection::Forward | TemporalDirection::Near
                 )
-            })),
+            }))
+            .copied(),
     );
     // Resolve the original ref's ordered position before focusing entries.
     // An unselected anchor still determines the sides; limits apply afterward.
@@ -299,29 +312,29 @@ fn validity_not_ended(coordinate: &TemporalCoordinate, cursor_axis_key: &Tempora
         .is_none_or(|end| TemporalAxisKey::time(end) > *cursor_axis_key)
 }
 
-struct TemporalPartitions {
-    before: Vec<TemporalPosition>,
-    exact: Vec<TemporalPosition>,
-    after: Vec<TemporalPosition>,
+struct TemporalPartitions<'a> {
+    before: Vec<&'a TemporalPosition>,
+    exact: Vec<&'a TemporalPosition>,
+    after: Vec<&'a TemporalPosition>,
 }
 
-fn partition_positions(
-    comparable: Vec<TemporalPosition>,
+fn partition_positions<'a>(
+    comparable: Vec<&'a TemporalPosition>,
     cursor_axis_key: &TemporalAxisKey,
     cursor_ref: Option<&str>,
     request: &TemporalTraversalRequest,
-) -> TemporalPartitions {
+) -> TemporalPartitions<'a> {
     let Some(cursor_ref) = cursor_ref else {
         return TemporalPartitions {
             before: comparable
                 .iter()
                 .filter(|position| &position.axis_key < cursor_axis_key)
-                .cloned()
+                .copied()
                 .collect(),
             exact: comparable
                 .iter()
                 .filter(|position| &position.axis_key == cursor_axis_key)
-                .cloned()
+                .copied()
                 .collect(),
             after: comparable
                 .into_iter()
@@ -339,7 +352,7 @@ fn partition_positions(
                     position.coordinate.scope_id(),
                 )
             })
-            .cloned()
+            .copied()
             .collect(),
     );
     let Some(anchor) = ordered_refs.iter().position(|ref_id| ref_id == cursor_ref) else {
@@ -356,12 +369,15 @@ fn partition_positions(
     }
 }
 
-fn positions_for_refs(positions: &[TemporalPosition], refs: &[String]) -> Vec<TemporalPosition> {
+fn positions_for_refs<'a>(
+    positions: &[&'a TemporalPosition],
+    refs: &[String],
+) -> Vec<&'a TemporalPosition> {
     let refs = refs.iter().map(String::as_str).collect::<BTreeSet<_>>();
     positions
         .iter()
         .filter(|position| refs.contains(position.ref_id.as_str()))
-        .cloned()
+        .copied()
         .collect()
 }
 
@@ -371,11 +387,11 @@ enum PageSide {
     After,
 }
 
-fn select_limited(
-    candidates: Vec<TemporalPosition>,
+fn select_limited<'a>(
+    candidates: Vec<&'a TemporalPosition>,
     limit: usize,
     page_side: PageSide,
-) -> TemporalSelection {
+) -> TemporalSelection<'a> {
     let total_unique_refs = unique_ref_count(candidates.iter());
     let (positions, returned_refs) = take_ref_page(candidates, limit, page_side);
     let next_cursor = if returned_refs.len() < total_unique_refs {
@@ -394,12 +410,11 @@ fn select_limited(
 }
 
 fn take_ref_page(
-    mut positions: Vec<TemporalPosition>,
+    mut positions: Vec<&TemporalPosition>,
     limit: usize,
     page_side: PageSide,
-) -> (Vec<TemporalPosition>, Vec<String>) {
-    positions.sort();
-    let ordered_refs = ordered_unique_ref_ids(positions.clone());
+) -> (Vec<&TemporalPosition>, Vec<String>) {
+    let ordered_refs = unique_refs_in_order(positions.iter().copied());
     let keep_from = ordered_refs.len().saturating_sub(limit);
     let selected_refs = match page_side {
         PageSide::Before => ordered_refs.into_iter().skip(keep_from).collect::<Vec<_>>(),
@@ -410,14 +425,19 @@ fn take_ref_page(
     (positions, selected_refs)
 }
 
-pub(super) fn ordered_unique_ref_ids(mut selected_positions: Vec<TemporalPosition>) -> Vec<String> {
+pub(super) fn ordered_unique_ref_ids(
+    mut selected_positions: Vec<&TemporalPosition>,
+) -> Vec<String> {
     selected_positions.sort();
+    unique_refs_in_order(selected_positions.into_iter())
+}
+
+fn unique_refs_in_order<'a>(positions: impl Iterator<Item = &'a TemporalPosition>) -> Vec<String> {
     let mut seen = BTreeSet::new();
-    selected_positions
-        .into_iter()
+    positions
         .filter_map(|position| {
-            if seen.insert(position.ref_id.clone()) {
-                Some(position.ref_id)
+            if seen.insert(position.ref_id.as_str()) {
+                Some(position.ref_id.clone())
             } else {
                 None
             }
@@ -426,7 +446,7 @@ pub(super) fn ordered_unique_ref_ids(mut selected_positions: Vec<TemporalPositio
 }
 
 pub(super) fn coordinates_by_ref(
-    positions: &[TemporalPosition],
+    positions: &[&TemporalPosition],
 ) -> BTreeMap<String, Vec<TemporalCoordinate>> {
     let mut coordinates = BTreeMap::<String, Vec<TemporalCoordinate>>::new();
     for position in positions {
@@ -443,7 +463,9 @@ pub(super) fn coordinates_by_ref(
     coordinates
 }
 
-fn unique_ref_count<'a>(positions: impl IntoIterator<Item = &'a TemporalPosition>) -> usize {
+fn unique_ref_count<'a: 'b, 'b>(
+    positions: impl IntoIterator<Item = &'b &'a TemporalPosition>,
+) -> usize {
     positions
         .into_iter()
         .map(|position| position.ref_id.as_str())

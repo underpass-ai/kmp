@@ -10,6 +10,8 @@ use super::engine::{Key, ReadTx, Table};
 use super::projection_write::MEMORY_ANCHOR_KIND;
 use super::serdes::{NodeRecord, decode, decode_explanation};
 use super::store::EmbeddedKernelStore;
+#[path = "node_admission_header.rs"]
+mod node_admission_header;
 
 fn load_node(tx: &dyn ReadTx, node_id: &str) -> Result<Option<NodeProjection>, PortError> {
     match tx.get(Table::Nodes, Key::Str(node_id))? {
@@ -138,7 +140,57 @@ fn shortest_outward_path(
     Ok(None)
 }
 
+impl EmbeddedKernelStore {
+    async fn read_catalogue_neighborhood(
+        &self,
+        request: &NeighborhoodRequest,
+        headers: bool,
+    ) -> Result<Option<NodeNeighborhood>, PortError> {
+        let request = request.clone();
+        self.run(move |store| {
+            let tx = store.begin_read()?;
+            let tx = tx.as_ref();
+            let read = |id: &str| {
+                if headers {
+                    node_admission_header::read(tx, id)
+                } else {
+                    load_node(tx, id)
+                }
+            };
+            let Some(root) = read(request.root_node_id())? else {
+                return Ok(None);
+            };
+            let reachable = reachable_outward(tx, &request)?;
+            let relations = if reachable.is_empty() {
+                Vec::new()
+            } else {
+                let mut selected = reachable.clone();
+                selected.insert(request.root_node_id().to_string());
+                relations_among(tx, &selected)?
+            };
+            let mut neighbors = Vec::with_capacity(reachable.len());
+            for id in reachable {
+                if let Some(node) = read(&id)? {
+                    neighbors.push(node);
+                }
+            }
+            Ok(Some(NodeNeighborhood {
+                root,
+                neighbors,
+                relations,
+            }))
+        })
+        .await
+    }
+}
+
 impl GraphNeighborhoodReader for EmbeddedKernelStore {
+    async fn graph_read_revision(
+        &self,
+    ) -> Result<Option<kmp_domain::GraphReadRevision>, PortError> {
+        Ok(self.read_revision())
+    }
+
     async fn load_nodes_batch(
         &self,
         node_ids: Vec<String>,
@@ -196,34 +248,14 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
         &self,
         request: &NeighborhoodRequest,
     ) -> Result<Option<NodeNeighborhood>, PortError> {
-        let request = request.clone();
-        let root_node_id = request.root_node_id().to_string();
-        self.run(move |store| {
-            let tx = store.begin_read()?;
-            let tx = tx.as_ref();
+        self.read_catalogue_neighborhood(request, false).await
+    }
 
-            let Some(root) = load_node(tx, &root_node_id)? else {
-                return Ok(None);
-            };
-
-            let reachable = reachable_outward(tx, &request)?;
-            // Mirrors the Neo4j neighborhood query: an empty neighborhood
-            // reports no relations, even for self-referential root edges.
-            let relation_rows = if reachable.is_empty() {
-                Vec::new()
-            } else {
-                let mut selected = reachable.clone();
-                selected.insert(root_node_id.clone());
-                relations_among(tx, &selected)?
-            };
-
-            Ok(Some(NodeNeighborhood {
-                neighbors: selected_projections(tx, &reachable, &root_node_id)?,
-                relations: relation_rows,
-                root,
-            }))
-        })
-        .await
+    async fn load_neighborhood_headers(
+        &self,
+        request: &NeighborhoodRequest,
+    ) -> Result<Option<NodeNeighborhood>, PortError> {
+        self.read_catalogue_neighborhood(request, true).await
     }
 
     async fn load_context_path(

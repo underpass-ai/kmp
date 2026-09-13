@@ -1,7 +1,9 @@
 mod axis_key;
 mod entry_selection;
 mod extract;
+mod index;
 mod position;
+pub use index::TemporalMemoryIndex;
 mod proof_memberships;
 mod proof_selection;
 mod request;
@@ -157,10 +159,18 @@ impl TemporalMemoryTraversal {
         bundle: &KmpBundle,
         request: &TemporalTraversalRequest,
     ) -> Result<TemporalTraversalResult, DomainError> {
+        let mut positions = temporal_positions(bundle, request.axis())?;
+        positions.sort();
+        Self::traverse_index(bundle, request, &positions)
+    }
+
+    fn traverse_index(
+        bundle: &KmpBundle,
+        request: &TemporalTraversalRequest,
+        all_positions: &[TemporalPosition],
+    ) -> Result<TemporalTraversalResult, DomainError> {
         request.validate()?;
         let nodes = bundle_nodes_by_id(bundle);
-        let mut all_positions = temporal_positions(bundle, request.axis())?;
-        all_positions.sort();
         // Lanes resolve the anchor; entry predicates apply only after the
         // temporal cut, using every admitted lane of the same entry (#560).
         let positions = all_positions
@@ -171,7 +181,6 @@ impl TemporalMemoryTraversal {
                     position.coordinate.scope_id(),
                 )
             })
-            .cloned()
             .collect::<Vec<_>>();
         let warnings = request
             .cursor()
@@ -197,7 +206,7 @@ impl TemporalMemoryTraversal {
                 })
             },
         );
-        let selection = select_positions(&all_positions, cursor.as_ref(), request);
+        let selection = select_positions(all_positions, cursor.as_ref(), request);
         let coordinates_by_ref = coordinates_by_ref(&selection.positions);
         let mut selected_ref_ids = ordered_unique_ref_ids(selection.positions);
         // A rewind page is consumed in the same direction the cursor moves:
@@ -256,7 +265,7 @@ impl TemporalMemoryTraversal {
 /// entry's other coordinates keep their own counters.
 fn sequence_cursor_warnings(
     cursor: &TemporalCursor,
-    positions: &[TemporalPosition],
+    positions: &[&TemporalPosition],
 ) -> Vec<String> {
     let TemporalCursor::Sequence(value) = cursor else {
         return Vec::new();
@@ -341,7 +350,7 @@ fn included_dimensions(entries: &[TemporalEntry]) -> Vec<String> {
         .collect()
 }
 
-fn dimensions_from_positions(positions: &[TemporalPosition]) -> Vec<String> {
+fn dimensions_from_positions(positions: &[&TemporalPosition]) -> Vec<String> {
     positions
         .iter()
         .map(|position| position.coordinate.dimension().to_string())

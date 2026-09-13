@@ -6,6 +6,15 @@ use crate::{
 };
 
 pub trait GraphNeighborhoodReader {
+    /// Optional reuse identity for this operation's pinned graph AND bodies.
+    /// Live readers and adapters unable to certify every write return None.
+    /// A reader identity must also distinguish stores and reader incarnations.
+    fn graph_read_revision(
+        &self,
+    ) -> impl Future<Output = Result<Option<crate::GraphReadRevision>, PortError>> + Send {
+        async { Ok(None) }
+    }
+
     /// Read the requested nodes without requiring their neighborhoods. Results
     /// preserve input order, duplicates and missing slots. This operation does
     /// not discover neighbors or authorize a scope; callers select refs first.
@@ -52,6 +61,17 @@ pub trait GraphNeighborhoodReader {
         }
     }
 
+    /// Admission-only graph catalogue. Source prose and node metadata may be
+    /// absent; consumers must point-read admitted nodes before returning them.
+    /// Memberships, relation explanations, entry summaries and placeholder
+    /// admission must be preserved. The default supplies complete nodes.
+    fn load_neighborhood_headers(
+        &self,
+        request: &NeighborhoodRequest,
+    ) -> impl Future<Output = Result<Option<NodeNeighborhood>, PortError>> + Send {
+        self.load_scoped_neighborhood(request)
+    }
+
     fn load_neighborhood(
         &self,
         root_node_id: &str,
@@ -88,6 +108,10 @@ impl<T> GraphNeighborhoodReader for Arc<T>
 where
     T: GraphNeighborhoodReader + Send + Sync + ?Sized,
 {
+    async fn graph_read_revision(&self) -> Result<Option<crate::GraphReadRevision>, PortError> {
+        self.as_ref().graph_read_revision().await
+    }
+
     async fn load_nodes_batch(
         &self,
         node_ids: Vec<String>,
@@ -107,6 +131,13 @@ where
         request: &crate::EvidencePathRequest,
     ) -> Result<crate::EvidencePathResult, PortError> {
         self.as_ref().load_evidence_paths(request).await
+    }
+
+    async fn load_neighborhood_headers(
+        &self,
+        request: &NeighborhoodRequest,
+    ) -> Result<Option<NodeNeighborhood>, PortError> {
+        self.as_ref().load_neighborhood_headers(request).await
     }
 
     async fn load_neighborhood(
@@ -140,6 +171,10 @@ impl<T> GraphNeighborhoodReader for &T
 where
     T: GraphNeighborhoodReader + Send + Sync + ?Sized,
 {
+    async fn graph_read_revision(&self) -> Result<Option<crate::GraphReadRevision>, PortError> {
+        (*self).graph_read_revision().await
+    }
+
     fn load_nodes_batch(
         &self,
         node_ids: Vec<String>,
@@ -159,6 +194,13 @@ where
         request: &crate::EvidencePathRequest,
     ) -> Result<crate::EvidencePathResult, PortError> {
         (*self).load_evidence_paths(request).await
+    }
+
+    async fn load_neighborhood_headers(
+        &self,
+        request: &NeighborhoodRequest,
+    ) -> Result<Option<NodeNeighborhood>, PortError> {
+        (*self).load_neighborhood_headers(request).await
     }
 
     async fn load_neighborhood(

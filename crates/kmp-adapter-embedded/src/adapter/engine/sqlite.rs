@@ -62,6 +62,7 @@ const ALL_TABLES: [Table; 14] = [
 pub(crate) struct SqliteEngine {
     path: PathBuf,
     pool: Arc<Mutex<Vec<Connection>>>,
+    revision_observer: Mutex<Option<super::snapshot_revision_observer::SnapshotRevisionObserver>>,
 }
 
 impl SqliteEngine {
@@ -74,6 +75,7 @@ impl SqliteEngine {
         Ok(Self {
             path: store_file.to_path_buf(),
             pool: Arc::new(Mutex::new(vec![connection])),
+            revision_observer: Mutex::new(None),
         })
     }
 
@@ -107,12 +109,23 @@ impl SqliteEngine {
 
 impl Engine for SqliteEngine {
     fn read_snapshot(&self) -> Result<Arc<dyn Engine>, PortError> {
-        let mut pooled = self.take_connection()?;
-        let connection = pooled.connection.take().expect("pooled connection");
-        Ok(Arc::new(super::sqlite_snapshot::SqliteSnapshot::new(
-            connection,
-            Arc::clone(&self.pool),
-        )?))
+        let mut observer = self.revision_observer.lock().map_err(|_| poisoned())?;
+        if observer.is_none() {
+            *observer = Some(
+                super::snapshot_revision_observer::SnapshotRevisionObserver::new(open_connection(
+                    &self.path,
+                )?)?,
+            );
+        }
+        let observer = observer.as_ref().expect("initialized observer");
+        let (snapshot, revision) = observer.pin(|| {
+            let mut pooled = self.take_connection()?;
+            let connection = pooled.connection.take().expect("pooled connection");
+            super::sqlite_snapshot::SqliteSnapshot::new(connection, Arc::clone(&self.pool))
+        })?;
+        // A commit during snapshot acquisition leaves a valid pinned read,
+        // but no reusable identity. Never retry indefinitely under writers.
+        Ok(Arc::new(snapshot.with_revision(revision)))
     }
 
     fn begin_read(&self) -> Result<Box<dyn ReadTx + '_>, PortError> {
@@ -471,6 +484,45 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
+    pub(super) fn project_str_json(
+        &self,
+        table: Table,
+        key: &str,
+        fields: &[&str],
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        if table.key_shape() != KeyShape::Str {
+            return Err(scan_shape_mismatch(table, KeyShape::Str));
+        }
+        let mut args = Vec::new();
+        let mut expressions = Vec::new();
+        for field in fields {
+            let path = field
+                .split('.')
+                .map(|part| serde_json::to_string(part).expect("string JSON"))
+                .fold(String::from("$"), |path, part| format!("{path}.{part}"));
+            args.push((*field).to_string());
+            args.push(path);
+            expressions.push(format!(
+                "?{}, json_extract(v, ?{})",
+                args.len() - 1,
+                args.len()
+            ));
+        }
+        args.push(key.to_string());
+        let sql = format!(
+            "SELECT json_object({}) FROM \"{table}\" WHERE k=?{}",
+            expressions.join(", "),
+            args.len()
+        );
+        self.prepare(&sql)?
+            .query_row(rusqlite::params_from_iter(args), |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()
+            .map(|value| value.map(String::into_bytes))
+            .map_err(|e| read_error(table, &e))
+    }
+
     pub(super) fn scan_str3_by_first(
         &self,
         table: Table,
@@ -667,6 +719,15 @@ impl ReadTx for SqliteRead<'_> {
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
+    fn project_str_json(
+        &self,
+        table: Table,
+        key: &str,
+        fields: &[&str],
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        self.ops().project_str_json(table, key, fields)
+    }
+
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
     }
@@ -716,6 +777,15 @@ impl ReadTx for SqliteWrite<'_> {
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
+    fn project_str_json(
+        &self,
+        table: Table,
+        key: &str,
+        fields: &[&str],
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        self.ops().project_str_json(table, key, fields)
+    }
+
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
     }
@@ -939,3 +1009,7 @@ mod adjacency_tests;
 #[cfg(test)]
 #[path = "sqlite_value_len_tests.rs"]
 mod value_len_tests;
+
+#[cfg(test)]
+#[path = "sqlite_json_projection_tests.rs"]
+mod json_projection_tests;

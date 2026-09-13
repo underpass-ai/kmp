@@ -50,6 +50,12 @@ impl<G, D, S> QueryApplicationService<G, D, S> {
 }
 
 impl<G: kmp_domain::GraphNeighborhoodReader + Send + Sync, D, S> QueryApplicationService<G, D, S> {
+    pub(crate) async fn graph_read_revision(
+        &self,
+    ) -> Result<Option<kmp_domain::GraphReadRevision>, crate::ApplicationError> {
+        Ok(self.graph_reader.graph_read_revision().await?)
+    }
+
     pub async fn evidence_paths(
         &self,
         request: &kmp_domain::EvidencePathRequest,
