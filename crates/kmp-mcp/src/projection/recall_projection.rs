@@ -29,8 +29,8 @@ pub(crate) fn enforce_recall_output_budget(
     arguments: &Value,
     default_tokens: u32,
 ) -> Value {
-    let estimator = Cl100kEstimator::new();
-    enforce_recall_output_budget_with_estimator(value, arguments, default_tokens, &estimator)
+    let estimator = Cl100kEstimator::shared();
+    enforce_recall_output_budget_with_estimator(value, arguments, default_tokens, estimator)
 }
 
 #[cfg(test)]
@@ -49,8 +49,8 @@ pub(crate) fn try_enforce_recall_output_budget(
     arguments: &Value,
     default_tokens: u32,
 ) -> Result<Value, ToolError> {
-    let estimator = Cl100kEstimator::new();
-    try_enforce_recall_output_budget_with_estimator(value, arguments, default_tokens, &estimator)
+    let estimator = Cl100kEstimator::shared();
+    try_enforce_recall_output_budget_with_estimator(value, arguments, default_tokens, estimator)
 }
 
 fn try_enforce_recall_output_budget_with_estimator(
@@ -380,5 +380,34 @@ mod tests {
         // one more call rather than a rewind that exists to find a timestamp.
         assert_eq!(value["resume_cursor"]["ref"], "decision:latest");
         assert_eq!(value["resume_cursor"]["sequence"], 3);
+    }
+
+    #[test]
+    fn shared_estimator_keeps_parallel_projection_results_identical() {
+        let value = recall_budget_fixture();
+        let arguments = json!({
+            "about": "project:kmp",
+            "question": "Which evidence is current?",
+            "budget": {"max_bytes": 4_000, "detail": "full"}
+        });
+        let expected = try_enforce_recall_output_budget(value.clone(), &arguments, 2_400)
+            .expect("baseline projection");
+
+        std::thread::scope(|scope| {
+            let workers = (0..24)
+                .map(|_| {
+                    let value = value.clone();
+                    let arguments = arguments.clone();
+                    scope.spawn(move || {
+                        try_enforce_recall_output_budget(value, &arguments, 2_400)
+                            .expect("parallel projection")
+                    })
+                })
+                .collect::<Vec<_>>();
+
+            for worker in workers {
+                assert_eq!(worker.join().expect("projection worker"), expected);
+            }
+        });
     }
 }
