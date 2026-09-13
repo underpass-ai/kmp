@@ -401,6 +401,7 @@ mod tests {
                 "options",
                 "rank",
                 "read_context",
+                "relations",
                 "review_token",
                 "search_summaries",
                 "source_kind",

@@ -57,6 +57,8 @@ impl ToolArgumentShape {
         if canonical_move(name) == "kmp_write_memory" {
             shape.entries = array_len_at(Some(arguments), &["memories"])
                 + array_len_at(Some(arguments), &["search_summaries"]);
+            // A relation-only packet declares its links at the top level.
+            shape.relations = array_len_at(Some(arguments), &["relations"]);
             shape.connect_to = arguments
                 .get("memories")
                 .and_then(Value::as_array)

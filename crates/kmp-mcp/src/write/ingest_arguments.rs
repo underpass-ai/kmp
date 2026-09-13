@@ -7,17 +7,14 @@ pub(super) fn required_string(value: Option<&Value>, key: &str) -> Result<String
         .map(ToString::to_string)
         .ok_or_else(|| format!("missing required argument `{key}`"))
 }
-pub(super) fn required_array<'a>(
+pub(super) fn required_array_allow_empty<'a>(
     value: Option<&'a Value>,
     key: &str,
 ) -> Result<&'a [Value], String> {
-    let values = value
+    value
         .and_then(Value::as_array)
-        .ok_or_else(|| format!("missing required array argument `{key}`"))?;
-    if values.is_empty() {
-        return Err(format!("required array argument `{key}` must not be empty"));
-    }
-    Ok(values)
+        .map(Vec::as_slice)
+        .ok_or_else(|| format!("missing required array argument `{key}`"))
 }
 pub(super) fn optional_array<'a>(
     value: Option<&'a Value>,

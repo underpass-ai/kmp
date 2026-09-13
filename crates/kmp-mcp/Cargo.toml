@@ -43,6 +43,7 @@ wait-timeout.workspace = true
 
 [dev-dependencies]
 kmp-adapter-embedded.workspace = true
+kmp-transport-grpc.workspace = true
 tempfile = "3.26.0"
 tokio-stream.workspace = true
 
