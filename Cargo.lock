@@ -1670,6 +1670,7 @@ dependencies = [
  "kmp-embedded",
  "kmp-proto",
  "kmp-proto-mapping",
+ "kmp-transport-grpc",
  "kmp-viewer",
  "opentelemetry",
  "prost 0.13.5",

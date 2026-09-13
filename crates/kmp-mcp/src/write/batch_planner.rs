@@ -12,6 +12,7 @@ use super::generated_ref::{generated_entry_ref, stable_idempotency_key};
 use super::json_value_type::JsonValueType;
 use super::plan::KernelWritePlan;
 use super::planner::build_write_plan_with_local_refs;
+use super::proof_observation::preserve_proof_observation;
 use super::relation_quality::relation_quality_metrics;
 use super::validated_arguments::{optional_string, required_map_string, required_string};
 
@@ -25,19 +26,7 @@ pub(crate) fn build_batch_plan(
     kmp_application::validate_ref_token("about", &about)?;
     required_string(object, "actor")?;
     super::coordinates::observation_time(object)?;
-    if let Some(token) = object.get("review_token") {
-        let token = token.as_str().ok_or_else(|| {
-            WriteValidationError::wrong_type("review_token", JsonValueType::String, token)
-        })?;
-        if token.len() != 64 || !token.bytes().all(|byte| byte.is_ascii_hexdigit()) {
-            return Err(WriteValidationError::new(
-                "review_token must be the returned 64-character neighborhood token",
-            )
-            .at("review_token")
-            .code("INVALID_REVIEW_TOKEN")
-            .into());
-        }
-    }
+    super::review_token::validate_review_token(object.get("review_token"))?;
     for field in ["current", "intent", "semantic_delta", "connect_to", "scope"] {
         if object.contains_key(field) {
             return Err(WriteValidationError::new(format!(
@@ -66,6 +55,9 @@ pub(crate) fn build_batch_plan(
         .unwrap_or_else(|| stable_idempotency_key(object));
     let mut refs = BTreeMap::new();
     let mut targets = BTreeSet::new();
+    // A caller-chosen ref updates the entry it names. The result has to say
+    // so, because the same packet shape also creates memories (#663).
+    let mut supplied = BTreeSet::new();
     // Resolve forward references as well as references to earlier records.
     for (index, memory) in memories.iter().enumerate() {
         let memory = memory.as_object().ok_or_else(|| {
@@ -99,6 +91,7 @@ pub(crate) fn build_batch_plan(
                     .at(format!("memories[{index}].ref"))
                     .code("INVALID_REF")
             })?;
+            supplied.insert(reference.to_owned());
             reference.to_owned()
         } else {
             generated_entry_ref(&about, kind, summary, &identity, id)
@@ -279,31 +272,8 @@ pub(crate) fn build_batch_plan(
     super::coordinates::omit_unknown_observations(&mut all.ingest_arguments);
     all.local_refs = refs;
     all.relation_quality_metrics = relation_quality_metrics(&all.relation_quality);
+    all.replaced = super::replacement_view::replaced_memories(&all.ingest_arguments, &supplied);
     Ok(all)
-}
-
-/// A member declares its proof at its effective observation. Preserve that
-/// provenance before merging; an empty clock object opts into the command's
-/// ingestion default without borrowing the packet or target's observation.
-fn preserve_proof_observation(arguments: &mut Value) {
-    let mut clocks = json!({});
-    if let Some(observed) = arguments.pointer("/provenance/observed_at") {
-        clocks["observed_at"] = observed.clone();
-    }
-    for relation in arguments["memory"]["relations"]
-        .as_array_mut()
-        .expect("compiled relations")
-    {
-        if relation["class"] != "structural" {
-            relation["clocks"] = clocks.clone();
-        }
-    }
-    for evidence in arguments["memory"]["evidence"]
-        .as_array_mut()
-        .expect("compiled evidence")
-    {
-        evidence["support_clocks"] = clocks.clone();
-    }
 }
 
 fn merged_labels(common: Option<&Value>, own: Option<&Value>) -> Result<Value, String> {

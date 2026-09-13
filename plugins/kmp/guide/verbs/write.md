@@ -142,8 +142,11 @@ Choose the kind from the source's meaning; the server supplies no replacement.
 For example, `memories: "[]"` is a string: send a JSON array of record objects.
 KMP does not parse a string into memories. A non-object array member reports
 `memories[index]`, expecting `object`. `EMPTY_MEMORIES` means the array is present
-but contains no records. Omitting both `memories` and `search_summaries` returns
-`WRITE_OPERATION_REQUIRED`; other absent required fields use `REQUIRED_FIELD`.
+but contains no records, and `EMPTY_RELATIONS` that a relations packet declares
+no link. Omitting all of `memories`, `search_summaries` and `relations`, or
+sending more than one of them, returns `WRITE_OPERATION_REQUIRED`; other absent
+required fields use `REQUIRED_FIELD`. `PRESERVED_FIELD` means a field was sent
+that would move a memory the packet is supposed to preserve.
 For example, an unapproved request may be recorded as an observation of the
 request, without `updates_state` or `supersedes` on the current decision.
 A later approval needs its own evidence. `request` and `outcome` are not kinds.
@@ -286,6 +289,68 @@ conflict is retryable. A key already accepted with different content must not
 be reused.
 
 For a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.
+
+## Linking memories that already exist
+
+`relations` is the third top-level shape, beside `memories` and
+`search_summaries`, and exactly one of the three belongs in a packet. Use it
+when both endpoints are already stored and only the link is new:
+
+```json
+{
+  "about": "project:junco",
+  "actor": "agent:sol",
+  "observed_at": "2026-09-08T11:00:00Z",
+  "idempotency_key": "junco-link-j01-j03-v1",
+  "read_context": {"inspected_refs": ["<J01 ref>", "<J03 ref>"]},
+  "relations": [{
+    "from": "<J01 ref>",
+    "to": "<J03 ref>",
+    "rel": "supports",
+    "why": "The alias register identifies the person the notice makes responsible.",
+    "evidence": "J01 registers the alias Nora; J03 names Nora as responsible."
+  }]
+}
+```
+
+Do not resubmit a stored memory as a `memories` record in order to connect it.
+A record carries its text, its evidence, its coordinates, its labels and its
+metadata, so that route replaces the source it was only meant to cite — and a
+read at the source's own observation afterwards returns prose about something
+that had not happened yet.
+
+KMP reads every endpoint this about owns before compiling, and writes it back
+byte for byte: same ref, same kind, same text, same coordinates, same metadata.
+A ref that is not in the store fails that pre-read and the whole packet is
+refused. `from` must be a canonical ref of this about, never a local id and
+never the about anchor; `to` may name another about only for `same_event_as`
+or `same_entity_as`, with the returned `kmp_relate` proposal in `read_context`.
+`why` and `evidence` are always required here, because this shape declares no
+structural link — change memberships with `kmp_relabel` instead.
+
+The link and the evidence generated with it carry their own observation:
+`relations[].observed_at`, else the packet's, else — for an explicit null —
+the exact ingestion instant. An endpoint's clock never dates a link, so an
+old source linked today is linked today, and a read before that instant sees
+neither the link nor its evidence. Occurrence and validity of a link stay
+unknown, and the sources' labels and coordinates are theirs: `labels`,
+`occurred_at`, `valid_from`, `valid_until` and `rank` are refused with
+`PRESERVED_FIELD`, as are `options.sequence` and `options.labels_new`.
+
+Rich links receive the same neighborhood review as `connect_to`: review the
+returned context and resume the bound continuation. The accepted result
+separates the two halves in `attachment`: `created.relations` and
+`created.evidence` are what this write brought into existence, and
+`unchanged_sources` the memories it left alone. Each evidence id is derived
+from the logical write identity and the triple, so an exact retry replays onto
+the same node while a second, later link to the same pair adds its own evidence
+beside the first instead of overwriting it. Reusing an accepted
+`idempotency_key` with a different link is a `conflict`, not a second write.
+
+A `memories` record that supplies `ref` is the other move, and the result says
+so in `replacement`: the ref, the evidence this write put on it and the
+observation it now carries. Read it as what it is — a replacement, not an
+attachment.
 
 ## A preview checks the selected store
 

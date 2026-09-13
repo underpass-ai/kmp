@@ -454,6 +454,7 @@ pub(super) fn build_write_plan_with_local_refs(
         relations: relation_names,
         relation_quality,
         relation_quality_metrics,
+        replaced: Vec::new(),
         diagnostics: search_summary.diagnostics,
         next_suggested_reads: suggested_reads(&current_ref, connect_to),
     })

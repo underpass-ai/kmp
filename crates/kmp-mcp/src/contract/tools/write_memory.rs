@@ -14,7 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_write_memory",
-        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+        "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Use relations to link memories that already exist: both sources are read and written back unchanged, and only the link and its evidence are new. Never resubmit a stored memory as a record just to connect it. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
         write_memory_schema(),
         write_memory_output_schema(),
     )
@@ -74,6 +74,27 @@ pub(crate) fn write_memory_schema() -> Value {
             }
         }
     });
+    let link = json!({
+        "type":"object","additionalProperties":false,
+        "required":["from","to","rel","why","evidence"],
+        "if":{"required":["rel"],"properties":{"rel":{"enum":writer_relations_requiring_class()}}},
+        "then":{"required":["class"]},
+        "properties":{
+            "from":string_schema("Existing memory of this about that asserts the link. Its stored text, evidence, coordinates, labels, metadata and ingestion history are preserved; a canonical ref returned by a read, never a local id."),
+            "to":string_schema("Existing target, also preserved. Only same_event_as/same_entity_as may name a ref of another about, with the returned kmp_relate proposal in read_context."),
+            "rel":{"type":"string","enum":writer_relation_names(),"description":relation_vocabulary_description("Choose the specific relation justified by the source.")},
+            "class":writer_class_schema(),
+            "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Always required here: a relation-only write declares no structural link."),
+            "evidence":string_schema("The concrete observation or source supporting the rationale. Stored as its own evidence node beside both memories; it never replaces the evidence they already carry."),
+            "confidence":{"type":"string","enum":["high","medium","low","unknown"]},
+            "observed_at":{"type":["string","null"],"description":"When this link was asserted, with its true RFC3339 UTC offset. Omit for the packet observation; null for the exact ingestion time. The endpoints' own clocks never date the link, so an old source linked today is linked today."}
+        }
+    });
+    let relations = json!({
+        "type":"array","minItems":1,
+        "description":"Evidenced links between memories that already exist in this about, separately from memories. KMP reads both endpoints first and writes them back unchanged, so adding a link never rewrites a source. Each link and its evidence carry their own observation. Labels, occurrence, validity and rank cannot accompany it; use memories to record a new fact and kmp_relabel to change memberships.",
+        "items":link
+    });
     json!({
         "type":"object", "additionalProperties":false,
         "required":["about","actor"],
@@ -88,6 +109,7 @@ pub(crate) fn write_memory_schema() -> Value {
             "source_kind":{"type":"string","enum":["human","agent","projection","derived"]},
             "labels":labels,
             "memories":memories,
+            "relations":relations,
             "search_summaries":{
                 "type":"array","minItems":1,
                 "description":"Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
@@ -109,17 +131,30 @@ pub(crate) fn write_memory_schema() -> Value {
                 }
             }
         },
-        "if":{"required":["memories"]},
-        "then":{
-            "not":{"required":["search_summaries"]},
-            "if":{"not":{"required":["options"],"properties":{"options":{"required":["strict"],"properties":{"strict":{"const":false}}}}}},
-            "then":{"properties":{"memories":{"items":{"required":["evidence"]}}}}
-        },
-        "else":{
-            "required":["search_summaries"],
-            "properties":{"options":{"not":{"anyOf":[{"required":["sequence"]},{"required":["labels_new"]}]}}},
-            "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]},{"required":["read_context"]},{"required":["review_token"]}]}
-        }
+        "oneOf":[{"required":["memories"]},{"required":["search_summaries"]},{"required":["relations"]}],
+        "allOf":[
+            {
+                "if":{"required":["memories"]},
+                "then":{
+                    "if":{"not":{"required":["options"],"properties":{"options":{"required":["strict"],"properties":{"strict":{"const":false}}}}}},
+                    "then":{"properties":{"memories":{"items":{"required":["evidence"]}}}}
+                }
+            },
+            {
+                "if":{"required":["search_summaries"]},
+                "then":{
+                    "properties":{"options":{"not":{"anyOf":[{"required":["sequence"]},{"required":["labels_new"]}]}}},
+                    "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]},{"required":["read_context"]},{"required":["review_token"]}]}
+                }
+            },
+            {
+                "if":{"required":["relations"]},
+                "then":{
+                    "properties":{"options":{"not":{"anyOf":[{"required":["sequence"]},{"required":["labels_new"]}]}}},
+                    "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]}]}
+                }
+            }
+        ]
     })
 }
 
@@ -260,6 +295,16 @@ fn write_memory_output_schema() -> Value {
                 }
             }
         }),
+        "attachment": output_object(json!({
+            "created": output_object(json!({
+                "relations": described("array", "Links this relation-only write brought into existence: from, rel, to, class, confidence, the observation the link itself carries, and the evidence node created with it. Absent observed_at means the kernel stamped its ingestion instant, never an endpoint's clock."),
+                "evidence": string_array("Evidence nodes created by this write. Their ids are derived from the logical write identity and the triple, so an exact retry replays onto the same node and a later link to the same pair adds a new one instead of overwriting it.")
+            })),
+            "unchanged_sources": string_array("The stored memories this write read and wrote back untouched: same text, evidence, coordinates, labels, metadata and ingestion history. Present only for a relations packet.")
+        })),
+        "replacement": output_object(json!({
+            "memories": described("array", "Memories this packet wrote at a ref the caller supplied, each with the evidence this write put on it and the observation it now carries. A supplied ref replaces whatever that entry held; use relations to add a link without replacing a source.")
+        })),
         "relation_quality": described("array", "Preview per-relation validation. After commit, recover it with receipt.action."),
         "relation_quality_metrics": described("object", "Preview counts and prior-context coverage; stored in the receipt after commit."),
         "ingest_preview": described("object", "Canonical kmp_ingest arguments. Present only on dry-run."),

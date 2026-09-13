@@ -66,3 +66,10 @@ Rules:
   observed_at and search_summaries: [{"ref": "returned canonical ref",
   "summary_en": "faithful English rendering"}]. The stored text, kind, labels
   and clocks are preserved. Do not combine search_summaries with memories.
+- To connect two memories that already exist, use a separate packet with about,
+  actor, observed_at and relations: [{"from": "returned canonical ref",
+  "to": "returned canonical ref", "rel": "supports", "why": "...",
+  "evidence": "..."}]. Both sources keep their text, evidence, coordinates,
+  labels and metadata; only the link and its evidence are new, and each carries
+  its own observation. Never resubmit a stored memory as a record to link it.
+  Do not combine relations with memories or search_summaries.
