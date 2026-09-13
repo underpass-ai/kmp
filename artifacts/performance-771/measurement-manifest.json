@@ -1,0 +1,14 @@
+{
+  "baseline_commit": "fdb2020f073b147fa7ab1f37c118678124ebe9dd",
+  "candidate_source_commit_before_release_rebase": "799b1273",
+  "rebased_source_commit": "6b8455362d529cb59b1a6f16ea4ed91cc1e257ae",
+  "measurement_profile": "dev, inherited workspace .cargo/config.toml",
+  "release_rebase": "65063cea changes release versions and metadata only; measured binaries remain v0.18.2",
+  "binaries": {
+    "baseline": "8879894d444fcffabcb39b4886c37be19d26815e7bd642c5de06b42f78b5a171",
+    "candidate": "4bacdeedbbb08f258cc0d72078fa12c55d7c86009a84c1bac12db9649ef0171d"
+  },
+  "workspace_cargo_config_sha256": "aa4afc0d2d90cf810213d38bc37a7b879ba683b518c6674e24d93b9272020cf7",
+  "candidate_source_note": "The measured-rust.patch reconstructs the optimization against fdb2020f. Subsequent Rust changes correct a test expectation and a comment only; no executable behavior changed.",
+  "ci_verified_code_commit": "6a0a0100946ddd9bff31859c22036804c54f2f88"
+}

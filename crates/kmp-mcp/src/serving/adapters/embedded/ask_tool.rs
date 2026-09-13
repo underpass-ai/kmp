@@ -18,6 +18,7 @@ pub(crate) struct EmbeddedAskTool<'a> {
     telemetry: EmbeddedReadTelemetry<'a>,
     bridge: &'a LexicalBridge,
     semantic: &'a Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
+    lexical_cache: &'a Arc<kmp_proto_mapping::v1beta1::LexicalIndexCache>,
 }
 
 impl<'a> EmbeddedAskTool<'a> {
@@ -26,12 +27,14 @@ impl<'a> EmbeddedAskTool<'a> {
         telemetry: EmbeddedReadTelemetry<'a>,
         bridge: &'a LexicalBridge,
         semantic: &'a Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
+        lexical_cache: &'a Arc<kmp_proto_mapping::v1beta1::LexicalIndexCache>,
     ) -> Self {
         Self {
             service,
             telemetry,
             bridge,
             semantic,
+            lexical_cache,
         }
     }
 
@@ -53,7 +56,8 @@ impl<'a> EmbeddedAskTool<'a> {
             .map_err(kernel_error("ask", &about))?;
         self.telemetry
             .observe("kmp_ask", &result.bundle, &result.rendered.quality);
-        let mut retrieval = AskRetrievalContext::from(result);
+        let mut retrieval =
+            AskRetrievalContext::from(result).with_lexical_cache(Arc::clone(self.lexical_cache));
         let mut warning = None;
         match self.semantic {
             Ok(Some(provider)) => {

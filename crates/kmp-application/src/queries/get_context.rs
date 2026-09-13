@@ -22,6 +22,9 @@ pub struct GetContextQuery {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetContextResult {
     pub bundle: KmpBundle,
+    /// Identity of the consistent operation read, when the backend supplies it.
+    /// Derived readers must bypass revision caches when this is absent.
+    pub read_revision: Option<kmp_domain::GraphReadRevision>,
     pub rendered: RenderedContext,
     pub requested_scopes: Vec<String>,
     pub served_at: std::time::SystemTime,
@@ -68,6 +71,7 @@ where
 
         Ok(GetContextResult {
             bundle,
+            read_revision: None,
             rendered,
             requested_scopes: requested_scopes.to_vec(),
             served_at: std::time::SystemTime::now(),

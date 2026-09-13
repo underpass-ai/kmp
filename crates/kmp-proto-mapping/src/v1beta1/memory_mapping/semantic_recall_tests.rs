@@ -45,6 +45,7 @@ fn context(expired: bool) -> GetContextResult {
     .expect("valid test fixture");
     let rendered = render_graph_bundle(&bundle);
     GetContextResult {
+        read_revision: None,
         bundle,
         rendered,
         requested_scopes: Vec::new(),

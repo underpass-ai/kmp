@@ -13,7 +13,10 @@ mod dimensions;
 mod hybrid_evidence;
 mod ingest;
 mod lexical_bridge;
+mod lexical_collection;
 mod lexical_field;
+mod lexical_index_cache;
+mod lexical_index_identity;
 mod lexicon;
 mod memory_catalog;
 mod memory_lifecycle;
@@ -53,6 +56,7 @@ pub use ask_retrieval_context::AskRetrievalContext;
 pub use bundle_views::abouts_in_bundle;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use lexical_bridge::LexicalBridge;
+pub use lexical_index_cache::LexicalIndexCache;
 pub use queries::{
     ask_query_from_proto, inspect_query_from_proto, relate_query_from_proto,
     temporal_query_from_move_proto, temporal_query_from_near_proto, trace_query_from_proto,
@@ -90,3 +94,8 @@ mod evidence_seek_tests;
 
 mod memory_nodes;
 pub use memory_nodes::{memory_nodes_request_from_proto, memory_nodes_response_from_result};
+
+#[cfg(test)]
+mod lexical_index_benchmark;
+#[cfg(test)]
+mod lexical_index_tests;

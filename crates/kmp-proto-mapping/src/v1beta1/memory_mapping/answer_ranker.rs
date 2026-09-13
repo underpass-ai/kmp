@@ -57,6 +57,8 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     context: AnswerRecallContext,
     /// The table this installation bridges languages with, or none.
     bridge: &'a LexicalBridge,
+    lexical_cache: Option<&'a super::lexical_index_cache::LexicalIndexCache>,
+    lexical_identity: Option<super::lexical_index_identity::LexicalIndexIdentity>,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -64,6 +66,8 @@ impl Default for AnswerEvidenceRanker<'_> {
         Self {
             context: AnswerRecallContext::default(),
             bridge: &SILENT_BRIDGE,
+            lexical_cache: None,
+            lexical_identity: None,
         }
     }
 }
@@ -104,7 +108,19 @@ impl<'a> AnswerEvidenceRanker<'a> {
         Self {
             context: AnswerRecallContext::from_bundle_with_lifecycle(bundle, lifecycle),
             bridge,
+            lexical_cache: None,
+            lexical_identity: None,
         }
+    }
+
+    pub(super) fn with_lexical_cache(
+        mut self,
+        cache: Option<&'a super::lexical_index_cache::LexicalIndexCache>,
+        identity: Option<super::lexical_index_identity::LexicalIndexIdentity>,
+    ) -> Self {
+        self.lexical_cache = cache;
+        self.lexical_identity = identity;
+        self
     }
 
     /// The `proof.expired` list for the lifecycle this ranker stands on.
@@ -152,7 +168,13 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 (item, terms)
             })
             .collect::<Vec<_>>();
-        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge);
+        let collection = match self.lexical_cache {
+            Some(cache) => cache.collection(self.lexical_identity.as_ref(), &prepared),
+            None => std::sync::Arc::new(super::lexical_collection::LexicalCollection::build(
+                &prepared, false,
+            )),
+        };
+        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
 
         let mut candidates = Vec::new();
         let mut rejected = Vec::new();
@@ -587,6 +609,8 @@ mod tests {
         why: &str,
     ) -> AnswerEvidenceRanker<'static> {
         AnswerEvidenceRanker {
+            lexical_cache: None,
+            lexical_identity: None,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1299,6 +1323,8 @@ mod tests {
             ..Default::default()
         };
         let ranker = AnswerEvidenceRanker {
+            lexical_cache: None,
+            lexical_identity: None,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -1726,6 +1752,8 @@ mod tests {
     /// shape every cross-language test needs.
     fn ranker_bridging_with(bridge: &LexicalBridge) -> AnswerEvidenceRanker<'_> {
         AnswerEvidenceRanker {
+            lexical_cache: None,
+            lexical_identity: None,
             context: AnswerRecallContext::default(),
             bridge,
         }

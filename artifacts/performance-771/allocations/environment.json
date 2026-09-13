@@ -1,0 +1,9 @@
+{
+  "baseline_sha256": "8879894d444fcffabcb39b4886c37be19d26815e7bd642c5de06b42f78b5a171",
+  "candidate_sha256": "4bacdeedbbb08f258cc0d72078fa12c55d7c86009a84c1bac12db9649ef0171d",
+  "counter_sha256": "48ff2cb21b1905e2e3b0b882fe2048107ed3fc8fbad2c5761eaeef6f6d1be989",
+  "runner_sha256": "6c130b825a180d5f8d21b3d58e47cf05efe1e0224cfa7ab23ed17af9b3fae3a5",
+  "scope": "process startup, initialize and 1 or 5 identical queries; no seeding",
+  "measurement": "allocation request count and cumulative requested bytes; not live heap",
+  "latency": "instrumented timing is not interpreted"
+}

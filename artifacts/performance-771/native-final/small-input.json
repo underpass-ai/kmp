@@ -1,0 +1,362 @@
+{
+  "about": "project:temporal-perf",
+  "idempotency_key": "fixture-v1",
+  "memory": {
+    "dimensions": [
+      {
+        "id": "proof",
+        "kind": "task"
+      },
+      {
+        "id": "shared",
+        "kind": "topic"
+      }
+    ],
+    "entries": [
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0000",
+        "kind": "observation",
+        "text": "The cache valkey rollout was delayed during the audit. vocabulary0 vocabulary1 vocabulary2 vocabulary3",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 1,
+            "observed_at": "2026-09-10T10:00:00Z",
+            "ingested_at": "2026-09-10T10:00:00Z",
+            "valid_from": "2026-09-10T10:00:00Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 1,
+            "observed_at": "2026-09-10T10:00:00Z",
+            "ingested_at": "2026-09-10T10:00:00Z",
+            "valid_from": "2026-09-10T10:00:00Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0001",
+        "kind": "observation",
+        "text": "The invoice supplier payment was approved during the meeting. vocabulary0 vocabulary1 vocabulary2 vocabulary3",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 2,
+            "observed_at": "2026-09-10T10:00:01Z",
+            "ingested_at": "2026-09-10T10:00:01Z",
+            "valid_from": "2026-09-10T10:00:01Z",
+            "occurred_at": "2026-09-10T10:00:01Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0002",
+        "kind": "observation",
+        "text": "The invoice supplier payment was approved during the meeting. vocabulary0 vocabulary1 vocabulary2 vocabulary3",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 3,
+            "observed_at": "2026-09-10T10:00:01Z",
+            "ingested_at": "2026-09-10T10:00:02Z",
+            "valid_from": "2026-09-10T10:00:02Z",
+            "occurred_at": "2026-09-10T10:00:02Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0003",
+        "kind": "observation",
+        "text": "The cache valkey rollout was delayed during the audit. vocabulary0 vocabulary1 vocabulary2 vocabulary3",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 4,
+            "observed_at": "2026-09-10T10:00:03Z",
+            "ingested_at": "2026-09-10T10:00:03Z",
+            "valid_from": "2026-09-10T10:00:03Z",
+            "occurred_at": "2026-09-10T10:00:03Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 4,
+            "observed_at": "2026-09-10T10:00:03Z",
+            "ingested_at": "2026-09-10T10:00:03Z",
+            "valid_from": "2026-09-10T10:00:03Z",
+            "occurred_at": "2026-09-10T10:00:03Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0004",
+        "kind": "observation",
+        "text": "The invoice supplier payment was approved during the meeting. vocabulary0 vocabulary1 vocabulary2 vocabulary3",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 5,
+            "observed_at": "2026-09-10T10:00:04Z",
+            "ingested_at": "2026-09-10T10:00:04Z",
+            "valid_from": "2026-09-10T10:00:04Z",
+            "occurred_at": "2026-09-10T10:00:04Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0005",
+        "kind": "observation",
+        "text": "The invoice supplier payment was approved during the meeting. vocabulary0 vocabulary1 vocabulary2 vocabulary3",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 6,
+            "observed_at": "2026-09-10T10:00:05Z",
+            "ingested_at": "2026-09-10T10:00:05Z",
+            "valid_from": "2026-09-10T10:00:05Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0006",
+        "kind": "observation",
+        "text": "The cache valkey rollout was delayed during the audit. vocabulary0 vocabulary1 vocabulary2 vocabulary3",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 7,
+            "observed_at": "2026-09-10T10:00:06Z",
+            "ingested_at": "2026-09-10T10:00:06Z",
+            "valid_from": "2026-09-10T10:00:06Z",
+            "occurred_at": "2026-09-10T10:00:06Z"
+          },
+          {
+            "dimension": "topic",
+            "scope_id": "shared",
+            "sequence": 7,
+            "observed_at": "2026-09-10T10:00:06Z",
+            "ingested_at": "2026-09-10T10:00:06Z",
+            "valid_from": "2026-09-10T10:00:06Z",
+            "occurred_at": "2026-09-10T10:00:06Z"
+          }
+        ]
+      },
+      {
+        "id": "project:temporal-perf:entry:observation:fact-0007",
+        "kind": "observation",
+        "text": "The invoice supplier payment was approved during the meeting. vocabulary0 vocabulary1 vocabulary2 vocabulary3",
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof",
+            "sequence": 8,
+            "observed_at": "2026-09-10T10:00:07Z",
+            "ingested_at": "2026-09-10T10:00:07Z",
+            "valid_from": "2026-09-10T10:00:07Z",
+            "occurred_at": "2026-09-10T10:00:07Z"
+          }
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "id": "evidence:project:temporal-perf:source-0000",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0000"
+        ],
+        "text": "Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantity 17 excludes B. Source 0: quantitX",
+        "source": "fixture:S0",
+        "time": "2026-09-10T10:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:00Z",
+          "ingested_at": "2026-09-10T10:00:00Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0001",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0001"
+        ],
+        "text": "Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantity 17 excludes B. Source 1: quantitX",
+        "source": "fixture:S1",
+        "time": "2026-09-10T10:00:01Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:01Z",
+          "ingested_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0002",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0002"
+        ],
+        "text": "Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantity 17 excludes B. Source 2: quantitX",
+        "source": "fixture:S2",
+        "time": "2026-09-10T10:00:02Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:02Z",
+          "ingested_at": "2026-09-10T10:00:02Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0003",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0003"
+        ],
+        "text": "Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantity 17 excludes B. Source 3: quantitX",
+        "source": "fixture:S3",
+        "time": "2026-09-10T10:00:03Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:03Z",
+          "ingested_at": "2026-09-10T10:00:03Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0004",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0004"
+        ],
+        "text": "Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantity 17 excludes B. Source 4: quantitX",
+        "source": "fixture:S4",
+        "time": "2026-09-10T10:00:04Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:04Z",
+          "ingested_at": "2026-09-10T10:00:04Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0005",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0005"
+        ],
+        "text": "Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantity 17 excludes B. Source 5: quantitX",
+        "source": "fixture:S5",
+        "time": "2026-09-10T10:00:05Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:05Z",
+          "ingested_at": "2026-09-10T10:00:05Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0006",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0006"
+        ],
+        "text": "Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantity 17 excludes B. Source 6: quantitX",
+        "source": "fixture:S6",
+        "time": "2026-09-10T10:00:06Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:06Z",
+          "ingested_at": "2026-09-10T10:00:06Z"
+        }
+      },
+      {
+        "id": "evidence:project:temporal-perf:source-0007",
+        "supports": [
+          "project:temporal-perf:entry:observation:fact-0007"
+        ],
+        "text": "Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantity 17 excludes B. Source 7: quantitX",
+        "source": "fixture:S7",
+        "time": "2026-09-10T10:00:07Z",
+        "support_clocks": {
+          "observed_at": "2026-09-10T10:00:07Z",
+          "ingested_at": "2026-09-10T10:00:07Z"
+        }
+      }
+    ],
+    "relations": [
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0001",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0002",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0003",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0004",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0005",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0006",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z"
+        }
+      },
+      {
+        "from": "project:temporal-perf:entry:observation:fact-0007",
+        "to": "project:temporal-perf:entry:observation:fact-0000",
+        "rel": "uses_background",
+        "class": "evidential",
+        "confidence": "high",
+        "why": "This observation uses the original count as its reference.",
+        "evidence": "The source identifies observation zero as the reference count.",
+        "clocks": {
+          "observed_at": "2026-09-10T10:00:01Z"
+        }
+      }
+    ]
+  }
+}

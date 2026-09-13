@@ -10,7 +10,7 @@ use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvide
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture, ToolError};
 use kmp_domain::TemporalDirection;
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel};
-use kmp_proto_mapping::v1beta1::LexicalBridge;
+use kmp_proto_mapping::v1beta1::{LexicalBridge, LexicalIndexCache};
 use serde_json::Value;
 use std::path::Path;
 use std::sync::Arc;
@@ -25,6 +25,7 @@ pub struct EmbeddedKernelMcpBackend {
     /// The word table `ask` bridges languages with, read once beside the
     /// store. Silent when none is installed.
     lexical_bridge: LexicalBridge,
+    lexical_cache: Arc<LexicalIndexCache>,
     semantic: Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
 }
 
@@ -57,6 +58,7 @@ impl EmbeddedKernelMcpBackend {
             data_dir: data_dir.display().to_string(),
             commit_native,
             lexical_bridge: load_lexical_bridge(data_dir),
+            lexical_cache: Arc::default(),
             semantic: LoopbackSemanticRetriever::load(data_dir),
         })
     }
@@ -112,9 +114,15 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         .await
                 }
                 "kmp_ask" => {
-                    EmbeddedAskTool::new(&service, telemetry, &self.lexical_bridge, &self.semantic)
-                        .call(arguments)
-                        .await
+                    EmbeddedAskTool::new(
+                        &service,
+                        telemetry,
+                        &self.lexical_bridge,
+                        &self.semantic,
+                        &self.lexical_cache,
+                    )
+                    .call(arguments)
+                    .await
                 }
                 "kmp_goto" => {
                     EmbeddedTemporalMoveTool::new(&service, TemporalDirection::Goto, "goto")

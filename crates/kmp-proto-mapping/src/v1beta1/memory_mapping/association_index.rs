@@ -40,6 +40,24 @@ const MAX_NEIGHBOURS: usize = 3;
 const EXPANSION_WEIGHT: f64 = 0.35;
 
 impl AssociationIndex {
+    pub(super) fn retained_bytes(&self) -> usize {
+        self.neighbours
+            .iter()
+            .fold(0usize, |total, (term, neighbours)| {
+                total
+                    .saturating_add(
+                        128 + term.capacity()
+                            + neighbours.capacity() * std::mem::size_of::<(String, f64)>(),
+                    )
+                    .saturating_add(
+                        neighbours
+                            .iter()
+                            .map(|(word, _)| word.capacity())
+                            .sum::<usize>(),
+                    )
+            })
+    }
+
     pub(super) fn build<'a>(documents: impl IntoIterator<Item = &'a TermCounts>) -> Self {
         let documents = documents.into_iter().collect::<Vec<_>>();
         if documents.len() < MINIMUM_DOCUMENTS {

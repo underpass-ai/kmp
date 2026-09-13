@@ -1,14 +1,15 @@
 use super::answer_candidate_terms::AnswerCandidateTerms;
-use super::association_index::AssociationIndex;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::lexical_bridge::LexicalBridge;
-use super::lexical_field::{LexicalField, ranked_score};
+use super::lexical_collection::LexicalCollection;
+use super::lexical_field::ranked_score;
 use super::morphology::Morphology;
 use super::search_terms::informative_term_counts;
 use super::term_counts::TermCounts;
 use kmp_proto::v1beta1::MemoryEvidence;
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 /// Everything BM25 needs about one question and the candidates it is being
 /// asked against.
@@ -23,8 +24,7 @@ pub(super) struct Lexicon {
     /// the table bridged is not mistaken for one the store's vocabulary
     /// reached.
     associated: BTreeMap<String, f64>,
-    content: LexicalField,
-    direct: LexicalField,
+    collection: Arc<LexicalCollection>,
     floor: f64,
     /// The word pairs the table vouched for between this question and these
     /// candidates, so a hit can say which ones carried it.
@@ -37,10 +37,9 @@ impl Lexicon {
         morphology: &Morphology,
         prepared: &[(MemoryEvidence, AnswerCandidateTerms)],
         bridge: &LexicalBridge,
+        collection: Arc<LexicalCollection>,
     ) -> Self {
         let question_counts = informative_term_counts(question, morphology);
-        let content = LexicalField::build(prepared.iter().map(|(_, terms)| &terms.content_counts));
-        let direct = LexicalField::build(prepared.iter().map(|(_, terms)| &terms.direct_counts));
         let bridged = BridgedKey::read(
             question,
             morphology,
@@ -59,10 +58,8 @@ impl Lexicon {
                 asked_for.insert(pair.candidate_key.clone());
             }
         }
-        let floor = direct.eligibility_floor(&asked_for);
-        let associated =
-            AssociationIndex::build(prepared.iter().map(|(_, terms)| &terms.direct_counts))
-                .expand(&question_counts);
+        let floor = collection.direct.eligibility_floor(&asked_for);
+        let associated = collection.associations.expand(&question_counts);
         let mut asked = associated.clone();
         for pair in &bridged {
             let weight = asked.entry(pair.candidate_key.clone()).or_insert(0.0);
@@ -74,8 +71,7 @@ impl Lexicon {
             question: question_counts,
             asked,
             associated,
-            content,
-            direct,
+            collection,
             floor,
             bridged,
         }
@@ -87,12 +83,17 @@ impl Lexicon {
     /// never refused by a rounding boundary.
     pub(super) fn clears_floor(&self, terms: &AnswerCandidateTerms) -> bool {
         let score = self
+            .collection
             .direct
             .score_weighted(&self.asked, &terms.direct_counts);
         // The bar is read in the candidate's own length, so a long entry that
         // says the one thing the question asked about is ranked low rather
         // than refused.
-        let floor = self.floor * self.direct.single_occurrence_factor(&terms.direct_counts);
+        let floor = self.floor
+            * self
+                .collection
+                .direct
+                .single_occurrence_factor(&terms.direct_counts);
         // Sharing nothing at all is its own answer, and no floor derived from
         // an empty overlap should be able to admit it.
         score > 0.0 && score >= floor
@@ -111,6 +112,7 @@ impl Lexicon {
     /// arrives marked and stays out of the answer.
     pub(super) fn is_associated(&self, terms: &AnswerCandidateTerms) -> bool {
         let expanded = self
+            .collection
             .direct
             .score_weighted(&self.associated, &terms.direct_counts);
         if expanded <= 0.0 {
@@ -121,7 +123,11 @@ impl Lexicon {
             .terms()
             .map(|term| (term.clone(), 1.0))
             .collect::<BTreeMap<_, _>>();
-        expanded > self.direct.score_weighted(&asked_for, &terms.direct_counts)
+        expanded
+            > self
+                .collection
+                .direct
+                .score_weighted(&asked_for, &terms.direct_counts)
     }
 
     /// The word pairs the table bridged onto this candidate, in the order the
@@ -142,14 +148,16 @@ impl Lexicon {
 
     pub(super) fn content_score(&self, terms: &AnswerCandidateTerms) -> i64 {
         ranked_score(
-            self.content
+            self.collection
+                .content
                 .score_weighted(&self.asked, &terms.content_counts),
         )
     }
 
     pub(super) fn direct_score(&self, terms: &AnswerCandidateTerms) -> i64 {
         ranked_score(
-            self.direct
+            self.collection
+                .direct
                 .score_weighted(&self.asked, &terms.direct_counts),
         )
     }

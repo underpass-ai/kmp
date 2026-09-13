@@ -1,0 +1,154 @@
+[
+  {
+    "fixture": "small",
+    "entries": 8,
+    "body_bytes": 256,
+    "vocabulary_per_entry": 4,
+    "first_query_ms": {
+      "before": [
+        372.296025,
+        373.066038
+      ],
+      "after": [
+        361.632196,
+        367.153447
+      ]
+    },
+    "before": {
+      "samples": 40,
+      "p50_ms": 142.672173,
+      "p95_ms": 144.244906,
+      "cpu_ms": 5660.0,
+      "peak_rss_kib": 60512,
+      "response_bytes": [
+        12607,
+        12608
+      ]
+    },
+    "after": {
+      "samples": 40,
+      "p50_ms": 139.170398,
+      "p95_ms": 140.548706,
+      "cpu_ms": 5520.0,
+      "peak_rss_kib": 60460,
+      "response_bytes": [
+        12607,
+        12608
+      ]
+    }
+  },
+  {
+    "fixture": "medium",
+    "entries": 64,
+    "body_bytes": 1024,
+    "vocabulary_per_entry": 16,
+    "first_query_ms": {
+      "before": [
+        1907.249365,
+        1882.546661
+      ],
+      "after": [
+        1882.372743,
+        1876.826264
+      ]
+    },
+    "before": {
+      "samples": 40,
+      "p50_ms": 1654.6637555,
+      "p95_ms": 1663.030049,
+      "cpu_ms": 65930.0,
+      "peak_rss_kib": 67696,
+      "response_bytes": [
+        80423,
+        80424
+      ]
+    },
+    "after": {
+      "samples": 40,
+      "p50_ms": 1644.106841,
+      "p95_ms": 1646.507853,
+      "cpu_ms": 65490.0,
+      "peak_rss_kib": 67756,
+      "response_bytes": [
+        80423,
+        80424
+      ]
+    }
+  },
+  {
+    "fixture": "wide_vocabulary",
+    "entries": 256,
+    "body_bytes": 1024,
+    "vocabulary_per_entry": 64,
+    "first_query_ms": {
+      "before": [
+        8702.291552,
+        8649.948029
+      ],
+      "after": [
+        8680.776689,
+        8766.078804
+      ]
+    },
+    "before": {
+      "samples": 40,
+      "p50_ms": 8453.835733,
+      "p95_ms": 8519.667433,
+      "cpu_ms": 338300.0,
+      "peak_rss_kib": 93428,
+      "response_bytes": [
+        344989,
+        344990
+      ]
+    },
+    "after": {
+      "samples": 40,
+      "p50_ms": 8006.4521625,
+      "p95_ms": 8021.501633,
+      "cpu_ms": 319350.0,
+      "peak_rss_kib": 91004,
+      "response_bytes": [
+        344989,
+        344990
+      ]
+    }
+  },
+  {
+    "fixture": "large_body",
+    "entries": 32,
+    "body_bytes": 32768,
+    "vocabulary_per_entry": 16,
+    "first_query_ms": {
+      "before": [
+        17446.122226,
+        17441.512231
+      ],
+      "after": [
+        17275.158297,
+        17436.361424
+      ]
+    },
+    "before": {
+      "samples": 40,
+      "p50_ms": 17137.6133785,
+      "p95_ms": 17210.197307,
+      "cpu_ms": 685390.0,
+      "peak_rss_kib": 121900,
+      "response_bytes": [
+        393376,
+        393377
+      ]
+    },
+    "after": {
+      "samples": 40,
+      "p50_ms": 17094.7122865,
+      "p95_ms": 17179.68591,
+      "cpu_ms": 683870.0,
+      "peak_rss_kib": 122124,
+      "response_bytes": [
+        393376,
+        393377
+      ]
+    }
+  }
+]

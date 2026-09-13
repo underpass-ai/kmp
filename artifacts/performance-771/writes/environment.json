@@ -1,0 +1,9 @@
+{
+  "baseline_sha256": "8879894d444fcffabcb39b4886c37be19d26815e7bd642c5de06b42f78b5a171",
+  "candidate_sha256": "4bacdeedbbb08f258cc0d72078fa12c55d7c86009a84c1bac12db9649ef0171d",
+  "runner_sha256": "2b4ba34c5c1140f0c8852ac1fa09e55ffca53032d20cc1616def01b4db553c94",
+  "concurrency": 1,
+  "scope": "24 writes and 48 post-write reads per side; SQL dump hashing excluded from call times",
+  "correctness": "all fresh/warm results exactly equal across both binaries; all kernel tables unchanged by reads; each replacement marker visible",
+  "timing": "dev synthetic control, no latency thresholds; startup excluded"
+}

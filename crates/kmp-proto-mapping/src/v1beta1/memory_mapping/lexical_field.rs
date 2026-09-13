@@ -15,8 +15,8 @@ use super::term_counts::TermCounts;
 /// The collection is this question's own candidates, not a global corpus.
 /// That is deliberate: inside an about whose every entry mentions deploys,
 /// `deploy` genuinely carries no information, and an IDF measured here says
-/// so. It also means the weights move as memory grows, which is why nothing
-/// downstream stores them.
+/// so. The weights move as memory grows; reuse therefore belongs to one
+/// revision and exactly the same admitted collection.
 #[derive(Debug, Default)]
 pub(super) struct LexicalField {
     documents: usize,
@@ -38,6 +38,13 @@ const B: f64 = 0.75;
 const SCORE_SCALE: f64 = 10.0;
 
 impl LexicalField {
+    pub(super) fn retained_bytes(&self) -> usize {
+        self.document_frequency
+            .keys()
+            .map(|term| 128 + term.capacity())
+            .sum()
+    }
+
     /// Builds the field statistics from every candidate's term counts.
     pub(super) fn build<'a>(documents: impl IntoIterator<Item = &'a TermCounts>) -> Self {
         let mut document_frequency = BTreeMap::<String, usize>::new();

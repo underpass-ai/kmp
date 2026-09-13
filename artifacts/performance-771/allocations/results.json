@@ -1,0 +1,90 @@
+[
+  {
+    "fixture": "small",
+    "side": "before",
+    "queries": 1,
+    "counts": {
+      "native_allocation_control": true,
+      "requests": 713227,
+      "requested_bytes": 66456969,
+      "frees": 364564
+    }
+  },
+  {
+    "fixture": "small",
+    "side": "before",
+    "queries": 5,
+    "counts": {
+      "native_allocation_control": true,
+      "requests": 1639302,
+      "requested_bytes": 157427165,
+      "frees": 1167288
+    }
+  },
+  {
+    "fixture": "small",
+    "side": "after",
+    "queries": 1,
+    "counts": {
+      "native_allocation_control": true,
+      "requests": 713725,
+      "requested_bytes": 66482672,
+      "frees": 365062
+    }
+  },
+  {
+    "fixture": "small",
+    "side": "after",
+    "queries": 5,
+    "counts": {
+      "native_allocation_control": true,
+      "requests": 1637116,
+      "requested_bytes": 157194948,
+      "frees": 1165130
+    }
+  },
+  {
+    "fixture": "wide_vocabulary",
+    "side": "before",
+    "queries": 1,
+    "counts": {
+      "native_allocation_control": true,
+      "requests": 11554399,
+      "requested_bytes": 993627972,
+      "frees": 9638632
+    }
+  },
+  {
+    "fixture": "wide_vocabulary",
+    "side": "before",
+    "queries": 5,
+    "counts": {
+      "native_allocation_control": true,
+      "requests": 55843527,
+      "requested_bytes": 4786100668,
+      "frees": 47535988
+    }
+  },
+  {
+    "fixture": "wide_vocabulary",
+    "side": "after",
+    "queries": 1,
+    "counts": {
+      "native_allocation_control": true,
+      "requests": 11605092,
+      "requested_bytes": 996225405,
+      "frees": 9689324
+    }
+  },
+  {
+    "fixture": "wide_vocabulary",
+    "side": "after",
+    "queries": 5,
+    "counts": {
+      "native_allocation_control": true,
+      "requests": 55645655,
+      "requested_bytes": 4769059121,
+      "frees": 47339240
+    }
+  }
+]

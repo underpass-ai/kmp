@@ -1,0 +1,11 @@
+{
+  "command": "bash scripts/ci/quality-gate.sh",
+  "exit_code": 0,
+  "rust_suites": 235,
+  "rust_passed": 2358,
+  "rust_ignored": 5,
+  "rust_failed": 0,
+  "code_commit": "6a0a0100",
+  "cargo_package_version": "0.18.3",
+  "coverage": "contracts, architecture, viewer Node tests, rustfmt, workspace Clippy -D warnings, workspace rustdoc -D warnings, workspace Rust tests, MCP build"
+}
