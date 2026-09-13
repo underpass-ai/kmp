@@ -1,6 +1,14 @@
 //! Callable recall continuations and lossless request arguments at the boundary.
-use super::*;
-use kmp_proto::v1beta1::{RecallCall, TemporalAxis, TemporalInterval};
+use kmp_proto::v1beta1::{RecallCall, TemporalAxis, TemporalCursor, TemporalInterval};
+use serde_json::{Map, Value, json};
+
+use super::budget::{Detail, ProjectionBudget};
+use super::core_fit::serialized_bytes;
+use super::json_paths::push_array;
+use super::metadata::attach_metadata;
+use super::plan::ProjectionPlan;
+use super::proof_value::temporal_axis_label;
+use super::scalars::{insert_non_empty, string_at};
 
 pub(super) fn call(arguments: &Value, cursor: Option<&str>, max_bytes: Option<usize>) -> Value {
     let mut arguments = arguments.clone();

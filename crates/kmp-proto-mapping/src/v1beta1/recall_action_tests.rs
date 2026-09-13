@@ -1,5 +1,11 @@
 //! Core restoration is an action even after the last expansion item.
-use super::*;
+use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
+use serde_json::{Value, json};
+
+use super::actions;
+use super::core_fit::serialized_bytes;
+use super::projection_outcome::ProjectionOutcome;
+use super::recall_output::project_recall_output_typed;
 
 #[test]
 fn a_completed_expansion_restores_its_shortened_cited_core() {
