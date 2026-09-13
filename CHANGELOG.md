@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-09-13
+
 ### Added
 
 - `kmp_summaries_audit` returns, in one call, where every memory of an about or a named set stands with respect to its English search summary: missing, refused by the lint with its own faults, standing, or needing none. A summary that stands and still retrieves little carries deterministic weakness signals — thin, repeated across the about, undiscriminating, stale after a later rewrite — which are warnings and never refusals. The reading generates no text, changes nothing and pages under the usual byte ceiling. This adds a fourteenth memory tool to every host's catalogue, which is a real context cost and pulls against the tool-surface reduction tracked in #544; the read half of the summary backfill was otherwise reachable only from a terminal.
@@ -1702,7 +1704,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.1...HEAD
+[0.18.1]: https://github.com/underpass-ai/kmp/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/underpass-ai/kmp/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/underpass-ai/kmp/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/underpass-ai/kmp/compare/v0.15.0...v0.16.0
