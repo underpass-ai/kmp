@@ -84,6 +84,20 @@ pub(crate) fn build_summary_plan(
         SearchSummary::SOURCE_FINGERPRINT_METADATA_KEY.to_string(),
         json!(SearchSummary::source_fingerprint(&existing.text)),
     );
+    match arguments
+        .get("summary_validation_identity")
+        .and_then(Value::as_str)
+    {
+        Some(identity) => {
+            metadata.insert(
+                SearchSummary::VALIDATION_IDENTITY_METADATA_KEY.to_string(),
+                json!(identity),
+            );
+        }
+        None => {
+            metadata.remove(SearchSummary::VALIDATION_IDENTITY_METADATA_KEY);
+        }
+    }
     let idempotency_key = optional_string(arguments.get("idempotency_key"))
         .map(ToString::to_string)
         .unwrap_or_else(|| stable_idempotency_key(arguments));
@@ -151,6 +165,7 @@ mod tests {
     fn existing() -> ExistingEntry {
         ExistingEntry {
             reference: "project:kmp:decision:valkey".to_string(),
+            revision: 7,
             kind: "decision".to_string(),
             text: "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018).".to_string(),
             coordinates: vec![json!({

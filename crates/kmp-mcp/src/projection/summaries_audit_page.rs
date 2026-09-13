@@ -248,7 +248,10 @@ fn selection_hash(core: &Value, items: &[Value], arguments: &Value) -> String {
     hasher.update(b"\0");
     hasher.update(serde_json::to_vec(&bound).expect("audit arguments serialize"));
     hasher.update(b"\0");
-    hasher.update(serde_json::to_vec(&core["totals"]).expect("audit totals serialize"));
+    // The stable core is part of every page. Aggregate totals alone do not
+    // bind a cursor: per-about totals can move while their sum and the
+    // filtered memory items remain unchanged.
+    hasher.update(serde_json::to_vec(core).expect("audit core serializes"));
     for value in items {
         hasher.update(b"\0");
         hasher.update(serde_json::to_vec(value).expect("audited memory serializes"));

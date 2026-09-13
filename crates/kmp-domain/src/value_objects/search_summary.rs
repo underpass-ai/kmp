@@ -50,6 +50,11 @@ impl SearchSummary {
     /// that happened to preserve old summary metadata.
     pub const SOURCE_FINGERPRINT_METADATA_KEY: &'static str = "summary_en_source_sha256";
 
+    /// The implicit write identity that attached this exact validated
+    /// rendering. It makes an unchanged summary call a replay without
+    /// conflating a later source revision with the old validation.
+    pub const VALIDATION_IDENTITY_METADATA_KEY: &'static str = "summary_en_validation_identity";
+
     /// Stable fingerprint of the stored source text a rendering was checked
     /// against. The source itself remains canonical; this only binds the
     /// validation event to that exact body.
