@@ -7,6 +7,13 @@ mod entry_selection_tests;
 struct EvidencedTemporalReader;
 
 impl GraphNeighborhoodReader for EvidencedTemporalReader {
+    async fn load_nodes_batch(
+        &self,
+        ids: Vec<String>,
+    ) -> Result<Vec<Option<NodeProjection>>, PortError> {
+        fixture_nodes_batch(self, ids).await
+    }
+
     async fn load_neighborhood(
         &self,
         root: &str,

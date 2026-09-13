@@ -97,7 +97,12 @@ where
     ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
         let root_node_id = request.root_node_id();
         let graph_start = Instant::now();
-        let Some(neighborhood) = self.graph_reader.load_scoped_neighborhood(request).await? else {
+        let neighborhood = if include_details {
+            self.graph_reader.load_scoped_neighborhood(request).await?
+        } else {
+            self.graph_reader.load_neighborhood_headers(request).await?
+        };
+        let Some(neighborhood) = neighborhood else {
             return Ok((None, QueryTimingBreakdown::not_found(graph_start.elapsed())));
         };
         if is_placeholder_projection_node(&neighborhood.root) {

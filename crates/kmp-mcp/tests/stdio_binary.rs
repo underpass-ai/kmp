@@ -695,17 +695,19 @@ fn run_binary_from(
     }
 
     let mut child = command.spawn().expect("stdio MCP binary should spawn");
-    child
-        .stdin
-        .as_mut()
-        .expect("stdin should be piped")
-        .write_all(stdin.as_bytes())
-        .expect("stdin should be written");
-    drop(child.stdin.take());
-
-    child
-        .wait_with_output()
-        .expect("stdio MCP binary should exit after stdin EOF")
+    let mut input = child.stdin.take().expect("stdin should be piped");
+    // A batch can exceed both pipe capacities. Drain responses while feeding
+    // requests so the fixture cannot deadlock behind the server's stdout.
+    std::thread::scope(|scope| {
+        scope.spawn(move || {
+            input
+                .write_all(stdin.as_bytes())
+                .expect("stdin should be written");
+        });
+        child
+            .wait_with_output()
+            .expect("stdio MCP binary should exit after stdin EOF")
+    })
 }
 
 #[test]

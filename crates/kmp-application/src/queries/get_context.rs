@@ -108,6 +108,17 @@ where
         request: &NeighborhoodRequest,
         role: &str,
     ) -> Result<KmpBundle, ApplicationError> {
+        Ok(self
+            .read_context_catalogue_with_timing(request, role)
+            .await?
+            .0)
+    }
+
+    pub(crate) async fn read_context_catalogue_with_timing(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+    ) -> Result<(KmpBundle, QueryTimingBreakdown), ApplicationError> {
         let reader = crate::queries::NodeCentricProjectionReader::new(
             std::sync::Arc::clone(&self.graph_reader),
             std::sync::Arc::clone(&self.detail_reader),
@@ -116,10 +127,10 @@ where
         // predicates run. Root selection already restricts the about scope.
         // The full reader also retains this catalogue; defer bodies only.
         let catalogue = NeighborhoodRequest::new(request.root_node_id(), request.depth());
-        let (bundle, _) = reader
+        let (bundle, timing) = reader
             .load_catalogue_for(&catalogue, role, self.generator_version)
             .await?;
-        bundle.ok_or_else(|| {
+        bundle.map(|bundle| (bundle, timing)).ok_or_else(|| {
             ApplicationError::NotFound(format!("node '{}' not found", request.root_node_id()))
         })
     }

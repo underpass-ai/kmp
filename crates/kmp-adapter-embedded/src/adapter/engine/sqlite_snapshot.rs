@@ -12,6 +12,7 @@ use super::{Engine, ReadTx, WriteTx};
 pub(super) struct SqliteSnapshot {
     connection: Mutex<Option<Connection>>,
     pool: Arc<Mutex<Vec<Connection>>>,
+    revision: Option<kmp_domain::GraphReadRevision>,
 }
 
 impl SqliteSnapshot {
@@ -22,6 +23,7 @@ impl SqliteSnapshot {
         let snapshot = Self {
             connection: Mutex::new(Some(connection)),
             pool,
+            revision: None,
         };
         {
             let guard = snapshot.connection.lock().map_err(|_| poisoned())?;
@@ -42,7 +44,18 @@ impl SqliteSnapshot {
     }
 }
 
+impl SqliteSnapshot {
+    pub(super) fn with_revision(mut self, revision: Option<kmp_domain::GraphReadRevision>) -> Self {
+        self.revision = revision;
+        self
+    }
+}
+
 impl Engine for SqliteSnapshot {
+    fn graph_read_revision(&self) -> Option<kmp_domain::GraphReadRevision> {
+        self.revision.clone()
+    }
+
     fn begin_read(&self) -> Result<Box<dyn ReadTx + '_>, PortError> {
         Ok(Box::new(SqliteSnapshotRead(
             self.connection.lock().map_err(|_| poisoned())?,

@@ -55,3 +55,5 @@ pub use timing_breakdown::QueryTimingBreakdown;
 pub use validate_scope::{
     ScopeValidation, ValidateScopeQuery, ValidateScopeUseCase, dedupe_scopes,
 };
+
+mod materialize_selected_nodes;

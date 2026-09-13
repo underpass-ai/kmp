@@ -168,6 +168,13 @@ impl ProjectionWriter for EmptyNodeDetailReader {
 struct SeededGraphNeighborhoodReader;
 
 impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
+    async fn load_nodes_batch(
+        &self,
+        ids: Vec<String>,
+    ) -> Result<Vec<Option<NodeProjection>>, PortError> {
+        fixture_nodes_batch(self, ids).await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,
@@ -506,6 +513,13 @@ struct RecordingSeededGraphNeighborhoodReader {
 }
 
 impl GraphNeighborhoodReader for RecordingSeededGraphNeighborhoodReader {
+    async fn load_nodes_batch(
+        &self,
+        ids: Vec<String>,
+    ) -> Result<Vec<Option<NodeProjection>>, PortError> {
+        fixture_nodes_batch(self, ids).await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,
@@ -668,9 +682,43 @@ impl NodeDetailReader for SeededNodeDetailReader {
     }
 }
 
+// The fixture's root catalogues own the complete graph. Point batches must
+// expose their admitted neighbor identities just as a real adapter does.
+async fn fixture_nodes_batch<G>(
+    graph: &G,
+    ids: Vec<String>,
+) -> Result<Vec<Option<NodeProjection>>, PortError>
+where
+    G: GraphNeighborhoodReader + MemoryAboutIndexReader + Sync,
+{
+    let mut nodes = std::collections::BTreeMap::new();
+    for root in graph.list_memory_abouts().await? {
+        if let Some(catalogue) = graph.load_neighborhood(&root, 1).await? {
+            for node in std::iter::once(catalogue.root).chain(catalogue.neighbors) {
+                nodes.insert(node.node_id.clone(), node);
+            }
+        }
+    }
+    let mut selected = Vec::with_capacity(ids.len());
+    for id in ids {
+        selected.push(match graph.load_neighborhood(&id, 1).await? {
+            Some(neighborhood) => Some(neighborhood.root),
+            None => nodes.get(&id).cloned(),
+        });
+    }
+    Ok(selected)
+}
+
 struct TemporalGraphNeighborhoodReader;
 
 impl GraphNeighborhoodReader for TemporalGraphNeighborhoodReader {
+    async fn load_nodes_batch(
+        &self,
+        ids: Vec<String>,
+    ) -> Result<Vec<Option<NodeProjection>>, PortError> {
+        fixture_nodes_batch(self, ids).await
+    }
+
     async fn load_neighborhood(
         &self,
         root_node_id: &str,

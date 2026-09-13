@@ -26,6 +26,14 @@ impl ReadTx for SqliteSnapshotRead<'_> {
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
+    fn project_str_json(
+        &self,
+        table: Table,
+        key: &str,
+        fields: &[&str],
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        self.ops().project_str_json(table, key, fields)
+    }
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
     }

@@ -77,6 +77,10 @@ impl EmbeddedKernelStore {
         .await
     }
 
+    pub(crate) fn read_revision(&self) -> Option<kmp_domain::GraphReadRevision> {
+        self.engine.graph_read_revision()
+    }
+
     pub(crate) fn begin_write(&self) -> Result<Box<dyn WriteTx + '_>, PortError> {
         self.engine.begin_write()
     }
