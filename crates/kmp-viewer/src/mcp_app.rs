@@ -1,58 +1,9 @@
-use std::sync::OnceLock;
-
-use crate::renderer_asset::renderer_source;
-use crate::routes::{
-    INDEX_HTML, LOOM_CORE_JS, LOOM_CSS, LOOM_JS, LOOM_LOADING_CSS, LOOM_MODULES, LOOM_SHELL_CSS,
-};
-
-const MCP_APP_BRIDGE: &str = include_str!("../ui/mcp-app-bridge.js");
-
 /// Self-contained MCP App resource: identical renderer and view semantics to
 /// the loopback adapter, with host-proxied tool calls instead of HTTP
 /// fetches. The script-tag modules are inlined in the exact order
 /// `index.html` loads them, so both faces run the same composition.
 pub fn mcp_app_html() -> &'static str {
-    static HTML: OnceLock<String> = OnceLock::new();
-    HTML.get_or_init(|| {
-        let script = |source: &str| {
-            format!(
-                "<script>{}</script>",
-                source.replace("</script", "<\\/script")
-            )
-        };
-        let mut html = INDEX_HTML
-            .replace(
-                "<link rel=\"stylesheet\" href=\"/assets/loom.css\">",
-                &format!("<style>{LOOM_CSS}</style>"),
-            )
-            .replace(
-                "<script src=\"/assets/three.min.js\" defer></script>",
-                &format!("{}{}", script(MCP_APP_BRIDGE), script(renderer_source())),
-            )
-            .replace(
-                "<link rel=\"stylesheet\" href=\"/assets/loom-shell.css\">",
-                &format!("<style>{LOOM_SHELL_CSS}</style>"),
-            )
-            .replace(
-                "<script src=\"/assets/loom-core.js\" defer></script>",
-                &script(LOOM_CORE_JS),
-            )
-            .replace(
-                "<script src=\"/assets/loom.js\" defer></script>",
-                &script(LOOM_JS),
-            );
-        html = html.replace(
-            "<link rel=\"stylesheet\" href=\"/assets/loom-loading.css\">",
-            &format!("<style>{LOOM_LOADING_CSS}</style>"),
-        );
-        for (name, source) in LOOM_MODULES {
-            html = html.replace(
-                &format!("<script src=\"/assets/{name}\" defer></script>"),
-                &script(source),
-            );
-        }
-        html
-    })
+    include_str!(concat!(env!("OUT_DIR"), "/chronoloom-mcp-app.html"))
 }
 
 #[cfg(test)]

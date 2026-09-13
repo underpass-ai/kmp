@@ -1,0 +1,31 @@
+{
+  "commit": "0f4b73023378388a42458c602d8909e3d1c1dc3c",
+  "baseline_sha256": "ca9698381a419ea9d80398bbb7eb99af72126d1991cca70ce040cb49703d77ea",
+  "candidate_sha256": "1133c861ab6d1a76d759126a089493fc2013efee83550f37cdc710b87a1738df",
+  "counter_sha256": "48ff2cb21b1905e2e3b0b882fe2048107ed3fc8fbad2c5761eaeef6f6d1be989",
+  "runner_sha256": "a160ba7b3477dec2ef532685919ac340570d45597c9a05839dc5b0ac2306cd2e",
+  "profile": "Cargo dev; shared workspace configuration; no profile overrides",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+  "machine": "aarch64",
+  "cpu": "aarch64",
+  "cpu_count": 20,
+  "samples_per_side": 8,
+  "concurrency": 1,
+  "synthetic_shape": {
+    "abouts": 1,
+    "entries": 32,
+    "dimensions": 1,
+    "relations": 0,
+    "entry_body": "Synthetic browser memory <index>"
+  },
+  "browser_observable": "stage data-loading=false; exact 1 about / 32 memory scene, moment projection, selection total 32, 32 projected entries, no selected ref; shared-view sync settled at revision > 0; then two animation frames",
+  "encoded_bytes": "Chrome DevTools Network.loadingFinished encodedDataLength; includes HTTP framing",
+  "allocation_scope": "separate instrumented kmp-mcp processes including startup, synthetic ingest, cold and warm scene or two MCP resource reads",
+  "allocation_units": "allocation requests and cumulative requested bytes; not retained/live bytes",
+  "timing_instrumentation": "browser and MCP latency samples are uninstrumented; LD_PRELOAD allocation-control timing is not interpreted",
+  "cold_definition": "fresh browser context and new server process; OS page cache uncontrolled",
+  "warm_definition": "reload in the same browser context and server process",
+  "latency_note": "informational local wall time; requires a quiet measurement slot",
+  "browser": "145.0.7632.0"
+}

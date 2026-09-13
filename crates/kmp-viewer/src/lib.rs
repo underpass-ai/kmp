@@ -8,16 +8,19 @@
 //! is no second database connection, daemon, sync protocol or parallel read
 //! model.
 //!
-//! The surface is deliberately small: a hand-rolled HTTP/1.1 GET server on a
-//! loopback address and a UI compiled into the binary. The vendored renderer
-//! is compressed at build time and decoded once on first use; there is no
-//! HTTP framework, runtime bundler, CDN or asset download.
+//! The surface is deliberately small: a hand-rolled HTTP/1.1 server on a
+//! loopback address and a UI compiled into the binary. Static assets carry
+//! content-versioned immutable URLs and precompressed representations; there
+//! is no HTTP framework, runtime bundler, CDN or asset download.
 
 mod http;
 mod mcp_app;
 mod query_params;
+#[cfg(test)]
 mod renderer_asset;
+mod response_body;
 mod routes;
+mod static_asset;
 mod time_format;
 pub mod view;
 pub mod views;
@@ -35,6 +38,7 @@ use kmp_domain::{
 use tokio::net::{TcpListener, TcpStream};
 
 use crate::http::{HttpResponse, host_is_local, read_request, write_response};
+use crate::static_asset::route_static_asset;
 pub use crate::view::ViewRegistry;
 pub use crate::view::application::Applied;
 pub use crate::view::application::commands::{ApplyIntentCommand, OpenViewCommand};
@@ -189,6 +193,8 @@ where
                         403,
                         "the viewer answers only to localhost / 127.0.0.1 / [::1]",
                     )
+                } else if let Some(response) = route_static_asset(&request) {
+                    response
                 } else if request
                     .cookie(&self.capability.cookie_name)
                     .is_some_and(|token| self.capability.matches(token))

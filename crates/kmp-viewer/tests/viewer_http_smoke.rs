@@ -3,6 +3,7 @@
 //! over real HTTP on an ephemeral loopback port.
 
 use std::collections::BTreeMap;
+use std::io::Read;
 use std::sync::{Arc, Mutex, OnceLock};
 
 use kmp_application::{
@@ -344,23 +345,80 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     assert!(trace["edges"].as_array().is_some_and(|e| !e.is_empty()));
 
     // The UI itself is served, and unknown paths and hosts are refused.
-    let (status, _) = get(port, "/").await;
-    assert_eq!(status, 200);
-    let renderer = raw_request(
+    let index = raw_request(
         port,
         &format!(
-            "GET /assets/three.min.js HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {}\r\nConnection: close\r\n\r\n",
+            "GET / HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {}\r\nConnection: close\r\n\r\n",
             auth_cookie(port)
         ),
     )
     .await;
-    let (headers, body) = renderer.split_once("\r\n\r\n").expect("HTTP response");
+    let (index_headers, index_body) = index.split_once("\r\n\r\n").expect("HTTP response");
+    assert!(index_headers.starts_with("HTTP/1.1 200"));
+    assert!(index_headers.contains("Cache-Control: private, no-store"));
+    let renderer_path = asset_path(index_body, "three.min.js");
+
+    // Immutable code is public and content-addressed. Identity and gzip
+    // decode to the exact same vendored bytes; private HTML and memory APIs
+    // retain their capability and no-store boundary.
+    let renderer = raw_request_bytes(
+        port,
+        &format!(
+            "GET {renderer_path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAccept-Encoding: identity\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    let (headers, body) = split_response(&renderer);
+    let headers = String::from_utf8_lossy(headers);
     assert!(headers.starts_with("HTTP/1.1 200"));
-    assert_eq!(body, include_str!("../ui/vendor/three.min.js"));
-    let (status, _) = get(port, "/assets/loom-core.js").await;
-    assert_eq!(status, 200, "the pure-logic asset is served");
-    let (status, _) = get(port, "/assets/loom.js").await;
-    assert_eq!(status, 200, "the loom app is served");
+    assert!(headers.contains("Cache-Control: public, max-age=31536000, immutable"));
+    assert!(headers.contains("Vary: Accept-Encoding"));
+    assert!(!headers.contains("Content-Encoding:"));
+    assert_eq!(body, include_bytes!("../ui/vendor/three.min.js"));
+
+    let renderer_gzip = raw_request_bytes(
+        port,
+        &format!(
+            "GET {renderer_path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAccept-Encoding: gzip\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    let (gzip_headers, gzip_body) = split_response(&renderer_gzip);
+    let gzip_headers = String::from_utf8_lossy(gzip_headers);
+    assert!(gzip_headers.contains("Content-Encoding: gzip"));
+    assert!(gzip_body.len() < body.len());
+    let mut decoded = Vec::new();
+    flate2::read::GzDecoder::new(gzip_body)
+        .read_to_end(&mut decoded)
+        .expect("precompressed renderer decodes");
+    assert_eq!(decoded, body);
+
+    let stale_path = renderer_path.replacen(
+        renderer_path.split('/').nth(2).expect("version segment"),
+        "stale",
+        1,
+    );
+    let stale = raw_request(
+        port,
+        &format!(
+            "GET {stale_path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(stale.starts_with("HTTP/1.1 404"));
+
+    let core_path = asset_path(index_body, "loom-core.js");
+    let core = raw_request(
+        port,
+        &format!(
+            "HEAD {core_path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAccept-Encoding: gzip\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(core.starts_with("HTTP/1.1 200"));
+    assert!(core.contains("Content-Encoding: gzip"));
+    assert!(core.ends_with("\r\n\r\n"), "HEAD withholds the asset body");
+
     let (status, _) = get(port, "/api/nope").await;
     assert_eq!(status, 404);
 
@@ -1051,7 +1109,10 @@ async fn warm_projection_rechecks_capabilities_and_peer_writes() {
     let port = ports[0];
     let raw = raw_request(port, &format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {}\r\nIf-None-Match: *\r\nConnection: close\r\n\r\n", auth_cookie(port))).await;
     assert!(raw.starts_with("HTTP/1.1 200"));
-    assert!(raw.to_ascii_lowercase().contains("cache-control: no-store"));
+    assert!(
+        raw.to_ascii_lowercase()
+            .contains("cache-control: private, no-store")
+    );
     let peer = EmbeddedKernel::open(dir.path()).expect("peer");
     let mut edited = corpus();
     edited.idempotency_key = "projection-peer-edit".into();
@@ -1277,12 +1338,16 @@ async fn head_answers_the_same_head_as_get_and_no_body() {
     let cookie = auth_cookie(port);
     let head = raw_request(
         port,
-        &format!("HEAD / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\n\r\n"),
+        &format!(
+            "HEAD / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        ),
     )
     .await;
     let get_response = raw_request(
         port,
-        &format!("GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\n\r\n"),
+        &format!(
+            "GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        ),
     )
     .await;
 
@@ -1300,10 +1365,90 @@ async fn head_answers_the_same_head_as_get_and_no_body() {
     // Everything else is still refused.
     let post = raw_request(
         port,
-        &format!("POST / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\n\r\n"),
+        &format!(
+            "POST / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        ),
     )
     .await;
     assert!(post.starts_with("HTTP/1.1 405"), "POST allowed: {post}");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn one_request_per_connection_rejects_bodies_and_pipelined_requests() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    let viewer = Arc::new(
+        MemoryViewerServer::new(kernel.service(), None).expect("viewer creates capability"),
+    );
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
+    tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
+    let cookie = auth_cookie(port);
+    let index = raw_request(
+        port,
+        &format!(
+            "GET / HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    let asset = asset_path(
+        index.split_once("\r\n\r\n").expect("index response").1,
+        "loom-core.js",
+    );
+
+    let pipelined = raw_request(
+        port,
+        &format!(
+            "HEAD {asset} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n\
+             GET /api/info HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(pipelined.starts_with("HTTP/1.1 200"));
+    assert_eq!(pipelined.matches("HTTP/1.1").count(), 1, "{pipelined}");
+    assert!(pipelined.contains("Connection: close"));
+    assert!(!pipelined.contains("kernel_version"));
+
+    for framing in [
+        "Content-Length: 44",
+        "Content-Length: nope",
+        "Transfer-Encoding: chunked",
+    ] {
+        let forged = format!(
+            "GET {asset} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n{framing}\r\n\r\n\
+             GET /api/info HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        );
+        let response = raw_request(port, &forged).await;
+        assert!(
+            response.starts_with("HTTP/1.1 400"),
+            "{framing}: {response}"
+        );
+        assert_eq!(
+            response.matches("HTTP/1.1").count(),
+            1,
+            "body bytes cannot become a second request: {response}"
+        );
+        assert!(!response.contains("kernel_version"));
+    }
+
+    for request in [
+        format!(
+            "GET {asset} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: keep-alive\r\nConnection: close\r\n\r\n\
+             GET /api/info HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        ),
+        format!(
+            "GET {asset} HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\nConnection: keep-alive\r\n\r\n\
+             GET /api/info HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        ),
+    ] {
+        let response = raw_request(port, &request).await;
+        assert!(response.starts_with("HTTP/1.1 200"), "{response}");
+        assert_eq!(response.matches("HTTP/1.1").count(), 1, "{response}");
+        assert!(response.contains("Connection: close"));
+        assert!(!response.contains("kernel_version"));
+    }
 }
 
 fn content_length(response: &str) -> usize {
@@ -1368,6 +1513,10 @@ async fn post(port: u16, path_and_query: &str) -> (u16, serde_json::Value) {
 }
 
 async fn raw_request(port: u16, request: &str) -> String {
+    String::from_utf8_lossy(&raw_request_bytes(port, request).await).to_string()
+}
+
+async fn raw_request_bytes(port: u16, request: &str) -> Vec<u8> {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
         .await
@@ -1378,7 +1527,23 @@ async fn raw_request(port: u16, request: &str) -> String {
         .expect("request writes");
     let mut raw = Vec::new();
     stream.read_to_end(&mut raw).await.expect("response reads");
-    String::from_utf8_lossy(&raw).to_string()
+    raw
+}
+
+fn split_response(raw: &[u8]) -> (&[u8], &[u8]) {
+    let split = raw
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .expect("HTTP response terminator");
+    (&raw[..split], &raw[split + 4..])
+}
+
+fn asset_path(index: &str, name: &str) -> String {
+    index
+        .split('"')
+        .find(|value| value.starts_with("/assets/") && value.ends_with(name))
+        .unwrap_or_else(|| panic!("index names versioned asset {name}"))
+        .to_string()
 }
 
 fn urlencode(value: &str) -> String {

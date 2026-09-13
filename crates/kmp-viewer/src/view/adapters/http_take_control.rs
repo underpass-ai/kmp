@@ -35,6 +35,7 @@ mod tests {
                 .collect(),
             host: None,
             cookie: None,
+            accept_encoding: None,
         }
     }
 
@@ -60,8 +61,8 @@ mod tests {
         assert_eq!(view_take_control(&request(Some("1"))).status, 409);
         let response = view_take_control(&request(Some(&moved.view_revision.value().to_string())));
         assert_eq!(response.status, 200);
-        let body: serde_json::Value =
-            serde_json::from_slice(&response.body).expect("successful test view operation");
+        let body: serde_json::Value = serde_json::from_slice(response.body.as_slice())
+            .expect("successful test view operation");
         assert_eq!(body["last_change"]["actor"], "human");
         assert_eq!(body["search"], "proof");
     }

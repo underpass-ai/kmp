@@ -1,12 +1,14 @@
-//! A deliberately small HTTP/1.1 surface: parse one GET, write one response,
-//! close. The viewer is a local, read-only window over the kernel — it does
-//! not need routing frameworks, keep-alive, or bodies, and every dependency
-//! it does not take is one the embedded binary does not carry.
+//! A deliberately small HTTP/1.1 surface: parse one bounded request head,
+//! write one length-delimited response, and close. The viewer is a local,
+//! read-only window over the kernel and does not need a routing framework,
+//! persistent connections, or request bodies.
 
 use std::collections::BTreeMap;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+
+use crate::response_body::ResponseBody;
 
 /// Upper bound on the request head. A local viewer request is a short GET;
 /// anything larger is a client that should not be talking to this port.
@@ -19,6 +21,7 @@ pub(crate) struct HttpRequest {
     pub(crate) query: BTreeMap<String, String>,
     pub(crate) host: Option<String>,
     pub(crate) cookie: Option<String>,
+    pub(crate) accept_encoding: Option<String>,
 }
 
 impl HttpRequest {
@@ -37,13 +40,58 @@ impl HttpRequest {
             })
         })
     }
+
+    pub(crate) fn encoding_quality(&self, encoding: &str) -> Option<f32> {
+        let mut wildcard = None;
+        for item in self.accept_encoding.as_deref()?.split(',') {
+            let (name, quality) = encoding_item(item);
+            if name.eq_ignore_ascii_case(encoding) {
+                return Some(quality);
+            }
+            if name == "*" {
+                wildcard = Some(quality);
+            }
+        }
+        wildcard
+    }
+
+    pub(crate) fn identity_quality(&self) -> f32 {
+        let Some(header) = self.accept_encoding.as_deref() else {
+            return 1.0;
+        };
+        let explicit = header.split(',').find_map(|item| {
+            let (name, quality) = encoding_item(item);
+            name.eq_ignore_ascii_case("identity").then_some(quality)
+        });
+        explicit.unwrap_or_else(|| {
+            if self.encoding_quality("*") == Some(0.0) {
+                0.0
+            } else {
+                1.0
+            }
+        })
+    }
+}
+
+fn encoding_item(item: &str) -> (&str, f32) {
+    let mut parts = item.trim().split(';');
+    let name = parts.next().unwrap_or_default().trim();
+    let quality = parts
+        .find_map(|parameter| {
+            let (key, value) = parameter.trim().split_once('=')?;
+            key.trim().eq_ignore_ascii_case("q").then_some(value.trim())
+        })
+        .and_then(|value| value.parse::<f32>().ok())
+        .unwrap_or(1.0)
+        .clamp(0.0, 1.0);
+    (name, quality)
 }
 
 #[derive(Debug)]
 pub(crate) struct HttpResponse {
     pub(crate) status: u16,
     pub(crate) content_type: &'static str,
-    pub(crate) body: Vec<u8>,
+    pub(crate) body: ResponseBody,
     pub(crate) headers: Vec<(&'static str, String)>,
     /// A HEAD answer: the same head a GET would send, with the body withheld.
     /// The body stays here so `Content-Length` keeps describing what a GET
@@ -68,27 +116,7 @@ impl HttpResponse {
         Self {
             status: 200,
             content_type: "text/html; charset=utf-8",
-            body: body.as_bytes().to_vec(),
-            headers: Vec::new(),
-            omit_body: false,
-        }
-    }
-
-    pub(crate) fn css(body: &'static str) -> Self {
-        Self {
-            status: 200,
-            content_type: "text/css; charset=utf-8",
-            body: body.as_bytes().to_vec(),
-            headers: Vec::new(),
-            omit_body: false,
-        }
-    }
-
-    pub(crate) fn javascript(body: &'static str) -> Self {
-        Self {
-            status: 200,
-            content_type: "text/javascript; charset=utf-8",
-            body: body.as_bytes().to_vec(),
+            body: ResponseBody::Static(body.as_bytes()),
             headers: Vec::new(),
             omit_body: false,
         }
@@ -99,7 +127,7 @@ impl HttpResponse {
             Ok(body) => Self {
                 status: 200,
                 content_type: "application/json",
-                body,
+                body: ResponseBody::Owned(body),
                 headers: Vec::new(),
                 omit_body: false,
             },
@@ -112,7 +140,7 @@ impl HttpResponse {
         Self {
             status,
             content_type: "application/json",
-            body: body.to_string().into_bytes(),
+            body: ResponseBody::Owned(body.to_string().into_bytes()),
             headers: Vec::new(),
             omit_body: false,
         }
@@ -122,8 +150,18 @@ impl HttpResponse {
         Self {
             status: 303,
             content_type: "text/plain; charset=utf-8",
-            body: Vec::new(),
+            body: ResponseBody::Static(&[]),
             headers: vec![("Location", location.to_string())],
+            omit_body: false,
+        }
+    }
+
+    pub(crate) fn static_bytes(content_type: &'static str, body: &'static [u8]) -> Self {
+        Self {
+            status: 200,
+            content_type,
+            body: ResponseBody::Static(body),
+            headers: Vec::new(),
             omit_body: false,
         }
     }
@@ -134,7 +172,7 @@ impl HttpResponse {
 pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, HttpResponse> {
     let mut head = Vec::with_capacity(1024);
     let mut chunk = [0u8; 1024];
-    while !contains_head_terminator(&head) {
+    while head_terminator(&head).is_none() {
         if head.len() > MAX_REQUEST_HEAD_BYTES {
             return Err(HttpResponse::error(431, "request head too large"));
         }
@@ -147,14 +185,19 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
         }
         head.extend_from_slice(&chunk[..read]);
     }
+    let head_end = head_terminator(&head).expect("terminator was found") + 4;
+    if head_end > MAX_REQUEST_HEAD_BYTES {
+        return Err(HttpResponse::error(431, "request head too large"));
+    }
 
-    let head_text = String::from_utf8_lossy(&head);
+    let head_text = String::from_utf8_lossy(&head[..head_end]);
     let mut lines = head_text.split("\r\n");
     let request_line = lines.next().unwrap_or_default();
     let mut parts = request_line.split_ascii_whitespace();
     let method = parts.next().unwrap_or_default().to_string();
     let target = parts.next().unwrap_or_default();
-    if method.is_empty() || target.is_empty() {
+    let version = parts.next().unwrap_or_default();
+    if method.is_empty() || target.is_empty() || !version.starts_with("HTTP/1.") {
         return Err(HttpResponse::error(400, "malformed request line"));
     }
 
@@ -165,6 +208,9 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
 
     let mut host = None;
     let mut cookies = Vec::new();
+    let mut accept_encodings = Vec::new();
+    let mut content_length = None;
+    let mut transfer_encoding = false;
     for line in lines {
         if line.is_empty() {
             break;
@@ -174,8 +220,35 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
                 host = Some(value.trim().to_string());
             } else if name.trim().eq_ignore_ascii_case("cookie") {
                 cookies.push(value.trim());
+            } else if name.trim().eq_ignore_ascii_case("accept-encoding") {
+                accept_encodings.push(value.trim());
+            } else if name.trim().eq_ignore_ascii_case("content-length") {
+                let parsed = value.trim().parse::<usize>().map_err(|_| {
+                    HttpResponse::error(400, "malformed Content-Length is not accepted")
+                })?;
+                if content_length.is_some_and(|previous| previous != parsed) {
+                    return Err(HttpResponse::error(
+                        400,
+                        "conflicting Content-Length headers are not accepted",
+                    ));
+                }
+                content_length = Some(parsed);
+            } else if name.trim().eq_ignore_ascii_case("transfer-encoding") {
+                transfer_encoding = true;
             }
         }
+    }
+    if transfer_encoding {
+        return Err(HttpResponse::error(
+            400,
+            "Transfer-Encoding is not accepted; viewer requests have no body",
+        ));
+    }
+    if content_length.is_some_and(|length| length != 0) {
+        return Err(HttpResponse::error(
+            400,
+            "viewer requests have no body; Content-Length must be zero",
+        ));
     }
 
     Ok(HttpRequest {
@@ -184,12 +257,13 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
         query: parse_query(raw_query),
         host,
         cookie: (!cookies.is_empty()).then(|| cookies.join("; ")),
+        accept_encoding: (!accept_encodings.is_empty()).then(|| accept_encodings.join(",")),
     })
 }
 
-/// Writes the response with the headers every viewer response carries: no
-/// caching (the memory moves underneath), no sniffing, and a CSP that keeps
-/// the page self-contained — the same stance the UI is built under.
+/// Writes the response with the security headers every viewer response
+/// carries. Dynamic/private responses default to no-store; static assets
+/// supply their immutable policy explicitly.
 pub(crate) async fn write_response(
     stream: &mut TcpStream,
     response: &HttpResponse,
@@ -200,7 +274,6 @@ pub(crate) async fn write_response(
          Content-Type: {}\r\n\
          Content-Length: {}\r\n\
          Connection: close\r\n\
-         Cache-Control: no-store\r\n\
          X-Content-Type-Options: nosniff\r\n\
          Referrer-Policy: no-referrer\r\n\
          Content-Security-Policy: default-src 'none'; script-src 'self'; \
@@ -210,6 +283,13 @@ pub(crate) async fn write_response(
         response.content_type,
         response.body.len(),
     );
+    if !response
+        .headers
+        .iter()
+        .any(|(name, _)| name.eq_ignore_ascii_case("Cache-Control"))
+    {
+        head.push_str("Cache-Control: private, no-store\r\n");
+    }
     for (name, value) in &response.headers {
         head.push_str(name);
         head.push_str(": ");
@@ -219,7 +299,7 @@ pub(crate) async fn write_response(
     head.push_str("\r\n");
     stream.write_all(head.as_bytes()).await?;
     if !response.omit_body {
-        stream.write_all(&response.body).await?;
+        stream.write_all(response.body.as_slice()).await?;
     }
     stream.flush().await
 }
@@ -245,8 +325,8 @@ fn strip_port(host: &str) -> &str {
     }
 }
 
-fn contains_head_terminator(head: &[u8]) -> bool {
-    head.windows(4).any(|window| window == b"\r\n\r\n")
+fn head_terminator(head: &[u8]) -> Option<usize> {
+    head.windows(4).position(|window| window == b"\r\n\r\n")
 }
 
 fn parse_query(raw: &str) -> BTreeMap<String, String> {
@@ -310,6 +390,7 @@ fn reason_phrase(status: u16) -> &'static str {
         403 => "Forbidden",
         404 => "Not Found",
         405 => "Method Not Allowed",
+        406 => "Not Acceptable",
         409 => "Conflict",
         431 => "Request Header Fields Too Large",
         500 => "Internal Server Error",
