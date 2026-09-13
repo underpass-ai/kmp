@@ -1,5 +1,8 @@
 """Real MCP -> HTTP -> Chromium journeys; no injected replacement application."""
 import time
+import math
+import statistics
+from collections import defaultdict
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 
@@ -87,4 +90,17 @@ def journey(browser, client, about, refs, samples, out):
                 "http_requests_started": len(requests) - request_start,
                 "http_completed": completed[complete_start:], "state": scene_state(page)})
         assert not errors, errors
-        return {"rows": rows, "requests": requests, "browser_errors": errors}
+        grouped = defaultdict(list)
+        for row in rows:
+            grouped[row["operation"]].append(row)
+        summary = {}
+        for operation, samples in grouped.items():
+            elapsed = sorted(row["elapsed_ms"] for row in samples)
+            summary[operation] = {"samples": len(samples),
+                "p50_ms": statistics.median(elapsed),
+                "p95_ms": elapsed[math.ceil(len(elapsed) * .95) - 1],
+                "http_requests_started": [row["http_requests_started"] for row in samples],
+                "http_response_bytes_completed": [sum(
+                    item["sizes"]["responseBodySize"] + item["sizes"]["responseHeadersSize"]
+                    for item in row["http_completed"]) for row in samples]}
+        return {"rows": rows, "summary": summary, "requests": requests, "browser_errors": errors}

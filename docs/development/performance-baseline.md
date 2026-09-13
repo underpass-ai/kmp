@@ -57,7 +57,11 @@ Four bounded shapes cover 8 entries/256-byte sources, 32 entries/1-KiB sources,
 Coordinates span occurred, observed and ingested clocks and two dimensions.
 The current positive fixture has no expiry; historical navigation explicitly
 selects the observed clock. Each shape is seeded and closed, then reopened in
-a fresh process. OS caches are not flushed.
+a fresh process. OS caches are not flushed. Relation observation and ingestion
+clocks are fixed too, so independently seeded binaries produce comparable
+responses. Wake/Ask use a 2-MB byte ceiling and at most eight selected entries;
+the generous byte ceiling lets the high-degree fixture return its selected
+evidence on the first page instead of filling that page with relations alone.
 
 Wake, Ask, Goto and Forward each record one first-operation sample, optional
 warmups and the requested warm samples. Every repeated complete native result

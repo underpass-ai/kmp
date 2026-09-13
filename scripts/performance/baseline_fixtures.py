@@ -19,14 +19,16 @@ def make_fixture(name):
     # Acyclic ordered proof graph, with bounded degree and no duplicate edges.
     template = packet["memory"]["relations"][0]
     packet["memory"]["relations"] = [
-        {**template, "from": refs[i], "to": refs[j]}
+        {**template, "from": refs[i], "to": refs[j],
+         "clocks": {"observed_at": "2026-09-10T10:00:01Z",
+                    "ingested_at": "2026-09-10T10:00:01Z"}}
         for i in range(1, count) for j in range(max(0, i - degree), i)
     ]
     return packet, refs
 
 
 def read_cases(about, refs):
-    budget = {"max_bytes": 64000, "max_entries": 8, "detail": "full"}
+    budget = {"max_bytes": 2_000_000, "max_entries": 8, "detail": "full"}
     return [
         ("wake", "kmp_wake", {"about": about, "budget": budget}),
         ("ask", "kmp_ask", {"about": about, "question": "quantity 17 excludes B", "budget": budget}),
