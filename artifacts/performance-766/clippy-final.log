@@ -1,0 +1,6 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Checking kmp-mcp v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-mcp)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.81s

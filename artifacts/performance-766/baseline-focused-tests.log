@@ -1,0 +1,131 @@
+   Compiling serde_core v1.0.228
+   Compiling serde v1.0.228
+   Compiling base64ct v1.8.3
+   Compiling semver v1.0.27
+   Compiling const-oid v0.9.6
+   Compiling signature v2.2.0
+   Compiling rand_core v0.10.1
+   Compiling getrandom v0.4.2
+   Compiling portable-atomic v1.13.1
+   Compiling openssl-probe v0.2.1
+   Compiling data-encoding v2.10.0
+   Compiling nuid v0.5.0
+   Compiling rusqlite v0.40.2
+   Compiling serde_repr v0.1.20
+   Compiling kmp-config v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-config)
+   Compiling ed25519 v2.2.3
+   Compiling rustls-native-certs v0.8.3
+   Compiling chacha20 v0.10.1
+   Compiling rustc_version v0.4.1
+   Compiling pem-rfc7468 v0.7.0
+   Compiling der v0.7.10
+   Compiling curve25519-dalek v4.1.3
+   Compiling rand v0.10.2
+   Compiling tempfile v3.27.0
+   Compiling ed25519-dalek v2.2.0
+   Compiling spki v0.7.3
+   Compiling pkcs8 v0.10.2
+   Compiling signatory v0.27.1
+   Compiling nkeys v0.4.5
+   Compiling serde_json v1.0.149
+   Compiling deranged v0.5.8
+   Compiling bytes v1.11.1
+   Compiling kmp-plugin-api v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-plugin-api)
+   Compiling serde_urlencoded v0.7.1
+   Compiling rust-stemmers v1.2.0
+   Compiling serde_nanos v0.1.4
+   Compiling tracing-serde v0.2.0
+   Compiling kmp-memory-api v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-memory-api)
+   Compiling tracing-subscriber v0.3.23
+   Compiling kmp-domain v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-domain)
+   Compiling time v0.3.47
+   Compiling tokio v1.50.0
+   Compiling http v1.4.0
+   Compiling prost v0.13.5
+   Compiling prost-types v0.13.5
+   Compiling http-body v1.0.1
+   Compiling http-body-util v0.1.3
+   Compiling axum-core v0.4.5
+   Compiling tracing-appender v0.2.5
+   Compiling kmp-ports v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-ports)
+   Compiling tokio-util v0.7.18
+   Compiling tokio-rustls v0.26.4
+   Compiling tower v0.5.3
+   Compiling kmp-application v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-application)
+   Compiling tokio-stream v0.1.18
+   Compiling tryhard v0.5.2
+   Compiling axum v0.7.9
+   Compiling tower-http v0.6.8
+   Compiling h2 v0.4.13
+   Compiling tower v0.4.13
+   Compiling tokio-websockets v0.10.1
+   Compiling async-nats v0.50.0
+   Compiling kmp-observability v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-observability)
+   Compiling kmp-viewer v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-viewer)
+   Compiling kmp-adapter-embedded v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-adapter-embedded)
+   Compiling hyper v1.8.1
+   Compiling hyper-util v0.1.20
+   Compiling kmp-embedded v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-embedded)
+   Compiling hyper-timeout v0.5.2
+   Compiling hyper-rustls v0.27.7
+   Compiling reqwest v0.12.28
+   Compiling tonic v0.12.3
+   Compiling kmp-proto v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-proto)
+   Compiling kmp-proto-mapping v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-proto-mapping)
+   Compiling kmp-transport-grpc v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-transport-grpc)
+   Compiling kmp-mcp v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-mcp)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.33s
+     Running unittests src/lib.rs (target/debug/deps/kmp_mcp-0283efb74c963c43)
+
+running 49 tests
+test projection::memory_nodes_projection::tests::a_batch_names_partial_headers_and_spells_clocks_like_every_other_coordinate ... ok
+test projection::inspect_projection::tests::inspect_reuse_requires_a_valid_continuation ... ok
+test projection::recall_projection::tests::maps_wake_and_ignores_transport_budget_types ... ok
+test projection::recall_projection::tests::maps_typed_ask_response_without_inventing_null_answer ... ok
+test projection::inspect_projection::tests::an_inspect_floor_over_the_ceiling_is_returned_and_says_so ... ok
+test projection::inspect_budget::tests::reused_cursor_still_binds_source_identity_body_and_shared_supports ... ok
+test projection::summaries_audit_page::tests::a_byte_ceiling_below_the_published_floor_is_refused ... ok
+test projection::inspect_projection::tests::inspect_cursor_is_bound_to_the_selection_but_not_the_byte_ceiling ... ok
+test projection::summaries_audit_page::tests::a_states_filter_narrows_the_page_and_leaves_the_totals_alone ... ok
+test projection::summaries_audit_page::tests::a_cursor_from_a_different_reading_is_refused_rather_than_paged ... ok
+test projection::summaries_audit_page::tests::an_all_abouts_core_over_the_ceiling_without_an_eligible_memory_stays_complete ... ok
+test projection::summaries_audit_page::tests::a_malformed_cursor_is_refused_by_shape_before_it_is_trusted ... ok
+test projection::summaries_audit_page::tests::an_all_abouts_stable_core_over_the_ceiling_reports_its_exact_floor ... ok
+test projection::summaries_audit_page::tests::an_unknown_state_is_refused_with_the_vocabulary_named ... ok
+test projection::summaries_audit_page::tests::an_empty_selection_pages_nothing_and_offers_no_continuation ... ok
+test projection::summaries_audit_page::tests::the_totals_describe_the_selection_and_the_entries_describe_the_page ... ok
+test projection::inspect_projection::tests::inspect_reuse_rejects_a_changed_object_or_proof ... ok
+test projection::summaries_audit_projection::tests::a_memory_with_nothing_to_do_prints_no_field_it_does_not_have ... ok
+test projection::summaries_audit_projection::tests::a_refused_summary_prints_the_lints_words_and_who_wrote_it ... ok
+test projection::summaries_audit_projection::tests::an_empty_selection_says_so_rather_than_reporting_a_clean_store ... ok
+test projection::summaries_audit_projection::tests::a_sweep_and_a_named_set_each_say_what_they_read ... ok
+test projection::summaries_audit_projection::tests::a_weakness_prints_a_word_to_branch_on_and_a_sentence_to_act_on ... ok
+test projection::inspect_projection::tests::inspect_can_reuse_a_large_object_and_reconstruct_every_expansion ... ok
+test projection::temporal_projection::tests::maps_temporal_response_to_kmp_json_names ... ok
+test projection::trace_body_actions::tests::a_response_the_kernel_left_without_a_plan_offers_nothing ... ok
+test projection::trace_body_actions::tests::a_refusal_offers_a_fresh_read_without_the_expectation_it_just_refused ... ok
+test projection::summaries_audit_page::tests::every_page_together_reconstructs_the_whole_reading_and_the_last_one_stops ... ok
+test projection::summaries_audit_page::tests::one_memory_larger_than_the_ceiling_is_returned_with_a_warning ... ok
+test projection::trace_body_actions::tests::only_the_oversized_record_left_still_produces_its_own_call ... ok
+test projection::summaries_audit_projection::tests::the_core_describes_the_whole_selection_and_leaves_the_page_to_its_caller ... ok
+test projection::trace_body_actions::tests::an_expansion_keeps_the_page_size_and_drops_only_the_cursor ... ok
+test projection::trace_body_actions::tests::an_oversized_record_is_offered_separately_at_its_exact_price ... ok
+test projection::trace_body_actions::tests::the_plan_becomes_a_complete_call_with_the_query_and_the_manifest ... ok
+test projection::trace_material_expansion::tests::trace_material_expansion_preserves_selection_except_material_and_old_cursor ... ok
+test serving::adapters::tool_request_mapping::visual_projection::tests::projection_request_requires_an_explicit_half_open_range ... ok
+test projection::inspect_projection::tests::inspect_pages_an_oversized_hub_without_repeats_or_gaps ... ok
+test projection::inspect_budget::tests::exact_whole_item_boundary_changes_only_when_real_bytes_fit ... ok
+test projection::inspect_budget::tests::template_bytes_equal_real_json_for_all_slices_and_object_modes ... ok
+test projection::recall_budget_audit::tests::projection_envelope_is_budgeted_without_losing_the_cited_core ... ok
+test projection::recall_budget_audit::tests::compact_output_filters_structure_and_honours_the_serialized_byte_limit ... ok
+test projection::recall_budget_audit::tests::wake_budget_keeps_the_wake_shape_when_retained_text_is_too_large ... ok
+test projection::recall_budget_audit::tests::max_entries_caps_ask_reasons_as_well_as_proof_evidence ... ok
+test projection::inspect_budget::tests::exact_floor_actions_and_reused_pages_reconstruct_original_sections ... ok
+test projection::recall_projection::tests::three_reason_packet_serializes_each_evidence_body_once ... ok
+test projection::recall_budget_audit::tests::transport_omissions_do_not_change_the_graph_frontier ... ok
+test projection::recall_budget_audit::tests::ask_budget_shortens_text_without_dropping_stable_citations ... ok
+test projection::recall_budget_audit::tests::a_budget_below_the_stable_floor_returns_the_floor_and_says_so ... ok
+test projection::recall_budget_audit::tests::wake_budget_sweep_preserves_the_ceiling_and_monotone_state ... ok
+test projection::recall_budget_audit::tests::ask_budget_sweep_preserves_the_ceiling_and_monotone_cited_core ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 383 filtered out; finished in 44.45s

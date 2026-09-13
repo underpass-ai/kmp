@@ -1,0 +1,84 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling cc v1.2.58
+   Compiling futures-task v0.3.32
+   Compiling libc v0.2.183
+   Compiling tracing-core v0.1.36
+   Compiling syn v2.0.117
+   Compiling futures-channel v0.3.32
+   Compiling rustls v0.23.37
+   Compiling sync_wrapper v1.0.2
+   Compiling futures-util v0.3.32
+   Compiling getrandom v0.4.2
+   Compiling ring v0.17.14
+   Compiling tempfile v3.27.0
+   Compiling tower v0.5.3
+   Compiling prettyplease v0.2.37
+   Compiling tokio-macros v2.6.1
+   Compiling prost-derive v0.13.5
+   Compiling serde_derive v1.0.228
+   Compiling tracing-attributes v0.1.31
+   Compiling pin-project-internal v1.1.11
+   Compiling async-trait v0.1.89
+   Compiling async-stream-impl v0.3.6
+   Compiling async-stream v0.3.6
+   Compiling tokio v1.50.0
+   Compiling pin-project v1.1.11
+   Compiling axum-core v0.4.5
+   Compiling tracing v0.1.44
+   Compiling prost v0.13.5
+   Compiling rustls-webpki v0.103.14
+   Compiling prost-types v0.13.5
+   Compiling prost-build v0.13.5
+   Compiling serde v1.0.228
+   Compiling axum v0.7.9
+   Compiling kmp-plugin-api v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-plugin-api)
+   Compiling rust-stemmers v1.2.0
+   Compiling tonic-build v0.12.3
+   Compiling kmp-domain v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-domain)
+   Compiling kmp-proto v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-proto)
+   Compiling tokio-util v0.7.18
+   Compiling tokio-stream v0.1.18
+   Compiling h2 v0.4.13
+   Compiling tower v0.4.13
+   Compiling tokio-rustls v0.26.4
+   Compiling kmp-application v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-application)
+   Compiling hyper v1.8.1
+   Compiling hyper-util v0.1.20
+   Compiling hyper-timeout v0.5.2
+   Compiling tonic v0.12.3
+   Compiling kmp-proto-mapping v0.18.3 (/home/gx10a/Documents/ai/kmp-perf-766/crates/kmp-proto-mapping)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.72s
+     Running unittests src/lib.rs (target/debug/deps/kmp_proto_mapping-d906fbd9fb825f65)
+
+running 28 tests
+test v1beta1::recall_projection::action_tests::typed_call_keeps_integers_above_floating_point_precision ... ok
+test v1beta1::recall_projection::rank_tests::ask_cursor_binds_both_evidence_rank_and_content ... ok
+test v1beta1::recall_projection::pending_tests::zero_remaining_does_not_erase_detail_exclusions ... ok
+test v1beta1::recall_projection::response_value_tests::wake_value_carries_the_labels_and_apply_reads_them_back ... ok
+test v1beta1::recall_projection::pending_tests::shortened_core_warns_to_restart_even_with_pending_expansion ... ok
+test v1beta1::recall_projection::rank_tests::ask_pages_preserve_retrieval_rank_instead_of_sorting_evidence_ids ... ok
+test v1beta1::recall_projection::pending_tests::wake_remaining_counts_only_expansion_after_the_current_page ... ok
+test v1beta1::recall_projection::action_tests::a_completed_expansion_restores_its_shortened_cited_core ... ok
+test v1beta1::recall_projection::pending_tests::ask_remaining_excludes_core_and_every_prior_page_through_typed_wire ... ok
+test v1beta1::recall_projection::typed_response_tests::shortened_wake_core_keeps_every_supersession_marker ... ok
+test v1beta1::recall_projection::typed_response_tests::typed_ask_projection_round_trips_exact_bytes_and_cursor ... ok
+test v1beta1::recall_projection::plan_tests::under_a_tight_budget_the_labels_yield_before_the_cited_proof ... ok
+test v1beta1::recall_projection::typed_response_tests::typed_wake_projection_round_trips_exact_bytes_and_cursor ... ok
+test v1beta1::recall_projection::cursor_tests::cursor_rejects_changed_bound_arguments ... ok
+test v1beta1::recall_projection::plan_tests::cited_evidence_survives_max_entries_even_when_it_is_not_first ... ok
+test v1beta1::recall_projection::budget_tests::advisory_token_hint_does_not_filter_structured_content ... ok
+test v1beta1::recall_projection::cursor_tests::cursor_identity_uses_the_canonical_ordered_selection ... ok
+test v1beta1::recall_projection::budget_tests::byte_budget_sweep_is_monotone_deterministic_and_exactly_accounted ... ok
+test v1beta1::recall_projection::core_fit_tests::compact_1400_and_balanced_1800_keep_the_same_cited_core ... ok
+test v1beta1::recall_projection::budget_tests::detail_levels_change_expansion_when_bytes_are_available ... ok
+test v1beta1::recall_projection::budget_tests::detail_modes_are_nested_fieldsets ... ok
+test v1beta1::recall_projection::core_fit_tests::core_is_identical_across_detail_modes_when_text_must_shorten ... ok
+test v1beta1::recall_projection::core_fit_tests::oversized_expansion_explains_stall_and_resumes_at_larger_budget ... ok
+test v1beta1::recall_projection::typed_response_tests::bounded_wake_roundtrip_preserves_long_causal_rationales ... ok
+test v1beta1::recall_projection::cursor_tests::pages_reconstruct_the_full_proof_without_changing_the_answer ... ok
+test v1beta1::recall_projection::typed_response_tests::shortened_typed_evidence_keeps_identity_text_and_budget ... ok
+test v1beta1::recall_projection::core_fit_tests::all_abouts_wake_with_a_shortened_core_advances_every_page ... ok
+test v1beta1::recall_projection::typed_response_tests::bounded_ask_roundtrip_retains_every_projected_field ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 247 filtered out; finished in 8.40s
