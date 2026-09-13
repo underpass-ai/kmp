@@ -9,6 +9,26 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.2] - 2026-09-13
+
+### Added
+
+- ChronoLoom now exposes batched memory-node reads and retains certified visual
+  projections across compatible interactions, reducing repeated graph and scene
+  work while preserving snapshot and revision boundaries.
+
+### Changed
+
+- ChronoLoom framing, scene retention and projection caching now share explicit
+  revision-aware contracts, with benchmark controls and performance notes for
+  the viewer path.
+
+### Fixed
+
+- Viewer interactions no longer rebuild compatible visual projections or
+  discard retained scenes unnecessarily, while embedded and gRPC memory-node
+  reads remain parity-tested.
+
 ## [0.18.1] - 2026-09-13
 
 ### Added
@@ -1704,7 +1724,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.1...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.2...HEAD
+[0.18.2]: https://github.com/underpass-ai/kmp/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/underpass-ai/kmp/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/underpass-ai/kmp/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/underpass-ai/kmp/compare/v0.16.0...v0.17.0
