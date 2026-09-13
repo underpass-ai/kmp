@@ -17,32 +17,19 @@
         {
           "dimension": "conversation",
           "ingested_at": "<stamped at call time>",
-          "method": "",
-          "motivation": "",
-          "observed_at": null,
           "occurred_at": "2026-04-12T18:00:00Z",
-          "rank": null,
           "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
           "sequence": 3,
-          "valid_from": "2026-04-12T18:00:00Z",
-          "valid_until": null,
-          "why": ""
+          "valid_from": "2026-04-12T18:00:00Z"
         }
       ],
       "question:parity:claim:denver": [
         {
           "dimension": "conversation",
           "ingested_at": "<stamped at call time>",
-          "method": "",
-          "motivation": "",
-          "observed_at": null,
           "occurred_at": "2026-04-12T15:00:00Z",
-          "rank": null,
           "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
-          "sequence": 1,
-          "valid_from": null,
-          "valid_until": null,
-          "why": ""
+          "sequence": 1
         }
       ]
     },

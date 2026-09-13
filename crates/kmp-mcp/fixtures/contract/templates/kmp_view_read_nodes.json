@@ -17,32 +17,19 @@
         {
           "dimension": "string",
           "ingested_at": "string",
-          "method": "string",
-          "motivation": "string",
-          "observed_at": "null",
           "occurred_at": "string",
-          "rank": "null",
           "scope_id": "string",
           "sequence": "integer",
-          "valid_from": "string",
-          "valid_until": "null",
-          "why": "string"
+          "valid_from": "string"
         }
       ],
       "question:parity:claim:denver": [
         {
           "dimension": "string",
           "ingested_at": "string",
-          "method": "string",
-          "motivation": "string",
-          "observed_at": "null",
           "occurred_at": "string",
-          "rank": "null",
           "scope_id": "string",
-          "sequence": "integer",
-          "valid_from": "null",
-          "valid_until": "null",
-          "why": "string"
+          "sequence": "integer"
         }
       ]
     },

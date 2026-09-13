@@ -88,6 +88,38 @@ invalidating write, clock change, eviction or process start. This implementation
 uses a bounded in-memory index instead of adding a persisted temporal index;
 it does not claim constant-cost cold discovery or physical-I/O savings.
 
+## Framing selected refs in ChronoLoom (#539)
+
+Framing a focus of refs previously ran one Inspect per uncached ref, over HTTP
+and over the MCP App bridge alike, and loaded the graph, proof and body data
+that framing then discarded. Cached scene entries could also precede a peer
+write, so one focus could combine clocks read at different revisions.
+
+`ReadNodes` resolves up to 64 refs per call against one pinned SQLite snapshot:
+scoped headers and every `contains_entry` coordinate, no canonical body and no
+source discovery. Duplicate refs share work and keep first-requested order.
+Refs the about does not hold are `missing`, without foreign metadata; refs a
+budget left unread are `omitted`, which is a different claim; a header whose
+coordinate walk was cut short is named in `incomplete_coordinates`. A batch
+stops at `max_edges` (2,048 by default, 32,768 at most) or after 4,096 distinct
+nodes, counting requested refs and coordinate scopes. The response carries the
+adapter-certified snapshot identity. A later batch that sends it back as
+`expect_snapshot` is refused when any commit or a reopened observer intervened,
+including body-only writes. There is no split-read fallback: an adapter that
+cannot certify one snapshot refuses the batch instead.
+
+ChronoLoom reads a whole focus this way, up to 4,096 refs in batches of 64
+under one shared 32,768-edge budget, and moves the window only after every
+batch succeeded. A store that moved under a multi-batch focus is read once
+more from its new revision; a second refusal, an omitted ref or an incomplete
+coordinate set keeps the previous window and is reported to the person, as is
+any agent intent the loom could not obey. A late batch cannot overwrite a newer
+focus, about or clock. The HTTP route renders the domain result through the
+viewer's own views; the embedded and gRPC MCP backends share one renderer in
+`kmp-mcp`. The app-only `kmp_view_read_nodes` tool is absent from the
+model-facing catalogue. A fully cached focus formerly avoided metadata I/O and
+now performs one fresh batch; that read is the price of not inventing a state.
+
 ## Validation
 
 `temporal_body_selection` uses a recording adapter over a real SQLite store. A
@@ -135,6 +167,23 @@ known-allocation control verifies three requests totaling 400 bytes and two
 explicit frees. Compile it with the command in its source header and pass both
 binaries, the shared library, paired artifact root, paired scratch root, a new
 output directory and a new scratch directory to the Python runner.
+
+`scripts/performance/node_batch_framing.py` drives the viewer example
+`node_batch_benchmark` over four synthetic fixtures: one ref with two labels and
+one source, eight refs with 4 KiB bodies, 64 refs with 32 labels and 64 shared
+sources, and eight refs with 256 KiB bodies. Before timing, its `verify` mode
+compares every batched header and its complete coordinates with individual
+Inspect on each quiescent fixture. Eight independent processes then run 20 warm
+frames per fixture in a reversed second-round order, natively and over loopback
+HTTP with a fresh TCP connection per request, keeping first reads, five
+reopened-engine reads and whole-process peak RSS. Domain tests assert
+deduplicated point reads and exact coordinate edge counts and fail if a body is
+read. Native tests cover a peer write between two reads of one pinned snapshot,
+a body-only write and a reopened observer against a bound batch. A real gRPC
+server matches the embedded service, budgets and the ABORTED refusal included;
+the HTTP smoke test matches `/api/node` byte for byte. Browser tests cover the
+one retry, a late batch, an incomplete batch and an intent the loom could not
+obey.
 
 ## Recorded comparison (2026-09-13)
 
@@ -217,3 +266,40 @@ these totals, especially for the large temporal catalogue.
 | Ask | 32 / 1024 | 2,422,477 → 846,898 | 0.257 → 0.104 |
 | Wake | 256 / 4096 | 33,521,640 → 3,166,693 | 3.924 → 0.902 |
 | Ask | 256 / 4096 | 34,686,480 → 4,279,781 | 3.985 → 0.953 |
+
+## Recorded framing comparison (2026-09-13)
+
+Same host, toolchain and dev profile as the comparison above, with no build or
+test running concurrently and OS caches not flushed. Each cell is 40 warm
+observations, one Inspect per ref → one ReadNodes batch, on the fixtures the
+runner builds. Calls are application calls natively and HTTP requests over
+loopback. Bytes are the complete JSON response. The raw samples of this run
+are not tracked; the runner reproduces them into a new directory.
+
+Native application read plus JSON serialization:
+
+| Fixture | p50 ms | p95 ms | Bytes | Calls |
+|---|---:|---:|---:|---:|
+| small | 0.650 → 0.319 | 0.877 → 0.366 | 1,817 → 842 | 1 → 1 |
+| medium | 18.772 → 2.314 | 26.480 → 2.933 | 60,616 → 8,013 | 8 → 1 |
+| high_degree | 415.045 → 45.880 | 517.330 → 46.748 | 2,167,360 → 353,087 | 64 → 1 |
+| large_body | 194.876 → 1.501 | 201.065 → 2.122 | 2,133,960 → 8,013 | 8 → 1 |
+
+Loopback HTTP round trips through the viewer:
+
+| Fixture | p50 ms | p95 ms | Bytes | Calls |
+|---|---:|---:|---:|---:|
+| small | 1.325 → 0.713 | 1.545 → 0.798 | 2,121 → 1,145 | 1 → 1 |
+| medium | 15.857 → 2.682 | 20.545 → 3.499 | 63,048 → 8,317 | 8 → 1 |
+| high_degree | 519.915 → 59.688 | 550.427 → 61.221 | 2,186,880 → 353,393 | 64 → 1 |
+| large_body | 210.244 → 2.024 | 272.439 → 2.338 | 2,136,408 → 8,317 | 8 → 1 |
+
+Whole-process peak RSS, which includes fixture construction, all four shapes
+and the reopened engines, was 20,832–22,444 KiB before and 19,316–19,416 KiB
+after natively, and 23,412–25,040 KiB before and 21,556–22,492 KiB after over
+HTTP. This is not an allocation profile. The result is fewer calls and lower
+latency on the framing path; it is not a complete-proof latency claim, a
+fixed-memory guarantee or a cold-cache measurement. The large-body fixture
+keeps short synthetic headers, and canonical-ingest headers can carry more text
+in their properties. The broader proof-group profiling matrix in #539 remains
+open.

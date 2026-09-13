@@ -1010,7 +1010,44 @@ test("long focuses bind every batch to the first snapshot before moving the wind
   assert.deepEqual(requests.map(r=>r.ids.split(",").length),[64,64,2]);
   assert.deepEqual(requests.map(r=>r.max_edges),[32768,32704,32640]);
   const before=[view.t0,view.t1];let reads=0;
-  app.api.call=async()=>({snapshot:++reads===1?"fixture:1":"fixture:2",nodes:[],coordinates:{}});
+  // A store that keeps moving: every batch answers from a newer revision, so
+  // the one retry the loom allows itself fails the same way and the window stays.
+  app.api.call=async()=>({snapshot:`fixture:${++reads}`,nodes:[],coordinates:{}});
   await assert.rejects(()=>app.sync.frameRefs(refs),/snapshot changed/);
+  assert.equal(reads,4,"two batches per pass, one retry");
+  assert.deepEqual([view.t0,view.t1],before);
+});
+
+test("a focus whose store moved under it is read again once from the new revision",async()=>{
+  for (const refuse of [error=>{error.status=409;},error=>{error.code="conflict";}]) {
+    const {app}=loom();const {model,view}=app.state;
+    model.about="project:x";view.clock="occurred";view.full={t0:0,t1:Date.parse("2026-10-01")};
+    app.data.loadProjection=async()=>{};app.data.cancelScheduledProjection=()=>{};app.sync.reportView=()=>{};
+    const refs=Array.from({length:70},(_,i)=>`n${i}`),requests=[];
+    app.api.call=async(path,params)=>{
+      requests.push(params.expect_snapshot);
+      // The store commits between the first pass's two batches: the bound
+      // batch is refused, and the retry starts over from the new revision.
+      if (requests.length===2){const refused=new Error("node batch snapshot changed; discard previous batches and restart the focus");refuse(refused);throw refused;}
+      const ids=params.ids.split(","),snapshot=requests.length<2?"fixture:1":"fixture:2";
+      return {snapshot,nodes:ids.map(id=>({id})),coordinates:Object.fromEntries(ids.map(id=>[id,[{occurred_at:"2026-09-13T12:00:00Z"}]])),scanned_edges:ids.length};
+    };
+    assert.equal(await app.sync.frameRefs(refs),true);
+    assert.deepEqual(requests,[undefined,"fixture:1",undefined,"fixture:2"]);
+    assert.ok(view.t0>Date.parse("2026-09-12"));
+  }
+});
+
+test("an agent intent the loom cannot obey is said aloud and its revision consumed",async()=>{
+  const {app,calls}=loom();const {model,view}=app.state;
+  model.about="project:x";view.clock="occurred";view.full={t0:0,t1:Date.parse("2026-10-01")};
+  app.data.loadProjection=async()=>{};app.data.cancelScheduledProjection=()=>{};app.data.loadObservability=async()=>{};app.sync.reportView=()=>{};
+  app.api.call=async(path)=>{assert.equal(path,"/api/nodes");return {snapshot:"fixture:1",nodes:[{id:"a"}],coordinates:{a:[]},omitted:["b"]};};
+  const before=[view.t0,view.t1];
+  await app.sync.adoptAgentState({view_revision:12,about:"project:x",focus:{refs:["a","b"]},projection:{}});
+  assert.equal(app.state.sync.revision,12,"a move the loom cannot obey is still consumed, not replayed");
+  const shown=calls.find(call=>call.name==="dom.showError");
+  assert.match(String(shown&&shown.args[0]),/could not be applied.*read budget/);
+  assert.ok(calls.some(call=>call.name==="panels.renderProvenance"));
   assert.deepEqual([view.t0,view.t1],before);
 });

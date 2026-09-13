@@ -1691,6 +1691,8 @@ message ReadNodesResponse {
   repeated string missing = 2;
   // Unread due to the work budget; these are not known to be missing.
   repeated string omitted = 3;
+  // `complete`; `edge_budget` once max_edges is spent; `node_budget` once
+  // 4096 distinct nodes (requested refs plus coordinate scopes) were touched.
   string stop_reason = 4;
   uint32 scanned_edges = 5;
   string snapshot = 6;

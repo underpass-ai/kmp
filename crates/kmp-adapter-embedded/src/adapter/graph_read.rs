@@ -235,7 +235,7 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
             if request
                 .expect_snapshot
                 .as_ref()
-                .is_some_and(|expected| expected != revision.as_str())
+                .is_some_and(|expected| expected != &revision)
             {
                 return Err(PortError::Conflict(
                     "node batch snapshot changed; discard previous batches and restart the focus"
@@ -247,7 +247,7 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
                 &super::trace_snapshot::TraceSnapshot(tx.as_ref()),
                 &request,
             )?;
-            result.snapshot = Some(revision.as_str().into());
+            result.snapshot = Some(revision);
             Ok(result)
         })
         .await

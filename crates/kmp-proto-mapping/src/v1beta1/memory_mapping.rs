@@ -89,6 +89,4 @@ pub use evidence_seek_response::evidence_seek_response_from_result;
 mod evidence_seek_tests;
 
 mod memory_nodes;
-pub use memory_nodes::{
-    memory_nodes_json, memory_nodes_request_from_proto, memory_nodes_response_from_result,
-};
+pub use memory_nodes::{memory_nodes_request_from_proto, memory_nodes_response_from_result};

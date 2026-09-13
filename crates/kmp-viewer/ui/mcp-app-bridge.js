@@ -82,7 +82,12 @@
     const result = await request("tools/call", { name, arguments: args });
     if (result && result.isError) {
       const text = result.content && result.content[0] && result.content[0].text;
-      throw new Error(text || `${name} failed`);
+      const error = new Error(text || `${name} failed`);
+      // The kernel's own error code travels with the message, so the loom can
+      // tell a store that moved (`conflict`) from a request that was wrong.
+      const detail = result.structuredContent && result.structuredContent.error;
+      if (detail && detail.code) error.code = detail.code;
+      throw error;
     }
     return (result && result.structuredContent) || {};
   }

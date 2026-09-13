@@ -1943,7 +1943,6 @@ dependencies = [
  "kmp-application",
  "kmp-domain",
  "kmp-embedded",
- "kmp-proto-mapping",
  "serde",
  "serde_json",
  "sha2",

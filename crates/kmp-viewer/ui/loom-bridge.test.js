@@ -9,7 +9,11 @@ function bridge(respond) {
     if (!message.id) return;
     calls.push(message);
     queueMicrotask(async()=>{
-      const result=message.method==="ui/initialize"?{}:{structuredContent:await respond(message.params.name,message.params.arguments)};
+      let result={};
+      if (message.method!=="ui/initialize") {
+        const answer=await respond(message.params.name,message.params.arguments);
+        result=answer&&answer.isError?answer:{structuredContent:answer};
+      }
       listener({source:parent,data:{jsonrpc:"2.0",id:message.id,result}});
     });
   }};
@@ -67,4 +71,9 @@ test("MCP App resolves a focus batch in one native call and preserves partial st
   });
   assert.deepEqual(plain(await api("/api/nodes",{about:"project:x",ids:"a,b,gone",max_edges:3})),result);
   assert.equal(calls.filter(c=>c.method==="tools/call").length,1);
+});
+
+test("MCP App keeps the kernel's conflict code on a refused focus batch so the loom can retry it",async()=>{
+  const {api}=bridge(()=>({isError:true,content:[{type:"text",text:"node batch snapshot changed; discard previous batches and restart the focus"}],structuredContent:{error:{code:"conflict",message:"node batch snapshot changed"}}}));
+  await assert.rejects(()=>api("/api/nodes",{about:"project:x",ids:"a"}),error=>error.code==="conflict"&&/snapshot changed/.test(error.message));
 });

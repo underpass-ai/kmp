@@ -21,7 +21,11 @@ KMP_APP.api = (() => {
         : "";
       const response = await fetch(path + query, { method });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || `${path} failed with ${response.status}`);
+      if (!response.ok) {
+        const error = new Error(body.error || `${path} failed with ${response.status}`);
+        error.status = response.status;
+        throw error;
+      }
       return body;
     } finally {
       finish?.();

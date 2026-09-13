@@ -8,15 +8,15 @@ use kmp_application::{
     TracePageRequest, VisualLevelOfDetail, VisualProjectionQuery, WakeMemoryQuery,
 };
 use kmp_domain::{
-    ContextEventStore, DomainError, GraphNeighborhoodReader, MemoryAboutIndexReader,
-    NodeDetailReader, NodeRelationshipReader, PortError, ProjectionWriter, SnapshotStore,
-    TemporalWindow,
+    ContextEventStore, DomainError, GraphNeighborhoodReader, GraphReadRevision,
+    MemoryAboutIndexReader, MemoryNodesRequest, NodeDetailReader, NodeRelationshipReader,
+    PortError, ProjectionWriter, SnapshotStore, TemporalWindow,
 };
 
 use crate::http::{HttpRequest, HttpResponse};
 use crate::query_params::{
     axis_param, budget_param, cursor_param, depth_param, dimension_selection, direction_param,
-    numeric_param, tier_param, window_param,
+    max_edges_param, numeric_param, tier_param, window_param,
 };
 use crate::renderer_asset::renderer_source;
 use crate::{MemoryViewerServer, view, views};
@@ -240,8 +240,9 @@ where
         }
     }
 
-    /// Summaries for a batch of ids, so the UI can label freshly expanded
-    /// neighbors in one request. Unknown ids are reported, not fatal.
+    /// Headers and coordinates for a batch of ids from one store snapshot, so
+    /// the UI can frame a focus in one request. Unknown ids are reported, not
+    /// fatal; ids the work budget left unread are reported apart from them.
     async fn nodes(&self, request: &HttpRequest) -> HttpResponse {
         let Some(about) = request.param("about") else {
             return HttpResponse::error(400, "missing required parameter `about`");
@@ -263,16 +264,19 @@ where
                 &format!("parameter `ids` holds more than {MAX_BATCH_IDS} ids"),
             );
         }
-        let query = kmp_domain::MemoryNodesRequest {
-            expect_snapshot: request.param("expect_snapshot").map(str::to_string),
+        // An absent or empty identity is a first batch; the adapter certifies
+        // the one it returns.
+        let expect_snapshot = request
+            .param("expect_snapshot")
+            .and_then(|identity| GraphReadRevision::new(identity).ok());
+        let query = MemoryNodesRequest {
+            expect_snapshot,
             about: about.to_string(),
             refs: ids.into_iter().map(str::to_string).collect(),
-            max_edges: param_or_refuse!(numeric_param(request, "max_edges", 2048)),
+            max_edges: param_or_refuse!(max_edges_param(request)),
         };
         match self.service.read_nodes(query).await {
-            Ok(result) => HttpResponse::json(&kmp_proto_mapping::v1beta1::memory_nodes_json(
-                kmp_proto_mapping::v1beta1::memory_nodes_response_from_result(result),
-            )),
+            Ok(result) => HttpResponse::json(&views::node_batch_view(&result)),
             Err(error) => application_error_response(&error),
         }
     }

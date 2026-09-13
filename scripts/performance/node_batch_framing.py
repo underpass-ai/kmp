@@ -1,4 +1,13 @@
-"""Run after compiling and validating; retain each run in a new artifact directory."""
+#!/usr/bin/env python3
+"""ChronoLoom framing batch runner for #539. Synthetic stores; no model calls.
+
+Usage: python3 scripts/performance/node_batch_framing.py OUT
+Build the viewer example first with the shared Cargo configuration:
+    cargo build --locked -p kmp-viewer --example node_batch_benchmark
+OUT is a new directory, normally under the ignored `artifacts/`; existing
+evidence is never overwritten. Disposable stores live under `tmp/` and are
+removed after the run.
+"""
 import argparse
 import hashlib
 import json

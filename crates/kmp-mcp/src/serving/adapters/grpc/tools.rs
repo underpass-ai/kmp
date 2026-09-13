@@ -375,6 +375,6 @@ async fn grpc_memory_nodes(
         .map_err(grpc_error("ReadNodes", &about))?
         .into_inner();
     Ok(app_data_success_result(
-        kmp_proto_mapping::v1beta1::memory_nodes_json(response),
+        crate::projection::memory_nodes_from_response(response),
     ))
 }

@@ -1,5 +1,0 @@
-{
-  "about": "person:rachel",
-  "refs": ["claim:rachel-austin", "claim:rachel-work"],
-  "maxEdges": 2048
-}

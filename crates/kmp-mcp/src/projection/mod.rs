@@ -6,6 +6,7 @@ pub(crate) mod condense_projection;
 pub(crate) mod ingest_projection;
 pub(crate) mod inspect_budget;
 pub(crate) mod inspect_projection;
+mod memory_nodes_projection;
 mod recall_budget_audit;
 pub(crate) mod recall_error;
 pub(crate) mod recall_projection;
@@ -30,6 +31,7 @@ pub(crate) use condense_projection::condense_from_response;
 pub(crate) use ingest_projection::ingest_from_response;
 pub(crate) use inspect_budget::enforce_inspect_output_budget;
 pub(crate) use inspect_projection::inspect_from_response;
+pub(crate) use memory_nodes_projection::memory_nodes_from_response;
 #[cfg(test)]
 pub(crate) use recall_projection::enforce_recall_output_budget;
 pub(crate) use recall_projection::{

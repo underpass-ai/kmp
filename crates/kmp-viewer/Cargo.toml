@@ -19,7 +19,6 @@ flate2.workspace = true
 getrandom.workspace = true
 kmp-application.workspace = true
 kmp-domain.workspace = true
-kmp-proto-mapping.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

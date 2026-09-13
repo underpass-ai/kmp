@@ -1,4 +1,9 @@
-use crate::{DomainError, TraceSearchLimits};
+use crate::{DomainError, GraphReadRevision, TraceSearchLimits};
+
+/// Distinct nodes one batch may touch: the requested refs plus every
+/// coordinate scope reached through them. Reaching it stops the batch with
+/// `node_budget`; refs left unread are reported as omitted, never as missing.
+const NODE_BATCH_NODE_BUDGET: u32 = 4096;
 
 /// Already selected references whose headers and coordinates are needed together.
 /// This read never loads canonical bodies or claims to assemble complete proof.
@@ -8,7 +13,7 @@ pub struct MemoryNodesRequest {
     pub refs: Vec<String>,
     pub max_edges: u32,
     /// Optional identity from a preceding batch; adapters reject changed stores.
-    pub expect_snapshot: Option<String>,
+    pub expect_snapshot: Option<GraphReadRevision>,
 }
 
 impl MemoryNodesRequest {
@@ -31,7 +36,7 @@ impl MemoryNodesRequest {
 
     pub(super) fn limits(&self) -> TraceSearchLimits {
         TraceSearchLimits {
-            nodes: 4096,
+            nodes: NODE_BATCH_NODE_BUDGET,
             edges: self.max_edges,
             ..Default::default()
         }

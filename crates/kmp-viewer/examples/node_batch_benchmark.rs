@@ -4,7 +4,7 @@ mod framing_http;
 use kmp_application::InspectMemoryQuery;
 use kmp_domain::*;
 use kmp_embedded::EmbeddedKernel;
-use kmp_proto_mapping::v1beta1::{memory_nodes_json, memory_nodes_response_from_result};
+use kmp_viewer::views::node_batch_view;
 use serde_json::json;
 use std::{collections::BTreeMap, time::Instant};
 
@@ -109,7 +109,7 @@ async fn measure(
             })
             .await?;
         assert!(read.stop.is_none());
-        serde_json::to_vec(&memory_nodes_json(memory_nodes_response_from_result(read)))?.len()
+        serde_json::to_vec(&node_batch_view(&read))?.len()
     };
     Ok((now.elapsed().as_micros(), bytes))
 }
