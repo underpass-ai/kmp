@@ -149,6 +149,12 @@ def queries(refs):
     q = {**copy.deepcopy(base), "at": {"time": "2026-09-10T10:00:06Z"},
          "dimensions": {"selectors": [{"key": "topic", "op": "in", "values": ["shared"]}]}}
     cases.append(("kmp_goto", q))
+    # A lane restriction must retain the other lane needed by a whole-entry selector.
+    for op in ["in", "notin"]:
+        q = {**copy.deepcopy(base), "at": {"time": "2026-09-10T10:00:06Z"},
+             "dimensions": {"mode": "only", "include": ["task"], "scope_ids": ["proof"],
+                 "selectors": [{"key": "topic", "op": op, "values": ["shared"]}]}}
+        cases.append(("kmp_goto", q))
     return cases
 
 

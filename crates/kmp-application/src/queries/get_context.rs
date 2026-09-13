@@ -112,8 +112,12 @@ where
             std::sync::Arc::clone(&self.graph_reader),
             std::sync::Arc::clone(&self.detail_reader),
         );
+        // Lane hints cannot remove other coordinates before whole-entry
+        // predicates run. Root selection already restricts the about scope.
+        // The full reader also retains this catalogue; defer bodies only.
+        let catalogue = NeighborhoodRequest::new(request.root_node_id(), request.depth());
         let (bundle, _) = reader
-            .load_catalogue_for(request, role, self.generator_version)
+            .load_catalogue_for(&catalogue, role, self.generator_version)
             .await?;
         bundle.ok_or_else(|| {
             ApplicationError::NotFound(format!("node '{}' not found", request.root_node_id()))
