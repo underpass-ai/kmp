@@ -105,6 +105,19 @@ impl KmpBundle {
         &self.relationships
     }
 
+    /// Replace materialized bodies without cloning the already selected graph.
+    pub fn with_node_details(self, details: Vec<BundleNodeDetail>) -> Result<Self, DomainError> {
+        Self::new(
+            self.root_node_id,
+            self.role,
+            self.root_node,
+            self.neighbor_nodes,
+            self.relationships,
+            details,
+            self.metadata,
+        )
+    }
+
     pub fn node_details(&self) -> &[BundleNodeDetail] {
         &self.node_details
     }

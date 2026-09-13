@@ -251,16 +251,6 @@ impl TemporalAdmission {
         }
     }
 
-    /// Dependency traversal may use a declared validity interval only where
-    /// it overlaps this selection. Historical proof paths remain unchanged.
-    pub(super) fn admits_dependency_relation(
-        &self,
-        relationship: &kmp_domain::BundleRelationship,
-    ) -> bool {
-        kmp_domain::TemporalReadWindow::new(&self.selection, self.resolved_as_of.as_deref())
-            .admits_dependency_relation(relationship.explanation())
-    }
-
     /// Whether the recall is bounded to a span — the one case an UNKNOWN can
     /// name what lies nearest outside.
     pub(super) fn bounds_a_span(&self) -> bool {

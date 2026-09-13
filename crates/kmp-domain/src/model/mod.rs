@@ -5,6 +5,8 @@ pub mod kmp_bundle;
 pub mod kmp_stats;
 pub mod labels;
 mod proof_dependency_group;
+mod temporal_proof_plan;
+pub use temporal_proof_plan::TemporalProofPlan;
 pub mod relate;
 mod relationship_path;
 pub mod temporal_memory;

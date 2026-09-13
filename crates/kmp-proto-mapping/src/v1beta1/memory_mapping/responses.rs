@@ -688,37 +688,11 @@ pub fn temporal_response_from_result(
     result: TemporalMemoryResult,
 ) -> TemporalMoveResponse {
     let traversal = result.traversal;
-    // Entry enumeration has a lower bound, but its antecedents may be older.
-    // Bound proof only at the exclusive end so later knowledge cannot rewrite
-    // the selected history while earlier reasons remain traversable.
-    let mut proof_selection = traversal
-        .interval()
-        .and_then(|interval| interval.end())
-        .map_or(TemporalSelection::Frontier, |end| {
-            TemporalSelection::within(
-                kmp_domain::TemporalInterval::new(None, Some(end.to_string()))
-                    .expect("validated interval end"),
-                traversal.axis(),
-            )
-        });
-    // Goto's state stops at its cursor even when a wider interval is supplied.
-    // An interval ending at or before that cursor remains the stricter,
-    // exclusive bound; other moves retain interval enumeration semantics.
+    let proof_selection = traversal.proof_selection();
     let goto_instant = (direction == TemporalDirection::Goto)
         .then(|| traversal.resolved_cursor())
         .flatten()
         .and_then(|cursor| cursor_instant(cursor, traversal.axis()));
-    if let Some(instant) = goto_instant
-        && traversal
-            .interval()
-            .and_then(|interval| interval.end())
-            .is_none_or(|end| compare_temporal_instants(end, instant) == Some(Ordering::Greater))
-    {
-        proof_selection = TemporalSelection::AsOf {
-            cursor: kmp_domain::TemporalCursor::Time(instant.to_string()),
-            axis: traversal.axis(),
-        };
-    }
     let admission = TemporalAdmission::read(&result.source_bundle, &proof_selection)
         .expect("a validated interval or resolved time needs no reference lookup");
     let proof_bundle = admission.bound(&result.source_bundle);
@@ -763,7 +737,12 @@ pub fn temporal_response_from_result(
         .map(|entry| entry.r#ref.clone())
         .collect::<BTreeSet<_>>();
     let (dependency_groups, mut proof_refs, dependency_entries) = if result.include.dependencies {
-        super::temporal_dependencies::select(&result.source_bundle, &admission, &entries)
+        super::temporal_dependencies::select(
+            &result.source_bundle,
+            &admission,
+            &entries,
+            &traversal,
+        )
     } else {
         (Vec::new(), BTreeSet::new(), Vec::new())
     };

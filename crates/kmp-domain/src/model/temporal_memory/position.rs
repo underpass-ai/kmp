@@ -14,8 +14,6 @@ pub(super) struct ResolvedTemporalCursor {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct TemporalPosition {
     pub(super) ref_id: String,
-    pub(super) kind: String,
-    pub(super) text: String,
     pub(super) coordinate: TemporalCoordinate,
     pub(super) axis_key: TemporalAxisKey,
 }

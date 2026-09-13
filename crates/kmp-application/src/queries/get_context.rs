@@ -101,6 +101,54 @@ where
         Ok(bundle)
     }
 
+    /// Read graph metadata first; the caller selects canonical bodies within
+    /// this same operation snapshot before returning a materialized result.
+    pub(crate) async fn read_context_catalogue(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+    ) -> Result<KmpBundle, ApplicationError> {
+        let reader = crate::queries::NodeCentricProjectionReader::new(
+            std::sync::Arc::clone(&self.graph_reader),
+            std::sync::Arc::clone(&self.detail_reader),
+        );
+        // Lane hints cannot remove other coordinates before whole-entry
+        // predicates run. Root selection already restricts the about scope.
+        // The full reader also retains this catalogue; defer bodies only.
+        let catalogue = NeighborhoodRequest::new(request.root_node_id(), request.depth());
+        let (bundle, _) = reader
+            .load_catalogue_for(&catalogue, role, self.generator_version)
+            .await?;
+        bundle.ok_or_else(|| {
+            ApplicationError::NotFound(format!("node '{}' not found", request.root_node_id()))
+        })
+    }
+
+    pub(crate) async fn materialize_selected_details(
+        &self,
+        bundle: KmpBundle,
+        selected: &std::collections::BTreeSet<String>,
+    ) -> Result<KmpBundle, ApplicationError> {
+        let ids = std::iter::once(bundle.root_node())
+            .chain(bundle.neighbor_nodes())
+            .map(|node| node.node_id())
+            .filter(|id| selected.contains(*id))
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let details = if ids.is_empty() {
+            Vec::new()
+        } else {
+            self.detail_reader
+                .load_node_details_batch(ids)
+                .await?
+                .into_iter()
+                .flatten()
+                .map(|detail| kmp_domain::BundleNodeDetail::from_projection(&detail))
+                .collect()
+        };
+        Ok(bundle.with_node_details(details)?)
+    }
+
     pub async fn get_context(
         &self,
         query: GetContextQuery,

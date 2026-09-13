@@ -20,6 +20,7 @@ pub struct Reads {
     pub resume: Arc<Notify>,
     pub opened: Arc<AtomicUsize>,
     pub fail_snapshot: bool,
+    pub detail_ids: Arc<std::sync::Mutex<Vec<String>>>,
 }
 impl Reads {
     pub fn new(store: EmbeddedKernelStore) -> Self {
@@ -30,6 +31,7 @@ impl Reads {
             resume: Arc::new(Notify::new()),
             opened: Arc::new(AtomicUsize::new(0)),
             fail_snapshot: false,
+            detail_ids: Arc::new(std::sync::Mutex::new(Vec::new())),
         }
     }
     async fn after_graph(&self) {
@@ -100,12 +102,20 @@ impl NodeRelationshipReader for Reads {
 }
 impl NodeDetailReader for Reads {
     async fn load_node_detail(&self, id: &str) -> Result<Option<NodeDetailProjection>, PortError> {
+        self.detail_ids
+            .lock()
+            .expect("record detail read")
+            .push(id.to_string());
         self.store.load_node_detail(id).await
     }
     async fn load_node_details_batch(
         &self,
         ids: Vec<String>,
     ) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
+        self.detail_ids
+            .lock()
+            .expect("record detail reads")
+            .extend(ids.iter().cloned());
         self.store.load_node_details_batch(ids).await
     }
 }
