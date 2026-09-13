@@ -530,7 +530,7 @@ pub(crate) mod tests {
         .expect("threshold fixture");
         let expected = integer_cosine_oracle(&near_left, &near_right);
         assert!(
-            expected >= MINIMUM_SIMILARITY && expected < 0.451,
+            (MINIMUM_SIMILARITY..0.451).contains(&expected),
             "{expected}"
         );
         assert_eq!(
