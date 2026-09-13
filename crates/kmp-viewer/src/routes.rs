@@ -52,7 +52,7 @@ pub(crate) const LOOM_CORE_JS: &str = include_str!("../ui/loom-core.js");
 /// The script-tag modules of the browser application, in the exact order
 /// `index.html` loads them and `mcp_app` inlines them: state, the backend
 /// port, the use cases, then the adapters, with the composition root last.
-pub(crate) const LOOM_MODULES: [(&str, &str); 23] = [
+pub(crate) const LOOM_MODULES: [(&str, &str); 25] = [
     (
         "loom-provenance.js",
         include_str!("../ui/loom-provenance.js"),
@@ -65,6 +65,11 @@ pub(crate) const LOOM_MODULES: [(&str, &str); 23] = [
     ("loom-theme.js", include_str!("../ui/loom-theme.js")),
     ("loom-navigator.js", include_str!("../ui/loom-navigator.js")),
     ("loom-camera.js", include_str!("../ui/loom-camera.js")),
+    ("loom-planes.js", include_str!("../ui/loom-planes.js")),
+    (
+        "loom-relation-lines.js",
+        include_str!("../ui/loom-relation-lines.js"),
+    ),
     ("loom-three.js", include_str!("../ui/loom-three.js")),
     (
         "loom-scene-model.js",

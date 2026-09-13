@@ -3,29 +3,27 @@
 KMP_APP.evidence = (() => {
   const { model, view } = KMP_APP.state;
   const { $, el, fmtMsFull } = KMP_APP.dom;
+  const options = new Map();
+  let prompt = null;
   function renderPicker() {
-    const picker = $("memory-picker"),
-      selected = view.selectedRef;
-    picker.replaceChildren(
-      el(
-        "option",
-        "",
-        model.currentLod === "moment"
-          ? "Choose a memory"
-          : "Choose Memories detail to inspect",
-      ),
-    );
-    picker.firstChild.value = "";
+    const picker = $("memory-picker");
+    if (!prompt) { prompt = el("option", "", ""); prompt.value = ""; picker.append(prompt); }
+    const title = model.currentLod === "moment" ? "Choose a memory" : "Choose Memories detail to inspect";
+    if (prompt.textContent !== title) prompt.textContent = title;
+    const live = new Set();
+    let previous = prompt;
     for (const entry of model.entries) {
-      const option = el(
-        "option",
-        "",
-        `${entry.kind} · ${entry.text.slice(0, 100)}`,
-      );
-      option.value = entry.ref;
-      picker.append(option);
+      live.add(entry.ref);
+      let option = options.get(entry.ref);
+      if (!option) { option = el("option", "", ""); option.value = entry.ref; options.set(entry.ref, option); }
+      const text = `${entry.kind} · ${entry.text.slice(0, 100)}`;
+      if (option.textContent !== text) option.textContent = text;
+      if (previous.nextSibling !== option) picker.insertBefore(option, previous.nextSibling);
+      previous = option;
     }
-    picker.value = selected || "";
+    for (const [ref, option] of options) if (!live.has(ref)) { option.remove(); options.delete(ref); }
+    const selected = view.selectedRef || "";
+    if (picker.value !== selected) picker.value = selected;
     picker.disabled = !model.entries.length;
   }
   function wire() {

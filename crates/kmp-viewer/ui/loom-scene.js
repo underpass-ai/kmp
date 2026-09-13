@@ -6,7 +6,8 @@ KMP_APP.scene = (() => {
   const canvas = () => $("loom-canvas");
   let renderer = null,
     frame = null,
-    current = null;
+    current = null,
+    currentByRef = new Map();
   function sceneState() {
     return {
       mode: view.sceneMode,
@@ -40,6 +41,7 @@ KMP_APP.scene = (() => {
     current = KMP_APP.sceneModel.layout(layers, state, (time) =>
       KMP_APP.viewport.lens().toRatio(time),
     );
+    currentByRef = new Map(current.nodes.map(node => [node.entry.ref, node.entry]));
     renderer.update(current, state);
     $("lod-chip").textContent = model.currentLod;
     $("lod-mode").value = view.requestedLod || "";
@@ -51,7 +53,7 @@ KMP_APP.scene = (() => {
     if (!frame) frame = requestAnimationFrame(draw);
   }
   async function picked(ref) {
-    const mark = current?.nodes.find((node) => node.entry.ref === ref)?.entry;
+    const mark = currentByRef.get(ref);
     if (!mark) return;
     if (mark.about !== model.about) await KMP_APP.layers.activate(mark.about);
     if (mark.aggregate) {
@@ -63,7 +65,7 @@ KMP_APP.scene = (() => {
   }
   function hover(ref, event) {
     const tip = $("tooltip");
-    const mark = current?.nodes.find((node) => node.entry.ref === ref)?.entry;
+    const mark = currentByRef.get(ref);
     tip.hidden = !mark;
     if (!mark) return;
     tip.textContent = `${mark.about} · ${mark.text}`;
@@ -72,6 +74,7 @@ KMP_APP.scene = (() => {
     tip.style.top = `${Math.max(8, event.clientY - bounds.top - 55)}px`;
   }
   async function setup() {
+    renderer?.dispose();
     renderer = new KMP_APP.three.MemoryScene(
       $("scene-world"),
       canvas(),

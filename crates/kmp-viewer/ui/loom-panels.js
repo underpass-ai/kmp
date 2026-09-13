@@ -438,7 +438,10 @@ KMP_APP.panels = (() => {
 
   /* ---------------- search ---------------- */
 
+  let searchTimer = null;
   function runSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = null;
     const raw = $("search").value;
     const results = $("search-results");
     results.textContent = "";
@@ -483,7 +486,7 @@ KMP_APP.panels = (() => {
      element: setting re-runs the search, reading reports what is typed. */
   function setSearch(text) {
     $("search").value = text;
-    $("search").dispatchEvent(new Event("input"));
+    runSearch();
   }
 
   function searchText() {
@@ -556,9 +559,13 @@ KMP_APP.panels = (() => {
       KMP_APP.scene.requestDraw();
     });
 
-    $("search").addEventListener("input", runSearch);
+    $("search").addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(runSearch, 120);
+    });
     $("search").addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        clearTimeout(searchTimer); searchTimer = null;
         $("search").value = "";
         view.searchHits = new Set();
         $("search-results").textContent = "";

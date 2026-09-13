@@ -15,7 +15,17 @@ KMP_APP.gestures = (() => {
 
   /* ---------------- navigator gestures ----------------
      Pan the pane, resize its edges, cut a fresh window, click to center. */
-  let navDrag = null;
+  let navDrag = null, navFrame = null, pendingX = null;
+  function cancelMove() {
+    if (navFrame !== null) cancelAnimationFrame(navFrame);
+    navFrame = null; pendingX = null;
+  }
+  function flushMove() {
+    if (navFrame !== null) cancelAnimationFrame(navFrame);
+    navFrame = null;
+    const x = pendingX; pendingX = null;
+    if (navDrag && x !== null) moveNavigator(x);
+  }
   const NAV_HANDLE = 6;
 
   function wireNavigator() {
@@ -28,6 +38,7 @@ KMP_APP.gestures = (() => {
 
     $("nav-canvas").addEventListener("pointerdown", (event) => {
       if (!view.full) return;
+      cancelMove();
       $("nav-canvas").setPointerCapture(event.pointerId);
       const width = $("nav-canvas").clientWidth || 1;
       const span = view.full.t1 - view.full.t0;
@@ -40,44 +51,21 @@ KMP_APP.gestures = (() => {
       if (windowed && Math.abs(x - a) <= NAV_HANDLE) mode = "resize-l";
       else if (windowed && Math.abs(x - b) <= NAV_HANDLE) mode = "resize-r";
       else if (windowed && x > a && x < b) mode = "pan";
-      navDrag = { mode, x0: x, moved: false, t0: view.t0, t1: view.t1, remembered: false };
+      navDrag = { full: view.full, mode, x0: x, moved: false, t0: view.t0, t1: view.t1, remembered: false };
     });
 
     $("nav-canvas").addEventListener("pointermove", (event) => {
       if (!navDrag) return;
-      const width = $("nav-canvas").clientWidth || 1;
-      const span = view.full.t1 - view.full.t0;
-      const x = event.offsetX;
-      if (!navDrag.moved && Math.abs(x - navDrag.x0) <= 4) return;
-      navDrag.moved = true;
-      const msOf = (px) => (px / width) * span;
-      if (!navDrag.remembered && navDrag.mode !== "select") {
-        view.windowStack.push([navDrag.t0, navDrag.t1]);
-        navDrag.remembered = true;
-      }
-      if (navDrag.mode === "pan") {
-        const delta = msOf(x - navDrag.x0);
-        const size = navDrag.t1 - navDrag.t0;
-        let t0 = navDrag.t0 + delta;
-        t0 = Math.max(view.full.t0, Math.min(view.full.t1 - size, t0));
-        viewport().setWindow(t0, t0 + size, false);
-      } else if (navDrag.mode === "resize-l") {
-        viewport().setWindow(view.full.t0 + msOf(x), navDrag.t1, false);
-      } else if (navDrag.mode === "resize-r") {
-        viewport().setWindow(navDrag.t0, view.full.t0 + msOf(x), false);
-      } else {
-        // Painting a fresh selection — live preview via the window itself.
-        if (!navDrag.remembered) {
-          view.windowStack.push([navDrag.t0, navDrag.t1]);
-          navDrag.remembered = true;
-        }
-        const lo = view.full.t0 + msOf(Math.min(navDrag.x0, x));
-        const hi = view.full.t0 + msOf(Math.max(navDrag.x0, x));
-        viewport().setWindow(lo, hi, false);
-      }
+      pendingX = event.offsetX;
+      if (navFrame === null) navFrame = requestAnimationFrame(flushMove);
     });
 
     $("nav-canvas").addEventListener("pointerup", (event) => {
+      if (!navDrag) return;
+      // The release coordinate is authoritative even when the last move has
+      // not reached an animation frame yet.
+      pendingX = event.offsetX;
+      flushMove();
       if (!navDrag) return;
       const drag = navDrag;
       navDrag = null;
@@ -92,7 +80,40 @@ KMP_APP.gestures = (() => {
         viewport().setWindow(t0, t0 + size);
       }
     });
-    $("nav-canvas").addEventListener("pointercancel", () => (navDrag = null));
+    $("nav-canvas").addEventListener("pointercancel", () => { cancelMove(); navDrag = null; });
+  }
+
+  function moveNavigator(x) {
+    if (!view.full || navDrag.full !== view.full) { cancelMove(); navDrag = null; return; }
+    const width = $("nav-canvas").clientWidth || 1;
+    const span = view.full.t1 - view.full.t0;
+    if (!navDrag.moved && Math.abs(x - navDrag.x0) <= 4) return;
+    navDrag.moved = true;
+    const msOf = (px) => (px / width) * span;
+    if (!navDrag.remembered && navDrag.mode !== "select") {
+      view.windowStack.push([navDrag.t0, navDrag.t1]);
+      navDrag.remembered = true;
+    }
+    if (navDrag.mode === "pan") {
+      const delta = msOf(x - navDrag.x0);
+      const size = navDrag.t1 - navDrag.t0;
+      let t0 = navDrag.t0 + delta;
+      t0 = Math.max(view.full.t0, Math.min(view.full.t1 - size, t0));
+      viewport().setWindow(t0, t0 + size, false);
+    } else if (navDrag.mode === "resize-l") {
+      viewport().setWindow(view.full.t0 + msOf(x), navDrag.t1, false);
+    } else if (navDrag.mode === "resize-r") {
+      viewport().setWindow(navDrag.t0, view.full.t0 + msOf(x), false);
+    } else {
+      // Painting a fresh selection — live preview via the window itself.
+      if (!navDrag.remembered) {
+        view.windowStack.push([navDrag.t0, navDrag.t1]);
+        navDrag.remembered = true;
+      }
+      const lo = view.full.t0 + msOf(Math.min(navDrag.x0, x));
+      const hi = view.full.t0 + msOf(Math.max(navDrag.x0, x));
+      viewport().setWindow(lo, hi, false);
+    }
   }
 
   function wireKeyboard() {

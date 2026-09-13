@@ -69,3 +69,8 @@ ChronoLoom keeps missing refs visible as unavailable. This framing read
 does not load canonical bodies or certify proof completeness; use Trace's bounded
 proof expansion and Inspect for the actual evidence. Older in-flight focus reads
 cannot overwrite a newer focus, about or clock.
+
+Rapid human drags and sliders follow the latest position; release keeps the final
+interval. Search waits for a short typing pause, while explicit view intents and
+Escape apply immediately. Selection, direction, labels and the chosen clock keep
+their meaning as existing scene objects are updated.
