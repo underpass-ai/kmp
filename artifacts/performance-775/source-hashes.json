@@ -1,0 +1,20 @@
+{
+  "baseline_commit": "c95a92d11d3b55c2c847c1d653dcfdd687132c58",
+  "sha256": {
+    "crates/kmp-adapter-embedded/examples/dimensional_lookup_benchmark.rs": "399cc4cb35b31b05ff79abed4c3f6125ba561e710df8937c3b598f224c1d6ada",
+    "crates/kmp-adapter-embedded/src/adapter/dimension_lookup_header.rs": "a194eb35710dd07a30bd8379fe85a0a2319f2820f73824ead63c1a80ecd8a7f4",
+    "crates/kmp-adapter-embedded/src/adapter/engine/linked_json_row.rs": "9b0367f18729f5e6591865c2cd1aa65bcb87bb50f133bdd59f3656537eae6a08",
+    "crates/kmp-adapter-embedded/src/adapter/engine/linked_json_scan.rs": "d022f60dd01a1977faacea3a4302e6c14f0bdb6fff3f12039144a7e7778a7baf",
+    "crates/kmp-adapter-embedded/src/adapter/engine/mod.rs": "0fed971722e76b67aee0f229c722fed98d6ea2f50198cd945ba9a517c3d5a352",
+    "crates/kmp-adapter-embedded/src/adapter/engine/sqlite.rs": "4eb2abd7850c2da5b1db688056e580f2c0acc9bca11f69d026efc02a27276cc6",
+    "crates/kmp-adapter-embedded/src/adapter/engine/sqlite_linked_json.rs": "42c292ba927eab403dfa93b0584197f65acb0e8e6e2c3347257aa9dffed834d1",
+    "crates/kmp-adapter-embedded/src/adapter/engine/sqlite_linked_json_tests.rs": "1f362b6595cf5c52660be1d57f68d08ae4f27a33ea1de628d4909d6baa357794",
+    "crates/kmp-adapter-embedded/src/adapter/engine/sqlite_snapshot_read.rs": "971cabd66f6842efaee411d00259976bcd4e10d5a229d9b95afb9931ee8e0954",
+    "crates/kmp-adapter-embedded/src/adapter/graph_read.rs": "cb98647e48b42d96bf27a76a4a47c62c821a0fbec7095f1336daf1530517386b",
+    "crates/kmp-adapter-embedded/src/adapter/memory_about_index.rs": "62fe9cd53a3cb59676525d79307cb25867a638c8d4bfafc83a54347804c72bad",
+    "crates/kmp-adapter-embedded/src/adapter/mod.rs": "0a1e45373ee3bbf9db89a555001856827410d8f6d0e5d70c20521ba08978ca41",
+    "crates/kmp-adapter-embedded/src/adapter/trace_large_body_tests.rs": "395c5981820fa5a2655da933e81a525a4e2e4a5bc1ad73b2b450707ab5182e7a",
+    "scripts/performance/dimensional_lookup.py": "d6f07e4248645410b55e72da596be0ef22f78fbdbf0a2af889c4fe72fffb14d7",
+    "scripts/performance/dimensional_read_parity.py": "6ea878f23f5cb994aaa351c3db4fa085b201233035041fced0f97cc10f1b9c81"
+  }
+}

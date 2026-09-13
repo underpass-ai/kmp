@@ -8,6 +8,13 @@ struct RecordingRead<'a> {
     details: RefCell<Vec<String>>,
 }
 impl ReadTx for RecordingRead<'_> {
+    fn scan_linked_json(
+        &self,
+        request: &crate::adapter::engine::LinkedJsonScan<'_>,
+    ) -> Result<Vec<crate::adapter::engine::LinkedJsonRow>, PortError> {
+        self.inner.scan_linked_json(request)
+    }
+
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         if let (Table::Details, Key::Str(id)) = (table, key) {
             self.details.borrow_mut().push(id.into());

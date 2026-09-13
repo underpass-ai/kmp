@@ -22,7 +22,12 @@ use std::fmt;
 
 use kmp_domain::PortError;
 
+mod linked_json_row;
+mod linked_json_scan;
 mod snapshot_revision_observer;
+mod sqlite_linked_json;
+pub(crate) use linked_json_row::LinkedJsonRow;
+pub(crate) use linked_json_scan::LinkedJsonScan;
 pub(crate) mod sqlite;
 mod sqlite_snapshot;
 mod sqlite_snapshot_read;
@@ -144,6 +149,12 @@ pub(crate) type U64Row = (u64, Vec<u8>);
 
 /// A read transaction: a consistent snapshot of every table.
 pub(crate) trait ReadTx {
+    /// Join a root-key set to typed links and project only the requested
+    /// JSON endpoint fields, at most `limit` rows after an exclusive key.
+    fn scan_linked_json(
+        &self,
+        request: &LinkedJsonScan<'_>,
+    ) -> Result<Vec<LinkedJsonRow>, PortError>;
     /// The value at `key`, if any. Unit-valued tables answer `Some(vec![])`
     /// for a present key.
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError>;

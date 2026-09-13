@@ -17,6 +17,13 @@ impl SqliteSnapshotRead<'_> {
 }
 
 impl ReadTx for SqliteSnapshotRead<'_> {
+    fn scan_linked_json(
+        &self,
+        request: &super::LinkedJsonScan<'_>,
+    ) -> Result<Vec<super::LinkedJsonRow>, PortError> {
+        super::sqlite_linked_json::scan(self.0.as_ref().expect("snapshot connection"), request)
+    }
+
     fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
         self.ops().get(table, key)
     }

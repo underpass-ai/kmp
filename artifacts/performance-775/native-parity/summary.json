@@ -1,0 +1,9 @@
+{
+  "complete_equal_results": 28,
+  "tool_calls": 56,
+  "before_sha256": "1bd4c16dc9d743d5c31a87864d2fc751cd7bf21fe4e7786906c2f77ef4cede4b",
+  "after_sha256": "0ba96d22065b2b8270753772378d0b8c140a1a04f2d2fcbfd6746ebea8f87572",
+  "runner_sha256": "6ea878f23f5cb994aaa351c3db4fa085b201233035041fced0f97cc10f1b9c81",
+  "scope": "4 abouts, positive and negative whole-entry selectors, explicit scope and five clocks",
+  "timings": "not interpreted; correctness replay may overlap validation workloads"
+}
