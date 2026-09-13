@@ -95,6 +95,13 @@ ancestor: the successful full run uses a dedicated sibling scratch directory
 inside `~/Documents/ai`, removed afterwards. The earlier in-repo-scratch failure is
 retained locally; its test and product code were not changed.
 
+The full gate passed on the implementation at 0.18.0 (2,333 Rust test executions,
+including the repeated contract tests; four ignored; 96 browser tests). The branch
+was then rebased on the version-only 0.18.1 preparation. Every changed Rust,
+JavaScript and proto file still matches `source-hashes.json`; the guide was
+regenerated with the 0.18.1 binary. Contract, tool-surface, gRPC and HTTP checks
+passed again after the rebase. See `validation.json`.
+
 The model-facing catalogue fixture is byte-identical to the base. Its hash is in
 `catalogue.json`; fixture bytes are not a host-visible token count. The new tool
 is app-only. The operation performs no model generation, embedding, scoring or
