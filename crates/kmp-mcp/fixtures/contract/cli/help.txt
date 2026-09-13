@@ -11,8 +11,10 @@ Usage:
   kmp-mcp doctor                  Diagnose the setup and name the one thing to fix
   kmp-mcp setup                   Align installed native plugins and engines
   kmp-mcp update                  Update every installed KMP host as one convergence
-  kmp-mcp config                  Show the agent orchestration policy
+  kmp-mcp config                  Show the agent policy and the user memory selection
   kmp-mcp config memory-routing <on-request|always>
+  kmp-mcp config memory-store <absolute-path>|--clear
+  Select the user memory persistently, or stop selecting one
   kmp-mcp guide sync --plugin-root DIR
   Converge the two immutable shipped guides
   kmp-mcp plugin resolve-engine  Select the engine matching both host manifests

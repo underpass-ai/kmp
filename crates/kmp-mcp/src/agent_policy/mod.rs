@@ -51,40 +51,9 @@ impl AgentPolicy {
     }
 }
 
+/// Where this policy is written: the user's one KMP settings file.
 pub fn config_path() -> Result<PathBuf, String> {
-    let path_from = |name| {
-        std::env::var_os(name)
-            .filter(|value| !value.is_empty())
-            .map(PathBuf::from)
-    };
-    config_path_from(
-        path_from("XDG_CONFIG_HOME"),
-        path_from("HOME"),
-        path_from("APPDATA"),
-        path_from("USERPROFILE"),
-    )
-}
-
-fn config_path_from(
-    xdg_config_home: Option<PathBuf>,
-    home: Option<PathBuf>,
-    app_data: Option<PathBuf>,
-    user_profile: Option<PathBuf>,
-) -> Result<PathBuf, String> {
-    if let Some(root) = xdg_config_home {
-        return Ok(root.join("kmp").join("config.toml"));
-    }
-    if let Some(root) = home {
-        return Ok(root.join(".config").join("kmp").join("config.toml"));
-    }
-    if let Some(root) = app_data {
-        return Ok(root.join("kmp").join("config.toml"));
-    }
-    user_profile
-        .map(|root| root.join(".config").join("kmp").join("config.toml"))
-        .ok_or_else(|| {
-            "none of XDG_CONFIG_HOME, HOME, APPDATA, or USERPROFILE is available".to_string()
-        })
+    kmp_embedded::user_config_file::user_config_path()
 }
 
 pub fn load() -> Result<AgentPolicy, String> {
@@ -93,11 +62,10 @@ pub fn load() -> Result<AgentPolicy, String> {
 }
 
 fn load_from(path: &Path) -> Result<AgentPolicy, String> {
-    if !path.exists() {
+    let text = kmp_embedded::user_config_file::read_text(path)?;
+    if text.is_empty() {
         return Ok(default_policy(path));
     }
-    let text = std::fs::read_to_string(path)
-        .map_err(|error| format!("could not read {}: {error}", path.display()))?;
     parse_policy(&text, path).map_err(|error| format!("{}: {error}", path.display()))
 }
 
@@ -114,9 +82,10 @@ fn parse_policy(text: &str, path: &Path) -> Result<AgentPolicy, String> {
     let routing = parse_memory_routing(text)?;
     // The retired key is looked for, never parsed: whatever it says, it is
     // not a reason to refuse a file whose only other setting is valid.
-    let retired_fallback_setting = root_setting(text, RETIRED_FALLBACK_KEY)
-        .map(|found| found.is_some())
-        .unwrap_or(true);
+    let retired_fallback_setting =
+        kmp_embedded::user_config_file::root_setting(text, RETIRED_FALLBACK_KEY)
+            .map(|found| found.is_some())
+            .unwrap_or(true);
     Ok(AgentPolicy {
         routing_configured: routing.is_some(),
         memory_routing: routing.unwrap_or_default(),
@@ -125,50 +94,11 @@ fn parse_policy(text: &str, path: &Path) -> Result<AgentPolicy, String> {
     })
 }
 
-/// One root-level setting, with the line it was written on. A key inside a
-/// table belongs to that table and is deliberately not this one.
-fn root_setting<'a>(text: &'a str, key: &str) -> Result<Option<(usize, &'a str)>, String> {
-    let mut found: Option<(usize, &str)> = None;
-    let mut at_root = true;
-    for (index, raw) in text.lines().enumerate() {
-        let line = raw.split('#').next().unwrap_or("").trim();
-        if line.is_empty() {
-            continue;
-        }
-        if line.starts_with('[') {
-            at_root = false;
-            continue;
-        }
-        if !at_root {
-            continue;
-        }
-        let Some((name, value)) = line.split_once('=') else {
-            continue;
-        };
-        if name.trim() != key {
-            continue;
-        }
-        if found.is_some() {
-            return Err(format!("{key} appears more than once"));
-        }
-        found = Some((index + 1, value.trim()));
-    }
-    Ok(found)
-}
-
 fn parse_memory_routing(text: &str) -> Result<Option<MemoryRouting>, String> {
     let routing_key = memory_routing::KEY;
-    root_setting(text, routing_key)?
+    kmp_embedded::user_config_file::quoted_root_setting(text, routing_key)?
         .map(|(line, value)| {
-            let quoted = value
-                .strip_prefix('"')
-                .and_then(|value| value.strip_suffix('"'))
-                .ok_or_else(|| {
-                    format!(
-                        "line {line} has invalid {routing_key}: expected a quoted mode such as \"on_request\""
-                    )
-                })?;
-            MemoryRouting::parse(quoted)
+            MemoryRouting::parse(value)
                 .map_err(|error| format!("line {line} has invalid {routing_key}: {error}"))
         })
         .transpose()
@@ -181,61 +111,10 @@ pub fn store_memory_routing(routing: MemoryRouting) -> Result<AgentPolicy, Strin
 
 fn store_setting(key: &str, rendered: &str) -> Result<AgentPolicy, String> {
     let path = config_path()?;
-    let existing = if path.exists() {
-        std::fs::read_to_string(&path)
-            .map_err(|error| format!("could not read {}: {error}", path.display()))?
-    } else {
-        String::new()
-    };
-    let text = updated_config(&existing, key, rendered);
-
-    let parent = path
-        .parent()
-        .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
-    std::fs::create_dir_all(parent)
-        .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
-    kmp_embedded::write_bundle_atomically(&path, &text)
-        .map_err(|error| format!("could not replace {}: {error}", path.display()))?;
+    let existing = kmp_embedded::user_config_file::read_text(&path)?;
+    let text = kmp_embedded::user_config_file::with_root_setting(&existing, key, rendered);
+    kmp_embedded::user_config_file::write_text(&path, &text)?;
     load_from(&path)
-}
-
-/// Replace one root-level setting and leave every other byte of the file
-/// alone. A setting that is not there yet lands above the first table, where
-/// it still belongs to the root.
-fn updated_config(existing: &str, key: &str, rendered: &str) -> String {
-    let mut output: Vec<String> = Vec::new();
-    let mut replaced = false;
-    for line in existing.lines() {
-        let significant = line.split('#').next().unwrap_or("").trim();
-        if !replaced && significant.starts_with('[') {
-            if !output.is_empty() && output.last().is_some_and(|line| !line.is_empty()) {
-                output.push(String::new());
-            }
-            output.push(rendered.to_string());
-            output.push(String::new());
-            replaced = true;
-        }
-        let is_target = !significant.starts_with('[')
-            && significant
-                .split_once('=')
-                .is_some_and(|(name, _)| name.trim() == key)
-            && !output.iter().any(|line| line.trim().starts_with('['));
-        if is_target {
-            if !replaced {
-                output.push(rendered.to_string());
-                replaced = true;
-            }
-        } else {
-            output.push(line.to_string());
-        }
-    }
-    if !replaced {
-        if !output.is_empty() && output.last().is_some_and(|line| !line.is_empty()) {
-            output.push(String::new());
-        }
-        output.push(rendered.to_string());
-    }
-    format!("{}\n", output.join("\n"))
 }
 
 pub fn display(policy: &AgentPolicy) -> String {
@@ -256,72 +135,6 @@ pub fn display(policy: &AgentPolicy) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn config_path_supports_windows_native_environment_fallbacks() {
-        assert_eq!(
-            config_path_from(
-                Some(PathBuf::from("xdg")),
-                Some(PathBuf::from("home")),
-                Some(PathBuf::from("appdata")),
-                Some(PathBuf::from("profile")),
-            )
-            .expect("XDG path"),
-            PathBuf::from("xdg/kmp/config.toml")
-        );
-        assert_eq!(
-            config_path_from(
-                None,
-                Some(PathBuf::from("home")),
-                Some(PathBuf::from("appdata")),
-                Some(PathBuf::from("profile")),
-            )
-            .expect("HOME path"),
-            PathBuf::from("home/.config/kmp/config.toml")
-        );
-        assert_eq!(
-            config_path_from(None, None, Some(PathBuf::from("appdata")), None)
-                .expect("APPDATA path"),
-            PathBuf::from("appdata/kmp/config.toml")
-        );
-        assert_eq!(
-            config_path_from(None, None, None, Some(PathBuf::from("profile")))
-                .expect("USERPROFILE path"),
-            PathBuf::from("profile/.config/kmp/config.toml")
-        );
-    }
-
-    #[test]
-    fn store_preserves_unrelated_configuration() {
-        let replaced = updated_config(
-            "future_setting = true\nmemory_routing = \"on_request\"\n",
-            memory_routing::KEY,
-            "memory_routing = \"always\"",
-        );
-
-        assert!(replaced.contains("future_setting = true"));
-        assert!(replaced.contains("memory_routing = \"always\""));
-        assert_eq!(replaced.matches(memory_routing::KEY).count(), 1);
-    }
-
-    #[test]
-    fn root_policy_does_not_capture_or_enter_an_unrelated_table() {
-        let existing = "[future]\nmemory_routing = \"always\"\n";
-        assert_eq!(
-            parse_memory_routing(existing).expect("valid TOML subset"),
-            None
-        );
-
-        let replaced = updated_config(existing, memory_routing::KEY, "memory_routing = \"always\"");
-        assert_eq!(
-            replaced,
-            "memory_routing = \"always\"\n\n[future]\nmemory_routing = \"always\"\n"
-        );
-        assert_eq!(
-            parse_memory_routing(&replaced).expect("root policy parses"),
-            Some(MemoryRouting::Always)
-        );
-    }
 
     #[test]
     fn memory_routing_defaults_to_on_request_and_reports_its_source() {
@@ -370,7 +183,7 @@ mod tests {
         let unquoted = parse_memory_routing("memory_routing = always\n")
             .expect_err("an unquoted mode is not TOML we accept");
         assert!(unquoted.contains("line 1 has invalid memory_routing"));
-        assert!(unquoted.contains("quoted mode"));
+        assert!(unquoted.contains("quoted value"));
 
         let unsupported = parse_memory_routing("memory_routing = \"sometimes\"\n")
             .expect_err("an unsupported mode must fail");
@@ -391,7 +204,7 @@ mod tests {
 
     #[test]
     fn writing_the_routing_leaves_a_retired_line_where_it_is() {
-        let with_retired = updated_config(
+        let with_retired = kmp_embedded::user_config_file::with_root_setting(
             "ask_fallback_languages = [\"en\", \"fr\"]\n",
             memory_routing::KEY,
             "memory_routing = \"always\"",
@@ -400,7 +213,7 @@ mod tests {
         assert_eq!(policy.memory_routing, MemoryRouting::Always);
         assert!(policy.retired_fallback_setting);
 
-        let then_back = updated_config(
+        let then_back = kmp_embedded::user_config_file::with_root_setting(
             &with_retired,
             memory_routing::KEY,
             "memory_routing = \"on_request\"",
