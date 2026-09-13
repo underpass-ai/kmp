@@ -1,0 +1,20 @@
+{
+  "gzip": "gzip -n; lossless DEFLATE with timestamp and original-name fields omitted",
+  "files": [
+    {
+      "compressed": "baseline-graph_read.rs.gz",
+      "original_sha256": "cb98647e48b42d96bf27a76a4a47c62c821a0fbec7095f1336daf1530517386b",
+      "compressed_sha256": "8687ba3a00f044aba231ef375a63e5b3cec7766a95e79c33f58d1183acadf784"
+    },
+    {
+      "compressed": "measured-source.patch.gz",
+      "original_sha256": "6acb83d48593a46c141bd01124524bbb734d65eb56dee0d82642de87c0d49c84",
+      "compressed_sha256": "26d6c23f1698ca0cf8bfad10b007af50e14c74efdff14f9f11351b6f85fdfa44"
+    },
+    {
+      "compressed": "native/runs.jsonl.gz",
+      "original_sha256": "e093307187f9246342919a0bca073ab1a2accde7e0992d21f4104205340fc3d1",
+      "compressed_sha256": "d361e431e061dc972704729b6e34f8de0ca66dc2c1244b52e57c768559f5fad6"
+    }
+  ]
+}

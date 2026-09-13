@@ -1,0 +1,17 @@
+{
+  "baseline_commit": "0f4b73023378388a42458c602d8909e3d1c1dc3c",
+  "harness_commit": "642d70057aff376a7d906866b41e9936735b9294",
+  "candidate_commit": "65b9b3983ea6193ea93c872f665e199a3541733c",
+  "baseline_graph_read_sha256": "cb98647e48b42d96bf27a76a4a47c62c821a0fbec7095f1336daf1530517386b",
+  "baseline_graph_read_gzip_sha256": "8687ba3a00f044aba231ef375a63e5b3cec7766a95e79c33f58d1183acadf784",
+  "candidate_graph_read_sha256": "1f9ce33c11b35495f69ead126f6ac28033b742d8f79ab8a9cee88846ab242c20",
+  "candidate_outward_neighborhood_sha256": "8e82f27d5a461c768372bdaf71a86babda33597cce254b5002c19247ba19155a",
+  "measured_patch_sha256": "6acb83d48593a46c141bd01124524bbb734d65eb56dee0d82642de87c0d49c84",
+  "measured_patch_gzip_sha256": "26d6c23f1698ca0cf8bfad10b007af50e14c74efdff14f9f11351b6f85fdfa44",
+  "baseline_binary_sha256": "2245bcb5bbcc2607ce4c07c391d37787cd52ce918b6591e3e3b900eb938dfd90",
+  "candidate_binary_sha256": "153927edc19d78e5633b4f079bd328d17a6a749ecbf8601d5fcf4f2c395550f5",
+  "benchmark_source_sha256": "8628287e729f25fee3ebdd89e69e6d869e81d2f85391f0baf1da76eb5bc898ab",
+  "runner_sha256": "132a8a36e2aa3340c3f39469ef898c3d02da8e0058ded732c15d0e7bfac44194",
+  "environment_sha256": "f9c31ca2dc7b4c2795bdcaaa3e7c93f8a9f08fd42be2b582507d87467c23489b",
+  "summary_sha256": "fdf8eda1ef9015fabb6767fef1e49c6e30c2f33c4b45f3f841fec76738cb4aef"
+}
