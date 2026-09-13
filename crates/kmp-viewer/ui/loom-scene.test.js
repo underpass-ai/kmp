@@ -309,6 +309,37 @@ test("the shared extent includes non-overlapping abouts without fetching entry b
   assert.ok(emptyPrimary.full.t1 > start + 25 * 3600000);
 });
 
+test("a single full scene supplies its navigator without a separate overview read", async () => {
+  const { KMP_APP: app } = modules([
+    "loom-core.js",
+    "loom-state.js",
+    "loom-layers.js",
+  ]);
+  const probe = {
+    clusters: [{
+      from: new Date(start).toISOString(),
+      to: new Date(start + 3600000).toISOString(),
+      total: 1,
+      dimension: "topic",
+    }],
+  };
+  let reads = 0;
+  app.api = {
+    fetchProjection: async () => {
+      reads += 1;
+      return probe;
+    },
+  };
+
+  const result = await app.layers.extent("a", "occurred", [], probe, false);
+
+  assert.ok(result.full);
+  assert.equal(reads, 0, "the final full projection will provide exact bins");
+  app.state.view.layerAbouts = ["b"];
+  await app.layers.extent("a", "occurred", [], probe, false);
+  assert.ok(reads >= 3, "layered extents still fetch their combined navigator");
+});
+
 test("adding an about expands All while retaining a focused window", async () => {
   const { KMP_APP: app } = modules([
     "loom-core.js",

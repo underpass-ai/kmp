@@ -214,7 +214,10 @@ test("an agent snapshot moves clock, frames refs and applies the trace", async (
   ]);
   app.data.loadProjection = async () => calls.push({ name: "data.loadProjection" });
   app.data.cancelScheduledProjection = () => {};
-  app.selection.runTrace = async (options) => calls.push({ name: "selection.runTrace", args: [options] });
+  app.selection.runTrace = async (options) => {
+    calls.push({ name: "selection.runTrace", args: [options] });
+    return false;
+  };
 
   nodeBatchStub(app);
   await app.sync.applyAgentState({
@@ -231,10 +234,275 @@ test("an agent snapshot moves clock, frames refs and applies the trace", async (
   const framed = calls.find((call) => call.name === "data.loadProjection");
   assert.ok(framed, "a ref-only focus loads the framed projection atomically");
   const trace = calls.find((call) => call.name === "selection.runTrace");
-  assert.equal(JSON.stringify(trace.args[0]), JSON.stringify({ framePath: true, preserveWindow: false }));
+  assert.equal(
+    JSON.stringify(trace.args[0]),
+    JSON.stringify({
+      framePath: true,
+      preserveWindow: false,
+    }),
+  );
   assert.equal(app.state.tracePick.from, "decision:new");
   assert.ok(view.t0 <= Date.parse("2026-08-31T16:50:00Z"));
   assert.ok(view.t1 >= Date.parse("2026-08-31T18:02:14Z"));
+});
+
+test("a cold snapshot adopts its clock before the extent and projects once", async () => {
+  const { app } = loom();
+  const asked = [];
+  const entry = {
+    ref_id: "project:x:observation:one",
+    kind: "observation",
+    text: "one",
+    coordinates: [{
+      dimension: "task",
+      scope_id: "proof",
+      observed_at: "2026-09-01T10:00:00Z",
+    }],
+  };
+  app.api.fetchProjection = async (about, axis, from, to, lod) => {
+    asked.push({ about, axis, from, to, lod });
+    return lod === "episode"
+      ? {
+          level_of_detail: "episode",
+          entries: [],
+          bins: [],
+          clusters: [{
+            dimension: "task",
+            total: 1,
+            from: "2026-09-01T10:00:00Z",
+            to: "2026-09-01T10:00:00Z",
+          }],
+          relations: [],
+          page: { total: 1 },
+        }
+      : {
+          level_of_detail: "moment",
+          entries: [entry],
+          bins: [],
+          clusters: [],
+          relations: [],
+          page: { total: 1 },
+        };
+  };
+
+  await app.sync.applyAgentState({
+    about: "project:x",
+    clock: "observed",
+    focus: {},
+    projection: {},
+  });
+
+  assert.deepEqual(asked.map(({ axis, lod }) => ({ axis, lod })), [
+    { axis: "observed", lod: "episode" },
+    { axis: "observed", lod: "moment" },
+  ]);
+  assert.equal(app.state.view.clock, "observed");
+  assert.equal(app.state.model.currentLod, "moment");
+  assert.deepEqual([...app.state.model.byRef.keys()], [entry.ref_id]);
+});
+
+test("a snapshot leaves an empty clock through one awaited replacement load", async () => {
+  const { app } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.clock = "occurred";
+  view.full = null;
+  const asked = [];
+  app.api.fetchProjection = async (about, axis, from, to, lod) => {
+    asked.push({ axis, lod });
+    return lod === "episode"
+      ? {
+          level_of_detail: "episode",
+          entries: [],
+          bins: [],
+          clusters: [{
+            dimension: "task",
+            total: 1,
+            from: "2026-09-01T10:00:00Z",
+            to: "2026-09-01T10:00:00Z",
+          }],
+          relations: [],
+          page: { total: 1 },
+        }
+      : {
+          level_of_detail: "moment",
+          entries: [{
+            ref_id: "project:x:observation:one",
+            kind: "observation",
+            text: "one",
+            coordinates: [{
+              dimension: "task",
+              scope_id: "proof",
+              observed_at: "2026-09-01T10:00:00Z",
+            }],
+          }],
+          bins: [],
+          clusters: [],
+          relations: [],
+          page: { total: 1 },
+        };
+  };
+
+  await app.sync.applyAgentState({
+    about: "project:x",
+    clock: "observed",
+    focus: {},
+    projection: { abouts: ["project:x"] },
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.deepEqual(asked, [
+    { axis: "observed", lod: "episode" },
+    { axis: "observed", lod: "moment" },
+  ]);
+  assert.equal(model.total, 1);
+  assert.equal(model.currentLod, "moment");
+  assert.equal(view.layerAbouts.length, 0, "the primary about is not its own layer");
+});
+
+test("focus and trace frame the authoritative proof path once", async () => {
+  const { app, core, calls } = loom();
+  const { model, view } = app.state;
+  const refs = [
+    "decision:new",
+    "success:root",
+    "evidence:middle",
+    "focus:outside-path",
+  ];
+  model.about = "project:x";
+  view.full = { t0: 0, t1: Date.parse("2026-09-01T00:00:00Z") };
+  model.byRef = new Map(refs.map((ref, index) => [
+    ref,
+    entryAt(core, ref, `2026-08-31T18:0${index}:00Z`),
+  ]));
+  const nodeReads = [];
+  app.api.call = async (path, params) => {
+    if (path === "/api/trace") {
+      return {
+        nodes: [refs[0], refs[1], refs[2]].map((id) => ({ id })),
+        edges: [{ source: refs[0], target: refs[2], rel: "supports" }],
+      };
+    }
+    assert.equal(path, "/api/nodes");
+    nodeReads.push(params.ids.split(","));
+    const selected = params.ids.split(",");
+    return {
+      snapshot: "fixture:1",
+      nodes: selected.map((id) => ({ id, kind: "observation", summary: id })),
+      coordinates: Object.fromEntries(selected.map((id, index) => [id, [{
+        dimension: "task",
+        scope_id: "proof",
+        occurred_at: `2026-08-31T18:0${index}:00Z`,
+      }]])),
+      missing: [],
+      omitted: [],
+      incomplete_coordinates: [],
+      scanned_edges: 2,
+    };
+  };
+  let projections = 0;
+  app.data.loadProjection = async () => { projections += 1; };
+  app.data.cancelScheduledProjection = () => {};
+
+  await app.sync.applyAgentState({
+    about: "project:x",
+    clock: "occurred",
+    focus: { refs: [refs[0], refs[3]] },
+    trace: { from: refs[0], to: refs[1] },
+    projection: {},
+  });
+
+  assert.deepEqual(
+    nodeReads,
+    [[refs[0], refs[1], refs[2]]],
+    "collapsing the reads does not widen the final trace projection",
+  );
+  assert.equal(projections, 1);
+  assert.ok(view.trace.refs.has(refs[2]));
+  assert.ok(
+    view.t1 < Date.parse("2026-08-31T20:00:00Z"),
+    "a focus-only ref outside the path does not widen the final trace frame",
+  );
+  assert.ok(calls.some((call) => call.name === "panels.renderTrace"));
+});
+
+test("selection after a collapsed trace still reveals and centers an outside ref", async () => {
+  const { app, core } = loom();
+  const { model, view } = app.state;
+  const from = "decision:from";
+  const to = "success:to";
+  const outside = "focus:selected-outside-path";
+  const stamps = new Map([
+    [from, "2026-08-31T18:00:00Z"],
+    [to, "2026-08-31T18:01:00Z"],
+    [outside, "2026-08-31T23:00:00Z"],
+  ]);
+  model.about = "project:x";
+  view.full = {
+    t0: Date.parse("2026-08-31T17:00:00Z"),
+    t1: Date.parse("2026-09-01T00:00:00Z"),
+  };
+  model.byRef = new Map([...stamps].map(([ref, stamp]) => [
+    ref,
+    entryAt(core, ref, stamp),
+  ]));
+  app.api.call = async (path, params) => {
+    if (path === "/api/trace") {
+      return {
+        nodes: [{ id: from }, { id: to }],
+        edges: [{ source: from, target: to, rel: "supports" }],
+      };
+    }
+    if (path === "/api/node") {
+      return {
+        node: { id: outside, kind: "observation", summary: outside },
+        raw_coordinates: [{
+          dimension: "task",
+          scope_id: "proof",
+          occurred_at: stamps.get(outside),
+        }],
+      };
+    }
+    assert.equal(path, "/api/nodes");
+    const selected = params.ids.split(",");
+    return {
+      snapshot: "fixture:1",
+      nodes: selected.map((id) => ({ id, kind: "observation", summary: id })),
+      coordinates: Object.fromEntries(selected.map((id) => [id, [{
+        dimension: "task",
+        scope_id: "proof",
+        occurred_at: stamps.get(id),
+      }]])),
+      missing: [],
+      omitted: [],
+      incomplete_coordinates: [],
+      scanned_edges: 1,
+    };
+  };
+  let projections = 0;
+  app.data.loadProjection = async () => {
+    projections += 1;
+    const visible = projections === 1 ? [from, to] : [outside];
+    model.byRef = new Map(visible.map((ref) => [
+      ref,
+      entryAt(core, ref, stamps.get(ref)),
+    ]));
+  };
+  app.data.cancelScheduledProjection = () => {};
+
+  await app.sync.applyAgentState({
+    about: "project:x",
+    clock: "occurred",
+    focus: { refs: [from, outside] },
+    trace: { from, to },
+    selection: outside,
+    projection: {},
+  });
+
+  assert.equal(projections, 2, "path frame plus the legacy outside-selection reveal");
+  assert.equal(view.selectedRef, outside);
+  assert.ok(view.t0 <= Date.parse(stamps.get(outside)));
+  assert.ok(view.t1 >= Date.parse(stamps.get(outside)));
 });
 
 /* #463's regression: the browser reconciles the full snapshot instead of
@@ -445,6 +713,28 @@ test("loadProjection re-fetches when the projection's density resolves another r
   assert.ok(fetched.length >= 1);
   const error = calls.find((call) => call.name === "dom.showError" && String(call.args[0]).includes("projection is partial"));
   assert.ok(error, "a truncated projection says so");
+});
+
+test("the applied projection owns its resolved level of detail", async () => {
+  const { app } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: 200000 };
+  view.t0 = 0;
+  view.t1 = 200000;
+  view.requestedLod = "moment";
+  app.api.fetchProjection = async () => ({
+    level_of_detail: "episode",
+    entries: [],
+    bins: [],
+    clusters: [],
+    relations: [],
+    page: { total: 0 },
+  });
+
+  await app.data.loadProjection();
+
+  assert.equal(model.currentLod, "episode");
 });
 
 test("loadObservability names unavailable series and gives lanes back on failure", async () => {

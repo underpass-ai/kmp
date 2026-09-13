@@ -12,6 +12,7 @@
   let lastFocus = {};
   const pending = new Map();
   const aboutWaiters = [];
+  let inFlightViewState = null;
 
   function request(method, params) {
     const id = nextId++;
@@ -65,7 +66,7 @@
     await ready;
     if (currentAbout) return currentAbout;
     try {
-      const state = await callTool("kmp_view_get_state", { view_id: currentViewId });
+      const state = await readViewState();
       currentAbout = state.state && state.state.about;
     } catch (_) {
       // Tool input normally follows ui/notifications/initialized.
@@ -90,6 +91,19 @@
       throw error;
     }
     return (result && result.structuredContent) || {};
+  }
+
+  function readViewState(viewId = currentViewId) {
+    if (inFlightViewState && inFlightViewState.viewId === viewId)
+      return inFlightViewState.promise;
+    const promise = callTool("kmp_view_get_state", { view_id: viewId });
+    inFlightViewState = { viewId, promise };
+    const clear = () => {
+      if (inFlightViewState && inFlightViewState.promise === promise)
+        inFlightViewState = null;
+    };
+    promise.then(clear, clear);
+    return promise;
   }
 
   const projectionArgs = (params) => ({
@@ -203,7 +217,9 @@
     }
     if (path === "/api/view") {
       const args = { view_id: params.id || currentViewId };
-      let result = await callTool("kmp_view_get_state", args);
+      let result = params.since
+        ? await callTool("kmp_view_get_state", args)
+        : await readViewState(args.view_id);
       let state = result.state || result;
       if (params.since && Number(params.since) === Number(state.view_revision)) {
         await new Promise((resolve) => setTimeout(resolve, 750));

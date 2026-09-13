@@ -43,6 +43,14 @@ test("MCP App handoff reaches the same revision-checked operation as HTTP",async
   assert.equal(state.view_revision,8);
   assert.deepEqual(plain(calls.at(-1).params),{name:"kmp_view_take_control",arguments:{view_id:"shared",expected_revision:7}});
 });
+test("MCP App coalesces parallel catalogue and initial view reads",async()=>{
+  const snapshot={state:{about:"a",view_revision:4,projection:{},focus:{}}};
+  const {api,calls}=bridge(()=>snapshot);
+  const [abouts,state]=await Promise.all([api("/api/abouts",{}),api("/api/view",{id:"default"})]);
+  assert.deepEqual(plain(abouts),{abouts:["a"]});
+  assert.equal(state.about,"a");
+  assert.equal(calls.filter(call=>call.params?.name==="kmp_view_get_state").length,1);
+});
 test("MCP App clock focus reads recorded coordinates and trace frames every stored hop",async()=>{
   const coordinate={dimension:"topic",scope_id:"review",observed_at:"2026-09-01T00:00:00Z"};
   const {api}=bridge(name=>name==="kmp_inspect"?{object:{ref:"a:proof",kind:"decision",text:"Proof"},links:{incoming:[{rel:"contains_entry",coordinate}],outgoing:[]}}:{trace:[{from:"a:start",to:"a:middle",rel:"follows"},{from:"a:middle",to:"a:end",rel:"follows"}]});

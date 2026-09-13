@@ -96,10 +96,14 @@ KMP_APP.sync = (() => {
       // The labels the snapshot carries are the kernel's filter; they are
       // adopted before any projection is asked for, and a change reloads.
       const projection = state.projection || {};
+      const primaryAbout = state.about || model.about;
+      const layerAbouts = [...new Set(projection.abouts || [])].filter(
+        (about) => about !== primaryAbout,
+      );
       const layersChanged =
         JSON.stringify(view.layerAbouts) !==
-        JSON.stringify(projection.abouts || []);
-      view.layerAbouts = [...(projection.abouts || [])];
+        JSON.stringify(layerAbouts);
+      view.layerAbouts = layerAbouts;
       view.requestedLod = projection.semantic_zoom || null;
       view.relationClasses = projection.relation_classes || null;
       KMP_APP.layers?.invalidate();
@@ -108,30 +112,24 @@ KMP_APP.sync = (() => {
         KMP_LOOM.labelQuery(selectors) !== KMP_LOOM.labelQuery(view.selectors);
       view.selectors = selectors;
       if (selectorsChanged) KMP_APP.panels.renderChips();
-      if (state.about && state.about !== model.about) {
-        await KMP_APP.data.loadAbout(state.about);
-      } else if ((selectorsChanged || layersChanged) && model.about) {
-        await KMP_APP.data.loadAbout(model.about, false);
-      }
-      if (state.clock && state.clock !== view.clock) {
-        await KMP_APP.viewport.setClock(state.clock, false);
-      }
-
-      await KMP_APP.data.loadObservability(projection.overlays || []);
-      if (projection.dimensions) {
-        const keep = new Set(projection.dimensions);
-        view.hiddenLanes = new Set(
-          model.lanes
-            .map((lane) => lane.name)
-            .filter((name) => !keep.has(name)),
-        );
-        KMP_APP.panels.renderRail();
-      } else {
-        view.hiddenLanes = new Set();
-      }
-
       const facets = KMP_LOOM.agentStateFacets(state);
       const { range, refs, explicitRange } = facets;
+      const clockChanged = Boolean(state.clock && state.clock !== view.clock);
+      if (clockChanged) KMP_APP.viewport.setClock(state.clock, false, false);
+      const aboutChanged = Boolean(state.about && state.about !== model.about);
+      const reloadAbout = aboutChanged || selectorsChanged || layersChanged || clockChanged;
+      const traceWillFrame = Boolean(state.trace && !explicitRange);
+      const willNarrow = explicitRange || refs.length > 0 || traceWillFrame;
+      if (reloadAbout) {
+        await KMP_APP.data.loadAbout(primaryAbout, false, {
+          deferProjection: true,
+          // A narrowed scene cannot supply the full navigator bins. Keep the
+          // separate overview only for that path (and for multi-about views,
+          // which the layers adapter always preserves).
+          preserveOverview: willNarrow,
+        });
+      }
+
       let framed = false;
       if (explicitRange) {
         const from = Date.parse(range.from);
@@ -151,19 +149,16 @@ KMP_APP.sync = (() => {
         // preserves it.
         view.focusRange = null;
         KMP_APP.panels.syncFocusButton();
-        if (refs.length) framed = await frameRefs(refs);
-        else if (view.full) {
+        // A successful trace frames its proof path later, exactly as the
+        // former focus-then-trace sequence ultimately did. Focus refs remain
+        // the fallback when that bounded trace cannot be applied.
+        if (refs.length && !traceWillFrame) framed = await frameRefs(refs);
+        else if (!traceWillFrame && view.full) {
           KMP_APP.viewport.setWindow(view.full.t0, view.full.t1);
           KMP_APP.data.cancelScheduledProjection();
           await KMP_APP.data.loadProjection();
         }
       }
-      // A rung is a density to fall back on, not an override: an intent that
-      // named its own window asked for that window.
-      if (projection.semantic_zoom && !framed) {
-        KMP_APP.viewport.applyZoomRung(projection.semantic_zoom);
-      }
-
       KMP_APP.panels.setSearch(facets.search);
       view.trace = null;
       tracePick.from = null;
@@ -172,12 +167,41 @@ KMP_APP.sync = (() => {
       if (state.trace) {
         tracePick.from = state.trace.from;
         tracePick.to = state.trace.to;
-        await KMP_APP.selection.runTrace({
+        const traceFramed = await KMP_APP.selection.runTrace({
           framePath: !explicitRange,
           preserveWindow: explicitRange,
         });
+        if (traceWillFrame) {
+          framed = traceFramed;
+          // A missing or refused trace retains the focus's prior meaning;
+          // an empty focus still gets the full scene that was deferred.
+          if (!traceFramed) {
+            if (refs.length) framed = await frameRefs(refs);
+            else if (view.full) await KMP_APP.data.loadProjection();
+          }
+        }
       }
-      KMP_APP.layers?.load();
+      // A rung is a density to fall back on, not an override: an intent that
+      // named its own window asked for that window.
+      if (projection.semantic_zoom && !framed) {
+        KMP_APP.viewport.applyZoomRung(projection.semantic_zoom);
+      }
+
+      // Overlays and lane visibility describe the resolved frame. Applying
+      // them after its one projection prevents an extent probe or stale scene
+      // from determining their range and lane set.
+      await KMP_APP.data.loadObservability(projection.overlays || []);
+      if (projection.dimensions) {
+        const keep = new Set(projection.dimensions);
+        view.hiddenLanes = new Set(
+          model.lanes
+            .map((lane) => lane.name)
+            .filter((name) => !keep.has(name)),
+        );
+        KMP_APP.panels.renderRail();
+      } else {
+        view.hiddenLanes = new Set();
+      }
       KMP_APP.panels.renderAbouts();
       view.selectedRef = null;
       KMP_APP.panels.renderDetailEmpty();

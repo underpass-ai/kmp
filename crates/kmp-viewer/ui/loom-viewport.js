@@ -53,13 +53,17 @@ KMP_APP.viewport = (() => {
     }
 
     if (!view.full) {
-      if (changed && model.about) {
+      if (changed && model.about && refresh) {
         // The empty state must not be a trap: an about with nothing on this
         // clock may hold entries on the one just selected, so a clock change
         // re-probes the about instead of repeating the message (#421).
         data().loadAbout(model.about, false);
         return;
       }
+      // Snapshot application changes the clock before its one authoritative
+      // extent probe. Its caller owns that awaited read; do not start a
+      // competing background load or report an intermediate empty clock.
+      if (!refresh) return;
       dom().showError("no entry carries any clock — the loom has no axis to weave on");
       return;
     }

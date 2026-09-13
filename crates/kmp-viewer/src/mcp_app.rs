@@ -40,7 +40,8 @@ mod tests {
         assert!(
             html.contains("view.full = KMP_LOOM.extentIncluding(view.full, lo - pad, hi + pad)")
         );
-        assert!(html.contains("await KMP_APP.sync.frameRefs(trace.nodes.map((node) => node.id))"));
+        assert!(html.contains("framed = await KMP_APP.sync.frameRefs("));
+        assert!(html.contains("trace.nodes.map((node) => node.id)"));
         assert!(html.contains("framePath: !explicitRange"));
         assert!(html.contains("preserveWindow: explicitRange"));
     }

@@ -116,15 +116,19 @@ KMP_APP.data = (() => {
     try {
       let projection = await fetchAt(lod);
       if (generation !== model.loadGeneration) return;
+      // The projection is the authority for the detail it actually carries.
+      // HTTP and MCP Apps both serialize this field; retaining the request is
+      // only a compatibility fallback for older fixture adapters.
+      lod = projection.level_of_detail || lod;
       const resolvedLod = KMP_LOOM.lodFor(
         msPerPx,
         width,
         KMP_LOOM.maxMarksPerLane(projection),
       );
       if (!view.requestedLod && resolvedLod !== lod) {
-        lod = resolvedLod;
-        projection = await fetchAt(lod);
+        projection = await fetchAt(resolvedLod);
         if (generation !== model.loadGeneration) return;
+        lod = projection.level_of_detail || resolvedLod;
       }
       await applyProjection(projection, lod);
       if (generation !== model.loadGeneration) return;
@@ -203,7 +207,11 @@ KMP_APP.data = (() => {
     scheduleObservability.timer = setTimeout(() => loadObservability(), 120);
   }
 
-  async function loadAbout(about, announce = true) {
+  async function loadAbout(
+    about,
+    announce = true,
+    { deferProjection = false, preserveOverview = false } = {},
+  ) {
     const previouslyApplying = sync.applying;
     sync.applying = true;
     try {
@@ -226,7 +234,13 @@ KMP_APP.data = (() => {
       );
       if (generation !== model.loadGeneration) return;
       const combined = KMP_APP.layers
-        ? await KMP_APP.layers.extent(about, view.clock, view.selectors, probe)
+        ? await KMP_APP.layers.extent(
+            about,
+            view.clock,
+            view.selectors,
+            probe,
+            preserveOverview,
+          )
         : null;
       if (generation !== model.loadGeneration) return;
       const extent = KMP_LOOM.projectionExtent(probe);
@@ -291,7 +305,7 @@ KMP_APP.data = (() => {
         return;
       }
       KMP_APP.viewport.setClock(view.clock, true, false);
-      await loadProjection();
+      if (!deferProjection) await loadProjection();
       KMP_APP.panels.renderAbouts();
       sync.applying = previouslyApplying;
       if (announce && !previouslyApplying) await KMP_APP.sync.viewOpen();

@@ -5,7 +5,13 @@ KMP_APP.layers = (() => {
   const { model, view } = KMP_APP.state;
   let generation = 0;
   let extentGeneration = 0;
-  async function extent(about, clock, selectors, primaryProbe) {
+  async function extent(
+    about,
+    clock,
+    selectors,
+    primaryProbe,
+    preserveOverview = true,
+  ) {
     const names = [...new Set([about, ...view.layerAbouts])].slice(0, 6);
     const probes = await Promise.all(
       names.map((name) =>
@@ -28,6 +34,10 @@ KMP_APP.layers = (() => {
     const t1 = Math.max(...ranges.map((range) => range.t1));
     const pad = Math.max(1, (t1 - t0) * 0.02);
     const full = { t0: t0 - pad, t1: t1 + pad };
+    // A single full-window projection replaces the navigator with the same
+    // bounded bins in applyProjection. Only a deferred frame, or additional
+    // abouts whose bins must be combined, needs this separate overview read.
+    if (!preserveOverview && names.length === 1) return { full, bins: [] };
     // An extent probe spans the whole clock; its bins are too wide for a
     // useful brush. Request bounded atlas bins over the actual union.
     const overviews = await Promise.all(
