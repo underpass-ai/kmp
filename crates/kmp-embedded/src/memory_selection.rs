@@ -38,7 +38,7 @@ impl SelectedMemory {
         if value.is_empty() {
             return Err(SelectionRefusal::Empty);
         }
-        if value.contains('"') || value.contains('\n') {
+        if value.contains(['"', '\n', '\r']) {
             return Err(SelectionRefusal::NotQuotable(value.to_string()));
         }
         let path = Path::new(value);

@@ -20,7 +20,11 @@ and it has one order: the `KMP_MCP_DATA_DIR` environment variable, then the
 selection saved with `kmp-mcp config memory-store <absolute-path>`, then the
 nearest project root, then the per-user default. `kmp-mcp config` prints the
 saved selection, the effective one and which rule won, without starting a host
-or creating a store. Memory this engine cannot open is refused with its reason:
+or creating a store. A valid explicit override still works if the saved
+selection is invalid; config and doctor report that unused setting for repair.
+Without an override, repair or clear the invalid selection before starting
+memory. Quoted paths may contain `#`; it is part of the directory name.
+Memory this engine cannot open is refused with its reason:
 never migrate, move or overwrite such a store, and never propose that a user
 do so as a repair. Selecting another directory is their decision.
 

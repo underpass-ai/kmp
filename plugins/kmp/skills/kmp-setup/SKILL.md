@@ -44,6 +44,8 @@ policy and the user memory selection, and starts no host.
 then the per-user default. `kmp-mcp config` prints the saved selection, the
 effective one, and which of those rules won, so a workspace that is not a
 repository never reaches a store nobody chose without saying so.
+A valid explicit override wins even if the saved selection is invalid;
+report the unused setting's warning and repair it before removing the override.
 
 Save a selection with `kmp-mcp config memory-store <absolute-path>`, and undo
 it with `kmp-mcp config memory-store --clear`. The selection is one line in

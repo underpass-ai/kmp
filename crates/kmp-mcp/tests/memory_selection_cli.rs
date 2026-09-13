@@ -8,8 +8,11 @@
 //! touched.
 
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
+
+use serde_json::{Value, json};
 
 struct Machine {
     root: tempfile::TempDir,
@@ -43,18 +46,43 @@ impl Machine {
         arguments: &[&str],
         data_dir: Option<&Path>,
     ) -> Output {
+        self.command(working_dir, data_dir)
+            .args(arguments)
+            .output()
+            .expect("the binary runs")
+    }
+
+    fn command(&self, working_dir: &str, data_dir: Option<&Path>) -> Command {
         let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
         command
-            .args(arguments)
             .current_dir(self.at(working_dir))
             .env("HOME", self.at("home"))
             .env("XDG_CONFIG_HOME", self.at("config"))
             .env("XDG_DATA_HOME", self.at("data"))
+            .env("KMP_MCP_BACKEND", "embedded")
+            .env("KMP_VIEWER_ADDR", "off")
             .env_remove("KMP_MCP_DATA_DIR");
         if let Some(data_dir) = data_dir {
             command.env("KMP_MCP_DATA_DIR", data_dir);
         }
-        command.output().expect("the binary runs")
+        command
+    }
+
+    fn mcp(&self, data_dir: Option<&Path>, request: Value) -> Value {
+        let mut child = self
+            .command("workspace", data_dir)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("MCP process starts");
+        let mut input = child.stdin.take().expect("piped input");
+        writeln!(input, "{request}").expect("MCP request written");
+        drop(input);
+        let output = child.wait_with_output().expect("MCP process exits");
+        assert!(output.status.success(), "{}", stderr(&output));
+        serde_json::from_str(stdout(&output).lines().next().expect("MCP response"))
+            .expect("JSON-RPC response")
     }
 
     fn config_file(&self) -> PathBuf {
@@ -335,6 +363,110 @@ fn a_broken_saved_selection_is_reported_rather_than_ignored() {
         &stdout(&doctor),
         &["the saved user memory selection is unusable"],
     );
+}
+
+#[test]
+fn a_hash_in_the_selected_path_survives_native_write_and_process_restart() {
+    let machine = Machine::new();
+    let selected = machine.at("memory#team");
+    let saved = machine.run("workspace", &["config", "memory-store", path(&selected)]);
+    assert!(saved.status.success(), "{}", stderr(&saved));
+    let written = machine.mcp(
+        None,
+        json!({
+            "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+            "params": {"name": "kmp_write_memory", "arguments": {
+                "about": "project:selection", "actor": "selection-test",
+                "idempotency_key": "selection:hash-path",
+                "labels": {"task": ["selection"]},
+                "memories": [{"id": "proof", "kind": "observation",
+                    "summary": "The selected memory survives a process restart.",
+                    "evidence": "The isolated selection test wrote this checkpoint."}]
+            }}
+        }),
+    );
+    let body = &written["result"]["structuredContent"];
+    assert_eq!(body["accepted"], true, "{written}");
+    let reference = body["local_refs"]["proof"].as_str().expect("stored ref");
+    let read = machine.mcp(
+        None,
+        json!({
+            "jsonrpc": "2.0", "id": 2, "method": "tools/call",
+            "params": {"name": "kmp_inspect", "arguments": {
+                "about": "project:selection", "ref": reference,
+                "include": {"details": true, "incoming": false, "outgoing": false, "raw": false}
+            }}
+        }),
+    );
+    assert_eq!(
+        read["result"]["structuredContent"]["object"]["text"],
+        "The selected memory survives a process restart.",
+        "{read}"
+    );
+    assert!(selected.join("FORMAT_VERSION").exists());
+    assert!(!machine.user_default_store().exists());
+}
+
+#[test]
+fn an_unrepresentable_selection_preserves_the_previous_setting() {
+    let machine = Machine::new();
+    let selected = machine.at("memory#team");
+    assert!(
+        machine
+            .run("workspace", &["config", "memory-store", path(&selected)])
+            .status
+            .success()
+    );
+    let before = fs::read(machine.config_file()).expect("saved configuration");
+    for suffix in ["bad\"path", "bad\npath", "bad\rpath"] {
+        let invalid = machine.at(suffix);
+        let refused = machine.run("workspace", &["config", "memory-store", path(&invalid)]);
+        assert_eq!(refused.status.code(), Some(2), "{}", stdout(&refused));
+        assert_eq!(
+            fs::read(machine.config_file()).expect("configuration remains"),
+            before
+        );
+    }
+}
+
+#[test]
+fn an_explicit_override_starts_mcp_despite_a_broken_saved_selection() {
+    let machine = Machine::new();
+    let config = machine.config_file();
+    fs::create_dir_all(config.parent().expect("config directory")).expect("config directory");
+    let broken = "memory_store = \"relative/memory\"\n";
+    fs::write(&config, broken).expect("invalid saved selection");
+    let explicit = machine.at("explicit-memory");
+    let shown = machine.run_with_override("workspace", &["config"], Some(&explicit));
+    assert!(shown.status.success(), "{}", stderr(&shown));
+    assert_says(
+        &stdout(&shown),
+        &[
+            "saved selection: invalid",
+            "chosen by: env",
+            path(&explicit),
+        ],
+    );
+    let initialized = machine.mcp(
+        Some(&explicit),
+        json!({
+            "jsonrpc": "2.0", "id": 1, "method": "initialize",
+            "params": {"protocolVersion": "2025-03-26", "capabilities": {},
+                "clientInfo": {"name": "selection-test", "version": "1"}}
+        }),
+    );
+    assert!(
+        initialized["result"]["serverInfo"].is_object(),
+        "{initialized}"
+    );
+    assert!(explicit.exists());
+    assert_eq!(
+        fs::read_to_string(config).expect("untouched selection"),
+        broken
+    );
+    assert!(!machine.user_default_store().exists());
+    let no_override = machine.run("workspace", &["config"]);
+    assert_eq!(no_override.status.code(), Some(2));
 }
 
 fn path(path: &Path) -> &str {

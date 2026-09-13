@@ -68,6 +68,10 @@ depend on it meaning exactly one process. A saved selection then beats
 automatic discovery, which is the point of saving one: a workspace with no git
 root reaches the memory its operator chose rather than whatever the per-user
 default happens to hold.
+A valid environment override does not depend on the saved selection being
+readable. Config and doctor report an invalid unused selection with a repair;
+without the override, an invalid selection still stops startup. A `#` inside
+a quoted selection is part of its path, not a comment.
 
 KMP creates and opens SQLite format-3 stores only. Unsupported store formats
 are detected and rejected before their bytes are opened, so an upgrade never

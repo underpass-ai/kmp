@@ -238,14 +238,21 @@ pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
         )
     })?;
     reject_unexpanded_home_override(env_override.as_deref())?;
-    // A saved selection that cannot be read is an error, never a silent
-    // fall-through: landing on a different store without saying so is the
-    // defect this selection exists to end.
-    let saved = memory_selection::saved_selection().map_err(|error| {
-        PortError::InvalidState(format!(
-            "the saved user memory selection is unusable: {error}"
-        ))
-    })?;
+    // An explicit override wins without depending on a lower-priority
+    // setting being readable. Without it, refuse a broken saved selection
+    // rather than silently falling through to automatic discovery.
+    let saved = if env_override
+        .as_deref()
+        .is_some_and(|value| !value.trim().is_empty())
+    {
+        None
+    } else {
+        memory_selection::saved_selection().map_err(|error| {
+            PortError::InvalidState(format!(
+                "the saved user memory selection is unusable: {error}"
+            ))
+        })?
+    };
 
     let resolved = resolve_data_dir(
         env_override.as_deref(),

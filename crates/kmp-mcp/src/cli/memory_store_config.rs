@@ -29,19 +29,26 @@ pub(super) fn clear() -> Result<String, String> {
 /// What is saved, what is effective, and which rule decided it.
 pub(super) fn describe() -> Result<String, String> {
     let config = kmp_embedded::user_config_file::user_config_path()?;
-    let saved = memory_selection::saved_selection()?;
+    let saved = memory_selection::saved_selection();
+    let resolved = kmp_embedded::locate_data_dir_from_env();
     let mut rendered = format!("KMP user memory\n\nselection file: {}\n", config.display());
     match &saved {
-        Some(selection) => rendered.push_str(&format!(
+        Ok(Some(selection)) => rendered.push_str(&format!(
             "saved selection: {}\n",
             selection.path().display()
         )),
-        None => rendered.push_str("saved selection: none (automatic selection)\n"),
+        Ok(None) => rendered.push_str("saved selection: none (automatic selection)\n"),
+        Err(error) if matches!(&resolved, Ok(kmp_embedded::ResolvedDataDir::Explicit(_))) => {
+            rendered.push_str(&format!(
+                "saved selection: invalid, not used by this process\nwarning: {error}\n{REPAIR}\n"
+            ));
+        }
+        Err(error) => return Err(format!("{error}\n{REPAIR}")),
     }
 
     // Locate, never prepare: naming the memory that would open must not
     // bring it into being in whatever directory the operator is standing in.
-    match kmp_embedded::locate_data_dir_from_env() {
+    match resolved {
         Ok(resolved) => {
             rendered.push_str(&format!(
                 "effective memory: {}\nchosen by: {} — {}\n",

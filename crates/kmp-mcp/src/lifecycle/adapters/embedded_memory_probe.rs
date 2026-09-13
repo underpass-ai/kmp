@@ -39,8 +39,20 @@ pub(crate) fn store_file_on_disk(data_dir: &Path) -> Option<PathBuf> {
 pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding {
     let path = resolved.path();
     let layout = kmp_embedded::validate_store_layout(path);
+    let saved = kmp_embedded::memory_selection::saved_selection();
+    let ignored_selection_error = saved
+        .as_ref()
+        .err()
+        .filter(|_| matches!(resolved, ResolvedDataDir::Explicit(_)));
     let mut finding = match &layout {
-        Ok(_) => LifecycleFinding::new(DiagnosticSeverity::Ok, path.display().to_string()),
+        Ok(_) => LifecycleFinding::new(
+            if ignored_selection_error.is_some() {
+                DiagnosticSeverity::Warn
+            } else {
+                DiagnosticSeverity::Ok
+            },
+            path.display().to_string(),
+        ),
         Err(error) => LifecycleFinding::new(
             DiagnosticSeverity::Fail,
             "the selected memory cannot be opened",
@@ -61,7 +73,7 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
     // actually holding — "why is my memory not the one open here?" — so the
     // report answers it instead of leaving the precedence to be applied by
     // hand.
-    if let Ok(Some(selection)) = kmp_embedded::memory_selection::saved_selection()
+    if let Ok(Some(selection)) = &saved
         && selection.path() != path
     {
         finding = finding.with_detail(format!(
@@ -69,6 +81,13 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
             selection.path().display(),
             resolved.rule_name()
         ));
+    }
+    if let Some(error) = ignored_selection_error {
+        finding = finding
+            .with_detail(format!(
+                "saved selection: invalid, not used because env won: {error}"
+            ))
+            .with_detail(MEMORY_SELECTION_REPAIR);
     }
 
     match layout {

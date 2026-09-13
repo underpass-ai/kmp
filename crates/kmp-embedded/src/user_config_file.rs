@@ -69,7 +69,7 @@ pub fn root_setting<'a>(text: &'a str, key: &str) -> Result<Option<(usize, &'a s
     let mut found: Option<(usize, &str)> = None;
     let mut at_root = true;
     for (index, raw) in text.lines().enumerate() {
-        let line = raw.split('#').next().unwrap_or("").trim();
+        let line = without_comment(raw).trim();
         if line.is_empty() {
             continue;
         }
@@ -92,6 +92,20 @@ pub fn root_setting<'a>(text: &'a str, key: &str) -> Result<Option<(usize, &'a s
         found = Some((index + 1, value.trim()));
     }
     Ok(found)
+}
+
+/// Quotes delimit the literal strings supported by this config subset. A
+/// hash inside a value is part of that value, including a directory name.
+fn without_comment(line: &str) -> &str {
+    let mut quoted = false;
+    for (index, character) in line.char_indices() {
+        match character {
+            '"' => quoted = !quoted,
+            '#' if !quoted => return &line[..index],
+            _ => {}
+        }
+    }
+    line
 }
 
 /// One root-level setting whose value is a quoted string, unquoted.
@@ -121,7 +135,7 @@ pub fn with_root_setting(existing: &str, key: &str, rendered: &str) -> String {
     let mut output: Vec<String> = Vec::new();
     let mut replaced = false;
     for line in existing.lines() {
-        let significant = line.split('#').next().unwrap_or("").trim();
+        let significant = without_comment(line).trim();
         if !replaced && significant.starts_with('[') {
             if !output.is_empty() && output.last().is_some_and(|line| !line.is_empty()) {
                 output.push(String::new());
@@ -159,7 +173,7 @@ pub fn without_root_setting(existing: &str, key: &str) -> String {
     let mut output: Vec<String> = Vec::new();
     let mut at_root = true;
     for line in existing.lines() {
-        let significant = line.split('#').next().unwrap_or("").trim();
+        let significant = without_comment(line).trim();
         if significant.starts_with('[') {
             at_root = false;
         }
@@ -266,6 +280,27 @@ mod tests {
             .expect_err("an unquoted value is not TOML we accept");
         assert!(error.contains("line 1 has invalid memory_store"), "{error}");
         assert!(error.contains("quoted value"), "{error}");
+    }
+
+    #[test]
+    fn hashes_inside_a_quoted_value_survive_read_replace_and_clear() {
+        let existing = "memory_store = \"/srv/memória#team\" # chosen by the user\n\
+                        memory_routing = \"always\"\n\
+                        [future]\nvalue = \"#unchanged\"\n";
+        assert_eq!(
+            quoted_root_setting(existing, "memory_store").expect("quoted hash"),
+            Some((1, "/srv/memória#team"))
+        );
+        let replaced =
+            with_root_setting(existing, "memory_store", "memory_store = \"/other#team\"");
+        assert_eq!(
+            quoted_root_setting(&replaced, "memory_store").expect("replacement"),
+            Some((1, "/other#team"))
+        );
+        assert_eq!(
+            without_root_setting(&replaced, "memory_store"),
+            "memory_routing = \"always\"\n[future]\nvalue = \"#unchanged\"\n"
+        );
     }
 
     #[test]
