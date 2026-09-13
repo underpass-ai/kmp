@@ -38,6 +38,13 @@ const B: f64 = 0.75;
 const SCORE_SCALE: f64 = 10.0;
 
 impl LexicalField {
+    pub(super) fn retained_bytes(&self) -> usize {
+        self.document_frequency
+            .keys()
+            .map(|term| 128 + term.capacity())
+            .sum()
+    }
+
     /// Builds the field statistics from every candidate's term counts.
     pub(super) fn build<'a>(documents: impl IntoIterator<Item = &'a TermCounts>) -> Self {
         let mut document_frequency = BTreeMap::<String, usize>::new();

@@ -11,6 +11,7 @@ use super::semantic_candidate_ranking::SemanticCandidateRanking;
 pub struct AskRetrievalContext {
     pub(super) result: GetContextResult,
     pub(super) semantic: Option<SemanticCandidateRanking>,
+    pub(super) lexical_cache: Option<std::sync::Arc<super::lexical_index_cache::LexicalIndexCache>>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -18,11 +19,22 @@ impl From<GetContextResult> for AskRetrievalContext {
         Self {
             result,
             semantic: None,
+            lexical_cache: None,
         }
     }
 }
 
 impl AskRetrievalContext {
+    /// Reuse collection statistics only for an identical operation snapshot,
+    /// selection and exact term counts. The returned evidence is always fresh.
+    pub fn with_lexical_cache(
+        mut self,
+        cache: std::sync::Arc<super::lexical_index_cache::LexicalIndexCache>,
+    ) -> Self {
+        self.lexical_cache = Some(cache);
+        self
+    }
+
     /// The encoder sees only live text from the application's scoped result
     /// and the requested clock. Admission precedes semantic top-k selection.
     pub fn semantic_sources(

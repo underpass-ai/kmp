@@ -33,7 +33,9 @@ use crate::transport::support::map_application_error;
 use kmp_proto_mapping::v1beta1::recall_projection::{
     RecallProjectionError, project_ask_response, project_wake_response,
 };
-use kmp_proto_mapping::v1beta1::{LexicalBridge, abouts_in_bundle};
+use kmp_proto_mapping::v1beta1::{
+    AskRetrievalContext, LexicalBridge, LexicalIndexCache, abouts_in_bundle,
+};
 
 pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     application: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
@@ -41,6 +43,7 @@ pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     /// store directory to find one beside, so it is handed in, and none is
     /// the default.
     lexical_bridge: Arc<LexicalBridge>,
+    lexical_cache: Arc<LexicalIndexCache>,
 }
 
 impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
@@ -48,6 +51,7 @@ impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
         Self {
             application,
             lexical_bridge: Arc::new(LexicalBridge::none()),
+            lexical_cache: Arc::default(),
         }
     }
 
@@ -182,7 +186,8 @@ where
                 asked_as.as_deref(),
                 answer_policy,
                 max_entries,
-                result,
+                AskRetrievalContext::from(result)
+                    .with_lexical_cache(Arc::clone(&self.lexical_cache)),
                 &self.lexical_bridge,
                 &temporal,
             )

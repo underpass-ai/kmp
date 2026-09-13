@@ -63,6 +63,7 @@ where
         let rendered = render_graph_bundle_with_options(&bundle, options);
         Ok(GetContextResult {
             bundle,
+            read_revision: self.query_application.graph_read_revision().await?,
             rendered,
             requested_scopes,
             served_at: std::time::SystemTime::now(),

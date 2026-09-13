@@ -10,6 +10,10 @@ pub(super) struct TermCounts {
 }
 
 impl TermCounts {
+    pub(super) fn retained_bytes(&self) -> usize {
+        self.counts.keys().map(|term| 128 + term.capacity()).sum()
+    }
+
     pub(super) fn insert(&mut self, term: String) {
         *self.counts.entry(term).or_default() += 1;
         self.length += 1;

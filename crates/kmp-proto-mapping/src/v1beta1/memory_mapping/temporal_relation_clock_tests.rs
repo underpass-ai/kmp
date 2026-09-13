@@ -118,6 +118,7 @@ fn wake_proof_does_not_apply_a_replacement_before_its_own_observation() {
             let bundle = bundle(relation);
             let rendered = render_graph_bundle(&bundle);
             let result = GetContextResult {
+                read_revision: None,
                 bundle,
                 rendered,
                 requested_scopes: Vec::new(),

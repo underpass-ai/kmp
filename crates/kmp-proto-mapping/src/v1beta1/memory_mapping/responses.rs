@@ -333,12 +333,15 @@ pub fn ask_response_from_result(
             "semantic ranking belongs to a different question",
         ));
     }
+    let lexical_identity =
+        super::lexical_index_identity::LexicalIndexIdentity::read(&retrieval.result, temporal);
     let result = retrieval.result;
     let admission = TemporalAdmission::read(&result.bundle, temporal)?;
     let bounded = admission.bound(&result.bundle);
     let lifecycle = lifecycle_for(&bounded, &admission);
     let superseded_refs = lifecycle.superseded_refs().clone();
-    let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle);
+    let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
+        .with_lexical_cache(retrieval.lexical_cache.as_deref(), lexical_identity);
     // What the selection admits is decided before the ranker weighs a word,
     // so the collection its statistics read is the selection's own: a word
     // common in the about and rare in the span earns what it earns there.
@@ -1902,6 +1905,7 @@ mod ask_entry_text_tests {
         .expect("bundle");
         let rendered = render_graph_bundle(&bundle);
         let result = GetContextResult {
+            read_revision: None,
             bundle,
             rendered,
             requested_scopes: Vec::new(),
@@ -1983,6 +1987,7 @@ mod ask_entry_text_tests {
         .expect("bundle");
         let rendered = render_graph_bundle(&bundle);
         let result = GetContextResult {
+            read_revision: None,
             bundle,
             rendered,
             requested_scopes: Vec::new(),
@@ -2057,6 +2062,7 @@ mod ask_entry_text_tests {
         .expect("bundle");
         let rendered = render_graph_bundle(&bundle);
         let result = GetContextResult {
+            read_revision: None,
             bundle,
             rendered,
             requested_scopes: Vec::new(),
@@ -2130,6 +2136,7 @@ mod ask_entry_text_tests {
         .expect("bundle");
         let rendered = render_graph_bundle(&bundle);
         let result = GetContextResult {
+            read_revision: None,
             bundle,
             rendered,
             requested_scopes: Vec::new(),
@@ -2229,6 +2236,7 @@ mod wake_cap_tests {
         )
         .expect("fixture");
         GetContextResult {
+            read_revision: None,
             rendered: render_graph_bundle(&bundle),
             bundle,
             requested_scopes: Vec::new(),
@@ -2611,6 +2619,7 @@ mod wake_priority_tests {
             "resume",
             max_entries,
             GetContextResult {
+                read_revision: None,
                 bundle,
                 rendered,
                 requested_scopes: Vec::new(),
