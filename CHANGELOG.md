@@ -9,6 +9,20 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.3] - 2026-09-13
+
+### Changed
+
+- Embedded dimensional reads now batch anchor lookups under one consistent
+  SQLite snapshot, reducing repeated scans while preserving read parity and
+  clock-aware filtering across memory dimensions.
+
+### Fixed
+
+- Large dimensional reads no longer repeat linked-JSON work for each about;
+  the optimized path keeps embedded behavior aligned with the native parity
+  contract and its snapshot boundaries.
+
 ## [0.18.2] - 2026-09-13
 
 ### Added
@@ -1724,7 +1738,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.2...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.3...HEAD
+[0.18.3]: https://github.com/underpass-ai/kmp/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/underpass-ai/kmp/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/underpass-ai/kmp/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/underpass-ai/kmp/compare/v0.17.0...v0.18.0
