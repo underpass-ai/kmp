@@ -1,0 +1,686 @@
+[
+  {
+    "shape": "small",
+    "rows": [
+      {
+        "operation": "wake",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 339.198753,
+        "p95_ms": 339.198753,
+        "cpu_ms": 340.0,
+        "peak_rss_kib": 61256,
+        "response_bytes": [
+          27254
+        ],
+        "compact_response_tokens": 8112
+      },
+      {
+        "operation": "wake",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 105.585171,
+        "p95_ms": 107.504794,
+        "cpu_ms": 840.0,
+        "peak_rss_kib": 61472,
+        "response_bytes": [
+          27254,
+          27255
+        ],
+        "compact_response_tokens": [
+          8112
+        ],
+        "proc_io_totals": {
+          "rchar": 3843627,
+          "wchar": 231827,
+          "syscr": 2280,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "ask",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 154.954397,
+        "p95_ms": 154.954397,
+        "cpu_ms": 150.0,
+        "peak_rss_kib": 61736,
+        "response_bytes": [
+          24776
+        ],
+        "compact_response_tokens": 7479
+      },
+      {
+        "operation": "ask",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 154.81927000000002,
+        "p95_ms": 155.520315,
+        "cpu_ms": 1220.0,
+        "peak_rss_kib": 61828,
+        "response_bytes": [
+          24776
+        ],
+        "compact_response_tokens": [
+          7479
+        ],
+        "proc_io_totals": {
+          "rchar": 3843928,
+          "wchar": 211984,
+          "syscr": 2280,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 8192
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "goto",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 8.97711,
+        "p95_ms": 8.97711,
+        "cpu_ms": 10.0,
+        "peak_rss_kib": 61892,
+        "response_bytes": [
+          4956
+        ],
+        "compact_response_tokens": 1600
+      },
+      {
+        "operation": "goto",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 5.7065095,
+        "p95_ms": 7.754796,
+        "cpu_ms": 40.0,
+        "peak_rss_kib": 61892,
+        "response_bytes": [
+          4956
+        ],
+        "compact_response_tokens": [
+          1600
+        ],
+        "proc_io_totals": {
+          "rchar": 677728,
+          "wchar": 53392,
+          "syscr": 416,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "forward",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 5.285367,
+        "p95_ms": 5.285367,
+        "cpu_ms": 0.0,
+        "peak_rss_kib": 61892,
+        "response_bytes": [
+          5024
+        ],
+        "compact_response_tokens": 1578
+      },
+      {
+        "operation": "forward",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 5.604165999999999,
+        "p95_ms": 7.922651,
+        "cpu_ms": 30.0,
+        "peak_rss_kib": 61892,
+        "response_bytes": [
+          5024
+        ],
+        "compact_response_tokens": [
+          1578
+        ],
+        "proc_io_totals": {
+          "rchar": 688968,
+          "wchar": 53984,
+          "syscr": 416,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "process-startup",
+        "elapsed_ms": 10.504127
+      },
+      {
+        "operation": "write-memory",
+        "cache": "sequential-new-writes",
+        "samples": 8,
+        "p50_ms": 160.01226350000002,
+        "p95_ms": 190.772409,
+        "cpu_ms": 1270.0,
+        "peak_rss_kib": 67468,
+        "response_bytes": [
+          1761,
+          2202
+        ]
+      }
+    ]
+  },
+  {
+    "shape": "medium",
+    "rows": [
+      {
+        "operation": "wake",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 825.977088,
+        "p95_ms": 825.977088,
+        "cpu_ms": 820.0,
+        "peak_rss_kib": 64304,
+        "response_bytes": [
+          120240
+        ],
+        "compact_response_tokens": 35426
+      },
+      {
+        "operation": "wake",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 600.8429705000001,
+        "p95_ms": 604.969079,
+        "cpu_ms": 4780.0,
+        "peak_rss_kib": 64912,
+        "response_bytes": [
+          120240,
+          120241
+        ],
+        "compact_response_tokens": [
+          35426
+        ],
+        "proc_io_totals": {
+          "rchar": 35682747,
+          "wchar": 1074611,
+          "syscr": 17304,
+          "syscw": 80,
+          "read_bytes": 0,
+          "write_bytes": 114688
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "ask",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 793.775871,
+        "p95_ms": 793.775871,
+        "cpu_ms": 800.0,
+        "peak_rss_kib": 65568,
+        "response_bytes": [
+          37151
+        ],
+        "compact_response_tokens": 11079
+      },
+      {
+        "operation": "ask",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 798.45544,
+        "p95_ms": 800.68369,
+        "cpu_ms": 6370.0,
+        "peak_rss_kib": 66072,
+        "response_bytes": [
+          37151
+        ],
+        "compact_response_tokens": [
+          11079
+        ],
+        "proc_io_totals": {
+          "rchar": 35683048,
+          "wchar": 422224,
+          "syscr": 17304,
+          "syscw": 86,
+          "read_bytes": 0,
+          "write_bytes": 122880
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "goto",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 23.132149,
+        "p95_ms": 23.132149,
+        "cpu_ms": 20.0,
+        "peak_rss_kib": 66136,
+        "response_bytes": [
+          4956
+        ],
+        "compact_response_tokens": 1600
+      },
+      {
+        "operation": "goto",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 8.137666,
+        "p95_ms": 9.038902,
+        "cpu_ms": 50.0,
+        "peak_rss_kib": 66136,
+        "response_bytes": [
+          4956
+        ],
+        "compact_response_tokens": [
+          1600
+        ],
+        "proc_io_totals": {
+          "rchar": 2287272,
+          "wchar": 53392,
+          "syscr": 888,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "forward",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 7.629245,
+        "p95_ms": 7.629245,
+        "cpu_ms": 10.0,
+        "peak_rss_kib": 66136,
+        "response_bytes": [
+          5025
+        ],
+        "compact_response_tokens": 1578
+      },
+      {
+        "operation": "forward",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 8.385793,
+        "p95_ms": 9.218502,
+        "cpu_ms": 50.0,
+        "peak_rss_kib": 66136,
+        "response_bytes": [
+          5025
+        ],
+        "compact_response_tokens": [
+          1578
+        ],
+        "proc_io_totals": {
+          "rchar": 2300328,
+          "wchar": 53992,
+          "syscr": 896,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "process-startup",
+        "elapsed_ms": 8.730391
+      },
+      {
+        "operation": "write-memory",
+        "cache": "sequential-new-writes",
+        "samples": 8,
+        "p50_ms": 858.615866,
+        "p95_ms": 880.824874,
+        "cpu_ms": 6820.0,
+        "peak_rss_kib": 73568,
+        "response_bytes": [
+          1761,
+          2202
+        ]
+      }
+    ]
+  },
+  {
+    "shape": "high-degree",
+    "rows": [
+      {
+        "operation": "wake",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 2183.35015,
+        "p95_ms": 2183.35015,
+        "cpu_ms": 2190.0,
+        "peak_rss_kib": 71892,
+        "response_bytes": [
+          369015
+        ],
+        "compact_response_tokens": 106890
+      },
+      {
+        "operation": "wake",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 1949.745199,
+        "p95_ms": 1951.84604,
+        "cpu_ms": 15580.0,
+        "peak_rss_kib": 73312,
+        "response_bytes": [
+          369015,
+          369016
+        ],
+        "compact_response_tokens": [
+          106890
+        ],
+        "proc_io_totals": {
+          "rchar": 77862091,
+          "wchar": 3064827,
+          "syscr": 38112,
+          "syscw": 80,
+          "read_bytes": 0,
+          "write_bytes": 114688
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "ask",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 1879.670188,
+        "p95_ms": 1879.670188,
+        "cpu_ms": 1890.0,
+        "peak_rss_kib": 73924,
+        "response_bytes": [
+          63137
+        ],
+        "compact_response_tokens": 18487
+      },
+      {
+        "operation": "ask",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 1867.1746515,
+        "p95_ms": 1870.940159,
+        "cpu_ms": 14930.0,
+        "peak_rss_kib": 73924,
+        "response_bytes": [
+          63137
+        ],
+        "compact_response_tokens": [
+          18487
+        ],
+        "proc_io_totals": {
+          "rchar": 77862392,
+          "wchar": 630128,
+          "syscr": 38112,
+          "syscw": 86,
+          "read_bytes": 0,
+          "write_bytes": 147456
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "goto",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 31.447106,
+        "p95_ms": 31.447106,
+        "cpu_ms": 30.0,
+        "peak_rss_kib": 73924,
+        "response_bytes": [
+          4956
+        ],
+        "compact_response_tokens": 1600
+      },
+      {
+        "operation": "goto",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 11.549483500000001,
+        "p95_ms": 13.713986,
+        "cpu_ms": 70.0,
+        "peak_rss_kib": 73924,
+        "response_bytes": [
+          4956
+        ],
+        "compact_response_tokens": [
+          1600
+        ],
+        "proc_io_totals": {
+          "rchar": 2685288,
+          "wchar": 53404,
+          "syscr": 1016,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "forward",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 12.721862,
+        "p95_ms": 12.721862,
+        "cpu_ms": 20.0,
+        "peak_rss_kib": 73924,
+        "response_bytes": [
+          5025
+        ],
+        "compact_response_tokens": 1578
+      },
+      {
+        "operation": "forward",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 11.643643,
+        "p95_ms": 13.664898,
+        "cpu_ms": 80.0,
+        "peak_rss_kib": 73924,
+        "response_bytes": [
+          5025
+        ],
+        "compact_response_tokens": [
+          1578
+        ],
+        "proc_io_totals": {
+          "rchar": 2712240,
+          "wchar": 54006,
+          "syscr": 1032,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "process-startup",
+        "elapsed_ms": 14.670381
+      },
+      {
+        "operation": "write-memory",
+        "cache": "sequential-new-writes",
+        "samples": 8,
+        "p50_ms": 2041.6197419999999,
+        "p95_ms": 2063.146327,
+        "cpu_ms": 16310.0,
+        "peak_rss_kib": 93468,
+        "response_bytes": [
+          1761,
+          2202
+        ]
+      }
+    ]
+  },
+  {
+    "shape": "large-body",
+    "rows": [
+      {
+        "operation": "wake",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 2560.480657,
+        "p95_ms": 2560.480657,
+        "cpu_ms": 2560.0,
+        "peak_rss_kib": 68992,
+        "response_bytes": [
+          547447
+        ],
+        "compact_response_tokens": 161104
+      },
+      {
+        "operation": "wake",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 2307.2899859999998,
+        "p95_ms": 2312.07047,
+        "cpu_ms": 18430.0,
+        "peak_rss_kib": 70140,
+        "response_bytes": [
+          547447,
+          547448
+        ],
+        "compact_response_tokens": [
+          161104
+        ],
+        "proc_io_totals": {
+          "rchar": 125476859,
+          "wchar": 4492267,
+          "syscr": 32168,
+          "syscw": 80,
+          "read_bytes": 0,
+          "write_bytes": 114688
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "ask",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 3949.478349,
+        "p95_ms": 3949.478349,
+        "cpu_ms": 3940.0,
+        "peak_rss_kib": 73916,
+        "response_bytes": [
+          284873
+        ],
+        "compact_response_tokens": 83975
+      },
+      {
+        "operation": "ask",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 3943.6447955000003,
+        "p95_ms": 3950.410415,
+        "cpu_ms": 31530.0,
+        "peak_rss_kib": 78180,
+        "response_bytes": [
+          284873
+        ],
+        "compact_response_tokens": [
+          83975
+        ],
+        "proc_io_totals": {
+          "rchar": 125477160,
+          "wchar": 2404016,
+          "syscr": 32168,
+          "syscw": 86,
+          "read_bytes": 0,
+          "write_bytes": 126976
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "goto",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 26.921034,
+        "p95_ms": 26.921034,
+        "cpu_ms": 20.0,
+        "peak_rss_kib": 78244,
+        "response_bytes": [
+          4956
+        ],
+        "compact_response_tokens": 1600
+      },
+      {
+        "operation": "goto",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 16.157337,
+        "p95_ms": 19.00358,
+        "cpu_ms": 110.0,
+        "peak_rss_kib": 78244,
+        "response_bytes": [
+          4956
+        ],
+        "compact_response_tokens": [
+          1600
+        ],
+        "proc_io_totals": {
+          "rchar": 30887936,
+          "wchar": 53408,
+          "syscr": 7840,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "forward",
+        "cache": "first-operation-in-process",
+        "samples": 1,
+        "p50_ms": 15.905978,
+        "p95_ms": 15.905978,
+        "cpu_ms": 10.0,
+        "peak_rss_kib": 78244,
+        "response_bytes": [
+          5024
+        ],
+        "compact_response_tokens": 1578
+      },
+      {
+        "operation": "forward",
+        "cache": "warm",
+        "samples": 8,
+        "p50_ms": 16.0079775,
+        "p95_ms": 16.511015,
+        "cpu_ms": 100.0,
+        "peak_rss_kib": 78244,
+        "response_bytes": [
+          5024
+        ],
+        "compact_response_tokens": [
+          1578
+        ],
+        "proc_io_totals": {
+          "rchar": 30899176,
+          "wchar": 54000,
+          "syscr": 7840,
+          "syscw": 32,
+          "read_bytes": 0,
+          "write_bytes": 16384
+        },
+        "mcp_calls": 8
+      },
+      {
+        "operation": "process-startup",
+        "elapsed_ms": 12.634679
+      },
+      {
+        "operation": "write-memory",
+        "cache": "sequential-new-writes",
+        "samples": 8,
+        "p50_ms": 3660.3611005000002,
+        "p95_ms": 3688.607834,
+        "cpu_ms": 29200.0,
+        "peak_rss_kib": 88560,
+        "response_bytes": [
+          1761,
+          2202
+        ]
+      }
+    ]
+  }
+]

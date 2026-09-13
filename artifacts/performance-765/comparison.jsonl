@@ -1,0 +1,16 @@
+{"shape": "small", "operation": "wake", "before_p50_ms": 105.585171, "after_p50_ms": 104.2926655, "before_p95_ms": 107.504794, "after_p95_ms": 104.635768, "complete_read_parity": true}
+{"shape": "small", "operation": "ask", "before_p50_ms": 154.81927000000002, "after_p50_ms": 153.20929999999998, "before_p95_ms": 155.520315, "after_p95_ms": 153.961185, "complete_read_parity": true}
+{"shape": "small", "operation": "goto", "before_p50_ms": 5.7065095, "after_p50_ms": 4.770395499999999, "before_p95_ms": 7.754796, "after_p95_ms": 5.723287, "complete_read_parity": true}
+{"shape": "small", "operation": "forward", "before_p50_ms": 5.604165999999999, "after_p50_ms": 5.010490000000001, "before_p95_ms": 7.922651, "after_p95_ms": 6.128149, "complete_read_parity": true}
+{"shape": "medium", "operation": "wake", "before_p50_ms": 600.8429705000001, "after_p50_ms": 616.094426, "before_p95_ms": 604.969079, "after_p95_ms": 616.842934, "complete_read_parity": true}
+{"shape": "medium", "operation": "ask", "before_p50_ms": 798.45544, "after_p50_ms": 808.6650195, "before_p95_ms": 800.68369, "after_p95_ms": 811.005456, "complete_read_parity": true}
+{"shape": "medium", "operation": "goto", "before_p50_ms": 8.137666, "after_p50_ms": 8.800522, "before_p95_ms": 9.038902, "after_p95_ms": 11.323391, "complete_read_parity": true}
+{"shape": "medium", "operation": "forward", "before_p50_ms": 8.385793, "after_p50_ms": 11.597798000000001, "before_p95_ms": 9.218502, "after_p95_ms": 13.420725, "complete_read_parity": true}
+{"shape": "high-degree", "operation": "wake", "before_p50_ms": 1949.745199, "after_p50_ms": 1953.6168905, "before_p95_ms": 1951.84604, "after_p95_ms": 1959.844427, "complete_read_parity": true}
+{"shape": "high-degree", "operation": "ask", "before_p50_ms": 1867.1746515, "after_p50_ms": 1849.443462, "before_p95_ms": 1870.940159, "after_p95_ms": 1853.552867, "complete_read_parity": true}
+{"shape": "high-degree", "operation": "goto", "before_p50_ms": 11.549483500000001, "after_p50_ms": 10.6298025, "before_p95_ms": 13.713986, "after_p95_ms": 12.285772, "complete_read_parity": true}
+{"shape": "high-degree", "operation": "forward", "before_p50_ms": 11.643643, "after_p50_ms": 14.4232905, "before_p95_ms": 13.664898, "after_p95_ms": 15.163407, "complete_read_parity": true}
+{"shape": "large-body", "operation": "wake", "before_p50_ms": 2307.2899859999998, "after_p50_ms": 2350.8370434999997, "before_p95_ms": 2312.07047, "after_p95_ms": 2352.053506, "complete_read_parity": true}
+{"shape": "large-body", "operation": "ask", "before_p50_ms": 3943.6447955000003, "after_p50_ms": 3988.1355025000003, "before_p95_ms": 3950.410415, "after_p95_ms": 3990.596922, "complete_read_parity": true}
+{"shape": "large-body", "operation": "goto", "before_p50_ms": 16.157337, "after_p50_ms": 10.236885000000001, "before_p95_ms": 19.00358, "after_p95_ms": 11.49456, "complete_read_parity": true}
+{"shape": "large-body", "operation": "forward", "before_p50_ms": 16.0079775, "after_p50_ms": 10.554212, "before_p95_ms": 16.511015, "after_p95_ms": 12.240461, "complete_read_parity": true}

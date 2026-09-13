@@ -1,0 +1,77 @@
+{
+  "manifests": {
+    "before": 42,
+    "after": 42,
+    "allocations-before": 34,
+    "allocations-after": 34
+  },
+  "exact_read_parity": {
+    "small": 4,
+    "medium": 4,
+    "high-degree": 4,
+    "large-body": 4,
+    "allocations-small": 4,
+    "allocations-medium": 4,
+    "allocations-high-degree": 4,
+    "allocations-large-body": 4
+  },
+  "phase_events": {
+    "small": 22,
+    "medium": 22,
+    "high-degree": 22,
+    "large-body": 22
+  },
+  "journeys": {
+    "before-small": {
+      "agent-open": 1,
+      "browser-reload": 5,
+      "agent-focus-trace": 5
+    },
+    "after-small": {
+      "agent-open": 1,
+      "browser-reload": 5,
+      "agent-focus-trace": 5
+    },
+    "before-medium": {
+      "agent-open": 1,
+      "browser-reload": 5,
+      "agent-focus-trace": 5
+    },
+    "after-medium": {
+      "agent-open": 1,
+      "browser-reload": 5,
+      "agent-focus-trace": 5
+    },
+    "before-high-degree": {
+      "agent-open": 1,
+      "browser-reload": 5,
+      "agent-focus-trace": 5
+    },
+    "after-high-degree": {
+      "agent-open": 1,
+      "browser-reload": 5,
+      "agent-focus-trace": 5
+    },
+    "before-large-body": {
+      "agent-open": 1,
+      "browser-reload": 5,
+      "agent-focus-trace": 5
+    },
+    "after-large-body": {
+      "agent-open": 1,
+      "browser-reload": 5,
+      "agent-focus-trace": 5
+    }
+  },
+  "native_read_responses_per_uninstrumented_side": 176,
+  "accepted_writes_per_uninstrumented_side": 32,
+  "local_checks": [
+    "cargo fmt --all -- --check",
+    "cargo build --locked -p kmp-mcp",
+    "cargo clippy --locked -p kmp-mcp --all-targets -- -D warnings",
+    "cargo test --locked -p kmp-mcp embedded_backend: 30 tests passed",
+    "MCP architecture audit: 442 files, zero debt",
+    "Python syntax compilation and independent native/browser smoke controls"
+  ],
+  "allocation_scope": "Each shape process: startup/initialize, 8 reads (one first and one warm for each of four operations), one accepted write; seed excluded. Timings excluded because these instrumented runs overlapped builds."
+}
