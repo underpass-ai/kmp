@@ -18,11 +18,14 @@ the native lifecycle; `--version <release>` selects an explicit target.
 The installed plugin's manifest only selects the initial bootstrap engine
 and the default setup version. Do not update only one host or one half.
 
-Once the release is proved and every host points at it, the update removes the
-superseded versions each host's plugin cache had kept, leaving the installed
-release and the one before it for rollback. The receipt names what went under
-`plugin_caches`; report it rather than letting sixty megabytes disappear
-quietly.
+Once the release is proved and every host points at it, the update names the
+superseded versions each host's plugin cache still holds, leaving the installed
+release and the one before it for rollback. It removes none of them: a session
+that was already open dispatches its skills out of the version directory it
+started in, and deleting that directory breaks the session until its host
+restarts. The next time the engine starts, that start removes them. The receipt
+names what is still there under `plugin_caches` as `deferred`; report it as
+deferred rather than as freed space.
 
 For an enabled Codex plugin, the plugin owns MCP. Install or update the engine
 with `<plugin-root>/scripts/kmp-install-binary.sh`, but do not add a global

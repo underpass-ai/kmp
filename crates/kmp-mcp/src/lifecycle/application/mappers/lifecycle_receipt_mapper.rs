@@ -67,12 +67,15 @@ impl LifecycleReceiptMapper {
                 .collect(),
             plugin_tree_digest: receipt.plugin_tree().map(ToString::to_string),
             plugin_caches: receipt
-                .pruned_caches()
+                .deferred_caches()
                 .iter()
-                .map(|(host, pruning)| LifecycleCacheDto {
+                .map(|(host, deferral)| LifecycleCacheDto {
                     host: host.to_string(),
-                    removed: pruning.removed().iter().map(ToString::to_string).collect(),
-                    kept: pruning.kept().iter().map(ToString::to_string).collect(),
+                    deferred: deferral
+                        .deferred()
+                        .iter()
+                        .map(ToString::to_string)
+                        .collect(),
                 })
                 .collect(),
             lexical_bridge: receipt.lexical_bridge().map(Self::bridge_dto),

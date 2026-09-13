@@ -39,6 +39,28 @@ impl FakeHostGateway {
         self.provisions.lock().expect("provision lock").clone()
     }
 
+    /// Where a host's plugin manager leaves the plugin after a refresh.
+    ///
+    /// A native plugin cache is keyed by version: refreshing installs the new
+    /// release into its own directory beside the old one, and the root moves
+    /// with it. A root that is not a version directory — the plain
+    /// `/tmp/claude` most of these tests use — stays exactly where it is.
+    fn refreshed_root(
+        existing: &kmp_mcp::lifecycle::PluginRoot,
+        target: &ReleaseVersion,
+    ) -> kmp_mcp::lifecycle::PluginRoot {
+        let path = existing.as_path();
+        let versioned = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| ReleaseVersion::parse(name).is_ok());
+        if !versioned {
+            return existing.clone();
+        }
+        kmp_mcp::lifecycle::PluginRoot::new(path.with_file_name(target.as_str()))
+            .expect("versioned plugin root")
+    }
+
     fn installation_for(&self, host: Host, target: &ReleaseVersion) -> HostInstallation {
         let root = match host {
             Host::Claude => "/tmp/claude",
@@ -101,10 +123,11 @@ impl HostGateway for FakeHostGateway {
             .iter()
             .find(|installation| installation.host() == host)
             .ok_or_else(|| LifecycleError::HostNotInstalled(host.to_string()))?;
+        let version = self.refreshed_version.as_ref().unwrap_or(target);
         Ok(HostInstallation::discovered(
             host,
-            self.refreshed_version.as_ref().unwrap_or(target).clone(),
-            existing.root().clone(),
+            version.clone(),
+            Self::refreshed_root(existing.root(), version),
             true,
         ))
     }
