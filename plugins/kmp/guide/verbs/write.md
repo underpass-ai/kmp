@@ -265,9 +265,20 @@ language, too thin, a copy of the text, a dropped identifier. Fix the summary
 the error names; never alter the text to fit it. A cited item that was reached
 through its summary says so with `matched_via: summary` and `summary_terms`.
 
-Memories written before summaries existed still owe one. `kmp-mcp summaries
-pending [<about>] [--json]` lists them, with the text to render and, for a
-summary the lint refuses, what is wrong with it; `kmp-mcp doctor` counts them.
+Memories written before summaries existed still owe one. Read the whole
+picture with `kmp_summaries_audit`: one call per about, or a named set through
+`dimensions.scope: abouts` with `dimensions.abouts`, or every anchor through
+`all_abouts`, which is the explicit opt-in to that cost. Each memory comes back
+with a `state` — `missing`, `refused`, `stands`, `not_required` — the stored
+`text` to render whenever there is work to do, `summary_en` and `summary_en_by`
+where a rendering exists, the lint's own `faults` when it refuses one, and
+deterministic `weaknesses` when one stands and still retrieves little: `thin`,
+`repeated` across the about, `undiscriminating`, `stale` after a later rewrite.
+Weaknesses are warnings and never refusals. `totals` describes the whole
+selection and never the page; continue with `page.cursor` and the same bound
+arguments. `kmp-mcp summaries pending [<about>…] [--json]` prints the debt half
+of the same reading and `kmp-mcp doctor` counts it.
+
 Attach one or more with `kmp_write_memory`, using `search_summaries` records
 containing only `ref` and `summary_en`: the text, kind and coordinates are read from
 the store and cannot be supplied, no relation is written, and a rendering

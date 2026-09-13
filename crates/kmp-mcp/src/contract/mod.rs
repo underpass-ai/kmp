@@ -6,6 +6,7 @@
 pub(crate) mod handshake;
 pub(crate) mod registry;
 pub(crate) mod schema;
+mod summaries_audit_surface;
 mod surface_audit;
 pub(crate) mod temporal_entry_field;
 pub(crate) mod tools;

@@ -1,38 +1,43 @@
 use kmp_mcp::guide;
-use kmp_mcp::summaries::pending;
+use kmp_mcp::summaries::{AuditScope, SummaryAudit};
+
+use super::pending_summary::PendingSummary;
 
 use super::{looks_like_option, unknown_option};
 
-/// `kmp-mcp summaries pending [<about>] [--json]`: the memories in the
+/// `kmp-mcp summaries pending [<about>…] [--json]`: the memories in the
 /// selected store that owe an English search summary.
 ///
 /// The kernel cannot write the summary; the agent does, with
 /// `kmp_write_memory` and `search_summaries`. This is the list it
-/// works from, and the doctor's count comes from the same reading.
+/// works from. It is a projection of the one audit `kmp_summaries_audit`
+/// returns and the doctor counts — the debt half of it, rendered for a
+/// terminal. The audit's weakness signals are for the agent that can act on
+/// them; what a terminal needs is the list of memories a question cannot
+/// reach at all.
 pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
     let Some((verb, rest)) = args.split_first() else {
-        eprintln!("kmp-mcp: summaries takes `pending [<about>] [--json]`");
+        eprintln!("kmp-mcp: summaries takes `pending [<about>…] [--json]`");
         return 2;
     };
     if *verb != "pending" {
-        eprintln!("kmp-mcp: summaries takes `pending [<about>] [--json]`, not `{verb}`");
+        eprintln!("kmp-mcp: summaries takes `pending [<about>…] [--json]`, not `{verb}`");
         return 2;
     }
-    let mut about = None;
+    let mut abouts: Vec<String> = Vec::new();
     let mut json = false;
     for argument in rest {
         match *argument {
             "--json" => json = true,
             other if looks_like_option(other) => return unknown_option("summaries", other),
-            other if about.is_none() => about = Some(other.to_string()),
-            other => {
-                eprintln!(
-                    "kmp-mcp: summaries pending takes one about, and `{other}` is a second one"
-                );
-                return 2;
-            }
+            other => abouts.push(other.to_string()),
         }
     }
+    let scope = match abouts.len() {
+        0 => AuditScope::AllAbouts,
+        1 => AuditScope::CurrentAbout(abouts[0].clone()),
+        _ => AuditScope::Abouts(abouts.clone()),
+    };
 
     let resolved = match kmp_embedded::resolve_data_dir_from_env() {
         Ok(resolved) => resolved,
@@ -50,8 +55,8 @@ pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
             return 2;
         }
     };
-    let pending = match pending(&bundle, about.as_deref()) {
-        Ok(pending) => pending,
+    let pending = match SummaryAudit::read(&bundle, &scope) {
+        Ok(audit) => audit.owed().map(PendingSummary::of).collect::<Vec<_>>(),
         Err(error) => {
             eprintln!("kmp-mcp: {error}");
             return 2;
@@ -71,10 +76,7 @@ pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
     if pending.is_empty() {
         println!(
             "every memory{} that needs an English search summary carries one",
-            about
-                .as_deref()
-                .map(|about| format!(" in `{about}`"))
-                .unwrap_or_default()
+            selected(&abouts)
         );
         return 0;
     }
@@ -102,4 +104,20 @@ pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
         }
     }
     0
+}
+
+/// How the empty answer names what was read. No about named is the whole
+/// store, and reads as it always did.
+fn selected(abouts: &[String]) -> String {
+    match abouts {
+        [] => String::new(),
+        [one] => format!(" in `{one}`"),
+        many => format!(
+            " in {}",
+            many.iter()
+                .map(|about| format!("`{about}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    }
 }

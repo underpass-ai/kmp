@@ -77,6 +77,16 @@ pub(super) async fn grpc_tool_result(
         "kmp_relabel" => grpc_relabel(endpoint, tls, arguments).await,
         "kmp_condense" => grpc_condense(endpoint, tls, arguments).await,
         "kmp_view_read_projection" => grpc_visual_projection(endpoint, tls, arguments).await,
+        // The audit is read off the store's own event log, including the
+        // earlier revisions of every entry, and the kernel's gRPC surface
+        // exposes no such stream. Saying so is honest; answering from the
+        // projections would be a second, weaker reading wearing this tool's
+        // name.
+        "kmp_summaries_audit" => Err(ToolError::unavailable(
+            "kmp_summaries_audit reads the store's own event log, which live gRPC mode does not \
+             serve. Run it against the embedded store, or list what is owed there with `kmp-mcp \
+             summaries pending`",
+        )),
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
         ))),

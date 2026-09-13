@@ -30,6 +30,7 @@ EXPECTED_TOOLS = {
     "kmp_inspect",
     "kmp_relabel",
     "kmp_condense",
+    "kmp_summaries_audit",
     "kmp_view_open",
     "kmp_view_apply_intent",
     "kmp_view_get_state",

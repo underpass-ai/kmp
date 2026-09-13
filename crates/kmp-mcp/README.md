@@ -3,7 +3,7 @@
 <!-- kmp:public-overview:begin -->
 KMP gives Codex and Claude Code local-first memory that preserves what
 happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through thirteen memory tools, three
+on embedded SQLite, and exposes them through fourteen memory tools, three
 semantic view tools over a shared ChronoLoom view and a progressive agent guide.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
@@ -67,6 +67,7 @@ Current status:
 - exposes `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
   `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
   `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_condense`, `kmp_relabel`,
+  `kmp_summaries_audit`,
   `kmp_guide`, `kmp_view_open`, `kmp_view_apply_intent`, and `kmp_view_get_state`;
 - can serve explicit fixture-backed KMP responses, embedded from the
   contract's reference examples;
@@ -244,6 +245,7 @@ Live backend mapping:
 | `kmp_trace` | `KernelMemoryService.Trace` |
 | `kmp_inspect` | `KernelMemoryService.Inspect` |
 | `kmp_condense` | `KernelMemoryService.Condense` |
+| `kmp_summaries_audit` | MCP-local reading of the embedded store's event log; unavailable in live gRPC mode |
 | `kmp_guide` | MCP-local persistent agent identity and progressive guidance |
 | `kmp_relabel` | `KernelMemoryService.Relabel` |
 | ChronoLoom app data | `KernelMemoryService.ProjectVisual` (hidden from model tool discovery) |

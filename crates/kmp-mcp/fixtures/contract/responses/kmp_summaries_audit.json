@@ -1,0 +1,81 @@
+{
+  "content": [
+    {
+      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\n0 of 6 memories in `question:parity` owe an English search summary; 0 of the rest carry one that stands and still retrieves little",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "abouts": [
+      {
+        "about": "question:parity",
+        "totals": {
+          "entries": 6,
+          "missing": 0,
+          "not_required": 6,
+          "owed": 0,
+          "refused": 0,
+          "stands": 0,
+          "weak": 0
+        }
+      }
+    ],
+    "entries": [
+      {
+        "about": "question:parity",
+        "kind": "claim",
+        "ref": "question:parity:claim:denver",
+        "state": "not_required"
+      },
+      {
+        "about": "question:parity",
+        "kind": "claim",
+        "ref": "question:parity:claim:denver-detail",
+        "state": "not_required"
+      },
+      {
+        "about": "question:parity",
+        "kind": "claim",
+        "ref": "question:parity:claim:boulder-current",
+        "state": "not_required"
+      }
+    ],
+    "next_actions": [
+      {
+        "arguments": {
+          "about": "question:parity",
+          "page": {
+            "cursor": "kmpsa1:3:5c5a8ecfbb4034b7e0d379d47c647f864b4703f15193cca0e884d39b919a64dc",
+            "entries": 3
+          }
+        },
+        "tool": "kmp_summaries_audit"
+      }
+    ],
+    "page": {
+      "has_more": true,
+      "next_cursor": "kmpsa1:3:5c5a8ecfbb4034b7e0d379d47c647f864b4703f15193cca0e884d39b919a64dc",
+      "offset": 0,
+      "returned": 3,
+      "total": 6
+    },
+    "scope": {
+      "abouts": [
+        "question:parity"
+      ],
+      "selection": "current_about"
+    },
+    "summary": "0 of 6 memories in `question:parity` owe an English search summary; 0 of the rest carry one that stands and still retrieves little",
+    "totals": {
+      "entries": 6,
+      "missing": 0,
+      "not_required": 6,
+      "owed": 0,
+      "refused": 0,
+      "stands": 0,
+      "weak": 0
+    },
+    "warnings": []
+  }
+}

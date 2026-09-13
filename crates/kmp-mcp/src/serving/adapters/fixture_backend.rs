@@ -37,6 +37,8 @@ const RELABEL_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/relabel.response.json");
 const CONDENSE_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/condense.response.json");
+const SUMMARIES_AUDIT_RESPONSE_FIXTURE: &str =
+    include_str!("../../../fixtures/kernel/v1beta1/kmp/summaries-audit.response.json");
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FixtureKernelMcpBackend;
@@ -88,6 +90,12 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
             ],
             CONDENSE_RESPONSE_FIXTURE,
         ),
+        // The fixture backend validates the call and answers the
+        // reference reading. It holds no event log, so it cannot make
+        // this reading itself; what it pins is the shape.
+        "kmp_summaries_audit" => {
+            read_fixture_tool_result(arguments, &["about"], SUMMARIES_AUDIT_RESPONSE_FIXTURE)
+        }
         "kmp_view_read_projection" => {
             VisualProjectionRequestMapper::from_arguments(arguments)
                 .map_err(ToolError::invalid_argument)?;

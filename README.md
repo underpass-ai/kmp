@@ -18,7 +18,7 @@
 <!-- kmp:public-overview:begin -->
 KMP gives Codex and Claude Code local-first memory that preserves what
 happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through thirteen memory tools, three
+on embedded SQLite, and exposes them through fourteen memory tools, three
 semantic view tools over a shared ChronoLoom view and a progressive agent guide.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
@@ -168,6 +168,7 @@ agent identity and progressive guidance. `tools/list` is the authority.
 | `kmp_ingest` | Ingest an exact canonical memory graph. |
 | `kmp_relabel` | Change the labels a memory stands in — add, take off, and why — without rewriting its text. |
 | `kmp_condense` | Write a compact reader card for one stored body, bound to the exact version it was read from. |
+| `kmp_summaries_audit` | Read where an about's memories stand with respect to their English search summaries: what is missing, what the lint refuses, and what stands and still retrieves little. |
 | `kmp_view_open` | Open or rehydrate a ChronoLoom view over an about. |
 | `kmp_view_apply_intent` | Move that view by declaring meaning — focus, clock, zoom, filters, selection — under optimistic concurrency. |
 | `kmp_view_get_state` | Read the view's semantic state, never its pixels. |
