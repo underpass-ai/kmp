@@ -4,9 +4,21 @@
     "artifact": "lifecycle.json",
     "warm_samples_per_shape": 21,
     "shapes": [
-      {"name": "empty", "seed_events": 0, "payload_bytes_per_event": 0},
-      {"name": "medium", "seed_events": 128, "payload_bytes_per_event": 32768},
-      {"name": "large", "seed_events": 512, "payload_bytes_per_event": 32768}
+      {
+        "name": "empty",
+        "seed_events": 0,
+        "payload_bytes_per_event": 0
+      },
+      {
+        "name": "medium",
+        "seed_events": 128,
+        "payload_bytes_per_event": 32768
+      },
+      {
+        "name": "large",
+        "seed_events": 512,
+        "payload_bytes_per_event": 32768
+      }
     ],
     "cold_open_is_separate": true,
     "percentile": "nearest-rank",
@@ -50,5 +62,11 @@
     "status": "retain_existing_lifecycle",
     "reason": "FULL kernel durability, quick_check coverage, reader/writer coexistence, and checkpoint progress are preserved; measurements do not justify a new checkpoint or cache policy.",
     "quality_telemetry": "Existing connection-local NORMAL with periodic FULL remains unchanged."
+  },
+  "review": {
+    "raw_evidence_unchanged": true,
+    "cache_size_correction": "Historical cache_size_pages=-2000 is KiB; current runner uses cache_size_raw plus explicit unit and connection scope. All diagnostic PRAGMAs are fresh-connection observations.",
+    "percentiles": "Verified all reported p50/p95 from raw n=21 arrays; current helper implements nearest rank for other sample counts too.",
+    "runner_metadata_build": "Current embedded Rust runner rebuilt successfully after output-only metadata changes; production timing operations unchanged."
   }
 }

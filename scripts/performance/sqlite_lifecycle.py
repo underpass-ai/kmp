@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import platform
 import subprocess
@@ -97,7 +98,9 @@ fn inventory(path: &Path) -> serde_json::Value {
         "exists": path.exists(),
         "journal_mode": journal_mode,
         "synchronous": synchronous,
-        "cache_size_pages": cache_size,
+        "cache_size_raw": cache_size,
+        "cache_size_unit": if cache_size < 0 { "negative KiB" } else { "pages" },
+        "connection_scope": "fresh diagnostic connection; connection-local settings are not writer observations",
         "temp_store": temp_store,
         "page_count": page_count,
         "page_size": page_size,
@@ -271,7 +274,7 @@ def output(*command: str) -> str:
 
 def percentile(values: list[float], fraction: float) -> float:
     ordered = sorted(values)
-    index = min(len(ordered) - 1, int((len(ordered) - 1) * fraction))
+    index = max(0, min(len(ordered) - 1, math.ceil(len(ordered) * fraction) - 1))
     return ordered[index]
 
 
@@ -294,6 +297,8 @@ def main() -> int:
     parser.add_argument("--build-only", action="store_true")
     parser.add_argument("--runner-binary", type=Path)
     args = parser.parse_args()
+    if args.warm_samples < 1:
+        parser.error("--warm-samples must be positive")
     args.scratch.mkdir(parents=True, exist_ok=False)
     runner_source = ROOT / "crates/kmp-adapter-embedded/src/bin/sqlite-lifecycle-runner.rs"
     if args.runner_binary:
