@@ -1,0 +1,13 @@
+a745a059114a88691340f03a46045f44046a5f68ed08440a6dd6a81996cf7c73  crates/kmp-viewer/src/mcp_app.rs
+8a2577a038b96f87f276d93ac8583d8f73d3f65cd609605652c6ddd15d4baa0e  crates/kmp-viewer/ui/loom-app.test.js
+f6bf72e129889ebd638b1e5c5896c635a242fc70fb7d02d19f2a546be842fffa  crates/kmp-viewer/ui/loom-bridge.test.js
+5919f904aa63ea5aa43213246dc1e19e2319135177d0756f698f3a1bd6803ade  crates/kmp-viewer/ui/loom-data.js
+e07cc3c03556203ec770ff181f2a98f4246312601246a1b8190d26794ca9360c  crates/kmp-viewer/ui/loom-layers.js
+226481b4ae99d7c39b617ba7ea50f28379680aba3a9137691c8caf54d6bf5b60  crates/kmp-viewer/ui/loom-scene.test.js
+5ef5e1cbae93ba27166fcc7ac8e5c0827eec7cd08c2b6cc623827f7baab81fc1  crates/kmp-viewer/ui/loom-selection.js
+a87002a4bcb6ccc8423a54a6636c7c7141fb46b74a4ea5222ce149c46972c16d  crates/kmp-viewer/ui/loom-startup.test.js
+52368f83023347f24d943a973e236b2dcbe070a196cb9e868d222da706c149c5  crates/kmp-viewer/ui/loom-sync.js
+3fa216740a4911ba38cb8837375b2763487ca8b76d50faffd1b4fbf258d9aede  crates/kmp-viewer/ui/loom-viewport.js
+69ac51b6256168a6345cd79a1d713452fdd898a6643dee62723f44bef3e2569a  crates/kmp-viewer/ui/loom.js
+fbaa4c99c53c780bb79720585a8530a40566a800f2e609e7e186c10655284504  crates/kmp-viewer/ui/mcp-app-bridge.js
+8d1c9f1dfd3bac5f077af30bdcd80ff00f6e9016a0564312d3f61acbb69d44b2  scripts/performance/chronoloom_startup.py

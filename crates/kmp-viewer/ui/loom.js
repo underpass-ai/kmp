@@ -24,8 +24,19 @@
       return;
     }
     try {
-      await api("/api/info");
-      const aboutsView = await api("/api/abouts");
+      // These describe independent authorities: server identity, the memory
+      // catalogue and the already shared view. Start them together so a
+      // browser join does not manufacture a serial startup waterfall.
+      const infoRead = api("/api/info");
+      const aboutsRead = api("/api/abouts");
+      const viewRead = api("/api/view", { id: KMP_APP.sync.VIEW_ID }).catch(
+        () => null,
+      );
+      const [, aboutsView, existing] = await Promise.all([
+        infoRead,
+        aboutsRead,
+        viewRead,
+      ]);
       model.abouts = aboutsView.abouts;
       KMP_APP.panels.renderAbouts();
       if (!model.abouts.length) {
@@ -36,15 +47,8 @@
       // A browser joining an already prepared loom is a reader first.
       // Opening the first about before this GET used to erase an agent's
       // focus, overlays and revision merely because the page was cold.
-      let existing = null;
-      try {
-        existing = await api("/api/view", { id: KMP_APP.sync.VIEW_ID });
-      } catch (_) {
-        // No aggregate exists yet; this browser will create the first one.
-      }
       if (existing && existing.about) {
         sync.revision = existing.view_revision || 0;
-        await KMP_APP.data.loadAbout(existing.about, false);
         await KMP_APP.sync.applyAgentState(existing);
         KMP_APP.panels.renderProvenance(existing);
         KMP_APP.sync.startViewPolling();

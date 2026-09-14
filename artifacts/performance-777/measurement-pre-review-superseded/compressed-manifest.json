@@ -1,0 +1,8 @@
+{
+  "waterfalls.json": {
+    "original_bytes": 1341010,
+    "compressed_file": "waterfalls.json.gz",
+    "compressed_bytes": 95369,
+    "compressed_sha256": "67867ece761833ac2d133d9764239a97f6642fc2fede4d7f1d4ca24f51d09659"
+  }
+}

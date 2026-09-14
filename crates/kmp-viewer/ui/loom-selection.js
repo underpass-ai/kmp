@@ -60,12 +60,22 @@ KMP_APP.selection = (() => {
     }
   }
 
-  async function runTrace({ framePath = false, preserveWindow = false } = {}) {
+  async function runTrace({
+    framePath = false,
+    preserveWindow = false,
+  } = {}) {
     try {
       const owner = model.byRef.get(tracePick.from)?.about || model.about;
       const trace = await api("/api/trace", { about: owner, from: tracePick.from, to: tracePick.to });
+      let framed = true;
       if (framePath) {
-        await KMP_APP.sync.frameRefs(trace.nodes.map((node) => node.id));
+        // The proof path was the final authoritative frame before this
+        // optimization, after the earlier focus frame. Ask for that exact
+        // stable ref set once; frameRefs retains its caps, snapshot checks
+        // and missing-node evidence.
+        framed = await KMP_APP.sync.frameRefs(
+          trace.nodes.map((node) => node.id),
+        );
       } else if (!preserveWindow) {
         const missingEndpoint = [tracePick.from, tracePick.to].find(
           (ref) => ref && !model.byRef.has(ref)
@@ -80,8 +90,10 @@ KMP_APP.selection = (() => {
       KMP_APP.scene.requestDraw();
       KMP_APP.sync.reportView();
       showError("");
+      return framePath ? framed : true;
     } catch (error) {
       showError(error.message);
+      return false;
     }
   }
 
