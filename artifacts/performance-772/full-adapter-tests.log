@@ -1,0 +1,370 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/kmp_adapter_embedded-fce9a4df9d42dc8b)
+
+running 72 tests
+test adapter::engine::snapshot_revision_observer::tests::a_commit_during_acquisition_never_certifies_a_reusable_snapshot ... ok
+test adapter::engine::sqlite::linked_json_tests::linked_projection_rejects_wrong_table_shapes_and_corrupt_selected_json ... ok
+test adapter::detail_header::tests::a_malformed_header_fails_to_decode_and_still_names_the_remedy ... ok
+test adapter::detail_header::tests::changed_text_under_the_same_public_version_and_hash_still_changes_the_digest ... ok
+test adapter::detail_header::tests::a_header_disagreeing_with_the_stored_record_length_is_refused ... ok
+test adapter::detail_header::tests::an_uncommitted_batch_leaves_neither_the_detail_nor_its_header ... ok
+test adapter::detail_header::tests::a_header_claiming_more_canonical_bytes_than_its_record_is_refused ... ok
+test adapter::detail_header::tests::a_header_naming_another_body_is_refused ... ok
+test adapter::detail_header::tests::a_header_describes_the_exact_serialized_record_and_the_canonical_body ... ok
+test adapter::detail_header::tests::a_detail_whose_header_is_absent_demands_a_rebuild_instead_of_reporting_absence ... ok
+test adapter::detail_header::tests::a_pinned_read_sees_one_state_of_the_detail_and_its_header ... ok
+test adapter::detail_header::tests::only_an_absent_body_reads_as_none_and_slots_follow_the_request ... ok
+test adapter::format_version::tests::a_format_one_store_is_rejected_without_being_opened ... ok
+test adapter::format_version::tests::a_stamp_cannot_hide_an_unsupported_storage_artifact ... ok
+test adapter::format_version::tests::a_transient_sqlite_rollback_journal_is_part_of_the_supported_layout ... ok
+test adapter::format_version::tests::corrupt_version_content_fails_fast ... ok
+test adapter::format_version::tests::fresh_directory_is_stamped_with_supported_version ... ok
+test adapter::engine::sqlite::tests::every_connection_treats_the_database_schema_as_untrusted ... ok
+test adapter::detail_header::tests::a_rebuild_clears_the_headers_with_their_details ... ok
+test adapter::format_version::tests::diagnostics_can_apply_the_open_gate_without_stamping_a_fresh_directory ... ok
+test adapter::format_version::tests::newer_format_version_fails_fast ... ok
+test adapter::format_version::tests::sqlite_layout_is_always_available ... ok
+test adapter::format_version::tests::unknown_older_format_version_is_rejected_untouched ... ok
+test adapter::format_version::tests::store_without_version_stamp_is_a_corrupt_layout ... ok
+test adapter::engine::sqlite::value_len_tests::a_key_of_the_wrong_shape_is_reported_as_a_programming_error ... ok
+test adapter::bounded_adjacency::tests::transaction_local_pages_keep_one_snapshot_across_another_engines_commit ... ok
+test adapter::engine::sqlite::value_len_tests::a_value_stored_as_text_is_refused_instead_of_being_miscounted ... ok
+test adapter::engine::sqlite::value_len_tests::the_probe_statement_is_answered_from_the_record_header ... ok
+test adapter::engine::sqlite::value_len_tests::multibyte_text_is_counted_in_stored_bytes_not_in_characters ... ok
+test adapter::engine::sqlite::value_len_tests::an_absent_key_is_none_and_a_stored_empty_value_is_zero ... ok
+test adapter::engine::sqlite::value_len_tests::a_value_spilling_onto_overflow_pages_reports_its_exact_length ... ok
+test adapter::engine::sqlite::value_len_tests::a_pinned_read_probes_the_same_snapshot_it_reads ... ok
+test adapter::portability::tests::current_format_identifies_and_covers_the_snapshot ... ok
+test adapter::portability::tests::excluding_an_about_the_store_never_had_is_not_an_error ... ok
+test adapter::portability::tests::exclusion_keeps_everything_the_excluded_abouts_do_not_root ... ok
+test adapter::portability::tests::exclusion_matches_exactly_because_abouts_are_opaque ... ok
+test adapter::portability::tests::filtered_export_matches_opaque_abouts_exactly_and_renumbers_its_range ... ok
+test adapter::portability::tests::filtered_export_names_every_requested_about_that_is_missing ... ok
+test adapter::portability::tests::invalid_later_revision_is_rejected_in_preflight ... ok
+test adapter::portability::tests::merge_fast_forwards_an_exact_prefix ... ok
+test adapter::portability::tests::merge_refuses_two_histories_at_the_same_position ... ok
+test adapter::portability::tests::tampering_is_rejected_before_a_bundle_can_be_replayed ... ok
+test adapter::portability::tests::unsupported_bundle_and_event_formats_are_rejected ... ok
+test adapter::portability::tests::verified_bundle_exclusion_keeps_unexcluded_events ... ok
+test adapter::node_card::tests::a_ref_of_another_about_is_refused_however_it_is_labelled ... ok
+test adapter::node_card::tests::a_body_whose_record_disagrees_with_its_descriptor_is_never_delivered ... ok
+test adapter::node_card::tests::a_body_rewritten_under_the_same_public_tokens_is_refused_not_delivered ... ok
+test adapter::node_card::tests::a_card_survives_reopening_the_store ... ok
+test adapter::node_card::tests::a_repeated_ref_reads_one_card_per_requested_slot ... ok
+test adapter::engine::sqlite::tests::a_trigger_from_an_existing_database_is_rejected_before_use ... ok
+test adapter::node_card::tests::a_shared_evidence_source_can_be_condensed_through_the_real_write_path ... ok
+test adapter::node_card::tests::a_refused_card_writes_nothing ... ok
+test adapter::node_card::tests::compare_and_set_serializes_two_readers_on_one_node ... ok
+test adapter::node_card::tests::language_is_part_of_the_identity_and_neither_card_shadows_the_other ... ok
+test adapter::node_detail::size_tests::sizes_follow_the_requested_slots_and_measure_the_stored_record ... ok
+test adapter::node_card::tests::an_accepted_card_leaves_the_canonical_body_untouched ... ok
+test adapter::trace_snapshot::proof_tests::a_body_port_reordering_slots_is_rejected_instead_of_mixing_sources ... ok
+test adapter::trace_snapshot::tests::ownership_and_all_route_explanations_share_one_snapshot_during_independent_commit ... ok
+test adapter::trace_snapshot::proof_tests::selected_paths_sources_and_bodies_remain_one_state_after_independent_commit ... ok
+test adapter::trace_snapshot::proof_tests::node_batch_continuation_rejects_body_only_changes_and_reopened_observers ... ok
+test adapter::trace_snapshot::tests::coordinate_admission_and_proof_share_one_snapshot_during_retiming ... ok
+test adapter::trace_snapshot::proof_tests::node_batch_keeps_headers_and_coordinates_on_the_pinned_revision ... ok
+test adapter::trace_snapshot::tests::focused_resumed_pages_keep_ownership_and_evidence_in_the_original_snapshot ... ok
+test adapter::engine::sqlite::json_projection_tests::json_headers_return_only_selected_fields_independent_of_discarded_source_size ... ok
+test adapter::trace_snapshot::proof_tests::independent_writer_between_selected_graph_and_bodies_cannot_mix_either_mode ... ok
+test adapter::engine::sqlite::adjacency_tests::a_late_page_seeks_the_key_and_reads_only_its_bounded_values ... ok
+test adapter::detail_header::tests::a_digest_this_store_could_not_have_written_is_refused ... ok
+test adapter::engine::sqlite::linked_json_tests::late_joined_pages_seek_within_one_root_without_revisiting_its_prior_links ... ok
+test adapter::engine::sqlite::tests::an_open_waits_out_a_conversion_it_lost_rather_than_failing ... ok
+test adapter::engine::sqlite::linked_json_tests::linked_header_pages_exclude_unrelated_payloads_and_preserve_missing_records ... ok
+test adapter::engine::sqlite::adjacency_tests::typed_pages_seek_past_unrelated_fanout_in_both_directions ... ok
+test adapter::trace_snapshot::proof_tests::large_body::real_64_mib_body_is_described_but_never_fetched_under_8_mib ... ok
+
+test result: ok. 72 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.15s
+
+     Running unittests src/bin/embedded_crash_writer.rs (target/debug/deps/embedded_crash_writer-ba239b8cbecaf93b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/atomic_context_projection.rs (target/debug/deps/atomic_context_projection-75357c914b9e12b7)
+
+running 1 test
+test a_projection_failure_rolls_back_the_event_revision_and_receipt ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/bounded_adjacency.rs (target/debug/deps/bounded_adjacency-c4fe2aeb53b22db8)
+
+running 4 tests
+test zero_budget_and_empty_node_are_rejected_before_storage ... ok
+test a_full_final_page_is_not_misreported_as_an_exhausted_node ... ok
+test keyset_uses_the_relation_as_well_as_neighbor_without_trimming_identity ... ok
+test pages_preserve_direction_sources_and_complete_key_order_without_duplicates ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/bounded_trace.rs (target/debug/deps/bounded_trace-7717c47f8bd9a591)
+
+running 4 tests
+test incoming_routes_preserve_arrows_and_shared_prefixes_are_not_duplicated ... ok
+test depth_and_edge_cutoffs_never_masquerade_as_a_leaf_or_exhausted_frontier ... ok
+test three_destinations_share_a_hundred_hop_search_and_keep_exact_link_proof ... ok
+test excluded_rows_spend_the_budget_and_never_leak_foreign_paths ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/bounded_trace_time.rs (target/debug/deps/bounded_trace_time-7b3703645f7c4f22)
+
+running 6 tests
+test alternatives_and_reverse_moves_still_admit_each_node_and_link_on_the_selected_clock ... ok
+test explicit_clock_never_falls_back_and_invalid_direct_selections_fail ... ok
+test canonical_coordinate_updates_control_admission_and_ref_cuts_spend_the_budget ... ok
+test unknown_link_clocks_remain_explicit_and_validity_expiry_excludes_links ... ok
+test incoming_temporal_walk_keeps_arrows_and_cuts_are_not_leaves ... ok
+test all_clocks_filter_link_arrival_between_old_endpoints_at_subsecond_boundaries ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/compaction.rs (target/debug/deps/compaction-c4cd20e6102797fb)
+
+running 1 test
+test compaction_after_rebuild_keeps_the_store_readable ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s
+
+     Running tests/crash_recovery.rs (target/debug/deps/crash_recovery-783011cbcfdf8115)
+
+running 3 tests
+test kill_nine_during_atomic_commit_leaves_no_unprojected_event ... ok
+test kill_nine_mid_write_loses_at_most_the_inflight_event_and_replays_cleanly ... ok
+test kill_nine_mid_write_on_sqlite_loses_at_most_the_inflight_event_and_replays_cleanly ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/dimensional_lookup.rs (target/debug/deps/dimensional_lookup-efe4194997db783e)
+
+running 3 tests
+test dimension_lookup_preserves_full_ids_values_kinds_and_sorted_union ... ok
+test dimension_lookup_and_graph_keep_the_pinned_state_across_peer_mutations ... ok
+test dimension_lookup_crosses_pages_without_duplicates_or_missing_endpoints ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/evidence_paths.rs (target/debug/deps/evidence_paths-7d0c10548707ea4d)
+
+running 16 tests
+test anchors::disjoint_action_anchors_cannot_form_a_group_even_with_a_shared_witness ... ok
+test joint::duplicate_proofs_do_not_create_identity_ambiguity ... ok
+test traversal::a_future_identity_link_is_not_admitted_early_and_unknown_clock_needs_review ... ok
+test joint::a_missing_witness_is_not_filled_from_another_route ... ok
+test traversal::incoming_identity_keeps_its_stored_arrow_and_foreign_about_is_excluded ... ok
+test joint::same_node_with_different_obligations_retains_different_states ... ok
+test anchors::context_anchor_equality_keeps_longer_authorized_action_and_separate_witnesses ... ok
+test anchors::a_witness_can_bind_another_roles_context_anchor_without_binding_bridges ... ok
+test context::context_binds_the_main_witness_after_discovery_and_keeps_explicit_suffix ... ok
+test context::context_cycles_and_longer_prefixes_do_not_multiply_the_same_anchor ... ok
+test anchors::explicit_prefix_anchor_binds_after_the_prefix_before_the_main_step ... ok
+test context::context_finds_unannounced_mixed_sequences_preserves_ties_and_stored_arrows ... ok
+test joint::pairwise_compatible_event_witnesses_can_have_no_joint_proof ... ok
+test context::context_admission_respects_clocks_about_proof_and_relation_direction ... ok
+test traversal::deep_paths_need_no_preknown_destination_and_every_work_cut_stays_partial ... ok
+test context::context_discovers_a_hundred_hops_without_a_sequence_and_cuts_stay_partial ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/guide_bundle.rs (target/debug/deps/guide_bundle-108d0e0a729abb54)
+
+running 1 test
+test shipped_guides_import_and_keep_distinct_audiences ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+
+     Running tests/neighborhood_cross_engine.rs (target/debug/deps/neighborhood_cross_engine-163ae2c7e47cbf61)
+
+running 4 tests
+test a_peer_commit_after_the_revision_read_invalidates_the_review ... ok
+test a_separate_process_commit_invalidates_the_review ... ok
+test a_commit_during_neighborhood_loading_refuses_a_mixed_view ... ok
+test a_foreign_peer_commit_invalidates_the_review ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+     Running tests/node_batch.rs (target/debug/deps/node_batch-0aec52a4c1436696)
+
+running 1 test
+test node_batch_preserves_slots_and_uses_the_held_view_through_arc_and_reference ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/portability_failfast.rs (target/debug/deps/portability_failfast-64844cea8d622b3f)
+
+running 5 tests
+test empty_bundle_is_rejected ... ok
+test unknown_bundle_format_is_rejected ... ok
+test mismatched_event_format_is_rejected ... ok
+test wrong_event_count_is_rejected ... ok
+test corrupt_event_line_is_rejected ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/proof_read_snapshot.rs (target/debug/deps/proof_read_snapshot-47c8d01cd18c8017)
+
+running 6 tests
+test snapshot_failure_never_falls_back_to_live_ports ... ok
+test opening_a_snapshot_pins_even_an_empty_store_before_the_first_port_call ... ok
+test cancelled_read_releases_its_snapshot_without_harming_later_reads ... ok
+test snapshot_clones_are_read_only_and_return_a_clean_connection ... ok
+test inspect_keeps_object_links_and_shared_sources_at_one_state ... ok
+test temporal_keeps_graph_bodies_and_all_about_selection_at_one_state ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/recall_body_selection.rs (target/debug/deps/recall_body_selection-fc2ff251199671cc)
+
+running 2 tests
+test ask_revision_belongs_to_its_pinned_bodies_after_a_peer_write ... ok
+test recall_admits_whole_entry_labels_before_loading_complete_candidate_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.71s
+
+     Running tests/scoped_neighborhood.rs (target/debug/deps/scoped_neighborhood-a629b77b86f78bcc)
+
+running 3 tests
+test a_request_that_names_no_scope_still_loads_everything ... ok
+test the_scoped_path_matches_the_plain_one_when_nothing_is_narrowed ... ok
+test an_unrequested_dimension_is_never_walked_into ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/sqlite_lifecycle.rs (target/debug/deps/sqlite_lifecycle-c0e289f2c70c9b71)
+
+running 2 tests
+test corrupt_kernel_input_is_refused_before_use ... ok
+test pinned_reader_keeps_committed_snapshot_while_writer_advances ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/store_migration.rs (target/debug/deps/store_migration-58ccfd780e2ce991)
+
+running 4 tests
+test source_and_destination_must_be_different ... ok
+test unsupported_format_is_rejected_without_source_or_destination_mutation ... ok
+test current_sqlite_source_reports_that_migration_is_unnecessary ... ok
+test open_or_migrate_reopens_an_existing_sqlite_destination ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/store_scale.rs (target/debug/deps/store_scale-d284054bc807cee6)
+
+running 1 test
+test store_survives_100k_event_corpus ... ignored, scale run (~minutes, fsync per event); execute manually in release
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/telemetry_journal.rs (target/debug/deps/telemetry_journal-21f024008f269450)
+
+running 5 tests
+test telemetry_process_worker ... ok
+
+running 1 test
+
+running 1 test
+test observability_projection_filters_the_about_and_keeps_revision_exemplars ... ok
+test two_independent_writers_share_one_quality_journal ... ok
+test observations_persist_survive_reopen_and_respect_retention ... ok
+test telemetry_process_worker ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.01s
+
+test telemetry_process_worker ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.02s
+
+test two_processes_keep_the_same_observability_pulse ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/temporal_body_selection.rs (target/debug/deps/temporal_body_selection-a8f460a5a19c601d)
+
+running 2 tests
+test body_reads_follow_bounded_dependencies_after_temporal_admission ... ok
+test temporal_reads_only_selected_bodies_and_their_sources ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.46s
+
+     Running tests/temporal_index.rs (target/debug/deps/temporal_index-144a77319b09e641)
+
+running 3 tests
+test revisions_observe_writes_without_any_new_binary_projection_hook ... ok
+test indexed_pages_equal_uncached_reads_for_every_clock_and_selection ... ok
+test peer_edits_cross_about_changes_and_eviction_never_reuse_stale_catalogues ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests/trace_alternatives.rs (target/debug/deps/trace_alternatives-37961495109a4190)
+
+running 5 tests
+test alternatives_survive_reconvergence_without_reading_adjacency_twice ... ok
+test cycles_spend_state_budget_and_source_target_requires_only_zero_hops ... ok
+test early_target_survives_a_later_hub_cut_and_missing_alternatives_are_explicit ... ok
+test alternatives_remain_available_at_one_hundred_hops ... ok
+test per_relation_directions_compose_without_reversing_assertions_or_reading_noise ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/trace_dimensions.rs (target/debug/deps/trace_dimensions-ff40156d9fbd1574)
+
+running 5 tests
+test dimension_policy_rejects_cross_about_scope_and_uninformative_preferences ... ok
+test memberships_use_the_selected_clock_whole_label_sets_and_exact_keys ... ok
+test focused_order_reaches_a_useful_branch_before_breadth_first_spends_its_node_budget ... ok
+test fifo_reserve_crosses_a_nonpreferred_bridge_that_a_hard_filter_removes ... ok
+test focused_pages_reach_a_dense_child_without_bypassing_global_work_limits ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/trace_focus_pages.rs (target/debug/deps/trace_focus_pages-ac08db24e912e962)
+
+running 3 tests
+test reconverging_paths_share_partial_pages_without_replaying_a_prefix_twice ... ok
+test page_positions_remain_bound_to_direction_type_and_relation_clock ... ok
+test resumed_positions_do_not_skip_late_edges_and_only_exhausted_nodes_are_leaves ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/trace_proof.rs (target/debug/deps/trace_proof-1fe6a234ff3c9188)
+
+running 9 tests
+test source_attachment_cut_and_unknown_clocks_qualify_group_completeness ... ok
+test selected_target_groups_keep_original_requirement_indices ... ok
+test shared_sources_are_read_once_with_canonical_bodies_and_complete_and_groups ... ok
+test seek_materializes_union_and_preserves_unknown_obligations_and_review ... ok
+test validity_cut_excludes_expired_support_and_preserves_canonical_supersession_status ... ok
+test seek_cutoffs_preserve_groups_without_inventing_missing_objects ... ok
+test missing_typed_sources_bodies_and_shared_budgets_remain_partial ... ok
+test foreign_and_ownerless_sources_never_expose_payloads_or_certify_proof ... ok
+test source_time_never_backdates_attachment_and_missing_selected_clocks_stay_unknown ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/two_writers_one_store.rs (target/debug/deps/two_writers_one_store-66cd447847f771d0)
+
+running 2 tests
+test two_processes_creating_the_same_sqlite_store_at_once_both_get_in ... ok
+test two_processes_write_the_same_sqlite_store_and_no_event_is_lost ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+
+     Running tests/visual_projection_cache.rs (target/debug/deps/visual_projection_cache-7aac2ab098d241f7)
+
+running 5 tests
+test unavailable_revisions_and_snapshot_errors_do_not_reuse_results ... ok
+test changed_query_fields_never_return_a_different_cached_selection ... ok
+test in_flight_old_snapshot_never_poisons_a_new_revision ... ok
+test peer_writes_labels_lifecycle_and_foreign_abouts_invalidate_even_historical_views ... ok
+test identical_queries_reuse_exact_projections_for_all_clocks_lods_filters_and_pages ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
+
+   Doc-tests kmp_adapter_embedded
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
