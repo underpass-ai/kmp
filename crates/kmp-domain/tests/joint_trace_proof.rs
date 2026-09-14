@@ -201,9 +201,9 @@ impl TraceSnapshotReader for WithoutBodies {
 }
 
 /// Same immutable fixture and proof algorithm, but the body port deliberately
-/// performs one store operation per requested ref. This is the body-loading
+/// performs one body-port call per requested ref. This is the body-loading
 /// part of the pre-batch Trace + Inspect oracle: comparison stays on one frozen
-/// state while only the physical delivery strategy changes.
+/// state while only the port-call strategy changes.
 struct SerialBodies(Reader);
 impl TraceSnapshotReader for SerialBodies {
     fn node(&self, id: &str) -> Result<Option<NodeProjection>, PortError> {
