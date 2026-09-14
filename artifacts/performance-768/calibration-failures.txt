@@ -1,0 +1,7 @@
+# Calibration runs retained for provenance
+
+- 8,192-repeat large_payload with `--warm-samples 21`: interrupted with Ctrl-C during `render large_payload 21` after the fixture exceeded the quiet-slot budget. No result JSON was emitted.
+- 512-repeat large_payload with `--warm-samples 21`: interrupted with Ctrl-C during the separate metric allocation process after the uninstrumented render/metric phases completed; no result JSON was emitted.
+- Initial paired command: baseline script failed before controls because a relative scratch path resolved inside the detached baseline worktree; rerun used absolute fresh paths.
+
+These are calibration/setup records, not successful measurements.

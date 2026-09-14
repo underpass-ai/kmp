@@ -45,9 +45,34 @@ impl TokenEstimator for Cl100kEstimator {
         self.bpe.encode_ordinary(text).len() as u32
     }
 
+    fn estimate_token_records(&self, records: &mut dyn Iterator<Item = String>) -> u32 {
+        let Some(mut pending) = records.next() else {
+            return 0;
+        };
+        let mut total = 0u64;
+        for record in records {
+            if can_flush_record(&pending, &record) {
+                total += self.estimate_tokens(&pending) as u64;
+                pending = record;
+            } else {
+                pending.push_str(&record);
+            }
+        }
+        total += self.estimate_tokens(&pending) as u64;
+        total as u32
+    }
+
     fn name(&self) -> &str {
         "cl100k_base"
     }
+}
+
+/// `cl100k_base`'s public regex separates trailing whitespace from the next
+/// ASCII word. Raw-dump records end in LF, so a following ASCII letter starts
+/// a new regex match and cannot merge with the preceding record. Every other
+/// boundary is retained in `pending` to preserve the full-string result.
+fn can_flush_record(previous: &str, next: &str) -> bool {
+    previous.ends_with('\n') && next.as_bytes().first().is_some_and(u8::is_ascii_alphabetic)
 }
 
 #[cfg(test)]
@@ -79,5 +104,51 @@ mod tests {
             first.estimate_tokens("hello world"),
             Cl100kEstimator::new().estimate_tokens("hello world")
         );
+    }
+
+    #[test]
+    fn record_boundaries_preserve_cl100k_count_for_recall_text() {
+        let records = vec![
+            "Node: case. Kind: case. Summary: café 😀 with \\\"quotes\\\" and \\\\slash.\n".to_string(),
+            "Node: node. Kind: claim. Summary: line one\nline two. Detail: body.\n".to_string(),
+            "Relationship: case connects to node via SUPPORTS. Semantic class: causal. Rationale: why. Decision: d-1.\n".to_string(),
+        ];
+        let joined = records.concat();
+        let estimator = Cl100kEstimator::shared();
+        let mut iter = records.into_iter();
+        assert_eq!(
+            estimator.estimate_token_records(&mut iter),
+            estimator.estimate_tokens(&joined)
+        );
+
+        let unsafe_records = vec![
+            "hel".to_string(),
+            "lo".to_string(),
+            "'s".to_string(),
+            " 😀".to_string(),
+            "\n".to_string(),
+            "123".to_string(),
+            String::new(),
+            "é".repeat(128),
+        ];
+        let unsafe_joined = unsafe_records.concat();
+        let mut unsafe_iter = unsafe_records.into_iter();
+        assert_eq!(
+            estimator.estimate_token_records(&mut unsafe_iter),
+            estimator.estimate_tokens(&unsafe_joined)
+        );
+
+        for previous in ["\n", "\r\n", " \n", "😀.\n", "a\n\n"] {
+            for next in ["Node: next", "Relationship: next", "alpha", "123", "!", ""] {
+                let records = vec![previous.to_string(), next.to_string()];
+                let joined = records.concat();
+                let mut iter = records.into_iter();
+                assert_eq!(
+                    estimator.estimate_token_records(&mut iter),
+                    estimator.estimate_tokens(&joined),
+                    "boundary {previous:?} + {next:?}"
+                );
+            }
+        }
     }
 }

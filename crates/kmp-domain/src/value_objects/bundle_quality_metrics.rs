@@ -5,6 +5,9 @@ use crate::model::{BundleNodeDetail, KmpBundle};
 use crate::repositories::TokenEstimator;
 use crate::value_objects::RelationSemanticClass;
 
+mod raw_dump_records;
+use raw_dump_records::raw_dump_records;
+
 /// Quality and efficiency metrics for a rendered context bundle.
 ///
 /// This is a domain value object with enforced invariants:
@@ -77,8 +80,8 @@ impl BundleQualityMetrics {
             .map(|d| (d.node_id(), d))
             .collect();
 
-        let raw_equivalent_tokens =
-            estimator.estimate_tokens(&raw_dump_text(bundle, &detail_by_node_id));
+        let mut raw_records = raw_dump_records(bundle, &detail_by_node_id);
+        let raw_equivalent_tokens = estimator.estimate_token_records(&mut raw_records);
 
         let compression_ratio = if rendered_tokens > 0 {
             raw_equivalent_tokens as f64 / rendered_tokens as f64
@@ -131,75 +134,6 @@ impl BundleQualityMetrics {
 }
 
 // ── Private domain logic ────────────────────────────────────────────────
-
-/// Canonical flat text representation of a bundle's data.
-///
-/// This defines "what would a naive flat dump look like?" — the baseline
-/// against which the kernel's structured rendering is measured. Both the
-/// kernel and the testkit's `raw_dump.rs` must produce identical output
-/// for the same data.
-fn raw_dump_text(
-    bundle: &KmpBundle,
-    detail_by_node_id: &BTreeMap<&str, &BundleNodeDetail>,
-) -> String {
-    let mut raw_text = String::new();
-
-    // Root node
-    let root = bundle.root_node();
-    raw_text.push_str(&format!(
-        "Node: {}. Kind: {}. Summary: {}.",
-        root.node_id(),
-        root.node_kind(),
-        root.summary()
-    ));
-    if let Some(detail) = detail_by_node_id.get(root.node_id()) {
-        raw_text.push_str(&format!(" Detail: {}.", detail.detail()));
-    }
-    raw_text.push('\n');
-
-    // Neighbor nodes
-    for node in bundle.neighbor_nodes() {
-        raw_text.push_str(&format!(
-            "Node: {}. Kind: {}. Summary: {}.",
-            node.node_id(),
-            node.node_kind(),
-            node.summary()
-        ));
-        if let Some(detail) = detail_by_node_id.get(node.node_id()) {
-            raw_text.push_str(&format!(" Detail: {}.", detail.detail()));
-        }
-        raw_text.push('\n');
-    }
-
-    // Relationships
-    for rel in bundle.relationships() {
-        raw_text.push_str(&format!(
-            "Relationship: {} connects to {} via {}. Semantic class: {}.",
-            rel.source_node_id(),
-            rel.target_node_id(),
-            rel.relationship_type(),
-            rel.explanation().semantic_class().as_str(),
-        ));
-        if let Some(r) = rel.explanation().rationale() {
-            raw_text.push_str(&format!(" Rationale: {r}."));
-        }
-        if let Some(m) = rel.explanation().motivation() {
-            raw_text.push_str(&format!(" Motivation: {m}."));
-        }
-        if let Some(m) = rel.explanation().method() {
-            raw_text.push_str(&format!(" Method: {m}."));
-        }
-        if let Some(d) = rel.explanation().decision_id() {
-            raw_text.push_str(&format!(" Decision: {d}."));
-        }
-        if let Some(c) = rel.explanation().caused_by_node_id() {
-            raw_text.push_str(&format!(" Caused by: {c}."));
-        }
-        raw_text.push('\n');
-    }
-
-    raw_text
-}
 
 fn compute_causal_density(bundle: &KmpBundle) -> f64 {
     let total = bundle.relationships().len();
@@ -254,11 +188,12 @@ mod tests {
     use std::collections::BTreeMap;
 
     use crate::model::{BundleNode, BundleNodeDetail, BundleRelationship, KmpBundle};
+    use crate::repositories::TokenEstimator;
     use crate::value_objects::{
         BundleMetadata, CaseId, RelationExplanation, RelationSemanticClass, Role,
     };
 
-    use super::BundleQualityMetrics;
+    use super::{BundleQualityMetrics, raw_dump_records::raw_dump_records};
 
     // ── Stub estimator for deterministic tests ──────────────────────────
 
@@ -271,6 +206,74 @@ mod tests {
         fn name(&self) -> &str {
             "word_count"
         }
+    }
+
+    struct ByteLengthEstimator;
+
+    impl crate::repositories::TokenEstimator for ByteLengthEstimator {
+        fn estimate_tokens(&self, text: &str) -> u32 {
+            text.len() as u32
+        }
+
+        fn name(&self) -> &str {
+            "byte_length"
+        }
+    }
+
+    fn legacy_raw_dump_text(
+        bundle: &KmpBundle,
+        detail_by_node_id: &BTreeMap<&str, &BundleNodeDetail>,
+    ) -> String {
+        let mut raw_text = String::new();
+        let root = bundle.root_node();
+        raw_text.push_str(&format!(
+            "Node: {}. Kind: {}. Summary: {}.",
+            root.node_id(),
+            root.node_kind(),
+            root.summary()
+        ));
+        if let Some(detail) = detail_by_node_id.get(root.node_id()) {
+            raw_text.push_str(&format!(" Detail: {}.", detail.detail()));
+        }
+        raw_text.push('\n');
+        for node in bundle.neighbor_nodes() {
+            raw_text.push_str(&format!(
+                "Node: {}. Kind: {}. Summary: {}.",
+                node.node_id(),
+                node.node_kind(),
+                node.summary()
+            ));
+            if let Some(detail) = detail_by_node_id.get(node.node_id()) {
+                raw_text.push_str(&format!(" Detail: {}.", detail.detail()));
+            }
+            raw_text.push('\n');
+        }
+        for rel in bundle.relationships() {
+            raw_text.push_str(&format!(
+                "Relationship: {} connects to {} via {}. Semantic class: {}.",
+                rel.source_node_id(),
+                rel.target_node_id(),
+                rel.relationship_type(),
+                rel.explanation().semantic_class().as_str(),
+            ));
+            if let Some(r) = rel.explanation().rationale() {
+                raw_text.push_str(&format!(" Rationale: {r}."));
+            }
+            if let Some(m) = rel.explanation().motivation() {
+                raw_text.push_str(&format!(" Motivation: {m}."));
+            }
+            if let Some(m) = rel.explanation().method() {
+                raw_text.push_str(&format!(" Method: {m}."));
+            }
+            if let Some(d) = rel.explanation().decision_id() {
+                raw_text.push_str(&format!(" Decision: {d}."));
+            }
+            if let Some(c) = rel.explanation().caused_by_node_id() {
+                raw_text.push_str(&format!(" Caused by: {c}."));
+            }
+            raw_text.push('\n');
+        }
+        raw_text
     }
 
     // ── Constructor invariant tests ─────────────────────────────────────
@@ -365,7 +368,10 @@ mod tests {
                     "node-a",
                     "CAUSED",
                     RelationExplanation::new(RelationSemanticClass::Causal)
-                        .with_rationale("failure triggered reroute")
+                        .with_rationale("failure triggered reroute — café\nline")
+                        .with_motivation("keep the Unicode path")
+                        .with_method("replay\\nmethod")
+                        .with_decision_id("decision-😀")
                         .with_caused_by_node_id("root"),
                 ),
                 BundleRelationship::new(
@@ -390,6 +396,38 @@ mod tests {
     fn compute_raw_equivalent_tokens_is_positive() {
         let m = BundleQualityMetrics::compute(&quality_bundle(), 100, &WordCountEstimator);
         assert!(m.raw_equivalent_tokens() > 0);
+    }
+
+    #[test]
+    fn raw_records_reconstruct_the_canonical_flat_dump_exactly() {
+        let bundle = quality_bundle();
+        let detail_by_node_id = bundle
+            .node_details()
+            .iter()
+            .map(|detail| (detail.node_id(), detail))
+            .collect::<BTreeMap<_, _>>();
+        let full = legacy_raw_dump_text(&bundle, &detail_by_node_id);
+        let records = raw_dump_records(&bundle, &detail_by_node_id).collect::<String>();
+        assert_eq!(records, full);
+    }
+
+    #[test]
+    fn default_record_estimation_preserves_unsafe_boundaries_and_empty_records() {
+        let records = vec![
+            "hel".to_string(),
+            "lo".to_string(),
+            "'s".to_string(),
+            " symbols\n".to_string(),
+            "123".to_string(),
+            String::new(),
+            "é".repeat(128),
+        ];
+        let expected = records.concat().len() as u32;
+        let mut iter = records.into_iter();
+        assert_eq!(
+            ByteLengthEstimator.estimate_token_records(&mut iter),
+            expected
+        );
     }
 
     #[test]
