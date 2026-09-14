@@ -103,6 +103,8 @@ pub fn project_recall_output_typed(
     let mut lengths = plan.core_lengths.clone();
 
     for item in eligible.iter().skip(offset).take(budget.page_entries) {
+        #[cfg(test)]
+        super::core_fit::note_item_serialization();
         let item_json =
             serde_json::to_string(&item.value).expect("projection item should serialize");
         let comma_bytes = usize::from(lengths.get(&item.section).copied().unwrap_or(0) > 0);

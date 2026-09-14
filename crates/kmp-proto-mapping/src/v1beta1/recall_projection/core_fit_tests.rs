@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 
 use serde_json::json;
 
-use super::core_fit::serialized_bytes;
+use super::core_fit::{reset_serialization_passes, serialization_passes, serialized_bytes};
 use super::test_support::{fixture, large_fixture, projected};
 
 #[test]
@@ -207,5 +207,45 @@ fn all_abouts_wake_with_a_shortened_core_advances_every_page() {
         );
         cursor = Some(next);
         assert!(seen_cursors.len() < 100, "the fixture must terminate");
+    }
+}
+
+#[test]
+#[ignore = "informational serialization-pass control for issue #769"]
+fn recall_sizing_serialization_pass_control() {
+    for (name, path_count, max_bytes) in [
+        ("small", 8, 8_000),
+        ("medium", 256, 24_000),
+        ("shortened_core", 128, 4_000),
+    ] {
+        let mut packet = large_fixture(path_count);
+        if name == "shortened_core" {
+            packet["answer"] = json!(format!(
+                "{}{}",
+                "escaped \"line\"\\path\né界🚀 ".repeat(2_000),
+                "tail"
+            ));
+        }
+        reset_serialization_passes();
+        let output = projected(
+            packet,
+            json!({
+                "about": "project:kmp",
+                "question": "Which storage engine is current?",
+                "budget": {"max_bytes": max_bytes, "detail": "full"},
+                "page": {"entries": 64}
+            }),
+        );
+        let (full_projection_passes, item_serialization_passes) = serialization_passes();
+        println!(
+            "PERFORMANCE_769 {}",
+            json!({
+                "shape": name,
+                "full_projection_passes": full_projection_passes,
+                "item_serialization_passes": item_serialization_passes,
+                "serialized_bytes": serde_json::to_vec(&output).expect("output").len(),
+                "returned": output["projection"]["page"]["returned"]
+            })
+        );
     }
 }

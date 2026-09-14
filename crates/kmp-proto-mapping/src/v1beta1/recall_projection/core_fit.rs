@@ -3,6 +3,9 @@
 
 use serde_json::{Value, json};
 
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use super::budget::ProjectionBudget;
 use super::json_paths::push_array;
 use super::metadata::attach_metadata;
@@ -91,7 +94,33 @@ pub(super) fn fits(value: &Value, budget: &ProjectionBudget) -> bool {
 }
 
 pub(super) fn serialized_bytes(value: &Value) -> usize {
+    #[cfg(test)]
+    FULL_SERIALIZATION_PASSES.fetch_add(1, Ordering::Relaxed);
     serde_json::to_vec(value)
         .expect("recall projection should serialize")
         .len()
+}
+
+#[cfg(test)]
+static FULL_SERIALIZATION_PASSES: AtomicUsize = AtomicUsize::new(0);
+#[cfg(test)]
+static ITEM_SERIALIZATION_PASSES: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(test)]
+pub(super) fn note_item_serialization() {
+    ITEM_SERIALIZATION_PASSES.fetch_add(1, Ordering::Relaxed);
+}
+
+#[cfg(test)]
+pub(super) fn reset_serialization_passes() {
+    FULL_SERIALIZATION_PASSES.store(0, Ordering::Relaxed);
+    ITEM_SERIALIZATION_PASSES.store(0, Ordering::Relaxed);
+}
+
+#[cfg(test)]
+pub(super) fn serialization_passes() -> (usize, usize) {
+    (
+        FULL_SERIALIZATION_PASSES.load(Ordering::Relaxed),
+        ITEM_SERIALIZATION_PASSES.load(Ordering::Relaxed),
+    )
 }
