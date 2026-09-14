@@ -9,6 +9,24 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.4] - 2026-09-14
+
+### Changed
+
+- Performance work across SQLite lifecycle, store leases, lexical indexing,
+  recall sizing, graph adjacency, dimensional reads and ChronoLoom startup now
+  reuses bounded state and avoids repeated scans while preserving snapshot and
+  revision boundaries.
+- ChronoLoom scene and projection paths, quality metrics and compressed assets
+  now retain or stream exact data more efficiently, with reproducible evidence
+  and benchmark controls for the optimized paths.
+
+### Fixed
+
+- SQLite checkpoint contention, temporal selection, isolated graph catalogue
+  reads and release-time performance evidence now have regression coverage and
+  preserve the existing native parity contracts.
+
 ## [0.18.3] - 2026-09-13
 
 ### Changed
@@ -1738,7 +1756,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.3...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.4...HEAD
+[0.18.4]: https://github.com/underpass-ai/kmp/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/underpass-ai/kmp/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/underpass-ai/kmp/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/underpass-ai/kmp/compare/v0.18.0...v0.18.1
