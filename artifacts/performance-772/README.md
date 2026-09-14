@@ -132,10 +132,12 @@ python3 scripts/performance/sqlite_clients.py \
   --scratch tmp/sqlite-clients-run --output artifacts/performance-772/clients-new.json
 ```
 
-The current Rust/Python runner hashes and measured source commit are in
-`clients.json`; production adapter source is unchanged from the earlier
-lifecycle measurement. The 32-sample smoke ran during development and is
-excluded; its semantic assertions passed before the final 40-sample run.
+The Rust/Python runner hashes used for the original client campaign and its
+measured source commit are in `clients.json`; production adapter source is
+unchanged from the earlier lifecycle measurement. The later runner hashes for
+the checkpoint control are recorded in `checkpoints.json`. The 32-sample smoke
+ran during development and is excluded; its semantic assertions passed before
+the final 40-sample run.
 
 ## Checkpoint threshold with a pinned production reader
 
