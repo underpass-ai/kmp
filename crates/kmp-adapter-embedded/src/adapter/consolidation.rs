@@ -12,6 +12,24 @@ use kmp_domain::{
 };
 use sha2::{Digest, Sha256};
 
+fn authored_at(now: std::time::SystemTime) -> Result<String, PortError> {
+    let elapsed = now
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| PortError::InvalidState(e.to_string()))?;
+    let seconds = i64::try_from(elapsed.as_secs())
+        .map_err(|_| PortError::InvalidState("clock out of range".into()))?;
+    let whole = kmp_domain::rfc3339_from_epoch_seconds(seconds);
+    // Preserve the sampled instant: rounding down would admit this derivation
+    // at a cutoff preceding its actual authorship within the same second.
+    let precise = format!(
+        "{}.{:09}Z",
+        whole.trim_end_matches('Z'),
+        elapsed.subsec_nanos()
+    );
+    kmp_domain::temporal_instant_rfc3339(&precise)
+        .ok_or_else(|| PortError::InvalidState("clock out of range".into()))
+}
+
 fn identity(about: &str, view: &str) -> Result<String, PortError> {
     if about.trim().is_empty() || view.trim().is_empty() || about.len() > 512 || view.len() > 512 {
         return Err(PortError::InvalidState(
@@ -93,16 +111,10 @@ impl ConsolidationStore for EmbeddedKernelStore {
                 let refs = command.sources.keys().cloned().collect::<Vec<_>>();
                 let sources =
                     super::consolidation_source::capture(tx.as_ref(), &command.about, &refs)?;
-                let seconds = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map_err(|e| PortError::InvalidState(e.to_string()))?
-                    .as_secs();
-                let seconds = i64::try_from(seconds)
-                    .map_err(|_| PortError::InvalidState("clock out of range".into()))?;
                 let view = consolidate(
                     &command,
                     sources,
-                    kmp_domain::rfc3339_from_epoch_seconds(seconds),
+                    authored_at(std::time::SystemTime::now())?,
                 )?;
                 tx.insert(
                     Table::ConsolidationViews,

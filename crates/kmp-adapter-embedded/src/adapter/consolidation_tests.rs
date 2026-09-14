@@ -9,6 +9,52 @@ const ABOUT: &str = "project:consolidation-test";
 const A: &str = "project:consolidation-test:a";
 const B: &str = "project:consolidation-test:b";
 
+#[test]
+fn authorship_preserves_subsecond_cuts() {
+    use kmp_domain::consolidation::{ConsolidationAxis, ConsolidationSelection};
+    use std::time::{Duration, UNIX_EPOCH};
+
+    let instant = UNIX_EPOCH + Duration::new(1_800_000_000, 123_456_789);
+    let clock = authored_at(instant).expect("authorship");
+    assert_eq!(
+        kmp_domain::temporal_instant_nanos(&clock),
+        Some(1_800_000_000_123_456_789)
+    );
+    let view = ConsolidatedView {
+        about: ABOUT.into(),
+        view: "owners".into(),
+        revision: 1,
+        authored_at: clock.clone(),
+        author: "reader".into(),
+        claims: vec![],
+        sources: vec![ConsolidationSource {
+            reference: A.into(),
+            stamp: "stamp".into(),
+            body: "source".into(),
+            status: "ACTIVE".into(),
+            properties: Default::default(),
+            provenance: Default::default(),
+            coordinates: vec![kmp_domain::consolidation::ConsolidationClocks {
+                observed_at: Some("2026-01-01T00:00:00Z".into()),
+                ..Default::default()
+            }],
+            dependency_clocks: vec![],
+            relations: vec![],
+        }],
+    };
+    let before = ConsolidationSelection {
+        axis: ConsolidationAxis::Observed,
+        as_of: authored_at(instant - Duration::from_nanos(1)).expect("previous instant"),
+    };
+    assert!(before.eligible_sources(&view).expect("before").is_empty());
+    let at = ConsolidationSelection {
+        as_of: clock,
+        ..before
+    };
+    assert_eq!(at.eligible_sources(&view).expect("at"), vec![A]);
+    assert!(authored_at(UNIX_EPOCH - Duration::from_nanos(1)).is_err());
+}
+
 fn node(reference: &str) -> ProjectionMutation {
     ProjectionMutation::UpsertNode(NodeProjection {
         node_id: reference.into(),

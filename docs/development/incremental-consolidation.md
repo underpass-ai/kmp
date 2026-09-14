@@ -54,6 +54,8 @@ relevant stored coordinates to pass;
 unknown clocks are not inferred. Cutoff equality is admitted, validity end equality
 is excluded, and a view authored after the cut contributes no claims. No interval,
 dimension-filter or historical source-version reconstruction is silently emulated.
+The stored authorship preserves the sampled clock's subsecond precision; a cut
+one nanosecond before creation cannot admit the new derivation.
 An explicit revision read is labelled `historical_audit`; it gives the saved
 sources and actual clocks, not current advice. Native temporal navigation remains
 the route for reconstructing canonical event/observation/ingestion/validity history.

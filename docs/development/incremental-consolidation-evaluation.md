@@ -8,6 +8,26 @@ source prose before reader questions; no proposal-generation model runs inside
 or outside the kernel in this control. Native behavioral tests separately cover
 CAS, restart, rejection, source/relation mutation and all four clocks.
 
+## Validation against current main
+
+The implementation was rebased onto `e60276a8` (main, 14 September 2026).
+The earlier validation logs in `consolidation-540-validation` belong to the
+pre-rebase tree; its interrupted workspace test is not a passing check of this
+delivery. Current validation is recorded separately in `consolidation-540-main`.
+
+Review found that authorship rounded the sampled clock down to a whole second.
+The delivery preserves nanoseconds and tests exclusion at the immediately
+preceding nanosecond and admission at equality. The rebuilt binary SHA-256 is
+`f00fdf965e72245dbf83352aaf83b06602042c1831d94178b0aafc5399d32740`.
+Both native controls were repeated with this binary: all twelve long-source and
+all twelve short-source packets are byte-identical to the corresponding saved
+controls below. The existing reader results therefore remain applicable to those
+exact packets; no fresh readers or new semantic-quality claims are implied.
+The new long-source CLI traffic is 59,696 tokens and the short-source traffic
+42,995 tokens. Stamps and the precise authorship change capture/write/audit costs;
+the earlier operation counts and historical cost table below are retained as
+their original measurement, not relabelled as current results.
+
 ## Method
 
 `scripts/consolidation/evaluate.py` creates an isolated native store, captures
