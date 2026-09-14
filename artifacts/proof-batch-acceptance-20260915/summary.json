@@ -1,0 +1,277 @@
+[
+  {
+    "shape": "001-distinct",
+    "equivalence": {
+      "selected_entries": 1,
+      "selected_sources": 1,
+      "objects": 2,
+      "supports": 1,
+      "body_bytes": 506,
+      "qualified_projection_difference": {
+        "inspect.evidence[].metadata.proof_role": "stored_evidence",
+        "trace.objects[].kind": "memory_evidence"
+      }
+    },
+    "logical_rpc_calls": {
+      "oracle": 2,
+      "batch": 1
+    },
+    "process_first": {
+      "oracle": {
+        "elapsed_ms": 13.645713,
+        "response_bytes": 5406,
+        "cpu_ticks": 2,
+        "peak_rss_kib": 33728,
+        "rpc_calls": 2
+      },
+      "batch": {
+        "elapsed_ms": 23.677948,
+        "response_bytes": 4363,
+        "cpu_ticks": 3,
+        "peak_rss_kib": 33596,
+        "rpc_calls": 1
+      }
+    },
+    "warm": {
+      "oracle": {
+        "samples": 20,
+        "p50_ms": 4.01405,
+        "p95_ms": 5.594237,
+        "cpu_ms": 60.0,
+        "peak_rss_kib": 33776,
+        "response_bytes": [
+          5408
+        ],
+        "rpc_calls": [
+          2
+        ]
+      },
+      "batch": {
+        "samples": 20,
+        "p50_ms": 2.7957985,
+        "p95_ms": 2.969686,
+        "cpu_ms": 50.0,
+        "peak_rss_kib": 33648,
+        "response_bytes": [
+          4363,
+          4364
+        ],
+        "rpc_calls": [
+          1
+        ]
+      }
+    },
+    "response_digests": {
+      "oracle": "d78736b683cd4d9b3695c712902e29ca3b8c689cac2735a01e19b69269be99a9",
+      "batch": "b446c47ea3efd6a0d93fdd0a766aea8663b7f4425d2714065bc05672560efaba"
+    }
+  },
+  {
+    "shape": "008-distinct",
+    "equivalence": {
+      "selected_entries": 8,
+      "selected_sources": 8,
+      "objects": 16,
+      "supports": 8,
+      "body_bytes": 4048,
+      "qualified_projection_difference": {
+        "inspect.evidence[].metadata.proof_role": "stored_evidence",
+        "trace.objects[].kind": "memory_evidence"
+      }
+    },
+    "logical_rpc_calls": {
+      "oracle": 9,
+      "batch": 1
+    },
+    "process_first": {
+      "oracle": {
+        "elapsed_ms": 35.056776,
+        "response_bytes": 41066,
+        "cpu_ticks": 3,
+        "peak_rss_kib": 33940,
+        "rpc_calls": 9
+      },
+      "batch": {
+        "elapsed_ms": 19.887498,
+        "response_bytes": 23721,
+        "cpu_ticks": 1,
+        "peak_rss_kib": 34040,
+        "rpc_calls": 1
+      }
+    },
+    "warm": {
+      "oracle": {
+        "samples": 20,
+        "p50_ms": 40.7627835,
+        "p95_ms": 48.685444,
+        "cpu_ms": 580.0,
+        "peak_rss_kib": 34048,
+        "response_bytes": [
+          41074,
+          41075,
+          41083
+        ],
+        "rpc_calls": [
+          9
+        ]
+      },
+      "batch": {
+        "samples": 20,
+        "p50_ms": 12.44818,
+        "p95_ms": 13.505712,
+        "cpu_ms": 210.0,
+        "peak_rss_kib": 34216,
+        "response_bytes": [
+          23721,
+          23722
+        ],
+        "rpc_calls": [
+          1
+        ]
+      }
+    },
+    "response_digests": {
+      "oracle": "d80503783b94e7d9ea60b3def9c73df93efde6c0f844775e2b53a80ad9a6c89e",
+      "batch": "e18e183a2c9eca297c2ec68df52e2c34da8c8c8dd4784e794d7cdf90fa421250"
+    }
+  },
+  {
+    "shape": "064-distinct",
+    "equivalence": {
+      "selected_entries": 64,
+      "selected_sources": 64,
+      "objects": 128,
+      "supports": 64,
+      "body_bytes": 32384,
+      "qualified_projection_difference": {
+        "inspect.evidence[].metadata.proof_role": "stored_evidence",
+        "trace.objects[].kind": "memory_evidence"
+      }
+    },
+    "logical_rpc_calls": {
+      "oracle": 65,
+      "batch": 8
+    },
+    "process_first": {
+      "oracle": {
+        "elapsed_ms": 297.369138,
+        "response_bytes": 326719,
+        "cpu_ticks": 21,
+        "peak_rss_kib": 35228,
+        "rpc_calls": 65
+      },
+      "batch": {
+        "elapsed_ms": 219.32385,
+        "response_bytes": 199306,
+        "cpu_ticks": 22,
+        "peak_rss_kib": 36412,
+        "rpc_calls": 8
+      }
+    },
+    "warm": {
+      "oracle": {
+        "samples": 20,
+        "p50_ms": 345.8139415,
+        "p95_ms": 377.871613,
+        "cpu_ms": 5170.0,
+        "peak_rss_kib": 35980,
+        "response_bytes": [
+          326792,
+          326834,
+          326857
+        ],
+        "rpc_calls": [
+          65
+        ]
+      },
+      "batch": {
+        "samples": 20,
+        "p50_ms": 214.2467165,
+        "p95_ms": 293.426436,
+        "cpu_ms": 4730.0,
+        "peak_rss_kib": 36424,
+        "response_bytes": [
+          199314,
+          199320,
+          199322
+        ],
+        "rpc_calls": [
+          8
+        ]
+      }
+    },
+    "response_digests": {
+      "oracle": "fa0e81163f31dc6099cb389606b582e18bccc215702cc1d86a9f1fde6ea754a9",
+      "batch": "41243841f82e430ea405928c3c0fe99bc19c1eed6df9e4b3c6df091a5e8b8e41"
+    }
+  },
+  {
+    "shape": "064-shared",
+    "equivalence": {
+      "selected_entries": 64,
+      "selected_sources": 8,
+      "objects": 72,
+      "supports": 64,
+      "body_bytes": 8792,
+      "qualified_projection_difference": {
+        "inspect.evidence[].metadata.proof_role": "stored_evidence",
+        "trace.objects[].kind": "memory_evidence"
+      }
+    },
+    "logical_rpc_calls": {
+      "oracle": 65,
+      "batch": 7
+    },
+    "process_first": {
+      "oracle": {
+        "elapsed_ms": 346.240239,
+        "response_bytes": 389961,
+        "cpu_ticks": 27,
+        "peak_rss_kib": 35028,
+        "rpc_calls": 65
+      },
+      "batch": {
+        "elapsed_ms": 255.287723,
+        "response_bytes": 165328,
+        "cpu_ticks": 25,
+        "peak_rss_kib": 35900,
+        "rpc_calls": 7
+      }
+    },
+    "warm": {
+      "oracle": {
+        "samples": 20,
+        "p50_ms": 363.497135,
+        "p95_ms": 407.007879,
+        "cpu_ms": 5350.0,
+        "peak_rss_kib": 35820,
+        "response_bytes": [
+          390034,
+          390076,
+          390099
+        ],
+        "rpc_calls": [
+          65
+        ]
+      },
+      "batch": {
+        "samples": 20,
+        "p50_ms": 209.3276305,
+        "p95_ms": 215.067403,
+        "cpu_ms": 3920.0,
+        "peak_rss_kib": 35916,
+        "response_bytes": [
+          165335,
+          165342
+        ],
+        "rpc_calls": [
+          7
+        ]
+      }
+    },
+    "response_digests": {
+      "oracle": "03593bb49d2d4c9800fd9cf692acbc369d98d2e6ca95ffcd2d825cbd4f2f0497",
+      "batch": "da4803ff2672192046f5fd365f564e4590904c46a6cb418ae0fe4911635870a8"
+    }
+  }
+]

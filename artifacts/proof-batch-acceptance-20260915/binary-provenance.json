@@ -1,0 +1,13 @@
+{
+  "binary_source_commit": "3aab9686f86912df97474bd6158017b18f484d91",
+  "binary_source_crates_tree": "1d2774b54786730948b8cf6d5c6bd0d5b8f0bc2c",
+  "measurement_source_commit": "9fa220afb2bf05b115caa0469fada1471dd23477",
+  "measurement_source_crates_tree": "1d2774b54786730948b8cf6d5c6bd0d5b8f0bc2c",
+  "tracked_changes_between_binary_and_measurement_sources": [
+    "scripts/performance/proof_batch_acceptance.py"
+  ],
+  "build_command": "CARGO_TARGET_DIR=/home/gx10a/Documents/ai/kmp-540-consolidation/target CARGO_BUILD_JOBS=4 TMPDIR=/home/gx10a/Documents/ai/kmp-top-proof-20260915/tmp cargo build --locked -p kmp-mcp --bin kmp-mcp",
+  "profile": "dev; /home/gx10a/Documents/ai/.cargo/config.toml",
+  "frozen_binary_name": "kmp-mcp-3aab9686",
+  "binary_sha256": "cd443d3b30bebc169c086047d4f168ea0f8af965d0cfb8c79f9df0ad1ebd7c00"
+}
