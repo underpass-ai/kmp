@@ -129,6 +129,7 @@ def aggregate(rows: list[dict]) -> dict:
         "response_bytes": sum(row["response_bytes"] for row in rows),
         "cpu_ticks": sum(row["cpu_ticks"] for row in rows),
         "peak_rss_kib": max(row["peak_rss_kib"] for row in rows),
+        "rpc_calls": len(rows),
     }
 
 
@@ -154,10 +155,53 @@ def oracle(client: Client, refs: list[str]) -> tuple[dict, dict]:
 
 
 def batched(client: Client, refs: list[str]) -> tuple[dict, dict]:
-    result, row = client.call("kmp_trace", trace_arguments(refs, True))
-    value = content(result)
-    assert value["page"]["has_more"] is False
-    return value, aggregate([row])
+    arguments = trace_arguments(refs, True)
+    arguments["page"] = {"entries": 32}
+    first = None
+    rows = []
+    sections = {name: [] for name in ["trace", "objects", "supports", "gaps"]}
+    for _ in range(40):
+        result, row = client.call("kmp_trace", arguments)
+        value = content(result)
+        rows.append(row)
+        if first is None:
+            first = copy.deepcopy(value)
+            for name in sections:
+                first[name] = []
+        else:
+            for name in ["summary", "search", "routes", "proof", "quality", "warnings"]:
+                assert value[name] == first[name], f"{name} changed between proof pages"
+        for name in sections:
+            sections[name].extend(value[name])
+        if value["page"]["has_more"] is False:
+            break
+        cursor = value["page"]["next_cursor"]
+        actions = [
+            action for action in value["next_actions"]
+            if action["tool"] == "kmp_trace"
+            and action["arguments"].get("page", {}).get("cursor") == cursor
+        ]
+        assert len(actions) == 1, "one exact continuation must advance the interrupted proof"
+        arguments = actions[0]["arguments"]
+    else:
+        raise AssertionError("proof pagination did not terminate")
+    for name, items in sections.items():
+        first[name] = items
+    first["page"] = {
+        "returned": sum(len(items) for items in sections.values()),
+        "total": value["page"]["total"],
+        "has_more": False,
+        "next_cursor": None,
+        "offset": 0,
+    }
+    first["next_actions"] = []
+    return first, aggregate(rows)
+
+
+def operation_stats(rows: list[dict]) -> dict:
+    result = stats(rows)
+    result["rpc_calls"] = sorted({row["rpc_calls"] for row in rows})
+    return result
 
 
 def optional(target: dict, key: str, value):
@@ -335,9 +379,12 @@ def main() -> None:
                 summary = {
                     "shape": name,
                     "equivalence": equivalence,
-                    "logical_rpc_calls": {"oracle": 1 + entries, "batch": 1},
+                    "logical_rpc_calls": {
+                        "oracle": oracle_first_row["rpc_calls"],
+                        "batch": batch_first_row["rpc_calls"],
+                    },
                     "process_first": {"oracle": oracle_first_row, "batch": batch_first_row},
-                    "warm": {side: stats(rows) for side, rows in measured.items()},
+                    "warm": {side: operation_stats(rows) for side, rows in measured.items()},
                     "response_digests": expected,
                 }
                 summaries.append(summary)
