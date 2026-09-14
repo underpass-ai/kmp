@@ -1,3 +1,4 @@
+pub mod consolidation;
 pub mod error;
 pub mod language;
 pub mod model;

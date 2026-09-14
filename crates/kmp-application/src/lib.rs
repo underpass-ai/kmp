@@ -52,3 +52,4 @@ pub use queries::{
     RehydrateSessionUseCase, RenderedContext, RenderedTier, ScopeValidation, ValidateScopeQuery,
     ValidateScopeUseCase, clamp_native_graph_traversal_depth, render_graph_bundle_with_options,
 };
+pub mod consolidation;

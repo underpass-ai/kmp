@@ -5,3 +5,5 @@
 
 pub mod context_projection;
 pub mod v1beta1;
+
+pub mod consolidation_projection;

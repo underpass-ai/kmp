@@ -444,6 +444,14 @@
           "depth": "basic",
           "text_file": "cards/condense.md",
           "evidence": "The progressive Condense card teaches descriptor-bound canonical reading, source and card compare-and-set, and a fresh compact read without named expansion arguments."
+        },
+        {
+          "id": "advanced:consolidation",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text_file": "topics/consolidation.md",
+          "evidence": "Native consolidation sources/write/read/project preserve versioned dependencies, literal quotes, canonical sources and explicit source-version clock filters. SQLite transaction checks and native CLI controls exercise stale reads, retries and immutable audits.",
+          "guide_title": "Use optional consolidated memory views"
         }
       ],
       "relations": [
@@ -996,6 +1004,14 @@
           "depth": "advanced",
           "text": "A reader can keep a short phrase for a body it has read, then explore the same paths using that phrase. KMP binds the card to the exact stored body version. It keeps evidence available for deliberate expansion; stale, absent or historically unavailable cards show no substitute prose. Cards help orientation, never prove a claim. Ask your agent for guide:kmp-agent:example:reader-cards. Reuse can save context on large repeated sources; writing a card for a small body can cost more overall. Compact proof reads include proof.condense_candidates: a bounded list of large absent/stale bodies ranked by selected route/group sharing and size, with exact source and card expectations to copy after reading the body. Valid, post-cut and small bodies are excluded; the size floor is a heuristic, not a savings guarantee. Seek sharing counts only groups with known clocks and all binding witnesses; groups retained for review do not count. The list is identical on every page and never establishes proof completeness.",
           "evidence": "Trace distinguishes canonical body delivery from derived cards. Condense checks source revision/digest and card compare-and-set; source materialization and relations retain their provenance."
+        },
+        {
+          "id": "advanced:consolidation",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text": "Optional consolidated views group compatible writer-declared claims while retaining their exact sources and past revisions. The kernel validates quotes, dependency versions and clocks; it does not decide that two sentences mean the same thing. A changed source or direct relation withdraws the current view until a writer refreshes it. The local CLI offers consolidation sources, write, read and project. This is a separate opt-in view, not an automatic change to Ask, native memory, or the MCP tool catalogue. Ask your agent for guide:kmp-agent:advanced:consolidation.",
+          "evidence": "ConsolidationApplicationService composes the native derived-view repository; canonical memory operations remain unchanged.",
+          "guide_title": "Consolidated views and their sources"
         }
       ],
       "relations": [
