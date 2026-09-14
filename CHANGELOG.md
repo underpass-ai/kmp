@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.5] - 2026-09-14
+
 ### Added
 
 - Compact Trace proof reads now recommend up to eight bodies to condense,
@@ -1772,7 +1774,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.4...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.5...HEAD
+[0.18.5]: https://github.com/underpass-ai/kmp/compare/v0.18.4...v0.18.5
 [0.18.4]: https://github.com/underpass-ai/kmp/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/underpass-ai/kmp/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/underpass-ai/kmp/compare/v0.18.1...v0.18.2
