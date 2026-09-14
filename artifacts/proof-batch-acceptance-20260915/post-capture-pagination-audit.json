@@ -1,0 +1,51 @@
+{
+  "auditor": "scripts/performance/proof_batch_capture_audit.py",
+  "auditor_sha256": "546f71764458b0cc6e1876317b4834030ad63ab876fdf958ad42351118cad787",
+  "captures": [
+    {
+      "capture": "001-distinct-batch.jsonl.gz",
+      "capture_sha256": "708ceb61d44a2663eceb99c7bd67293a01e449e0b3c76423797483fbdea29dbc",
+      "operations": 24,
+      "page_counts": [
+        1
+      ],
+      "totals": [
+        3
+      ]
+    },
+    {
+      "capture": "008-distinct-batch.jsonl.gz",
+      "capture_sha256": "d06b0a9d8abc28e34e7f5816e2bcedf872f24a064deffaa5e63efac2b32ae999",
+      "operations": 24,
+      "page_counts": [
+        1
+      ],
+      "totals": [
+        31
+      ]
+    },
+    {
+      "capture": "064-distinct-batch.jsonl.gz",
+      "capture_sha256": "f0e01cc3ee49cab85191f17a2847d6e37f4d0d4a8d835ee93be30d0e64e968e9",
+      "operations": 24,
+      "page_counts": [
+        8
+      ],
+      "totals": [
+        255
+      ]
+    },
+    {
+      "capture": "064-shared-batch.jsonl.gz",
+      "capture_sha256": "74384bd10b60a71493448ddc6f0642c600e2a9af1f4bc761d6d969a29751c54e",
+      "operations": 24,
+      "page_counts": [
+        7
+      ],
+      "totals": [
+        199
+      ]
+    }
+  ],
+  "contract": "kmp.proof-batch-capture-audit.v1"
+}

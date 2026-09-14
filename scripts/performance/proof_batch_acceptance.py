@@ -161,6 +161,8 @@ def batched(client: Client, refs: list[str]) -> tuple[dict, dict]:
     stable_warnings = None
     rows = []
     sections = {name: [] for name in ["trace", "objects", "supports", "gaps"]}
+    expected_offset = 0
+    total = None
     for _ in range(40):
         result, row = client.call("kmp_trace", arguments)
         value = content(result)
@@ -182,11 +184,24 @@ def batched(client: Client, refs: list[str]) -> tuple[dict, dict]:
             ] == stable_warnings
         partial_warning = "response is partial; execute next_actions to continue the same selection" in value["warnings"]
         assert partial_warning == value["page"]["has_more"]
+        page = value["page"]
+        returned = sum(len(value[name]) for name in sections)
+        assert page["returned"] == returned, "page.returned does not match its typed sections"
+        assert page["offset"] == expected_offset, "proof page offset is not contiguous"
+        total = page["total"] if total is None else total
+        assert page["total"] == total, "proof page total changed between continuations"
+        assert page["offset"] + returned <= total, "proof page exceeds its declared total"
         for name in sections:
             sections[name].extend(value[name])
-        if value["page"]["has_more"] is False:
+        expected_offset += returned
+        if page["has_more"] is False:
+            assert page["next_cursor"] in (None, "")
+            assert page["offset"] + returned == total, "final proof page does not reach total"
+            assert not any(action["tool"] == "kmp_trace" for action in value["next_actions"])
             break
-        cursor = value["page"]["next_cursor"]
+        assert returned > 0, "proof pagination stalled despite the sufficient fixture budget"
+        cursor = page["next_cursor"]
+        assert cursor, "partial proof page omitted its cursor"
         actions = [
             action for action in value["next_actions"]
             if action["tool"] == "kmp_trace"
@@ -196,11 +211,12 @@ def batched(client: Client, refs: list[str]) -> tuple[dict, dict]:
         arguments = actions[0]["arguments"]
     else:
         raise AssertionError("proof pagination did not terminate")
+    assert expected_offset == total, "reconstructed proof does not contain page.total items"
     for name, items in sections.items():
         first[name] = items
     first["page"] = {
         "returned": sum(len(items) for items in sections.values()),
-        "total": value["page"]["total"],
+        "total": total,
         "has_more": False,
         "next_cursor": None,
         "offset": 0,
@@ -230,6 +246,7 @@ def compare(oracle_value: dict, batch: dict) -> dict:
     assert [item["object"]["ref"] for item in inspections] == selected
 
     by_ref = {item["ref"]: item for item in batch["objects"]}
+    assert len(by_ref) == len(batch["objects"]), "proof objects contain duplicate refs"
     source_evidence = {}
     oracle_supports = []
     for inspected in inspections:
@@ -256,6 +273,7 @@ def compare(oracle_value: dict, batch: dict) -> dict:
     expected_source_order = sorted(source_evidence)
     actual_source_order = [item["ref"] for item in batch["objects"] if item["ref"] not in selected]
     assert actual_source_order == expected_source_order, "source order changed"
+    assert set(by_ref) == set(selected) | set(expected_source_order), "proof object set changed"
     for reference in expected_source_order:
         source = by_ref[reference]
         evidence = copy.deepcopy(source_evidence[reference])
@@ -285,6 +303,7 @@ def compare(oracle_value: dict, batch: dict) -> dict:
     assert batch["proof"]["stop_reason"] == "sources_enumerated"
     assert batch["proof"]["complete_groups"] == [0]
     assert batch["proof"]["incomplete_groups"] == []
+    assert batch["gaps"] == [], "complete fixture returned proof gaps"
     assert batch["proof"]["body_bytes"] == sum(
         len(item["text"].encode()) for item in batch["objects"]
     )

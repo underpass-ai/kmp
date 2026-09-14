@@ -67,6 +67,9 @@ The measured fixture and frozen-binary provenance are in
 three untimed warmups and one first read in a fresh process over its own copy of
 the same quiescent store. The 64-entry joint results intentionally span seven
 or eight MCP pages. Every slow sample remains in the compressed JSONL traces.
+The 8 MB budget is a per-response allowance; the oracle receives it once for
+Trace and once for every Inspect, while the joint path receives it on each
+page. It is not a matched total-context budget between the two paths.
 
 | Shape | Selected sources | RPCs oracle → joint | First-process sum RPC ms oracle → joint | Warm p50 ms oracle → joint | Warm p95 ms oracle → joint | Response bytes oracle → joint |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -83,6 +86,19 @@ is recorded, but it is neither an allocation count nor attributable solely to
 the query. Physical I/O and allocations were not measured. These results apply
 to this frozen fixture, binary and rich audit comparator; they do not establish
 a universal ratio for all clients.
+
+The timed capture used runner SHA-256
+`aa7b263a71067af0132e2b81c059defc6686e695b6b9184be6e96cc36bbb5555`.
+That version followed the exact returned action and checked reconstructed
+semantic content, but did not assert page arithmetic. After capture, the
+current runner added those assertions. The separate
+`proof_batch_capture_audit.py` checked all 96 recorded joint operations for
+contiguous offsets, stable totals, exact section counts, final completion,
+cursor/action agreement, unique and complete object sets, and empty gaps. Its
+own hash and every evaluated capture hash are recorded in
+`post-capture-pagination-audit.json`; all captures passed. This post-capture
+check validates the preserved responses and does not retroactively change the
+timing runner's source hash.
 
 Reproduce after freezing a development-profile `kmp-mcp` outside Cargo
 `target/`:
