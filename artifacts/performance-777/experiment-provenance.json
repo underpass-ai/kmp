@@ -1,0 +1,24 @@
+{
+  "final": {
+    "status": "accepted",
+    "baseline_commit": "26956aba5d19aa4165e3216e1fd7af5a8f350a2f",
+    "baseline_binary_sha256": "2beef5a0b53151c8624946aa003f54296d7f99895857b44b50a4316b663ae0a7",
+    "candidate_commit": "0eaa095a12407bebd25e4f30b1e89196379ff03b",
+    "candidate_binary_sha256": "2996f988a61b458d6f72ad4c4f6fd1951c17fae2e31997687bc672fdfeac8f01",
+    "runner_sha256": "8d1c9f1dfd3bac5f077af30bdcd80ff00f6e9016a0564312d3f61acbb69d44b2",
+    "started_at_utc": "2026-09-14T00:02:41Z",
+    "finished_at_utc": "2026-09-14T00:03:20Z",
+    "samples_per_side": 8,
+    "timing": "uninstrumented exclusive quiet slot"
+  },
+  "pre_review": {
+    "status": "superseded",
+    "baseline_commit": "7869a6bfd079ce8eb90b225e152ae3a0f51fd412",
+    "baseline_binary_sha256": "a13655270429d1993e5458d669e043a619071eb5d7b8a41322ec206b67b83cba",
+    "candidate_binary_sha256": "876782dc782d37779a2bdce11693a18549a5730892e80881200de2eef651ac2b",
+    "runner_sha256": "8d1c9f1dfd3bac5f077af30bdcd80ff00f6e9016a0564312d3f61acbb69d44b2",
+    "results_sha256": "a733d662ded9d759db73bef97b620ecaac805bed8d51b397ee875b4495d3adf0",
+    "waterfalls_gzip_sha256": "67867ece761833ac2d133d9764239a97f6642fc2fede4d7f1d4ca24f51d09659",
+    "reason": "Candidate preceded the awaited empty-clock transition and exact legacy trace-window corrections; timings are retained but excluded."
+  }
+}

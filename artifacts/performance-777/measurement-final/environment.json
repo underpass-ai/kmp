@@ -1,0 +1,41 @@
+{
+  "commit": "0eaa095a12407bebd25e4f30b1e89196379ff03b",
+  "baseline_sha256": "2beef5a0b53151c8624946aa003f54296d7f99895857b44b50a4316b663ae0a7",
+  "candidate_sha256": "2996f988a61b458d6f72ad4c4f6fd1951c17fae2e31997687bc672fdfeac8f01",
+  "baseline_size_bytes": 107205216,
+  "candidate_size_bytes": 107205192,
+  "runner_sha256": "8d1c9f1dfd3bac5f077af30bdcd80ff00f6e9016a0564312d3f61acbb69d44b2",
+  "profile": "Cargo dev; workspace .cargo/config.toml; no profile overrides",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+  "machine": "aarch64",
+  "cpu": "aarch64",
+  "cpu_count": 20,
+  "samples_per_side": 8,
+  "concurrency": 1,
+  "fixture": {
+    "abouts": 1,
+    "entries": 32,
+    "dimensions": 1,
+    "relations": 11,
+    "clocks": [
+      "occurred",
+      "observed",
+      "ingested"
+    ],
+    "expiry": null
+  },
+  "operations": {
+    "agent-open": "kmp_view_open plus first real HTTP scene in a fresh process/context",
+    "agent-focus-trace": "get state plus apply intent through browser revision, selected occurred/observed/ingested axis, selection and trace adoption",
+    "browser-reload-rich-state": "reload in the same context after focus/trace, preserving authoritative state"
+  },
+  "ready_observable": "stage loading=false, nonempty scene, sync polling/applying settled at expected revision, exact selection/trace where applicable, then two animation frames and 75ms request completion grace",
+  "timing_instrumentation": "uninstrumented kmp-mcp and Chromium wall time",
+  "allocation_scope": "not measured by this runner",
+  "server_cost": "uninstrumented process current/peak RSS in KiB and cumulative Linux clock ticks after each settled operation",
+  "cold_definition": "fresh embedded store, server process and browser context; OS page cache uncontrolled",
+  "warm_definition": "same server process and browser context after authoritative focus/trace state",
+  "latency_note": "informational local wall time; publish only from an exclusive quiet slot",
+  "browser": "145.0.7632.0"
+}
