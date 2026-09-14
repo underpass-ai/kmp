@@ -51,8 +51,8 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
                     .as_array_mut()
                     .expect("required")
                     .retain(|field| field != "actor");
-                tool["inputSchema"]["anyOf"] =
-                    json!([{"required":["actor"]},{"required":["context_id"]}]);
+                tool["inputSchema"]["if"] = json!({"not":{"required":["actor"]}});
+                tool["inputSchema"]["then"] = json!({"required":["context_id"]});
                 tool["inputSchema"]["properties"]["actor"]["description"] = json!(
                     "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context."
                 );
@@ -62,16 +62,19 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
             ) {
                 let schema = tool["inputSchema"].as_object_mut().expect("input schema");
                 schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":"Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again."});
-                let mut initial = json!({"not":{"required":["continuation"]}});
+                // Keep the shared argument object at the root. Hosts that
+                // render a root union from its branches alone otherwise lose
+                // these properties and advertise unconstrained dictionaries.
+                // The conditional preserves the same two disjoint call forms.
+                let mut initial = json!({});
                 for key in ["required", "anyOf", "oneOf", "allOf", "if", "then", "else"] {
                     if let Some(value) = schema.remove(key) {
                         initial[key] = value;
                     }
                 }
-                schema.insert(
-                    "oneOf".into(),
-                    json!([initial,{"required":["continuation"],"maxProperties":1}]),
-                );
+                schema.insert("if".into(), json!({"required":["continuation"]}));
+                schema.insert("then".into(), json!({"maxProperties":1}));
+                schema.insert("else".into(), initial);
             }
         }
         if apps {

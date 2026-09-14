@@ -1,0 +1,48 @@
+    Blocking waiting for file lock on build directory
+   Compiling kmp-mcp v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-mcp)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.02s
+     Running tests/paged_read_continuations.rs (/home/gx10a/Documents/ai/kmp-540-consolidation/target/debug/deps/paged_read_continuations-5edb9f5c0743247c)
+
+running 1 test
+test short_recall_temporal_trace_and_relate_preserve_complete_evidence ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.60s
+
+     Running tests/read_continuations.rs (/home/gx10a/Documents/ai/kmp-540-consolidation/target/debug/deps/read_continuations-581cfc69e63c9f81)
+
+running 3 tests
+test failed_retention_keeps_a_complete_executable_action ... ok
+test inspect_short_actions_reconstruct_raw_proof_negotiate_budget_and_replay ... ok
+test handles_survive_restart_but_reject_changed_evidence_mixed_arguments_and_wrong_tools ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.95s
+
+     Running tests/relation_only_writes.rs (/home/gx10a/Documents/ai/kmp-540-consolidation/target/debug/deps/relation_only_writes-7245504de526c119)
+
+running 5 tests
+test replacing_a_memory_at_a_supplied_ref_says_so_instead_of_reading_as_an_attachment ... ok
+test the_link_is_dated_when_it_was_asserted_and_not_when_its_sources_were ... ok
+test the_receipt_separates_the_created_link_from_the_untouched_sources ... ok
+test a_declared_link_leaves_both_sources_exactly_as_they_were ... ok
+test a_second_link_to_the_same_pair_keeps_the_first_link_and_its_evidence ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+
+     Running tests/tool_surface_parity.rs (/home/gx10a/Documents/ai/kmp-540-consolidation/target/debug/deps/tool_surface_parity-01221560745362a8)
+
+running 3 tests
+test the_pinned_calls_cover_every_advertised_tool ... ok
+test the_advertised_tool_definitions_match_their_reviewed_fixture ... ok
+test every_tool_answers_what_its_reviewed_fixture_says ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.58s
+
+     Running tests/writer_input_types.rs (/home/gx10a/Documents/ai/kmp-540-consolidation/target/debug/deps/writer_input_types-2e4ef7e92273ba14)
+
+running 3 tests
+test absent_operation_and_empty_collection_are_distinct_from_wrong_type ... ok
+test wrong_member_type_locates_the_member_and_keeps_the_valid_prefix_uncommitted ... ok
+test wrong_collection_types_are_explicit_and_strings_are_never_coerced ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+

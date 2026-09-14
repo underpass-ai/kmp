@@ -136,14 +136,18 @@ mod tests {
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
         assert!(
-            !tools[1]["inputSchema"]["oneOf"][0]["required"]
+            !tools[1]["inputSchema"]["else"]["required"]
                 .as_array()
                 .expect("required")
                 .contains(&json!("actor"))
         );
         assert_eq!(
-            tools[1]["inputSchema"]["oneOf"][0]["anyOf"],
-            json!([{"required":["actor"]},{"required":["context_id"]}])
+            tools[1]["inputSchema"]["else"]["if"],
+            json!({"not":{"required":["actor"]}})
+        );
+        assert_eq!(
+            tools[1]["inputSchema"]["else"]["then"],
+            json!({"required":["context_id"]})
         );
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
@@ -170,7 +174,7 @@ mod tests {
         assert!(evidence_description.contains("concrete observation or source"));
         assert!(evidence_description.contains("relation rationale"));
         assert_eq!(tools[2]["name"], "kmp_wake");
-        assert_eq!(tools[2]["inputSchema"]["oneOf"][0]["required"][0], "about");
+        assert_eq!(tools[2]["inputSchema"]["else"]["required"][0], "about");
         assert_eq!(tools[2]["_meta"]["anthropic/maxResultSizeChars"], 10_000);
         assert_eq!(
             tools[2]["inputSchema"]["properties"]["budget"]["properties"]["max_bytes"]["minimum"],
@@ -178,10 +182,7 @@ mod tests {
         );
         assert!(tools[2]["inputSchema"]["properties"].get("page").is_some());
         assert_eq!(tools[3]["name"], "kmp_ask");
-        assert_eq!(
-            tools[3]["inputSchema"]["oneOf"][0]["required"][1],
-            "question"
-        );
+        assert_eq!(tools[3]["inputSchema"]["else"]["required"][1], "question");
         assert_eq!(tools[3]["_meta"]["anthropic/maxResultSizeChars"], 10_000);
         assert!(tools[3]["inputSchema"]["properties"].get("page").is_some());
         assert!(
@@ -190,7 +191,7 @@ mod tests {
                 .is_none()
         );
         assert_eq!(tools[4]["name"], "kmp_relate");
-        assert_eq!(tools[4]["inputSchema"]["oneOf"][0]["required"][0], "about");
+        assert_eq!(tools[4]["inputSchema"]["else"]["required"][0], "about");
         assert_eq!(tools[11]["name"], "kmp_relabel");
         assert_eq!(
             tools[11]["inputSchema"]["required"],
@@ -206,7 +207,7 @@ mod tests {
         assert_eq!(tools[13]["name"], "kmp_summaries_audit");
         assert_eq!(tools[14]["name"], "kmp_view_open");
         assert_eq!(tools[5]["name"], "kmp_goto");
-        assert_eq!(tools[5]["inputSchema"]["oneOf"][0]["required"][1], "at");
+        assert_eq!(tools[5]["inputSchema"]["else"]["required"][1], "at");
         for index in [5, 6] {
             assert_eq!(
                 tools[index]["inputSchema"]["properties"]["page"]["properties"]["cursor"]["type"],

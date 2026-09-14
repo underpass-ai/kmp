@@ -1,0 +1,15 @@
+    Blocking waiting for file lock on build directory
+   Compiling kmp-proto v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-proto)
+   Compiling kmp-proto-mapping v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-proto-mapping)
+   Compiling kmp-mcp v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-mcp)
+   Compiling kmp-transport-grpc v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-transport-grpc)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.86s
+     Running tests/tool_surface_parity.rs (/home/gx10a/Documents/ai/kmp-540-consolidation/target/debug/deps/tool_surface_parity-01221560745362a8)
+
+running 3 tests
+test the_pinned_calls_cover_every_advertised_tool ... ok
+test the_advertised_tool_definitions_match_their_reviewed_fixture ... ok
+test every_tool_answers_what_its_reviewed_fixture_says ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.64s
+

@@ -28,6 +28,13 @@ when the evidence says it is not.
 Once invoked, known work enters through `kmp_wake`; apply the remaining rows
 to the part of the goal the wake packet did not already answer.
 
+An initial call needs the arguments described by its verb. A returned
+`continuation` is a separate call form: send only that handle on its named
+tool. Do not add `about`, `context_id` or budget overrides to it. Tool schemas
+keep the common argument fields visible and enforce these conditional
+requirements; an optional field in a host's type display does not make an
+initial call valid without the verb's required arguments.
+
 | Signal in the user's goal | First move |
 | --- | --- |
 | Continue known work or recover its state | `kmp_wake` |

@@ -46,10 +46,9 @@ pub(crate) fn definition() -> Value {
                     "type": "object",
                     "additionalProperties": false,
                     "description": "Compare-and-set on the card itself, separate from the body. Exactly one of absent or card_revision.",
-                    "oneOf": [
-                        {"required": ["absent"]},
-                        {"required": ["card_revision"]}
-                    ],
+                    "if":{"required":["absent"]},
+                    "then":{"not":{"required":["card_revision"]}},
+                    "else":{"required":["card_revision"]},
                     "properties": {
                         "absent": {"type": "boolean", "const": true, "description": "No card is stored for this ref and language yet. Refused, naming the stored revision, if one is."},
                         "card_revision": {"type": "integer", "minimum": 1, "description": "The card revision you are replacing. Refused if another reader replaced it first."}
