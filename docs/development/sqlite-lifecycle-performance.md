@@ -47,3 +47,23 @@ client processes against each database, with per-operation latency, per-client
 VmHWM, WAL growth and exact acknowledgement counts checked after reopening.
 Its 40-operation samples, process barriers, native quality writer cadence and
 measurement limits are documented alongside `artifacts/performance-772/clients.json`.
+The report also publishes p99/max, the individual periodic FULL writes at
+batches 16 and 32, and the explicit durable tail flushes derived from those
+unchanged raw arrays.
+
+A separate `--checkpoint-only` mode uses 32 128-KiB commits per production
+writer so that both its one-writer and two-writer cases exceed SQLite's default
+1,000-page autocheckpoint threshold. An independent production snapshot reader
+pins the 128-row seed before the common writer start. A fresh diagnostic
+connection times `PASSIVE` while that snapshot is pinned; the reader then drops
+the snapshot but keeps its production store connection open while an explicit
+diagnostic `FULL` runs. Finally, a new process reopens the store and verifies
+every acknowledgement. This control does not change any production PRAGMA.
+
+Post-commit WAL observations identify writer samples that were eligible for an
+automatic checkpoint at the observed threshold. They do not directly observe
+SQLite's callback, and the report labels them as an inference. The PASSIVE and
+FULL frame counts and durations are direct observations of the explicit
+diagnostic calls. The bounded result, raw writer samples, source and binary
+hashes, hardware, fixture sizes and snapshot/reopen assertions are in
+`artifacts/performance-772/checkpoints.json`.

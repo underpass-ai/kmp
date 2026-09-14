@@ -56,6 +56,25 @@
       "command": "bash scripts/ci/kmp-mcp-architecture-gate.sh",
       "status": "passed",
       "log": "architecture.log"
+    },
+    "checkpoint_runner_build": {
+      "command": "python3 scripts/performance/sqlite_clients.py --build-only --scratch tmp/sqlite-checkpoint-build2 --output tmp/unused2.json",
+      "status": "passed"
+    },
+    "checkpoint_runner_format": {
+      "command": "cargo fmt --all -- --check; rustfmt --edition 2024 --check scripts/performance/sqlite_clients.rs; python3 -m py_compile scripts/performance/sqlite_clients.py; git diff --check",
+      "status": "passed"
+    },
+    "checkpoint_runner_clippy": {
+      "command": "cargo clippy --locked -p kmp-adapter-embedded --bin sqlite-clients-runner -- -D warnings",
+      "temporary_bin_source": "scripts/performance/sqlite_clients.rs copied unchanged to the crate bin path, then removed",
+      "status": "passed"
+    },
+    "checkpoint_semantic_smoke": {
+      "command": "python3 scripts/performance/sqlite_clients.py --checkpoint-only --samples 32 --runner-binary target/debug/sqlite-clients-runner --scratch tmp/sqlite-checkpoint-smoke2 --output tmp/sqlite-checkpoint-smoke2.json",
+      "status": "passed",
+      "timings_published": false,
+      "semantic_result": "one/two writers crossed 1000 frames; pinned snapshot remained exact; PASSIVE was constrained; FULL applied every frame after release; reopen counts were exact"
     }
   },
   "policy_decision": {
@@ -85,5 +104,51 @@
     "binary_sha256": "a8f56aa41f37241ff5697ddae94ac758c9fc20b8819038c405b3348687600e2f",
     "source_commit": "ac5bc05ea4033965a3d15f496290e74b598143ae",
     "smoke": "32-operation development smoke excluded from timing table"
+  },
+  "quality_tail_review": {
+    "source_artifact": "clients.json",
+    "source_sha256": "b38dd8ea2e4a9f41d1159c9bb3ae99602cd4f1678d1261224b8949b0ab93b1ed",
+    "new_measurement": false,
+    "published_from_existing_raw": [
+      "write and read p99/max",
+      "periodic FULL writes 16 and 32 for every client",
+      "durable tail flush samples and p99/max"
+    ]
+  },
+  "checkpoint_control": {
+    "artifact": "checkpoints.json",
+    "artifact_sha256": "6c213a948352b8aaa48790517d4de4234b4f4ce955f854ccd576ab44f0bea5ca",
+    "source_commit": "3b46fb5da14bce2e2cc86a2bd6c3825f510b2459",
+    "runner_sha256": "2ee2945f1da996cb85924a617584807763ed19fb3077a3373e11bd72b5e0b4cc",
+    "rust_source_sha256": "3a98201b01da66e13f91e6cd6c6900e6976780c2b685e14ede1fb76a5c27c7bb",
+    "binary_sha256": "c83f84ddb35eb99d1436ed033dd3604c0b0048dec5f5aed5a8bc945187d1cd5d",
+    "measurement_utc": "2026-09-14T00:23:52Z/2026-09-14T00:23:54Z",
+    "writer_processes": [
+      1,
+      2
+    ],
+    "writes_per_process": 32,
+    "payload_bytes_per_write": 131072,
+    "wal_frames_before_diagnostic": [
+      1124,
+      2248
+    ],
+    "autocheckpoint_threshold_pages": 1000,
+    "automatic_checkpoint_observation": "inferred threshold eligibility only; no callback hook",
+    "explicit_passive_checkpointed_frames": [
+      0,
+      0
+    ],
+    "explicit_full_checkpointed_frames": [
+      1124,
+      2248
+    ],
+    "pinned_snapshot_old_rows_verified": true,
+    "all_reopened_counts_verified": true,
+    "all_per_client_acknowledgements_verified": true,
+    "max_fixture_bytes": 9080834,
+    "bounded_control": true,
+    "long_duration_starvation_claim": false,
+    "uninstrumented": true
   }
 }

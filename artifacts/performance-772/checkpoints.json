@@ -1,0 +1,811 @@
+{
+  "started_utc": "2026-09-14T00:23:52Z",
+  "completed_utc": "2026-09-14T00:23:54Z",
+  "commit": "3b46fb5da14bce2e2cc86a2bd6c3825f510b2459",
+  "binary_sha256": "c83f84ddb35eb99d1436ed033dd3604c0b0048dec5f5aed5a8bc945187d1cd5d",
+  "runner_sha256": "2ee2945f1da996cb85924a617584807763ed19fb3077a3373e11bd72b5e0b4cc",
+  "rust_source_sha256": "3a98201b01da66e13f91e6cd6c6900e6976780c2b685e14ede1fb76a5c27c7bb",
+  "production_kernel_sqlite_sha256": "4eb2abd7850c2da5b1db688056e580f2c0acc9bca11f69d026efc02a27276cc6",
+  "profile": "dev/sqlite, inherited workspace Cargo configuration",
+  "samples_per_writer": 32,
+  "payload_bytes_per_write": 131072,
+  "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "lscpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "aarch64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "64-bit"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "20"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-19"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "ARM"
+      },
+      {
+        "field": "Model name:",
+        "data": "Cortex-X925"
+      },
+      {
+        "field": "Model:",
+        "data": "1"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "1"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "10"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "r0p1"
+      },
+      {
+        "field": "Frequency boost:",
+        "data": "disabled"
+      },
+      {
+        "field": "CPU(s) scaling MHz:",
+        "data": "100%"
+      },
+      {
+        "field": "CPU max MHz:",
+        "data": "3900.0000"
+      },
+      {
+        "field": "CPU min MHz:",
+        "data": "1378.0000"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "2000.00"
+      },
+      {
+        "field": "Flags:",
+        "data": "fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt"
+      },
+      {
+        "field": "Model name:",
+        "data": "Cortex-A725"
+      },
+      {
+        "field": "Model:",
+        "data": "1"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "1"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "10"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "r0p1"
+      },
+      {
+        "field": "CPU(s) scaling MHz:",
+        "data": "100%"
+      },
+      {
+        "field": "CPU max MHz:",
+        "data": "2808.0000"
+      },
+      {
+        "field": "CPU min MHz:",
+        "data": "338.0000"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "2000.00"
+      },
+      {
+        "field": "Flags:",
+        "data": "fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti ecv afp wfxt"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "1.3 MiB (20 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "1.3 MiB (20 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "25 MiB (20 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "24 MiB (2 instances)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-19"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; CSV2, BHB"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "checkpoint_scope": "one or two independent production-adapter writers with one independent production snapshot reader pinned before their common start",
+  "automatic_checkpoint_scope": "threshold eligibility is inferred from WAL frames after acknowledged commits; PASSIVE and FULL rows are explicit diagnostic checkpoint observations",
+  "cache": "prepared persistent store, fresh worker processes, OS cache not flushed; reader pins before writer processes open",
+  "quality_existing_control": {
+    "source": "artifacts/performance-772/clients.json",
+    "source_sha256": "b38dd8ea2e4a9f41d1159c9bb3ae99602cd4f1678d1261224b8949b0ab93b1ed",
+    "samples_reused": true,
+    "new_measurement": false,
+    "periodic_full_cadence": "write numbers 16 and 32 for each fresh writer",
+    "cases": [
+      {
+        "clients": 1,
+        "write": {
+          "samples": 40,
+          "p50_ms": 0.037551,
+          "p95_ms": 0.5679339999999999,
+          "p99_ms": 1.344507,
+          "max_ms": 1.344507
+        },
+        "read": {
+          "samples": 40,
+          "p50_ms": 0.1621595,
+          "p95_ms": 0.172575,
+          "p99_ms": 0.26566300000000004,
+          "max_ms": 0.26566300000000004
+        },
+        "periodic_full_write_samples": [
+          {
+            "client": "0",
+            "write_number": 16,
+            "duration_ms": 1.344507
+          },
+          {
+            "client": "0",
+            "write_number": 32,
+            "duration_ms": 1.214508
+          }
+        ],
+        "durable_tail_flush_ms": [
+          3.69501
+        ],
+        "durable_tail_flush": {
+          "samples": 1,
+          "p50_ms": 3.69501,
+          "p95_ms": 3.69501,
+          "p99_ms": 3.69501,
+          "max_ms": 3.69501
+        }
+      },
+      {
+        "clients": 2,
+        "write": {
+          "samples": 80,
+          "p50_ms": 0.13032,
+          "p95_ms": 0.7122689999999999,
+          "p99_ms": 1.870393,
+          "max_ms": 1.870393
+        },
+        "read": {
+          "samples": 80,
+          "p50_ms": 0.362719,
+          "p95_ms": 0.386078,
+          "p99_ms": 0.438191,
+          "max_ms": 0.438191
+        },
+        "periodic_full_write_samples": [
+          {
+            "client": "0",
+            "write_number": 16,
+            "duration_ms": 1.779114
+          },
+          {
+            "client": "0",
+            "write_number": 32,
+            "duration_ms": 1.870393
+          },
+          {
+            "client": "1",
+            "write_number": 16,
+            "duration_ms": 1.539098
+          },
+          {
+            "client": "1",
+            "write_number": 32,
+            "duration_ms": 1.301292
+          }
+        ],
+        "durable_tail_flush_ms": [
+          1.095884,
+          2.0806
+        ],
+        "durable_tail_flush": {
+          "samples": 2,
+          "p50_ms": 1.5882420000000002,
+          "p95_ms": 2.0806,
+          "p99_ms": 2.0806,
+          "max_ms": 2.0806
+        }
+      }
+    ]
+  },
+  "kernel_checkpoint_results": [
+    {
+      "database": "kernel",
+      "clients": 1,
+      "prepared": {
+        "prepared": true
+      },
+      "raw_clients": [
+        {
+          "client": "0",
+          "open_ms": 1.750507,
+          "peak_rss_kib": 8536,
+          "wal_bytes_after_each_write": [
+            148352,
+            292552,
+            436752,
+            580952,
+            725152,
+            869352,
+            1013552,
+            1157752,
+            1306072,
+            1450272,
+            1594472,
+            1738672,
+            1882872,
+            2027072,
+            2171272,
+            2315472,
+            2463792,
+            2607992,
+            2752192,
+            2896392,
+            3040592,
+            3184792,
+            3328992,
+            3473192,
+            3621512,
+            3765712,
+            3909912,
+            4054112,
+            4198312,
+            4342512,
+            4486712,
+            4630912
+          ],
+          "write_ms": [
+            8.227655,
+            7.087802,
+            7.1134830000000004,
+            7.68476,
+            7.180747,
+            7.163803,
+            7.154506,
+            8.642454,
+            9.403666999999999,
+            8.597238,
+            9.466819,
+            8.571942,
+            8.463989999999999,
+            8.535558,
+            8.091928,
+            8.315335,
+            7.358345,
+            7.645049,
+            7.14025,
+            8.166599,
+            8.355527,
+            8.284711,
+            7.834936000000001,
+            9.058709,
+            7.658665,
+            7.474169,
+            7.466873,
+            7.616536999999999,
+            8.652566,
+            6.984395,
+            8.634294,
+            7.4950980000000005
+          ],
+          "wal_frames_after_each_write": [
+            36,
+            71,
+            106,
+            141,
+            176,
+            211,
+            246,
+            281,
+            317,
+            352,
+            387,
+            422,
+            457,
+            492,
+            527,
+            562,
+            598,
+            633,
+            668,
+            703,
+            738,
+            773,
+            808,
+            843,
+            879,
+            914,
+            949,
+            984,
+            1019,
+            1054,
+            1089,
+            1124
+          ]
+        }
+      ],
+      "writer_latency": {
+        "samples": 32,
+        "p50_ms": 7.963432,
+        "p95_ms": 9.403666999999999,
+        "p99_ms": 9.466819,
+        "max_ms": 9.466819
+      },
+      "threshold_eligible_writer_latency": {
+        "samples": 4,
+        "p50_ms": 8.064696000000001,
+        "p95_ms": 8.652566,
+        "p99_ms": 8.652566,
+        "max_ms": 8.652566
+      },
+      "automatic_checkpoint_inference": {
+        "threshold_pages": 1000,
+        "eligible_write_observations": 4,
+        "basis": "post-commit WAL frames at or above the connection-local threshold; no hook directly observed an automatic checkpoint call"
+      },
+      "pinned_reader": {
+        "last_sequence_after_full": 160,
+        "last_sequence_before_release": 128,
+        "last_sequence_before_writers": 128,
+        "old_snapshot_preserved": true,
+        "rows_after_full": 160,
+        "rows_before_release": 128,
+        "rows_before_writers": 128,
+        "snapshot_released_before_full": true
+      },
+      "passive_while_reader_pinned": {
+        "busy": 0,
+        "checkpointed_frames": 0,
+        "connection_scope": "explicit fresh diagnostic connection; not a production writer observation",
+        "duration_ms": 0.250127,
+        "log_frames": 1124,
+        "mode": "PASSIVE",
+        "page_size_bytes": 4096,
+        "wal_autocheckpoint_pages": 1000,
+        "wal_bytes_after": 4630912,
+        "wal_bytes_before": 4630912,
+        "wal_frames_after": 1124,
+        "wal_frames_before": 1124
+      },
+      "full_after_reader_release": {
+        "busy": 0,
+        "checkpointed_frames": 1124,
+        "connection_scope": "explicit fresh diagnostic connection; not a production writer observation",
+        "duration_ms": 6.447724,
+        "log_frames": 1124,
+        "mode": "FULL",
+        "page_size_bytes": 4096,
+        "wal_autocheckpoint_pages": 1000,
+        "wal_bytes_after": 4630912,
+        "wal_bytes_before": 4630912,
+        "wal_frames_after": 1124,
+        "wal_frames_before": 1124
+      },
+      "verification_after_reopen": {
+        "every_client_acknowledgement_preserved": true,
+        "expected_count": 160,
+        "reopened_count": 160
+      },
+      "peak_rss_kib_per_writer": [
+        8536
+      ],
+      "max_observed_wal_bytes": 4630912,
+      "fixture_bytes_after_full_checkpoint": 4870146
+    },
+    {
+      "database": "kernel",
+      "clients": 2,
+      "prepared": {
+        "prepared": true
+      },
+      "raw_clients": [
+        {
+          "client": "0",
+          "open_ms": 1.0679649999999998,
+          "peak_rss_kib": 7508,
+          "wal_bytes_after_each_write": [
+            148352,
+            292552,
+            580952,
+            869352,
+            1013552,
+            1157752,
+            1306072,
+            1450272,
+            1594472,
+            1738672,
+            1882872,
+            2171272,
+            2463792,
+            2752192,
+            2896392,
+            3040592,
+            3184792,
+            3328992,
+            3473192,
+            3621512,
+            3765712,
+            4054112,
+            4342512,
+            4486712,
+            4779232,
+            5067632,
+            5356032,
+            5644432,
+            5936952,
+            6225352,
+            6513752,
+            6802152
+          ],
+          "write_ms": [
+            7.423082,
+            6.860891,
+            15.661584,
+            14.729859,
+            6.912619,
+            6.912939,
+            6.700443,
+            6.79838,
+            6.522684,
+            6.7763800000000005,
+            6.753819,
+            15.173106,
+            9.93381,
+            15.022753999999999,
+            6.505933000000001,
+            6.843483,
+            6.739260000000001,
+            6.4956119999999995,
+            6.976299,
+            7.376618,
+            7.569129,
+            15.018883,
+            15.099554,
+            6.813339,
+            15.211697999999998,
+            15.101267,
+            9.987521,
+            15.223825,
+            15.300545,
+            15.164274,
+            9.987938,
+            15.622593
+          ],
+          "wal_frames_after_each_write": [
+            36,
+            71,
+            141,
+            211,
+            246,
+            281,
+            317,
+            352,
+            387,
+            422,
+            457,
+            527,
+            598,
+            668,
+            703,
+            738,
+            773,
+            808,
+            843,
+            879,
+            914,
+            984,
+            1054,
+            1089,
+            1160,
+            1230,
+            1300,
+            1370,
+            1441,
+            1511,
+            1581,
+            1651
+          ]
+        },
+        {
+          "client": "1",
+          "open_ms": 1.673802,
+          "peak_rss_kib": 8292,
+          "wal_bytes_after_each_write": [
+            436752,
+            725152,
+            2027072,
+            2315472,
+            2607992,
+            3909912,
+            4198312,
+            4630912,
+            4923432,
+            5211832,
+            5500232,
+            5788632,
+            6081152,
+            6369552,
+            6657952,
+            6946352,
+            7094672,
+            7238872,
+            7383072,
+            7527272,
+            7671472,
+            7815672,
+            7959872,
+            8104072,
+            8252392,
+            8396592,
+            8540792,
+            8684992,
+            8829192,
+            8973392,
+            9117592,
+            9261792
+          ],
+          "write_ms": [
+            26.296,
+            8.144344,
+            87.300167,
+            7.82068,
+            6.963755,
+            86.78493700000001,
+            10.228849,
+            25.111955,
+            10.055714,
+            10.069793,
+            6.856635,
+            15.271298000000002,
+            10.227665,
+            10.091536999999999,
+            6.970395,
+            14.963635,
+            6.4832279999999995,
+            7.068474,
+            6.910779,
+            6.829052000000001,
+            6.856731,
+            6.850859,
+            7.014539,
+            7.033754,
+            6.907979,
+            7.0117069999999995,
+            6.971483,
+            6.850331000000001,
+            6.924219,
+            6.8798189999999995,
+            6.748971,
+            6.940603
+          ],
+          "wal_frames_after_each_write": [
+            106,
+            176,
+            492,
+            562,
+            633,
+            949,
+            1019,
+            1124,
+            1195,
+            1265,
+            1335,
+            1405,
+            1476,
+            1546,
+            1616,
+            1686,
+            1722,
+            1757,
+            1792,
+            1827,
+            1862,
+            1897,
+            1932,
+            1967,
+            2003,
+            2038,
+            2073,
+            2108,
+            2143,
+            2178,
+            2213,
+            2248
+          ]
+        }
+      ],
+      "writer_latency": {
+        "samples": 64,
+        "p50_ms": 7.051114,
+        "p95_ms": 25.111955,
+        "p99_ms": 87.300167,
+        "max_ms": 87.300167
+      },
+      "threshold_eligible_writer_latency": {
+        "samples": 36,
+        "p50_ms": 7.051114,
+        "p95_ms": 15.622593,
+        "p99_ms": 25.111955,
+        "max_ms": 25.111955
+      },
+      "automatic_checkpoint_inference": {
+        "threshold_pages": 1000,
+        "eligible_write_observations": 36,
+        "basis": "post-commit WAL frames at or above the connection-local threshold; no hook directly observed an automatic checkpoint call"
+      },
+      "pinned_reader": {
+        "last_sequence_after_full": 192,
+        "last_sequence_before_release": 128,
+        "last_sequence_before_writers": 128,
+        "old_snapshot_preserved": true,
+        "rows_after_full": 192,
+        "rows_before_release": 128,
+        "rows_before_writers": 128,
+        "snapshot_released_before_full": true
+      },
+      "passive_while_reader_pinned": {
+        "busy": 0,
+        "checkpointed_frames": 0,
+        "connection_scope": "explicit fresh diagnostic connection; not a production writer observation",
+        "duration_ms": 0.49943800000000005,
+        "log_frames": 2248,
+        "mode": "PASSIVE",
+        "page_size_bytes": 4096,
+        "wal_autocheckpoint_pages": 1000,
+        "wal_bytes_after": 9261792,
+        "wal_bytes_before": 9261792,
+        "wal_frames_after": 2248,
+        "wal_frames_before": 2248
+      },
+      "full_after_reader_release": {
+        "busy": 0,
+        "checkpointed_frames": 2248,
+        "connection_scope": "explicit fresh diagnostic connection; not a production writer observation",
+        "duration_ms": 11.765692,
+        "log_frames": 2248,
+        "mode": "FULL",
+        "page_size_bytes": 4096,
+        "wal_autocheckpoint_pages": 1000,
+        "wal_bytes_after": 9261792,
+        "wal_bytes_before": 9261792,
+        "wal_frames_after": 2248,
+        "wal_frames_before": 2248
+      },
+      "verification_after_reopen": {
+        "every_client_acknowledgement_preserved": true,
+        "expected_count": 192,
+        "reopened_count": 192
+      },
+      "peak_rss_kib_per_writer": [
+        7508,
+        8292
+      ],
+      "max_observed_wal_bytes": 9261792,
+      "fixture_bytes_after_full_checkpoint": 9080834
+    }
+  ]
+}

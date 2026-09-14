@@ -96,6 +96,17 @@ existing FULL cadence every 16 batches, and a durable tail flush.
 | quality / 1 | 0.038 / 0.568 | 0.162 / 0.173 | 5668 | 510,912 |
 | quality / 2 | 0.130 / 0.712 | 0.363 / 0.386 | 5672, 5652 | 1,030,032 |
 
+The nearest-rank p95 excludes the slowest two observations at 40 samples and
+the slowest four at 80 samples. The existing raw arrays therefore also yield
+these tail and durability values; `checkpoints.json` publishes the derivation
+and preserves the `clients.json` SHA-256
+`b38dd8ea2e4a9f41d1159c9bb3ae99602cd4f1678d1261224b8949b0ab93b1ed`:
+
+| Quality clients | Write p99 / max ms | Read p99 / max ms | Periodic FULL writes, client: #16 / #32 ms | Durable tail flushes ms |
+| ---: | ---: | ---: | --- | --- |
+| 1 | 1.345 / 1.345 | 0.266 / 0.266 | 0: 1.345 / 1.215 | 3.695 |
+| 2 | 1.870 / 1.870 | 0.438 / 0.438 | 0: 1.779 / 1.870; 1: 1.539 / 1.301 | 1.096, 2.081 (p50 1.588; p99/max 2.081) |
+
 The two-client percentiles pool 80 operations; per-process arrays remain in the
 artifact. Pacing sleeps of 1 ms, barriers, fixture construction, WAL reads and
 RSS observation are outside operation timings. First-open times and quality
@@ -125,3 +136,62 @@ The current Rust/Python runner hashes and measured source commit are in
 `clients.json`; production adapter source is unchanged from the earlier
 lifecycle measurement. The 32-sample smoke ran during development and is
 excluded; its semantic assertions passed before the final 40-sample run.
+
+## Checkpoint threshold with a pinned production reader
+
+`checkpoints.json` adds a separate kernel control. A production
+`EmbeddedKernelStore` snapshot reader fixes the 128-row seed before one or two
+independent production-adapter writer processes cross the checkpoint threshold.
+Each writer commits 32 events with a 128-KiB payload under its own logical root.
+This produces more than 1,000 real 4-KiB WAL frames even in the one-writer case.
+
+| Writers | Timed writes | Writer p50 / p95 / p99 / max ms | Threshold-eligible writes | Eligible p50 / p95 / p99 / max ms | Peak WAL frames / bytes |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 32 | 7.963 / 9.404 / 9.467 / 9.467 | 4 | 8.065 / 8.653 / 8.653 / 8.653 | 1,124 / 4,630,912 |
+| 2 | 64 pooled | 7.051 / 25.112 / 87.300 / 87.300 | 36 | 7.051 / 15.623 / 25.112 / 25.112 | 2,248 / 9,261,792 |
+
+The fresh diagnostic connection reported `wal_autocheckpoint=1000`; production
+kernel setup does not override that connection default. A write is classified
+as threshold-eligible only when its post-commit WAL observation is at least
+1,000 frames. No hook directly observed SQLite invoking its automatic
+checkpoint callback, so those 4/36 observations are an inference about
+eligibility, not a count of observed callback executions. The timed `PASSIVE`
+and `FULL` calls below are explicit diagnostic operations outside writer
+latency.
+
+| Writers | Pinned reader before/release | Explicit PASSIVE while pinned | Explicit FULL after release | Reopened rows | Per-writer VmHWM KiB | Final fixture bytes |
+| ---: | --- | --- | --- | ---: | --- | ---: |
+| 1 | 128 / 128 | 0 of 1,124 frames, 0.250 ms | 1,124 of 1,124, 6.448 ms | 160 | 8536 | 4,870,146 |
+| 2 | 128 / 128 | 0 of 2,248 frames, 0.499 ms | 2,248 of 2,248, 11.766 ms | 192 | 7508, 8292 | 9,080,834 |
+
+The snapshot returned exactly its old 128-row, sequence-128 view before release.
+After release, the idle reader process kept a production connection open while
+the explicit `FULL` checkpoint applied every WAL frame. A new process then
+reopened the store and verified all 32 or 64 writer acknowledgements. `FULL`
+applies frames without requesting truncation, so the WAL file remained allocated
+during that diagnostic; the fixture-size column was collected after the reader
+closed and reopen verification completed. Both fixtures remain below 30 MiB.
+
+This is a bounded checkpoint-contention control, not a long-duration starvation
+test. The result shows correct snapshot isolation and recovery past the default
+threshold; it does not support changing the current durability or checkpoint
+policy.
+
+Reproduce from the separately built runner in a quiet slot:
+
+```sh
+python3 scripts/performance/sqlite_clients.py --checkpoint-only --samples 32 \
+  --runner-binary target/debug/sqlite-clients-runner \
+  --scratch tmp/sqlite-checkpoint-final \
+  --output artifacts/performance-772/checkpoints-new.json
+```
+
+The final control ran from source commit
+`3b46fb5da14bce2e2cc86a2bd6c3825f510b2459` in the inherited dev profile.
+The Rust source, Python runner and binary SHA-256 values are respectively
+`3a98201b01da66e13f91e6cd6c6900e6976780c2b685e14ede1fb76a5c27c7bb`,
+`2ee2945f1da996cb85924a617584807763ed19fb3077a3373e11bd72b5e0b4cc`, and
+`c83f84ddb35eb99d1436ed033dd3604c0b0048dec5f5aed5a8bc945187d1cd5d`.
+The measured interval was 2026-09-14 00:23:52Z–00:23:54Z; hardware, toolchain,
+raw writer arrays, page counts and diagnostic connection scope are retained in
+the JSON record.
