@@ -11,6 +11,7 @@ separately and are not OS-cold-cache measurements. No model is called.
 """
 from __future__ import annotations
 
+import copy
 import gzip
 import hashlib
 import json
@@ -201,7 +202,15 @@ def compare(oracle_value: dict, batch: dict) -> dict:
     assert actual_source_order == expected_source_order, "source order changed"
     for reference in expected_source_order:
         source = by_ref[reference]
-        evidence = source_evidence[reference]
+        evidence = copy.deepcopy(source_evidence[reference])
+        # Inspect presents stored evidence through MemoryEvidence and adds this
+        # projection-only classifier. Trace presents the same record as its
+        # typed source object; kind=memory_evidence carries that role there.
+        # Require the only shape difference explicitly before comparing every
+        # persisted byte and field.
+        assert evidence.get("metadata", {}).pop("proof_role", None) == "stored_evidence"
+        if not evidence.get("metadata"):
+            evidence.pop("metadata", None)
         expected = {
             "id": source["ref"],
             "supports": [row["to"] for row in batch["supports"] if row["from"] == reference],
@@ -230,6 +239,10 @@ def compare(oracle_value: dict, batch: dict) -> dict:
         "supports": len(batch["supports"]),
         "body_bytes": batch["proof"]["body_bytes"],
         "selection_fingerprint": batch["selection_fingerprint"],
+        "qualified_projection_difference": {
+            "inspect.evidence[].metadata.proof_role": "stored_evidence",
+            "trace.objects[].kind": "memory_evidence",
+        },
     }
 
 
