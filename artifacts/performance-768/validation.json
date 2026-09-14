@@ -60,5 +60,59 @@
     "python3 tmp/performance-768-baseline-worktree/scripts/performance/quality_metric_rendering.py --runner-binary /home/gx10a/Documents/ai/kmp-perf-768/tmp/performance-768-baseline-runner-final --scratch /home/gx10a/Documents/ai/kmp-perf-768/tmp/performance-768-baseline-metrics-abs --output /home/gx10a/Documents/ai/kmp-perf-768/artifacts/performance-768/baseline-metrics-abs.json --warm-samples 8 --allocation-warm-samples 5",
     "python3 scripts/performance/quality_metric_rendering.py --runner-binary /home/gx10a/Documents/ai/kmp-perf-768/target/debug/quality-metric-rendering-runner --scratch /home/gx10a/Documents/ai/kmp-perf-768/tmp/performance-768-candidate-metrics-abs --output /home/gx10a/Documents/ai/kmp-perf-768/artifacts/performance-768/candidate-metrics-abs.json --warm-samples 8 --allocation-warm-samples 5"
   ],
-  "interpretation": "Candidate removes the normal canonical raw-dump String while retaining exact full-text cl100k counts. Latency and allocations are attribution evidence from one host; no threshold or speedup claim is made."
+  "interpretation": "Candidate removes the normal canonical raw-dump String while retaining exact full-text cl100k counts. Latency and allocations are attribution evidence from one host; no threshold or speedup claim is made.",
+  "script_metadata": {
+    "measured_sha256": "b1802dd774084bd2a0fb0e29b45a7102ccf5884413a777ba498be77b6c474258",
+    "current_sha256": "50d469c58c6512deff44dafa9b89e1900f50f9015ecac227edfbd57c10eec2ca",
+    "historical_raw_json_label": "none; baseline attribution only",
+    "current_future_label": "paired baseline/candidate attribution; allocation controls are process-scoped",
+    "erratum": "Historical baseline-metrics-abs.json and candidate-metrics-abs.json retain the measured script label and measured script hash. Only future campaigns use the current label/hash; raw historical measurements are unchanged."
+  },
+  "allocation_control": {
+    "process_scope": "one fresh process per phase and shape",
+    "calls_per_process": "one first-use call plus five warm calls",
+    "metric_phase_totals_baseline_to_candidate": {
+      "small": {
+        "requests": [
+          426799,
+          427147
+        ],
+        "requested_bytes": [
+          31187870,
+          31192859
+        ]
+      },
+      "unicode": {
+        "requests": [
+          462700,
+          464464
+        ],
+        "requested_bytes": [
+          35022604,
+          34965205
+        ]
+      },
+      "large_payload": {
+        "requests": [
+          3269437,
+          3276799
+        ],
+        "requested_bytes": [
+          435688556,
+          420845837
+        ]
+      },
+      "relations": {
+        "requests": [
+          945874,
+          979954
+        ],
+        "requested_bytes": [
+          90525640,
+          90089539
+        ]
+      }
+    },
+    "interpretation": "The large-payload request count increases while cumulative requested bytes decrease; do not describe this as fewer allocation requests."
+  }
 }

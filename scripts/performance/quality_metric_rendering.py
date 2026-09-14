@@ -307,7 +307,7 @@ def main() -> int:
             "allocation_counter": "separate Linux/glibc LD_PRELOAD process controls; startup and bundle construction included, deallocations reported separately; do not interpret instrumented times",
             "warm_samples": args.warm_samples,
             "allocation_warm_samples": args.allocation_warm_samples,
-            "candidate": "none; baseline attribution only",
+            "candidate": "paired baseline/candidate attribution; allocation controls are process-scoped",
         },
         "source_hashes": {
             path: digest(ROOT / path)

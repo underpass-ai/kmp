@@ -3,14 +3,17 @@
 The paired baseline and candidate JSON files are produced by
 `scripts/performance/quality_metric_rendering.py` with the same runner source,
 four synthetic shapes, uninstrumented render/metric latency, and separate
-LD_PRELOAD allocation controls. Latency uses eight warm samples; allocation
-controls use five process samples and their instrumented timings are ignored.
+LD_PRELOAD allocation controls. Latency uses eight warm samples; each
+allocation control is one fresh process per phase and shape, with its first
+call plus five warm calls. Instrumented timings are ignored.
 
 The large-payload fixture uses 512 repetitions of `payload-` in the generated
 node, detail, and relationship fields (approximately 600 KB of canonical flat
 text). The Unicode shape includes emoji, accented text, quotes, backslashes,
-and literal newlines. Raw arrays remain in the JSON; summary percentiles use
-nearest rank.
+and the literal backslash+n text `\\n+line` from the Rust raw string; it has no
+literal newline in that payload. Actual newline boundaries are covered by the
+independent exactness tests. Raw arrays remain in the JSON; summary percentiles
+use nearest rank.
 
 The baseline runner was built from commit `7af38d73a6bd2dcf5ea9e83e394838af8d612a6f`.
 The final manifest records both executable hashes, source hashes, Rust toolchain,
@@ -38,6 +41,24 @@ observations:
 The candidate's warm metric p50 is slightly lower for the large payload (522.96
 ms versus 526.05 ms in this single-host campaign); other shapes are mixed. The
 result is attribution evidence, not a latency gate.
+
+The metric allocation controls report cumulative process-scoped requests and
+requested bytes (baseline -> candidate):
+
+| Shape | Requests | Requested bytes |
+| --- | ---: | ---: |
+| small | 426,799 -> 427,147 | 31,187,870 -> 31,192,859 |
+| unicode | 462,700 -> 464,464 | 35,022,604 -> 34,965,205 |
+| large payload | 3,269,437 -> 3,276,799 | 435,688,556 -> 420,845,837 |
+| relations | 945,874 -> 979,954 | 90,525,640 -> 90,089,539 |
+
+The large-payload request count increases while cumulative requested bytes fall;
+these controls do not show a decrease in allocation-request count.
+
+The historical raw JSON files retain the metadata label `candidate: "none;
+baseline attribution only"` from the measured script. The script now emits the
+paired-campaign label for future runs; `validation.json` records both script
+hashes and this metadata erratum.
 Allocation controls include process startup and bundle setup, so they are
 reported as separate request/byte observations rather than per-call heap
 claims. See `comparison.json` for the raw arrays' nearest-rank summaries and
