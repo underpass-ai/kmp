@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use super::actions;
 use super::budget::{Detail, ProjectionBudget};
-use super::core_fit::{fit_core, fits, serialized_bytes, stabilize_used_bytes};
+use super::core_fit::{fit_core, serialized_bytes, stabilize_used_bytes};
 use super::cursor::{parse_cursor, selection_hash};
 use super::json_paths::push_array;
 use super::metadata::{append_warning, attach_metadata};
@@ -39,7 +39,6 @@ pub fn project_recall_output_typed(
         .items
         .iter()
         .filter(|item| item.min_detail <= budget.detail)
-        .cloned()
         .collect::<Vec<_>>();
     let selection_hash = selection_hash(arguments, &plan, &eligible);
     let excluded_by_detail = plan.items.len() - eligible.len();
@@ -91,7 +90,7 @@ pub fn project_recall_output_typed(
         &mut planning,
         &plan,
         &eligible,
-        &[],
+        &selected,
         offset,
         excluded_by_detail,
         &selection_hash,
@@ -103,10 +102,8 @@ pub fn project_recall_output_typed(
     let mut lengths = plan.core_lengths.clone();
 
     for item in eligible.iter().skip(offset).take(budget.page_entries) {
-        let item_json =
-            serde_json::to_string(&item.value).expect("projection item should serialize");
         let comma_bytes = usize::from(lengths.get(&item.section).copied().unwrap_or(0) > 0);
-        let item_bytes = item_json.len() + comma_bytes;
+        let item_bytes = item.serialized_len() + comma_bytes;
         // `tokens` predates the transport-neutral byte contract and remains in
         // the API as a planning hint. Treating it as a second hard cap made a
         // typical stable core consume the entire default before any expansion
@@ -119,7 +116,7 @@ pub fn project_recall_output_typed(
         }
         planned_bytes += item_bytes;
         *lengths.entry(item.section).or_default() += 1;
-        selected.push(item.clone());
+        selected.push(*item);
     }
 
     if selected.is_empty() && offset < eligible.len() && !floor_mode {
@@ -132,7 +129,7 @@ pub fn project_recall_output_typed(
     }
 
     // Item costs are deliberately conservative, so this normally runs once.
-    // The exact final assertion protects the hard byte ceiling and estimator
+    // The exact final measurement protects the hard byte ceiling and estimator
     // compatibility without the old serialize-and-drop O(n²) loop.
     loop {
         let mut projected = plan.core.clone();
@@ -151,8 +148,8 @@ pub fn project_recall_output_typed(
             core_text_shortened,
             false,
         );
-        stabilize_used_bytes(&mut projected);
-        if fits(&projected, &budget) {
+        let used_bytes = stabilize_used_bytes(&mut projected);
+        if used_bytes <= budget.byte_limit {
             return Ok(ProjectionOutcome::Projected(projected));
         }
         if selected.pop().is_none() {
@@ -160,7 +157,7 @@ pub fn project_recall_output_typed(
                 // The floor exceeds the requested ceiling by definition.
                 // Return it anyway, saying so: min(content, floor) beats an
                 // error the caller can only answer by over-budgeting.
-                let floor_bytes = serialized_bytes(&projected);
+                let floor_bytes = used_bytes;
                 append_warning(
                     &mut projected,
                     &format!(

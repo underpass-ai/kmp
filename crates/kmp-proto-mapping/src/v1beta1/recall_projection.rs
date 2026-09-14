@@ -18,6 +18,7 @@ mod recall_output;
 mod request_arguments;
 mod response_value;
 mod scalars;
+mod serialized_size;
 mod text_shortening;
 mod typed_recall;
 mod typed_response;
@@ -50,6 +51,8 @@ mod plan_tests;
 mod rank_tests;
 #[cfg(test)]
 mod response_value_tests;
+#[cfg(test)]
+mod serialized_size_tests;
 #[cfg(test)]
 mod test_support;
 #[cfg(test)]

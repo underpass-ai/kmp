@@ -1,0 +1,394 @@
+{
+  "parity": {
+    "empty": {
+      "final_digest": "b3c593248749338794c793f624d8bbea299e4fd60cd4496ae46e74cf40da1696",
+      "page_bytes": [
+        683
+      ],
+      "page_hashes": [
+        "b3c593248749338794c793f624d8bbea299e4fd60cd4496ae46e74cf40da1696"
+      ],
+      "returned": [
+        0
+      ]
+    },
+    "small": {
+      "final_digest": "c61ca51a51659a6390f166c660953e24a6fcab1d556d6625d608fa686cc5fdff",
+      "page_bytes": [
+        2527
+      ],
+      "page_hashes": [
+        "c61ca51a51659a6390f166c660953e24a6fcab1d556d6625d608fa686cc5fdff"
+      ],
+      "returned": [
+        12
+      ]
+    },
+    "medium": {
+      "final_digest": "6310e2fb3e6c080767510d57530a7b8324ae2fc74f3370f612c582ab47b3e2b7",
+      "page_bytes": [
+        9772,
+        9831,
+        23542,
+        11688,
+        9956,
+        2096
+      ],
+      "page_hashes": [
+        "2f163f52b70d37abfd5bde390941ef7c557131a198bd2ab2186afcbee12e91ae",
+        "ead6d347587d7b53740bcc6075ed22e95113177a5a9a3bcd43cb32ba0ce95480",
+        "e5351481f3397064882332a6aee8e7c9c582080684ab2df378c42a39dfaae208",
+        "9a3144cd890c3dfd80d0363ff1f5b0140b5a58e6c25271e2a1872b8f696535fc",
+        "7cf3bae7d669f82b98586c2e22f6795a43df93de3c4e9830a3488c0a40bd4edb",
+        "6310e2fb3e6c080767510d57530a7b8324ae2fc74f3370f612c582ab47b3e2b7"
+      ],
+      "returned": [
+        64,
+        64,
+        57,
+        64,
+        64,
+        7
+      ]
+    },
+    "shortened_core": {
+      "final_digest": "6ff5bfd3c9985c75249572914f1738d05440945bb2626609a8b21a84169a0c3a",
+      "page_bytes": [
+        3802,
+        93579,
+        93599,
+        97586,
+        93645,
+        93320
+      ],
+      "page_hashes": [
+        "4794e9e2fb6b0040a8316d1b2b73379ea971ac30aff0c4aaf36f452d1e23e250",
+        "c181a3ff38c20d1e8a76e33ec2cb9d192b0887e757fde7b31d975a02737bd57c",
+        "dcc139969c0d190a9368d2942f3bb14ce836e9580346de4bf014de52aea88c5f",
+        "1ee8d6725f4228cdc6f18035610fc550ce3fcdc24623a6a0a44e40bbe29198e2",
+        "fc8d89e065d18fe328338a27daf3627c303dc3ec1986556f79abbe3a9b6f889f",
+        "6ff5bfd3c9985c75249572914f1738d05440945bb2626609a8b21a84169a0c3a"
+      ],
+      "returned": [
+        2,
+        32,
+        32,
+        32,
+        32,
+        32
+      ]
+    },
+    "oversized_item": {
+      "final_digest": "18b61d19958ad909b80d5eef1d9d42ac3dcd182fd65804b1429e817e9d666e78",
+      "page_bytes": [
+        1496,
+        1630,
+        1630,
+        1630,
+        1630,
+        1630,
+        1631,
+        1630,
+        1630,
+        28682,
+        28684,
+        28685,
+        28685,
+        1634,
+        1634,
+        1634,
+        1634,
+        1634,
+        1635,
+        1635,
+        1294
+      ],
+      "page_hashes": [
+        "c87fa8053f5a56a8d8d6dbf8b4a04fa855f28681cf9183e4dc49ce000e479995",
+        "4c9c87661aa90816544914b85a7d8288ef97b5d6a99cdfe801b7b678805e9714",
+        "db54d610e40a241eba564e1f4432a717c2be82edebc96dcc7c23f43bf70cc624",
+        "240cdedbb870d364cdac83ac037a80c37011a4004c610f9bc4c5856c90217d3c",
+        "4cdf9b2ae11378d99b812d2422c8c21ae80a6ae50bd1b6992b5b00343ca1619f",
+        "ea17b5d7819acef0641e2c2f3a5f3fa9021ee6b3cb193d17a12b89f2be22291e",
+        "97785aa9c84573713a1dd756f0ec7aaf945b15856d9577a1f27397f05397ce32",
+        "f3a700468b5a05d12cdc6e666801c4041aabf0d70f203ac412dce4855bdb68e0",
+        "c1f39427e692cbfc4058cdf6e66d064f3b03dc49afa786852adc10c9699cd046",
+        "d0f56dabd7935a4c8e3834eadf6b7dd84f1cc830f84af884a99997975f21c816",
+        "170c17ca987503038e3108a54053393c74587eba4f11762befaf76cc701b3266",
+        "5a81d0c00b30648a926db7dcd647f26cf3ab6c05f8141b3d29e3d982c75fad4c",
+        "b9d44116689a877616ba51b7a2b952dc89af8b6e058508936fac78870cd5a10f",
+        "c2f913885ff75535d9291e8231f4db832801be52568ddc70c69492751ca77949",
+        "d931d67ae3136b1fe2b56b24736257334979ce7475f9a61a1dec43ee3abb9ff5",
+        "d2e57829baae4550deeefc80a03b67fedc40f016cc4e3baa31a161ad0fcfb263",
+        "9cf2cbb1b9bc073c6d09806d0b484b5186b29ce4ea1ac53288c2048719f602b3",
+        "6155ca349a12651b5609b539efba954ee4918df09432c8b7f648a1c952b8a32f",
+        "530a3eaa4bc87e369b97b8017ff2934b908b3cc9f24c3412cf8a26b9e3dda37a",
+        "4d3e962cd93d242ce56c2401416c788951b6e85a6b315d17dbd516fd2d328943",
+        "18b61d19958ad909b80d5eef1d9d42ac3dcd182fd65804b1429e817e9d666e78"
+      ],
+      "returned": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "timing_us": {
+    "empty": {
+      "before": {
+        "count": 60,
+        "min": 309,
+        "p50": 311.0,
+        "p95": 316,
+        "max": 319
+      },
+      "after": {
+        "count": 60,
+        "min": 222,
+        "p50": 226.0,
+        "p95": 230,
+        "max": 232
+      }
+    },
+    "small": {
+      "before": {
+        "count": 60,
+        "min": 739,
+        "p50": 760.0,
+        "p95": 768,
+        "max": 770
+      },
+      "after": {
+        "count": 60,
+        "min": 455,
+        "p50": 462.0,
+        "p95": 470,
+        "max": 473
+      }
+    },
+    "medium": {
+      "before": {
+        "count": 60,
+        "min": 7887,
+        "p50": 7987.0,
+        "p95": 8032,
+        "max": 8088
+      },
+      "after": {
+        "count": 60,
+        "min": 4945,
+        "p50": 4982.5,
+        "p95": 4996,
+        "max": 5004
+      }
+    },
+    "shortened_core": {
+      "before": {
+        "count": 60,
+        "min": 18700,
+        "p50": 18745.5,
+        "p95": 18877,
+        "max": 18959
+      },
+      "after": {
+        "count": 60,
+        "min": 16431,
+        "p50": 16609.0,
+        "p95": 16675,
+        "max": 16698
+      }
+    },
+    "oversized_item": {
+      "before": {
+        "count": 60,
+        "min": 14736,
+        "p50": 14892.5,
+        "p95": 14995,
+        "max": 15069
+      },
+      "after": {
+        "count": 60,
+        "min": 11237,
+        "p50": 11387.0,
+        "p95": 11417,
+        "max": 11426
+      }
+    }
+  },
+  "serialization_passes": {
+    "before": [
+      {
+        "full_projection_passes": 21,
+        "item_serialization_passes": 15,
+        "returned": 15,
+        "serialized_bytes": 4002,
+        "shape": "small"
+      },
+      {
+        "full_projection_passes": 269,
+        "item_serialization_passes": 64,
+        "returned": 64,
+        "serialized_bytes": 10090,
+        "shape": "medium"
+      },
+      {
+        "full_projection_passes": 157,
+        "item_serialization_passes": 3,
+        "returned": 2,
+        "serialized_bytes": 3805,
+        "shape": "shortened_core"
+      }
+    ],
+    "after": [
+      {
+        "full_projection_passes": 4,
+        "item_serialization_passes": 0,
+        "returned": 15,
+        "serialized_bytes": 4002,
+        "shape": "small"
+      },
+      {
+        "full_projection_passes": 4,
+        "item_serialization_passes": 0,
+        "returned": 64,
+        "serialized_bytes": 10090,
+        "shape": "medium"
+      },
+      {
+        "full_projection_passes": 20,
+        "item_serialization_passes": 0,
+        "returned": 2,
+        "serialized_bytes": 3805,
+        "shape": "shortened_core"
+      }
+    ]
+  },
+  "allocations": {
+    "medium": {
+      "before": {
+        "iterations": 25,
+        "additional_requests": 277175,
+        "additional_requested_bytes": 34661678,
+        "zero": {
+          "native_allocation_control": true,
+          "requests": 440547,
+          "requested_bytes": 32502168,
+          "frees": 438186
+        },
+        "many": {
+          "native_allocation_control": true,
+          "requests": 717722,
+          "requested_bytes": 67163846,
+          "frees": 693961
+        }
+      },
+      "after": {
+        "iterations": 25,
+        "additional_requests": 144050,
+        "additional_requested_bytes": 16700578,
+        "zero": {
+          "native_allocation_control": true,
+          "requests": 435222,
+          "requested_bytes": 31783640,
+          "frees": 433236
+        },
+        "many": {
+          "native_allocation_control": true,
+          "requests": 579272,
+          "requested_bytes": 48484218,
+          "frees": 565261
+        }
+      }
+    },
+    "shortened_core": {
+      "before": {
+        "iterations": 25,
+        "additional_requests": 199750,
+        "additional_requested_bytes": 102904903,
+        "zero": {
+          "native_allocation_control": true,
+          "requests": 433289,
+          "requested_bytes": 35051979,
+          "frees": 431444
+        },
+        "many": {
+          "native_allocation_control": true,
+          "requests": 633039,
+          "requested_bytes": 137956882,
+          "frees": 618644
+        }
+      },
+      "after": {
+        "iterations": 25,
+        "additional_requests": 139425,
+        "additional_requested_bytes": 68095803,
+        "zero": {
+          "native_allocation_control": true,
+          "requests": 430876,
+          "requested_bytes": 33659531,
+          "frees": 429269
+        },
+        "many": {
+          "native_allocation_control": true,
+          "requests": 570301,
+          "requested_bytes": 101755334,
+          "frees": 562094
+        }
+      }
+    },
+    "oversized_item": {
+      "before": {
+        "iterations": 25,
+        "additional_requests": 57475,
+        "additional_requested_bytes": 44952003,
+        "zero": {
+          "native_allocation_control": true,
+          "requests": 423956,
+          "requested_bytes": 32709767,
+          "frees": 422563
+        },
+        "many": {
+          "native_allocation_control": true,
+          "requests": 481431,
+          "requested_bytes": 77661770,
+          "frees": 475263
+        }
+      },
+      "after": {
+        "iterations": 25,
+        "additional_requests": 47300,
+        "additional_requested_bytes": 20757753,
+        "zero": {
+          "native_allocation_control": true,
+          "requests": 423549,
+          "requested_bytes": 31741913,
+          "frees": 422267
+        },
+        "many": {
+          "native_allocation_control": true,
+          "requests": 470849,
+          "requested_bytes": 52499666,
+          "frees": 467567
+        }
+      }
+    }
+  }
+}

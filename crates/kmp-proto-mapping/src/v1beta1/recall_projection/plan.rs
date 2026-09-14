@@ -9,6 +9,7 @@ use super::budget::{Detail, ProjectionBudget};
 use super::json_paths::{array_at_mut, array_len, push_array, take_array};
 use super::normalization::{cited_evidence_refs, rebuild_answer, wake_evidence_refs};
 use super::scalars::u64_at;
+use super::serialized_size::serialized_size;
 
 /// The head of the catalogue: the labels most entries stand in, the current
 /// about first, up to this many and this many serialized bytes. A writer
@@ -81,6 +82,7 @@ pub(super) struct ProjectionItem {
     pub(super) min_detail: Detail,
     pub(super) priority: u8,
     pub(super) stable_key: String,
+    serialized_len: usize,
 }
 
 pub(super) struct ProjectionPlan {
@@ -136,9 +138,7 @@ impl ProjectionPlan {
             // their JSON.
             let mut head_bytes = 0usize;
             for (index, label) in take_array(&mut value, &["labels"]).into_iter().enumerate() {
-                let bytes = serde_json::to_string(&label)
-                    .map(|text| text.len())
-                    .unwrap_or(0);
+                let bytes = serialized_size(&label);
                 let in_head = index < LABEL_HEAD_ITEMS && head_bytes + bytes <= LABEL_HEAD_BYTES;
                 if in_head {
                     head_bytes += bytes;
@@ -149,6 +149,7 @@ impl ProjectionPlan {
                     min_detail: Detail::Compact,
                     priority: if in_head { 0 } else { 6 },
                     stable_key: format!("labels:{index:05}"),
+                    serialized_len: bytes,
                 });
             }
         }
@@ -235,13 +236,19 @@ impl ProjectionPlan {
 impl ProjectionItem {
     fn new(section: Section, value: Value, min_detail: Detail, priority: u8) -> Self {
         let stable_key = serde_json::to_string(&value).expect("projection item should serialize");
+        let serialized_len = stable_key.len();
         Self {
             section,
             value,
             min_detail,
             priority,
             stable_key,
+            serialized_len,
         }
+    }
+
+    pub(super) fn serialized_len(&self) -> usize {
+        self.serialized_len
     }
 }
 

@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "compressed": "baseline-core_fit.rs.gz",
+      "compressed_sha256": "7113ce3668a16dedbbb81b2327605c5b67df21e8354de43a7d7b92bd5af2c752",
+      "original_sha256": "4451f69b5f54816e5d01122f9f934b3a343c6717f95e51f3c7c19796f06230fc"
+    },
+    {
+      "compressed": "measured-source.patch.gz",
+      "compressed_sha256": "eccc634e17b98a6632d3fcabddf443a3bac6abed8cac3e92b5a8a4da220e7d51",
+      "original_sha256": "e66d8a05e2a94275a466f2296ba7059717b3f8f298be9e8bdde1f2f955e81058"
+    },
+    {
+      "compressed": "native/timing-raw.jsonl.gz",
+      "compressed_sha256": "7471327ff19e8a481c99109f00aa1665d9f6d4868c66689aef52e151853f1edb",
+      "original_sha256": "a5602b5a3336ddbe536216c1e9b0578d42c1f37ead42c292aec43a3d0c502dae"
+    }
+  ],
+  "gzip": "gzip -n / GzipFile mtime=0; lossless DEFLATE without source timestamp"
+}

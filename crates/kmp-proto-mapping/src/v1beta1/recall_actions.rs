@@ -6,7 +6,7 @@ use super::budget::{Detail, ProjectionBudget};
 use super::core_fit::serialized_bytes;
 use super::json_paths::push_array;
 use super::metadata::attach_metadata;
-use super::plan::ProjectionPlan;
+use super::plan::{ProjectionItem, ProjectionPlan};
 use super::proof_value::temporal_axis_label;
 use super::scalars::{insert_non_empty, string_at};
 
@@ -75,11 +75,7 @@ pub(super) fn progress_bytes(
     budget: &ProjectionBudget,
 ) -> usize {
     let mut value = plan.core.clone();
-    if let Some(item) = plan
-        .items
-        .iter()
-        .max_by_key(|item| serialized_bytes(&item.value))
-    {
+    if let Some(item) = plan.items.iter().max_by_key(|item| item.serialized_len()) {
         push_array(&mut value, item.section.path(), item.value.clone());
     }
     let planning = ProjectionBudget {
@@ -93,7 +89,7 @@ pub(super) fn progress_bytes(
         &mut value,
         plan,
         &plan.items,
-        &[],
+        &[] as &[ProjectionItem],
         0,
         plan.items.len(),
         hash,

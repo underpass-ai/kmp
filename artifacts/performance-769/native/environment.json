@@ -1,0 +1,31 @@
+{
+  "allocation_measurement": "Linux/glibc cumulative allocation requests and requested bytes; zero-vs-N process difference; not live or retained heap",
+  "baseline_sha256": "9b18068ecb2bc2dcfa1e2ba386562ef460f2c7993e89956f6de85915dda0b2a0",
+  "baseline_source_commit": "59bc1fd4edd8fb6c764f1eb0d761dd1f05bdb7e0",
+  "baseline_test_sha256": "0a51e8892dca8eb3a4c71a51db42a9f496e4b04837130ad5f815c2f9a0cc708e",
+  "candidate_sha256": "1e007961f185f55298b6cc7af974b924beca928c9a29e2baa810d983804ffd5f",
+  "candidate_source_commit": "3d68a0896067863eb8a9986572746bbc2e557b6d",
+  "candidate_test_sha256": "ebb0a436c4876e99c4c8f6a35690d24806bdf059a2496fa8f5c2e74a89e71fb6",
+  "command": "python3 scripts/performance/recall_byte_sizing.py tmp/performance-769-baseline/recall_byte_sizing_benchmark tmp/performance-769-candidate tmp/performance-769-baseline/kmp_proto_mapping_test tmp/performance-769-candidate-test tmp/performance-769-native-allocation-counter.so artifacts/performance-769/native 30",
+  "counter_sha256": "48ff2cb21b1905e2e3b0b882fe2048107ed3fc8fbad2c5761eaeef6f6d1be989",
+  "cpu": {
+    "Architecture": "aarch64",
+    "CPU(s)": "20",
+    "Model name": "Cortex-A725",
+    "Vendor ID": "ARM"
+  },
+  "first_read": "not measured; every timing process performs three unreported warmups before 30 samples",
+  "harness_commit": "4fae90aa7ac2419d2d9e2411727cefbc8dcc2581",
+  "model_calls": 0,
+  "physical_io": "not measured",
+  "platform": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+  "profile": "dev; inherited /home/gx10a/Documents/ai/.cargo/config.toml; same settings for both binaries; no CARGO_PROFILE override",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "quiet_slot": "serialized by root coordinator; other workers paused builds and latency work",
+  "runner_sha256": "81f0ba507de71b9920847abc141e814750bb2a2a610717adb001cc64c2470b38",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "samples_per_process": 30,
+  "source_shape": "synthetic direct project_recall_output JSON fixtures; no store, disk or network in measured operation",
+  "timing_instrumentation": "none; LD_PRELOAD is absent",
+  "timing_processes_per_side_shape": 2
+}

@@ -1,0 +1,43 @@
+{
+  "checks": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "result": "pass"
+    },
+    {
+      "command": "cargo test -p kmp-proto-mapping",
+      "result": "pass: 282 passed, 2 informational controls ignored"
+    },
+    {
+      "command": "cargo clippy -p kmp-proto-mapping --all-targets --all-features -- -D warnings",
+      "result": "pass"
+    },
+    {
+      "command": "python3 scripts/performance/recall_byte_sizing.py tmp/performance-769-baseline/recall_byte_sizing_benchmark tmp/performance-769-candidate tmp/performance-769-baseline/kmp_proto_mapping_test tmp/performance-769-candidate-test tmp/performance-769-native-allocation-counter.so artifacts/performance-769/native 30",
+      "result": "pass in serialized quiet slot: exact full page sequence parity across all five shapes"
+    }
+  ],
+  "coverage": [
+    "empty expansion",
+    "small response",
+    "medium response",
+    "escaped Unicode/control strings",
+    "ranked evidence and label ordering keys",
+    "shortened stable core",
+    "oversized item progress floor",
+    "every continuation page and final response byte count",
+    "page/section metadata and next_action arguments"
+  ],
+  "measurement": {
+    "allocations": "separate LD_PRELOAD zero-vs-25 cumulative request/byte control; not live heap",
+    "first_read": "not measured",
+    "latency": "uninstrumented warm samples",
+    "models": "none",
+    "physical_io": "not measured"
+  },
+  "source": {
+    "baseline": "59bc1fd4edd8fb6c764f1eb0d761dd1f05bdb7e0",
+    "candidate": "3d68a0896067863eb8a9986572746bbc2e557b6d",
+    "harness": "4fae90aa7ac2419d2d9e2411727cefbc8dcc2581"
+  }
+}
