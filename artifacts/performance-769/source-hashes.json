@@ -1,0 +1,22 @@
+{
+  "allocation_counter_sha256": "48ff2cb21b1905e2e3b0b882fe2048107ed3fc8fbad2c5761eaeef6f6d1be989",
+  "baseline_binary_sha256": "9b18068ecb2bc2dcfa1e2ba386562ef460f2c7993e89956f6de85915dda0b2a0",
+  "baseline_core_fit_gzip_sha256": "7113ce3668a16dedbbb81b2327605c5b67df21e8354de43a7d7b92bd5af2c752",
+  "baseline_core_fit_sha256": "4451f69b5f54816e5d01122f9f934b3a343c6717f95e51f3c7c19796f06230fc",
+  "baseline_source_commit": "59bc1fd4edd8fb6c764f1eb0d761dd1f05bdb7e0",
+  "baseline_test_binary_sha256": "0a51e8892dca8eb3a4c71a51db42a9f496e4b04837130ad5f815c2f9a0cc708e",
+  "benchmark_source_sha256": "7b704778b1df58fc3355a8503ee75b735f0d3baf271b2788a4a6b7d155f8b8ad",
+  "candidate_binary_sha256": "1e007961f185f55298b6cc7af974b924beca928c9a29e2baa810d983804ffd5f",
+  "candidate_core_fit_sha256": "57b33f736e1eec6f5f2513f37ab36cd52dddc3ce292081ecef2d03cc5055dd04",
+  "candidate_serialized_size_sha256": "7456a3ef5abe6cdfda7d55bd04102a95eca2f62cbdb9f160293ac329858ff728",
+  "candidate_source_commit": "3d68a0896067863eb8a9986572746bbc2e557b6d",
+  "candidate_test_binary_sha256": "ebb0a436c4876e99c4c8f6a35690d24806bdf059a2496fa8f5c2e74a89e71fb6",
+  "environment_sha256": "67708c00842bfe5586af04cd13c92503b5c75ed35c27168dd26136d701e1263e",
+  "harness_commit": "4fae90aa7ac2419d2d9e2411727cefbc8dcc2581",
+  "measured_source_patch_gzip_sha256": "eccc634e17b98a6632d3fcabddf443a3bac6abed8cac3e92b5a8a4da220e7d51",
+  "measured_source_patch_sha256": "e66d8a05e2a94275a466f2296ba7059717b3f8f298be9e8bdde1f2f955e81058",
+  "results_sha256": "3e6aa4420631fd01a0a16537c34d6a3dbbb9db2a07ef587e70036415ba7468a6",
+  "runner_sha256": "81f0ba507de71b9920847abc141e814750bb2a2a610717adb001cc64c2470b38",
+  "timing_raw_gzip_sha256": "7471327ff19e8a481c99109f00aa1665d9f6d4868c66689aef52e151853f1edb",
+  "timing_raw_sha256": "a5602b5a3336ddbe536216c1e9b0578d42c1f37ead42c292aec43a3d0c502dae"
+}
