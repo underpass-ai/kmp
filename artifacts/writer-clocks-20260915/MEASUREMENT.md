@@ -2,9 +2,11 @@
 
 On 2026-09-15, the existing native #683 regression
 `neighborhood_clocks_reach_the_writer_as_rfc3339` serialized its
-`neighborhood` object to **1,758 bytes**. The builder uses 2,048 bytes as its
-selection target, but it can retain one oversized item; it is not a public
-response-size guarantee and this measurement does not add a test gate.
+`neighborhood` object to **1,758 bytes** before `stored_abouts` was added and
+to **1,806 bytes** on the final candidate (**+48 bytes**). The builder uses
+2,048 bytes as its selection target, but it can retain one oversized item; it
+is not a public response-size guarantee and this measurement does not add a
+test gate.
 
 Command:
 
