@@ -238,7 +238,6 @@ def compare(oracle_value: dict, batch: dict) -> dict:
         "objects": len(batch["objects"]),
         "supports": len(batch["supports"]),
         "body_bytes": batch["proof"]["body_bytes"],
-        "selection_fingerprint": batch["selection_fingerprint"],
         "qualified_projection_difference": {
             "inspect.evidence[].metadata.proof_role": "stored_evidence",
             "trace.objects[].kind": "memory_evidence",
