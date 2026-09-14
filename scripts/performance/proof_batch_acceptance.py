@@ -280,6 +280,8 @@ def main() -> None:
         "concurrency": 1,
         "startup_included_in_query_latency": False,
         "process_first_definition": "first read after initialize on a copied, quiescent store; OS cache not evicted",
+        "timed_scope": "sum of Client wait elapsed for each RPC in an operation; excludes JSON parsing, gzip trace writes and client work between RPCs",
+        "oracle_scope": "one base Trace plus Inspect(details,incoming,outgoing,raw) for every selected entry; a rich audit path, not the minimum possible client inspection",
         "allocations": "not measured; process VmHWM reported",
         "physical_io": "not measured",
         "model_calls": 0,
