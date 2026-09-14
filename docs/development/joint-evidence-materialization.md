@@ -66,7 +66,8 @@ The measured fixture and frozen-binary provenance are in
 `artifacts/proof-batch-acceptance-20260915`. Each path has 20 warm samples,
 three untimed warmups and one first read in a fresh process over its own copy of
 the same quiescent store. The 64-entry joint results intentionally span seven
-or eight MCP pages. Every slow sample remains in the compressed JSONL traces.
+or eight MCP pages. Every slow sample from the successful run remains in the
+compressed JSONL traces.
 The 8 MB budget is a per-response allowance; the oracle receives it once for
 Trace and once for every Inspect, while the joint path receives it on each
 page. It is not a matched total-context budget between the two paths.
@@ -99,6 +100,26 @@ own hash and every evaluated capture hash are recorded in
 `post-capture-pagination-audit.json`; all captures passed. This post-capture
 check validates the preserved responses and does not retroactively change the
 timing runner's source hash.
+
+### Failed-attempt preservation gap
+
+Four earlier failed-run directories were mistakenly deleted as scratch at
+2026-09-14T22:49:47.690Z, after the successful run had been recorded. This
+removed 38 untracked files: five from the projection-normalization attempt,
+five from the MCP fingerprint attempt, and fourteen each from the pagination
+and page-warning attempts. Their original environment files, fixtures, partial
+summaries and gzip JSON-RPC traces are irrecoverable. They were never Git
+objects, and no workspace copy remains.
+
+`failed-attempt-ledger.json` records this integrity failure, the exact deleted
+file inventory, the runner commit and independently computed runner hash for
+each attempt, exact command-output hashes and the recovered failure. For the
+pagination and page-warning attempts, the task execution log also retained the
+complete printed summaries for the successful 1- and 8-entry shapes; the
+ledger preserves those values. It leaves unavailable timings, counts and file
+hashes unknown. No fixture or trace was rerun or regenerated under an old name.
+The deletion did not touch the separate successful-run directory or its 96
+operation post-capture audit.
 
 Reproduce after freezing a development-profile `kmp-mcp` outside Cargo
 `target/`:
