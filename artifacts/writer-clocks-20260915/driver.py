@@ -77,8 +77,16 @@ def run(args):
             'preparation': 'fresh persistent embedded store', 'store': str(store),
             'binary': str(binary), 'binary_sha256': digest(binary),
             'source_sha256': digest(source), 'instructions_sha256': digest(instructions),
-            'driver_sha256': digest(Path(__file__)), 'model_calls': 0,
+            'driver_sha256': digest(Path(__file__)), 'model_calls_by_driver': 0,
         }) + '\n')
+        trace.flush()
+        plugin_root = (args.plugin_root or root / 'plugins/kmp').resolve()
+        synced = subprocess.run(
+            [str(binary), 'guide', 'sync', '--plugin-root', str(plugin_root)],
+            cwd=store, env=env, text=True, capture_output=True, check=True)
+        trace.write(json.dumps({'preparation': 'guide sync in the isolated store',
+            'plugin_root': str(plugin_root), 'stdout': synced.stdout,
+            'guide_sha256': digest(plugin_root / 'guide/memory.jsonl')}) + '\n')
         trace.flush()
         client = Client(binary, store, env, trace)
         try:
@@ -114,4 +122,5 @@ if __name__ == '__main__':
     parser.add_argument('--binary', type=Path, required=True)
     parser.add_argument('--trace', type=Path, required=True)
     parser.add_argument('--store', type=Path)
+    parser.add_argument('--plugin-root', type=Path)
     run(parser.parse_args())
