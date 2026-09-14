@@ -1,0 +1,9 @@
+{
+  "measured_commit": "03eb1131f5c5843901a87e861aaee90bb2467e6c",
+  "final_source_commit": "2a58a397a245bd17e04ffa01f4c8ace7bd3cc0f7",
+  "difference": "rustfmt line wrapping only in outward_neighborhood.rs",
+  "measured_source_sha256": "addd29f246416f6789c851580ffa6aa48345823d6257dd069e1aeeb163664573",
+  "measured_source_after_rustfmt_sha256": "a1bc5bfdfc27b3fd283f64d0c55b6d864749f6def36eda71802e7748f0489359",
+  "final_source_sha256": "a1bc5bfdfc27b3fd283f64d0c55b6d864749f6def36eda71802e7748f0489359",
+  "verification": "rustfmt --edition 2024 --config skip_children=true measured source; cmp against final source returned zero"
+}

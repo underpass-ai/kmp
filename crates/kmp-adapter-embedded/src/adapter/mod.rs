@@ -10,6 +10,7 @@ mod migration;
 mod node_body_descriptor;
 mod node_card;
 mod node_detail;
+mod outward_neighborhood;
 mod portability;
 mod projection_write;
 mod read_snapshot;

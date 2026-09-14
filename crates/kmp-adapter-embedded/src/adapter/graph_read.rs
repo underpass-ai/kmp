@@ -6,6 +6,7 @@ use kmp_domain::{
 };
 
 use super::engine::{Key, ReadTx, Table};
+use super::outward_neighborhood::OutwardNeighborhoodRead;
 use super::serdes::{NodeRecord, decode, decode_explanation};
 use super::store::EmbeddedKernelStore;
 #[path = "node_admission_header.rs"]
@@ -40,53 +41,6 @@ fn outgoing_targets(tx: &dyn ReadTx, source: &str) -> Result<Vec<String>, PortEr
         .into_iter()
         .map(|((_, target, _), _)| target)
         .collect())
-}
-
-fn reachable_outward(
-    tx: &dyn ReadTx,
-    request: &NeighborhoodRequest,
-) -> Result<BTreeSet<String>, PortError> {
-    let root_node_id = request.root_node_id();
-    let mut visited = BTreeSet::from([root_node_id.to_string()]);
-    let mut reachable = BTreeSet::new();
-    let mut frontier = VecDeque::from([(root_node_id.to_string(), 0u32)]);
-
-    while let Some((node_id, hops)) = frontier.pop_front() {
-        if hops == request.depth() {
-            continue;
-        }
-        for target in outgoing_targets(tx, &node_id)? {
-            // A dimension the caller did not ask for is not descended into,
-            // and everything hanging from it is thereby never loaded. Nothing
-            // else is refused: the narrowing is on the axis, not on the
-            // contents.
-            if !request.admits(&target) {
-                continue;
-            }
-            if visited.insert(target.clone()) {
-                reachable.insert(target.clone());
-                frontier.push_back((target, hops + 1));
-            }
-        }
-    }
-
-    reachable.remove(root_node_id);
-    Ok(reachable)
-}
-
-fn relations_among(
-    tx: &dyn ReadTx,
-    selected: &BTreeSet<String>,
-) -> Result<Vec<NodeRelationProjection>, PortError> {
-    let mut rows = Vec::new();
-    for source in selected {
-        for relation in outgoing_rows(tx, source)? {
-            if selected.contains(&relation.target_node_id) {
-                rows.push(relation);
-            }
-        }
-    }
-    Ok(rows)
 }
 
 fn selected_projections(
@@ -158,14 +112,7 @@ impl EmbeddedKernelStore {
             let Some(root) = read(request.root_node_id())? else {
                 return Ok(None);
             };
-            let reachable = reachable_outward(tx, &request)?;
-            let relations = if reachable.is_empty() {
-                Vec::new()
-            } else {
-                let mut selected = reachable.clone();
-                selected.insert(request.root_node_id().to_string());
-                relations_among(tx, &selected)?
-            };
+            let (reachable, relations) = OutwardNeighborhoodRead::new(tx, &request).catalogue()?;
             let mut neighbors = Vec::with_capacity(reachable.len());
             for id in reachable {
                 if let Some(node) = read(&id)? {
@@ -312,16 +259,13 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
                 return Ok(None);
             };
 
-            let mut selected = path_node_ids.iter().cloned().collect::<BTreeSet<_>>();
-            selected.insert(target_node_id.clone());
-            selected.extend(reachable_outward(
-                tx,
-                &NeighborhoodRequest::new(&target_node_id, subtree_depth),
-            )?);
+            let subtree = NeighborhoodRequest::new(&target_node_id, subtree_depth);
+            let (selected, relations) = OutwardNeighborhoodRead::new(tx, &subtree)
+                .extending(path_node_ids.iter().cloned().collect())?;
 
             Ok(Some(ContextPathNeighborhood {
                 neighbors: selected_projections(tx, &selected, &root_node_id)?,
-                relations: relations_among(tx, &selected)?,
+                relations,
                 path_node_ids,
                 root,
             }))
