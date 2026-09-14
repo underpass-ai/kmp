@@ -158,6 +158,7 @@ def batched(client: Client, refs: list[str]) -> tuple[dict, dict]:
     arguments = trace_arguments(refs, True)
     arguments["page"] = {"entries": 32}
     first = None
+    stable_warnings = None
     rows = []
     sections = {name: [] for name in ["trace", "objects", "supports", "gaps"]}
     for _ in range(40):
@@ -168,9 +169,19 @@ def batched(client: Client, refs: list[str]) -> tuple[dict, dict]:
             first = copy.deepcopy(value)
             for name in sections:
                 first[name] = []
+            stable_warnings = [
+                warning for warning in value["warnings"]
+                if warning != "response is partial; execute next_actions to continue the same selection"
+            ]
         else:
-            for name in ["summary", "search", "routes", "proof", "quality", "warnings"]:
+            for name in ["summary", "search", "routes", "proof", "quality"]:
                 assert value[name] == first[name], f"{name} changed between proof pages"
+            assert [
+                warning for warning in value["warnings"]
+                if warning != "response is partial; execute next_actions to continue the same selection"
+            ] == stable_warnings
+        partial_warning = "response is partial; execute next_actions to continue the same selection" in value["warnings"]
+        assert partial_warning == value["page"]["has_more"]
         for name in sections:
             sections[name].extend(value[name])
         if value["page"]["has_more"] is False:
@@ -195,6 +206,7 @@ def batched(client: Client, refs: list[str]) -> tuple[dict, dict]:
         "offset": 0,
     }
     first["next_actions"] = []
+    first["warnings"] = stable_warnings
     return first, aggregate(rows)
 
 
