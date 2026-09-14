@@ -61,7 +61,9 @@ pub use value_objects::{
 };
 pub use value_objects::{RelationExplanation, RelationSemanticClass};
 
-pub use model::{AuthorNodeCard, NodeCardExpectation, NodeCardRejection, node_card_policy};
+pub use model::{
+    AuthorNodeCard, NodeCardExpectation, NodeCardRejection, node_card_policy, trace_condense_policy,
+};
 pub use model::{
     EvidenceMissingWitness, EvidencePathBinding, EvidencePathBindings, EvidencePathCandidate,
     EvidencePathGroup, EvidencePathRequest, EvidencePathResult, EvidencePathRole,
@@ -80,7 +82,8 @@ pub use repositories::TraceSnapshotReader;
 pub use repositories::{NodeCardStore, NodeCardWriteFuture};
 pub use value_objects::{
     NodeCard, NodeCardPresentation, NodeCardStamp, NodeCardStatus, TraceBodyDelivery,
-    TraceBodyState, TraceCompactSummary, TraceExpansionPlan, TraceExpansionRefusal,
+    TraceBodyState, TraceCompactSummary, TraceCondenseCandidate, TraceCondenseCandidates,
+    TraceExpansionPlan, TraceExpansionRefusal,
 };
 
 pub use model::{MemoryNodeHeader, MemoryNodesRequest, MemoryNodesResult, read_memory_nodes};

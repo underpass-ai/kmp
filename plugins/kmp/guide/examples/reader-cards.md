@@ -5,13 +5,27 @@ what text you read, not which paths or refs were selected. These four calls
 show the workflow. Replace **every `<placeholder>` and illustrative number**
 with values from your memory results; digests and manifests are never invented.
 
-## 1. Discover descriptors
+## 1. Discover card targets and descriptors
 
 ```json
 {"tool":"kmp_trace","arguments":{
  "about":"<about>","from":"<from-ref>","to":"<to-ref>",
- "search":{"proof":true,"proof_refs":[]}}}
+ "search":{"proof":true,"compact":{"language":"en"}}}}
 ```
+
+`proof.condense_candidates.items` orders absent/stale bodies by `shared_by`
+descending, then `body_bytes` descending, then `ref`. A shared source counts
+once per returned route or structurally complete seek group. The first eight
+eligible bodies are offered; `omitted_count` counts the tail. Bodies under
+1024 UTF-8 bytes, valid cards and post-cut cards are excluded and counted in
+`below_floor`, `valid` and `after_cut` (card status takes precedence over size).
+Objects without a stored body are outside this inventory. The floor is a
+heuristic, not proof that writing a card saves context. A card written now
+cannot help a historical cutoff already in the past.
+
+The list is computed before pagination and appears unchanged on every page,
+even a page with none of its refs. Its `source` and `expect` are ready to copy;
+no card text is proposed. Recommendations never close a proof group.
 
 Finish this operation's `next_actions` pages. Each selected object with a stored body retains its
 ref, descriptor and `required_record_bytes`, but no canonical body text.
@@ -52,7 +66,8 @@ including otherwise valid refs. Correct the refs from the selected table.
 
 ## 3. Condense the body you actually read
 
-Copy `revision` and `record_digest` from that body's descriptor:
+Copy the chosen candidate's complete `source` and `expect` objects after
+reading its canonical body. The following values are illustrative:
 
 ```json
 {"tool":"kmp_condense","arguments":{
@@ -62,8 +77,10 @@ Copy `revision` and `record_digest` from that body's descriptor:
  "expect":{"absent":true}}}
 ```
 
-Replace `3` with the observed revision. Without `context_id`, `actor` is required;
-with a valid context, an omitted actor defaults to the persistent agent name.
+Replace the illustrative `source` and `expect` with the candidate's objects.
+Without `context_id`, `actor` is required; with a valid context, an omitted actor
+defaults to the persistent agent name. If deliberately condensing a body outside
+the candidate list, obtain its identity from its descriptor as before.
 Card text must be nonempty, at most
 4096 UTF-8 bytes and strictly shorter than its body. Entries and evidence
 sources can both be condensed. Do not summarize a path or neighborhood into

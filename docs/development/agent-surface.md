@@ -917,6 +917,23 @@ See [contract and limits](joint-evidence-materialization.md).
 
 ### Lectura, ampliación y tarjetas: comprobar el recorrido
 
+Las lecturas compactas de prueba incorporan `proof.condense_candidates`: una
+lista acotada de identidades y costes, calculada en dominio sobre toda la tabla
+seleccionada antes de paginar. `shared_by` cuenta rutas o grupos estructurales,
+incluidos sus soportes admitidos, una vez por grupo. No cuenta grupos cuya
+evidencia canónica se haya leído ni verifica significado. El fingerprint de
+la selección incluye la lista; el manifiesto de cuerpos conserva su identidad.
+Mantener política, ambos protobufs, mappers y schema junto a las guías de
+Condense. El lector copia `source` y `expect`, lee el cuerpo y redacta su tarjeta.
+
+Comprobar prioridad, desempate, cupo, suelo, tarjetas válidas/posteriores al
+corte, CAS de tarjetas obsoletas, cambios de fuente y páginas sin objetos del
+listado. Comparar los bytes de la lista en embedded y gRPC. Medir el recorrido
+completo: repetir una recomendación en cada página añade coste. El ensayo
+reproducible y sus límites se describen en
+[condense-candidates.md](condense-candidates.md); no supone ahorro de tokens
+ni aprendizaje del lector y no incorpora gates editoriales.
+
 Mantener alineados Trace, Condense, fichas `audit`/`condense`, verbos, ejemplo
 `reader-cards` y ayuda ante rechazos. El verbo audit sirve como mapa; el detalle
 de navegación se consulta en `advanced:audit-reference`. No cargar ambos por

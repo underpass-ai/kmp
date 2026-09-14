@@ -113,6 +113,117 @@ fn condense(
 }
 
 #[tokio::test]
+async fn condense_candidates_are_byte_identical_on_embedded_and_grpc_pages()
+-> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use kmp_proto_mapping::v1beta1::{
+        trace_query_from_proto, trace_search_request_from_proto, trace_search_response_from_result,
+    };
+    use prost::Message;
+
+    let dir = tempfile::tempdir()?;
+    let kernel = EmbeddedKernel::open(dir.path())?;
+    let mut seed = packet();
+    seed.memory.entries[0].text = BODY.repeat(32);
+    seed.memory.evidence[0].text = BODY.repeat(128);
+    kernel.service().ingest(seed).await?;
+    let listener = TcpListener::bind("127.0.0.1:0").await?;
+    let endpoint = format!("http://{}", listener.local_addr()?);
+    let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
+    let server = tokio::spawn(
+        tonic::transport::Server::builder()
+            .add_service(KernelMemoryServiceServer::new(MemoryGrpcService::new(
+                kernel.service(),
+            )))
+            .serve_with_incoming_shutdown(TcpListenerStream::new(listener), async {
+                let _ = stopped.await;
+            }),
+    );
+    let mut client = KernelMemoryServiceClient::connect(endpoint).await?;
+    let mut request = descriptor_only();
+    request
+        .search
+        .as_mut()
+        .expect("valid candidate fixture")
+        .compact_language = "es".into();
+    request
+        .search
+        .as_mut()
+        .expect("valid candidate fixture")
+        .proof_refs = None;
+    request.page = Some(kmp_proto::v1beta1::PageRequest {
+        entries: 1,
+        cursor: String::new(),
+    });
+
+    let search = trace_search_request_from_proto(&request)?.expect("valid candidate fixture");
+    let direction = search.direction;
+    let page = trace_query_from_proto(request.clone())?.page;
+    let native = kernel.service().trace_search(search).await?;
+    let native = trace_search_response_from_result(native, direction, page);
+    let expected = native
+        .proof
+        .as_ref()
+        .expect("valid candidate fixture")
+        .condense_candidates
+        .as_ref()
+        .expect("valid candidate fixture");
+    assert_eq!(expected.items[0].r#ref, SOURCE);
+    let expected_bytes = expected.encode_to_vec();
+    let mut pages = 0;
+    loop {
+        let result = client.trace(request.clone()).await?.into_inner();
+        assert_eq!(
+            result
+                .proof
+                .expect("valid candidate fixture")
+                .condense_candidates
+                .expect("valid candidate fixture")
+                .encode_to_vec(),
+            expected_bytes
+        );
+        pages += 1;
+        assert!(pages < 30);
+        let page = result.page.expect("valid candidate fixture");
+        if !page.has_more {
+            break;
+        }
+        request
+            .page
+            .as_mut()
+            .expect("valid candidate fixture")
+            .cursor = page.next_cursor;
+    }
+    assert!(pages > 1);
+
+    let candidate = &expected.items[0];
+    let written = client
+        .condense(CondenseRequest {
+            about: ABOUT.into(),
+            r#ref: candidate.r#ref.clone(),
+            language: "es".into(),
+            scope: "node_body".into(),
+            card: "La fuente sostiene la entrada.".into(),
+            source_revision: candidate.source_revision,
+            source_record_digest: candidate.source_record_digest.clone(),
+            expect_absent: true,
+            actor: "candidate-reader".into(),
+            ..Default::default()
+        })
+        .await?
+        .into_inner();
+    assert_eq!(
+        written
+            .card
+            .expect("valid candidate fixture")
+            .source_record_digest,
+        candidate.source_record_digest
+    );
+    let _ = stop.send(());
+    server.await??;
+    Ok(())
+}
+
+#[tokio::test]
 async fn condense_over_grpc_binds_a_card_to_the_descriptor_the_store_returned()
 -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let dir = tempfile::tempdir()?;

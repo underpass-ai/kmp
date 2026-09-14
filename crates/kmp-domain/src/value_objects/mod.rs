@@ -58,6 +58,8 @@ pub use temporal_selection::TemporalSelection;
 pub use trace_body_delivery::TraceBodyDelivery;
 pub use trace_body_state::TraceBodyState;
 pub use trace_compact_summary::TraceCompactSummary;
+pub use trace_condense_candidate::TraceCondenseCandidate;
+pub use trace_condense_candidates::TraceCondenseCandidates;
 pub use trace_expansion_plan::TraceExpansionPlan;
 pub use trace_selection_conflict::TraceExpansionRefusal;
 
@@ -70,6 +72,8 @@ mod reference_component;
 mod trace_body_delivery;
 mod trace_body_state;
 mod trace_compact_summary;
+mod trace_condense_candidate;
+mod trace_condense_candidates;
 mod trace_expansion_plan;
 mod trace_selection_conflict;
 pub use memory_receipt_ref::MemoryReceiptRef;

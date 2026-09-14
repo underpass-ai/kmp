@@ -23,6 +23,7 @@ mod temporal_page;
 pub(crate) mod temporal_projection;
 mod test_support;
 mod trace_body_actions;
+mod trace_condense;
 mod trace_material_expansion;
 mod trace_projection;
 pub(crate) mod visual_projection;

@@ -7185,6 +7185,126 @@
           },
           "proof": {
             "description": "Present with search.proof. expansion_plan names the next batch of bodies to ask for, decided over the complete selection before this response was paginated, so a page that holds none of the pending refs still carries it; expand_bodies and expand_oversized_body are that plan as complete calls. They continue a suffix of the manifest order and never claim a selection is complete: join responses by ref against one manifest, and read every page before concluding a selection is exhausted. Counts missing refs/bodies, incomplete entries and unknown attachment clocks. complete_groups/incomplete_groups index the declared target requirements or seek groups and describe fetched sources, not truth, lifecycle status or semantic sufficiency; a group whose body was deferred, not requested or shown as a card is not fetched proof. Join all pages and retain seek review_required/unknown. stop_reason and body_bytes report joint materialization work; body_bytes counts canonical UTF-8 bytes actually loaded, never a body this response withheld. With a body option active it also carries manifest_id, delivery counts and, for a compact read, the card summary.",
+            "properties": {
+              "condense_candidates": {
+                "additionalProperties": false,
+                "description": "Compact proof orientation over the whole selection, identical on every page. Items rank by shared_by descending, body_bytes descending, then ref; at most 8 bodies of at least 1024 UTF-8 bytes. The floor is a heuristic, not a savings guarantee. Counts are disjoint: valid and after_cut take precedence over below_floor; objects without a stored body are outside these counts. Read the canonical body before authoring a card; copy source and expect into kmp_condense with this about, ref, compact language and scope node_body. This is not fetched proof or a required next action. A card written now cannot help a past cutoff.",
+                "properties": {
+                  "after_cut": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "below_floor": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "items": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "body_bytes": {
+                          "minimum": 1024,
+                          "type": "integer"
+                        },
+                        "card_status": {
+                          "enum": [
+                            "absent",
+                            "stale"
+                          ],
+                          "type": "string"
+                        },
+                        "expect": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "absent": {
+                                  "const": true
+                                }
+                              },
+                              "required": [
+                                "absent"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "card_revision": {
+                                  "minimum": 1,
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "card_revision"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "record_bytes": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "ref": {
+                          "type": "string"
+                        },
+                        "shared_by": {
+                          "description": "Returned routes, or structurally complete seek groups, whose selected proof uses this ref, once per route/group.",
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "source": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "record_digest": {
+                              "type": "string"
+                            },
+                            "revision": {
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "revision",
+                            "record_digest"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "ref",
+                        "body_bytes",
+                        "record_bytes",
+                        "card_status",
+                        "shared_by",
+                        "source",
+                        "expect"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 8,
+                    "type": "array"
+                  },
+                  "omitted_count": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "valid": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "items",
+                  "omitted_count",
+                  "below_floor",
+                  "valid",
+                  "after_cut"
+                ],
+                "type": "object"
+              }
+            },
             "type": "object"
           },
           "quality": {
@@ -7828,7 +7948,7 @@
           },
           "source": {
             "additionalProperties": false,
-            "description": "Copy revision and record_digest from Trace with search.proof:true and a body option such as proof_refs:[]. Read that canonical body before writing; Inspect and legacy Trace do not expose this descriptor. Never construct a digest.",
+            "description": "Copy source and expect directly from proof.condense_candidates.items on a compact Trace proof read, then read that canonical body before writing. For a deliberate target outside the list, copy revision and record_digest from its Trace body descriptor. Inspect and legacy Trace do not expose it. Never construct a digest.",
             "properties": {
               "content_hash": {
                 "description": "Public token of that body version, kept as provenance. Validity is not decided on it: a write can change the text without changing it.",

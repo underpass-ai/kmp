@@ -1,0 +1,91 @@
+{
+  "description": "Illustrative excerpt from a native compact Trace. Never reuse its stored identities: read the current selection.",
+  "request": {
+    "about": "question:card-replay",
+    "from": "question:card-replay:root",
+    "to": [
+      "question:card-replay:b",
+      "question:card-replay:c"
+    ],
+    "search": {
+      "proof": true,
+      "compact": {
+        "language": "en"
+      }
+    },
+    "page": {
+      "entries": 2
+    },
+    "budget": {
+      "max_bytes": 200000
+    }
+  },
+  "response_excerpt": {
+    "proof": {
+      "condense_candidates": {
+        "after_cut": 0,
+        "below_floor": 0,
+        "items": [
+          {
+            "body_bytes": 16391,
+            "card_status": "absent",
+            "expect": {
+              "absent": true
+            },
+            "record_bytes": 16585,
+            "ref": "evidence:question:card-replay:shared",
+            "shared_by": 2,
+            "source": {
+              "record_digest": "sha256:18828521ec91723ed7f17ad3a38a157d06e23cd25d0e70cae42c8286aae860ac",
+              "revision": 1
+            }
+          },
+          {
+            "body_bytes": 4102,
+            "card_status": "absent",
+            "expect": {
+              "absent": true
+            },
+            "record_bytes": 4274,
+            "ref": "question:card-replay:root",
+            "shared_by": 2,
+            "source": {
+              "record_digest": "sha256:225ea8d1f8888bd79258bd4f9e09864a7bf435a0204fe446d8dc5ab6b4e00ed3",
+              "revision": 1
+            }
+          },
+          {
+            "body_bytes": 4102,
+            "card_status": "absent",
+            "expect": {
+              "absent": true
+            },
+            "record_bytes": 4268,
+            "ref": "question:card-replay:b",
+            "shared_by": 1,
+            "source": {
+              "record_digest": "sha256:593b5f3ff9be8c87ac080aa83638e5f1670232ce4893a341f0abbe06a1588989",
+              "revision": 1
+            }
+          },
+          {
+            "body_bytes": 4102,
+            "card_status": "absent",
+            "expect": {
+              "absent": true
+            },
+            "record_bytes": 4268,
+            "ref": "question:card-replay:c",
+            "shared_by": 1,
+            "source": {
+              "record_digest": "sha256:03bcb916fe30831181ae617f5d1ae9ec6875da43d05722bd9ba9baf0faee5c67",
+              "revision": 1
+            }
+          }
+        ],
+        "omitted_count": 0,
+        "valid": 0
+      }
+    }
+  }
+}

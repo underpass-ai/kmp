@@ -67,7 +67,7 @@
           "id": "verb:condense",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The tool contract in crates/kmp-mcp/src/contract/tools/condense.rs and the card policy in crates/kmp-domain/src/model/node_card_policy.rs: scope node_body only, digest-bound validity, compare-and-set on card_revision, kernel-stamped authorship and refusal of a source that moved. Condense mapping requires actor; CallGuidance fills an omitted actor only from a valid persistent context. Standalone examples therefore include an explicit actor.",
+          "evidence": "The tool contract in crates/kmp-mcp/src/contract/tools/condense.rs and the card policy in crates/kmp-domain/src/model/node_card_policy.rs: scope node_body only, digest-bound validity, compare-and-set on card_revision, kernel-stamped authorship and refusal of a source that moved. Condense mapping requires actor; CallGuidance fills an omitted actor only from a valid persistent context. Standalone examples therefore include an explicit actor. Trace condense candidates are computed by trace_condense_policy over selected descriptors, card views and admitted supports before pagination; exact source/expect values replace manual identity transcription.",
           "guide_title": "Condense: write a compact card bound to one body version",
           "text_file": "verbs/condense.md"
         },
@@ -994,7 +994,7 @@
           "id": "advanced:reader-cards",
           "kind": "concept",
           "depth": "advanced",
-          "text": "A reader can keep a short phrase for a body it has read, then explore the same paths using that phrase. KMP binds the card to the exact stored body version. It keeps evidence available for deliberate expansion; stale, absent or historically unavailable cards show no substitute prose. Cards help orientation, never prove a claim. Ask your agent for guide:kmp-agent:example:reader-cards. Reuse can save context on large repeated sources; writing a card for a small body can cost more overall.",
+          "text": "A reader can keep a short phrase for a body it has read, then explore the same paths using that phrase. KMP binds the card to the exact stored body version. It keeps evidence available for deliberate expansion; stale, absent or historically unavailable cards show no substitute prose. Cards help orientation, never prove a claim. Ask your agent for guide:kmp-agent:example:reader-cards. Reuse can save context on large repeated sources; writing a card for a small body can cost more overall. Compact proof reads include proof.condense_candidates: a bounded list of large absent/stale bodies ranked by selected route/group sharing and size, with exact source and card expectations to copy after reading the body. Valid, post-cut and small bodies are excluded; the size floor is a heuristic, not a savings guarantee. The list is identical on every page and never establishes proof completeness.",
           "evidence": "Trace distinguishes canonical body delivery from derived cards. Condense checks source revision/digest and card compare-and-set; source materialization and relations retain their provenance."
         }
       ],

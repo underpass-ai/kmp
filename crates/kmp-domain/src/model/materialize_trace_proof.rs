@@ -73,6 +73,13 @@ pub(super) fn trace<R: TraceSnapshotReader>(
                 .any(|a| !a.is_empty() && a.is_subset(&available));
         group_result(&mut result, index, complete);
     }
+    if request.body.compact.is_some() {
+        let memberships = paths.into_iter().map(|(refs, _)| refs).collect::<Vec<_>>();
+        result.condense_candidates = Some(crate::trace_condense_policy::recommend(
+            &result,
+            &memberships,
+        ));
+    }
     Ok(result)
 }
 
@@ -114,6 +121,25 @@ pub(super) fn evidence<R: TraceSnapshotReader>(
             });
         let fetched = known && complete(&refs, &result);
         group_result(&mut result, index, fetched);
+    }
+    if options.compact.is_some() {
+        // These are complete structural alternatives from the solver. Fetched
+        // proof completeness is separate: compact cards never close a group.
+        let memberships = search
+            .groups
+            .iter()
+            .map(|group| {
+                group
+                    .candidate_indexes
+                    .iter()
+                    .flat_map(|&i| search.candidates[i as usize].nodes.iter().cloned())
+                    .collect()
+            })
+            .collect::<Vec<_>>();
+        result.condense_candidates = Some(crate::trace_condense_policy::recommend(
+            &result,
+            &memberships,
+        ));
     }
     Ok(result)
 }

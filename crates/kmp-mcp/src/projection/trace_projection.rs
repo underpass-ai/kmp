@@ -79,6 +79,9 @@ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
                 "body_bytes_omitted": compact.body_bytes_omitted
             });
         }
+        if let Some(candidates) = &proof.condense_candidates {
+            value["proof"]["condense_candidates"] = super::trace_condense::project(candidates);
+        }
         value["objects"] = json!(response.objects.iter().map(|o| {
             let object = o.object.as_ref().expect("trace proof object");
                     let mut value = json!({"ref":object.r#ref,"kind":object.kind,"text":object.text,"metadata":object.metadata,
