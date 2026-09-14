@@ -1,0 +1,32 @@
+{
+  "model": "gpt-5.6-luna",
+  "reasoning_effort": "high",
+  "context": "fresh subagent, no inherited turns; source and writer instructions only before native guidance",
+  "native_trace_sha256": "9eeb8e5810921ca7b68a94d753308ed6ac1bd9bd02f8dc57afde2a49b219b26c",
+  "native_trace_uncompressed_bytes": 547467,
+  "trace_rows": 26,
+  "rpc_count": 23,
+  "native_tool_calls": 21,
+  "preparation": [
+    {
+      "preparation": "fresh persistent embedded store",
+      "store": "/home/gx10a/Documents/ai/kmp-top-writer-20260915/tmp/writer-clocks-xencw_qx",
+      "binary": "/home/gx10a/Documents/ai/kmp-top-writer-20260915/tmp/fresh-writer/kmp-mcp",
+      "binary_sha256": "58f5234cd384d27536d977598dc65f6269a0a5eb4dfa655f596b4738c499e3d0",
+      "source_sha256": "fb4ba3a36f0f78df5b591426fc2a6a0db691b3102310aabd9e9f1a8612f3318e",
+      "instructions_sha256": "4c7c6de21e56f932c88431a7ff869f86342419616b2de7c0f29d460ce1e64659",
+      "driver_sha256": "7488d8a95dc55d650dc6d9f1142bf32b60570081c6911fdc1a976750a9e1ef68",
+      "model_calls_by_driver": 0
+    },
+    {
+      "preparation": "guide sync in the isolated store",
+      "plugin_root": "/home/gx10a/Documents/ai/kmp-top-writer-20260915/plugins/kmp",
+      "stdout": "KMP guide: converged 2 immutable guide memories into the selected store\n",
+      "guide_sha256": "fbc9afd0bbdb8397cecf82c4f20eb566b3838a5b1f9f39443d7342a36057d50c"
+    }
+  ],
+  "driver_model_calls": 0,
+  "scope": "one fresh writer observation, not an independent reader or causal comparison",
+  "worktree_commit_at_run": "e38f089b28d91d98af237a062e2de44073fc6842",
+  "binary_note": "Pre-fix runtime copied from the shared debug build; SHA-256 in preparation is the artifact identity. Worktree commit records execution context, not a reproducible binary attestation."
+}
