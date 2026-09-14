@@ -3,6 +3,7 @@ use kmp_mcp::lifecycle::LifecycleAction;
 pub(crate) mod serve;
 
 mod config;
+mod consolidation_verb;
 mod context_verb;
 mod document;
 mod guide_verb;
@@ -35,6 +36,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     match command {
         "export" | "import" => return transfer::run(command, first_argument, args).await,
         "document" => return run_document_command(args).await,
+        "consolidation" => return consolidation_verb::run(args).await,
         "snapshot" => return run_snapshot_command(args).await,
         "summaries" => return run_summaries_command(args).await,
         "config" => run_config_command(args),
@@ -111,6 +113,7 @@ fn is_cli_subcommand(command: &str) -> bool {
             | "import"
             | "viewer"
             | "summaries"
+            | "consolidation"
     )
 }
 
@@ -146,6 +149,7 @@ fn subcommand_usage(command: &str) -> &'static str {
         }
         "document" => "kmp-mcp document <about> [--out FILE]",
         "context" => "kmp-mcp context project|expand [FILE|-]",
+        "consolidation" => "kmp-mcp consolidation sources|write|read|project [FILE|-]",
         "guide" => "kmp-mcp guide sync --plugin-root DIR [--dry-run]",
         "plugin" => "kmp-mcp plugin resolve-engine|notice --plugin-root DIR",
         "setup" => {
@@ -211,6 +215,7 @@ kmp-mcp plugin notice          Report version drift without changing the machine
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
 kmp-mcp context project|expand  Compose captured memory packets or expand their text\n  \
 kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
+kmp-mcp consolidation          Capture, write, audit or project versioned views\n  \
 kmp-mcp summaries pending       List the memories that owe an English search summary\n  \
 kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply]\n  \
                                 Remove one store or one engine, or preview it all\n  \

@@ -991,3 +991,16 @@ one quiescent fixture before measuring, retain empty/missing/foreign cases and
 real concurrent snapshot tests, and report complete framing journeys separately
 from storage latency. See `kmp-viewer/examples/node_batch_benchmark.rs` and
 `scripts/performance/node_batch_framing.py`.
+
+### Optional consolidated views
+
+The embedded `consolidation sources|write|read|project` CLI is a separate optional
+view contract, not another MCP verb. Keep source stamps, compact acceptance
+receipts, immutable expansion, stale handling and explicit clock restrictions
+aligned with `advanced:consolidation` in both generated guide abouts. Verify the
+real CLI through restart, source mutation, invalid requests and an exact audit
+expansion. Measure preparation and write cost as well as selected context; retain
+writer mistakes and budget failures when comparing readers. Semantic fidelity is
+external to deterministic quote/dependency validation. See the
+[contract](incremental-consolidation.md) and
+[development evidence](incremental-consolidation-evaluation.md).

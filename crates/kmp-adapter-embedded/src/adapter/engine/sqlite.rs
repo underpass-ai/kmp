@@ -37,13 +37,16 @@ use super::{
 /// other side is stuck", not "the other side is busy".
 const BUSY_TIMEOUT: Duration = Duration::from_secs(10);
 
-const ALL_TABLES: [Table; 14] = [
+const ALL_TABLES: [Table; 17] = [
     Table::Nodes,
     Table::Relations,
     Table::RelationsByTarget,
     Table::Details,
     Table::DetailHeaders,
     Table::Cards,
+    Table::ConsolidationHeads,
+    Table::ConsolidationViews,
+    Table::ConsolidationReceipts,
     Table::Anchors,
     Table::EventLog,
     Table::Aggregates,

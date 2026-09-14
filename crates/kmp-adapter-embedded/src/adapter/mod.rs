@@ -1,4 +1,6 @@
 mod bounded_adjacency;
+mod consolidation;
+mod consolidation_source;
 mod context_events;
 mod detail_header;
 mod dimension_lookup_header;

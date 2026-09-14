@@ -51,6 +51,10 @@ pub(crate) enum Table {
     /// Reader-authored compact cards: `(node_id, language) -> CardRecord`.
     /// A derived view beside the canonical body, never inside it.
     Cards,
+    /// Optional consolidated-view head, immutable revisions and retry receipts.
+    ConsolidationHeads,
+    ConsolidationViews,
+    ConsolidationReceipts,
     /// Memory anchor index: `node_id -> ()`.
     Anchors,
     /// Append-only context event log: `sequence -> ContextUpdatedEvent`.
@@ -82,6 +86,8 @@ impl Table {
             | Table::Aggregates
             | Table::Idempotency
             | Table::Migrations => KeyShape::Str,
+            Table::ConsolidationHeads => KeyShape::Str,
+            Table::ConsolidationViews | Table::ConsolidationReceipts => KeyShape::Str2,
             Table::Cards | Table::Processed | Table::Checkpoints | Table::Snapshots => {
                 KeyShape::Str2
             }
@@ -100,6 +106,9 @@ impl fmt::Display for Table {
             Table::Details => "details",
             Table::DetailHeaders => "detail_headers",
             Table::Cards => "node_cards",
+            Table::ConsolidationHeads => "consolidation_heads",
+            Table::ConsolidationViews => "consolidation_views",
+            Table::ConsolidationReceipts => "consolidation_receipts",
             Table::Anchors => "memory_anchors",
             Table::EventLog => "event_log",
             Table::Aggregates => "aggregates",
