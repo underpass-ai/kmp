@@ -1,0 +1,64 @@
+{
+  "issue": 768,
+  "baseline": {
+    "commit": "7af38d73a6bd2dcf5ea9e83e394838af8d612a6f",
+    "runner_binary": "tmp/performance-768-baseline-runner-final",
+    "runner_sha256": "12f0c05f4191b0d63e07a8df6b9889de278f31a6b755e8b01f72a54c9ad367a1"
+  },
+  "candidate": {
+    "commit_at_measurement": "7af38d73a6bd2dcf5ea9e83e394838af8d612a6f plus working-tree changes",
+    "runner_binary": "target/debug/quality-metric-rendering-runner",
+    "runner_sha256": "8939f9bf726a91b95cc5c58136daad3df45a2921a1c524f91068dd573f4af763",
+    "source_hashes": {
+      "crates/kmp-domain/src/value_objects/bundle_quality_metrics.rs": "bd821d23682324a7c8ba4c2ff71c16f840a056fe0b715fdde1e9e711864d1b47",
+      "crates/kmp-domain/src/value_objects/bundle_quality_metrics/raw_dump_records.rs": "71e2f8c0039488fc5c617f5c036bab6fe645e78ccd91fab50f54244b89eecb28",
+      "crates/kmp-domain/src/repositories/token_estimator.rs": "aad77a7a248a1c41702941b8adc67f85f7f4fec3bc753d0ec7e80f2a5196bc8f",
+      "crates/kmp-application/src/queries/cl100k_estimator.rs": "336faa9e3b2919fffea487667bc263288fc45faf1fca41a617c40a32aa6de2cd",
+      "scripts/performance/quality_metric_rendering.py": "b1802dd774084bd2a0fb0e29b45a7102ccf5884413a777ba498be77b6c474258"
+    }
+  },
+  "fixture": {
+    "shapes": [
+      "small",
+      "unicode",
+      "large_payload",
+      "relations"
+    ],
+    "large_payload_records": 97,
+    "large_payload_utf8_bytes": 545324,
+    "large_payload_repeat": 512
+  },
+  "sampling": {
+    "latency_warm_samples": 8,
+    "allocation_warm_samples": 5,
+    "percentiles": "nearest-rank",
+    "first_use_separate": true
+  },
+  "parity": {
+    "quality_values_all_shapes": true,
+    "complete_rendered_context_fingerprints_all_shapes": true,
+    "raw_record_legacy_oracle": true,
+    "cl100k_full_text_oracle": true
+  },
+  "checks": {
+    "cargo_fmt": "passed",
+    "focused_domain_tests": "passed",
+    "focused_application_tests": "passed",
+    "cargo_clippy_locked_domain_application_all_targets_d_warnings": "passed",
+    "cargo_test_locked_domain_application": "passed",
+    "kmp_mcp_architecture_gate": "passed",
+    "python_py_compile": "passed"
+  },
+  "evidence_files": [
+    "README.md",
+    "comparison.json",
+    "baseline-metrics-abs.json",
+    "candidate-metrics-abs.json",
+    "calibration-failures.txt"
+  ],
+  "commands": [
+    "python3 tmp/performance-768-baseline-worktree/scripts/performance/quality_metric_rendering.py --runner-binary /home/gx10a/Documents/ai/kmp-perf-768/tmp/performance-768-baseline-runner-final --scratch /home/gx10a/Documents/ai/kmp-perf-768/tmp/performance-768-baseline-metrics-abs --output /home/gx10a/Documents/ai/kmp-perf-768/artifacts/performance-768/baseline-metrics-abs.json --warm-samples 8 --allocation-warm-samples 5",
+    "python3 scripts/performance/quality_metric_rendering.py --runner-binary /home/gx10a/Documents/ai/kmp-perf-768/target/debug/quality-metric-rendering-runner --scratch /home/gx10a/Documents/ai/kmp-perf-768/tmp/performance-768-candidate-metrics-abs --output /home/gx10a/Documents/ai/kmp-perf-768/artifacts/performance-768/candidate-metrics-abs.json --warm-samples 8 --allocation-warm-samples 5"
+  ],
+  "interpretation": "Candidate removes the normal canonical raw-dump String while retaining exact full-text cl100k counts. Latency and allocations are attribution evidence from one host; no threshold or speedup claim is made."
+}

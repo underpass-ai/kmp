@@ -1,0 +1,376 @@
+{
+  "issue": 768,
+  "runner": "scripts/performance/quality_metric_rendering.py",
+  "runner_sha256": "b1802dd774084bd2a0fb0e29b45a7102ccf5884413a777ba498be77b6c474258",
+  "runner_binary_sha256": "12f0c05f4191b0d63e07a8df6b9889de278f31a6b755e8b01f72a54c9ad367a1",
+  "git_commit": "7af38d73a6bd2dcf5ea9e83e394838af8d612a6f",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "cargo_profile": "dev, workspace .cargo/config.toml",
+  "host": {
+    "system": "Linux-6.17.0-1029-nvidia-aarch64-with-glibc2.39",
+    "machine": "aarch64",
+    "cpu_model": "0xd87",
+    "hardware_sha256": "4d6c2eeb5df6e23c1f48767d92a655930827437db5e51af6bc0b4667e3d8c022"
+  },
+  "method": {
+    "render": "render_graph_bundle_with_options with token_budget=512",
+    "metric": "BundleQualityMetrics::compute on the same bundle and rendered token count",
+    "allocation_counter": "separate Linux/glibc LD_PRELOAD process controls; startup and bundle construction included, deallocations reported separately; do not interpret instrumented times",
+    "warm_samples": 8,
+    "allocation_warm_samples": 5,
+    "candidate": "none; baseline attribution only"
+  },
+  "source_hashes": {
+    "crates/kmp-domain/src/value_objects/bundle_quality_metrics.rs": "f052adc566b5ae1aed6619e0a0f42c4b287ae1cd0e8c921a0eb8395d79efcc13",
+    "crates/kmp-application/src/queries/render_graph_bundle.rs": "801fd32b20d40cb762a1d82f2deef2e3f94fd82146f41182e622cd912d543451",
+    "crates/kmp-application/src/queries/cl100k_estimator.rs": "b42f109e8ad349ceb8d030b68fa3cb7b6a1f1f23e15502f526d41ab030e7209d",
+    "crates/kmp-proto-mapping/src/v1beta1/recall_projection/typed_recall.rs": "43b8bb008a3c2a239a36bc49bc8e60e0ef6690118953a1e03b4581690c242b2e",
+    "scripts/performance/native_allocation_counter.c": "3dcf91a1211f619827bb7be2ffcab62d10a74e3a19a10dfd748f842a111a0e79"
+  },
+  "shapes": [
+    {
+      "shape": "small",
+      "bundle": {
+        "details": 2,
+        "neighbors": 4,
+        "relationships": 3,
+        "rendered_bytes": 175,
+        "rendered_tokens": 43
+      },
+      "quality": {
+        "causal_density": 0.3333333333333333,
+        "compression_ratio": 5.488372093023256,
+        "detail_coverage": 0.4,
+        "noise_ratio": 0.0,
+        "raw_equivalent_tokens": 236
+      },
+      "render": {
+        "bundle": {
+          "details": 2,
+          "neighbors": 4,
+          "relationships": 3,
+          "rendered_bytes": 175,
+          "rendered_tokens": 43
+        },
+        "first_ms": 233.438765,
+        "mode": "render",
+        "render_fingerprint": "1b84c90eed1b61d9b984cfe87fcf02f7c57b4cbe4b23e1199583383c3d7f51c8",
+        "shape": "small",
+        "warm_ms": [
+          4.205159,
+          4.184248,
+          4.205799,
+          4.188472,
+          4.178439,
+          4.191336000000001,
+          4.197399999999999,
+          4.195383
+        ],
+        "warm_samples": 8
+      },
+      "metric": {
+        "bundle": {
+          "details": 2,
+          "neighbors": 4,
+          "relationships": 3
+        },
+        "first_ms": 216.155359,
+        "mode": "metric",
+        "quality": {
+          "causal_density": 0.3333333333333333,
+          "compression_ratio": 5.488372093023256,
+          "detail_coverage": 0.4,
+          "noise_ratio": 0.0,
+          "raw_equivalent_tokens": 236
+        },
+        "rendered_tokens": 43,
+        "shape": "small",
+        "warm_ms": [
+          1.0057740000000002,
+          1.001774,
+          1.007902,
+          1.010126,
+          1.001678,
+          1.005838,
+          0.9987660000000002,
+          0.99603
+        ],
+        "warm_samples": 8
+      },
+      "allocation_control": {
+        "scope": "separate process per phase; startup, bundle construction and all warm calls included",
+        "metric": "Linux/glibc LD_PRELOAD allocation requests and cumulative requested bytes; not live heap",
+        "render": {
+          "native_allocation_control": true,
+          "requests": 445268,
+          "requested_bytes": 32988425,
+          "frees": 128905
+        },
+        "metric_phase": {
+          "native_allocation_control": true,
+          "requests": 426799,
+          "requested_bytes": 31187870,
+          "frees": 114848
+        }
+      }
+    },
+    {
+      "shape": "unicode",
+      "bundle": {
+        "details": 8,
+        "neighbors": 16,
+        "relationships": 20,
+        "rendered_bytes": 1008,
+        "rendered_tokens": 259
+      },
+      "quality": {
+        "causal_density": 0.25,
+        "compression_ratio": 7.05019305019305,
+        "detail_coverage": 0.47058823529411764,
+        "noise_ratio": 0.0,
+        "raw_equivalent_tokens": 1826
+      },
+      "render": {
+        "bundle": {
+          "details": 8,
+          "neighbors": 16,
+          "relationships": 20,
+          "rendered_bytes": 1008,
+          "rendered_tokens": 259
+        },
+        "first_ms": 242.463993,
+        "mode": "render",
+        "render_fingerprint": "51b54dfd802b1c0bd4dcd2bd57147bc04ac27f48d516deecaf83fc54d3a4a63f",
+        "shape": "unicode",
+        "warm_ms": [
+          29.442436999999998,
+          29.498613,
+          29.524805,
+          29.50786,
+          29.503733,
+          29.430501,
+          29.435333,
+          29.459269
+        ],
+        "warm_samples": 8
+      },
+      "metric": {
+        "bundle": {
+          "details": 8,
+          "neighbors": 16,
+          "relationships": 20
+        },
+        "first_ms": 224.213437,
+        "mode": "metric",
+        "quality": {
+          "causal_density": 0.25,
+          "compression_ratio": 7.05019305019305,
+          "detail_coverage": 0.47058823529411764,
+          "noise_ratio": 0.0,
+          "raw_equivalent_tokens": 1826
+        },
+        "rendered_tokens": 259,
+        "shape": "unicode",
+        "warm_ms": [
+          7.7493609999999995,
+          7.773008,
+          7.769088,
+          7.790161,
+          7.768032,
+          7.792529,
+          7.742224,
+          7.773232
+        ],
+        "warm_samples": 8
+      },
+      "allocation_control": {
+        "scope": "separate process per phase; startup, bundle construction and all warm calls included",
+        "metric": "Linux/glibc LD_PRELOAD allocation requests and cumulative requested bytes; not live heap",
+        "render": {
+          "native_allocation_control": true,
+          "requests": 580539,
+          "requested_bytes": 46926681,
+          "frees": 233985
+        },
+        "metric_phase": {
+          "native_allocation_control": true,
+          "requests": 462700,
+          "requested_bytes": 35022604,
+          "frees": 143037
+        }
+      }
+    },
+    {
+      "shape": "large_payload",
+      "bundle": {
+        "details": 32,
+        "neighbors": 32,
+        "relationships": 64,
+        "rendered_bytes": 4127,
+        "rendered_tokens": 1031
+      },
+      "quality": {
+        "causal_density": 0.25,
+        "compression_ratio": 131.15033947623667,
+        "detail_coverage": 0.9696969696969697,
+        "noise_ratio": 0.0,
+        "raw_equivalent_tokens": 135216
+      },
+      "render": {
+        "bundle": {
+          "details": 32,
+          "neighbors": 32,
+          "relationships": 64,
+          "rendered_bytes": 4127,
+          "rendered_tokens": 1031
+        },
+        "first_ms": 2076.535804,
+        "mode": "render",
+        "render_fingerprint": "6033516f7f243358bc9237431cd8a89666f14c722c7b33e3cdb5202e9cd12d94",
+        "shape": "large_payload",
+        "warm_ms": [
+          1865.5129379999998,
+          1864.125941,
+          1860.6385140000002,
+          1861.937959,
+          1862.878876,
+          1860.762375,
+          1861.28259,
+          1861.617268
+        ],
+        "warm_samples": 8
+      },
+      "metric": {
+        "bundle": {
+          "details": 32,
+          "neighbors": 32,
+          "relationships": 64
+        },
+        "first_ms": 745.1916200000001,
+        "mode": "metric",
+        "quality": {
+          "causal_density": 0.25,
+          "compression_ratio": 131.15033947623667,
+          "detail_coverage": 0.9696969696969697,
+          "noise_ratio": 0.0,
+          "raw_equivalent_tokens": 135216
+        },
+        "rendered_tokens": 1031,
+        "shape": "large_payload",
+        "warm_ms": [
+          527.17234,
+          524.497656,
+          525.646533,
+          524.750199,
+          526.9622889999999,
+          528.096895,
+          527.551422,
+          526.049841
+        ],
+        "warm_samples": 8
+      },
+      "allocation_control": {
+        "scope": "separate process per phase; startup, bundle construction and all warm calls included",
+        "metric": "Linux/glibc LD_PRELOAD allocation requests and cumulative requested bytes; not live heap",
+        "render": {
+          "native_allocation_control": true,
+          "requests": 10511754,
+          "requested_bytes": 1419508791,
+          "frees": 7320625
+        },
+        "metric_phase": {
+          "native_allocation_control": true,
+          "requests": 3269437,
+          "requested_bytes": 435688556,
+          "frees": 2149136
+        }
+      }
+    },
+    {
+      "shape": "relations",
+      "bundle": {
+        "details": 16,
+        "neighbors": 128,
+        "relationships": 512,
+        "rendered_bytes": 1701,
+        "rendered_tokens": 406
+      },
+      "quality": {
+        "causal_density": 0.25,
+        "compression_ratio": 55.57142857142857,
+        "detail_coverage": 0.12403100775193798,
+        "noise_ratio": 0.0,
+        "raw_equivalent_tokens": 22562
+      },
+      "render": {
+        "bundle": {
+          "details": 16,
+          "neighbors": 128,
+          "relationships": 512,
+          "rendered_bytes": 1701,
+          "rendered_tokens": 406
+        },
+        "first_ms": 487.599326,
+        "mode": "render",
+        "render_fingerprint": "6718120da35fc5c17a81ef8fec443eafbc700724ac2ff5353ffa4906db210ff9",
+        "shape": "relations",
+        "warm_ms": [
+          274.979357,
+          275.245356,
+          275.123596,
+          275.400188,
+          275.03658800000005,
+          275.004716,
+          274.956588,
+          275.632203
+        ],
+        "warm_samples": 8
+      },
+      "metric": {
+        "bundle": {
+          "details": 16,
+          "neighbors": 128,
+          "relationships": 512
+        },
+        "first_ms": 312.287261,
+        "mode": "metric",
+        "quality": {
+          "causal_density": 0.25,
+          "compression_ratio": 55.57142857142857,
+          "detail_coverage": 0.12403100775193798,
+          "noise_ratio": 0.0,
+          "raw_equivalent_tokens": 22562
+        },
+        "rendered_tokens": 406,
+        "shape": "relations",
+        "warm_ms": [
+          102.565239,
+          102.61524,
+          102.42535099999999,
+          102.36084,
+          102.646343,
+          102.50380000000001,
+          102.478743,
+          102.516792
+        ],
+        "warm_samples": 8
+      },
+      "allocation_control": {
+        "scope": "separate process per phase; startup, bundle construction and all warm calls included",
+        "metric": "Linux/glibc LD_PRELOAD allocation requests and cumulative requested bytes; not live heap",
+        "render": {
+          "native_allocation_control": true,
+          "requests": 1890056,
+          "requested_bytes": 192486295,
+          "frees": 1215400
+        },
+        "metric_phase": {
+          "native_allocation_control": true,
+          "requests": 945874,
+          "requested_bytes": 90525640,
+          "frees": 515981
+        }
+      }
+    }
+  ]
+}
