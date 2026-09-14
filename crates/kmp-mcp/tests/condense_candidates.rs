@@ -29,7 +29,7 @@ fn content(result: &Value) -> &Value {
     &result["structuredContent"]
 }
 
-async fn seed(server: &KernelMcpServer, generation: usize) {
+fn packet(generation: usize) -> Value {
     let entries = [(ROOT, 5000), (B, 2048), (C, 500)].map(|(id, size)| json!({
         "id":id,"kind":"observation","text":"x".repeat(size),
         "coordinates":[{"dimension":"task","scope_id":"read","occurred_at":EARLY,"observed_at":EARLY}]
@@ -41,7 +41,7 @@ async fn seed(server: &KernelMcpServer, generation: usize) {
             "clocks":{"occurred_at":EARLY,"observed_at":EARLY}
         })
     });
-    let result = call(server, "kmp_ingest", json!({
+    json!({
         "about":ABOUT,"idempotency_key":format!("seed-{generation}"),
         "memory":{
             "dimensions":[{"id":"read","kind":"task"}],"entries":entries,"relations":relations,
@@ -52,8 +52,11 @@ async fn seed(server: &KernelMcpServer, generation: usize) {
                     "support_clocks":{"observed_at":EARLY}}
             ]
         }
-    })).await;
-    content(&result);
+    })
+}
+
+async fn seed(server: &KernelMcpServer, generation: usize) {
+    content(&call(server, "kmp_ingest", packet(generation)).await);
 }
 
 async fn server() -> (tempfile::TempDir, KernelMcpServer) {
@@ -193,6 +196,10 @@ async fn moved_source_is_refused_and_a_stale_card_carries_the_exact_cas_revision
     assert_eq!(fresh["expect"], json!({"card_revision":1}));
     assert_ne!(fresh["source"], old["source"]);
     content(&call(&server, "kmp_condense", write_from(fresh)).await);
+    let concurrent = call(&server, "kmp_condense", write_from(fresh)).await;
+    assert_eq!(concurrent["isError"], true);
+    assert_eq!(concurrent["structuredContent"]["error"]["code"], "conflict");
+    assert!(concurrent.to_string().contains("stored card revision 2"));
 }
 
 #[tokio::test]
@@ -240,4 +247,81 @@ async fn seek_counts_complete_structural_groups_before_compact_body_delivery() {
     assert_eq!(candidates[0]["ref"], SOURCE);
     assert_eq!(candidates[0]["shared_by"], 2);
     assert_eq!(value["proof"]["complete_groups"], json!([]));
+}
+
+#[tokio::test]
+async fn seek_does_not_count_groups_with_missing_witnesses_as_shared_proof() {
+    let (_dir, server) = server().await;
+    let mut seek = request();
+    seek.as_object_mut()
+        .expect("valid candidate fixture")
+        .remove("to");
+    seek["search"]["seek"] = json!(["depends_on"]);
+    seek["search"]["same_labels"] = json!(["event"]);
+    let result = call(&server, "kmp_trace", seek).await;
+    let value = content(&result);
+    assert_eq!(value["seek"]["status"], "review_required", "{value}");
+    assert_eq!(value["groups"].as_array().expect("groups").len(), 2);
+    let candidates = value["proof"]["condense_candidates"]["items"]
+        .as_array()
+        .expect("candidates");
+    assert!(!candidates.is_empty());
+    assert!(
+        candidates.iter().all(|c| c["shared_by"] == 0),
+        "{candidates:?}"
+    );
+}
+
+#[tokio::test]
+async fn historical_seek_does_not_count_groups_with_unknown_relation_clocks() {
+    let dir = tempfile::tempdir().expect("temporary store");
+    let server = KernelMcpServer::with_embedded_backend(
+        EmbeddedKernelMcpBackend::open(dir.path()).expect("SQLite backend"),
+    );
+    let mut seed = packet(0);
+    for edge in seed["memory"]["relations"]
+        .as_array_mut()
+        .expect("relations")
+    {
+        edge.as_object_mut().expect("relation").remove("clocks");
+    }
+    content(&call(&server, "kmp_ingest", seed).await);
+    let mut seek = request();
+    seek.as_object_mut().expect("request").remove("to");
+    seek["search"]["seek"] = json!(["depends_on"]);
+    seek["axis"] = json!("occurred");
+    seek["as_of"] = json!({"time":"2026-08-01T00:00:00Z"});
+    let result = call(&server, "kmp_trace", seek).await;
+    let value = content(&result);
+    assert_eq!(value["seek"]["status"], "review_required", "{value}");
+    let groups = value["groups"].as_array().expect("groups");
+    assert_eq!(groups.len(), 2);
+    assert!(groups.iter().all(|g| g["clock_unknown"] == true));
+    let candidates = value["proof"]["condense_candidates"]["items"]
+        .as_array()
+        .expect("candidates");
+    assert!(!candidates.is_empty());
+    assert!(
+        candidates.iter().all(|c| c["shared_by"] == 0),
+        "{candidates:?}"
+    );
+}
+
+#[tokio::test]
+async fn material_selection_counts_only_returned_routes() {
+    let (_dir, server) = server().await;
+    let mut selected = request();
+    selected["search"]["select"] = json!({"max_material_nodes":2,"max_paths":1});
+    let result = call(&server, "kmp_trace", selected).await;
+    let value = content(&result);
+    assert_eq!(value["routes"].as_array().expect("routes").len(), 1);
+    assert_eq!(value["search"]["material"]["candidate_count"], 2);
+    let candidates = value["proof"]["condense_candidates"]["items"]
+        .as_array()
+        .expect("candidates");
+    assert!(!candidates.is_empty());
+    assert!(
+        candidates.iter().all(|c| c["shared_by"] == 1),
+        "{candidates:?}"
+    );
 }

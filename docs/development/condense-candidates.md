@@ -4,7 +4,9 @@ Issue #784 adds deterministic card targets to compact Trace proof reads. The
 domain uses the selected object descriptors, card presentations and admitted
 support relations from the operation snapshot. It loads no extra canonical body.
 Destination mode counts selected routes; seek counts structurally complete
-solver groups, independently of canonical body delivery. A shared source counts
+solver groups with known relation clocks and all binding witnesses, independently
+of canonical body delivery. Groups retained for review do not add sharing.
+A shared source counts
 once per route/group even when it supports several of that group's entries.
 
 `proof.condense_candidates.items` contains ref, body/record bytes, card status,
@@ -37,7 +39,7 @@ to locate the same source; it does not simulate agent choice or transcription
 errors. The small negative control deliberately cards a source below the floor
 to compare the same work, although the new list would not recommend it.
 
-Baseline: integration `6cbd061432de92d1ca18252e9bb7b5434d548c20`. Local debug
+Baseline: main `4b97b15f79b450b8e3f589eb68d6fc8a20bbaab6` (v0.18.4). Local debug
 builds, default workspace profiles, native stdio, fresh isolated SQLite stores.
 Bytes include complete JSON-RPC requests and responses, excluding line endings.
 Setup, seed and tools/list are recorded separately. This is a deterministic
@@ -51,13 +53,13 @@ contract/cost replay, with no model, latency, token or comprehension claim.
 The large list value costs 1072 bytes on its initial pages, with 19606 bytes
 of list values over the complete journey. Empty list values cost 70 bytes each
 (1400 over the small journey). Field names/separators add a further 460 bytes
-per journey. Native tools/list grows from 223574 to 225649 response bytes
-(+2075); initialize remains 1805 bytes. Body hashes match between variants.
+per journey. Native tools/list grows from 244994 to 247172 response bytes
+(+2178); initialize remains 1805 bytes. Body hashes match between variants.
 The new field increases this scripted journey's cost; it provides targeting and
 copyable identity, not a demonstrated reduction in calls or context.
 
 Raw phase counts and binary/source hashes are in the local generated
-`artifacts/condense-candidates-784/replay.json` (not tracked in Git).
+`artifacts/condense-candidates-784/replay-main.json` (not tracked in Git).
 Reproduce with binaries built from the baseline and candidate, keeping scratch
 inside the workspace:
 
@@ -66,7 +68,7 @@ python3 scripts/performance/condense-candidates.py \
   --baseline /absolute/path/to/baseline-kmp-mcp \
   --candidate /absolute/path/to/candidate-kmp-mcp \
   --scratch tmp/condense-candidates \
-  --output artifacts/condense-candidates-784/replay.json
+  --output artifacts/condense-candidates-784/replay-main.json
 ```
 
 Behavioral controls cover ordering, tie/cap/floor boundaries, source sharing,

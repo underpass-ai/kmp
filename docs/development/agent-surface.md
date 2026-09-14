@@ -919,9 +919,11 @@ See [contract and limits](joint-evidence-materialization.md).
 
 Las lecturas compactas de prueba incorporan `proof.condense_candidates`: una
 lista acotada de identidades y costes, calculada en dominio sobre toda la tabla
-seleccionada antes de paginar. `shared_by` cuenta rutas o grupos estructurales,
-incluidos sus soportes admitidos, una vez por grupo. No cuenta grupos cuya
-evidencia canónica se haya leído ni verifica significado. El fingerprint de
+seleccionada antes de paginar. `shared_by` cuenta rutas devueltas o grupos de
+seek con relojes conocidos y todos sus testigos de bindings, incluidos sus
+soportes admitidos, una vez por ruta/grupo. Los grupos pendientes de revisión
+no suman compartición. La entrega de evidencia canónica es independiente del
+recuento, que tampoco verifica significado. El fingerprint de
 la selección incluye la lista; el manifiesto de cuerpos conserva su identidad.
 Mantener política, ambos protobufs, mappers y schema junto a las guías de
 Condense. El lector copia `source` y `expect`, lee el cuerpo y redacta su tarjeta.

@@ -34,7 +34,9 @@ The list offers at most eight absent/stale bodies of at least 1024 UTF-8 bytes.
 `omitted_count` counts the remaining eligible targets. `valid`, `after_cut`
 and `below_floor` are disjoint exclusions, card status taking precedence over
 size; missing bodies are outside these counts. `shared_by` counts returned
-routes or structurally complete seek groups, once per group, not fetched proof.
+routes or seek groups with known clocks and all binding witnesses, once per
+route/group. Groups retained for review do not count; canonical body delivery
+is independent.
 The floor is a targeting heuristic, not a savings guarantee. A card written now
 cannot appear in a read whose cutoff is already past. The list is orientation,
 not a required action or permission to skip canonical source review.

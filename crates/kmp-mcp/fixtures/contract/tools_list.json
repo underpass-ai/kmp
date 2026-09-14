@@ -7250,7 +7250,7 @@
                           "type": "string"
                         },
                         "shared_by": {
-                          "description": "Returned routes, or structurally complete seek groups, whose selected proof uses this ref, once per route/group.",
+                          "description": "Returned routes, or seek groups with known clocks and all binding witnesses, whose selected proof uses this ref, once per route/group. Groups retained for review do not count; canonical body delivery is independent.",
                           "minimum": 0,
                           "type": "integer"
                         },

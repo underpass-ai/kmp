@@ -1,32 +1,21 @@
 # KMP repository working agreement
 
-## Evidence retrieval integration
+## Branch base and delivery
 
-The active MCP evolution follows solution A: simplify the existing native MCP
-contract. SQL, GraphQL and another query language are out of scope for this track.
+Base new branches on current `origin/main` and target their pull requests at
+`main`, unless the user explicitly selects another active integration. Fetch
+before branching and pass the PR base explicitly.
 
-- Base evolution branches on `integration/evidence-retrieval` and target their
-  pull requests at that branch. Do not target `main` or `work/sota-gaps` for this
-  redesign. Pass the PR base explicitly; the repository default remains `main`.
-- This is a breaking redesign. Backward compatibility, legacy-ref adapters and
-  old-store migration are not requirements. Reject unsupported formats explicitly.
-- The former `integration/mcp-simplification` track shipped in v0.17.0 and its
-  remote branch is closed. The new integration starts from released main
-  `2a9ad2f3cc7d25a8f7788ccc0bbddfbdcb53d53f`.
-- Finish selecting and materializing complete evidence paths, with behavioral
-  and performance evidence, before reader-authored compact trajectory summaries.
-  Preserve dimensions, semantic writing, temporal navigation and continuations.
-- Keep changes reviewable and run the behavioral checks appropriate to each
-  change. Do not add editorial CI gates or change repository protections.
-- Bugs in released behavior retain the normal bug PR and check process against
-  `main`; bring the fix into integration when needed. Bugs specific to new
-  integration behavior target integration, with the same bug discipline.
-- Integrating an evolution PR does not publish a release or merge this track
-  into `main`. The final integration-to-main PR is a separate delivery step.
+The `integration/mcp-simplification` track shipped in v0.17.0 through #724.
+The `integration/evidence-retrieval` track shipped in v0.18.0 through #753.
+Those historical integration branches are not bases for new work. The
+[integration plan](docs/development/mcp-simplification.md) retains their design
+and acceptance history; it does not override the current branch base.
 
-See [the integration plan](docs/development/mcp-simplification.md) for scope,
-compatibility and acceptance criteria. This section applies to this evolution;
-existing guide and surface maintenance procedures still apply.
+Preserve dimensions, semantic writing, temporal navigation and continuations.
+Keep changes reviewable and run behavioral and performance checks appropriate
+to each change. Do not add editorial CI gates or change repository protections.
+Merging a feature does not publish a release; release delivery is a separate step.
 
 ## Public README parity
 

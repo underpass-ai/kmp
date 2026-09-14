@@ -4,18 +4,18 @@ Decision: 2026-09-09. Evolve the native MCP contract (solution A), preserving
 evidence-backed writing and navigation through dimensions, time and relations.
 SQL, GraphQL and a new query language are outside this implementation track.
 
-Delivery update, 2026-09-11: the former `integration/mcp-simplification` track
-shipped in v0.17.0 through PR724. Its remote branch is closed. The active branch
-is `integration/evidence-retrieval`, created from released `main` at
-`2a9ad2f3cc7d25a8f7788ccc0bbddfbdcb53d53f`. Feature branches start from this new
-integration and their PRs explicitly target it. The repository default stays
-`main`. Use a separate integration-to-main PR when the combined change is ready.
+Delivery update, 2026-09-14: `integration/mcp-simplification` shipped in v0.17.0
+through #724. Its successor, `integration/evidence-retrieval`, started from
+released `main` at `2a9ad2f3cc7d25a8f7788ccc0bbddfbdcb53d53f` and shipped in
+v0.18.0 through #753. New feature and bug branches start from current
+`origin/main` and their PRs target `main`; neither historical integration is an
+active delivery base.
 
-The next delivery finishes selection and materialization of complete evidence
-paths (#538/#539), including bodies and sources from a consistent read view and
-measured performance. Reader-authored compact trajectory summaries follow that
-work. The original design and increments below describe the retained contract;
-they are not instructions to repeat work already shipped in v0.17.0.
+The evidence retrieval track added selection and materialization of complete
+paths, including bodies and sources from a consistent read view. Remaining
+quality and performance work in #538/#539 precedes evaluating reader-authored
+compact trajectory summaries. The original design and increments below retain
+the implementation history; they are not instructions to repeat shipped work.
 
 ## Delivery order
 
@@ -50,10 +50,8 @@ memories; pagination and work limits report incomplete coverage explicitly.
 
 ## Working and verification
 
-Use cohesive PRs with behavioral evidence appropriate to their changes. Bugs in
-released behavior follow the normal route to main; integration-only bugs target
-integration. Bring required main fixes into integration without rewriting its
-shared history. Existing repository protections and workflows remain unchanged.
+Use cohesive PRs against current `main` with behavioral evidence appropriate to
+their changes. Existing repository protections and workflows remain unchanged.
 
 Follow [agent surface maintenance](agent-surface.md) for actual contract changes,
 including guide examples and discoverable extended help. Editorial guidance is

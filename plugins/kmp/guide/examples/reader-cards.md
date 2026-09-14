@@ -15,8 +15,9 @@ with values from your memory results; digests and manifests are never invented.
 
 `proof.condense_candidates.items` orders absent/stale bodies by `shared_by`
 descending, then `body_bytes` descending, then `ref`. A shared source counts
-once per returned route or structurally complete seek group. The first eight
-eligible bodies are offered; `omitted_count` counts the tail. Bodies under
+once per returned route or structurally complete seek group.
+Seek groups with unknown clocks or missing binding witnesses do not add sharing.
+The first eight eligible bodies are offered; `omitted_count` counts the tail. Bodies under
 1024 UTF-8 bytes, valid cards and post-cut cards are excluded and counted in
 `below_floor`, `valid` and `after_cut` (card status takes precedence over size).
 Objects without a stored body are outside this inventory. The floor is a

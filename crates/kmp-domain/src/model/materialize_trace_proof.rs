@@ -107,6 +107,7 @@ pub(super) fn evidence<R: TraceSnapshotReader>(
     if result.refusal.is_some() {
         return Ok(result);
     }
+    let mut memberships = Vec::new();
     for (index, group) in search.groups.iter().enumerate() {
         let refs = group
             .candidate_indexes
@@ -121,21 +122,13 @@ pub(super) fn evidence<R: TraceSnapshotReader>(
             });
         let fetched = known && complete(&refs, &result);
         group_result(&mut result, index, fetched);
+        if known {
+            memberships.push(refs);
+        }
     }
     if options.compact.is_some() {
-        // These are complete structural alternatives from the solver. Fetched
-        // proof completeness is separate: compact cards never close a group.
-        let memberships = search
-            .groups
-            .iter()
-            .map(|group| {
-                group
-                    .candidate_indexes
-                    .iter()
-                    .flat_map(|&i| search.candidates[i as usize].nodes.iter().cloned())
-                    .collect()
-            })
-            .collect::<Vec<_>>();
+        // Only groups with known clocks and all binding witnesses contribute
+        // sharing. Canonical delivery is separate: cards never close a group.
         result.condense_candidates = Some(crate::trace_condense_policy::recommend(
             &result,
             &memberships,

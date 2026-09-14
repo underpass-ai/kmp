@@ -14,7 +14,7 @@ pub(super) fn schema() -> Value {
                     "body_bytes":{"type":"integer","minimum":1024},
                     "record_bytes":{"type":"integer","minimum":0},
                     "card_status":{"type":"string","enum":["absent","stale"]},
-                    "shared_by":{"type":"integer","minimum":0,"description":"Returned routes, or structurally complete seek groups, whose selected proof uses this ref, once per route/group."},
+                    "shared_by":{"type":"integer","minimum":0,"description":"Returned routes, or seek groups with known clocks and all binding witnesses, whose selected proof uses this ref, once per route/group. Groups retained for review do not count; canonical body delivery is independent."},
                     "source":{"type":"object","additionalProperties":false,"required":["revision","record_digest"],"properties":{
                         "revision":{"type":"integer","minimum":1},"record_digest":{"type":"string"}
                     }},
