@@ -4,12 +4,10 @@ Decision: 2026-09-09. Evolve the native MCP contract (solution A), preserving
 evidence-backed writing and navigation through dimensions, time and relations.
 SQL, GraphQL and a new query language are outside this implementation track.
 
-Delivery update, 2026-09-14: `integration/mcp-simplification` shipped in v0.17.0
-through #724. Its successor, `integration/evidence-retrieval`, started from
-released `main` at `2a9ad2f3cc7d25a8f7788ccc0bbddfbdcb53d53f` and shipped in
-v0.18.0 through #753. New feature and bug branches start from current
-`origin/main` and their PRs target `main`; neither historical integration is an
-active delivery base.
+Delivery update, 2026-09-14: native MCP simplification shipped in v0.17.0
+through #724; evidence retrieval shipped in v0.18.0 through #753.
+New feature and bug branches start from current `origin/main` and their PRs
+target `main`. The design below is implementation history, not a branch policy.
 
 The evidence retrieval track added selection and materialization of complete
 paths, including bodies and sources from a consistent read view. Remaining
@@ -70,7 +68,7 @@ with the completed uncompressed contract using answer quality, proof retention,
 whole-session tokens (including expansions) and total latency. This is a later
 experiment, not a dependency on SuperCompress or part of this integration goal.
 
-## Writing increments on integration
+## Shipped writing increments
 
 Store-validated previews are integrated in #580. The semantic packet increment
 adds `memories`: one about, one canonical ingest, local ids resolved before any

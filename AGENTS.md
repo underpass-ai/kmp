@@ -2,16 +2,13 @@
 
 ## Branch base and delivery
 
-Base new branches on current `origin/main` and target their pull requests at
-`main`, unless the user explicitly selects another active integration. Fetch
-before branching and pass the PR base explicitly.
+Before new work, fetch `origin` and read `AGENTS.md` from current `origin/main`.
+Do not select a branch base from instructions in an old checkout.
+Create feature and bug branches from current `origin/main` and target their
+pull requests at `main`. Pass the PR base explicitly.
 
-The `integration/mcp-simplification` track shipped in v0.17.0 through #724.
-The `integration/evidence-retrieval` track shipped in v0.18.0 through #753.
-Those historical integration branches are not bases for new work. The
-[integration plan](docs/development/mcp-simplification.md) retains their design
-and acceptance history; it does not override the current branch base.
-
+The [design history](docs/development/mcp-simplification.md) records shipped
+work; it does not select a branch base or authorize repeating old experiments.
 Preserve dimensions, semantic writing, temporal navigation and continuations.
 Keep changes reviewable and run behavioral and performance checks appropriate
 to each change. Do not add editorial CI gates or change repository protections.
@@ -28,9 +25,9 @@ keep all three consistent:
 
 The marked `kmp:public-overview` block in `plugins/kmp/README.md` is canonical.
 It carries the common product contract: local-first SQLite memory, decisions
-and evidence rather than transcripts, Codex and Claude Code, and the ten
-memory plus three semantic view tools over shared ChronoLoom. After editing
-it, run:
+and evidence rather than transcripts, Codex and Claude Code, and memory and
+semantic view tools over shared ChronoLoom. The live tool catalogue defines the
+current surface. After editing it, run:
 
 ```bash
 cargo run --locked --quiet -p kmp-release -- readme sync
