@@ -1,9 +1,10 @@
 Condense a canonical body you have read; reuse its short phrase on later paths.
 
-1. Obtain descriptors: Trace the selected paths with
-   `search:{proof:true,proof_refs:[]}`. Keep the manifest and finish page actions.
-2. Execute the returned body expansion calls; finish their pages. Read the body
-   before writing, and copy its descriptor `revision` and `record_digest`.
+1. Trace with `search:{proof:true,compact:{language:"en"}}`. Read
+   `proof.condense_candidates.items`: shared sources and large bodies come first.
+   The same bounded list appears on every page. Keep the manifest and finish pages.
+2. Read a chosen candidate's canonical body with a manifest-bound named expansion
+   priced by its `record_bytes`. Copy its `source` and `expect` objects directly.
 3. Replace every placeholder below with observed values:
 
 ```json
@@ -13,10 +14,9 @@ Condense a canonical body you have read; reuse its short phrase on later paths.
  "expect":{"absent":true}}
 ```
 
-Call `kmp_condense`; copy the actual source revision instead of the illustrative
-`1`. Without `context_id`, `actor` is required; with a valid context, an omitted
-actor defaults to the persistent agent name. For an existing card use its
-observed `expect:{card_revision:...}`. Text
+Call `kmp_condense` with the candidate's actual `source` and `expect`, replacing
+the illustrative values above. Without `context_id`, `actor` is required; with
+a valid context, an omitted actor defaults to the persistent agent name. Text
 must be at most 4096 UTF-8 bytes and shorter than its body. On conflict, reread.
 
 4. Reuse: start the same Trace with `proof:true,compact:{language:"en"}`.

@@ -77,6 +77,7 @@ pub use visual_projection::{
 
 mod condense;
 mod trace_body_options;
+mod trace_condense;
 mod trace_material;
 mod trace_proof;
 pub use condense::{NODE_BODY_SCOPE, condense_command_from_proto, condense_response_from_card};

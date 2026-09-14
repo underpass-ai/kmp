@@ -89,6 +89,7 @@ pub mod node_card_policy;
 mod node_card_rejection;
 pub mod trace_body_admission;
 mod trace_body_options;
+pub mod trace_condense_policy;
 mod trace_manifest;
 pub use author_node_card::AuthorNodeCard;
 pub use node_card_expectation::NodeCardExpectation;

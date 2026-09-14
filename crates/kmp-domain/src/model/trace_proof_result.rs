@@ -29,6 +29,8 @@ pub struct TraceProofResult {
     pub delivery: Option<TraceBodyDelivery>,
     /// Present only when the read asked for a compact presentation.
     pub compact: Option<TraceCompactSummary>,
+    /// Card targets for the complete compact selection, independent of pages.
+    pub condense_candidates: Option<crate::TraceCondenseCandidates>,
     /// What to ask for next, decided over the whole selection before any
     /// pagination. `None` when nothing the store holds is still withheld.
     pub expansion_plan: Option<TraceExpansionPlan>,

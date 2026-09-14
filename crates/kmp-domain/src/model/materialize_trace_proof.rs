@@ -73,6 +73,13 @@ pub(super) fn trace<R: TraceSnapshotReader>(
                 .any(|a| !a.is_empty() && a.is_subset(&available));
         group_result(&mut result, index, complete);
     }
+    if request.body.compact.is_some() {
+        let memberships = paths.into_iter().map(|(refs, _)| refs).collect::<Vec<_>>();
+        result.condense_candidates = Some(crate::trace_condense_policy::recommend(
+            &result,
+            &memberships,
+        ));
+    }
     Ok(result)
 }
 
@@ -100,6 +107,7 @@ pub(super) fn evidence<R: TraceSnapshotReader>(
     if result.refusal.is_some() {
         return Ok(result);
     }
+    let mut memberships = Vec::new();
     for (index, group) in search.groups.iter().enumerate() {
         let refs = group
             .candidate_indexes
@@ -114,6 +122,17 @@ pub(super) fn evidence<R: TraceSnapshotReader>(
             });
         let fetched = known && complete(&refs, &result);
         group_result(&mut result, index, fetched);
+        if known {
+            memberships.push(refs);
+        }
+    }
+    if options.compact.is_some() {
+        // Only groups with known clocks and all binding witnesses contribute
+        // sharing. Canonical delivery is separate: cards never close a group.
+        result.condense_candidates = Some(crate::trace_condense_policy::recommend(
+            &result,
+            &memberships,
+        ));
     }
     Ok(result)
 }

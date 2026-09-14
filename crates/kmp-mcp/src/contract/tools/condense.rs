@@ -35,7 +35,7 @@ pub(crate) fn definition() -> Value {
                     "type": "object",
                     "additionalProperties": false,
                     "required": ["revision", "record_digest"],
-                    "description": "Copy revision and record_digest from Trace with search.proof:true and a body option such as proof_refs:[]. Read that canonical body before writing; Inspect and legacy Trace do not expose this descriptor. Never construct a digest.",
+                    "description": "Copy source and expect directly from proof.condense_candidates.items on a compact Trace proof read, then read that canonical body before writing. For a deliberate target outside the list, copy revision and record_digest from its Trace body descriptor. Inspect and legacy Trace do not expose it. Never construct a digest.",
                     "properties": {
                         "revision": {"type": "integer", "minimum": 1, "description": "Body revision the card was written from."},
                         "content_hash": string_schema("Public token of that body version, kept as provenance. Validity is not decided on it: a write can change the text without changing it."),

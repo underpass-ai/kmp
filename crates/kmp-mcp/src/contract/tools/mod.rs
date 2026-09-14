@@ -14,6 +14,7 @@ pub(crate) mod relate;
 pub(crate) mod rewind;
 pub(crate) mod summaries_audit;
 pub(crate) mod trace;
+mod trace_condense;
 mod trace_seek;
 pub(crate) mod view_apply_intent;
 pub(crate) mod view_get_state;

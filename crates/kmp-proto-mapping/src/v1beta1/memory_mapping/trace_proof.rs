@@ -185,6 +185,9 @@ pub(super) fn project(response: &mut TraceResponse, proof: TraceProofResult) {
             .into(),
         body_bytes: proof.body_bytes,
         manifest_id: proof.manifest_id.unwrap_or_default(),
+        condense_candidates: proof
+            .condense_candidates
+            .map(super::trace_condense::project),
         delivery: proof.delivery.map(|d| TraceBodyDelivery {
             loaded: d.loaded,
             deferred_budget: d.deferred_budget,

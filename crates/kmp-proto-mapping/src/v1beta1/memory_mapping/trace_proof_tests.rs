@@ -43,6 +43,38 @@ fn response() -> TraceResponse {
 }
 
 #[test]
+fn condense_candidates_are_bound_into_the_whole_selection_fingerprint() {
+    let mut value = response();
+    let before = ReadSelectionFingerprint::trace_search(&value);
+    value
+        .proof
+        .as_mut()
+        .expect("valid candidate fixture")
+        .condense_candidates = Some(kmp_proto::v1beta1::TraceCondenseCandidates {
+        items: vec![kmp_proto::v1beta1::TraceCondenseCandidate {
+            r#ref: "source".into(),
+            source_revision: 3,
+            source_record_digest: "digest".into(),
+            shared_by: 2,
+            ..Default::default()
+        }],
+        ..Default::default()
+    });
+    let added = ReadSelectionFingerprint::trace_search(&value);
+    assert_ne!(before, added);
+    value
+        .proof
+        .as_mut()
+        .expect("valid candidate fixture")
+        .condense_candidates
+        .as_mut()
+        .expect("valid candidate fixture")
+        .items[0]
+        .shared_by = 1;
+    assert_ne!(added, ReadSelectionFingerprint::trace_search(&value));
+}
+
+#[test]
 fn body_source_and_metadata_changes_invalidate_selection_but_map_order_does_not() {
     let original = response();
     assert_eq!(
