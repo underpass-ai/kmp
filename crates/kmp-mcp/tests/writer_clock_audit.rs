@@ -46,22 +46,22 @@ async fn resume(server: &KernelMcpServer, pending: &Value) -> Value {
 
 fn write_packet() -> Value {
     json!({"about":ABOUT,"actor":"investigator","idempotency_key":"f17-report",
-    "observed_at":REPORT_OBSERVED,"labels":{"source":["F17"],"backup":["R8"]},
+    "observed_at":REPORT_OBSERVED,"labels":{"backup":["R8"]},
     "memories":[
-        {"id":"execution","kind":"observation","occurred_at":EXECUTION_OCCURRED,
+        {"id":"execution","kind":"observation","labels":{"source":["F17"]},"occurred_at":EXECUTION_OCCURRED,
          "summary":"R8 ran in staging at 11:00.",
          "evidence":"F17: R8 ran in staging at 2026-09-04T11:00:00Z.",
          "connect_to":[{"ref":"@verification","rel":"verified_by","class":"evidential",
              "why":"The later H8 check verifies the R8 execution outcome.",
              "evidence":"F17 separately reports R8 at 11:00 and H8 at 11:05.",
              "confidence":"high"}]},
-        {"id":"verification","kind":"observation","occurred_at":VERIFICATION_OCCURRED,
+        {"id":"verification","kind":"observation","labels":{"source":["F17"]},"occurred_at":VERIFICATION_OCCURRED,
          "summary":"H8 checked the restored file at 11:05.",
          "evidence":"F17: H8 checked the restored file at 2026-09-04T11:05:00Z."},
-        {"id":"quantity81","kind":"observation",
+        {"id":"quantity81","kind":"observation","labels":{"source":["F17"]},
          "summary":"The copied quantity was recorded as 81 MB.",
          "evidence":"F17 correction identifies the earlier copied quantity as 81 MB."},
-        {"id":"correction","kind":"observation",
+        {"id":"correction","kind":"observation","labels":{"source":["F17"]},
          "occurred_at":"2026-09-04T11:06:00Z",
          "summary":"F17 corrects the copied quantity from 81 MB to 80 MB.",
          "evidence":"F17 correction: the copied quantity is 80 MB, not 81 MB.",
@@ -139,6 +139,12 @@ async fn source_backed_clock_control_keeps_event_knowledge_and_late_support_sepa
     let occurred_before = goto(&server, "occurred", "2026-09-04T11:02:00Z").await;
     assert!(has_ref(&occurred_before, &refs["execution"]));
     assert!(!has_ref(&occurred_before, &refs["verification"]));
+    assert!(
+        !occurred_before["proof"]
+            .to_string()
+            .contains(refs["verification"].as_str().expect("verification ref")),
+        "the later check is absent from the selected proof route, not merely from entries: {occurred_before}"
+    );
     let occurred_equal = goto(&server, "occurred", VERIFICATION_OCCURRED).await;
     assert!(has_ref(&occurred_equal, &refs["execution"]));
     assert!(has_ref(&occurred_equal, &refs["verification"]));
@@ -150,6 +156,12 @@ async fn source_backed_clock_control_keeps_event_knowledge_and_late_support_sepa
     assert!(
         !has_ref(&observed_report, &refs["conflict"]),
         "G2 has no supplied observation and therefore remains at its own ingestion: {observed_report}"
+    );
+    let observed_before = goto(&server, "observed", "2026-09-04T11:02:00Z").await;
+    assert_eq!(
+        observed_before["entries"],
+        json!([]),
+        "the source was first observed at noon, so neither event is known at 11:02: {observed_before}"
     );
     let receipt = call(
         &server,

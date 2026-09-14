@@ -17,9 +17,14 @@ pub(super) fn pending_review(
             }});
         }
     }
-    let expand = neighborhood["abouts"].as_array().into_iter().flatten().map(|about| json!({
+    let expand = neighborhood["stored_abouts"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|about| json!({
         "tool":"kmp_wake","arguments":{"about":about,"budget":{"detail":"full","max_bytes":10000}}
-    })).collect::<Vec<_>>();
+    }))
+        .collect::<Vec<_>>();
     json!({
         "accepted":false,"status":"needs_review","dry_run":plan.dry_run,
         "summary":"Nothing written. Review stored context and proposed link directions. Resume the unchanged packet, or correct it and submit again. A compact view is not complete evidence; expand omissions when needed.",

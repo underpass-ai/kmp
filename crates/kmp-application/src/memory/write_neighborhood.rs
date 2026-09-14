@@ -22,6 +22,9 @@ pub struct WriteNeighborhood {
     pub eligible: usize,
     pub omitted: usize,
     pub omitted_conflicts: usize,
+    /// Abouts backed by a memory bundle before this command. This remains
+    /// complete even when compact rendering omits every stored item.
+    pub stored_abouts: Vec<String>,
     pub abouts: Vec<String>,
     pub partial: bool,
 }
@@ -289,6 +292,12 @@ pub(super) fn build_neighborhood(
         omitted_conflicts: 0,
         partial: false,
         links: Vec::new(),
+        stored_abouts: bundles
+            .iter()
+            .map(|bundle| bundle.root_node_id().as_str().to_owned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
         abouts: bundles
             .iter()
             .map(|bundle| bundle.root_node_id().as_str().to_owned())
