@@ -9,6 +9,22 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- Compact Trace proof reads now recommend up to eight bodies to condense,
+  ranked by selected route or complete seek-group sharing, body size and ref.
+  Each candidate carries the exact source identity and card expectation to use
+  after reading the canonical body. Valid cards, cards after the historical
+  cutoff and bodies below 1024 bytes are excluded with separate counts.
+
+### Changed
+
+- Condense guides and examples now teach candidate selection and direct reuse
+  of source and card expectations. Recommendations remain orientation, never
+  proof; the size floor does not guarantee that writing a card saves context.
+- Repository contribution instructions now base new work on `main`, reflecting
+  the delivery of the former integration tracks.
+
 ## [0.18.4] - 2026-09-14
 
 ### Changed
