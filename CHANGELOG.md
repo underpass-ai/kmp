@@ -9,6 +9,22 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- Performance work across SQLite lifecycle, store leases, lexical indexing,
+  recall sizing, graph adjacency, dimensional reads and ChronoLoom startup now
+  reuses bounded state and avoids repeated scans while preserving snapshot and
+  revision boundaries.
+- ChronoLoom scene and projection paths, quality metrics and compressed assets
+  now retain or stream exact data more efficiently, with reproducible evidence
+  and benchmark controls for the optimized paths.
+
+### Fixed
+
+- SQLite checkpoint contention, temporal selection, isolated graph catalogue
+  reads and release-time performance evidence now have regression coverage and
+  preserve the existing native parity contracts.
+
 ## [0.18.3] - 2026-09-13
 
 ### Changed
