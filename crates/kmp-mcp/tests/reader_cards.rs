@@ -859,3 +859,65 @@ async fn changing_a_card_between_compact_pages_invalidates_cursor_not_manifest()
     let fresh = call(&server, "kmp_trace", request).await;
     assert_eq!(structured(&fresh)["proof"]["manifest_id"], manifest);
 }
+
+#[tokio::test]
+async fn changing_a_source_body_outside_the_visible_page_invalidates_the_proof_cursor() {
+    let (_dir, server) = seeded().await;
+    let mut request = trace(json!({"proof": true}));
+    request["page"] = json!({"entries": 1});
+    let first = call(&server, "kmp_trace", request.clone()).await;
+    let first_value = structured(&first);
+    assert_eq!(first_value["page"]["returned"], 1);
+    assert!(first_value["objects"].as_array().is_some_and(Vec::is_empty));
+    let continuation = first_value["next_actions"][0]["arguments"].clone();
+    let path_clocks = first_value["trace"][0]["clocks"].clone();
+
+    let changed = call(
+        &server,
+        "kmp_ingest",
+        json!({
+            "about": ABOUT,
+            "idempotency_key": "ingest:cards:changed-hidden-source",
+            "memory": {
+                "dimensions": [],
+                "entries": [],
+                "relations": [{
+                    "from": ENTRY_A,
+                    "to": ENTRY_B,
+                    "rel": "depends_on",
+                    "class": "causal",
+                    "confidence": "high",
+                    "why": "A depends on B in this fixture.",
+                    "evidence": "reader card wire test",
+                    "clocks": path_clocks
+                }],
+                "evidence": [{
+                    "id": SOURCE,
+                    "supports": [ENTRY_A, ENTRY_B],
+                    "text": long_body("ZQCHANGEDHIDDENSOURCEBODY"),
+                    "source": "reader card wire test"
+                }]
+            }
+        }),
+    )
+    .await;
+    structured(&changed);
+
+    let rejected = call(&server, "kmp_trace", continuation).await;
+    assert_eq!(rejected["result"]["isError"], true, "{rejected}");
+    assert_eq!(
+        rejected["result"]["structuredContent"]["error"]["code"],
+        "conflict"
+    );
+    assert_eq!(
+        rejected["result"]["structuredContent"]["feedback"][0]["code"],
+        "READ_SELECTION_CHANGED"
+    );
+
+    let fresh = call(&server, "kmp_trace", request).await;
+    assert_eq!(
+        structured(&fresh)["trace"],
+        first_value["trace"],
+        "the visible first page stayed unchanged; only hidden proof moved"
+    );
+}

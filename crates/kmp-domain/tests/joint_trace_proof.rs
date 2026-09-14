@@ -199,6 +199,69 @@ impl TraceSnapshotReader for WithoutBodies {
         self.0.adjacency(q)
     }
 }
+
+/// Same immutable fixture and proof algorithm, but the body port deliberately
+/// performs one store operation per requested ref. This is the body-loading
+/// part of the pre-batch Trace + Inspect oracle: comparison stays on one frozen
+/// state while only the physical delivery strategy changes.
+struct SerialBodies(Reader);
+impl TraceSnapshotReader for SerialBodies {
+    fn node(&self, id: &str) -> Result<Option<NodeProjection>, PortError> {
+        self.0.node(id)
+    }
+
+    fn adjacency(&self, q: &AdjacencyRequest) -> Result<AdjacencyPage, PortError> {
+        self.0.adjacency(q)
+    }
+
+    fn bodies(&self, ids: &[String]) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
+        ids.iter()
+            .map(|id| {
+                self.0
+                    .bodies(std::slice::from_ref(id))
+                    .map(|mut values| values.pop().expect("one requested body slot"))
+            })
+            .collect()
+    }
+}
+
+#[test]
+fn one_joint_body_operation_is_exactly_equivalent_to_the_serial_body_oracle() {
+    for seeking in [false, true] {
+        let batched = Reader::fixture();
+        let serial = SerialBodies(Reader::fixture());
+        let (actual, expected) = if seeking {
+            (
+                search_evidence_paths(&batched, &seek())
+                    .expect("batched proof")
+                    .proof
+                    .expect("batched proof material"),
+                search_evidence_paths(&serial, &seek())
+                    .expect("serial proof")
+                    .proof
+                    .expect("serial proof material"),
+            )
+        } else {
+            (
+                bounded_trace_search(&batched, &trace())
+                    .expect("batched proof")
+                    .proof
+                    .expect("batched proof material"),
+                bounded_trace_search(&serial, &trace())
+                    .expect("serial proof")
+                    .proof
+                    .expect("serial proof material"),
+            )
+        };
+
+        assert_eq!(
+            actual, expected,
+            "bodies, refs, relations, clocks and order"
+        );
+        assert_eq!(batched.body_calls.borrow().len(), 1);
+        assert_eq!(serial.0.body_calls.borrow().len(), actual.objects.len());
+    }
+}
 #[test]
 fn nonproof_readers_still_work_and_proof_is_explicitly_unsupported() {
     let r = WithoutBodies(Reader::fixture());
