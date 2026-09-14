@@ -5,8 +5,12 @@ use std::collections::BTreeSet;
 
 use serde_json::json;
 
+use super::budget::ProjectionBudget;
+use super::plan::ProjectionPlan;
+use super::response_value::{ask_value, wake_value};
 use super::test_support::{
-    fixture, labels_fixture, projected, typed_wake_fixture, wake_request_with_bytes,
+    fixture, labels_fixture, projected, typed_ask_fixture, typed_wake_fixture,
+    wake_request_with_bytes,
 };
 use super::typed_recall::project_wake_response;
 
@@ -102,4 +106,23 @@ fn under_a_tight_budget_the_labels_yield_before_the_cited_proof() {
         Some(true),
         "dropping labels is reported as truncation"
     );
+}
+
+#[test]
+fn cached_item_lengths_match_exact_json_for_ranked_and_label_keys() {
+    let arguments = json!({"budget": {"max_bytes": 60_000, "detail": "full"}});
+    let budget = ProjectionBudget::from_arguments(&arguments, 2_400).expect("budget");
+    let ask = ProjectionPlan::build(ask_value(&typed_ask_fixture(24)), &budget);
+    let mut wake = typed_wake_fixture(24);
+    wake.labels = labels_fixture(60);
+    let wake = ProjectionPlan::build(wake_value(&wake), &budget);
+
+    for item in ask.items.iter().chain(&wake.items) {
+        assert_eq!(
+            item.serialized_len(),
+            serde_json::to_vec(&item.value)
+                .expect("projection item JSON")
+                .len()
+        );
+    }
 }

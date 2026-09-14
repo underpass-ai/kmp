@@ -5,7 +5,9 @@ use std::collections::BTreeSet;
 
 use serde_json::json;
 
-use super::core_fit::{reset_serialization_passes, serialization_passes, serialized_bytes};
+use super::core_fit::{
+    reset_serialization_passes, serialization_passes, serialized_bytes, stabilize_used_bytes,
+};
 use super::test_support::{fixture, large_fixture, projected};
 
 #[test]
@@ -247,5 +249,34 @@ fn recall_sizing_serialization_pass_control() {
                 "returned": output["projection"]["page"]["returned"]
             })
         );
+    }
+}
+
+#[test]
+fn used_bytes_fixed_point_matches_exact_final_json_size() {
+    let cases = [
+        (String::new(), 0_u64),
+        ("\"\\\n\té界🚀".to_string(), 9),
+        ("boundary".repeat(125), 999),
+        ("long 🚀".repeat(2_000), 100_000),
+    ];
+    for (payload, initial_used_bytes) in cases {
+        let mut value = json!({
+            "answer": payload,
+            "projection": {
+                "budget": {"max_bytes": 100_000, "used_bytes": initial_used_bytes},
+                "page": {"offset": 9, "returned": 1, "has_more": true},
+                "next_action": {
+                    "tool": "kmp_ask",
+                    "arguments": {"question": "escaped \"question\" é界🚀"}
+                }
+            }
+        });
+        let used = stabilize_used_bytes(&mut value);
+        let oracle = serde_json::to_vec(&value)
+            .expect("final response JSON")
+            .len();
+        assert_eq!(used, oracle);
+        assert_eq!(value["projection"]["budget"]["used_bytes"], oracle);
     }
 }

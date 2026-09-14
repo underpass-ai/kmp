@@ -1,6 +1,8 @@
 //! The recall continuation cursor: the hash that binds it to one selection
 //! and the opaque token a caller returns to read the next page.
 
+use std::borrow::Borrow;
+
 use kmp_proto::v1beta1::RecallCursorErrorReason;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -11,11 +13,10 @@ use super::projection_error::RecallProjectionError;
 
 const CURSOR_VERSION: &str = "kmp1";
 
-pub(super) fn selection_hash(
-    arguments: &Value,
-    plan: &ProjectionPlan,
-    eligible: &[ProjectionItem],
-) -> String {
+pub(super) fn selection_hash<T>(arguments: &Value, plan: &ProjectionPlan, eligible: &[T]) -> String
+where
+    T: Borrow<ProjectionItem>,
+{
     let mut bound_arguments = arguments.clone();
     if let Some(arguments) = bound_arguments.as_object_mut() {
         arguments.remove("page");
@@ -42,6 +43,7 @@ pub(super) fn selection_hash(
         serde_json::to_vec(&plan.core).expect("projection core should serialize canonically"),
     );
     for item in eligible {
+        let item = item.borrow();
         hasher.update(b"\0");
         hasher.update(item.section.name().as_bytes());
         hasher.update(b"\0");

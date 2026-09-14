@@ -1,6 +1,8 @@
 //! The projection and truncation envelope a recall page carries: what was
 //! returned, what remains, and the call that reads the rest.
 
+use std::borrow::Borrow;
+
 use serde_json::{Map, Value, json};
 
 use super::actions;
@@ -11,18 +13,21 @@ use super::plan::{ProjectionItem, ProjectionPlan, Section};
 pub const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v1";
 
 #[allow(clippy::too_many_arguments)]
-pub(super) fn attach_metadata(
+pub(super) fn attach_metadata<E, S>(
     value: &mut Value,
     plan: &ProjectionPlan,
-    eligible: &[ProjectionItem],
-    selected: &[ProjectionItem],
+    eligible: &[E],
+    selected: &[S],
     offset: usize,
     excluded_by_detail: usize,
     selection_hash: &str,
     budget: &ProjectionBudget,
     core_text_shortened: bool,
     planning: bool,
-) {
+) where
+    E: Borrow<ProjectionItem>,
+    S: Borrow<ProjectionItem>,
+{
     const RESTART: &str = "recall core prose was shortened; execute projection.next_action to restart and discard the partial reconstruction before reading more expansion";
     const STALLED: &str = "recall expansion cannot advance at this byte budget; repeating the same cursor with unchanged budget.max_bytes returns no additional evidence";
     const PARTIAL: &str = "recall expansion pending; see projection.sections.*.remaining and execute projection.next_action";
@@ -54,15 +59,15 @@ pub(super) fn attach_metadata(
         let eligible_total = core
             + eligible
                 .iter()
-                .filter(|item| item.section == section)
+                .filter(|item| <E as Borrow<ProjectionItem>>::borrow(*item).section == section)
                 .count();
         let returned = selected
             .iter()
-            .filter(|item| item.section == section)
+            .filter(|item| <S as Borrow<ProjectionItem>>::borrow(*item).section == section)
             .count();
         let remaining = eligible[next_offset.min(eligible.len())..]
             .iter()
-            .filter(|item| item.section == section)
+            .filter(|item| <E as Borrow<ProjectionItem>>::borrow(*item).section == section)
             .count();
         sections.insert(
             section.name().to_string(),
