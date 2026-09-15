@@ -1,0 +1,5 @@
+   Compiling kmp-proto v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-proto)
+    Checking kmp-proto-mapping v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-proto-mapping)
+    Checking kmp-transport-grpc v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-transport-grpc)
+    Checking kmp-mcp v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-mcp)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.43s

@@ -18,7 +18,8 @@ pub(crate) fn definition() -> Value {
             "type": "object",
             "additionalProperties": false,
             "required": ["about", "memory", "idempotency_key"],
-            "allOf":[{"if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},"then":{"properties":{"provenance":{"required":["observed_at"]}}}}],
+            "if":{"not":{"required":["default_observation_to_ingestion"],"properties":{"default_observation_to_ingestion":{"const":true}}}},
+            "then":{"properties":{"provenance":{"required":["observed_at"]}}},
             "properties": {
                 "about": string_schema("Memory anchor or root ref this memory should attach to."),
                 "default_observation_to_ingestion": json!({"type":"boolean","default":false,"description":"Semantic-writer policy: fill missing observations on new coordinates, source times, packet provenance and explicit proof clock objects using exact kernel ingestion. Preserve supplied observations and restored clocks. Absent relation/support clock objects inherit packet observation. Ordinary canonical ingest preserves unknown entry clocks."}),
@@ -26,10 +27,8 @@ pub(crate) fn definition() -> Value {
                     "type": "object",
                     "additionalProperties": true,
                     "required": ["dimensions", "entries"],
-                    "anyOf": [
-                        {"properties":{"entries":{"minItems":1}}},
-                        {"required":["relations"],"properties":{"relations":{"minItems":1}}}
-                    ],
+                    "if":{"properties":{"entries":{"maxItems":0}}},
+                    "then":{"required":["relations"],"properties":{"relations":{"minItems":1}}},
                     "properties": {
                         "dimensions": {
                             "type": "array",

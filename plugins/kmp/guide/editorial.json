@@ -19,7 +19,7 @@
           "id": "gate:invocation",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "Initialize carries common activation and routing guidance; tools teach their specific operation and this node expands how to choose and continue a route. Temporal response pages recover one selected packet before executable navigation traverses history outside it.",
+          "evidence": "Initialize carries common activation and routing guidance; tools teach their specific operation and this node expands how to choose and continue a route. Temporal response pages recover one selected packet before executable navigation traverses history outside it. Conditional input schemas keep the shared argument object visible while preserving initial-call requirements and continuation-only validation.",
           "text_file": "topics/routing.md",
           "guide_title": "Choose and continue a memory route"
         },

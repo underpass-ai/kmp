@@ -1,0 +1,942 @@
+{
+  "encoder": "o200k_base",
+  "packages": {
+    "tiktoken": "0.12.0",
+    "jsonschema": "4.25.1"
+  },
+  "unit": "separately serialized compact UTF-8 JSON; no billing inference",
+  "before": {
+    "catalogue": {
+      "bytes": 247138,
+      "tokens": 51284,
+      "sha256": "eda36da72d07456535c38c712a5ffbe6161e4cf271e62c5b21467f7035bcea42"
+    },
+    "tools": [
+      {
+        "name": "kmp_ingest",
+        "input": {
+          "bytes": 14835,
+          "tokens": 3078,
+          "sha256": "5471d8b012eadb6b0f1537193b967d337a811e74d176d17dd56a1512fefd6786"
+        },
+        "output": {
+          "bytes": 5354,
+          "tokens": 1059,
+          "sha256": "6002bb8c373c8ec2ae406b8d545eb4c3ba282cb1e297a702166f14f45ae22d23"
+        },
+        "description": {
+          "bytes": 222,
+          "tokens": 37,
+          "sha256": "48731965b067810f3cf2398fdd6ee23c03631ffa4d43c6e85823784f952c7a7a"
+        }
+      },
+      {
+        "name": "kmp_write_memory",
+        "input": {
+          "bytes": 24344,
+          "tokens": 5017,
+          "sha256": "f28cb9351e1965595618757bb262157c5bbc34b71fa4e1d4bfb976996c63e968"
+        },
+        "output": {
+          "bytes": 13057,
+          "tokens": 2562,
+          "sha256": "5ed49bdda45f00d9443bee24a1cb54583b89beddda742aa7da9407278479981c"
+        },
+        "description": {
+          "bytes": 790,
+          "tokens": 148,
+          "sha256": "9aa6ac956149b51c80a347736b6a2d434bd73d9a14337358397c085bf60da066"
+        }
+      },
+      {
+        "name": "kmp_wake",
+        "input": {
+          "bytes": 5782,
+          "tokens": 1278,
+          "sha256": "358d6af3a1889bdd11ea2105920c6c435e3f2b2a1a0dfd34f2b1d43988d636e2"
+        },
+        "output": {
+          "bytes": 10944,
+          "tokens": 2248,
+          "sha256": "095b38de8e76275e2c1076b4ebdc7f43fcb66f973b60af31e8ad152ffa1f185b"
+        },
+        "description": {
+          "bytes": 289,
+          "tokens": 50,
+          "sha256": "e7664e27ea9089e261ebfa94c4275a4dbbd839fa521c27b0be75f697d207bf80"
+        }
+      },
+      {
+        "name": "kmp_ask",
+        "input": {
+          "bytes": 7235,
+          "tokens": 1573,
+          "sha256": "76996c5800ee7467c322b3a9bad6fff8910eca220c03aca65e7786d7e1bd22a3"
+        },
+        "output": {
+          "bytes": 7093,
+          "tokens": 1404,
+          "sha256": "ce83cc1b4cf26da938208b0576b8c9eb6a4b1e0c5b002b3b99340864940b9750"
+        },
+        "description": {
+          "bytes": 974,
+          "tokens": 180,
+          "sha256": "05a3a45072061765fa471d298d4fe4cfc115dead65d8540fb21565bac95b2d83"
+        }
+      },
+      {
+        "name": "kmp_relate",
+        "input": {
+          "bytes": 4946,
+          "tokens": 1108,
+          "sha256": "970bfd8f0eb262ef28c6883b2b47c01bdbd2b402a9dee3e4999c66fb73027a19"
+        },
+        "output": {
+          "bytes": 6589,
+          "tokens": 1397,
+          "sha256": "514ddb23d7c8549a6f0d2e8059ab737934c5963374774312e5989aa07929ecfe"
+        },
+        "description": {
+          "bytes": 1440,
+          "tokens": 283,
+          "sha256": "e4a01065f3666e8f661ba8577eff9bbf96c5b936131907150923534164b92344"
+        }
+      },
+      {
+        "name": "kmp_goto",
+        "input": {
+          "bytes": 7158,
+          "tokens": 1554,
+          "sha256": "0973a9ee1f36be51bcbbdfaa8987a4b28b2f79d6782f9ad7a4e570cb4292fb25"
+        },
+        "output": {
+          "bytes": 9190,
+          "tokens": 1776,
+          "sha256": "44c78e487a7fd855ebf93fc30cb9aa0bff6b0e6438b10987fbadf4a9806c9d6a"
+        },
+        "description": {
+          "bytes": 266,
+          "tokens": 52,
+          "sha256": "afb5004c0a2616e5f04f59bd3ccd9ff60eadd7ca8442bdbfc531bdea6ee605ee"
+        }
+      },
+      {
+        "name": "kmp_near",
+        "input": {
+          "bytes": 7166,
+          "tokens": 1554,
+          "sha256": "21884cfb077d5e30e7fffccdeda95f8bfdeaed2e688187c360a4990956d0e682"
+        },
+        "output": {
+          "bytes": 9190,
+          "tokens": 1776,
+          "sha256": "44c78e487a7fd855ebf93fc30cb9aa0bff6b0e6438b10987fbadf4a9806c9d6a"
+        },
+        "description": {
+          "bytes": 236,
+          "tokens": 46,
+          "sha256": "fa82c3bda11cd31dd6b5c937dfa6e2b1765d49775edd2e7b00d380a6a558eceb"
+        }
+      },
+      {
+        "name": "kmp_rewind",
+        "input": {
+          "bytes": 7213,
+          "tokens": 1567,
+          "sha256": "f4dcd88394e9b0908d0c1ff768326af372cd7deb64b7d0b2e9d61ffb6ef203b6"
+        },
+        "output": {
+          "bytes": 9190,
+          "tokens": 1776,
+          "sha256": "44c78e487a7fd855ebf93fc30cb9aa0bff6b0e6438b10987fbadf4a9806c9d6a"
+        },
+        "description": {
+          "bytes": 259,
+          "tokens": 49,
+          "sha256": "d7145c04f951fa7849adc78b1fc703dee8c79afd390bad52c2ee15c34ef195f4"
+        }
+      },
+      {
+        "name": "kmp_forward",
+        "input": {
+          "bytes": 7213,
+          "tokens": 1567,
+          "sha256": "f4dcd88394e9b0908d0c1ff768326af372cd7deb64b7d0b2e9d61ffb6ef203b6"
+        },
+        "output": {
+          "bytes": 9190,
+          "tokens": 1776,
+          "sha256": "44c78e487a7fd855ebf93fc30cb9aa0bff6b0e6438b10987fbadf4a9806c9d6a"
+        },
+        "description": {
+          "bytes": 246,
+          "tokens": 48,
+          "sha256": "29953624917a64ddadf225a8f66d96739d7741ff327fcf75b8f70ee8cd0a6e83"
+        }
+      },
+      {
+        "name": "kmp_trace",
+        "input": {
+          "bytes": 17864,
+          "tokens": 3977,
+          "sha256": "14e995e1d8a0ae118dac68980faa819a372beada79df65bd0452194ec27340cd"
+        },
+        "output": {
+          "bytes": 10520,
+          "tokens": 2058,
+          "sha256": "0d324e25470e0f71c7e17924c1f658b5e84d4c08d1a97247261a86f0080aea5d"
+        },
+        "description": {
+          "bytes": 545,
+          "tokens": 91,
+          "sha256": "16f4d3aa73a3c70b4d132afbec7efe353df5edc6a9f378e7232ca6ff9a079d3e"
+        }
+      },
+      {
+        "name": "kmp_inspect",
+        "input": {
+          "bytes": 3229,
+          "tokens": 662,
+          "sha256": "833b8f38628365030128791b9e20fb66425cb7430ead07faa3c261a9f0d7485b"
+        },
+        "output": {
+          "bytes": 3892,
+          "tokens": 754,
+          "sha256": "4dabe61ea56e5c0040fde9d939d56924fd5a6485cf901b8e77ab74cfae8c2cb6"
+        },
+        "description": {
+          "bytes": 279,
+          "tokens": 51,
+          "sha256": "965d3c6a7d2c75e1b507fede96e74c6517bfb2eff12fa55b1a642672f5982c06"
+        }
+      },
+      {
+        "name": "kmp_relabel",
+        "input": {
+          "bytes": 3183,
+          "tokens": 697,
+          "sha256": "25626399154ac690a7e95bd0ca7857334d6ed2ad3666a3e9c0a38ffa32f2e85d"
+        },
+        "output": {
+          "bytes": 1592,
+          "tokens": 359,
+          "sha256": "47d0ce3da102c0128a508ca05ea00253f8b2e4b9612f6d4e238765722c982f2e"
+        },
+        "description": {
+          "bytes": 792,
+          "tokens": 173,
+          "sha256": "89fecd5b9f83f2fa28d187c27c8a4f1afe85c07e9feeae681fb9b18698222736"
+        }
+      },
+      {
+        "name": "kmp_condense",
+        "input": {
+          "bytes": 3188,
+          "tokens": 678,
+          "sha256": "f12180e139b43320c1da1df8683e81d120d2638977449c2776c4250cc057141e"
+        },
+        "output": {
+          "bytes": 1504,
+          "tokens": 312,
+          "sha256": "025cc7d7348eef08866d4117a3e48c10053750f0fd0e1398d6de181eb438597d"
+        },
+        "description": {
+          "bytes": 591,
+          "tokens": 118,
+          "sha256": "3c9b2c4cbb45866a63b60215786564b43e517acb4066d1a8410c6d275ba98117"
+        }
+      },
+      {
+        "name": "kmp_summaries_audit",
+        "input": {
+          "bytes": 2597,
+          "tokens": 549,
+          "sha256": "0e238f1007e9e86f19775e6d122ef1aaeb362e82e5c7bedacedfebf6a6b9dfe5"
+        },
+        "output": {
+          "bytes": 6263,
+          "tokens": 1312,
+          "sha256": "598cc6ead5bc67db35962d3546442a9d70410fac3e6f1d8e268386d3fdfbc459"
+        },
+        "description": {
+          "bytes": 900,
+          "tokens": 186,
+          "sha256": "6dbfb3b4085651892065cba4647890557b446a11aa02aad573e86ee77a4a4e9d"
+        }
+      },
+      {
+        "name": "kmp_view_open",
+        "input": {
+          "bytes": 1114,
+          "tokens": 238,
+          "sha256": "0cc2e556991cc06a22ba4fb2925a80769db13dbc6411eddfa3c2b0949cb90c7f"
+        },
+        "output": {
+          "bytes": 1820,
+          "tokens": 401,
+          "sha256": "0fbc3ca4f54b43ddf195dc6f18f184451123b3a68fa6618ba8d4f620d49c8984"
+        },
+        "description": {
+          "bytes": 251,
+          "tokens": 58,
+          "sha256": "f9d9395a98d9d83ffed789eaae932799363c27249ce01e08c38cd736e206ff7b"
+        }
+      },
+      {
+        "name": "kmp_view_apply_intent",
+        "input": {
+          "bytes": 5770,
+          "tokens": 1301,
+          "sha256": "0fb53f254339e7478c7e47349b796a840a57349a2c6b461040ea2aafcc7c375c"
+        },
+        "output": {
+          "bytes": 1664,
+          "tokens": 369,
+          "sha256": "c302012daf2dff27815735c4bf65bdc177a44398dfbbd030a197324b7ac80cd6"
+        },
+        "description": {
+          "bytes": 610,
+          "tokens": 137,
+          "sha256": "b788321cfe63c87a7156e0b563f3226db50dad81bb539e628b1519069828240d"
+        }
+      },
+      {
+        "name": "kmp_view_get_state",
+        "input": {
+          "bytes": 480,
+          "tokens": 101,
+          "sha256": "bdcf15c2795d5f8e1f510b728385e4db4618ad14887340790b625494c609ae9c"
+        },
+        "output": {
+          "bytes": 1820,
+          "tokens": 401,
+          "sha256": "0fbc3ca4f54b43ddf195dc6f18f184451123b3a68fa6618ba8d4f620d49c8984"
+        },
+        "description": {
+          "bytes": 210,
+          "tokens": 45,
+          "sha256": "ba3ef6bf3cb109f342a11887bec41c2bcb1b288c3f4cb74304ac8f9dc10da407"
+        }
+      },
+      {
+        "name": "kmp_guide",
+        "input": {
+          "bytes": 947,
+          "tokens": 202,
+          "sha256": "9b91bfbf968443123d2cac16665908f32209bbd63fd5af991c6744279dcb2ca5"
+        },
+        "output": {
+          "bytes": 1757,
+          "tokens": 351,
+          "sha256": "e9ce83d91e775eefc0eb329b76369c13e109a1c2f131933fcee413027008ef62"
+        },
+        "description": {
+          "bytes": 517,
+          "tokens": 93,
+          "sha256": "4deef1336a6a012e8ecb3ff89e95a5440516f9e80b8be93c019b77ef3a7716d3"
+        }
+      }
+    ]
+  },
+  "after": {
+    "catalogue": {
+      "bytes": 246956,
+      "tokens": 51225,
+      "sha256": "3b5766ca6f6ac558dd615ae48112fb75bbd638d7c661372f1b2f56f013a2fdb6"
+    },
+    "tools": [
+      {
+        "name": "kmp_ingest",
+        "input": {
+          "bytes": 14825,
+          "tokens": 3072,
+          "sha256": "406086c0bb0e1da072818dec670a7ef1f50242177f1145a54be4889c2441788b"
+        },
+        "output": {
+          "bytes": 5354,
+          "tokens": 1059,
+          "sha256": "6002bb8c373c8ec2ae406b8d545eb4c3ba282cb1e297a702166f14f45ae22d23"
+        },
+        "description": {
+          "bytes": 222,
+          "tokens": 37,
+          "sha256": "48731965b067810f3cf2398fdd6ee23c03631ffa4d43c6e85823784f952c7a7a"
+        }
+      },
+      {
+        "name": "kmp_write_memory",
+        "input": {
+          "bytes": 24329,
+          "tokens": 5013,
+          "sha256": "2171c69bb19e252ad90dab3fe0de83c397b6842c7974177f464fb3197b755cf1"
+        },
+        "output": {
+          "bytes": 13057,
+          "tokens": 2562,
+          "sha256": "5ed49bdda45f00d9443bee24a1cb54583b89beddda742aa7da9407278479981c"
+        },
+        "description": {
+          "bytes": 790,
+          "tokens": 148,
+          "sha256": "9aa6ac956149b51c80a347736b6a2d434bd73d9a14337358397c085bf60da066"
+        }
+      },
+      {
+        "name": "kmp_wake",
+        "input": {
+          "bytes": 5757,
+          "tokens": 1271,
+          "sha256": "2229776726fc5cc13f26f119518b9837e5a2f42e9c99ee21be26ed894e1a470b"
+        },
+        "output": {
+          "bytes": 10944,
+          "tokens": 2248,
+          "sha256": "095b38de8e76275e2c1076b4ebdc7f43fcb66f973b60af31e8ad152ffa1f185b"
+        },
+        "description": {
+          "bytes": 289,
+          "tokens": 50,
+          "sha256": "e7664e27ea9089e261ebfa94c4275a4dbbd839fa521c27b0be75f697d207bf80"
+        }
+      },
+      {
+        "name": "kmp_ask",
+        "input": {
+          "bytes": 7210,
+          "tokens": 1566,
+          "sha256": "1b1f2bae26b90a176c074c3c4001969dd7b7f3a5a15470cf16430328355f8b31"
+        },
+        "output": {
+          "bytes": 7093,
+          "tokens": 1404,
+          "sha256": "ce83cc1b4cf26da938208b0576b8c9eb6a4b1e0c5b002b3b99340864940b9750"
+        },
+        "description": {
+          "bytes": 974,
+          "tokens": 180,
+          "sha256": "05a3a45072061765fa471d298d4fe4cfc115dead65d8540fb21565bac95b2d83"
+        }
+      },
+      {
+        "name": "kmp_relate",
+        "input": {
+          "bytes": 4921,
+          "tokens": 1101,
+          "sha256": "0ba485e9cc9d994e0faac6e1498a1d7a95f17acdf9d0859dd6020f54f5403565"
+        },
+        "output": {
+          "bytes": 6589,
+          "tokens": 1397,
+          "sha256": "514ddb23d7c8549a6f0d2e8059ab737934c5963374774312e5989aa07929ecfe"
+        },
+        "description": {
+          "bytes": 1440,
+          "tokens": 283,
+          "sha256": "e4a01065f3666e8f661ba8577eff9bbf96c5b936131907150923534164b92344"
+        }
+      },
+      {
+        "name": "kmp_goto",
+        "input": {
+          "bytes": 7133,
+          "tokens": 1547,
+          "sha256": "530d3ab816b2c6eb3d1c3ee619611aae4d6498c9dc377b5d6c8547a84c7f5f74"
+        },
+        "output": {
+          "bytes": 9190,
+          "tokens": 1776,
+          "sha256": "44c78e487a7fd855ebf93fc30cb9aa0bff6b0e6438b10987fbadf4a9806c9d6a"
+        },
+        "description": {
+          "bytes": 266,
+          "tokens": 52,
+          "sha256": "afb5004c0a2616e5f04f59bd3ccd9ff60eadd7ca8442bdbfc531bdea6ee605ee"
+        }
+      },
+      {
+        "name": "kmp_near",
+        "input": {
+          "bytes": 7141,
+          "tokens": 1547,
+          "sha256": "ed108ae6f52431a0494bb3371ae36bc774a664bb7ba16beecfa98ad9330ace77"
+        },
+        "output": {
+          "bytes": 9190,
+          "tokens": 1776,
+          "sha256": "44c78e487a7fd855ebf93fc30cb9aa0bff6b0e6438b10987fbadf4a9806c9d6a"
+        },
+        "description": {
+          "bytes": 236,
+          "tokens": 46,
+          "sha256": "fa82c3bda11cd31dd6b5c937dfa6e2b1765d49775edd2e7b00d380a6a558eceb"
+        }
+      },
+      {
+        "name": "kmp_rewind",
+        "input": {
+          "bytes": 7188,
+          "tokens": 1560,
+          "sha256": "7fd8a676b2bc4439c95d2478b65268b18faef8aa64aa56280dd90921e54b2f98"
+        },
+        "output": {
+          "bytes": 9190,
+          "tokens": 1776,
+          "sha256": "44c78e487a7fd855ebf93fc30cb9aa0bff6b0e6438b10987fbadf4a9806c9d6a"
+        },
+        "description": {
+          "bytes": 259,
+          "tokens": 49,
+          "sha256": "d7145c04f951fa7849adc78b1fc703dee8c79afd390bad52c2ee15c34ef195f4"
+        }
+      },
+      {
+        "name": "kmp_forward",
+        "input": {
+          "bytes": 7188,
+          "tokens": 1560,
+          "sha256": "7fd8a676b2bc4439c95d2478b65268b18faef8aa64aa56280dd90921e54b2f98"
+        },
+        "output": {
+          "bytes": 9190,
+          "tokens": 1776,
+          "sha256": "44c78e487a7fd855ebf93fc30cb9aa0bff6b0e6438b10987fbadf4a9806c9d6a"
+        },
+        "description": {
+          "bytes": 246,
+          "tokens": 48,
+          "sha256": "29953624917a64ddadf225a8f66d96739d7741ff327fcf75b8f70ee8cd0a6e83"
+        }
+      },
+      {
+        "name": "kmp_trace",
+        "input": {
+          "bytes": 17839,
+          "tokens": 3970,
+          "sha256": "4447b3b39fcec902e5c79eef05c6239db38d7e1c8213656991821f8aed48c7a5"
+        },
+        "output": {
+          "bytes": 10520,
+          "tokens": 2058,
+          "sha256": "0d324e25470e0f71c7e17924c1f658b5e84d4c08d1a97247261a86f0080aea5d"
+        },
+        "description": {
+          "bytes": 545,
+          "tokens": 91,
+          "sha256": "16f4d3aa73a3c70b4d132afbec7efe353df5edc6a9f378e7232ca6ff9a079d3e"
+        }
+      },
+      {
+        "name": "kmp_inspect",
+        "input": {
+          "bytes": 3204,
+          "tokens": 655,
+          "sha256": "228dcc4df7d08f989f139626a3bb1e1a13e9f1d38ed4ab982b5f1c3a46c28f23"
+        },
+        "output": {
+          "bytes": 3892,
+          "tokens": 754,
+          "sha256": "4dabe61ea56e5c0040fde9d939d56924fd5a6485cf901b8e77ab74cfae8c2cb6"
+        },
+        "description": {
+          "bytes": 279,
+          "tokens": 51,
+          "sha256": "965d3c6a7d2c75e1b507fede96e74c6517bfb2eff12fa55b1a642672f5982c06"
+        }
+      },
+      {
+        "name": "kmp_relabel",
+        "input": {
+          "bytes": 3193,
+          "tokens": 699,
+          "sha256": "deda55cb06b319dadcb24e29b4de855bea4a6d1f0e112cf412a07984062b5371"
+        },
+        "output": {
+          "bytes": 1592,
+          "tokens": 359,
+          "sha256": "47d0ce3da102c0128a508ca05ea00253f8b2e4b9612f6d4e238765722c982f2e"
+        },
+        "description": {
+          "bytes": 792,
+          "tokens": 173,
+          "sha256": "89fecd5b9f83f2fa28d187c27c8a4f1afe85c07e9feeae681fb9b18698222736"
+        }
+      },
+      {
+        "name": "kmp_condense",
+        "input": {
+          "bytes": 3246,
+          "tokens": 690,
+          "sha256": "ed35ed756b45f5fbbc70d791bd20821c502df6bcdc45b34c733d49de1de7b602"
+        },
+        "output": {
+          "bytes": 1504,
+          "tokens": 312,
+          "sha256": "025cc7d7348eef08866d4117a3e48c10053750f0fd0e1398d6de181eb438597d"
+        },
+        "description": {
+          "bytes": 591,
+          "tokens": 118,
+          "sha256": "3c9b2c4cbb45866a63b60215786564b43e517acb4066d1a8410c6d275ba98117"
+        }
+      },
+      {
+        "name": "kmp_summaries_audit",
+        "input": {
+          "bytes": 2597,
+          "tokens": 549,
+          "sha256": "0e238f1007e9e86f19775e6d122ef1aaeb362e82e5c7bedacedfebf6a6b9dfe5"
+        },
+        "output": {
+          "bytes": 6263,
+          "tokens": 1312,
+          "sha256": "598cc6ead5bc67db35962d3546442a9d70410fac3e6f1d8e268386d3fdfbc459"
+        },
+        "description": {
+          "bytes": 900,
+          "tokens": 186,
+          "sha256": "6dbfb3b4085651892065cba4647890557b446a11aa02aad573e86ee77a4a4e9d"
+        }
+      },
+      {
+        "name": "kmp_view_open",
+        "input": {
+          "bytes": 1114,
+          "tokens": 238,
+          "sha256": "0cc2e556991cc06a22ba4fb2925a80769db13dbc6411eddfa3c2b0949cb90c7f"
+        },
+        "output": {
+          "bytes": 1820,
+          "tokens": 401,
+          "sha256": "0fbc3ca4f54b43ddf195dc6f18f184451123b3a68fa6618ba8d4f620d49c8984"
+        },
+        "description": {
+          "bytes": 251,
+          "tokens": 58,
+          "sha256": "f9d9395a98d9d83ffed789eaae932799363c27249ce01e08c38cd736e206ff7b"
+        }
+      },
+      {
+        "name": "kmp_view_apply_intent",
+        "input": {
+          "bytes": 5770,
+          "tokens": 1301,
+          "sha256": "0fb53f254339e7478c7e47349b796a840a57349a2c6b461040ea2aafcc7c375c"
+        },
+        "output": {
+          "bytes": 1664,
+          "tokens": 369,
+          "sha256": "c302012daf2dff27815735c4bf65bdc177a44398dfbbd030a197324b7ac80cd6"
+        },
+        "description": {
+          "bytes": 610,
+          "tokens": 137,
+          "sha256": "b788321cfe63c87a7156e0b563f3226db50dad81bb539e628b1519069828240d"
+        }
+      },
+      {
+        "name": "kmp_view_get_state",
+        "input": {
+          "bytes": 480,
+          "tokens": 101,
+          "sha256": "bdcf15c2795d5f8e1f510b728385e4db4618ad14887340790b625494c609ae9c"
+        },
+        "output": {
+          "bytes": 1820,
+          "tokens": 401,
+          "sha256": "0fbc3ca4f54b43ddf195dc6f18f184451123b3a68fa6618ba8d4f620d49c8984"
+        },
+        "description": {
+          "bytes": 210,
+          "tokens": 45,
+          "sha256": "ba3ef6bf3cb109f342a11887bec41c2bcb1b288c3f4cb74304ac8f9dc10da407"
+        }
+      },
+      {
+        "name": "kmp_guide",
+        "input": {
+          "bytes": 947,
+          "tokens": 202,
+          "sha256": "9b91bfbf968443123d2cac16665908f32209bbd63fd5af991c6744279dcb2ca5"
+        },
+        "output": {
+          "bytes": 1757,
+          "tokens": 351,
+          "sha256": "e9ce83d91e775eefc0eb329b76369c13e109a1c2f131933fcee413027008ef62"
+        },
+        "description": {
+          "bytes": 517,
+          "tokens": 93,
+          "sha256": "4deef1336a6a012e8ecb3ff89e95a5440516f9e80b8be93c019b77ef3a7716d3"
+        }
+      }
+    ]
+  },
+  "schema_cases": [
+    {
+      "tool": "kmp_ingest",
+      "accepted": 22,
+      "rejected": 247
+    },
+    {
+      "tool": "kmp_wake",
+      "accepted": 16,
+      "rejected": 277
+    },
+    {
+      "tool": "kmp_ask",
+      "accepted": 15,
+      "rejected": 301
+    },
+    {
+      "tool": "kmp_relate",
+      "accepted": 13,
+      "rejected": 196
+    },
+    {
+      "tool": "kmp_goto",
+      "accepted": 16,
+      "rejected": 342
+    },
+    {
+      "tool": "kmp_near",
+      "accepted": 16,
+      "rejected": 342
+    },
+    {
+      "tool": "kmp_forward",
+      "accepted": 16,
+      "rejected": 342
+    },
+    {
+      "tool": "kmp_rewind",
+      "accepted": 16,
+      "rejected": 342
+    },
+    {
+      "tool": "kmp_trace",
+      "accepted": 17,
+      "rejected": 303
+    },
+    {
+      "tool": "kmp_inspect",
+      "accepted": 12,
+      "rejected": 205
+    },
+    {
+      "tool": "kmp_relabel",
+      "accepted": 17,
+      "rejected": 317
+    },
+    {
+      "tool": "kmp_condense",
+      "accepted": 14,
+      "rejected": 476
+    },
+    {
+      "tool": "kmp_write_memory",
+      "accepted": 58,
+      "rejected": 685
+    }
+  ],
+  "model_calls": 0,
+  "native": {
+    "before": {
+      "binary_sha256": "1f9872a03e12a41afe3dac29dcc0f012f8541c0d26fb8fe32fd84dae4c28a9d8",
+      "profiles": {
+        "model": [
+          {
+            "method": "initialize",
+            "request": {
+              "bytes": 166,
+              "tokens": 49,
+              "sha256": "ef845423cfe6f0de6fcff1d6c723bee8c8f2673e435dbec2e0a0dfc3ef846144"
+            },
+            "response": {
+              "bytes": 1705,
+              "tokens": 357,
+              "sha256": "c579df19c7bd0d4083bc0f86cef9ff8a46574dc56cca3b756cbd0ef9efa813af"
+            }
+          },
+          {
+            "method": "tools/list",
+            "request": {
+              "bytes": 58,
+              "tokens": 21,
+              "sha256": "aa4597ff6cde6df7ad1134bdbeefe00d234cc87c2a4db91b43c0f5b0b4c6063e"
+            },
+            "response": {
+              "bytes": 247172,
+              "tokens": 51298,
+              "sha256": "2b33fe88d42b04371e939116c9292f5fd2a0c0035ab56430fa5c2cf490cf943a"
+            }
+          }
+        ],
+        "apps": [
+          {
+            "method": "initialize",
+            "request": {
+              "bytes": 253,
+              "tokens": 68,
+              "sha256": "0dac89620ef1500c57842d353f0ecb79c4c9c03783f3d41b63bc146654edd689"
+            },
+            "response": {
+              "bytes": 1808,
+              "tokens": 382,
+              "sha256": "2b40e73beba65c6cc074bc8ddb3e24b92fdcaa3d57ea1b341bb062372c34e14c"
+            }
+          },
+          {
+            "method": "tools/list",
+            "request": {
+              "bytes": 58,
+              "tokens": 21,
+              "sha256": "aa4597ff6cde6df7ad1134bdbeefe00d234cc87c2a4db91b43c0f5b0b4c6063e"
+            },
+            "response": {
+              "bytes": 252155,
+              "tokens": 52494,
+              "sha256": "0078847e43abfcd88af51ff16ce5be1efefa6190e6edc1496be1e062e88e40ed"
+            }
+          },
+          {
+            "method": "resources/list",
+            "request": {
+              "bytes": 62,
+              "tokens": 21,
+              "sha256": "8ddb449835cd5352142ac73c4a4e86a0f0229d4e97cb24ecbb61360b9ddf1e39"
+            },
+            "response": {
+              "bytes": 272,
+              "tokens": 77,
+              "sha256": "c3c276d084b4a4aa46120ab4acb6244c76d9e4a6672be32e514e2922c12bd5fc"
+            }
+          },
+          {
+            "method": "resources/read",
+            "request": {
+              "bytes": 94,
+              "tokens": 31,
+              "sha256": "581533e2a209e26e2472fbd25ca074e45f8a0f104b3643f59ae7a8c92591f70e"
+            },
+            "response": {
+              "bytes": 983795,
+              "tokens": 316594,
+              "sha256": "e950b2ce7aebea15e221f6cbc324f6a0866b4546fa7a905751856a99044797f2"
+            }
+          }
+        ]
+      }
+    },
+    "after": {
+      "binary_sha256": "738cb5404cb648e525c00baeed00a6caa6046a6b102f3edd7dc67562a312290e",
+      "profiles": {
+        "model": [
+          {
+            "method": "initialize",
+            "request": {
+              "bytes": 166,
+              "tokens": 49,
+              "sha256": "ef845423cfe6f0de6fcff1d6c723bee8c8f2673e435dbec2e0a0dfc3ef846144"
+            },
+            "response": {
+              "bytes": 1705,
+              "tokens": 357,
+              "sha256": "c579df19c7bd0d4083bc0f86cef9ff8a46574dc56cca3b756cbd0ef9efa813af"
+            }
+          },
+          {
+            "method": "tools/list",
+            "request": {
+              "bytes": 58,
+              "tokens": 21,
+              "sha256": "aa4597ff6cde6df7ad1134bdbeefe00d234cc87c2a4db91b43c0f5b0b4c6063e"
+            },
+            "response": {
+              "bytes": 246990,
+              "tokens": 51239,
+              "sha256": "61dee051533dc8db666b89bd814f5b2ebd80409501555ddd202f73ec5df40fa8"
+            }
+          }
+        ],
+        "apps": [
+          {
+            "method": "initialize",
+            "request": {
+              "bytes": 253,
+              "tokens": 68,
+              "sha256": "0dac89620ef1500c57842d353f0ecb79c4c9c03783f3d41b63bc146654edd689"
+            },
+            "response": {
+              "bytes": 1808,
+              "tokens": 382,
+              "sha256": "2b40e73beba65c6cc074bc8ddb3e24b92fdcaa3d57ea1b341bb062372c34e14c"
+            }
+          },
+          {
+            "method": "tools/list",
+            "request": {
+              "bytes": 58,
+              "tokens": 21,
+              "sha256": "aa4597ff6cde6df7ad1134bdbeefe00d234cc87c2a4db91b43c0f5b0b4c6063e"
+            },
+            "response": {
+              "bytes": 251973,
+              "tokens": 52435,
+              "sha256": "38213b25de1093054631137a35f43b7dbd9fec2cfea3e91507d3bb07ef3f8013"
+            }
+          },
+          {
+            "method": "resources/list",
+            "request": {
+              "bytes": 62,
+              "tokens": 21,
+              "sha256": "8ddb449835cd5352142ac73c4a4e86a0f0229d4e97cb24ecbb61360b9ddf1e39"
+            },
+            "response": {
+              "bytes": 272,
+              "tokens": 77,
+              "sha256": "c3c276d084b4a4aa46120ab4acb6244c76d9e4a6672be32e514e2922c12bd5fc"
+            }
+          },
+          {
+            "method": "resources/read",
+            "request": {
+              "bytes": 94,
+              "tokens": 31,
+              "sha256": "581533e2a209e26e2472fbd25ca074e45f8a0f104b3643f59ae7a8c92591f70e"
+            },
+            "response": {
+              "bytes": 983795,
+              "tokens": 316594,
+              "sha256": "e950b2ce7aebea15e221f6cbc324f6a0866b4546fa7a905751856a99044797f2"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "host_before": {
+    "metadata": {
+      "bytes": 139332,
+      "tokens": 31223,
+      "sha256": "6ac7df13f616268dc6b5d7f7c613965c2b7900a2f9dcd554dfc22f66ebf4236b"
+    },
+    "opaque_argument_tools": [
+      "mcp__kmp__kmp_ask",
+      "mcp__kmp__kmp_condense",
+      "mcp__kmp__kmp_forward",
+      "mcp__kmp__kmp_goto",
+      "mcp__kmp__kmp_ingest",
+      "mcp__kmp__kmp_inspect",
+      "mcp__kmp__kmp_near",
+      "mcp__kmp__kmp_relabel",
+      "mcp__kmp__kmp_relate",
+      "mcp__kmp__kmp_rewind",
+      "mcp__kmp__kmp_trace",
+      "mcp__kmp__kmp_wake",
+      "mcp__kmp__kmp_write_memory"
+    ],
+    "source": "ALL_TOOLS metadata exposed to the coordinating Codex agent; descriptions contain the host declaration. Installed plugin 0.18.5. This is not billed model context.",
+    "candidate_host_refresh_observed": false
+  }
+}

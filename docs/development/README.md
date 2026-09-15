@@ -11,6 +11,7 @@ should start with [Embedded KMP](../embedded/README.md).
 - [Visual projection performance](visual-projection-performance.md) — snapshot-bound ChronoLoom reuse, correctness and reproducible measurements.
 - [Releasing](releasing.md) — version, artifact and tag flow.
 - [Agent-facing surface](agent-surface.md) — maintenance procedure for people and agents, including ownership, generation, validation and context cost.
+- [Conditional argument schemas](agent-schema-conditions.md) — preserve callable fields and validate equivalent call forms against captured catalogues.
 - [Guide examples](../../plugins/kmp/guide/README.md) — authored lessons and isolated MCP replays.
 - [Semantic retrieval](semantic-retrieval.md) — optional retrieval policies and their contracts.
 - [Automatic formation](automatic-formation.md) — source-grounded memory writing and verification.

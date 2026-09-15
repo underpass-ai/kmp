@@ -1,0 +1,9 @@
+   Compiling kmp-application v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-application)
+   Compiling kmp-proto v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-proto)
+   Compiling kmp-observability v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-observability)
+   Compiling kmp-viewer v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-viewer)
+   Compiling kmp-adapter-embedded v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-adapter-embedded)
+   Compiling kmp-proto-mapping v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-proto-mapping)
+   Compiling kmp-embedded v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-embedded)
+   Compiling kmp-mcp v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-mcp)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.60s

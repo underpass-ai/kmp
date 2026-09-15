@@ -1,0 +1,32 @@
+    Blocking waiting for file lock on build directory
+   Compiling kmp-proto v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-proto)
+   Compiling kmp-proto-mapping v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-proto-mapping)
+   Compiling kmp-transport-grpc v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-transport-grpc)
+   Compiling kmp-mcp v0.18.5 (/home/gx10a/Documents/ai/kmp-top-five-20260915/crates/kmp-mcp)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.38s
+     Running unittests src/lib.rs (/home/gx10a/Documents/ai/kmp-540-consolidation/target/debug/deps/kmp_mcp-7a83b51cfce8a517)
+
+running 20 tests
+test contract::validator::tests::validates_non_empty_required_string_arguments ... ok
+test contract::validator::tests::reads_optional_strings ... ok
+test contract::validator::tests::rejects_missing_blank_or_non_object_required_arguments ... ok
+test contract::surface_audit::tests::the_code_comes_from_the_producer_and_not_from_the_message ... ok
+test contract::surface_audit::tests::initialize_result_reports_backend_metadata ... ok
+test contract::writer_audit::tests::writer_schema_has_one_record_shape_for_single_and_batch_writes ... ok
+test contract::view_absence_audit::absence_fails_an_open_and_degrades_an_intent_on_the_advertised_surface ... ok
+test contract::surface_audit::tests::former_tool_names_resolve_to_the_advertised_kmp_surface ... ok
+test contract::surface_audit::tests::tools_list_result_exposes_expected_tool_shapes ... ok
+test contract::surface_audit::tests::every_tool_describes_the_response_it_returns ... ok
+test contract::writer_audit::tests::relation_vocabulary_documentation_matches_the_writer_spec ... ok
+test contract::surface_audit::tests::the_surface_enumerates_every_error_code_it_can_return ... ok
+test contract::writer_audit::tests::each_verb_publishes_the_defaults_its_backend_uses ... ok
+test contract::summaries_audit_surface::tests::the_scope_vocabulary_is_the_one_the_reads_already_use ... ok
+test contract::surface_audit::tests::semantic_input_fields_have_a_typed_grpc_or_explicit_helper_classification ... ok
+test contract::summaries_audit_surface::tests::the_page_and_the_byte_ceiling_follow_the_conventions_already_published ... ok
+test contract::summaries_audit_surface::tests::every_advertised_argument_is_scope_vocabulary_or_response_projection ... ok
+test contract::surface_audit::tests::the_view_tools_are_declarative_idempotent_and_conflict_aware ... ok
+test contract::summaries_audit_surface::tests::the_states_filter_names_the_whole_vocabulary ... ok
+test contract::surface_audit::tests::output_schemas_cover_the_mapper_top_level_fields ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 413 filtered out; finished in 0.26s
+
