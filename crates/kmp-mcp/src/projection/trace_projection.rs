@@ -5,7 +5,6 @@ use kmp_proto::v1beta1::TraceResponse;
 use super::rendering::*;
 
 pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
-    let _eval539_span = kmp_domain::eval539_profile::span("projection.trace");
     let mut value = json!({
         "summary": response.summary,
         "trace": response.trace.iter().map(memory_relation_json).collect::<Vec<_>>(),

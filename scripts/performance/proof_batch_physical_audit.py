@@ -26,20 +26,36 @@ def percentiles(values: list[int]) -> dict:
 
 
 def operation_profiles(capture: Path, rows: list[dict], side: str) -> list[list[dict]]:
+    ids = [row["id"] for row in rows]
+    assert len(ids) == len(set(ids)), f"duplicate profile ids in {capture.name}"
     by_id = {row["id"]: row for row in rows}
     operations = []
     current = None
+    request_ids = []
     with gzip.open(capture, "rt") as source:
         for line in source:
             exchange = json.loads(line)
             request = exchange["request"]
+            request_ids.append(request["id"])
+            assert request["id"] in by_id, f"missing profile for request {request['id']}"
+            profile = by_id[request["id"]]
+            expected_tool = request.get("params", {}).get("name")
+            assert profile["method"] == request["method"]
+            assert profile["tool"] == expected_tool
+            assert profile["nesting_errors"] == 0
+            assert profile["sql"]["statements"] == profile["sql"]["profiles"]
+            assert profile["sql"]["vm_step_invalid_deltas"] == 0
             if request.get("method") != "tools/call":
                 continue
             params = request["params"]
             tool = params["name"]
             if tool not in {"kmp_trace", "kmp_inspect"}:
                 continue
-            profile = by_id[request["id"]]
+            phase_paths = {"/".join(phase["path"]) for phase in profile["phases"]}
+            assert "rpc.dispatch" in phase_paths
+            assert f"rpc.dispatch/backend.{tool.removeprefix('kmp_')}" in phase_paths
+            assert "rpc.dispatch/dispatch.validate_schema" in phase_paths
+            assert "rpc.dispatch/encoding.jsonrpc_string" in phase_paths
             if tool == "kmp_trace" and params["arguments"].get("page", {}).get("cursor") is None:
                 if current:
                     operations.append(current)
@@ -54,6 +70,7 @@ def operation_profiles(capture: Path, rows: list[dict], side: str) -> list[list[
                     current = None
     if current:
         operations.append(current)
+    assert request_ids == ids, "request/profile order or bijection changed"
     return operations
 
 
@@ -91,6 +108,7 @@ def summarize(rows: list[dict], operations: list[list[dict]]) -> dict:
         "phase_totals": dict(sorted(phase_totals.items())),
         "complete_operations": {
             "count": len(operations),
+            "rpc_counts": sorted({len(operation) for operation in operations}),
             **{
                 metric: percentiles([
                     sum(row["sql"][metric] for row in operation) for operation in operations
@@ -110,17 +128,26 @@ def main() -> None:
         shape = path.name.removesuffix("-physical.json.gz")
         with gzip.open(path, "rt") as source:
             sides = json.load(source)
+        summarized_sides = {
+            side: summarize(
+                rows,
+                operation_profiles(root / f"{shape}-{side}.jsonl.gz", rows, side),
+            )
+            for side, rows in sorted(sides.items())
+        }
+        if shape.startswith("064-"):
+            assert min(summarized_sides["batch"]["complete_operations"]["rpc_counts"]) > 1
         captures[shape] = {
             "source": path.name,
             "sha256": digest(path),
-            "sides": {
-                side: summarize(
-                    rows,
-                    operation_profiles(root / f"{shape}-{side}.jsonl.gz", rows, side),
-                )
-                for side, rows in sorted(sides.items())
-            },
+            "sides": summarized_sides,
         }
+    acceptance = json.loads((root / "summary.json").read_text())
+    assert {row["shape"] for row in acceptance} == set(captures)
+    for row in acceptance:
+        assert row["equivalence"]["selected_entries"] in {1, 8, 64}
+        assert row["warm"]["oracle"]["samples"] == row["warm"]["batch"]["samples"]
+        assert row["warm"]["oracle"]["samples"] > 0
     result = {
         "contract": "kmp.proof-batch-physical-audit.v1",
         "scope": "opt-in per-RPC inclusive phases and actual embedded SQLite trace_v2 events",

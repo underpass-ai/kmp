@@ -38,7 +38,6 @@ impl TraceSnapshotReader for TraceSnapshot<'_> {
     }
 
     fn node(&self, id: &str) -> Result<Option<NodeProjection>, PortError> {
-        let _eval539_span = kmp_domain::eval539_profile::span("adapter.trace_node");
         self.0
             .get(Table::Nodes, Key::Str(id))?
             .map(|raw| decode::<NodeRecord>("trace node", &raw)?.into_projection())
@@ -46,7 +45,6 @@ impl TraceSnapshotReader for TraceSnapshot<'_> {
     }
 
     fn adjacency(&self, request: &AdjacencyRequest) -> Result<AdjacencyPage, PortError> {
-        let _eval539_span = kmp_domain::eval539_profile::span("adapter.trace_adjacency");
         bounded_adjacency::read_page(self.0, request)
     }
 }

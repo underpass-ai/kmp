@@ -17,7 +17,6 @@ pub(crate) fn packet_is_partial(body: &Value) -> bool {
 }
 
 pub(crate) fn tool_success_result(structured_content: Value) -> Value {
-    let _eval539_span = kmp_domain::eval539_profile::span("envelope.tool_result");
     // `structuredContent` is the canonical response. Repeating the entire
     // pretty-printed JSON in the text block doubled every tool result and was
     // enough to overflow hosts even after the structured packet was budgeted.
@@ -27,7 +26,6 @@ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
         .or_else(|| structured_content.get("answer").and_then(Value::as_str))
         .map(ToString::to_string)
         .unwrap_or_else(|| {
-            let _span = kmp_domain::eval539_profile::span("encoding.tool_text");
             serde_json::to_string(&structured_content)
                 .expect("fixture JSON should serialize as compact text")
         });
@@ -71,7 +69,6 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
 }
 
 pub(crate) fn tool_error_result(tool: &str, arguments: &Value, error: &ToolError) -> Value {
-    let _eval539_span = kmp_domain::eval539_profile::span("envelope.tool_error");
     let guide_error = (tool == "kmp_inspect")
         .then(|| super::guide_repair::GuideRepair::for_inspect(arguments, error))
         .flatten();

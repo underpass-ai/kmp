@@ -5,7 +5,6 @@ use kmp_proto::v1beta1::InspectResponse;
 use super::rendering::*;
 
 pub(crate) fn inspect_from_response(response: InspectResponse) -> Value {
-    let _eval539_span = kmp_domain::eval539_profile::span("projection.inspect");
     let object = response.object.as_ref().map_or_else(
         || {
             json!({

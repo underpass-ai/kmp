@@ -41,7 +41,6 @@ impl RelationPageBudget {
         arguments: &Value,
         fingerprint: &str,
     ) -> Result<Value, ToolError> {
-        let _eval539_span = kmp_domain::eval539_profile::span("projection.relation_page_budget");
         if matches!(self, Self::Trace) {
             super::trace_material_expansion::attach(&mut value, arguments);
             super::trace_body_actions::attach(&mut value, arguments);

@@ -23,7 +23,6 @@ impl<'a> EmbeddedTraceTool<'a> {
     }
 
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
-        let _eval539_span = kmp_domain::eval539_profile::span("backend.trace");
         let request =
             TraceRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
         if let Some(query) = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)

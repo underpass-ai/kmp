@@ -8,19 +8,14 @@ pub(super) fn read_batch(
     tx: &dyn ReadTx,
     node_ids: &[String],
 ) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
-    let _eval539_span = kmp_domain::eval539_profile::span("bodies.read_batch");
-    let result: Result<Vec<Option<NodeDetailProjection>>, PortError> = node_ids
+    node_ids
         .iter()
         .map(|id| {
             tx.get(Table::Details, Key::Str(id))?
                 .map(|raw| decode::<DetailRecord>("node detail", &raw).map(Into::into))
                 .transpose()
         })
-        .collect();
-    if let Ok(values) = &result {
-        kmp_domain::eval539_profile::bodies(node_ids.len(), values, false);
-    }
-    result
+        .collect()
 }
 
 /// Stored record bytes for each id, in the requested order, duplicates and
@@ -46,13 +41,10 @@ impl NodeDetailReader for EmbeddedKernelStore {
         let node_id = node_id.to_string();
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let _span = kmp_domain::eval539_profile::span("bodies.read_single");
-            let value = match tx.get(Table::Details, Key::Str(&node_id))? {
-                Some(raw) => Some(decode::<DetailRecord>("node detail", &raw)?.into()),
-                None => None,
-            };
-            kmp_domain::eval539_profile::bodies(1, std::slice::from_ref(&value), true);
-            Ok(value)
+            match tx.get(Table::Details, Key::Str(&node_id))? {
+                Some(raw) => Ok(Some(decode::<DetailRecord>("node detail", &raw)?.into())),
+                None => Ok(None),
+            }
         })
         .await
     }

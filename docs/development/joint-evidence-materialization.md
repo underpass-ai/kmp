@@ -137,13 +137,15 @@ part of seeding, comparison or measurement.
 
 ### Physical backend and complete-operation follow-up
 
-The opt-in `EVAL539_PROFILE=1` observer records real SQLite `trace_v2` events,
+An experimental patch series applied to the exact clean main commit
+`fc352d7d37ac0480cc79120a6288bfd446fa4c86` records real SQLite `trace_v2` events,
 VM steps and returned rows, logical table reads, body batch slots and inclusive
 application, adapter, projection, mapping and encoding phases for each serial
-RPC. It is acceptance instrumentation rather than a public product surface. A
-binary test proves that the marker is absent by default and that one explicitly
-enabled request emits exactly one structured record. Inclusive phase spans can
-overlap, so they are not added together as exclusive wall time.
+RPC when `EVAL539_PROFILE=1`. The patches and their hashes live in
+`instrumentation-patches/`; its manifest records clean application, diffstat,
+scope and the enabled real-SQLite control command. None of this instrumentation
+is present in the product source tree or compiled default binary delivered by
+this PR.
 
 `artifacts/proof-batch-physical-20260915` repeats the four exact-equivalence
 fixtures with ten measured operations, three warmups and one process-first
@@ -154,6 +156,13 @@ the run rejects an operation whose cumulative responses exceed it. Each MCP
 call still declares the same value as its per-response API ceiling; observed
 complete traversals are far below the shared total (largest: 390,034 oracle
 bytes and 199,322 joint bytes).
+Each fixture arm uses its own temporary store and dedicated process, disables
+the viewer, writes stderr to a dedicated file and issues one stdin request at a
+time. Initialize, seeding and warmups remain identifiable and excluded from the
+ten measured operations. The post-capture auditor requires a bijection between
+request and profile ids/method/tools, zero nesting and VM-delta errors, one
+SQLite profile per statement, and the required RPC/backend/schema/encoding
+phase paths.
 
 | Shape | Warm client p50 ms oracle → joint | RPCs | SQLite statements p50 per complete operation oracle → joint | VM steps p50 oracle → joint |
 | --- | ---: | ---: | ---: | ---: |
@@ -170,6 +179,11 @@ larger pages may reduce it but would change response shape and are not inferred
 as a fix here. SQLite profile duration is statement execution reported by the
 observer, not physical disk I/O. `VmHWM` is still process-wide, and a fresh
 process still does not imply an empty operating-system cache.
+All elapsed and inclusive phase timings in this table come from the patched
+instrumented binary; no enabled-versus-disabled calibration was run, so they
+must not be presented as production latency. SQLite statements, rows and VM
+steps are the physical backend evidence. The exact semantic response equality,
+RPC counts and response bytes are independently checked by the runner.
 
 `proof_batch_physical_audit.py` reconstructs complete operations from the
 preserved JSON-RPC traces, joins each request id to its physical profile and
@@ -180,3 +194,11 @@ decompressed bytes were verified against the originals from commit `bd7681a8`.
 The
 previous 38 lost failed-attempt files remain lost and are only described by
 `failed-attempt-ledger.json`; this follow-up does not recreate them.
+
+For a new physical run, use
+`proof_batch_physical_run.py REPOSITORY OUTPUT SCRATCH SAMPLES`. The wrapper
+refuses a dirty repository or a different `origin/main`, verifies patch hashes,
+creates a detached temporary worktree, applies every patch, executes the
+enabled prepared-statement/partial-row SQLite control, builds and freezes that
+isolated binary, runs the serial acceptance capture, audits it, records patch
+validation and removes the temporary worktree and stores.

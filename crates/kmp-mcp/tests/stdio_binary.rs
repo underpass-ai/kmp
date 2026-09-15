@@ -141,10 +141,6 @@ fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configur
         "an unconfigured binary must serve, not refuse: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(
-        !String::from_utf8_lossy(&output.stderr).contains("EVAL539_PROFILE "),
-        "the acceptance profiler must be inert unless explicitly enabled"
-    );
     let stdout = String::from_utf8(output.stdout).expect("stdout should be UTF-8");
     let response: Value = serde_json::from_str(stdout.lines().next().expect("one response"))
         .expect("stdout line should be JSON");
@@ -163,35 +159,6 @@ fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configur
         log_entries > 0,
         "the default backend must journal exactly like explicit embedded mode"
     );
-}
-
-#[test]
-fn acceptance_profiler_emits_one_structured_record_when_explicitly_enabled() {
-    let data_dir = tempfile::tempdir().expect("temp data dir");
-    let output = run_binary(
-        &[
-            ("KMP_MCP_DATA_DIR", &data_dir.path().display().to_string()),
-            ("KMP_VIEWER_ADDR", "off"),
-            ("EVAL539_PROFILE", "1"),
-        ],
-        "{\"jsonrpc\":\"2.0\",\"id\":41,\"method\":\"tools/list\",\"params\":{}}\n",
-    );
-    assert!(output.status.success(), "{output:?}");
-    let stderr = String::from_utf8(output.stderr).expect("stderr UTF-8");
-    let records = stderr
-        .lines()
-        .filter_map(|line| line.strip_prefix("EVAL539_PROFILE "))
-        .map(|line| serde_json::from_str::<Value>(line).expect("profile JSON"))
-        .collect::<Vec<_>>();
-    assert_eq!(
-        records.len(),
-        1,
-        "one request produces one profile: {stderr}"
-    );
-    assert_eq!(records[0]["schema"], "eval539.physical.v1");
-    assert_eq!(records[0]["id"], 41);
-    assert_eq!(records[0]["method"], "tools/list");
-    assert_eq!(records[0]["nesting_errors"], 0);
 }
 
 #[test]

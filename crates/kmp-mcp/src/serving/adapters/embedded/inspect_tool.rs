@@ -17,7 +17,6 @@ impl<'a> EmbeddedInspectTool<'a> {
     }
 
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
-        let _eval539_span = kmp_domain::eval539_profile::span("backend.inspect");
         let request =
             InspectRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
         let query = inspect_query_from_proto(request).map_err(|status| mapping_error(&status))?;

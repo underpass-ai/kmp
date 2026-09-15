@@ -1049,7 +1049,6 @@ pub fn trace_response_from_result(
     result: GetContextPathResult,
     page: TracePageRequest,
 ) -> TraceResponse {
-    let _eval539_span = kmp_domain::eval539_profile::span("mapping.trace");
     let path = result.path_relationships();
     let trace = path
         .as_ref()
@@ -1216,7 +1215,6 @@ fn distinct_relation_nodes(relationships: &[kmp_proto::v1beta1::MemoryRelation])
 }
 
 pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectResponse {
-    let _eval539_span = kmp_domain::eval539_profile::span("mapping.inspect");
     let node_ref = result.detail.node.node_id.clone();
     let node_kind = result.detail.node.node_kind.clone();
     let metadata = persisted_memory_metadata(&result.detail.node.properties);

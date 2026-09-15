@@ -101,30 +101,7 @@ pub(crate) async fn serve() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
 
-        let response = if kmp_domain::eval539_profile::begin() {
-            let request: serde_json::Value = serde_json::from_slice(&line).unwrap_or_default();
-            let started = std::time::Instant::now();
-            let span = kmp_domain::eval539_profile::span("rpc.dispatch");
-            let response = server.handle_json_bytes(&line).await;
-            drop(span);
-            let elapsed_ns = started.elapsed().as_nanos() as u64;
-            let totals = kmp_domain::eval539_profile::finish();
-            eprintln!(
-                "EVAL539_PROFILE {}",
-                serde_json::json!({
-                    "schema": "eval539.physical.v1", "id": request.get("id"),
-                    "method": request.get("method"), "tool": request.pointer("/params/name"),
-                    "elapsed_ns": elapsed_ns, "phases": totals.phases,
-                    "logical_reads": totals.logical_reads, "sql": totals.sql,
-                    "bodies": totals.bodies, "nesting_errors": totals.nesting_errors,
-                    "allocations": null
-                })
-            );
-            response
-        } else {
-            server.handle_json_bytes(&line).await
-        };
-        if let Some(response) = response {
+        if let Some(response) = server.handle_json_bytes(&line).await {
             writeln!(stdout, "{response}")?;
             stdout.flush()?;
         }

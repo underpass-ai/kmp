@@ -149,22 +149,16 @@ impl KernelMcpServer {
         // Before anything reads them: the schemas declare
         // `additionalProperties: false`, so an argument the tool does not have
         // is refused here rather than dropped and answered anyway.
-        if let Err(error) = {
-            let _eval539_span = kmp_domain::eval539_profile::span("dispatch.validate_schema");
-            reject_unknown_arguments(name, arguments)
-        } {
-            {
-                let _eval539_span = kmp_domain::eval539_profile::span("dispatch.record_tool_error");
-                record_tool_error(
-                    self.backend_name(),
-                    self.grpc_tls_mode_name(),
-                    name,
-                    arguments,
-                    ToolErrorKind::Validation,
-                    &error.message,
-                    start.elapsed(),
-                );
-            }
+        if let Err(error) = reject_unknown_arguments(name, arguments) {
+            record_tool_error(
+                self.backend_name(),
+                self.grpc_tls_mode_name(),
+                name,
+                arguments,
+                ToolErrorKind::Validation,
+                &error.message,
+                start.elapsed(),
+            );
             return jsonrpc_result(id, tool_error_result(name, arguments, &error));
         }
 
@@ -172,21 +166,12 @@ impl KernelMcpServer {
             return self.handle_kmp_guide(id, arguments, start).await;
         }
 
-        let resolved_result = {
-            let _eval539_span =
-                kmp_domain::eval539_profile::span("dispatch.resolve_read_arguments");
-            self.resolve_read_arguments(name, arguments)
-        };
-        let resolved = match resolved_result {
+        let resolved = match self.resolve_read_arguments(name, arguments) {
             Ok(resolved) => resolved,
             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
         };
         let arguments = resolved.as_ref().unwrap_or(arguments);
-        let guidance_result = {
-            let _eval539_span = kmp_domain::eval539_profile::span("dispatch.guidance_prepare");
-            super::call_guidance::CallGuidance::prepare(self, arguments)
-        };
-        let guidance = match guidance_result {
+        let guidance = match super::call_guidance::CallGuidance::prepare(self, arguments) {
             Ok(guidance) => guidance,
             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
         };
@@ -203,23 +188,12 @@ impl KernelMcpServer {
             .await;
         let result = match guidance {
             Some(guidance) => {
-                let result = {
-                    let _eval539_span =
-                        kmp_domain::eval539_profile::span("dispatch.guidance_shorten");
-                    self.shorten_read_actions(&guidance, result)
-                };
-                {
-                    let _eval539_span =
-                        kmp_domain::eval539_profile::span("dispatch.guidance_complete");
-                    self.complete_work_guidance(name, arguments, &guidance, result)
-                }
+                let result = self.shorten_read_actions(&guidance, result);
+                self.complete_work_guidance(name, arguments, &guidance, result)
             }
             None => result,
         };
-        {
-            let _eval539_span = kmp_domain::eval539_profile::span("dispatch.project_read_passages");
-            self.project_read_passages(name, result)
-        }
+        self.project_read_passages(name, result)
     }
 
     async fn dispatch_memory_call(
@@ -249,18 +223,15 @@ impl KernelMcpServer {
             && let Err(message) = crate::write::reject_refs_outside_about(arguments)
         {
             let error = ToolError::invalid_argument(message);
-            {
-                let _eval539_span = kmp_domain::eval539_profile::span("dispatch.record_tool_error");
-                record_tool_error(
-                    self.backend_name(),
-                    self.grpc_tls_mode_name(),
-                    name,
-                    arguments,
-                    ToolErrorKind::Validation,
-                    &error.message,
-                    start.elapsed(),
-                );
-            }
+            record_tool_error(
+                self.backend_name(),
+                self.grpc_tls_mode_name(),
+                name,
+                arguments,
+                ToolErrorKind::Validation,
+                &error.message,
+                start.elapsed(),
+            );
             return jsonrpc_result(id, tool_error_result(name, arguments, &error));
         }
 
@@ -272,34 +243,26 @@ impl KernelMcpServer {
 
         match self.backend.call_tool(name, arguments).await {
             Ok(result) => {
-                {
-                    let _eval539_span =
-                        kmp_domain::eval539_profile::span("dispatch.record_tool_success");
-                    record_tool_success(
-                        self.backend_name(),
-                        self.grpc_tls_mode_name(),
-                        name,
-                        arguments,
-                        &result,
-                        start.elapsed(),
-                    );
-                }
+                record_tool_success(
+                    self.backend_name(),
+                    self.grpc_tls_mode_name(),
+                    name,
+                    arguments,
+                    &result,
+                    start.elapsed(),
+                );
                 jsonrpc_result(id, result)
             }
             Err(error) => {
-                {
-                    let _eval539_span =
-                        kmp_domain::eval539_profile::span("dispatch.record_tool_error");
-                    record_tool_error(
-                        self.backend_name(),
-                        self.grpc_tls_mode_name(),
-                        name,
-                        arguments,
-                        ToolErrorKind::Backend,
-                        &error.message,
-                        start.elapsed(),
-                    );
-                }
+                record_tool_error(
+                    self.backend_name(),
+                    self.grpc_tls_mode_name(),
+                    name,
+                    arguments,
+                    ToolErrorKind::Backend,
+                    &error.message,
+                    start.elapsed(),
+                );
                 jsonrpc_result(id, tool_error_result(name, arguments, &error))
             }
         }
