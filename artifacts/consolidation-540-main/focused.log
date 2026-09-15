@@ -1,0 +1,193 @@
+   Compiling kmp-plugin-api v0.18.5 (/home/gx10a/Documents/ai/kmp-540-consolidation/crates/kmp-plugin-api)
+   Compiling kmp-domain v0.18.5 (/home/gx10a/Documents/ai/kmp-540-consolidation/crates/kmp-domain)
+   Compiling kmp-application v0.18.5 (/home/gx10a/Documents/ai/kmp-540-consolidation/crates/kmp-application)
+   Compiling kmp-ports v0.18.5 (/home/gx10a/Documents/ai/kmp-540-consolidation/crates/kmp-ports)
+   Compiling kmp-observability v0.18.5 (/home/gx10a/Documents/ai/kmp-540-consolidation/crates/kmp-observability)
+   Compiling kmp-adapter-embedded v0.18.5 (/home/gx10a/Documents/ai/kmp-540-consolidation/crates/kmp-adapter-embedded)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.54s
+     Running unittests src/lib.rs (target/debug/deps/kmp_adapter_embedded-30422723135947db)
+
+running 12 tests
+test adapter::consolidation::tests::authorship_preserves_subsecond_cuts ... ok
+test adapter::consolidation::tests::invalid_quotes_and_foreign_sources_write_nothing ... ok
+test adapter::consolidation::tests::source_limits_and_unknown_fields_fail_explicitly ... ok
+test adapter::consolidation::tests::changed_capture_is_refused_atomically ... ok
+test adapter::consolidation::tests::changed_body_under_same_public_revision_invalidates_and_history_survives ... ok
+test adapter::consolidation::tests::concurrent_sessions_compare_and_set_one_view_revision ... ok
+test adapter::consolidation::tests::relation_only_changes_invalidate_but_unrelated_writes_do_not ... ok
+test adapter::consolidation::tests::paraphrases_group_without_rewriting_originals_and_retry_survives_restart ... ok
+test adapter::consolidation::tests::reused_key_with_different_payload_is_a_conflict ... ok
+test adapter::consolidation::tests::refresh_is_incremental_and_preserves_both_revisions ... ok
+test adapter::consolidation::tests::relabel_membership_clocks_are_dependencies_even_when_structural ... ok
+test adapter::consolidation::tests::incompatible_dimensions_never_collapse_and_unknowns_remain_separate ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.29s
+
+     Running unittests src/bin/embedded_crash_writer.rs (target/debug/deps/embedded_crash_writer-714e48834497cbc8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/atomic_context_projection.rs (target/debug/deps/atomic_context_projection-d75816659a0370f3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/bounded_adjacency.rs (target/debug/deps/bounded_adjacency-dfe11c5b5bd07aee)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/bounded_trace.rs (target/debug/deps/bounded_trace-b639a7c0031c131b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/bounded_trace_time.rs (target/debug/deps/bounded_trace_time-892a6e24def3497d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/compaction.rs (target/debug/deps/compaction-ec5ab9755c4a2d94)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/crash_recovery.rs (target/debug/deps/crash_recovery-5e1aa37b9233d8ef)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/dimensional_lookup.rs (target/debug/deps/dimensional_lookup-236ad4adc076fd5e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/evidence_paths.rs (target/debug/deps/evidence_paths-6731b72a991571e1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+     Running tests/guide_bundle.rs (target/debug/deps/guide_bundle-750627188a0e7bba)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/neighborhood_cross_engine.rs (target/debug/deps/neighborhood_cross_engine-b23d64287a8e89aa)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/node_batch.rs (target/debug/deps/node_batch-2ea8390b4c0464cf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/portability_failfast.rs (target/debug/deps/portability_failfast-7c39f3e94b29fb01)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/proof_read_snapshot.rs (target/debug/deps/proof_read_snapshot-6ec0bed508ed1ef8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/recall_body_selection.rs (target/debug/deps/recall_body_selection-c5b1e79964172a25)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/scoped_neighborhood.rs (target/debug/deps/scoped_neighborhood-d2b823cd565c1471)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/sqlite_lifecycle.rs (target/debug/deps/sqlite_lifecycle-958c67bce705034f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/store_migration.rs (target/debug/deps/store_migration-1b7c6f05e7d6439b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/store_scale.rs (target/debug/deps/store_scale-f00d30faa0f283de)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/telemetry_journal.rs (target/debug/deps/telemetry_journal-eafc0bc60ef19cac)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/temporal_body_selection.rs (target/debug/deps/temporal_body_selection-50bed62448bdd34b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/temporal_index.rs (target/debug/deps/temporal_index-25d8b23fa155b712)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/trace_alternatives.rs (target/debug/deps/trace_alternatives-2e3ec5de2468b0a5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/trace_dimensions.rs (target/debug/deps/trace_dimensions-955df23db4ef67d1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/trace_focus_pages.rs (target/debug/deps/trace_focus_pages-e61d0736b0d434ec)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/trace_proof.rs (target/debug/deps/trace_proof-bf5005e60a2e79f0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/two_writers_one_store.rs (target/debug/deps/two_writers_one_store-90a7338a9711b487)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/visual_projection_cache.rs (target/debug/deps/visual_projection_cache-7707f527fb021942)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
