@@ -1,0 +1,11 @@
+   Compiling kmp-mcp v0.18.4 (/home/gx10a/Documents/ai/kmp-784-condense/crates/kmp-mcp)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.87s
+     Running tests/tool_surface_parity.rs (target/debug/deps/tool_surface_parity-6477c1e91dcf2775)
+
+running 3 tests
+test the_pinned_calls_cover_every_advertised_tool ... ok
+test the_advertised_tool_definitions_match_their_reviewed_fixture ... ok
+test every_tool_answers_what_its_reviewed_fixture_says ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.67s
+

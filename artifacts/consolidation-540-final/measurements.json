@@ -1,0 +1,220 @@
+{
+  "binary_sha256": "5d52cc6d8ef070d8e82c80e01bf5c8e90685aa9873a56acbf4012985eb2be319",
+  "script_sha256": "7bd24b0c689c4a8629e60a01ecedd1ec06ffa1858910155f23492295ce713c45",
+  "archive_repeats": 8,
+  "tokenizer": "tiktoken 0.14.0 o200k_base",
+  "original_sources": 16,
+  "fixed_declarations": 16,
+  "consolidated_groups": 8,
+  "budgets": "100%, 75%, 50% of full formed JSON packet byte size including envelope; same ceiling for all arms",
+  "budget_bytes": {
+    "100": 13791,
+    "75": 10343,
+    "50": 6895
+  },
+  "budget_delivery_failures": [],
+  "cli_calls": [
+    {
+      "verb": "consolidation sources",
+      "request_bytes": 738,
+      "response_bytes": 39148,
+      "request_tokens": 221,
+      "response_tokens": 10194,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 99.604523
+    },
+    {
+      "verb": "consolidation write",
+      "request_bytes": 9155,
+      "response_bytes": 279,
+      "request_tokens": 2492,
+      "response_tokens": 79,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 85.535799
+    },
+    {
+      "verb": "consolidation write",
+      "request_bytes": 9155,
+      "response_bytes": 279,
+      "request_tokens": 2492,
+      "response_tokens": 79,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 25.076406
+    },
+    {
+      "verb": "consolidation write",
+      "request_bytes": 2476,
+      "response_bytes": 0,
+      "request_tokens": 978,
+      "response_tokens": 0,
+      "stderr_bytes": 81,
+      "stderr_tokens": 17,
+      "exit_code": 2,
+      "wall_ms_including_process_start": 62.593368
+    },
+    {
+      "verb": "consolidation project",
+      "request_bytes": 76,
+      "response_bytes": 3946,
+      "request_tokens": 20,
+      "response_tokens": 1032,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 75.639713
+    },
+    {
+      "verb": "context project",
+      "request_bytes": 19250,
+      "response_bytes": 13645,
+      "request_tokens": 4530,
+      "response_tokens": 3533,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 109.623633
+    },
+    {
+      "verb": "consolidation project",
+      "request_bytes": 76,
+      "response_bytes": 3946,
+      "request_tokens": 20,
+      "response_tokens": 1032,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 96.222058
+    },
+    {
+      "verb": "context project",
+      "request_bytes": 19250,
+      "response_bytes": 10299,
+      "request_tokens": 4530,
+      "response_tokens": 2617,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 83.409023
+    },
+    {
+      "verb": "consolidation project",
+      "request_bytes": 75,
+      "response_bytes": 3946,
+      "request_tokens": 20,
+      "response_tokens": 1032,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 88.51761
+    },
+    {
+      "verb": "context project",
+      "request_bytes": 19249,
+      "response_bytes": 6807,
+      "request_tokens": 4530,
+      "response_tokens": 1858,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 75.679953
+    },
+    {
+      "verb": "consolidation read",
+      "request_bytes": 71,
+      "response_bytes": 75557,
+      "request_tokens": 18,
+      "response_tokens": 18250,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 27.790491
+    }
+  ],
+  "packets": [
+    {
+      "packet": "consolidated-100.json",
+      "bytes": 3945,
+      "tokens": 1032,
+      "sha256": "848160c53df8445323fdae03237a49e0c87f2b171cc37f5fb489ac73726ab455"
+    },
+    {
+      "packet": "consolidated-50.json",
+      "bytes": 3945,
+      "tokens": 1032,
+      "sha256": "848160c53df8445323fdae03237a49e0c87f2b171cc37f5fb489ac73726ab455"
+    },
+    {
+      "packet": "consolidated-75.json",
+      "bytes": 3945,
+      "tokens": 1032,
+      "sha256": "848160c53df8445323fdae03237a49e0c87f2b171cc37f5fb489ac73726ab455"
+    },
+    {
+      "packet": "deduplicated-100.json",
+      "bytes": 13644,
+      "tokens": 3533,
+      "sha256": "df24d89ce12d7a12a44bdecd013318ea8928f48270af60273e33c1ca08e3bf7f"
+    },
+    {
+      "packet": "deduplicated-50.json",
+      "bytes": 6806,
+      "tokens": 1858,
+      "sha256": "4c9b3d78348b9b974d5156fa368a02df8dc7fe2c9396617f56b3707ab58c7ba2"
+    },
+    {
+      "packet": "deduplicated-75.json",
+      "bytes": 10298,
+      "tokens": 2617,
+      "sha256": "1f72368a791836007ab3fcbecef39b1c8331e5fea14eccd4b73bec9325ea6ced"
+    },
+    {
+      "packet": "formed-100.json",
+      "bytes": 13791,
+      "tokens": 2963,
+      "sha256": "f43fb036cbc9401c022fd4b21035c43ad46c3998bcec08ded6a2535a85a961b2"
+    },
+    {
+      "packet": "formed-50.json",
+      "bytes": 6875,
+      "tokens": 1463,
+      "sha256": "4c9e6f57be45003bdb2ed081768b4fcc0b84ab4b2afc9680cec2d59470b4ad08"
+    },
+    {
+      "packet": "formed-75.json",
+      "bytes": 10250,
+      "tokens": 2135,
+      "sha256": "7bfa67d376e2571594a3845c9c11a5d04db6c6c477c67efa1d34defa1d2b5eb8"
+    },
+    {
+      "packet": "source-only-100.json",
+      "bytes": 11405,
+      "tokens": 2343,
+      "sha256": "8851dc4bd386451320d743c50f4085bfc03259b4e0bc7cbc51099c4e72f5e6f3"
+    },
+    {
+      "packet": "source-only-50.json",
+      "bytes": 6413,
+      "tokens": 1338,
+      "sha256": "b24d5da40b43d8b42dedcfa4d99a814832b30c03047edf1adddf897eb0be77da"
+    },
+    {
+      "packet": "source-only-75.json",
+      "bytes": 9951,
+      "tokens": 2053,
+      "sha256": "be12658b6d142d879f6c9831fe6574db4e94131217a4eb9e17150a806a2d9302"
+    }
+  ],
+  "reader_results": "not run by this script",
+  "limitations": [
+    "Development fixture with manually fixed writer declarations, not held-out evaluation.",
+    "Byte savings and token counts are representation measurements, not reader quality or billed cost.",
+    "CLI latency includes process startup; this is not a warmed embedded-service latency benchmark.",
+    "Preparation, writes and audit expansion are reported separately; no generation model was invoked."
+  ]
+}

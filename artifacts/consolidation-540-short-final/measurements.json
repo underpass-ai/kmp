@@ -1,0 +1,239 @@
+{
+  "binary_sha256": "5d52cc6d8ef070d8e82c80e01bf5c8e90685aa9873a56acbf4012985eb2be319",
+  "script_sha256": "7bd24b0c689c4a8629e60a01ecedd1ec06ffa1858910155f23492295ce713c45",
+  "archive_repeats": 0,
+  "tokenizer": "tiktoken 0.14.0 o200k_base",
+  "original_sources": 16,
+  "fixed_declarations": 16,
+  "consolidated_groups": 8,
+  "budgets": "100%, 75%, 50% of full formed JSON packet byte size including envelope; same ceiling for all arms",
+  "budget_bytes": {
+    "100": 4447,
+    "75": 3335,
+    "50": 2223
+  },
+  "budget_delivery_failures": [
+    {
+      "arm": "deduplicated",
+      "budget_percent": 100,
+      "requested_bytes": 4447,
+      "actual_bytes": 5675
+    },
+    {
+      "arm": "deduplicated",
+      "budget_percent": 75,
+      "requested_bytes": 3335,
+      "actual_bytes": 5675
+    },
+    {
+      "arm": "deduplicated",
+      "budget_percent": 50,
+      "requested_bytes": 2223,
+      "actual_bytes": 5675
+    }
+  ],
+  "cli_calls": [
+    {
+      "verb": "consolidation sources",
+      "request_bytes": 738,
+      "response_bytes": 29804,
+      "request_tokens": 221,
+      "response_tokens": 8443,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 47.680582
+    },
+    {
+      "verb": "consolidation write",
+      "request_bytes": 9155,
+      "response_bytes": 279,
+      "request_tokens": 2533,
+      "response_tokens": 79,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 52.435619
+    },
+    {
+      "verb": "consolidation write",
+      "request_bytes": 9155,
+      "response_bytes": 279,
+      "request_tokens": 2533,
+      "response_tokens": 79,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 38.23491
+    },
+    {
+      "verb": "consolidation write",
+      "request_bytes": 2476,
+      "response_bytes": 0,
+      "request_tokens": 1019,
+      "response_tokens": 0,
+      "stderr_bytes": 81,
+      "stderr_tokens": 17,
+      "exit_code": 2,
+      "wall_ms_including_process_start": 37.46517
+    },
+    {
+      "verb": "consolidation project",
+      "request_bytes": 75,
+      "response_bytes": 3946,
+      "request_tokens": 20,
+      "response_tokens": 1032,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 39.065051
+    },
+    {
+      "verb": "context project",
+      "request_bytes": 9905,
+      "response_bytes": 5676,
+      "request_tokens": 2738,
+      "response_tokens": 1558,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 52.269299
+    },
+    {
+      "verb": "consolidation project",
+      "request_bytes": 75,
+      "response_bytes": 3042,
+      "request_tokens": 20,
+      "response_tokens": 798,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 53.408078
+    },
+    {
+      "verb": "context project",
+      "request_bytes": 9905,
+      "response_bytes": 5676,
+      "request_tokens": 2738,
+      "response_tokens": 1558,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 62.320409
+    },
+    {
+      "verb": "consolidation project",
+      "request_bytes": 75,
+      "response_bytes": 2156,
+      "request_tokens": 20,
+      "response_tokens": 566,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 29.183397
+    },
+    {
+      "verb": "context project",
+      "request_bytes": 9905,
+      "response_bytes": 5676,
+      "request_tokens": 2738,
+      "response_tokens": 1558,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 47.86063
+    },
+    {
+      "verb": "consolidation read",
+      "request_bytes": 71,
+      "response_bytes": 47397,
+      "request_tokens": 18,
+      "response_tokens": 12787,
+      "stderr_bytes": 0,
+      "stderr_tokens": 0,
+      "exit_code": 0,
+      "wall_ms_including_process_start": 21.014599
+    }
+  ],
+  "packets": [
+    {
+      "packet": "consolidated-100.json",
+      "bytes": 3945,
+      "tokens": 1032,
+      "sha256": "848160c53df8445323fdae03237a49e0c87f2b171cc37f5fb489ac73726ab455"
+    },
+    {
+      "packet": "consolidated-50.json",
+      "bytes": 2155,
+      "tokens": 566,
+      "sha256": "4ab90ec0b7e2c669cf8056bd42c6217b45457e81e4867f15dd868cc2e3a07c34"
+    },
+    {
+      "packet": "consolidated-75.json",
+      "bytes": 3041,
+      "tokens": 798,
+      "sha256": "4510dba6ee4f82809d7bdbd326a0da38f60f91a9adab3e05bdbafe0e373765a3"
+    },
+    {
+      "packet": "deduplicated-100.json",
+      "bytes": 5675,
+      "tokens": 1559,
+      "sha256": "37d724b8e2bf2483250c7e50b374b079e35e03a0ef6be0bfb82ade2cdb2818aa"
+    },
+    {
+      "packet": "deduplicated-50.json",
+      "bytes": 5675,
+      "tokens": 1559,
+      "sha256": "ae4a2e287d416069863bcbc460d0551ef267b870e13981ce4c64e47b18f5fb67"
+    },
+    {
+      "packet": "deduplicated-75.json",
+      "bytes": 5675,
+      "tokens": 1559,
+      "sha256": "bd0bdcaf33c54b7c1b61e943c589fb5b96de16f7dcbefd3afc439626e67fa157"
+    },
+    {
+      "packet": "formed-100.json",
+      "bytes": 4447,
+      "tokens": 1171,
+      "sha256": "bac10afbd14bec3a9dbe9a0d13666066d601e358d21a24d8a3722ac0da77f8f8"
+    },
+    {
+      "packet": "formed-50.json",
+      "bytes": 2211,
+      "tokens": 592,
+      "sha256": "eb98adce85c930845a9e708686ed54ac7ad9ca32e28081dce5f8c84efc8ad7a7"
+    },
+    {
+      "packet": "formed-75.json",
+      "bytes": 3261,
+      "tokens": 883,
+      "sha256": "baba026556951392a4457eee1d3857840486627d17a8e9933bc843e222fb7338"
+    },
+    {
+      "packet": "source-only-100.json",
+      "bytes": 2061,
+      "tokens": 551,
+      "sha256": "368b85c828ecb9d8f888f33b95d9f5a41b961ca017ef3675459b4c8196c758f0"
+    },
+    {
+      "packet": "source-only-50.json",
+      "bytes": 2061,
+      "tokens": 551,
+      "sha256": "368b85c828ecb9d8f888f33b95d9f5a41b961ca017ef3675459b4c8196c758f0"
+    },
+    {
+      "packet": "source-only-75.json",
+      "bytes": 2061,
+      "tokens": 551,
+      "sha256": "368b85c828ecb9d8f888f33b95d9f5a41b961ca017ef3675459b4c8196c758f0"
+    }
+  ],
+  "reader_results": "not run by this script",
+  "limitations": [
+    "Development fixture with manually fixed writer declarations, not held-out evaluation.",
+    "Byte savings and token counts are representation measurements, not reader quality or billed cost.",
+    "CLI latency includes process startup; this is not a warmed embedded-service latency benchmark.",
+    "Preparation, writes and audit expansion are reported separately; no generation model was invoked."
+  ]
+}
