@@ -1,0 +1,13 @@
+{
+  "sequence": 3,
+  "arguments": [
+    "git",
+    "merge-base",
+    "--is-ancestor",
+    "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
+    "origin/main"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+  "exit_code": 0,
+  "output": ""
+}

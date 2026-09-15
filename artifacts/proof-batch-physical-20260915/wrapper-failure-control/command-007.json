@@ -1,0 +1,11 @@
+{
+  "sequence": 7,
+  "arguments": [
+    "git",
+    "am",
+    "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/artifacts/proof-batch-physical-20260915/instrumentation-patches/0003-experiment-split-RPC-validation-and-guidance-overhea.patch"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-x89_4_dr",
+  "exit_code": 0,
+  "output": "Applying: experiment: split RPC validation and guidance overhead phases\n"
+}

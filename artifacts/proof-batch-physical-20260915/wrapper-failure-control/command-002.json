@@ -1,0 +1,12 @@
+{
+  "sequence": 2,
+  "arguments": [
+    "git",
+    "cat-file",
+    "-e",
+    "fc352d7d37ac0480cc79120a6288bfd446fa4c86^{commit}"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+  "exit_code": 0,
+  "output": ""
+}
