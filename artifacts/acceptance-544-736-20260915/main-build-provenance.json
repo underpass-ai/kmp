@@ -1,0 +1,29 @@
+{
+  "kind": "new stable build validation; not reconstructed original build log",
+  "worktree": "/home/gx10a/Documents/ai/kmp-accept-writer-20260915",
+  "base_commit": "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
+  "base_tree": "5f1d2b1142f0cb662e517221d68c339a0adae6be",
+  "worktree_commit": "fabb1f039262c851ae6d342704aa3ad2efc15634",
+  "worktree_tree": "9c94274faa22f101010b93ee863f5f17387c75e7",
+  "build_input_paths": [
+    "crates",
+    "plugins",
+    "Cargo.toml",
+    "Cargo.lock",
+    "build.rs",
+    ".cargo"
+  ],
+  "diff_against_base": "empty before and after build",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "-p",
+    "kmp-mcp"
+  ],
+  "exit_code": 0,
+  "binary_sha256": "455820c837eb3bf15e8c2d411a6726ea2418f6f682ebf4c7d2c8a6dd7a636801",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "workspace_cargo_config_sha256": "aa4afc0d2d90cf810213d38bc37a7b879ba683b518c6674e24d93b9272020cf7"
+}

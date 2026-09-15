@@ -15,13 +15,13 @@ hashes are in [the evidence directory](../../artifacts/acceptance-544-736-202609
 ## #544: surface and complete authored journeys
 
 The main binary SHA-256 is
-`8ff8ca3217639aa61d72d258b0c8b880803e3bd7d8705fb666d14bd38ca72675`.
+`455820c837eb3bf15e8c2d411a6726ea2418f6f682ebf4c7d2c8a6dd7a636801`.
 The installed 0.18.5 binary SHA-256 is
 `c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910`.
 Main was built in the development profile; the installed release has a different
 build profile. Their wall times are recorded but are not a performance comparison.
 
-`surface-metrics.json` separates native initialization, catalogue, MCP Apps
+`surface-metrics-validated.json` separates native initialization, catalogue, MCP Apps
 resources, guide entry/editorial/skills, actual host declarations, and guide and
 memory RPCs within each journey. It uses tiktoken 0.14.0, `o200k_base`, compact
 UTF-8 JSON per envelope and exact text for files. These representations are not
@@ -36,14 +36,14 @@ boundaries and are both retained.
 
 | Journey | RPCs per variant | Installed request + response tokens | Main request + response tokens |
 | --- | ---: | ---: | ---: |
-| Semantic batch writing | 40 | 115,904 | 115,810 |
-| Decision history and recovery | 47 | 178,512 | 178,590 |
-| Four clocks and dated reads | 64 | 136,423 | 136,458 |
-| Budgeted proof and interval navigation | 77 | 240,615 | 240,595 |
-| Dimensional memberships | 27 | 97,543 | 97,480 |
-| Distributed incident and cross-about evidence | 52 | 138,079 | 138,095 |
-| Workflow proof audit | 51 | 135,927 | 135,969 |
-| Shared resumption and view revision | 69 | 235,155 | 234,989 |
+| Semantic batch writing | 40 | 115,904 | 115,855 |
+| Decision history and recovery | 47 | 178,512 | 178,572 |
+| Four clocks and dated reads | 64 | 136,423 | 136,421 |
+| Budgeted proof and interval navigation | 77 | 240,615 | 240,521 |
+| Dimensional memberships | 27 | 97,543 | 97,447 |
+| Distributed incident and cross-about evidence | 52 | 138,079 | 138,050 |
+| Workflow proof audit | 51 | 135,927 | 135,927 |
+| Shared resumption and view revision | 69 | 235,155 | 235,094 |
 
 All sixteen runs pass their shipped source-backed behavioral checks, including
 explicit continuations and retained expected errors. Small token differences
@@ -82,8 +82,31 @@ Reproduction:
 ```bash
 python3 scripts/performance/agent_surface_capture.py --binary /path/to/kmp-mcp --output /new/native.json.gz
 python3 scripts/performance/acceptance_surface_journeys.py --binary /path/to/kmp-mcp --output /new/journeys
-uv run --with tiktoken==0.14.0 python scripts/performance/surface_acceptance_metrics.py --evidence artifacts/acceptance-544-736-20260915
+uv run --with tiktoken==0.14.0 python scripts/performance/surface_acceptance_metrics.py --evidence artifacts/acceptance-544-736-20260915 --main-journeys journeys-main-validated --native-main native-main-validated.json.gz --output surface-metrics-validated.json
 ```
+
+### Build and integrity review
+
+The first runner's `main_base` recorded the harness checkout, not the binary's
+build provenance. Its original eight candidate runs and metrics are preserved
+under `journeys-main`/`surface-metrics.json` and are not silently relabelled.
+Review prompted a new build validation with the build worktree's commit/tree,
+exact command, Cargo/Rust versions and workspace-profile hash. The crates,
+plugin assets and Cargo build inputs are equal to the fresh main base before
+and after that validation. A repeated build preserves the binary SHA-256 in
+`main-build-provenance.json`, bound to all eight `journeys-main-validated` runs
+and the fresh native capture. The table above uses this validated rerun.
+
+The first validation attempt changed the selected target executable hash despite
+returning success; its stdout/stderr are retained. We do not infer a runtime
+behavior change from that hash difference. A second stable build plus new
+captures establish the identity used for the final measurements. The initial
+writer experiment remains separately bound to its original 8ff8ca32 binary.
+
+The metrics tool now verifies every original file's length and SHA-256 before
+counting, classifies opaque guide continuations with their originating response,
+and counts shortened cores as partial. A tampered compressed trace is refused
+by the recorded integrity check. No original capture was modified by that test.
 
 ## #736: the legacy source is identified
 

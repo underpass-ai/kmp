@@ -23,14 +23,33 @@ def read(path):
     return json.loads(gzip.decompress(path.read_bytes()) if path.suffix == '.gz' else path.read_bytes())
 
 
+def continuation_tokens(value):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key == 'continuation' and isinstance(child, str):
+                yield child
+            else:
+                yield from continuation_tokens(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from continuation_tokens(child)
+
+
 def journey(folder):
     manifest = read(folder / 'manifest.json')
+    for name, expected in manifest['uncompressed_files'].items():
+        path = folder / name
+        raw = path.read_bytes() if path.exists() else gzip.decompress(
+            path.with_suffix(path.suffix + '.gz').read_bytes())
+        if len(raw) != expected['bytes'] or hashlib.sha256(raw).hexdigest() != expected['sha256']:
+            raise ValueError('Capture integrity mismatch: ' + str(path))
     rows = []
     for run in manifest['journeys']:
         events = [json.loads(line) for line in gzip.decompress(
             (folder / (run['lesson'] + '.jsonl.gz')).read_bytes()).splitlines()]
         groups = {}
         methods = Counter()
+        continuation_groups = {}
         for event in events:
             if 'request' not in event or 'response' not in event:
                 continue
@@ -44,7 +63,7 @@ def journey(folder):
             elif name == 'kmp_guide' or arguments.get('about', '').startswith('guide:'):
                 group = 'guide'
             else:
-                group = 'memory'
+                group = continuation_groups.get(arguments.get('continuation'), 'memory')
             counts = groups.setdefault(group, Counter())
             counts['calls'] += 1
             methods[name] += 1
@@ -52,8 +71,11 @@ def journey(folder):
                 for unit, amount in measure(event[side]).items():
                     counts[side + '_' + unit] += amount
             result = event['response'].get('result', {})
+            for token in continuation_tokens(result):
+                continuation_groups[token] = group
             structured = result.get('structuredContent', {})
-            if any(page.get('has_more', False) for page in
+            if structured.get('projection', {}).get('core_text_shortened') or any(
+                   page.get('has_more', False) for page in
                    (structured.get('page', {}), structured.get('projection', {}).get('page', {}))):
                 counts['partial_responses'] += 1
             counts['error_responses'] += bool(event['response'].get('error') or result.get('isError'))
@@ -66,10 +88,13 @@ def journey(folder):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--evidence', type=Path, required=True)
+    parser.add_argument('--main-journeys', default='journeys-main')
+    parser.add_argument('--native-main', default='native-main.json.gz')
+    parser.add_argument('--output', default='surface-metrics.json')
     args = parser.parse_args()
     root = args.evidence
     host = read(root / 'host-catalogue.json')
-    native = read(root / 'native-main.json.gz')
+    native = read(root / args.native_main)
     profiles = {}
     for name, events in native['profiles'].items():
         profiles[name] = [{'method': e['request']['method'],
@@ -87,8 +112,8 @@ def main():
               'files': [{'path': str(p.relative_to(ROOT)), **measure(p.read_text()),
                          'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in files],
               'journeys': {side: journey(root / side) for side in
-                           ('journeys-main', 'journeys-installed-0185')}}
-    (root / 'surface-metrics.json').write_text(json.dumps(report, indent=2) + '\n')
+                           (args.main_journeys, 'journeys-installed-0185')}}
+    (root / args.output).write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps({'opaque_arguments': len(report['host']['opaque_argument_tools']),
                       'journeys': {k: len(v['journeys']) for k,v in report['journeys'].items()}}))
 
