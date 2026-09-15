@@ -69,3 +69,38 @@ not combined with this lexical comparison. It must not be cited as satisfying
 No independent reader or old experiment is used here. The deterministic controls
 are safe to rerun on fresh temporary stores; they do not open or modify frozen
 evaluation stores.
+
+## Pending external comparison protocol
+
+The external criterion remains open until a comparator and blind readers are
+actually available. The executable task is deliberately fixed before choosing
+either system:
+
+1. Freeze new source packets and sealed judgments separately. The reader gets
+   source text, questions, cuts and explicit total byte/token allowances; it
+   never gets required passage ids or expected answers.
+2. Ingest the identical sources into fresh KMP and comparator stores. Record
+   source hashes, adapter/version hashes, preparation wall time, calls, bytes
+   and tokens. Do not reuse either system's closed experimental store.
+3. Run semantic-only, temporal-only and combined routes. For each route, run
+   ablations that remove labels, routing and complete-group selection one at a
+   time while keeping sources, cut, reader and total allowance fixed.
+4. Cover old alias, scoped homonyms, evidenced identity, unsupported identity,
+   reassignment before/after the cut, restriction, conflict, currency and
+   temporal quantities. Preserve the current native lost-alias outcome as a
+   named regression case.
+5. Require each arm to complete source → justified write → navigation → source
+   audit → answer. Save native requests/responses and the exact source bodies
+   consulted by the reader. A retrieval-only result is incomplete.
+6. A separate evaluator opens the sealed judgments after both arms finish and
+   reports complete support, grounded-answer accuracy, unsupported identity,
+   correct abstention, input/output tokens, total bytes/calls, preparation time
+   and query/reader time. Failures and rejected calls stay in the denominator.
+
+Before execution, the run manifest must name `run_id`, source/judgment hashes,
+KMP and comparator versions, adapter hashes, reader model/configuration,
+temperature/seed where supported, UTC cut, route, ablation, total byte and token
+allowances, concurrency and whether startup is included. Both arms must match
+all fields except system/adapter identity. This protocol supplies no comparator
+name, reader or result; those remain concrete prerequisites rather than values
+inferred from the local FTS5 control.

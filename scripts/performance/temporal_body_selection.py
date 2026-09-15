@@ -30,7 +30,7 @@ def sha(path):
 
 
 class Client:
-    def __init__(self, binary, store, trace):
+    def __init__(self, binary, store, trace, extra_env=None):
         store.mkdir(parents=True, exist_ok=True)
         self.trace = trace
         self.serial = 0
@@ -38,6 +38,7 @@ class Client:
         env.update(KMP_MCP_BACKEND="embedded", KMP_MCP_DATA_DIR=str(store),
                    KMP_VIEWER_ADDR="off", XDG_DATA_HOME=str(store / "xdg"),
                    XDG_STATE_HOME=str(store / "state"))
+        env.update(extra_env or {})
         self.stderr = (store / "stderr.log").open("w")
         self.process = subprocess.Popen([str(binary)], stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=self.stderr, text=True, bufsize=1,

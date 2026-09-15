@@ -134,3 +134,45 @@ The runner requires a new output directory, creates one seed store per shape,
 copies it only after the writer closes, records source/runner/binary hashes and
 host/profile details, and removes its scratch stores on exit. No model call is
 part of seeding, comparison or measurement.
+
+### Physical backend and complete-operation follow-up
+
+The opt-in `EVAL539_PROFILE=1` observer records real SQLite `trace_v2` events,
+VM steps and returned rows, logical table reads, body batch slots and inclusive
+application, adapter, projection, mapping and encoding phases for each serial
+RPC. It is acceptance instrumentation rather than a public product surface. A
+binary test proves that the marker is absent by default and that one explicitly
+enabled request emits exactly one structured record. Inclusive phase spans can
+overlap, so they are not added together as exclusive wall time.
+
+`artifacts/proof-batch-physical-20260915` repeats the four exact-equivalence
+fixtures with ten measured operations, three warmups and one process-first
+operation per path. The runner reports preparation, process startup plus
+initialize, summed RPC wait and complete client wall time separately. Both
+paths have the same explicit 8,000,000-byte **total traversal** allowance and
+the run rejects an operation whose cumulative responses exceed it. Each MCP
+call still declares the same value as its per-response API ceiling; observed
+complete traversals are far below the shared total (largest: 390,034 oracle
+bytes and 199,322 joint bytes).
+
+| Shape | Warm client p50 ms oracle → joint | RPCs | SQLite statements p50 per complete operation oracle → joint | VM steps p50 oracle → joint |
+| --- | ---: | ---: | ---: | ---: |
+| 1 distinct | 10.01 → 5.92 | 2 → 1 | 26 → 11 | 277 → 135 |
+| 8 distinct | 60.80 → 12.91 | 9 → 1 | 222 → 81 | 2,785 → 1,177 |
+| 64 distinct | 373.08 → 236.91 | 65 → 8 | 1,790 → 5,128 | 22,945 → 76,168 |
+| 64 shared | 420.32 → 189.10 | 65 → 7 | 2,686 → 3,703 | 38,121 → 58,807 |
+
+The high-degree joint path reduces round trips, response bytes and observed
+client latency while executing more SQLite statements and VM steps because
+each continuation reconstructs the bounded selection in a new transaction.
+This retained regression is a concrete limit of the current pagination model;
+larger pages may reduce it but would change response shape and are not inferred
+as a fix here. SQLite profile duration is statement execution reported by the
+observer, not physical disk I/O. `VmHWM` is still process-wide, and a fresh
+process still does not imply an empty operating-system cache.
+
+`proof_batch_physical_audit.py` reconstructs complete operations from the
+preserved JSON-RPC traces, joins each request id to its physical profile and
+writes `physical-summary.json`, including capture and auditor hashes. The
+previous 38 lost failed-attempt files remain lost and are only described by
+`failed-attempt-ledger.json`; this follow-up does not recreate them.

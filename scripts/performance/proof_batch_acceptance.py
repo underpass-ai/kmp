@@ -15,17 +15,20 @@ import copy
 import gzip
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import platform
 import shutil
 import subprocess
 import sys
+import time
 
 from temporal_body_selection import Client, dump, sha, stats
 
 
 ABOUT = "project:proof-batch-acceptance"
+TOTAL_RESPONSE_BUDGET = 8_000_000
 
 
 def content(result):
@@ -110,7 +113,7 @@ def trace_arguments(refs: list[str], proof: bool) -> dict:
             "max_depth": 256,
             "max_states": 4096,
         },
-        "budget": {"max_bytes": 8_000_000},
+        "budget": {"max_bytes": TOTAL_RESPONSE_BUDGET},
     }
 
 
@@ -145,7 +148,7 @@ def oracle(client: Client, refs: list[str]) -> tuple[dict, dict]:
             "about": ABOUT,
             "ref": reference,
             "include": {"details": True, "incoming": True, "outgoing": True, "raw": True},
-            "budget": {"max_bytes": 8_000_000},
+            "budget": {"max_bytes": TOTAL_RESPONSE_BUDGET},
         })
         value = content(result)
         assert value["page"]["has_more"] is False
@@ -229,6 +232,10 @@ def batched(client: Client, refs: list[str]) -> tuple[dict, dict]:
 def operation_stats(rows: list[dict]) -> dict:
     result = stats(rows)
     result["rpc_calls"] = sorted({row["rpc_calls"] for row in rows})
+    total_client = [row["total_client_ms"] for row in rows]
+    total_client.sort()
+    result["total_client_p50_ms"] = total_client[len(total_client) // 2]
+    result["total_client_p95_ms"] = total_client[math.ceil(len(total_client) * .95) - 1]
     return result
 
 
@@ -325,6 +332,23 @@ def stable_digest(value) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def profile_rows(stderr_path: Path) -> list[dict]:
+    prefix = "EVAL539_PROFILE "
+    return [
+        json.loads(line[len(prefix):])
+        for line in stderr_path.read_text().splitlines()
+        if line.startswith(prefix)
+    ]
+
+
+def assert_total_budget(operation: dict, side: str) -> None:
+    used = operation["response_bytes"]
+    assert used <= TOTAL_RESPONSE_BUDGET, (
+        f"{side} traversal used {used} response bytes, exceeding the shared "
+        f"{TOTAL_RESPONSE_BUDGET}-byte total budget"
+    )
+
+
 def main() -> None:
     if len(sys.argv) not in (4, 5):
         raise SystemExit(__doc__)
@@ -355,6 +379,9 @@ def main() -> None:
         "startup_included_in_query_latency": False,
         "process_first_definition": "first read after initialize on a copied, quiescent store; OS cache not evicted",
         "timed_scope": "sum of Client wait elapsed for each RPC in an operation; excludes JSON parsing, gzip trace writes and client work between RPCs",
+        "total_client_scope": "wall time around the complete logical operation, including client JSON parsing and work between RPCs; excludes process startup",
+        "shared_total_response_budget_bytes": TOTAL_RESPONSE_BUDGET,
+        "per_response_budget_note": "each MCP request still declares the API's response ceiling; acceptance separately rejects either complete traversal when cumulative response bytes exceed the shared total",
         "oracle_scope": "one base Trace plus Inspect(details,incoming,outgoing,raw) for every selected entry; a rich audit path, not the minimum possible client inspection",
         "allocations": "not measured; process VmHWM reported",
         "physical_io": "not measured",
@@ -364,30 +391,42 @@ def main() -> None:
     summaries = []
     try:
         for entries, source_mode in [(1, "distinct"), (8, "distinct"), (64, "distinct"), (64, "shared")]:
+            preparation_started = time.perf_counter_ns()
             name = f"{entries:03}-{source_mode}"
             shape = scratch / name
             seed_store = shape / "seed"
             packet, refs = fixture(entries, source_mode)
             dump(out / f"{name}-fixture.json", packet)
             with gzip.open(out / f"{name}-seed.jsonl.gz", "wt") as trace:
-                client = Client(binary, seed_store, trace)
+                client = Client(binary, seed_store, trace, {"EVAL539_PROFILE": "1"})
                 try:
                     client.call("kmp_ingest", packet)
                 finally:
                     client.close()
             shutil.copytree(seed_store, shape / "oracle")
             shutil.copytree(seed_store, shape / "batch")
+            preparation_ms = (time.perf_counter_ns() - preparation_started) / 1e6
             traces = {
                 side: gzip.open(out / f"{name}-{side}.jsonl.gz", "wt")
                 for side in ["oracle", "batch"]
             }
-            clients = {
-                side: Client(binary, shape / side, traces[side])
-                for side in ["oracle", "batch"]
-            }
+            clients = {}
+            startup_ms = {}
+            for side in ["oracle", "batch"]:
+                started = time.perf_counter_ns()
+                clients[side] = Client(
+                    binary, shape / side, traces[side], {"EVAL539_PROFILE": "1"}
+                )
+                startup_ms[side] = (time.perf_counter_ns() - started) / 1e6
             try:
+                started = time.perf_counter_ns()
                 oracle_first, oracle_first_row = oracle(clients["oracle"], refs)
+                oracle_first_row["total_client_ms"] = (time.perf_counter_ns() - started) / 1e6
+                started = time.perf_counter_ns()
                 batch_first, batch_first_row = batched(clients["batch"], refs)
+                batch_first_row["total_client_ms"] = (time.perf_counter_ns() - started) / 1e6
+                assert_total_budget(oracle_first_row, "oracle")
+                assert_total_budget(batch_first_row, "batch")
                 equivalence = compare(oracle_first, batch_first)
                 expected = {
                     "oracle": stable_digest(oracle_first),
@@ -400,15 +439,21 @@ def main() -> None:
                     order = ["oracle", "batch"] if index % 2 == 0 else ["batch", "oracle"]
                     values = {}
                     for side in order:
+                        started = time.perf_counter_ns()
                         values[side], row = (
                             oracle(clients[side], refs) if side == "oracle"
                             else batched(clients[side], refs)
                         )
+                        row["total_client_ms"] = (time.perf_counter_ns() - started) / 1e6
+                        assert_total_budget(row, side)
                         assert stable_digest(values[side]) == expected[side]
                         measured[side].append(row)
                     compare(values["oracle"], values["batch"])
                 summary = {
                     "shape": name,
+                    "preparation_ms": preparation_ms,
+                    "startup_initialize_ms": startup_ms,
+                    "shared_total_response_budget_bytes": TOTAL_RESPONSE_BUDGET,
                     "equivalence": equivalence,
                     "logical_rpc_calls": {
                         "oracle": oracle_first_row["rpc_calls"],
@@ -426,6 +471,10 @@ def main() -> None:
                     client.close()
                 for trace in traces.values():
                     trace.close()
+                dump(out / f"{name}-physical.json", {
+                    side: profile_rows(shape / side / "stderr.log")
+                    for side in ["oracle", "batch"]
+                })
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 
