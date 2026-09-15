@@ -9,6 +9,17 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- Installation guides now include explicit first-store guide synchronization
+  after setup and restart, including recovery from `GUIDE_UNAVAILABLE`.
+- Public documentation and installed guides now match current summary writer
+  fields, temporal intervals, store and portable bundle formats, release
+  checksum names and version-matched engine resolution.
+- Save, data sharing and remote backend guidance now distinguish local export
+  from Git publication and document backend availability limits. Contribution
+  instructions reference the existing checks.
+
 ## [0.18.6] - 2026-09-15
 
 ### Added
