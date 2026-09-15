@@ -171,7 +171,7 @@ phase paths.
 | 64 distinct | 471.09 → 251.53 | 65 → 8 | 1,790 → 5,128 | 22,945 → 76,168 |
 | 64 shared | 538.66 → 247.66 | 65 → 7 | 2,686 → 3,703 | 38,121 → 58,807 |
 
-The high-degree joint path reduces round trips, response bytes and observed
+The 64-entry multipage joint path reduces round trips, response bytes and observed
 client latency while executing more SQLite statements and VM steps because
 each continuation reconstructs the bounded selection in a new transaction.
 This retained regression is a concrete limit of the current pagination model;
@@ -200,6 +200,7 @@ For a new physical run, use
 refuses a dirty repository, verifies that the frozen base exists and remains an
 ancestor of `origin/main`, verifies patch hashes,
 creates a detached temporary worktree, applies every patch, executes the
-enabled prepared-statement/partial-row SQLite control, builds and freezes that
-isolated binary, runs the serial acceptance capture under `OUTPUT/capture`, audits it, records patch
-validation and removes the temporary worktree and stores.
+enabled prepared-statement/partial-row SQLite control and the separate
+10,000-link late-cursor SQLite control, builds and freezes that isolated binary,
+runs the serial acceptance capture under `OUTPUT/capture`, audits it, records
+every command and its output, and removes the temporary worktree and stores.

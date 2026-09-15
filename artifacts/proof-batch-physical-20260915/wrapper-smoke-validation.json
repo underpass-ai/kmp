@@ -6,7 +6,7 @@
   "samples": 2,
   "sqlite_control_passed": true,
   "audit_passed": true,
-  "high_degree_distinct": {
+  "multipage_distinct": {
     "complete_operations": 6,
     "rpc_counts": [8],
     "sqlite_statements_p50": 5128,

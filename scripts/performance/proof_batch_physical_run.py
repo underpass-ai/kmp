@@ -90,7 +90,8 @@ def main() -> None:
     patch_dir = repository / "artifacts/proof-batch-physical-20260915/instrumentation-patches"
     isolated: Path | None = None
     frozen: Path | None = None
-    test_output = ""
+    prepared_control_output = ""
+    high_degree_control_output = ""
     try:
         manifest = json.loads((patch_dir / "manifest.json").read_text())
         expected = {item["file"]: item["sha256"] for item in manifest["patches"]}
@@ -136,11 +137,22 @@ def main() -> None:
             raise AssertionError("patched validation worktree is dirty")
         enabled_env = dict(os.environ)
         enabled_env["EVAL539_PROFILE"] = "1"
-        test_output = run(
+        prepared_control_output = run(
             [
                 "cargo", "test", "--locked", "-p", "kmp-adapter-embedded",
                 "prepared_cached_vm_work_is_per_execution_and_partial_rows_are_counted",
                 "--", "--ignored", "--nocapture",
+            ],
+            isolated,
+            output,
+            commands,
+            enabled_env,
+        )
+        high_degree_control_output = run(
+            [
+                "cargo", "test", "--locked", "-p", "kmp-adapter-embedded",
+                "late_joined_pages_seek_within_one_root_without_revisiting_its_prior_links",
+                "--", "--nocapture",
             ],
             isolated,
             output,
@@ -188,7 +200,12 @@ def main() -> None:
                 ["git", "rev-parse", "HEAD"], isolated, output, commands
             ).strip(),
             "patched_tree_clean": True,
-            "sqlite_control_passed": "test result: ok." in test_output,
+            "prepared_partial_rows_sqlite_control_passed": (
+                "test result: ok." in prepared_control_output
+            ),
+            "high_degree_late_cursor_sqlite_control_passed": (
+                "test result: ok." in high_degree_control_output
+            ),
             "capture_process": "dedicated stdio process per fixture arm; viewer off; exclusive store; serial requests",
         })
     except BaseException as error:
