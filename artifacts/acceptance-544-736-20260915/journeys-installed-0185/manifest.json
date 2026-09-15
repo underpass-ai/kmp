@@ -1,0 +1,274 @@
+{
+  "binary": "/home/gx10a/.local/bin/kmp-mcp",
+  "binary_sha256": "c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910",
+  "main_base": "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
+  "model_calls": 0,
+  "human_review": false,
+  "kind": "authored deterministic replay; not agent learning or billing",
+  "journeys": [
+    {
+      "lesson": "semantic-batch",
+      "command": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+        "--binary",
+        "/home/gx10a/.local/bin/kmp-mcp",
+        "--trace",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/semantic-batch.jsonl",
+        "--result",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/semantic-batch-result.json",
+        "--lesson",
+        "semantic-batch"
+      ],
+      "exit_code": 0,
+      "client_total_seconds": 0.3113554879964795
+    },
+    {
+      "lesson": "decision-history",
+      "command": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+        "--binary",
+        "/home/gx10a/.local/bin/kmp-mcp",
+        "--trace",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/decision-history.jsonl",
+        "--result",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/decision-history-result.json",
+        "--lesson",
+        "decision-history"
+      ],
+      "exit_code": 0,
+      "client_total_seconds": 0.4919508879975183
+    },
+    {
+      "lesson": "four-clocks",
+      "command": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+        "--binary",
+        "/home/gx10a/.local/bin/kmp-mcp",
+        "--trace",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/four-clocks.jsonl",
+        "--result",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/four-clocks-result.json",
+        "--lesson",
+        "four-clocks"
+      ],
+      "exit_code": 0,
+      "client_total_seconds": 0.41316544100118335
+    },
+    {
+      "lesson": "budget-proof",
+      "command": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+        "--binary",
+        "/home/gx10a/.local/bin/kmp-mcp",
+        "--trace",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/budget-proof.jsonl",
+        "--result",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/budget-proof-result.json",
+        "--lesson",
+        "budget-proof"
+      ],
+      "exit_code": 0,
+      "client_total_seconds": 0.677979977990617
+    },
+    {
+      "lesson": "dimensional-memberships",
+      "command": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+        "--binary",
+        "/home/gx10a/.local/bin/kmp-mcp",
+        "--trace",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/dimensional-memberships.jsonl",
+        "--result",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/dimensional-memberships-result.json",
+        "--lesson",
+        "dimensional-memberships"
+      ],
+      "exit_code": 0,
+      "client_total_seconds": 0.27211294799053576
+    },
+    {
+      "lesson": "distributed-incident",
+      "command": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+        "--binary",
+        "/home/gx10a/.local/bin/kmp-mcp",
+        "--trace",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/distributed-incident.jsonl",
+        "--result",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/distributed-incident-result.json",
+        "--lesson",
+        "distributed-incident"
+      ],
+      "exit_code": 0,
+      "client_total_seconds": 0.5732520760066109
+    },
+    {
+      "lesson": "workflow-proof",
+      "command": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+        "--binary",
+        "/home/gx10a/.local/bin/kmp-mcp",
+        "--trace",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/workflow-proof.jsonl",
+        "--result",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/workflow-proof-result.json",
+        "--lesson",
+        "workflow-proof"
+      ],
+      "exit_code": 0,
+      "client_total_seconds": 0.48954188100469764
+    },
+    {
+      "lesson": "shared-resumption",
+      "command": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay_shared.py",
+        "--binary",
+        "/home/gx10a/.local/bin/kmp-mcp",
+        "--trace",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/shared-resumption.jsonl",
+        "--result",
+        "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/shared-resumption-result.json"
+      ],
+      "exit_code": 0,
+      "client_total_seconds": 0.5689698060014052
+    }
+  ],
+  "uncompressed_files": {
+    "budget-proof-result.json": {
+      "bytes": 220936,
+      "sha256": "8860a448a04e827c59e94e87da826dacde6a34a2c5e0b55a26ca7d70652a9db8"
+    },
+    "budget-proof.jsonl": {
+      "bytes": 947039,
+      "sha256": "b75ba08306ff136bbf6e7147bc00e6cdda9f6589a6e8a8876b1ada150eb5d97b"
+    },
+    "budget-proof.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "budget-proof.stdout": {
+      "bytes": 903,
+      "sha256": "83f3fbe596b5ecfbfe09d3a6f9630490f18bf35b6c86b63f5a8d139cb9beac43"
+    },
+    "decision-history-result.json": {
+      "bytes": 324830,
+      "sha256": "e7fa30109b5ba77bbfd09c5e8bedf0c227ff9ef95c2459856d0513ba4daa468f"
+    },
+    "decision-history.jsonl": {
+      "bytes": 731073,
+      "sha256": "4e74ebe58d67f6c2bcecd8e78ea59d950e17f5710b8acc6fd96dd9c564a5dc7d"
+    },
+    "decision-history.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "decision-history.stdout": {
+      "bytes": 411,
+      "sha256": "b9ec55932a5ee9beece60763be7f45b0d22fcc3e5112cee13f4ff030d7012b4e"
+    },
+    "dimensional-memberships-result.json": {
+      "bytes": 51621,
+      "sha256": "c2f3a0bee41dc4a8f01430e319c3f099ae4638edb149169b9985ff816c1df035"
+    },
+    "dimensional-memberships.jsonl": {
+      "bytes": 447250,
+      "sha256": "1b361490ea8754c8efe2498b0a1d9d4b52f123c84cc53c65d00b828827dc2b0e"
+    },
+    "dimensional-memberships.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "dimensional-memberships.stdout": {
+      "bytes": 206,
+      "sha256": "e30e0858e4f324a6221ee17a18fd4d019e2c879b5aec32d93baba0fe985f8a8a"
+    },
+    "distributed-incident-result.json": {
+      "bytes": 157281,
+      "sha256": "cdbcac3b3f5be6ecfdac1613521937ea5a10882b790d7c09b7c3f197ce6a363d"
+    },
+    "distributed-incident.jsonl": {
+      "bytes": 597719,
+      "sha256": "82a364ea18236a5d18ce25d0f97006b97aedd48e3c095a86b5533c14c2a538be"
+    },
+    "distributed-incident.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "distributed-incident.stdout": {
+      "bytes": 680,
+      "sha256": "be15fd75fd42b6b5db7a3508bd3006934d433a17ed5111b53ddf4cc2d72e5439"
+    },
+    "four-clocks-result.json": {
+      "bytes": 165981,
+      "sha256": "8080ca993492457561978d6da1a32b1a5d3f09201f22609ae5fb3f3277cb8c85"
+    },
+    "four-clocks.jsonl": {
+      "bytes": 593362,
+      "sha256": "e0d791fb9cbcd08f2c79e4677d8db892b1ccf4d529c3a85d8dc39d555f677f5f"
+    },
+    "four-clocks.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "four-clocks.stdout": {
+      "bytes": 605,
+      "sha256": "b9cb70493bc4db04453fbd161685fa17c3225d3adb326ae90afd7f5bbfaeef54"
+    },
+    "semantic-batch-result.json": {
+      "bytes": 78350,
+      "sha256": "32eb419abf27e1cfe41538ae7226992a0abad9b6df474ddb66ddb216d92c7dde"
+    },
+    "semantic-batch.jsonl": {
+      "bytes": 514661,
+      "sha256": "4003ff628aa8f93b34eaa4a73f165619f975b6812b314a8da3ee4ce7383bb7ec"
+    },
+    "semantic-batch.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "semantic-batch.stdout": {
+      "bytes": 590,
+      "sha256": "53bc1b87fa4adef1d1baee399eb694963dd6d2d4ebc3d3d1c457b9391fe190bc"
+    },
+    "shared-resumption-result.json": {
+      "bytes": 177672,
+      "sha256": "d7b7f633df6cd8479a9dc549b851c44f251cc4d0b7bae1cb80ffb40aed123447"
+    },
+    "shared-resumption.jsonl": {
+      "bytes": 1042446,
+      "sha256": "66073f9ad02f83ecadb60aab7574643a80b4c7ff812a357e7f31d4fae8374a57"
+    },
+    "shared-resumption.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "shared-resumption.stdout": {
+      "bytes": 812,
+      "sha256": "50b761a6c3c4057171b8c302781c2f5e186792b75c4bd2d6129df84e13e1facf"
+    },
+    "workflow-proof-result.json": {
+      "bytes": 168096,
+      "sha256": "3574265fdf128426764ec44fe1c1284c6f80f2899939a372b2f3f047705d97ca"
+    },
+    "workflow-proof.jsonl": {
+      "bytes": 585628,
+      "sha256": "52d9de6cf32560277eba7fbc802ce7204cf61b065023319b78b6137f4ca1a965"
+    },
+    "workflow-proof.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "workflow-proof.stdout": {
+      "bytes": 349,
+      "sha256": "f9a4cf7d597d911dbb8faad1e8036e313303d76da1fc22ef631fe6795cca1fcd"
+    }
+  }
+}

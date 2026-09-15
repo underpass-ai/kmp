@@ -1,0 +1,1130 @@
+{
+  "encoder": "o200k_base",
+  "tiktoken_version": "0.14.0",
+  "unit": "compact UTF-8 JSON per RPC or exact file text; separately tokenized, not billing",
+  "model_calls": 0,
+  "host": {
+    "source": "functions.ALL_TOOLS of active Codex desktop task; declaration metadata exposed to model",
+    "metadata": {
+      "bytes": 139261,
+      "tokens": 31207
+    },
+    "tools": 18,
+    "opaque_argument_tools": [
+      "mcp__kmp__kmp_ask",
+      "mcp__kmp__kmp_condense",
+      "mcp__kmp__kmp_forward",
+      "mcp__kmp__kmp_goto",
+      "mcp__kmp__kmp_ingest",
+      "mcp__kmp__kmp_inspect",
+      "mcp__kmp__kmp_near",
+      "mcp__kmp__kmp_relabel",
+      "mcp__kmp__kmp_relate",
+      "mcp__kmp__kmp_rewind",
+      "mcp__kmp__kmp_trace",
+      "mcp__kmp__kmp_wake",
+      "mcp__kmp__kmp_write_memory"
+    ],
+    "candidate_host_refresh_observed": false
+  },
+  "native_main": {
+    "model": [
+      {
+        "method": "initialize",
+        "request": {
+          "bytes": 166,
+          "tokens": 49
+        },
+        "response": {
+          "bytes": 1705,
+          "tokens": 357
+        }
+      },
+      {
+        "method": "tools/list",
+        "request": {
+          "bytes": 58,
+          "tokens": 21
+        },
+        "response": {
+          "bytes": 247046,
+          "tokens": 51250
+        }
+      }
+    ],
+    "apps": [
+      {
+        "method": "initialize",
+        "request": {
+          "bytes": 253,
+          "tokens": 68
+        },
+        "response": {
+          "bytes": 1808,
+          "tokens": 382
+        }
+      },
+      {
+        "method": "tools/list",
+        "request": {
+          "bytes": 58,
+          "tokens": 21
+        },
+        "response": {
+          "bytes": 252029,
+          "tokens": 52446
+        }
+      },
+      {
+        "method": "resources/list",
+        "request": {
+          "bytes": 62,
+          "tokens": 21
+        },
+        "response": {
+          "bytes": 272,
+          "tokens": 77
+        }
+      },
+      {
+        "method": "resources/read",
+        "request": {
+          "bytes": 94,
+          "tokens": 31
+        },
+        "response": {
+          "bytes": 983795,
+          "tokens": 316594
+        }
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "plugins/kmp/guide/AGENT.md",
+      "bytes": 4201,
+      "tokens": 1049,
+      "sha256": "4fff007fbad408a86db5259392daaea45be93912e054ccf02ab6d8dfd071b4c5"
+    },
+    {
+      "path": "plugins/kmp/guide/editorial.json",
+      "bytes": 126362,
+      "tokens": 25236,
+      "sha256": "c956ce6a44eefdbeaea3e963f389b7bac75589c0288da98c304d0ced22d516e9"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-catchup/SKILL.md",
+      "bytes": 1486,
+      "tokens": 349,
+      "sha256": "1050d7804c12cb8a6bd92baaf36fd5a3b26b04c861c99481a9783f3a440a63f6"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-doctor/SKILL.md",
+      "bytes": 2118,
+      "tokens": 452,
+      "sha256": "9bb68d3d4aa4431040556ed1de9f266a39bc3e6e08f0fb86d4595b0dd1adbfe8"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-expert/SKILL.md",
+      "bytes": 3854,
+      "tokens": 776,
+      "sha256": "0ee73ec5b036d4a48e16dbbc93e4c3bcd42720f9a5cfecba71a0d7df902f9ea7"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-guide/SKILL.md",
+      "bytes": 3500,
+      "tokens": 804,
+      "sha256": "ecfb32106a689113533821c5161a6c5f4c0f4484611bec2123cc5161c39cd179"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-info/SKILL.md",
+      "bytes": 783,
+      "tokens": 173,
+      "sha256": "d9cd37a5408891c593080d069ed2c5389d59c20336f5f1b18a6f3d8508f0170e"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-memory/SKILL.md",
+      "bytes": 1678,
+      "tokens": 387,
+      "sha256": "c2446bbcb06601b53a79963b4ba98f459eaeb10ed8af4fd879b3dabc7b14a60f"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-moves/SKILL.md",
+      "bytes": 1213,
+      "tokens": 334,
+      "sha256": "92783aa18c541b52506eda55839331cd4d792e227da3e80787f0f7ae1a8d7465"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-restore/SKILL.md",
+      "bytes": 476,
+      "tokens": 113,
+      "sha256": "6f54e2d9cee8c43bcbbe6eedea76396736ece20c71f2d4663c2667d508e48845"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-revert/SKILL.md",
+      "bytes": 574,
+      "tokens": 127,
+      "sha256": "0315609409bb222505626da7267c4ca5dc736c4016841ae607d26b4f103754c2"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-save/SKILL.md",
+      "bytes": 435,
+      "tokens": 111,
+      "sha256": "f0eeb58b6350909ea03fe548e64137a7d4cb0e57653d26d45eb27e27402060e6"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-setup/SKILL.md",
+      "bytes": 5290,
+      "tokens": 1185,
+      "sha256": "6a165436beaeb290ecb3a714f8530435e7dbce46842d8ec2dd71b60d1ed9a669"
+    },
+    {
+      "path": "plugins/kmp/skills/kmp-uninstall/SKILL.md",
+      "bytes": 1980,
+      "tokens": 453,
+      "sha256": "605d5884b88a0a0e19ac4494ec94a7cdf44147e25bf2bf72519b1b5103e21804"
+    }
+  ],
+  "journeys": {
+    "journeys-main": {
+      "binary_sha256": "8ff8ca3217639aa61d72d258b0c8b880803e3bd7d8705fb666d14bd38ca72675",
+      "journeys": [
+        {
+          "lesson": "semantic-batch",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/semantic-batch.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/semantic-batch-result.json",
+            "--lesson",
+            "semantic-batch"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 1.3004240190057317,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248751,
+              "response_tokens": 51607,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 15,
+              "request_bytes": 4426,
+              "request_tokens": 1378,
+              "response_bytes": 144797,
+              "response_tokens": 35029,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 23,
+              "request_bytes": 10773,
+              "request_tokens": 3242,
+              "response_bytes": 81943,
+              "response_tokens": 24485,
+              "error_responses": 2
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 21,
+            "kmp_write_memory": 5,
+            "kmp_trace": 1,
+            "kmp_goto": 3,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 1,
+            "kmp_view_get_state": 1,
+            "kmp_forward": 5
+          },
+          "all_rpc_request_response_tokens": 115810
+        },
+        {
+          "lesson": "decision-history",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/decision-history.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/decision-history-result.json",
+            "--lesson",
+            "decision-history"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 2.1143877799913753,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248751,
+              "response_tokens": 51607,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 19,
+              "request_bytes": 5421,
+              "request_tokens": 1674,
+              "response_bytes": 170770,
+              "response_tokens": 41191,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 26,
+              "request_bytes": 22880,
+              "request_tokens": 6407,
+              "response_bytes": 254073,
+              "response_tokens": 77642,
+              "error_responses": 3
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 23,
+            "kmp_wake": 2,
+            "kmp_write_memory": 10,
+            "kmp_goto": 1,
+            "kmp_forward": 1,
+            "kmp_rewind": 1,
+            "kmp_trace": 2,
+            "kmp_ask": 2,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 1,
+            "kmp_view_get_state": 1
+          },
+          "all_rpc_request_response_tokens": 178590
+        },
+        {
+          "lesson": "four-clocks",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/four-clocks.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/four-clocks-result.json",
+            "--lesson",
+            "four-clocks"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 1.40451045599184,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248751,
+              "response_tokens": 51607,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 17,
+              "request_bytes": 4917,
+              "request_tokens": 1537,
+              "response_bytes": 167897,
+              "response_tokens": 40563,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 45,
+              "request_bytes": 18600,
+              "request_tokens": 5641,
+              "response_bytes": 124515,
+              "response_tokens": 37041,
+              "error_responses": 2
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 21,
+            "kmp_wake": 2,
+            "kmp_write_memory": 5,
+            "kmp_goto": 10,
+            "kmp_forward": 6,
+            "kmp_rewind": 1,
+            "kmp_trace": 1,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 7,
+            "kmp_view_get_state": 8
+          },
+          "all_rpc_request_response_tokens": 136458
+        },
+        {
+          "lesson": "budget-proof",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/budget-proof.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/budget-proof-result.json",
+            "--lesson",
+            "budget-proof"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 3.9023258209927008,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248751,
+              "response_tokens": 51607,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 21,
+              "request_bytes": 5801,
+              "request_tokens": 1787,
+              "response_bytes": 195306,
+              "response_tokens": 47574,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 54,
+              "request_bytes": 27373,
+              "request_tokens": 8346,
+              "response_bytes": 431784,
+              "response_tokens": 131212,
+              "error_responses": 1,
+              "partial_responses": 13
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 33,
+            "kmp_wake": 11,
+            "kmp_write_memory": 7,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 3,
+            "kmp_view_get_state": 4,
+            "kmp_goto": 1,
+            "kmp_forward": 2,
+            "kmp_trace": 4,
+            "kmp_guide": 1,
+            "kmp_ask": 8
+          },
+          "all_rpc_request_response_tokens": 240595
+        },
+        {
+          "lesson": "dimensional-memberships",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/dimensional-memberships.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/dimensional-memberships-result.json",
+            "--lesson",
+            "dimensional-memberships"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 1.1130862790014362,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248751,
+              "response_tokens": 51607,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 14,
+              "request_bytes": 4063,
+              "request_tokens": 1255,
+              "response_bytes": 133032,
+              "response_tokens": 32083,
+              "partial_responses": 5,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 11,
+              "request_bytes": 3868,
+              "request_tokens": 1155,
+              "response_bytes": 36963,
+              "response_tokens": 11311,
+              "error_responses": 0
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 16,
+            "kmp_write_memory": 1,
+            "kmp_goto": 4,
+            "kmp_relabel": 1,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 1,
+            "kmp_view_get_state": 1
+          },
+          "all_rpc_request_response_tokens": 97480
+        },
+        {
+          "lesson": "distributed-incident",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/distributed-incident.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/distributed-incident-result.json",
+            "--lesson",
+            "distributed-incident"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 2.4740018199954648,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248751,
+              "response_tokens": 51607,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 17,
+              "request_bytes": 4928,
+              "request_tokens": 1531,
+              "response_bytes": 172506,
+              "response_tokens": 42637,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 33,
+              "request_bytes": 21772,
+              "request_tokens": 6177,
+              "response_bytes": 123680,
+              "response_tokens": 36074,
+              "error_responses": 5
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 22,
+            "kmp_wake": 3,
+            "kmp_write_memory": 7,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 3,
+            "kmp_view_get_state": 3,
+            "kmp_relate": 3,
+            "kmp_trace": 2,
+            "kmp_forward": 4,
+            "kmp_goto": 2
+          },
+          "all_rpc_request_response_tokens": 138095
+        },
+        {
+          "lesson": "workflow-proof",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/workflow-proof.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/workflow-proof-result.json",
+            "--lesson",
+            "workflow-proof"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 2.863664559990866,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248751,
+              "response_tokens": 51607,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 16,
+              "request_bytes": 4670,
+              "request_tokens": 1458,
+              "response_bytes": 157353,
+              "response_tokens": 38229,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 33,
+              "request_bytes": 24205,
+              "request_tokens": 6954,
+              "response_bytes": 124710,
+              "response_tokens": 37652,
+              "error_responses": 1
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 26,
+            "kmp_wake": 1,
+            "kmp_write_memory": 16,
+            "kmp_trace": 2,
+            "kmp_forward": 1,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 1,
+            "kmp_view_get_state": 1
+          },
+          "all_rpc_request_response_tokens": 135969
+        },
+        {
+          "lesson": "shared-resumption",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay_shared.py",
+            "--binary",
+            "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/shared-resumption.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-main/shared-resumption-result.json"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 2.266740879000281,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 4,
+              "request_bytes": 444,
+              "request_tokens": 139,
+              "response_bytes": 497502,
+              "response_tokens": 103214,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 32,
+              "request_bytes": 9249,
+              "request_tokens": 2848,
+              "response_bytes": 326855,
+              "response_tokens": 80357,
+              "partial_responses": 11,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 33,
+              "request_bytes": 19529,
+              "request_tokens": 5694,
+              "response_bytes": 142564,
+              "response_tokens": 42737,
+              "error_responses": 2
+            }
+          },
+          "methods": {
+            "initialize": 2,
+            "tools/list": 2,
+            "kmp_inspect": 39,
+            "kmp_wake": 3,
+            "kmp_write_memory": 7,
+            "kmp_trace": 2,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 4,
+            "kmp_view_get_state": 6,
+            "kmp_goto": 1,
+            "kmp_forward": 2
+          },
+          "all_rpc_request_response_tokens": 234989
+        }
+      ]
+    },
+    "journeys-installed-0185": {
+      "binary_sha256": "c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910",
+      "journeys": [
+        {
+          "lesson": "semantic-batch",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/.local/bin/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/semantic-batch.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/semantic-batch-result.json",
+            "--lesson",
+            "semantic-batch"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 0.3113554879964795,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248877,
+              "response_tokens": 51655,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 15,
+              "request_bytes": 4426,
+              "request_tokens": 1387,
+              "response_bytes": 144797,
+              "response_tokens": 35047,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 23,
+              "request_bytes": 10773,
+              "request_tokens": 3242,
+              "response_bytes": 82041,
+              "response_tokens": 24504,
+              "error_responses": 2
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 21,
+            "kmp_write_memory": 5,
+            "kmp_trace": 1,
+            "kmp_goto": 3,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 1,
+            "kmp_view_get_state": 1,
+            "kmp_forward": 5
+          },
+          "all_rpc_request_response_tokens": 115904
+        },
+        {
+          "lesson": "decision-history",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/.local/bin/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/decision-history.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/decision-history-result.json",
+            "--lesson",
+            "decision-history"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 0.4919508879975183,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248877,
+              "response_tokens": 51655,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 19,
+              "request_bytes": 5421,
+              "request_tokens": 1658,
+              "response_bytes": 170770,
+              "response_tokens": 41159,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 26,
+              "request_bytes": 22880,
+              "request_tokens": 6377,
+              "response_bytes": 253919,
+              "response_tokens": 77594,
+              "error_responses": 3
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 23,
+            "kmp_wake": 2,
+            "kmp_write_memory": 10,
+            "kmp_goto": 1,
+            "kmp_forward": 1,
+            "kmp_rewind": 1,
+            "kmp_trace": 2,
+            "kmp_ask": 2,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 1,
+            "kmp_view_get_state": 1
+          },
+          "all_rpc_request_response_tokens": 178512
+        },
+        {
+          "lesson": "four-clocks",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/.local/bin/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/four-clocks.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/four-clocks-result.json",
+            "--lesson",
+            "four-clocks"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 0.41316544100118335,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248877,
+              "response_tokens": 51655,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 17,
+              "request_bytes": 4917,
+              "request_tokens": 1519,
+              "response_bytes": 167897,
+              "response_tokens": 40527,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 45,
+              "request_bytes": 18600,
+              "request_tokens": 5635,
+              "response_bytes": 124469,
+              "response_tokens": 37018,
+              "error_responses": 2
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 21,
+            "kmp_wake": 2,
+            "kmp_write_memory": 5,
+            "kmp_goto": 10,
+            "kmp_forward": 6,
+            "kmp_rewind": 1,
+            "kmp_trace": 1,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 7,
+            "kmp_view_get_state": 8
+          },
+          "all_rpc_request_response_tokens": 136423
+        },
+        {
+          "lesson": "budget-proof",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/.local/bin/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/budget-proof.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/budget-proof-result.json",
+            "--lesson",
+            "budget-proof"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 0.677979977990617,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248877,
+              "response_tokens": 51655,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 21,
+              "request_bytes": 5801,
+              "request_tokens": 1790,
+              "response_bytes": 195306,
+              "response_tokens": 47581,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 54,
+              "request_bytes": 27373,
+              "request_tokens": 8338,
+              "response_bytes": 431689,
+              "response_tokens": 131182,
+              "error_responses": 1,
+              "partial_responses": 13
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 33,
+            "kmp_wake": 11,
+            "kmp_write_memory": 7,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 3,
+            "kmp_view_get_state": 4,
+            "kmp_goto": 1,
+            "kmp_forward": 2,
+            "kmp_trace": 4,
+            "kmp_guide": 1,
+            "kmp_ask": 8
+          },
+          "all_rpc_request_response_tokens": 240615
+        },
+        {
+          "lesson": "dimensional-memberships",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/.local/bin/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/dimensional-memberships.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/dimensional-memberships-result.json",
+            "--lesson",
+            "dimensional-memberships"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 0.27211294799053576,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248877,
+              "response_tokens": 51655,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 14,
+              "request_bytes": 4063,
+              "request_tokens": 1264,
+              "response_bytes": 133032,
+              "response_tokens": 32101,
+              "partial_responses": 5,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 11,
+              "request_bytes": 3868,
+              "request_tokens": 1155,
+              "response_bytes": 36963,
+              "response_tokens": 11299,
+              "error_responses": 0
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 16,
+            "kmp_write_memory": 1,
+            "kmp_goto": 4,
+            "kmp_relabel": 1,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 1,
+            "kmp_view_get_state": 1
+          },
+          "all_rpc_request_response_tokens": 97543
+        },
+        {
+          "lesson": "distributed-incident",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/.local/bin/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/distributed-incident.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/distributed-incident-result.json",
+            "--lesson",
+            "distributed-incident"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 0.5732520760066109,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248877,
+              "response_tokens": 51655,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 17,
+              "request_bytes": 4928,
+              "request_tokens": 1514,
+              "response_bytes": 172506,
+              "response_tokens": 42603,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 33,
+              "request_bytes": 21772,
+              "request_tokens": 6179,
+              "response_bytes": 123597,
+              "response_tokens": 36059,
+              "error_responses": 5
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 22,
+            "kmp_wake": 3,
+            "kmp_write_memory": 7,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 3,
+            "kmp_view_get_state": 3,
+            "kmp_relate": 3,
+            "kmp_trace": 2,
+            "kmp_forward": 4,
+            "kmp_goto": 2
+          },
+          "all_rpc_request_response_tokens": 138079
+        },
+        {
+          "lesson": "workflow-proof",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay.py",
+            "--binary",
+            "/home/gx10a/.local/bin/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/workflow-proof.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/workflow-proof-result.json",
+            "--lesson",
+            "workflow-proof"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 0.48954188100469764,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 2,
+              "request_bytes": 223,
+              "request_tokens": 69,
+              "response_bytes": 248877,
+              "response_tokens": 51655,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 16,
+              "request_bytes": 4670,
+              "request_tokens": 1449,
+              "response_bytes": 157353,
+              "response_tokens": 38211,
+              "partial_responses": 6,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 33,
+              "request_bytes": 24205,
+              "request_tokens": 6957,
+              "response_bytes": 124422,
+              "response_tokens": 37586,
+              "error_responses": 1
+            }
+          },
+          "methods": {
+            "initialize": 1,
+            "tools/list": 1,
+            "kmp_inspect": 26,
+            "kmp_wake": 1,
+            "kmp_write_memory": 16,
+            "kmp_trace": 2,
+            "kmp_forward": 1,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 1,
+            "kmp_view_get_state": 1
+          },
+          "all_rpc_request_response_tokens": 135927
+        },
+        {
+          "lesson": "shared-resumption",
+          "command": [
+            "/usr/bin/python3",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/scripts/guide_examples/replay_shared.py",
+            "--binary",
+            "/home/gx10a/.local/bin/kmp-mcp",
+            "--trace",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/shared-resumption.jsonl",
+            "--result",
+            "/home/gx10a/Documents/ai/kmp-acceptance-20260915/artifacts/acceptance-544-736-20260915/journeys-installed-0185/shared-resumption-result.json"
+          ],
+          "exit_code": 0,
+          "client_total_seconds": 0.5689698060014052,
+          "groups": {
+            "startup_catalogue": {
+              "calls": 4,
+              "request_bytes": 444,
+              "request_tokens": 139,
+              "response_bytes": 497754,
+              "response_tokens": 103310,
+              "error_responses": 0
+            },
+            "guide": {
+              "calls": 32,
+              "request_bytes": 9249,
+              "request_tokens": 2870,
+              "response_bytes": 326855,
+              "response_tokens": 80401,
+              "partial_responses": 11,
+              "error_responses": 0
+            },
+            "memory": {
+              "calls": 33,
+              "request_bytes": 19529,
+              "request_tokens": 5704,
+              "response_bytes": 142462,
+              "response_tokens": 42731,
+              "error_responses": 2
+            }
+          },
+          "methods": {
+            "initialize": 2,
+            "tools/list": 2,
+            "kmp_inspect": 39,
+            "kmp_wake": 3,
+            "kmp_write_memory": 7,
+            "kmp_trace": 2,
+            "kmp_view_open": 1,
+            "kmp_view_apply_intent": 4,
+            "kmp_view_get_state": 6,
+            "kmp_goto": 1,
+            "kmp_forward": 2
+          },
+          "all_rpc_request_response_tokens": 235155
+        }
+      ]
+    }
+  }
+}
