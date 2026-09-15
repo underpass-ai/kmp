@@ -9,6 +9,31 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.6] - 2026-09-15
+
+### Added
+
+- Source-bound consolidation views retain versioned derived text alongside
+  canonical memories, with explicit source revisions, invalidation and
+  compare-and-swap updates. Views survive full SQLite backups; canonical
+  event-only export and import do not include them.
+
+### Fixed
+
+- Conditional MCP arguments now retain their named shapes in host-facing
+  schemas instead of collapsing into opaque objects. Native schema checks
+  cover the change; the desktop host still needs a reload to expose it.
+- Pending semantic writes now offer review-context expansion only for abouts
+  already present in memory, avoiding Wake actions for uncommitted new abouts.
+
+### Changed
+
+- Acceptance reports now retain source, clock, catalogue and physical-query
+  evidence for views, semantic writing and proof traversal, including measured
+  regressions and remaining host and end-to-end evaluation limits.
+- The marketplace audit identifies the matching legacy local KMP card and
+  documents its owner and the remaining fresh-install and update checks.
+
 ## [0.18.5] - 2026-09-14
 
 ### Added
@@ -1774,7 +1799,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.5...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.6...HEAD
+[0.18.6]: https://github.com/underpass-ai/kmp/compare/v0.18.5...v0.18.6
 [0.18.5]: https://github.com/underpass-ai/kmp/compare/v0.18.4...v0.18.5
 [0.18.4]: https://github.com/underpass-ai/kmp/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/underpass-ai/kmp/compare/v0.18.2...v0.18.3
