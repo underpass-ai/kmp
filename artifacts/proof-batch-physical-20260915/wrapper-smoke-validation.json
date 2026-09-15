@@ -1,0 +1,16 @@
+{
+  "base_commit": "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
+  "capture_process": "dedicated stdio process per fixture arm; viewer off; exclusive store; serial requests",
+  "patched_commit": "2bc52bfc202c9015e4e605c4afbb22b175962664",
+  "patched_tree_clean": true,
+  "samples": 2,
+  "sqlite_control_passed": true,
+  "audit_passed": true,
+  "multipage_distinct": {
+    "complete_operations": 6,
+    "rpc_counts": [8],
+    "sqlite_statements_p50": 5128,
+    "sqlite_vm_steps_p50": 76168
+  },
+  "cleanup_verified": "temporary stores, frozen binary and generated worktree were absent after the wrapper exited"
+}

@@ -1,0 +1,11 @@
+{
+  "sequence": 6,
+  "arguments": [
+    "git",
+    "am",
+    "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/artifacts/proof-batch-physical-20260915/instrumentation-patches/0002-test-opt-in-to-experimental-SQLite-observer-acceptan.patch"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-xpz18ulx",
+  "exit_code": 0,
+  "output": "Applying: test: opt in to experimental SQLite observer acceptance\n"
+}

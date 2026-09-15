@@ -1,0 +1,31 @@
+{
+  "contract": "kmp.lossless-capture-compression.v1",
+  "algorithm": "gzip",
+  "verification": "For every capture, sha256(gzip -cd compressed) equals original_sha256 from commit bd7681a8.",
+  "captures": [
+    {
+      "compressed": "001-distinct-physical.json.gz",
+      "compressed_sha256": "165761d8475f55fc606626d533875c3ea2c746f230afa652b5c9920057a01054",
+      "original": "001-distinct-physical.json",
+      "original_sha256": "bbde9c0b6bdfbb2695055c036e669a53a65206b4d3ab2f779b09e9f45aa0955c"
+    },
+    {
+      "compressed": "008-distinct-physical.json.gz",
+      "compressed_sha256": "ca577f127b46dad06870a749da044872ebe03a50f51d473c6726fd60b835de70",
+      "original": "008-distinct-physical.json",
+      "original_sha256": "0f6381f94a7e3102e470e80d9d4d3eb0e6dba4a515c5a202588d269d2b62959f"
+    },
+    {
+      "compressed": "064-distinct-physical.json.gz",
+      "compressed_sha256": "4b8663033823e90156bb5d2a310a5b434d38b97818783d228e3185c29ef0580e",
+      "original": "064-distinct-physical.json",
+      "original_sha256": "74e2983e270870426bbeea9c324301bd57facfea19220eab94264eee8c6a6948"
+    },
+    {
+      "compressed": "064-shared-physical.json.gz",
+      "compressed_sha256": "5a5115f82a67aeda77ec8b4a76ca7cbc4e248e003b9786e0771964aee4e33605",
+      "original": "064-shared-physical.json",
+      "original_sha256": "84486dc71765d623e7874fc6eeceb0c1d1dbfa6ee9046fd734b8dcea42325fb7"
+    }
+  ]
+}

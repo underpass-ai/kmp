@@ -1,0 +1,11 @@
+{
+  "sequence": 14,
+  "arguments": [
+    "git",
+    "rev-parse",
+    "HEAD"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+  "exit_code": 0,
+  "output": "4c14e7446c2ecd3be0c3bd173a1db61a6397b9df\n"
+}

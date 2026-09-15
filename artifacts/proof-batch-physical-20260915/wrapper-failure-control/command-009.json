@@ -1,0 +1,17 @@
+{
+  "sequence": 9,
+  "arguments": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "kmp-adapter-embedded",
+    "prepared_cached_vm_work_is_per_execution_and_partial_rows_are_counted",
+    "--",
+    "--ignored",
+    "--nocapture"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-x89_4_dr",
+  "exit_code": 37,
+  "output": "intentional SQLite-control failure marker\n"
+}

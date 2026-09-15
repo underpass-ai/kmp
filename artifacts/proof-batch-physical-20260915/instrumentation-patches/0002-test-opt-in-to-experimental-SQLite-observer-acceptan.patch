@@ -1,0 +1,24 @@
+From 31ba6e5c4ac661c1a1dc79f3aec8b29d27661ba8 Mon Sep 17 00:00:00 2001
+From: Tirso Garcia <tgarciaib@gmail.com>
+Date: Fri, 11 Sep 2026 23:17:12 +0200
+Subject: [PATCH 2/3] test: opt in to experimental SQLite observer acceptance
+
+---
+ crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs b/crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs
+index 91b63b63..a61ab08c 100644
+--- a/crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs
++++ b/crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs
+@@ -60,6 +60,7 @@ mod tests {
+     use super::*;
+ 
+     #[test]
++    #[ignore = "experimental observer: run EVAL539_PROFILE=1 with --ignored"]
+     fn prepared_cached_vm_work_is_per_execution_and_partial_rows_are_counted() {
+         assert!(eval539_profile::enabled(), "run with EVAL539_PROFILE=1");
+         let connection = Connection::open_in_memory().unwrap();
+-- 
+2.43.0
+

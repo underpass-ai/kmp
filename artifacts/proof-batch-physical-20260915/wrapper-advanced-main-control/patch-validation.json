@@ -1,0 +1,191 @@
+{
+  "status": "success",
+  "base_commit": "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
+  "commands": [
+    {
+      "sequence": 1,
+      "arguments": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+      "exit_code": 0
+    },
+    {
+      "sequence": 2,
+      "arguments": [
+        "git",
+        "cat-file",
+        "-e",
+        "fc352d7d37ac0480cc79120a6288bfd446fa4c86^{commit}"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+      "exit_code": 0
+    },
+    {
+      "sequence": 3,
+      "arguments": [
+        "git",
+        "merge-base",
+        "--is-ancestor",
+        "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
+        "origin/main"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+      "exit_code": 0
+    },
+    {
+      "sequence": 4,
+      "arguments": [
+        "git",
+        "worktree",
+        "add",
+        "--detach",
+        "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+        "fc352d7d37ac0480cc79120a6288bfd446fa4c86"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+      "exit_code": 0
+    },
+    {
+      "sequence": 5,
+      "arguments": [
+        "git",
+        "am",
+        "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/artifacts/proof-batch-physical-20260915/instrumentation-patches/0001-experiment-observe-physical-proof-costs-per-serial-s.patch"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+      "exit_code": 0
+    },
+    {
+      "sequence": 6,
+      "arguments": [
+        "git",
+        "am",
+        "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/artifacts/proof-batch-physical-20260915/instrumentation-patches/0002-test-opt-in-to-experimental-SQLite-observer-acceptan.patch"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+      "exit_code": 0
+    },
+    {
+      "sequence": 7,
+      "arguments": [
+        "git",
+        "am",
+        "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/artifacts/proof-batch-physical-20260915/instrumentation-patches/0003-experiment-split-RPC-validation-and-guidance-overhea.patch"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+      "exit_code": 0
+    },
+    {
+      "sequence": 8,
+      "arguments": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+      "exit_code": 0
+    },
+    {
+      "sequence": 9,
+      "arguments": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "kmp-adapter-embedded",
+        "prepared_cached_vm_work_is_per_execution_and_partial_rows_are_counted",
+        "--",
+        "--ignored",
+        "--nocapture"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+      "exit_code": 0
+    },
+    {
+      "sequence": 10,
+      "arguments": [
+        "cargo",
+        "build",
+        "--locked",
+        "-p",
+        "kmp-mcp"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+      "exit_code": 0
+    },
+    {
+      "sequence": 11,
+      "arguments": [
+        "cargo",
+        "metadata",
+        "--no-deps",
+        "--format-version",
+        "1"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+      "exit_code": 0
+    },
+    {
+      "sequence": 12,
+      "arguments": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/scripts/performance/proof_batch_acceptance.py",
+        "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx-binary",
+        "/tmp/proof-539-success-evidence-20260915/capture",
+        "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-success-scratch",
+        "2"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+      "exit_code": 0
+    },
+    {
+      "sequence": 13,
+      "arguments": [
+        "/usr/bin/python3",
+        "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/scripts/performance/proof_batch_physical_audit.py",
+        "/tmp/proof-539-success-evidence-20260915/capture",
+        "/tmp/proof-539-success-evidence-20260915/capture/physical-summary.json"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+      "exit_code": 0
+    },
+    {
+      "sequence": 14,
+      "arguments": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+      "exit_code": 0
+    }
+  ],
+  "patches": [
+    {
+      "file": "0001-experiment-observe-physical-proof-costs-per-serial-s.patch",
+      "expected_sha256": "95d3508c5ede7d616f0dcbfe02d5ef7d78c3d604989b96268a9267c65f0c4bfb",
+      "actual_sha256": "95d3508c5ede7d616f0dcbfe02d5ef7d78c3d604989b96268a9267c65f0c4bfb",
+      "matches": true
+    },
+    {
+      "file": "0002-test-opt-in-to-experimental-SQLite-observer-acceptan.patch",
+      "expected_sha256": "989deff51c231140df8267adfbde9ce7e583b823dd61cfa6f5f9e3d8a001540a",
+      "actual_sha256": "989deff51c231140df8267adfbde9ce7e583b823dd61cfa6f5f9e3d8a001540a",
+      "matches": true
+    },
+    {
+      "file": "0003-experiment-split-RPC-validation-and-guidance-overhea.patch",
+      "expected_sha256": "1b69f605558ca211be43de90172453348b8683d85cff75286dc574a7885bff76",
+      "actual_sha256": "1b69f605558ca211be43de90172453348b8683d85cff75286dc574a7885bff76",
+      "matches": true
+    }
+  ],
+  "patched_commit": "4c14e7446c2ecd3be0c3bd173a1db61a6397b9df",
+  "patched_tree_clean": true,
+  "sqlite_control_passed": true,
+  "capture_process": "dedicated stdio process per fixture arm; viewer off; exclusive store; serial requests",
+  "cleanup_exit_code": 0
+}

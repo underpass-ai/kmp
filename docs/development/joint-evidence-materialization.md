@@ -134,3 +134,73 @@ The runner requires a new output directory, creates one seed store per shape,
 copies it only after the writer closes, records source/runner/binary hashes and
 host/profile details, and removes its scratch stores on exit. No model call is
 part of seeding, comparison or measurement.
+
+### Physical backend and complete-operation follow-up
+
+An experimental patch series applied to the exact clean main commit
+`fc352d7d37ac0480cc79120a6288bfd446fa4c86` records real SQLite `trace_v2` events,
+VM steps and returned rows, logical table reads, body batch slots and inclusive
+application, adapter, projection, mapping and encoding phases for each serial
+RPC when `EVAL539_PROFILE=1`. The patches and their hashes live in
+`instrumentation-patches/`; its manifest records clean application, diffstat,
+scope and the enabled real-SQLite control command. None of this instrumentation
+is present in the product source tree or compiled default binary delivered by
+this PR.
+
+`artifacts/proof-batch-physical-20260915` repeats the four exact-equivalence
+fixtures with ten measured operations, three warmups and one process-first
+operation per path. The runner reports preparation, process startup plus
+initialize, summed RPC wait and complete client wall time separately. Both
+paths have the same explicit 8,000,000-byte **total traversal** allowance and
+the run rejects an operation whose cumulative responses exceed it. Each MCP
+call still declares the same value as its per-response API ceiling; observed
+complete traversals are far below the shared total (largest: 390,034 oracle
+bytes and 199,322 joint bytes).
+Each fixture arm uses its own temporary store and dedicated process, disables
+the viewer, writes stderr to a dedicated file and issues one stdin request at a
+time. Initialize, seeding and warmups remain identifiable and excluded from the
+ten measured operations. The post-capture auditor requires a bijection between
+request and profile ids/method/tools, zero nesting and VM-delta errors, one
+SQLite profile per statement, and the required RPC/backend/schema/encoding
+phase paths.
+
+| Shape | Warm client p50 ms oracle → joint | RPCs | SQLite statements p50 per complete operation oracle → joint | VM steps p50 oracle → joint |
+| --- | ---: | ---: | ---: | ---: |
+| 1 distinct | 7.66 → 3.90 | 2 → 1 | 26 → 11 | 277 → 135 |
+| 8 distinct | 51.57 → 12.64 | 9 → 1 | 222 → 81 | 2,785 → 1,177 |
+| 64 distinct | 471.09 → 251.53 | 65 → 8 | 1,790 → 5,128 | 22,945 → 76,168 |
+| 64 shared | 538.66 → 247.66 | 65 → 7 | 2,686 → 3,703 | 38,121 → 58,807 |
+
+The 64-entry multipage joint path reduces round trips, response bytes and observed
+client latency while executing more SQLite statements and VM steps because
+each continuation reconstructs the bounded selection in a new transaction.
+This retained regression is a concrete limit of the current pagination model;
+larger pages may reduce it but would change response shape and are not inferred
+as a fix here. SQLite profile duration is statement execution reported by the
+observer, not physical disk I/O. `VmHWM` is still process-wide, and a fresh
+process still does not imply an empty operating-system cache.
+All elapsed and inclusive phase timings in this table come from the patched
+instrumented binary; no enabled-versus-disabled calibration was run, so they
+must not be presented as production latency. SQLite statements, rows and VM
+steps are the physical backend evidence. The exact semantic response equality,
+RPC counts and response bytes are independently checked by the runner.
+
+`proof_batch_physical_audit.py` reconstructs complete operations from the
+preserved JSON-RPC traces, joins each request id to its physical profile and
+writes `physical-summary.json`, including capture and auditor hashes. Raw
+physical profiles are preserved losslessly as `*-physical.json.gz`;
+`compression-manifest.json` records each original and compressed hash, and the
+decompressed bytes were verified against the originals from commit `bd7681a8`.
+The
+previous 38 lost failed-attempt files remain lost and are only described by
+`failed-attempt-ledger.json`; this follow-up does not recreate them.
+
+For a new physical run, use
+`proof_batch_physical_run.py REPOSITORY OUTPUT SCRATCH SAMPLES`. The wrapper
+refuses a dirty repository, verifies that the frozen base exists and remains an
+ancestor of `origin/main`, verifies patch hashes,
+creates a detached temporary worktree, applies every patch, executes the
+enabled prepared-statement/partial-row SQLite control and the separate
+10,000-link late-cursor SQLite control, builds and freezes that isolated binary,
+runs the serial acceptance capture under `OUTPUT/capture`, audits it, records
+every command and its output, and removes the temporary worktree and stores.

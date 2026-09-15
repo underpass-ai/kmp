@@ -1,0 +1,973 @@
+From f27899750bdb3db1da5ea4c18d59dc59675a16a6 Mon Sep 17 00:00:00 2001
+From: Tirso Garcia <tgarciaib@gmail.com>
+Date: Fri, 11 Sep 2026 23:15:00 +0200
+Subject: [PATCH 1/3] experiment: observe physical proof costs per serial stdio
+ RPC
+
+---
+ crates/kmp-adapter-embedded/Cargo.toml        |   2 +-
+ .../src/adapter/engine/eval539_sql.rs         |  90 ++++++++
+ .../src/adapter/engine/mod.rs                 |   1 +
+ .../src/adapter/engine/sqlite.rs              | 201 +++++++++++++++++-
+ .../src/adapter/node_detail.rs                |  20 +-
+ .../src/adapter/trace_snapshot.rs             |   2 +
+ crates/kmp-domain/src/eval539_profile.rs      | 192 +++++++++++++++++
+ crates/kmp-domain/src/lib.rs                  |   1 +
+ .../src/model/bounded_trace_search.rs         |   3 +
+ .../src/model/evidence_paths/search.rs        |   3 +
+ .../src/model/materialize_trace_proof.rs      |   2 +
+ crates/kmp-mcp/src/cli/serve.rs               |  25 ++-
+ .../src/projection/inspect_projection.rs      |   1 +
+ .../src/projection/relation_page_budget.rs    |   1 +
+ .../src/projection/trace_projection.rs        |   1 +
+ .../serving/adapters/embedded/inspect_tool.rs |   1 +
+ .../serving/adapters/embedded/trace_tool.rs   |   1 +
+ crates/kmp-mcp/src/serving/json_rpc.rs        |  38 ++--
+ crates/kmp-mcp/src/serving/tool_result.rs     |   3 +
+ .../memory_mapping/evidence_seek_response.rs  |   1 +
+ .../src/v1beta1/memory_mapping/responses.rs   |   2 +
+ .../v1beta1/memory_mapping/trace_search.rs    |   1 +
+ 22 files changed, 563 insertions(+), 29 deletions(-)
+ create mode 100644 crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs
+ create mode 100644 crates/kmp-domain/src/eval539_profile.rs
+
+diff --git a/crates/kmp-adapter-embedded/Cargo.toml b/crates/kmp-adapter-embedded/Cargo.toml
+index 543d4632..9c29fa35 100644
+--- a/crates/kmp-adapter-embedded/Cargo.toml
++++ b/crates/kmp-adapter-embedded/Cargo.toml
+@@ -21,7 +21,7 @@ sqlite = []
+ workspace = true
+ 
+ [dependencies]
+-rusqlite = { version = "0.40.1", features = ["bundled"] }
++rusqlite = { version = "0.40.1", features = ["bundled", "trace"] }
+ sha2.workspace = true
+ kmp-domain.workspace = true
+ kmp-application.workspace = true
+diff --git a/crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs b/crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs
+new file mode 100644
+index 00000000..91b63b63
+--- /dev/null
++++ b/crates/kmp-adapter-embedded/src/adapter/engine/eval539_sql.rs
+@@ -0,0 +1,90 @@
++//! Experimental trace_v2 observer. Triggers are disabled by the engine; each
++//! SQLite connection runs serially on its current worker thread. The stack is
++//! bounded by in-flight statements, not historical SQL text or statement keys.
++use kmp_domain::eval539_profile;
++use rusqlite::{
++    Connection, StatementStatus,
++    trace::{TraceEvent, TraceEventCodes},
++};
++use std::cell::RefCell;
++
++thread_local! {
++    static VM_BASELINES: RefCell<Vec<i32>> = const { RefCell::new(Vec::new()) };
++}
++
++pub(super) fn install(connection: &Connection) {
++    if eval539_profile::enabled() {
++        connection.trace_v2(
++            TraceEventCodes::SQLITE_TRACE_STMT
++                | TraceEventCodes::SQLITE_TRACE_ROW
++                | TraceEventCodes::SQLITE_TRACE_PROFILE,
++            Some(observe),
++        );
++    }
++}
++
++fn observe(event: TraceEvent<'_>) {
++    match event {
++        TraceEvent::Stmt(statement, _) => {
++            // sqlite3_reset does not clear VM_STEP. Subtract the status seen at
++            // this execution's STMT event, never sum lifetime status repeatedly.
++            VM_BASELINES.with(|s| {
++                s.borrow_mut()
++                    .push(statement.get_status(StatementStatus::VmStep))
++            });
++            eval539_profile::sql(|s| s.statements += 1);
++        }
++        TraceEvent::Row(_) => eval539_profile::sql(|s| s.rows += 1),
++        TraceEvent::Profile(statement, duration) => {
++            let baseline = VM_BASELINES.with(|s| s.borrow_mut().pop());
++            let current = statement.get_status(StatementStatus::VmStep);
++            eval539_profile::sql(|s| {
++                s.profiles += 1;
++                s.profile_ns += duration.as_nanos() as u64;
++                if let Some(delta) = baseline
++                    .and_then(|v| current.checked_sub(v))
++                    .filter(|v| *v >= 0)
++                {
++                    s.vm_steps += delta as u64;
++                } else {
++                    s.vm_step_invalid_deltas += 1;
++                }
++            });
++        }
++        _ => {}
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn prepared_cached_vm_work_is_per_execution_and_partial_rows_are_counted() {
++        assert!(eval539_profile::enabled(), "run with EVAL539_PROFILE=1");
++        let connection = Connection::open_in_memory().unwrap();
++        install(&connection);
++        let mut observed = Vec::new();
++        for _ in 0..3 {
++            assert!(eval539_profile::begin());
++            {
++                let mut statement = connection
++                    .prepare_cached("SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3")
++                    .unwrap();
++                let mut rows = statement.query([]).unwrap();
++                assert!(rows.next().unwrap().is_some());
++                // Deliberately stop before SQLITE_DONE: resetting/dropping must
++                // still report exactly the VM work and row consumed this run.
++            }
++            let result = eval539_profile::finish();
++            assert_eq!(result.sql.statements, 1);
++            assert_eq!(result.sql.profiles, 1);
++            assert_eq!(result.sql.rows, 1);
++            assert_eq!(result.sql.vm_step_invalid_deltas, 0);
++            assert!(result.sql.vm_steps > 0);
++            observed.push(result.sql.vm_steps);
++        }
++        assert_eq!(observed[0], observed[1]);
++        assert_eq!(observed[1], observed[2]);
++    }
++}
+diff --git a/crates/kmp-adapter-embedded/src/adapter/engine/mod.rs b/crates/kmp-adapter-embedded/src/adapter/engine/mod.rs
+index 4fbad739..6bab6921 100644
+--- a/crates/kmp-adapter-embedded/src/adapter/engine/mod.rs
++++ b/crates/kmp-adapter-embedded/src/adapter/engine/mod.rs
+@@ -28,6 +28,7 @@ mod snapshot_revision_observer;
+ mod sqlite_linked_json;
+ pub(crate) use linked_json_row::LinkedJsonRow;
+ pub(crate) use linked_json_scan::LinkedJsonScan;
++mod eval539_sql;
+ pub(crate) mod sqlite;
+ mod sqlite_snapshot;
+ mod sqlite_snapshot_read;
+diff --git a/crates/kmp-adapter-embedded/src/adapter/engine/sqlite.rs b/crates/kmp-adapter-embedded/src/adapter/engine/sqlite.rs
+index ddda385c..5f18d194 100644
+--- a/crates/kmp-adapter-embedded/src/adapter/engine/sqlite.rs
++++ b/crates/kmp-adapter-embedded/src/adapter/engine/sqlite.rs
+@@ -179,6 +179,7 @@ fn open_connection(store_file: &Path) -> Result<Connection, PortError> {
+             store_file.display()
+         ))
+     })?;
++    super::eval539_sql::install(&connection);
+     harden_connection(&connection, store_file)?;
+     // busy_timeout FIRST. Switching the journal mode takes a brief
+     // exclusive lock, so two processes opening at the same instant collide
+@@ -423,6 +424,194 @@ pub(super) struct Ops<'c> {
+ 
+ impl Ops<'_> {
+     pub(super) fn get(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
++        if !kmp_domain::eval539_profile::active() {
++            return self.get_unprofiled(table, key);
++        }
++        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.get");
++        let result = self.get_unprofiled(table, key);
++        let (rows, bytes, keys) = match &result {
++            Ok(value) => (
++                value.iter().count() as u64,
++                value.iter().map(|v| v.len() as u64).sum(),
++                0,
++            ),
++            Err(_) => (0, 0, 0),
++        };
++        kmp_domain::eval539_profile::logical(
++            table.to_string(),
++            "get",
++            rows,
++            bytes,
++            keys,
++            result.is_err(),
++        );
++        result
++    }
++
++    pub(super) fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
++        if !kmp_domain::eval539_profile::active() {
++            return self.scan_str_unprofiled(table);
++        }
++        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.scan_str");
++        let result = self.scan_str_unprofiled(table);
++        let (rows, bytes, keys) = match &result {
++            Ok(value) => (
++                value.len() as u64,
++                value.iter().map(|(_, v)| v.len() as u64).sum(),
++                value.iter().map(|(k, _)| k.len() as u64).sum(),
++            ),
++            Err(_) => (0, 0, 0),
++        };
++        kmp_domain::eval539_profile::logical(
++            table.to_string(),
++            "scan_str",
++            rows,
++            bytes,
++            keys,
++            result.is_err(),
++        );
++        result
++    }
++
++    pub(super) fn scan_str3_by_first(
++        &self,
++        table: Table,
++        first: &str,
++    ) -> Result<Vec<Str3Row>, PortError> {
++        if !kmp_domain::eval539_profile::active() {
++            return self.scan_str3_by_first_unprofiled(table, first);
++        }
++        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.scan_str3_by_first");
++        let result = self.scan_str3_by_first_unprofiled(table, first);
++        let (rows, bytes, keys) = match &result {
++            Ok(value) => (
++                value.len() as u64,
++                value.iter().map(|(_, v)| v.len() as u64).sum(),
++                value
++                    .iter()
++                    .map(|((a, b, c), _)| (a.len() + b.len() + c.len()) as u64)
++                    .sum(),
++            ),
++            Err(_) => (0, 0, 0),
++        };
++        kmp_domain::eval539_profile::logical(
++            table.to_string(),
++            "scan_str3_by_first",
++            rows,
++            bytes,
++            keys,
++            result.is_err(),
++        );
++        result
++    }
++
++    pub(super) fn scan_str3_page(
++        &self,
++        table: Table,
++        first: &str,
++        after: Option<(&str, &str)>,
++        limit: u32,
++        relation_type: Option<&str>,
++    ) -> Result<Vec<Str3Row>, PortError> {
++        if !kmp_domain::eval539_profile::active() {
++            return self.scan_str3_page_unprofiled(table, first, after, limit, relation_type);
++        }
++        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.scan_str3_page");
++        let result = self.scan_str3_page_unprofiled(table, first, after, limit, relation_type);
++        let (rows, bytes, keys) = match &result {
++            Ok(value) => (
++                value.len() as u64,
++                value.iter().map(|(_, v)| v.len() as u64).sum(),
++                value
++                    .iter()
++                    .map(|((a, b, c), _)| (a.len() + b.len() + c.len()) as u64)
++                    .sum(),
++            ),
++            Err(_) => (0, 0, 0),
++        };
++        kmp_domain::eval539_profile::logical(
++            table.to_string(),
++            "scan_str3_page",
++            rows,
++            bytes,
++            keys,
++            result.is_err(),
++        );
++        result
++    }
++
++    pub(super) fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
++        if !kmp_domain::eval539_profile::active() {
++            return self.scan_u64_unprofiled(table);
++        }
++        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.scan_u64");
++        let result = self.scan_u64_unprofiled(table);
++        let (rows, bytes, keys) = match &result {
++            Ok(value) => (
++                value.len() as u64,
++                value.iter().map(|(_, v)| v.len() as u64).sum(),
++                8 * value.len() as u64,
++            ),
++            Err(_) => (0, 0, 0),
++        };
++        kmp_domain::eval539_profile::logical(
++            table.to_string(),
++            "scan_u64",
++            rows,
++            bytes,
++            keys,
++            result.is_err(),
++        );
++        result
++    }
++
++    pub(super) fn last_u64(&self, table: Table) -> Result<Option<U64Row>, PortError> {
++        if !kmp_domain::eval539_profile::active() {
++            return self.last_u64_unprofiled(table);
++        }
++        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.last_u64");
++        let result = self.last_u64_unprofiled(table);
++        let (rows, bytes, keys) = match &result {
++            Ok(value) => (
++                value.iter().count() as u64,
++                value.iter().map(|(_, v)| v.len() as u64).sum(),
++                8 * value.iter().count() as u64,
++            ),
++            Err(_) => (0, 0, 0),
++        };
++        kmp_domain::eval539_profile::logical(
++            table.to_string(),
++            "last_u64",
++            rows,
++            bytes,
++            keys,
++            result.is_err(),
++        );
++        result
++    }
++
++    pub(super) fn count(&self, table: Table) -> Result<u64, PortError> {
++        if !kmp_domain::eval539_profile::active() {
++            return self.count_unprofiled(table);
++        }
++        let _span = kmp_domain::eval539_profile::span("adapter.read_tx.count");
++        let result = self.count_unprofiled(table);
++        let (rows, bytes, keys) = match &result {
++            Ok(_value) => (1, 0, 0),
++            Err(_) => (0, 0, 0),
++        };
++        kmp_domain::eval539_profile::logical(
++            table.to_string(),
++            "count",
++            rows,
++            bytes,
++            keys,
++            result.is_err(),
++        );
++        result
++    }
++
++    fn get_unprofiled(&self, table: Table, key: Key<'_>) -> Result<Option<Vec<u8>>, PortError> {
+         check_key(table, key)?;
+         let sql = format!(
+             "SELECT v FROM \"{table}\" WHERE {}",
+@@ -472,7 +661,7 @@ impl Ops<'_> {
+         })
+     }
+ 
+-    pub(super) fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
++    fn scan_str_unprofiled(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
+         if table.key_shape() != KeyShape::Str {
+             return Err(scan_shape_mismatch(table, KeyShape::Str));
+         }
+@@ -526,7 +715,7 @@ impl Ops<'_> {
+             .map_err(|e| read_error(table, &e))
+     }
+ 
+-    pub(super) fn scan_str3_by_first(
++    fn scan_str3_by_first_unprofiled(
+         &self,
+         table: Table,
+         first: &str,
+@@ -553,7 +742,7 @@ impl Ops<'_> {
+             .map_err(|error| read_error(table, &error))
+     }
+ 
+-    pub(super) fn scan_str3_page(
++    fn scan_str3_page_unprofiled(
+         &self,
+         table: Table,
+         first: &str,
+@@ -595,7 +784,7 @@ impl Ops<'_> {
+             .map_err(|error| read_error(table, &error))
+     }
+ 
+-    pub(super) fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
++    fn scan_u64_unprofiled(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
+         if table.key_shape() != KeyShape::U64 {
+             return Err(scan_shape_mismatch(table, KeyShape::U64));
+         }
+@@ -613,7 +802,7 @@ impl Ops<'_> {
+         .collect()
+     }
+ 
+-    pub(super) fn last_u64(&self, table: Table) -> Result<Option<U64Row>, PortError> {
++    fn last_u64_unprofiled(&self, table: Table) -> Result<Option<U64Row>, PortError> {
+         if table.key_shape() != KeyShape::U64 {
+             return Err(scan_shape_mismatch(table, KeyShape::U64));
+         }
+@@ -629,7 +818,7 @@ impl Ops<'_> {
+             .transpose()
+     }
+ 
+-    pub(super) fn count(&self, table: Table) -> Result<u64, PortError> {
++    fn count_unprofiled(&self, table: Table) -> Result<u64, PortError> {
+         let sql = format!("SELECT COUNT(*) FROM \"{table}\"");
+         let mut statement = self.prepare(&sql)?;
+         let count: i64 = statement
+diff --git a/crates/kmp-adapter-embedded/src/adapter/node_detail.rs b/crates/kmp-adapter-embedded/src/adapter/node_detail.rs
+index 4aa27282..cbaaa6c0 100644
+--- a/crates/kmp-adapter-embedded/src/adapter/node_detail.rs
++++ b/crates/kmp-adapter-embedded/src/adapter/node_detail.rs
+@@ -8,14 +8,19 @@ pub(super) fn read_batch(
+     tx: &dyn ReadTx,
+     node_ids: &[String],
+ ) -> Result<Vec<Option<NodeDetailProjection>>, PortError> {
+-    node_ids
++    let _eval539_span = kmp_domain::eval539_profile::span("bodies.read_batch");
++    let result: Result<Vec<Option<NodeDetailProjection>>, PortError> = node_ids
+         .iter()
+         .map(|id| {
+             tx.get(Table::Details, Key::Str(id))?
+                 .map(|raw| decode::<DetailRecord>("node detail", &raw).map(Into::into))
+                 .transpose()
+         })
+-        .collect()
++        .collect();
++    if let Ok(values) = &result {
++        kmp_domain::eval539_profile::bodies(node_ids.len(), values, false);
++    }
++    result
+ }
+ 
+ /// Stored record bytes for each id, in the requested order, duplicates and
+@@ -41,10 +46,13 @@ impl NodeDetailReader for EmbeddedKernelStore {
+         let node_id = node_id.to_string();
+         self.run(move |store| {
+             let tx = store.begin_read()?;
+-            match tx.get(Table::Details, Key::Str(&node_id))? {
+-                Some(raw) => Ok(Some(decode::<DetailRecord>("node detail", &raw)?.into())),
+-                None => Ok(None),
+-            }
++            let _span = kmp_domain::eval539_profile::span("bodies.read_single");
++            let value = match tx.get(Table::Details, Key::Str(&node_id))? {
++                Some(raw) => Some(decode::<DetailRecord>("node detail", &raw)?.into()),
++                None => None,
++            };
++            kmp_domain::eval539_profile::bodies(1, std::slice::from_ref(&value), true);
++            Ok(value)
+         })
+         .await
+     }
+diff --git a/crates/kmp-adapter-embedded/src/adapter/trace_snapshot.rs b/crates/kmp-adapter-embedded/src/adapter/trace_snapshot.rs
+index 78a6e3e3..18a3a391 100644
+--- a/crates/kmp-adapter-embedded/src/adapter/trace_snapshot.rs
++++ b/crates/kmp-adapter-embedded/src/adapter/trace_snapshot.rs
+@@ -38,6 +38,7 @@ impl TraceSnapshotReader for TraceSnapshot<'_> {
+     }
+ 
+     fn node(&self, id: &str) -> Result<Option<NodeProjection>, PortError> {
++        let _eval539_span = kmp_domain::eval539_profile::span("adapter.trace_node");
+         self.0
+             .get(Table::Nodes, Key::Str(id))?
+             .map(|raw| decode::<NodeRecord>("trace node", &raw)?.into_projection())
+@@ -45,6 +46,7 @@ impl TraceSnapshotReader for TraceSnapshot<'_> {
+     }
+ 
+     fn adjacency(&self, request: &AdjacencyRequest) -> Result<AdjacencyPage, PortError> {
++        let _eval539_span = kmp_domain::eval539_profile::span("adapter.trace_adjacency");
+         bounded_adjacency::read_page(self.0, request)
+     }
+ }
+diff --git a/crates/kmp-domain/src/eval539_profile.rs b/crates/kmp-domain/src/eval539_profile.rs
+new file mode 100644
+index 00000000..9247918b
+--- /dev/null
++++ b/crates/kmp-domain/src/eval539_profile.rs
+@@ -0,0 +1,192 @@
++//! Experimental #539 instrumentation, not a product API. The process must serve
++//! one serial RPC with no background work. Inclusive spans may cross threads.
++//! This neutral, standard-library collector deliberately lives below adapters.
++use std::collections::BTreeMap;
++use std::sync::atomic::{AtomicBool, Ordering};
++use std::sync::{Mutex, OnceLock};
++use std::time::Instant;
++
++use serde::Serialize;
++
++static ENABLED: OnceLock<bool> = OnceLock::new();
++static ACTIVE: AtomicBool = AtomicBool::new(false);
++static STATE: Mutex<Option<State>> = Mutex::new(None);
++
++#[derive(Default, Serialize)]
++pub struct Totals {
++    pub phases: Vec<Phase>,
++    pub logical_reads: Vec<LogicalRead>,
++    pub sql: Sql,
++    pub bodies: Bodies,
++    pub nesting_errors: u64,
++}
++
++#[derive(Default, Serialize)]
++pub struct Phase {
++    pub path: Vec<&'static str>,
++    pub calls: u64,
++    pub inclusive_ns: u64,
++}
++
++#[derive(Default, Serialize)]
++pub struct LogicalRead {
++    pub table: String,
++    pub operation: &'static str,
++    pub calls: u64,
++    pub rows: u64,
++    pub value_bytes: u64,
++    pub key_bytes: u64,
++    pub errors: u64,
++}
++
++#[derive(Default, Serialize)]
++pub struct Sql {
++    pub statements: u64,
++    pub rows: u64,
++    pub profiles: u64,
++    pub vm_steps: u64,
++    pub profile_ns: u64,
++    pub vm_step_invalid_deltas: u64,
++}
++
++#[derive(Default, Serialize)]
++pub struct Bodies {
++    pub single_reads: u64,
++    pub batches: u64,
++    pub slots: u64,
++    pub found: u64,
++    pub detail_bytes: u64,
++}
++
++#[derive(Default)]
++struct State {
++    phases: BTreeMap<Vec<&'static str>, Phase>,
++    logical: BTreeMap<(String, &'static str), LogicalRead>,
++    stack: Vec<(u64, &'static str)>,
++    next_id: u64,
++    totals: Totals,
++}
++
++pub fn enabled() -> bool {
++    *ENABLED.get_or_init(|| std::env::var("EVAL539_PROFILE").is_ok_and(|v| v == "1"))
++}
++
++pub fn active() -> bool {
++    ACTIVE.load(Ordering::Relaxed)
++}
++
++pub fn begin() -> bool {
++    if !enabled() {
++        return false;
++    }
++    let mut state = STATE.lock().expect("eval539 collector lock");
++    assert!(state.is_none(), "eval539 requires serial isolated RPCs");
++    *state = Some(State::default());
++    ACTIVE.store(true, Ordering::Relaxed);
++    true
++}
++
++pub fn finish() -> Totals {
++    ACTIVE.store(false, Ordering::Relaxed);
++    let mut state = STATE
++        .lock()
++        .expect("eval539 collector lock")
++        .take()
++        .expect("active collector");
++    state.totals.nesting_errors += state.stack.len() as u64;
++    state.totals.phases = state.phases.into_values().collect();
++    state.totals.logical_reads = state.logical.into_values().collect();
++    state.totals
++}
++
++pub struct Span(Option<(Instant, u64, Vec<&'static str>)>);
++
++pub fn span(name: &'static str) -> Span {
++    if !active() {
++        return Span(None);
++    }
++    let started = Instant::now();
++    let mut state = STATE.lock().expect("eval539 collector lock");
++    let state = state.as_mut().expect("active collector");
++    let id = state.next_id;
++    state.next_id += 1;
++    state.stack.push((id, name));
++    let path = state.stack.iter().map(|(_, name)| *name).collect();
++    Span(Some((started, id, path)))
++}
++
++impl Drop for Span {
++    fn drop(&mut self) {
++        let Some((started, id, path)) = self.0.take() else {
++            return;
++        };
++        let elapsed = started.elapsed().as_nanos() as u64;
++        let mut state = STATE.lock().expect("eval539 collector lock");
++        let Some(state) = state.as_mut() else { return };
++        if state.stack.last().map(|(id, _)| *id) != Some(id) {
++            state.totals.nesting_errors += 1;
++        }
++        state.stack.retain(|(open, _)| *open != id);
++        let phase = state.phases.entry(path.clone()).or_insert_with(|| Phase {
++            path,
++            ..Phase::default()
++        });
++        phase.calls += 1;
++        phase.inclusive_ns += elapsed;
++    }
++}
++
++pub fn logical(
++    table: String,
++    operation: &'static str,
++    rows: u64,
++    value_bytes: u64,
++    key_bytes: u64,
++    error: bool,
++) {
++    if !active() {
++        return;
++    }
++    let mut state = STATE.lock().expect("eval539 collector lock");
++    let Some(state) = state.as_mut() else { return };
++    let read = state
++        .logical
++        .entry((table.clone(), operation))
++        .or_insert_with(|| LogicalRead {
++            table,
++            operation,
++            ..LogicalRead::default()
++        });
++    read.calls += 1;
++    read.rows += rows;
++    read.value_bytes += value_bytes;
++    read.key_bytes += key_bytes;
++    read.errors += u64::from(error);
++}
++
++pub fn sql(update: impl FnOnce(&mut Sql)) {
++    if !active() {
++        return;
++    }
++    if let Some(state) = STATE.lock().expect("eval539 collector lock").as_mut() {
++        update(&mut state.totals.sql);
++    }
++}
++
++pub fn bodies(slots: usize, values: &[Option<crate::NodeDetailProjection>], single: bool) {
++    if !active() {
++        return;
++    }
++    if let Some(state) = STATE.lock().expect("eval539 collector lock").as_mut() {
++        if single {
++            state.totals.bodies.single_reads += 1;
++        } else {
++            state.totals.bodies.batches += 1;
++        }
++        state.totals.bodies.slots += slots as u64;
++        for body in values.iter().flatten() {
++            state.totals.bodies.found += 1;
++            state.totals.bodies.detail_bytes += body.detail.len() as u64;
++        }
++    }
++}
+diff --git a/crates/kmp-domain/src/lib.rs b/crates/kmp-domain/src/lib.rs
+index f3d07947..692565ec 100644
+--- a/crates/kmp-domain/src/lib.rs
++++ b/crates/kmp-domain/src/lib.rs
+@@ -1,5 +1,6 @@
+ pub mod consolidation;
+ pub mod error;
++pub mod eval539_profile;
+ pub mod language;
+ pub mod model;
+ pub mod plugins;
+diff --git a/crates/kmp-domain/src/model/bounded_trace_search.rs b/crates/kmp-domain/src/model/bounded_trace_search.rs
+index 243f2458..881ab917 100644
+--- a/crates/kmp-domain/src/model/bounded_trace_search.rs
++++ b/crates/kmp-domain/src/model/bounded_trace_search.rs
+@@ -13,6 +13,8 @@ pub fn bounded_trace_search(
+     reader: &impl TraceSnapshotReader,
+     request: &TraceSearchRequest,
+ ) -> Result<TraceSearchResult, PortError> {
++    let _eval539_total = crate::eval539_profile::span("search.target.total");
++    let eval539_selection = crate::eval539_profile::span("search.target.selection");
+     request
+         .validate()
+         .map_err(|e| PortError::InvalidState(e.to_string()))?;
+@@ -186,6 +188,7 @@ pub fn bounded_trace_search(
+                 .map_err(|e| PortError::InvalidState(e.to_string()))?,
+         );
+     }
++    drop(eval539_selection);
+     if request.proof {
+         result.proof = Some(super::materialize_trace_proof::trace(
+             reader,
+diff --git a/crates/kmp-domain/src/model/evidence_paths/search.rs b/crates/kmp-domain/src/model/evidence_paths/search.rs
+index 9ad31062..2c43cf59 100644
+--- a/crates/kmp-domain/src/model/evidence_paths/search.rs
++++ b/crates/kmp-domain/src/model/evidence_paths/search.rs
+@@ -16,6 +16,8 @@ pub fn search_evidence_paths(
+     reader: &impl TraceSnapshotReader,
+     request: &EvidencePathRequest,
+ ) -> Result<EvidencePathResult, PortError> {
++    let _eval539_total = crate::eval539_profile::span("search.seek.total");
++    let eval539_selection = crate::eval539_profile::span("search.seek.selection");
+     request
+         .validate()
+         .map_err(|e| PortError::InvalidState(e.to_string()))?;
+@@ -39,6 +41,7 @@ pub fn search_evidence_paths(
+         stop: None,
+     };
+     let mut result = search.run()?;
++    drop(eval539_selection);
+     if request.proof {
+         result.proof = Some(crate::model::materialize_trace_proof::evidence(
+             reader,
+diff --git a/crates/kmp-domain/src/model/materialize_trace_proof.rs b/crates/kmp-domain/src/model/materialize_trace_proof.rs
+index 45557d25..f3c3e33a 100644
+--- a/crates/kmp-domain/src/model/materialize_trace_proof.rs
++++ b/crates/kmp-domain/src/model/materialize_trace_proof.rs
+@@ -16,6 +16,7 @@ pub(super) fn trace<R: TraceSnapshotReader>(
+     search: &TraceSearchResult,
+     admission: &mut TraceTemporalAdmission<'_, R>,
+ ) -> Result<TraceProofResult, PortError> {
++    let _eval539_span = crate::eval539_profile::span("proof.target.materialize");
+     let selected: Vec<usize> = search.material.as_ref().map_or_else(
+         || (0..search.routes.len()).collect(),
+         |m| m.selected_candidates.iter().map(|&i| i as usize).collect(),
+@@ -90,6 +91,7 @@ pub(super) fn evidence<R: TraceSnapshotReader>(
+     admission: &mut TraceTemporalAdmission<'_, R>,
+     options: &TraceBodyOptions,
+ ) -> Result<TraceProofResult, PortError> {
++    let _eval539_span = crate::eval539_profile::span("proof.seek.materialize");
+     let about = &request.about;
+     let entries: BTreeSet<String> = search
+         .viable_candidates()
+diff --git a/crates/kmp-mcp/src/cli/serve.rs b/crates/kmp-mcp/src/cli/serve.rs
+index a6a8bcad..0084c808 100644
+--- a/crates/kmp-mcp/src/cli/serve.rs
++++ b/crates/kmp-mcp/src/cli/serve.rs
+@@ -101,7 +101,30 @@ pub(crate) async fn serve() -> Result<(), Box<dyn std::error::Error>> {
+             continue;
+         }
+ 
+-        if let Some(response) = server.handle_json_bytes(&line).await {
++        let response = if kmp_domain::eval539_profile::begin() {
++            let request: serde_json::Value = serde_json::from_slice(&line).unwrap_or_default();
++            let started = std::time::Instant::now();
++            let span = kmp_domain::eval539_profile::span("rpc.dispatch");
++            let response = server.handle_json_bytes(&line).await;
++            drop(span);
++            let elapsed_ns = started.elapsed().as_nanos() as u64;
++            let totals = kmp_domain::eval539_profile::finish();
++            eprintln!(
++                "EVAL539_PROFILE {}",
++                serde_json::json!({
++                    "schema": "eval539.physical.v1", "id": request.get("id"),
++                    "method": request.get("method"), "tool": request.pointer("/params/name"),
++                    "elapsed_ns": elapsed_ns, "phases": totals.phases,
++                    "logical_reads": totals.logical_reads, "sql": totals.sql,
++                    "bodies": totals.bodies, "nesting_errors": totals.nesting_errors,
++                    "allocations": null
++                })
++            );
++            response
++        } else {
++            server.handle_json_bytes(&line).await
++        };
++        if let Some(response) = response {
+             writeln!(stdout, "{response}")?;
+             stdout.flush()?;
+         }
+diff --git a/crates/kmp-mcp/src/projection/inspect_projection.rs b/crates/kmp-mcp/src/projection/inspect_projection.rs
+index c0cbc4ae..b03963ee 100644
+--- a/crates/kmp-mcp/src/projection/inspect_projection.rs
++++ b/crates/kmp-mcp/src/projection/inspect_projection.rs
+@@ -5,6 +5,7 @@ use kmp_proto::v1beta1::InspectResponse;
+ use super::rendering::*;
+ 
+ pub(crate) fn inspect_from_response(response: InspectResponse) -> Value {
++    let _eval539_span = kmp_domain::eval539_profile::span("projection.inspect");
+     let object = response.object.as_ref().map_or_else(
+         || {
+             json!({
+diff --git a/crates/kmp-mcp/src/projection/relation_page_budget.rs b/crates/kmp-mcp/src/projection/relation_page_budget.rs
+index 89a15ac9..b2069f33 100644
+--- a/crates/kmp-mcp/src/projection/relation_page_budget.rs
++++ b/crates/kmp-mcp/src/projection/relation_page_budget.rs
+@@ -41,6 +41,7 @@ impl RelationPageBudget {
+         arguments: &Value,
+         fingerprint: &str,
+     ) -> Result<Value, ToolError> {
++        let _eval539_span = kmp_domain::eval539_profile::span("projection.relation_page_budget");
+         if matches!(self, Self::Trace) {
+             super::trace_material_expansion::attach(&mut value, arguments);
+             super::trace_body_actions::attach(&mut value, arguments);
+diff --git a/crates/kmp-mcp/src/projection/trace_projection.rs b/crates/kmp-mcp/src/projection/trace_projection.rs
+index 5246a400..6a3b6fdc 100644
+--- a/crates/kmp-mcp/src/projection/trace_projection.rs
++++ b/crates/kmp-mcp/src/projection/trace_projection.rs
+@@ -5,6 +5,7 @@ use kmp_proto::v1beta1::TraceResponse;
+ use super::rendering::*;
+ 
+ pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
++    let _eval539_span = kmp_domain::eval539_profile::span("projection.trace");
+     let mut value = json!({
+         "summary": response.summary,
+         "trace": response.trace.iter().map(memory_relation_json).collect::<Vec<_>>(),
+diff --git a/crates/kmp-mcp/src/serving/adapters/embedded/inspect_tool.rs b/crates/kmp-mcp/src/serving/adapters/embedded/inspect_tool.rs
+index 5e53fda5..05fea680 100644
+--- a/crates/kmp-mcp/src/serving/adapters/embedded/inspect_tool.rs
++++ b/crates/kmp-mcp/src/serving/adapters/embedded/inspect_tool.rs
+@@ -17,6 +17,7 @@ impl<'a> EmbeddedInspectTool<'a> {
+     }
+ 
+     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
++        let _eval539_span = kmp_domain::eval539_profile::span("backend.inspect");
+         let request =
+             InspectRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+         let query = inspect_query_from_proto(request).map_err(|status| mapping_error(&status))?;
+diff --git a/crates/kmp-mcp/src/serving/adapters/embedded/trace_tool.rs b/crates/kmp-mcp/src/serving/adapters/embedded/trace_tool.rs
+index 835b0489..79a2ffd3 100644
+--- a/crates/kmp-mcp/src/serving/adapters/embedded/trace_tool.rs
++++ b/crates/kmp-mcp/src/serving/adapters/embedded/trace_tool.rs
+@@ -23,6 +23,7 @@ impl<'a> EmbeddedTraceTool<'a> {
+     }
+ 
+     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
++        let _eval539_span = kmp_domain::eval539_profile::span("backend.trace");
+         let request =
+             TraceRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+         if let Some(query) = kmp_proto_mapping::v1beta1::evidence_seek_request_from_proto(&request)
+diff --git a/crates/kmp-mcp/src/serving/json_rpc.rs b/crates/kmp-mcp/src/serving/json_rpc.rs
+index a8567432..6f98aac5 100644
+--- a/crates/kmp-mcp/src/serving/json_rpc.rs
++++ b/crates/kmp-mcp/src/serving/json_rpc.rs
+@@ -7,24 +7,32 @@
+ use serde_json::{Value, json};
+ 
+ pub(crate) fn jsonrpc_result(id: Value, result: Value) -> String {
+-    json!({
+-        "jsonrpc": "2.0",
+-        "id": id,
+-        "result": result
+-    })
+-    .to_string()
++    let value = {
++        let _span = kmp_domain::eval539_profile::span("encoding.jsonrpc_value");
++        json!({
++            "jsonrpc": "2.0",
++            "id": id,
++            "result": result
++        })
++    };
++    let _span = kmp_domain::eval539_profile::span("encoding.jsonrpc_string");
++    value.to_string()
+ }
+ 
+ pub(crate) fn jsonrpc_error(id: Value, code: i64, message: &str) -> String {
+-    json!({
+-        "jsonrpc": "2.0",
+-        "id": id,
+-        "error": {
+-            "code": code,
+-            "message": message
+-        }
+-    })
+-    .to_string()
++    let value = {
++        let _span = kmp_domain::eval539_profile::span("encoding.jsonrpc_value");
++        json!({
++            "jsonrpc": "2.0",
++            "id": id,
++            "error": {
++                "code": code,
++                "message": message
++            }
++        })
++    };
++    let _span = kmp_domain::eval539_profile::span("encoding.jsonrpc_string");
++    value.to_string()
+ }
+ 
+ #[cfg(test)]
+diff --git a/crates/kmp-mcp/src/serving/tool_result.rs b/crates/kmp-mcp/src/serving/tool_result.rs
+index acdb01bc..7949a864 100644
+--- a/crates/kmp-mcp/src/serving/tool_result.rs
++++ b/crates/kmp-mcp/src/serving/tool_result.rs
+@@ -17,6 +17,7 @@ pub(crate) fn packet_is_partial(body: &Value) -> bool {
+ }
+ 
+ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
++    let _eval539_span = kmp_domain::eval539_profile::span("envelope.tool_result");
+     // `structuredContent` is the canonical response. Repeating the entire
+     // pretty-printed JSON in the text block doubled every tool result and was
+     // enough to overflow hosts even after the structured packet was budgeted.
+@@ -26,6 +27,7 @@ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
+         .or_else(|| structured_content.get("answer").and_then(Value::as_str))
+         .map(ToString::to_string)
+         .unwrap_or_else(|| {
++            let _span = kmp_domain::eval539_profile::span("encoding.tool_text");
+             serde_json::to_string(&structured_content)
+                 .expect("fixture JSON should serialize as compact text")
+         });
+@@ -69,6 +71,7 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
+ }
+ 
+ pub(crate) fn tool_error_result(tool: &str, arguments: &Value, error: &ToolError) -> Value {
++    let _eval539_span = kmp_domain::eval539_profile::span("envelope.tool_error");
+     let guide_error = (tool == "kmp_inspect")
+         .then(|| super::guide_repair::GuideRepair::for_inspect(arguments, error))
+         .flatten();
+diff --git a/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/evidence_seek_response.rs b/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/evidence_seek_response.rs
+index 351aeab1..e0707b0a 100644
+--- a/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/evidence_seek_response.rs
++++ b/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/evidence_seek_response.rs
+@@ -21,6 +21,7 @@ pub fn evidence_seek_response_from_result(
+     seek: &kmp_proto::v1beta1::TraceSeekOptions,
+     page: TracePageRequest,
+ ) -> TraceResponse {
++    let _eval539_span = kmp_domain::eval539_profile::span("mapping.seek");
+     let status = match result.status {
+         EvidencePathStatus::Compatible => "compatible",
+         EvidencePathStatus::Ambiguous => "ambiguous",
+diff --git a/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/responses.rs b/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/responses.rs
+index 6a85f94d..7fd6f085 100644
+--- a/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/responses.rs
++++ b/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/responses.rs
+@@ -1049,6 +1049,7 @@ pub fn trace_response_from_result(
+     result: GetContextPathResult,
+     page: TracePageRequest,
+ ) -> TraceResponse {
++    let _eval539_span = kmp_domain::eval539_profile::span("mapping.trace");
+     let path = result.path_relationships();
+     let trace = path
+         .as_ref()
+@@ -1215,6 +1216,7 @@ fn distinct_relation_nodes(relationships: &[kmp_proto::v1beta1::MemoryRelation])
+ }
+ 
+ pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectResponse {
++    let _eval539_span = kmp_domain::eval539_profile::span("mapping.inspect");
+     let node_ref = result.detail.node.node_id.clone();
+     let node_kind = result.detail.node.node_kind.clone();
+     let metadata = persisted_memory_metadata(&result.detail.node.properties);
+diff --git a/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/trace_search.rs b/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/trace_search.rs
+index c443308b..b4f4cbd8 100644
+--- a/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/trace_search.rs
++++ b/crates/kmp-proto-mapping/src/v1beta1/memory_mapping/trace_search.rs
+@@ -135,6 +135,7 @@ pub fn trace_search_response_from_result(
+     direction: RelationDirection,
+     page: TracePageRequest,
+ ) -> TraceResponse {
++    let _eval539_span = kmp_domain::eval539_profile::span("mapping.trace_search");
+     let reached = result
+         .routes
+         .iter()
+-- 
+2.43.0
+

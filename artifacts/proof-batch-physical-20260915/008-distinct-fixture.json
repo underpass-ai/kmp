@@ -1,0 +1,421 @@
+{
+  "about": "project:proof-batch-acceptance",
+  "idempotency_key": "proof-batch:8:distinct",
+  "memory": {
+    "dimensions": [
+      {
+        "id": "proof-batch",
+        "kind": "task"
+      }
+    ],
+    "entries": [
+      {
+        "id": "project:proof-batch-acceptance:observation:000",
+        "kind": "observation",
+        "text": "Entry 000: literal π body for distinct.",
+        "summary_en": "Entry 000 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "0"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:00Z",
+            "observed_at": "2026-09-01T10:00:00Z",
+            "ingested_at": "2026-09-01T10:00:00Z",
+            "valid_from": "2026-09-01T10:00:00Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 1
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:001",
+        "kind": "observation",
+        "text": "Entry 001: literal π body for distinct.",
+        "summary_en": "Entry 001 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "1"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:01Z",
+            "observed_at": "2026-09-01T10:00:01Z",
+            "ingested_at": "2026-09-01T10:00:01Z",
+            "valid_from": "2026-09-01T10:00:01Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 2
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:002",
+        "kind": "observation",
+        "text": "Entry 002: literal π body for distinct.",
+        "summary_en": "Entry 002 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "2"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:02Z",
+            "observed_at": "2026-09-01T10:00:02Z",
+            "ingested_at": "2026-09-01T10:00:02Z",
+            "valid_from": "2026-09-01T10:00:02Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 3
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:003",
+        "kind": "observation",
+        "text": "Entry 003: literal π body for distinct.",
+        "summary_en": "Entry 003 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "3"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:03Z",
+            "observed_at": "2026-09-01T10:00:03Z",
+            "ingested_at": "2026-09-01T10:00:03Z",
+            "valid_from": "2026-09-01T10:00:03Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 4
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:004",
+        "kind": "observation",
+        "text": "Entry 004: literal π body for distinct.",
+        "summary_en": "Entry 004 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "4"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:04Z",
+            "observed_at": "2026-09-01T10:00:04Z",
+            "ingested_at": "2026-09-01T10:00:04Z",
+            "valid_from": "2026-09-01T10:00:04Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 5
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:005",
+        "kind": "observation",
+        "text": "Entry 005: literal π body for distinct.",
+        "summary_en": "Entry 005 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "5"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:05Z",
+            "observed_at": "2026-09-01T10:00:05Z",
+            "ingested_at": "2026-09-01T10:00:05Z",
+            "valid_from": "2026-09-01T10:00:05Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 6
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:006",
+        "kind": "observation",
+        "text": "Entry 006: literal π body for distinct.",
+        "summary_en": "Entry 006 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "6"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:06Z",
+            "observed_at": "2026-09-01T10:00:06Z",
+            "ingested_at": "2026-09-01T10:00:06Z",
+            "valid_from": "2026-09-01T10:00:06Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 7
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:007",
+        "kind": "observation",
+        "text": "Entry 007: literal π body for distinct.",
+        "summary_en": "Entry 007 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "7"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:07Z",
+            "observed_at": "2026-09-01T10:00:07Z",
+            "ingested_at": "2026-09-01T10:00:07Z",
+            "valid_from": "2026-09-01T10:00:07Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 8
+          }
+        ]
+      }
+    ],
+    "relations": [
+      {
+        "from": "project:proof-batch-acceptance:observation:000",
+        "to": "project:proof-batch-acceptance:observation:001",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 000 precedes 001.",
+        "evidence": "Signed chain register 000->001.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:001",
+        "to": "project:proof-batch-acceptance:observation:002",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 001 precedes 002.",
+        "evidence": "Signed chain register 001->002.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:002",
+        "to": "project:proof-batch-acceptance:observation:003",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 002 precedes 003.",
+        "evidence": "Signed chain register 002->003.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:003",
+        "to": "project:proof-batch-acceptance:observation:004",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 003 precedes 004.",
+        "evidence": "Signed chain register 003->004.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:004",
+        "to": "project:proof-batch-acceptance:observation:005",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 004 precedes 005.",
+        "evidence": "Signed chain register 004->005.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:005",
+        "to": "project:proof-batch-acceptance:observation:006",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 005 precedes 006.",
+        "evidence": "Signed chain register 005->006.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:006",
+        "to": "project:proof-batch-acceptance:observation:007",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 006 precedes 007.",
+        "evidence": "Signed chain register 006->007.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      }
+    ],
+    "evidence": [
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:000",
+        "supports": [
+          "project:proof-batch-acceptance:observation:000"
+        ],
+        "text": "Source 000: exact λ evidence for project:proof-batch-acceptance:observation:000. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:000",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "0"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:001",
+        "supports": [
+          "project:proof-batch-acceptance:observation:001"
+        ],
+        "text": "Source 001: exact λ evidence for project:proof-batch-acceptance:observation:001. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:001",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "1"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:002",
+        "supports": [
+          "project:proof-batch-acceptance:observation:002"
+        ],
+        "text": "Source 002: exact λ evidence for project:proof-batch-acceptance:observation:002. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:002",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "2"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:003",
+        "supports": [
+          "project:proof-batch-acceptance:observation:003"
+        ],
+        "text": "Source 003: exact λ evidence for project:proof-batch-acceptance:observation:003. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:003",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "3"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:004",
+        "supports": [
+          "project:proof-batch-acceptance:observation:004"
+        ],
+        "text": "Source 004: exact λ evidence for project:proof-batch-acceptance:observation:004. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:004",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "4"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:005",
+        "supports": [
+          "project:proof-batch-acceptance:observation:005"
+        ],
+        "text": "Source 005: exact λ evidence for project:proof-batch-acceptance:observation:005. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:005",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "5"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:006",
+        "supports": [
+          "project:proof-batch-acceptance:observation:006"
+        ],
+        "text": "Source 006: exact λ evidence for project:proof-batch-acceptance:observation:006. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:006",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "6"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:007",
+        "supports": [
+          "project:proof-batch-acceptance:observation:007"
+        ],
+        "text": "Source 007: exact λ evidence for project:proof-batch-acceptance:observation:007. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:007",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "7"
+        }
+      }
+    ]
+  }
+}

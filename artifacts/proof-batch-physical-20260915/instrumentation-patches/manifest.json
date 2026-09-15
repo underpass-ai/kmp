@@ -1,0 +1,35 @@
+{
+  "contract": "kmp.eval539.instrumentation-patch-series.v1",
+  "base_commit": "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
+  "application": "Apply the three numbered patches in order to a detached, clean checkout at base_commit.",
+  "scope": "Experimental acceptance binary only; these patches are absent from the product tree in PR812.",
+  "execution_constraints": {
+    "backend": "embedded SQLite",
+    "concurrency": 1,
+    "stdin": "one request in flight; wait for matching stdout response before the next request",
+    "stderr": "dedicated regular file, parsed after process exit",
+    "store": "fresh exclusive temporary directory per fixture arm",
+    "viewer": "KMP_VIEWER_ADDR=off",
+    "background_interfaces": "none"
+  },
+  "patches": [
+    {
+      "file": "0001-experiment-observe-physical-proof-costs-per-serial-s.patch",
+      "sha256": "95d3508c5ede7d616f0dcbfe02d5ef7d78c3d604989b96268a9267c65f0c4bfb"
+    },
+    {
+      "file": "0002-test-opt-in-to-experimental-SQLite-observer-acceptan.patch",
+      "sha256": "989deff51c231140df8267adfbde9ce7e583b823dd61cfa6f5f9e3d8a001540a"
+    },
+    {
+      "file": "0003-experiment-split-RPC-validation-and-guidance-overhea.patch",
+      "sha256": "1b69f605558ca211be43de90172453348b8683d85cff75286dc574a7885bff76"
+    }
+  ],
+  "combined_diffstat": "23 files changed, 640 insertions(+), 70 deletions(-)",
+  "validation": {
+    "clean_apply": true,
+    "result_commit_from_validation_worktree": "d362f6dd",
+    "sqlite_control": "EVAL539_PROFILE=1 cargo test --locked -p kmp-adapter-embedded prepared_cached_vm_work_is_per_execution_and_partial_rows_are_counted -- --ignored --nocapture"
+  }
+}

@@ -1,0 +1,179 @@
+From 866ef4fd87d096b3df48a9f28ad1336e99864738 Mon Sep 17 00:00:00 2001
+From: Tirso Garcia <tgarciaib@gmail.com>
+Date: Fri, 11 Sep 2026 23:21:39 +0200
+Subject: [PATCH 3/3] experiment: split RPC validation and guidance overhead
+ phases
+
+---
+ crates/kmp-mcp/src/serving/rpc_dispatch.rs | 117 +++++++++++++--------
+ 1 file changed, 76 insertions(+), 41 deletions(-)
+
+diff --git a/crates/kmp-mcp/src/serving/rpc_dispatch.rs b/crates/kmp-mcp/src/serving/rpc_dispatch.rs
+index acacab94..3466b57d 100644
+--- a/crates/kmp-mcp/src/serving/rpc_dispatch.rs
++++ b/crates/kmp-mcp/src/serving/rpc_dispatch.rs
+@@ -149,16 +149,22 @@ impl KernelMcpServer {
+         // Before anything reads them: the schemas declare
+         // `additionalProperties: false`, so an argument the tool does not have
+         // is refused here rather than dropped and answered anyway.
+-        if let Err(error) = reject_unknown_arguments(name, arguments) {
+-            record_tool_error(
+-                self.backend_name(),
+-                self.grpc_tls_mode_name(),
+-                name,
+-                arguments,
+-                ToolErrorKind::Validation,
+-                &error.message,
+-                start.elapsed(),
+-            );
++        if let Err(error) = {
++            let _eval539_span = kmp_domain::eval539_profile::span("dispatch.validate_schema");
++            reject_unknown_arguments(name, arguments)
++        } {
++            {
++                let _eval539_span = kmp_domain::eval539_profile::span("dispatch.record_tool_error");
++                record_tool_error(
++                    self.backend_name(),
++                    self.grpc_tls_mode_name(),
++                    name,
++                    arguments,
++                    ToolErrorKind::Validation,
++                    &error.message,
++                    start.elapsed(),
++                );
++            }
+             return jsonrpc_result(id, tool_error_result(name, arguments, &error));
+         }
+ 
+@@ -166,12 +172,19 @@ impl KernelMcpServer {
+             return self.handle_kmp_guide(id, arguments, start).await;
+         }
+ 
+-        let resolved = match self.resolve_read_arguments(name, arguments) {
++        let resolved = match {
++            let _eval539_span =
++                kmp_domain::eval539_profile::span("dispatch.resolve_read_arguments");
++            self.resolve_read_arguments(name, arguments)
++        } {
+             Ok(resolved) => resolved,
+             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
+         };
+         let arguments = resolved.as_ref().unwrap_or(arguments);
+-        let guidance = match super::call_guidance::CallGuidance::prepare(self, arguments) {
++        let guidance = match {
++            let _eval539_span = kmp_domain::eval539_profile::span("dispatch.guidance_prepare");
++            super::call_guidance::CallGuidance::prepare(self, arguments)
++        } {
+             Ok(guidance) => guidance,
+             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
+         };
+@@ -188,12 +201,23 @@ impl KernelMcpServer {
+             .await;
+         let result = match guidance {
+             Some(guidance) => {
+-                let result = self.shorten_read_actions(&guidance, result);
+-                self.complete_work_guidance(name, arguments, &guidance, result)
++                let result = {
++                    let _eval539_span =
++                        kmp_domain::eval539_profile::span("dispatch.guidance_shorten");
++                    self.shorten_read_actions(&guidance, result)
++                };
++                {
++                    let _eval539_span =
++                        kmp_domain::eval539_profile::span("dispatch.guidance_complete");
++                    self.complete_work_guidance(name, arguments, &guidance, result)
++                }
+             }
+             None => result,
+         };
+-        self.project_read_passages(name, result)
++        {
++            let _eval539_span = kmp_domain::eval539_profile::span("dispatch.project_read_passages");
++            self.project_read_passages(name, result)
++        }
+     }
+ 
+     async fn dispatch_memory_call(
+@@ -223,15 +247,18 @@ impl KernelMcpServer {
+             && let Err(message) = crate::write::reject_refs_outside_about(arguments)
+         {
+             let error = ToolError::invalid_argument(message);
+-            record_tool_error(
+-                self.backend_name(),
+-                self.grpc_tls_mode_name(),
+-                name,
+-                arguments,
+-                ToolErrorKind::Validation,
+-                &error.message,
+-                start.elapsed(),
+-            );
++            {
++                let _eval539_span = kmp_domain::eval539_profile::span("dispatch.record_tool_error");
++                record_tool_error(
++                    self.backend_name(),
++                    self.grpc_tls_mode_name(),
++                    name,
++                    arguments,
++                    ToolErrorKind::Validation,
++                    &error.message,
++                    start.elapsed(),
++                );
++            }
+             return jsonrpc_result(id, tool_error_result(name, arguments, &error));
+         }
+ 
+@@ -243,26 +270,34 @@ impl KernelMcpServer {
+ 
+         match self.backend.call_tool(name, arguments).await {
+             Ok(result) => {
+-                record_tool_success(
+-                    self.backend_name(),
+-                    self.grpc_tls_mode_name(),
+-                    name,
+-                    arguments,
+-                    &result,
+-                    start.elapsed(),
+-                );
++                {
++                    let _eval539_span =
++                        kmp_domain::eval539_profile::span("dispatch.record_tool_success");
++                    record_tool_success(
++                        self.backend_name(),
++                        self.grpc_tls_mode_name(),
++                        name,
++                        arguments,
++                        &result,
++                        start.elapsed(),
++                    );
++                }
+                 jsonrpc_result(id, result)
+             }
+             Err(error) => {
+-                record_tool_error(
+-                    self.backend_name(),
+-                    self.grpc_tls_mode_name(),
+-                    name,
+-                    arguments,
+-                    ToolErrorKind::Backend,
+-                    &error.message,
+-                    start.elapsed(),
+-                );
++                {
++                    let _eval539_span =
++                        kmp_domain::eval539_profile::span("dispatch.record_tool_error");
++                    record_tool_error(
++                        self.backend_name(),
++                        self.grpc_tls_mode_name(),
++                        name,
++                        arguments,
++                        ToolErrorKind::Backend,
++                        &error.message,
++                        start.elapsed(),
++                    );
++                }
+                 jsonrpc_result(id, tool_error_result(name, arguments, &error))
+             }
+         }
+-- 
+2.43.0
+
