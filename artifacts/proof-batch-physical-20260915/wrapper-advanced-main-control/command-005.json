@@ -1,0 +1,11 @@
+{
+  "sequence": 5,
+  "arguments": [
+    "git",
+    "am",
+    "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/artifacts/proof-batch-physical-20260915/instrumentation-patches/0001-experiment-observe-physical-proof-costs-per-serial-s.patch"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+  "exit_code": 0,
+  "output": "Applying: experiment: observe physical proof costs per serial stdio RPC\n"
+}

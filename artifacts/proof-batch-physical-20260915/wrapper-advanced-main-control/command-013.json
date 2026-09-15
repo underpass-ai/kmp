@@ -1,0 +1,12 @@
+{
+  "sequence": 13,
+  "arguments": [
+    "/usr/bin/python3",
+    "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/scripts/performance/proof_batch_physical_audit.py",
+    "/tmp/proof-539-success-evidence-20260915/capture",
+    "/tmp/proof-539-success-evidence-20260915/capture/physical-summary.json"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915",
+  "exit_code": 0,
+  "output": ""
+}

@@ -1,0 +1,11 @@
+{
+  "sequence": 8,
+  "arguments": [
+    "git",
+    "status",
+    "--porcelain"
+  ],
+  "cwd": "/home/gx10a/Documents/ai/kmp-accept-proof-20260915/tmp/proof-539-patched-p440z2fx",
+  "exit_code": 0,
+  "output": ""
+}
