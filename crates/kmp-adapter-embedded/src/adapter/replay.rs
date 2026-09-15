@@ -27,16 +27,13 @@ impl EmbeddedKernelStore {
     where
         F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
     {
-        let events = self.run(EmbeddedKernelStore::read_event_log).await?;
-
-        let mut mutations = Vec::new();
-        for event in &events {
-            mutations.extend(derive(event)?);
-        }
-        let events_replayed = events.len() as u64;
-
         self.run(move |store| {
+            // Freeze the event frontier under the same write lock as the
+            // rebuild. A concurrent condense cannot commit between the read
+            // of the log and replacement of its card projections.
             let mut tx = store.begin_write()?;
+            let events = tx.scan_u64(Table::EventLog)?;
+            let events_replayed = events.len() as u64;
             tx.clear(Table::Nodes)?;
             tx.clear(Table::Relations)?;
             tx.clear(Table::RelationsByTarget)?;
@@ -45,8 +42,14 @@ impl EmbeddedKernelStore {
             // two tables are never observable out of step.
             tx.clear(Table::DetailHeaders)?;
             tx.clear(Table::Anchors)?;
+            tx.clear(Table::Cards)?;
+            tx.clear(Table::CardVersions)?;
 
-            let mutations_applied = apply_mutations_in_transaction(tx.as_mut(), mutations)?;
+            let mut mutations_applied = 0;
+            for (_, raw) in events {
+                let event = super::serdes::decode::<ContextUpdatedEvent>("replay event", &raw)?;
+                mutations_applied += apply_mutations_in_transaction(tx.as_mut(), derive(&event)?)?;
+            }
             tx.commit()?;
 
             Ok(ProjectionRebuildReport {

@@ -42,8 +42,19 @@ impl ValkeyNodeDetailStore {
 
 impl ProjectionWriter for ValkeyNodeDetailStore {
     async fn apply_mutations(&self, mutations: Vec<ProjectionMutation>) -> Result<(), PortError> {
+        if mutations
+            .iter()
+            .any(|m| matches!(m, ProjectionMutation::RecordNodeCard(_)))
+        {
+            return Err(PortError::Unavailable(
+                "authored card projections require the embedded store".into(),
+            ));
+        }
         for mutation in mutations {
             match mutation {
+                ProjectionMutation::RecordNodeCard(_) => {
+                    unreachable!("preflight rejects card projections")
+                }
                 ProjectionMutation::UpsertNodeDetail(detail) => {
                     let key = self.detail_key(&detail.node_id);
                     let payload = self.detail_payload(&detail)?;

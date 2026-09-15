@@ -2,6 +2,8 @@ use crate::{NodeDetailProjection, NodeProjection, NodeRelationProjection};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProjectionMutation {
+    /// Replay one immutable authored card revision and advance its read model.
+    RecordNodeCard(crate::NodeCard),
     EnsureNode(NodeProjection),
     UpsertNode(NodeProjection),
     UpdateNodeStatus {

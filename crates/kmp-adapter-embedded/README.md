@@ -13,7 +13,7 @@ server, no cluster, no daemon.
 ## One engine
 
 The ports are written once against a small storage seam. Every new directory
-is SQLite and records store format 3. No retired engine is linked.
+is SQLite and records store format 4. Format-3 SQLite stores upgrade on open, preserving source events and adopting surviving cards into history. No retired engine is linked.
 
 | Engine | `FORMAT_VERSION` | Store file | Availability |
 | --- | --- | --- | --- |

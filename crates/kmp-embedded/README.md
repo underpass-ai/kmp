@@ -21,7 +21,7 @@ let kernel = EmbeddedKernel::open_with_engine(dir.path(), engine)?;
 
 Fresh stores always use shareable SQLite. The `sqlite` feature name remains
 as a compatibility alias for downstream manifests. An existing store opens
-from its `FORMAT_VERSION`; only store format 3 is supported. Unsupported
+from its `FORMAT_VERSION`; new stores use format 4 and format-3 stores upgrade on open. Unsupported
 formats are rejected without being touched. Preserve the source and export it
 with an explicitly archived compatible exporter, then import the portable
 bundle into an empty current store. KMP never guesses or silently changes an engine.

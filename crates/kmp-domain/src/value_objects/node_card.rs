@@ -6,11 +6,12 @@ use crate::NodeCardStamp;
 /// written from — revision and content hash — so a later reader can tell
 /// whether it still describes what the store holds, without trusting the
 /// prose. Nothing here participates in ranking, path selection or proof;
-/// deleting every card changes no answer except the cards themselves.
+/// rebuilding its presentation projection restores every recorded card version.
+/// Authored card events preserve the prose; the canonical body cannot regenerate it.
 ///
 /// `card_revision` is the card's own compare-and-set token, separate from the
 /// node's revision. Rewriting a card never advances the node.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct NodeCard {
     pub node_id: String,
     /// Language tag the card is written in. Part of the identity: a Spanish

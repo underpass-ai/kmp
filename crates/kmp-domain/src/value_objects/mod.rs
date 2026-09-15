@@ -77,3 +77,6 @@ mod trace_condense_candidates;
 mod trace_expansion_plan;
 mod trace_selection_conflict;
 pub use memory_receipt_ref::MemoryReceiptRef;
+
+mod node_card_event;
+pub use node_card_event::NodeCardEvent;

@@ -77,7 +77,7 @@ readable. Config and doctor report an invalid unused selection with a repair;
 without the override, an invalid selection still stops startup. A `#` inside
 a quoted selection is part of its path, not a comment.
 
-KMP creates and opens SQLite format-3 stores only. Unsupported store formats
+KMP creates SQLite format-4 stores and upgrades format-3 stores on open. Unsupported store formats
 are detected and rejected before their bytes are opened, so an upgrade never
 substitutes empty SQLite memory for an older store.
 
@@ -158,7 +158,7 @@ catalogue; CLI verbs and model tools are not interchangeable inventories.
 
 `--about` is repeatable and matches `root_node_id` byte-for-byte. A requested
 about with no events fails before the destination is created. Filtered bundles
-are complete format-3 bundles (`bundle_format: 3`, `event_format: 2`): their header names only the included abouts and
+are complete format-3 bundles (`bundle_format: 3`, `event_format: 2` for memory-only histories or `3` with authored card events): their header names only the included abouts and
 its count, digest and range cover only the filtered payload. `event_range` is
 bundle-local, so filtered payload positions are renumbered from one; aggregate
 revisions and refs are preserved.
@@ -178,3 +178,34 @@ requirements.
 - [`crates/kmp-adapter-embedded`](../../crates/kmp-adapter-embedded/)
 - [`crates/kmp-viewer`](../../crates/kmp-viewer/)
 - [`plugins/kmp/capabilities.json`](../../plugins/kmp/capabilities.json)
+
+
+### Authored card history
+
+`kmp_condense` appends a complete card revision to the `node_cards` event
+stream for its about. The source version checks, compare-and-set, event append,
+and card projections share one SQLite transaction. A rejected write appends
+nothing. Canonical bodies, their revisions, relations and proof stay unchanged.
+
+Rebuild, full export/import, about-filtered export and named snapshots retain
+card text, language, author, authorship time, source identity and card revision.
+A historical compact read selects the latest authored card at or before its
+cutoff using an indexed lookup, then applies the usual source-digest policy.
+A card that predates the cutoff can still be stale for the selected body.
+The event history records authorship; it does not certify the prose as evidence.
+
+The first open with card-event support adopts surviving pre-event cards as
+`BASELINE` events in one transaction. A migration receipt makes later opens
+constant-cost. No earlier overwritten card versions are manufactured. On a
+project store, export this extended history to its maintained `.kmp/memory.jsonl`
+before resuming guarded writes if the committed bundle is now behind; the
+bundle guard still refuses a stale checkout. New successful MCP Condense writes
+publish the maintained bundle before reporting success.
+
+The SQLite layout is format 4; upgrading format 3 retains the existing SQLite
+file. Portable event format 3 identifies bundles
+containing card history; memory-only exports retain event format 2. The current
+reader accepts both. Upgrade every writer and recovery tool before using card
+history; older engines reject the upgraded format stamp. Stop already-running
+older processes before upgrading a shared store. See
+[the card history design](../architecture/authored-card-history.md).

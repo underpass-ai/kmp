@@ -244,7 +244,10 @@ fn parse_bundle(bundle: &str) -> Result<VerifiedBundle, PortError> {
             header.bundle_format, BUNDLE_FORMAT_VERSION
         )));
     }
-    if header.event_format != super::format_version::EVENT_FORMAT_VERSION {
+    if !matches!(
+        header.event_format,
+        2 | super::format_version::EVENT_FORMAT_VERSION
+    ) {
         return Err(PortError::InvalidState(format!(
             "bundle carries event format {}, this binary supports {}",
             header.event_format,
@@ -267,6 +270,33 @@ fn parse_bundle(bundle: &str) -> Result<VerifiedBundle, PortError> {
         )));
     }
 
+    if header.event_format < 3
+        && events
+            .iter()
+            .any(|e| e.role == kmp_domain::NodeCardEvent::ROLE)
+    {
+        return Err(PortError::InvalidState(
+            "card history requires event format 3".into(),
+        ));
+    }
+    let mut card_heads: BTreeMap<(String, String, String), u64> = BTreeMap::new();
+    for event in &events {
+        if let Some(card) = kmp_domain::NodeCardEvent::card(event)? {
+            let identity = (event.root_node_id.clone(), card.node_id, card.language);
+            let previous = card_heads.get(&identity).copied();
+            let baseline = event.changes[0].operation == "BASELINE";
+            let valid = match previous {
+                None => baseline || card.card_revision == 1,
+                Some(revision) => !baseline && revision.checked_add(1) == Some(card.card_revision),
+            };
+            if !valid {
+                return Err(PortError::InvalidState(
+                    "non-contiguous card history".into(),
+                ));
+            }
+            card_heads.insert(identity, card.card_revision);
+        }
+    }
     validate_header(&header, &events, &event_payload)?;
     Ok(VerifiedBundle { header, events })
 }
@@ -344,7 +374,14 @@ fn encode_bundle(
         .as_millis() as u64;
     let header = BundleHeader {
         bundle_format: BUNDLE_FORMAT_VERSION,
-        event_format: super::format_version::EVENT_FORMAT_VERSION,
+        event_format: if events
+            .iter()
+            .any(|event| event.role == kmp_domain::NodeCardEvent::ROLE)
+        {
+            super::format_version::EVENT_FORMAT_VERSION
+        } else {
+            2
+        },
         event_count: events.len() as u64,
         kernel_version: env!("CARGO_PKG_VERSION").to_string(),
         snapshot_id,
@@ -524,10 +561,7 @@ mod tests {
         let header = verify_bundle(&bundle).expect("verified");
 
         assert_eq!(header.bundle_format, BUNDLE_FORMAT_VERSION);
-        assert_eq!(
-            header.event_format,
-            super::super::format_version::EVENT_FORMAT_VERSION
-        );
+        assert_eq!(header.event_format, 2);
         assert_eq!(header.snapshot_id, "pre-release");
         assert!(header.created_at_unix_ms > 0);
         assert_eq!(

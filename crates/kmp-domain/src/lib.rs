@@ -82,9 +82,9 @@ pub use projection::NodeBodyDescriptor;
 pub use repositories::TraceSnapshotReader;
 pub use repositories::{NodeCardStore, NodeCardWriteFuture};
 pub use value_objects::{
-    NodeCard, NodeCardPresentation, NodeCardStamp, NodeCardStatus, TraceBodyDelivery,
-    TraceBodyState, TraceCompactSummary, TraceCondenseCandidate, TraceCondenseCandidates,
-    TraceExpansionPlan, TraceExpansionRefusal,
+    NodeCard, NodeCardEvent, NodeCardPresentation, NodeCardStamp, NodeCardStatus,
+    TraceBodyDelivery, TraceBodyState, TraceCompactSummary, TraceCondenseCandidate,
+    TraceCondenseCandidates, TraceExpansionPlan, TraceExpansionRefusal,
 };
 
 pub use model::{MemoryNodeHeader, MemoryNodesRequest, MemoryNodesResult, read_memory_nodes};

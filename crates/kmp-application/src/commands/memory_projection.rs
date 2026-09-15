@@ -22,6 +22,9 @@ use crate::memory::{RELABEL_ENTITY_KIND, RELABEL_METHOD};
 pub fn projection_mutations_for_context_event(
     event: &ContextUpdatedEvent,
 ) -> Result<Vec<ProjectionMutation>, PortError> {
+    if let Some(card) = kmp_domain::NodeCardEvent::card(event)? {
+        return Ok(vec![ProjectionMutation::RecordNodeCard(card)]);
+    }
     let command = UpdateContextCommand {
         root_node_id: event.root_node_id.clone(),
         role: event.role.clone(),

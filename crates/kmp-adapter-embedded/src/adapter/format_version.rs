@@ -9,14 +9,17 @@ use kmp_domain::PortError;
 ///
 /// `FORMAT_VERSION` names the storage layout and logical identity contract.
 /// Format 3 requires dimensional identities with about, key and value.
-/// Format 3 changes dimensional identity; there is no legacy migration.
+/// Format 3 changes dimensional identity; older identities cannot be migrated.
+/// Format 4 adds replayable authored card history. Opening format 3 upgrades
+/// its stamp before adoption so older binaries cannot reopen the new history.
 /// Bumping it is what makes a binary that predates
 /// a layout refuse the directory instead of opening an empty store beside
 /// it, so a new engine is a new number ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 pub const SUPPORTED_FORMAT_VERSION: u32 = StorageEngine::Sqlite.format_version();
 
-/// The logical shape of the event log carried by a portable bundle.
-pub const EVENT_FORMAT_VERSION: u32 = 2;
+/// Highest supported portable event format. Memory-only exports remain at
+/// format 2; authored card histories require format 3.
+pub const EVENT_FORMAT_VERSION: u32 = 3;
 
 const FORMAT_VERSION_FILE: &str = "FORMAT_VERSION";
 
@@ -33,7 +36,7 @@ impl StorageEngine {
     /// The `FORMAT_VERSION` this engine stamps.
     pub const fn format_version(self) -> u32 {
         match self {
-            StorageEngine::Sqlite => 3,
+            StorageEngine::Sqlite => 4,
         }
     }
 
@@ -43,7 +46,7 @@ impl StorageEngine {
 
     pub(crate) const fn from_format_version(version: u32) -> Option<Self> {
         match version {
-            3 => Some(StorageEngine::Sqlite),
+            3 | 4 => Some(StorageEngine::Sqlite),
             _ => None,
         }
     }
@@ -246,7 +249,7 @@ fn resolve_stamped(data_dir: &Path, version: u32) -> Result<StorageEngine, PortE
             StorageEngine::NEWEST_KNOWN_FORMAT_VERSION
         )));
     }
-    if version < SUPPORTED_FORMAT_VERSION {
+    if version < 3 {
         return Err(PortError::InvalidState(format!(
             "embedded store at `{}` uses unsupported format version {version}; current KMP \
              opens format {SUPPORTED_FORMAT_VERSION} only and left the directory untouched. \
@@ -339,7 +342,7 @@ mod tests {
         let store = store_file_path_for(invalid.path(), StorageEngine::Sqlite);
         fs::create_dir_all(store.parent().expect("parent")).expect("mkdir");
         fs::write(&store, b"memory remains here").expect("store marker");
-        for stamp in [Some("4\n"), Some("banana\n"), None] {
+        for stamp in [Some("5\n"), Some("banana\n"), None] {
             match stamp {
                 Some(stamp) => fs::write(format_version_path(invalid.path()), stamp)
                     .expect("write invalid stamp"),

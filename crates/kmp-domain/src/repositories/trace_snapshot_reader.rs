@@ -66,6 +66,18 @@ pub trait TraceSnapshotReader {
         Ok(vec![None; _ids.len()])
     }
 
+    /// Read the card version visible at a historical cut. Backends without
+    /// version history retain the ordinary card, whose presentation policy
+    /// still hides prose authored after the cut.
+    fn cards_at(
+        &self,
+        ids: &[String],
+        language: &str,
+        _cut_nanos: Option<i128>,
+    ) -> Result<Vec<Option<crate::NodeCard>>, PortError> {
+        self.cards(ids, language)
+    }
+
     fn node(&self, id: &str) -> Result<Option<NodeProjection>, PortError>;
     fn adjacency(&self, request: &AdjacencyRequest) -> Result<AdjacencyPage, PortError>;
 }

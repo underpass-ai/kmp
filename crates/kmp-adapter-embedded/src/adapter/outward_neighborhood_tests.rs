@@ -65,6 +65,9 @@ impl ReadTx for RecordingRead<'_> {
         self.inner.value_len(table, key)
     }
 
+    fn scan_str2(&self, table: Table) -> Result<Vec<crate::adapter::engine::Str2Row>, PortError> {
+        self.inner.scan_str2(table)
+    }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.inner.scan_str(table)
     }
@@ -97,6 +100,15 @@ impl ReadTx for RecordingRead<'_> {
             .scan_str3_page(table, first, after, limit, relation_type)
     }
 
+    fn last_str3_before(
+        &self,
+        table: Table,
+        first: &str,
+        second: &str,
+        before: &str,
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        self.inner.last_str3_before(table, first, second, before)
+    }
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         self.inner.scan_u64(table)
     }
