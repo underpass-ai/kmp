@@ -27,4 +27,5 @@ tokio-rustls = "0.26.4"
 tonic.workspace = true
 
 [dev-dependencies]
+rusqlite = { version = "0.40.1", features = ["bundled"] }
 tempfile = "3.26.0"
