@@ -242,9 +242,9 @@ fn write_memory_output_schema() -> Value {
         }),
         "accepted": described("boolean", "True only when the canonical ingest was committed; false for a preview or pending context review."),
         "status": json!({"type":"string","enum":["committed","replayed","validated","needs_review","rejected","unconfirmed"],"description":"committed appended a command; replayed returned its earlier acceptance; validated is a preview; needs_review has applied nothing and returns context to review; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure."}),
-        "neighborhood": described("object", "Bounded literal context: stored/proposed items, exact refs, clocks, reasons, omissions and token. Proximity does not prove a relation; expand partial context when needed."),
+        "neighborhood": described("object", "Bounded literal context: stored/proposed items, exact refs, clocks, reasons, omissions, token and complete stored_abouts ownership. Proximity does not prove a relation; expand partial stored context when needed."),
         "next_actions": described("array", "For needs_review, the bound write continuation. Review first; resuming rechecks context. No human approval per write is required."),
-        "expand_context": described("array", "Explicit-about native reads to expand omitted surroundings. Complete their relevant pages."),
+        "expand_context": described("array", "Native reads only for stored_abouts to expand omitted stored surroundings. Complete their relevant pages."),
         "clocks": crate::contract::schema::write_clocks::write_clocks_schema(),
         "clock_defaults": output_object(json!({
             "observed_at": described("string", "ingested_at: omitted/null observation is resolved by the kernel. Previews describe a plan, never a committed timestamp."),

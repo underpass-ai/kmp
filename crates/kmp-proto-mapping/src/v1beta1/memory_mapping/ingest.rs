@@ -77,6 +77,7 @@ pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestRespo
                 eligible: view.eligible as u32,
                 omitted: view.omitted as u32,
                 omitted_conflicts: view.omitted_conflicts as u32,
+                stored_abouts: view.stored_abouts,
                 abouts: view.abouts,
                 partial: view.partial,
                 links: view
