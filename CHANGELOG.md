@@ -9,6 +9,26 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.8] - 2026-09-15
+
+### Fixed
+
+- Authored Condense card revisions now enter append-only event history in the
+  same transaction as their projections. Rebuild and portable export/import
+  preserve those revisions without changing canonical memory bodies or proof.
+- Historical compact reads select the card version available at the requested
+  time. Successful Condense writes also update the maintained project bundle.
+
+### Changed
+
+- SQLite stores upgrade automatically from format 3 to format 4. Existing cards
+  become explicit baseline events; previously overwritten revisions cannot be
+  recovered. Stop older KMP processes before upgrading a shared store.
+- Portable bundles containing card events use event format 3; memory-only
+  exports retain format 2. Older engines reject the upgraded store and card
+  bundles. After adopting legacy cards, export the project bundle before the
+  next guarded write if its maintained bundle is behind the store.
+
 ## [0.18.7] - 2026-09-15
 
 ### Fixed
@@ -1812,7 +1832,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.7...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.8...HEAD
+[0.18.8]: https://github.com/underpass-ai/kmp/compare/v0.18.7...v0.18.8
 [0.18.7]: https://github.com/underpass-ai/kmp/compare/v0.18.6...v0.18.7
 [0.18.6]: https://github.com/underpass-ai/kmp/compare/v0.18.5...v0.18.6
 [0.18.5]: https://github.com/underpass-ai/kmp/compare/v0.18.4...v0.18.5
