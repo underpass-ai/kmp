@@ -37,6 +37,15 @@ impl TraceSnapshotReader for TraceSnapshot<'_> {
         super::node_card::read_batch(self.0, ids, language)
     }
 
+    fn cards_at(
+        &self,
+        ids: &[String],
+        language: &str,
+        cut_nanos: Option<i128>,
+    ) -> Result<Vec<Option<kmp_domain::NodeCard>>, PortError> {
+        super::node_card::read_batch_at(self.0, ids, language, cut_nanos)
+    }
+
     fn node(&self, id: &str) -> Result<Option<NodeProjection>, PortError> {
         self.0
             .get(Table::Nodes, Key::Str(id))?

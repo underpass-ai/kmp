@@ -1,7 +1,7 @@
 //! Compatibility API for store-layout migration receipts.
 //!
-//! Current KMP has one supported layout, SQLite format 3, so there is no live
-//! in-process migration path. These APIs remain available to avoid breaking
+//! Current KMP creates SQLite format 4 and upgrades format 3 in place on open.
+//! The cross-directory migration API remains a compatibility surface for
 //! downstream Rust callers: a current source reports that migration is
 //! unnecessary, and an unsupported source is preserved with the same generic
 //! external export/import recovery contract as the open gate.
@@ -33,7 +33,7 @@ impl StoreMigrationReceipt {
 }
 
 impl EmbeddedKernelStore {
-    /// Compatibility entry point. No current layout requires migration.
+    /// Compatibility entry point. Format 3 upgrades in place when opened.
     pub async fn migrate_data_dir<F>(
         source_dir: &Path,
         destination_dir: &Path,
@@ -69,9 +69,10 @@ impl EmbeddedKernelStore {
                 StorageEngine::NEWEST_KNOWN_FORMAT_VERSION
             )));
         }
-        if source_format == StorageEngine::Sqlite.format_version() {
+        if matches!(source_format, 3 | 4) {
             return Err(PortError::Unavailable(format!(
-                "migration from a SQLite format-3 store is unnecessary and unsupported; the \
+                "cross-directory migration from SQLite format {source_format} is unnecessary and unsupported; open \
+                 with the current binary to upgrade format 3 in place. The \
                  source at `{}` is left untouched",
                 source_dir.display()
             )));

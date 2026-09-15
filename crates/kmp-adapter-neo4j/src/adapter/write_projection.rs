@@ -53,10 +53,21 @@ impl Neo4jProjectionStore {
 
 impl ProjectionWriter for Neo4jProjectionStore {
     async fn apply_mutations(&self, mutations: Vec<ProjectionMutation>) -> Result<(), PortError> {
+        if mutations
+            .iter()
+            .any(|m| matches!(m, ProjectionMutation::RecordNodeCard(_)))
+        {
+            return Err(PortError::Unavailable(
+                "authored card projections require the embedded store".into(),
+            ));
+        }
         let graph = self.graph().await?;
 
         for mutation in mutations {
             match mutation {
+                ProjectionMutation::RecordNodeCard(_) => {
+                    unreachable!("preflight rejects card projections")
+                }
                 ProjectionMutation::EnsureNode(node) => {
                     self.ensure_node_projection(&graph, &node).await?;
                 }

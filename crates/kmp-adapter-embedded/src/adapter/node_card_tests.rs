@@ -434,3 +434,6 @@ async fn a_body_whose_record_disagrees_with_its_descriptor_is_never_delivered() 
         "{error}"
     );
 }
+
+#[path = "node_card_history_tests.rs"]
+mod history;

@@ -1,7 +1,7 @@
 //! The storage seam ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 //!
 //! Everything the kernel ports need from a storage engine, and nothing an
-//! engine would need to know about the kernel: fourteen key-to-bytes maps,
+//! engine would need to know about the kernel: transactional key-to-bytes maps,
 //! transactions over them, and four key shapes. Port logic — graph
 //! traversal, revision checks, idempotency — is written once against this
 //! and never sees an engine type.
@@ -51,6 +51,8 @@ pub(crate) enum Table {
     /// Reader-authored compact cards: `(node_id, language) -> CardRecord`.
     /// A derived view beside the canonical body, never inside it.
     Cards,
+    /// Immutable card revisions: (node, language, authored instant + revision) -> CardRecord.
+    CardVersions,
     /// Optional consolidated-view head, immutable revisions and retry receipts.
     ConsolidationHeads,
     ConsolidationViews,
@@ -69,7 +71,7 @@ pub(crate) enum Table {
     Checkpoints,
     /// Snapshot audit records: `(root, role) -> snapshot summary`.
     Snapshots,
-    /// Historical migration receipts retained for data-file compatibility.
+    /// Migration and adoption receipts retained for data-file compatibility.
     Migrations,
 }
 
@@ -91,7 +93,7 @@ impl Table {
             Table::Cards | Table::Processed | Table::Checkpoints | Table::Snapshots => {
                 KeyShape::Str2
             }
-            Table::Relations | Table::RelationsByTarget => KeyShape::Str3,
+            Table::Relations | Table::RelationsByTarget | Table::CardVersions => KeyShape::Str3,
             Table::EventLog => KeyShape::U64,
         }
     }
@@ -106,6 +108,7 @@ impl fmt::Display for Table {
             Table::Details => "details",
             Table::DetailHeaders => "detail_headers",
             Table::Cards => "node_cards",
+            Table::CardVersions => "node_card_versions",
             Table::ConsolidationHeads => "consolidation_heads",
             Table::ConsolidationViews => "consolidation_views",
             Table::ConsolidationReceipts => "consolidation_receipts",
@@ -151,6 +154,7 @@ impl Key<'_> {
 
 /// A row read back from a `Str`-keyed table.
 pub(crate) type StrRow = (String, Vec<u8>);
+pub(crate) type Str2Row = ((String, String), Vec<u8>);
 /// A row read back from a `Str3`-keyed table.
 pub(crate) type Str3Row = ((String, String, String), Vec<u8>);
 /// A row read back from a `U64`-keyed table.
@@ -207,6 +211,9 @@ pub(crate) trait ReadTx {
     /// Every row of a `Str`-keyed table, ascending.
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError>;
 
+    /// All composite-key rows, used when adopting pre-event card state.
+    fn scan_str2(&self, table: Table) -> Result<Vec<Str2Row>, PortError>;
+
     /// Every row of a `Str3`-keyed table whose first component equals
     /// `first`, ascending by the remaining components. This is the adjacency
     /// query: all edges out of (or into) one node.
@@ -222,6 +229,16 @@ pub(crate) trait ReadTx {
         limit: u32,
         relation_type: Option<&str>,
     ) -> Result<Vec<Str3Row>, PortError>;
+
+    /// Last row in a two-component prefix, at or before the third-key bound.
+    /// Uses the key index and returns at most one value.
+    fn last_str3_before(
+        &self,
+        table: Table,
+        first: &str,
+        second: &str,
+        before: &str,
+    ) -> Result<Option<Vec<u8>>, PortError>;
 
     /// Every row of a `U64`-keyed table, ascending.
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError>;

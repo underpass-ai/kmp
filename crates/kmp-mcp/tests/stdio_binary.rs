@@ -713,7 +713,7 @@ fn run_binary_from(
 #[test]
 fn doctor_fails_on_every_layout_that_real_store_open_refuses() {
     let home = tempfile::tempdir().expect("isolated home");
-    for stamp in [Some("2\n"), Some("4\n"), Some("banana\n"), None] {
+    for stamp in [Some("2\n"), Some("5\n"), Some("banana\n"), None] {
         let data_dir = tempfile::tempdir().expect("data dir");
         let store = data_dir.path().join("store/kernel.sqlite3");
         std::fs::create_dir_all(store.parent().expect("parent")).expect("store dir");

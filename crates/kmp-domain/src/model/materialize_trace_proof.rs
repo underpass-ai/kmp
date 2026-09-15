@@ -354,7 +354,7 @@ fn fetch<R: TraceSnapshotReader>(
             });
         }
         let cut = admission.window().card_cut_nanos();
-        let cards = load_cards(reader, &ids, options.compact.as_deref())?;
+        let cards = load_cards(reader, &ids, options.compact.as_deref(), cut)?;
         let presentations: Vec<Option<crate::NodeCardPresentation>> = ids
             .iter()
             .zip(&cards)
@@ -541,11 +541,12 @@ fn load_cards<R: TraceSnapshotReader>(
     reader: &R,
     ids: &[String],
     language: Option<&str>,
+    cut: Option<i128>,
 ) -> Result<Vec<Option<NodeCard>>, PortError> {
     let Some(language) = language.filter(|_| !ids.is_empty()) else {
         return Ok(vec![None; ids.len()]);
     };
-    let cards = reader.cards(ids, language)?;
+    let cards = reader.cards_at(ids, language, cut)?;
     if cards.len() != ids.len()
         || cards
             .iter()

@@ -1,6 +1,6 @@
 //! Unsupported sources are rejected without mutation.
 //!
-//! The current layout never migrates in process. Unsupported sources are
+//! Cross-directory migration remains unsupported. Unsupported sources are
 //! left untouched; an already-current SQLite destination remains usable
 //! through `open_or_migrate_data_dir` without rewriting either directory.
 

@@ -1,6 +1,11 @@
 Use **Condense** after reading a canonical body that will be useful again.
 It stores your phrase for one entry or evidence source, in one language.
 It does not summarize automatically or verify the phrase's faithfulness.
+Accepted cards append an event and update the card projection in one transaction.
+Their own revisions survive export/import and projection rebuild; replacing a
+card preserves its previous text and does not advance the canonical body's
+revision. Historical reads select the latest card authored at or before their
+cutoff, then check that it still describes the selected body.
 
 1. Trace with `search:{proof:true,compact:{language:"en"}}` to obtain
    `proof.condense_candidates` and `proof.manifest_id`. Its `items` rank shared

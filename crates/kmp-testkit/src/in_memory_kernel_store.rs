@@ -44,6 +44,7 @@ struct KernelStoreState {
     nodes: BTreeMap<String, NodeProjection>,
     relations: BTreeMap<(String, String, String), RelationExplanation>,
     details: BTreeMap<String, NodeDetailProjection>,
+    cards: BTreeMap<(String, String, u64), kmp_domain::NodeCard>,
 }
 
 impl KernelStoreState {
@@ -198,6 +199,16 @@ impl ProjectionWriter for InMemoryKernelStore {
         let mut state = self.state.lock().await;
         for mutation in mutations {
             match mutation {
+                ProjectionMutation::RecordNodeCard(card) => {
+                    state.cards.insert(
+                        (
+                            card.node_id.clone(),
+                            card.language.clone(),
+                            card.card_revision,
+                        ),
+                        card,
+                    );
+                }
                 ProjectionMutation::EnsureNode(node) => state.ensure_node(node),
                 ProjectionMutation::UpsertNode(node) => state.upsert_node(node),
                 ProjectionMutation::UpdateNodeStatus { node_id, status } => {

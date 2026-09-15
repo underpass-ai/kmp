@@ -4,7 +4,7 @@ use kmp_domain::PortError;
 use rusqlite::Connection;
 
 use super::sqlite::Ops;
-use super::{Key, ReadTx, Str3Row, StrRow, Table, U64Row};
+use super::{Key, ReadTx, Str2Row, Str3Row, StrRow, Table, U64Row};
 
 pub(super) struct SqliteSnapshotRead<'a>(pub(super) MutexGuard<'a, Option<Connection>>);
 
@@ -30,6 +30,9 @@ impl ReadTx for SqliteSnapshotRead<'_> {
     fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
         self.ops().value_len(table, key)
     }
+    fn scan_str2(&self, table: Table) -> Result<Vec<Str2Row>, PortError> {
+        self.ops().scan_str2(table)
+    }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
@@ -54,6 +57,15 @@ impl ReadTx for SqliteSnapshotRead<'_> {
     ) -> Result<Vec<Str3Row>, PortError> {
         self.ops()
             .scan_str3_page(table, first, after, limit, relation_type)
+    }
+    fn last_str3_before(
+        &self,
+        table: Table,
+        first: &str,
+        second: &str,
+        before: &str,
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        self.ops().last_str3_before(table, first, second, before)
     }
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         self.ops().scan_u64(table)

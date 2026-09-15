@@ -1,8 +1,9 @@
 use super::super::embedded_errors::{kernel_error, mapping_error};
+use super::commit_native_write_guard::CommitNativeWriteGuard;
 use crate::projection::condense_from_response;
 use crate::serving::adapters::tool_request_mapping::CondenseRequestMapper;
 use crate::serving::{ToolError, tool_success_result};
-use kmp_embedded::EmbeddedMemoryService;
+use kmp_embedded::{CommitNativeBundle, EmbeddedKernelStore, EmbeddedMemoryService};
 use kmp_proto_mapping::v1beta1::{condense_command_from_proto, condense_response_from_card};
 use serde_json::Value;
 
@@ -13,14 +14,33 @@ use serde_json::Value;
 /// policy is a typed tool error, distinct from an application/store failure.
 pub(crate) struct EmbeddedCondenseTool<'a> {
     service: &'a EmbeddedMemoryService,
+    commit_native: Option<&'a CommitNativeBundle>,
+    store: &'a EmbeddedKernelStore,
 }
 
 impl<'a> EmbeddedCondenseTool<'a> {
-    pub(crate) fn new(service: &'a EmbeddedMemoryService) -> Self {
-        Self { service }
+    pub(crate) fn new(
+        service: &'a EmbeddedMemoryService,
+        commit_native: Option<&'a CommitNativeBundle>,
+        store: &'a EmbeddedKernelStore,
+    ) -> Self {
+        Self {
+            service,
+            commit_native,
+            store,
+        }
     }
 
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
+        let Some(bundle) = self.commit_native else {
+            return self.condense(arguments).await;
+        };
+        let guard = CommitNativeWriteGuard::begin(bundle, self.store).await?;
+        let result = self.condense(arguments).await;
+        guard.finish(result).await
+    }
+
+    async fn condense(&self, arguments: &Value) -> Result<Value, ToolError> {
         let request = CondenseRequestMapper::from_arguments(arguments)
             .map_err(ToolError::invalid_argument)?;
         let about = request.about.clone();

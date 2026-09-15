@@ -112,7 +112,7 @@ impl EmbeddedKernelStore {
     }
 }
 
-fn append_in_transaction(
+pub(super) fn append_in_transaction(
     tx: &mut dyn super::engine::WriteTx,
     event: ContextUpdatedEvent,
     expected_revision: u64,

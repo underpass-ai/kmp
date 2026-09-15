@@ -3,7 +3,7 @@ use kmp_domain::PortError;
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernelStore, PendingBundleExport};
 use serde_json::Value;
 
-/// Owns one canonical ingest's bundle guard until publication or a known rejection.
+/// Owns one event-backed write's bundle guard until publication or a known rejection.
 /// Ambiguous failures deliberately retain the existing pending marker.
 pub(crate) struct CommitNativeWriteGuard<'a> {
     bundle: &'a CommitNativeBundle,

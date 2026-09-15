@@ -152,7 +152,15 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 }
                 "kmp_inspect" => EmbeddedInspectTool::new(&service).call(arguments).await,
                 "kmp_relabel" => EmbeddedRelabelTool::new(&service).call(arguments).await,
-                "kmp_condense" => EmbeddedCondenseTool::new(&service).call(arguments).await,
+                "kmp_condense" => {
+                    EmbeddedCondenseTool::new(
+                        &service,
+                        self.commit_native.as_ref(),
+                        self.kernel.store(),
+                    )
+                    .call(arguments)
+                    .await
+                }
                 // The one read that is made off the event log rather than
                 // the projections: a summary's earlier revisions are what
                 // say whether the text moved after it was written.

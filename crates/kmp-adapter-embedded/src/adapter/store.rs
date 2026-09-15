@@ -63,7 +63,10 @@ impl EmbeddedKernelStore {
 
         let engine: Arc<dyn Engine> =
             Arc::new(super::engine::sqlite::SqliteEngine::open_file(&store_file)?);
-        Ok(Self { engine })
+        let store = Self { engine };
+        super::card_history_format::upgrade_stamp(data_dir)?;
+        super::node_card_adoption::adopt(&store)?;
+        Ok(store)
     }
 
     /// Freeze all cloned read ports at one SQLite snapshot for this operation.

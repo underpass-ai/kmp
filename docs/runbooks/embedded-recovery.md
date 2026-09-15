@@ -55,7 +55,7 @@ kmp-mcp snapshot verify pre-change
 
 ## 4A. Bridge an unsupported store format into SQLite
 
-Current KMP opens store format 3 only. Keep the unsupported source untouched and use
+Current KMP creates store format 4 and upgrades format-3 SQLite stores on open. Keep the unsupported source untouched and use
 an explicitly archived compatible exporter to write an engine-independent
 event bundle outside the source directory. Verify the exporter and its exact
 source path before running it; current KMP deliberately does not carry a

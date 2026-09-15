@@ -28,6 +28,18 @@ impl ReadTx for RecordingRead<'_> {
     fn value_len(&self, t: Table, k: Key<'_>) -> Result<Option<u64>, PortError> {
         self.inner.value_len(t, k)
     }
+    fn last_str3_before(
+        &self,
+        table: Table,
+        first: &str,
+        second: &str,
+        before: &str,
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        self.inner.last_str3_before(table, first, second, before)
+    }
+    fn scan_str2(&self, table: Table) -> Result<Vec<crate::adapter::engine::Str2Row>, PortError> {
+        self.inner.scan_str2(table)
+    }
     fn scan_str(&self, t: Table) -> Result<Vec<StrRow>, PortError> {
         assert_ne!(t, Table::Details, "no bulk Details read");
         self.inner.scan_str(t)

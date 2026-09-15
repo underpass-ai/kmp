@@ -77,6 +77,9 @@ pub(crate) fn apply_mutations_in_transaction(
     let mut applied = 0u64;
     for mutation in mutations {
         match mutation {
+            ProjectionMutation::RecordNodeCard(card) => {
+                super::node_card::project(tx, &card)?;
+            }
             ProjectionMutation::EnsureNode(node) => {
                 ensure_node(tx, node)?;
             }

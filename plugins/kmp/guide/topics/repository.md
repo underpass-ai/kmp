@@ -16,9 +16,18 @@ The bundle contains a header followed by one JSON event per line in sequence
 order. An event can contain several memories and relations, so the number of
 new lines is not the number of decisions. The payload preserves stored
 authorship and relation rationale. The format-3 header (`bundle_format: 3`,
-`event_format: 2`) names the snapshot, creation time, event range, about
+`event_format: 2` for memory-only histories, `3` when authored card events are
+present) names the snapshot, creation time, event range, about
 coverage and SHA-256, so a saved copy can be verified before restore. The
 portable event format and the on-disk store format are separate contracts.
+The reader accepts both event formats. New SQLite stores use layout format 4;
+format-3 stores upgrade on open, fencing older binaries before card adoption.
+Stop older processes before upgrading a shared store. Card-bearing bundles
+require an engine that supports event format 3; older engines reject them. On first open, surviving
+pre-event cards are adopted as baseline events. Their earlier overwritten
+versions cannot be recovered. Export the adopted history to the project's
+maintained bundle before resuming guarded writes if its existing bundle is
+now behind the store.
 
 Use named snapshots when a release or risky change needs a recovery point:
 

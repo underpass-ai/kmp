@@ -20,6 +20,8 @@ pub type NodeCardWriteFuture<'a> = Pin<
 /// policy refusing a write that the store could have performed — a lost race,
 /// a body that moved, prose that compresses nothing. Collapsing them would
 /// turn "your card is out of date" into "memory is unavailable".
+/// An accepted authored revision and its event must be committed atomically.
+/// Rebuilding a projection must not lose the prose or change its source body.
 pub trait NodeCardStore: Debug + Send + Sync {
     /// Reads node, body and stored card, applies the card policy and persists
     /// the result, all inside one write transaction. Implementations must not

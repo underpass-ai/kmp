@@ -30,7 +30,7 @@ The fallback cannot inspect plugin/global ownership inside every host.
 | The expected tools in a standalone smoke, none in the current session | The host cached its startup inventory | Restart the host once. |
 | Fixture backend | Responses are canned and nothing is stored | Unset `KMP_MCP_BACKEND=fixture`. |
 | gRPC without endpoint | Remote backend was requested with no kernel | Set a verified endpoint or return to embedded mode. |
-| Unsupported store format | The current binary deliberately opens store format 3 only | Preserve the source and follow the external export/import contract in the embedded recovery runbook. |
+| Unsupported store format | The current binary opens format 4 and upgrades format 3; earlier layouts remain unsupported | Preserve the source and follow the external export/import contract in the embedded recovery runbook. |
 
 ## 3. Verify the repair
 

@@ -28,8 +28,8 @@ use kmp_domain::PortError;
 use rusqlite::{Connection, OptionalExtension, config::DbConfig, params};
 
 use super::{
-    Engine, Key, KeyShape, ReadTx, Str3Row, StrRow, Table, U64Row, WriteTx, key_shape_mismatch,
-    scan_shape_mismatch,
+    Engine, Key, KeyShape, ReadTx, Str2Row, Str3Row, StrRow, Table, U64Row, WriteTx,
+    key_shape_mismatch, scan_shape_mismatch,
 };
 
 /// How long a transaction waits for another process's commit before giving
@@ -37,13 +37,14 @@ use super::{
 /// other side is stuck", not "the other side is busy".
 const BUSY_TIMEOUT: Duration = Duration::from_secs(10);
 
-const ALL_TABLES: [Table; 17] = [
+const ALL_TABLES: [Table; 18] = [
     Table::Nodes,
     Table::Relations,
     Table::RelationsByTarget,
     Table::Details,
     Table::DetailHeaders,
     Table::Cards,
+    Table::CardVersions,
     Table::ConsolidationHeads,
     Table::ConsolidationViews,
     Table::ConsolidationReceipts,
@@ -472,6 +473,24 @@ impl Ops<'_> {
         })
     }
 
+    pub(super) fn scan_str2(&self, table: Table) -> Result<Vec<Str2Row>, PortError> {
+        if table.key_shape() != KeyShape::Str2 {
+            return Err(scan_shape_mismatch(table, KeyShape::Str2));
+        }
+        let sql = format!("SELECT k1, k2, v FROM \"{table}\" ORDER BY k1, k2");
+        let mut statement = self.prepare(&sql)?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((
+                    (row.get::<_, String>(0)?, row.get::<_, String>(1)?),
+                    row.get::<_, Vec<u8>>(2)?,
+                ))
+            })
+            .map_err(|error| read_error(table, &error))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|error| read_error(table, &error))
+    }
+
     pub(super) fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         if table.key_shape() != KeyShape::Str {
             return Err(scan_shape_mismatch(table, KeyShape::Str));
@@ -592,6 +611,25 @@ impl Ops<'_> {
             })
             .map_err(|error| read_error(table, &error))?;
         rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|error| read_error(table, &error))
+    }
+
+    pub(super) fn last_str3_before(
+        &self,
+        table: Table,
+        first: &str,
+        second: &str,
+        before: &str,
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        if table.key_shape() != KeyShape::Str3 {
+            return Err(scan_shape_mismatch(table, KeyShape::Str3));
+        }
+        let sql = format!(
+            "SELECT v FROM \"{table}\" WHERE k1 = ?1 AND k2 = ?2 AND k3 <= ?3 ORDER BY k3 DESC LIMIT 1"
+        );
+        self.connection
+            .query_row(&sql, params![first, second, before], |row| row.get(0))
+            .optional()
             .map_err(|error| read_error(table, &error))
     }
 
@@ -726,6 +764,9 @@ impl ReadTx for SqliteRead<'_> {
     fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
         self.ops().value_len(table, key)
     }
+    fn scan_str2(&self, table: Table) -> Result<Vec<Str2Row>, PortError> {
+        self.ops().scan_str2(table)
+    }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
@@ -751,6 +792,15 @@ impl ReadTx for SqliteRead<'_> {
     ) -> Result<Vec<Str3Row>, PortError> {
         self.ops()
             .scan_str3_page(table, first, after, limit, relation_type)
+    }
+    fn last_str3_before(
+        &self,
+        table: Table,
+        first: &str,
+        second: &str,
+        before: &str,
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        self.ops().last_str3_before(table, first, second, before)
     }
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         self.ops().scan_u64(table)
@@ -791,6 +841,9 @@ impl ReadTx for SqliteWrite<'_> {
     fn value_len(&self, table: Table, key: Key<'_>) -> Result<Option<u64>, PortError> {
         self.ops().value_len(table, key)
     }
+    fn scan_str2(&self, table: Table) -> Result<Vec<Str2Row>, PortError> {
+        self.ops().scan_str2(table)
+    }
     fn scan_str(&self, table: Table) -> Result<Vec<StrRow>, PortError> {
         self.ops().scan_str(table)
     }
@@ -816,6 +869,15 @@ impl ReadTx for SqliteWrite<'_> {
     ) -> Result<Vec<Str3Row>, PortError> {
         self.ops()
             .scan_str3_page(table, first, after, limit, relation_type)
+    }
+    fn last_str3_before(
+        &self,
+        table: Table,
+        first: &str,
+        second: &str,
+        before: &str,
+    ) -> Result<Option<Vec<u8>>, PortError> {
+        self.ops().last_str3_before(table, first, second, before)
     }
     fn scan_u64(&self, table: Table) -> Result<Vec<U64Row>, PortError> {
         self.ops().scan_u64(table)

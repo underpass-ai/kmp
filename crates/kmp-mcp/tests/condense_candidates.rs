@@ -81,6 +81,66 @@ fn write_from(candidate: &Value) -> Value {
 }
 
 #[tokio::test]
+async fn condense_publishes_its_event_before_success_and_guards_a_stale_bundle() {
+    let dir = tempfile::tempdir().expect("valid card history fixture");
+    let path = dir.path().join("project/memory.jsonl");
+    let backend = EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
+        dir.path(),
+        None,
+        Some(kmp_embedded::CommitNativeBundle::new(dir.path(), &path)),
+    )
+    .expect("valid card history fixture");
+    let server = KernelMcpServer::with_embedded_backend(backend);
+    seed(&server, 0).await;
+    let initial = std::fs::read_to_string(&path).expect("valid card history fixture");
+    let trace = call(&server, "kmp_trace", request()).await;
+    let candidate = &content(&trace)["proof"]["condense_candidates"]["items"][0];
+    let mut write = write_from(candidate);
+    content(&call(&server, "kmp_condense", write.clone()).await);
+    let published = std::fs::read_to_string(&path).expect("valid card history fixture");
+    let header =
+        kmp_adapter_embedded::verify_bundle(&published).expect("valid card history fixture");
+    assert_eq!(header.event_count, 2);
+    assert_eq!(header.event_format, 3);
+    let event: kmp_domain::ContextUpdatedEvent = serde_json::from_str(
+        published
+            .lines()
+            .last()
+            .expect("valid card history fixture"),
+    )
+    .expect("valid card history fixture");
+    assert_eq!(
+        kmp_domain::NodeCardEvent::card(&event)
+            .expect("valid card history fixture")
+            .expect("valid card history fixture")
+            .text,
+        write["card"]
+    );
+    let rejected = call(&server, "kmp_condense", write.clone()).await;
+    assert_eq!(rejected["isError"], true, "stale CAS");
+    assert_eq!(
+        std::fs::read_to_string(&path).expect("valid card history fixture"),
+        published
+    );
+
+    // A stale checkout must refuse the write before SQLite changes.
+    std::fs::write(&path, initial).expect("valid card history fixture");
+    write["expect"] = json!({"card_revision":1});
+    write["card"] = json!("Replacement that must not be committed.");
+    let refused = call(&server, "kmp_condense", write).await;
+    assert_eq!(refused["isError"], true);
+    let store = kmp_adapter_embedded::EmbeddedKernelStore::open(dir.path())
+        .expect("valid card history fixture");
+    assert_eq!(
+        store
+            .export_bundle()
+            .await
+            .expect("valid card history fixture"),
+        published
+    );
+}
+
+#[tokio::test]
 async fn every_page_ranks_the_shared_source_and_its_identity_can_be_used_directly() {
     let (_dir, server) = server().await;
     let whole = call(&server, "kmp_trace", request()).await;
