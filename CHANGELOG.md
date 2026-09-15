@@ -9,6 +9,19 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.7] - 2026-09-15
+
+### Fixed
+
+- Installation guides now include explicit first-store guide synchronization
+  after setup and restart, including recovery from `GUIDE_UNAVAILABLE`.
+- Public documentation and installed guides now match current summary writer
+  fields, temporal intervals, store and portable bundle formats, release
+  checksum names and version-matched engine resolution.
+- Save, data sharing and remote backend guidance now distinguish local export
+  from Git publication and document backend availability limits. Contribution
+  instructions reference the existing checks.
+
 ## [0.18.6] - 2026-09-15
 
 ### Added
@@ -1799,7 +1812,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.6...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.7...HEAD
+[0.18.7]: https://github.com/underpass-ai/kmp/compare/v0.18.6...v0.18.7
 [0.18.6]: https://github.com/underpass-ai/kmp/compare/v0.18.5...v0.18.6
 [0.18.5]: https://github.com/underpass-ai/kmp/compare/v0.18.4...v0.18.5
 [0.18.4]: https://github.com/underpass-ai/kmp/compare/v0.18.3...v0.18.4
