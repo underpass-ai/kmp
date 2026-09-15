@@ -197,8 +197,9 @@ previous 38 lost failed-attempt files remain lost and are only described by
 
 For a new physical run, use
 `proof_batch_physical_run.py REPOSITORY OUTPUT SCRATCH SAMPLES`. The wrapper
-refuses a dirty repository or a different `origin/main`, verifies patch hashes,
+refuses a dirty repository, verifies that the frozen base exists and remains an
+ancestor of `origin/main`, verifies patch hashes,
 creates a detached temporary worktree, applies every patch, executes the
 enabled prepared-statement/partial-row SQLite control, builds and freezes that
-isolated binary, runs the serial acceptance capture, audits it, records patch
+isolated binary, runs the serial acceptance capture under `OUTPUT/capture`, audits it, records patch
 validation and removes the temporary worktree and stores.
