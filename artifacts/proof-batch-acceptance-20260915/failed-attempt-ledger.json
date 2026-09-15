@@ -1,0 +1,394 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "cd443d3b30bebc169c086047d4f168ea0f8af965d0cfb8c79f9df0ad1ebd7c00",
+      "cause": "Inspect added metadata.proof_role=stored_evidence while Trace represented the same role as object.kind=memory_evidence; the original comparator treated that presentation-only difference as persisted metadata mismatch.",
+      "command_stdout_bytes": 744,
+      "command_stdout_sha256": "511df10cfa4e6f35dade9130152cfba63c4d0eab53dca5e9a89f714e9f419019",
+      "completed_shape_summaries_recovered_from_task_log": [],
+      "deleted_directory": "artifacts/proof-batch-acceptance-20260915-failed-normalization",
+      "deleted_file_count": 5,
+      "deleted_files": [
+        "environment.json",
+        "001-distinct-fixture.json",
+        "001-distinct-seed.jsonl.gz",
+        "001-distinct-oracle.jsonl.gz",
+        "001-distinct-batch.jsonl.gz"
+      ],
+      "exit_code": 1,
+      "failure": "AssertionError: source body/provenance mismatch for evidence:project:proof-batch-acceptance:source:000",
+      "name": "normalization",
+      "raw_artifact_status": "irrecoverable; the files were untracked and their original bytes and hashes were not captured in the task log",
+      "runner_commit": "3aab9686f86912df97474bd6158017b18f484d91",
+      "runner_sha256": "d238a0defddec37e888c018ae0302bf437f901e54a0fa2584dcfe01c64d7dd9f",
+      "started_at_utc": "2026-09-14T22:34:57.189Z"
+    },
+    {
+      "binary_sha256": "cd443d3b30bebc169c086047d4f168ea0f8af965d0cfb8c79f9df0ad1ebd7c00",
+      "cause": "The harness tried to read selection_fingerprint from the MCP structured response. That internal digest is bound into the opaque MCP cursor and is exposed by direct typed gRPC, not as an MCP response field.",
+      "command_stdout_bytes": 680,
+      "command_stdout_sha256": "dc8b9dcb38028e36428d2e3b7b9a65e8bd560b0dbe37466d04cb50b16108b9f4",
+      "completed_shape_summaries_recovered_from_task_log": [],
+      "deleted_directory": "artifacts/proof-batch-acceptance-20260915-failed-fingerprint",
+      "deleted_file_count": 5,
+      "deleted_files": [
+        "environment.json",
+        "001-distinct-fixture.json",
+        "001-distinct-seed.jsonl.gz",
+        "001-distinct-oracle.jsonl.gz",
+        "001-distinct-batch.jsonl.gz"
+      ],
+      "exit_code": 1,
+      "failure": "KeyError: 'selection_fingerprint'",
+      "name": "fingerprint",
+      "raw_artifact_status": "irrecoverable; the files were untracked and their original bytes and hashes were not captured in the task log",
+      "runner_commit": "f0c02133f17a782b56fa7f74c89a60a45741bca8",
+      "runner_sha256": "b8c0ed3d4560052f7fa6c508e5d4cc4e88ece650a78be294015580198f906c75",
+      "started_at_utc": "2026-09-14T22:36:47.821Z"
+    },
+    {
+      "binary_sha256": "cd443d3b30bebc169c086047d4f168ea0f8af965d0cfb8c79f9df0ad1ebd7c00",
+      "cause": "The first harness required page.has_more=false. The 64-distinct response was correctly interrupted, so the harness needed to follow returned continuations and reconstruct the selection.",
+      "command_stdout_bytes": 2714,
+      "command_stdout_sha256": "75cf089fe36f7a9c571c1945e6f0aaedc5aa5f806f8686a0e38cad1129306244",
+      "completed_shape_summaries_recovered_from_task_log": [
+        {
+          "equivalence": {
+            "body_bytes": 506,
+            "objects": 2,
+            "qualified_projection_difference": {
+              "inspect.evidence[].metadata.proof_role": "stored_evidence",
+              "trace.objects[].kind": "memory_evidence"
+            },
+            "selected_entries": 1,
+            "selected_sources": 1,
+            "supports": 1
+          },
+          "logical_rpc_calls": {
+            "batch": 1,
+            "oracle": 2
+          },
+          "process_first": {
+            "batch": {
+              "cpu_ticks": 2,
+              "elapsed_ms": 22.877454,
+              "peak_rss_kib": 33640,
+              "response_bytes": 4363
+            },
+            "oracle": {
+              "cpu_ticks": 3,
+              "elapsed_ms": 24.091195,
+              "peak_rss_kib": 33724,
+              "response_bytes": 5406
+            }
+          },
+          "response_digests": {
+            "batch": "b446c47ea3efd6a0d93fdd0a766aea8663b7f4425d2714065bc05672560efaba",
+            "oracle": "d78736b683cd4d9b3695c712902e29ca3b8c689cac2735a01e19b69269be99a9"
+          },
+          "shape": "001-distinct",
+          "warm": {
+            "batch": {
+              "cpu_ms": 40.0,
+              "p50_ms": 2.3151919999999997,
+              "p95_ms": 2.578087,
+              "peak_rss_kib": 33692,
+              "response_bytes": [
+                4363,
+                4364
+              ],
+              "samples": 20
+            },
+            "oracle": {
+              "cpu_ms": 80.0,
+              "p50_ms": 4.89207,
+              "p95_ms": 5.7420610000000005,
+              "peak_rss_kib": 33772,
+              "response_bytes": [
+                5408
+              ],
+              "samples": 20
+            }
+          }
+        },
+        {
+          "equivalence": {
+            "body_bytes": 4048,
+            "objects": 16,
+            "qualified_projection_difference": {
+              "inspect.evidence[].metadata.proof_role": "stored_evidence",
+              "trace.objects[].kind": "memory_evidence"
+            },
+            "selected_entries": 8,
+            "selected_sources": 8,
+            "supports": 8
+          },
+          "logical_rpc_calls": {
+            "batch": 1,
+            "oracle": 9
+          },
+          "process_first": {
+            "batch": {
+              "cpu_ticks": 4,
+              "elapsed_ms": 30.634307,
+              "peak_rss_kib": 34100,
+              "response_bytes": 23721
+            },
+            "oracle": {
+              "cpu_ticks": 3,
+              "elapsed_ms": 34.14364,
+              "peak_rss_kib": 33940,
+              "response_bytes": 41066
+            }
+          },
+          "response_digests": {
+            "batch": "e18e183a2c9eca297c2ec68df52e2c34da8c8c8dd4784e794d7cdf90fa421250",
+            "oracle": "d80503783b94e7d9ea60b3def9c73df93efde6c0f844775e2b53a80ad9a6c89e"
+          },
+          "shape": "008-distinct",
+          "warm": {
+            "batch": {
+              "cpu_ms": 180.0,
+              "p50_ms": 10.027452,
+              "p95_ms": 10.787258,
+              "peak_rss_kib": 34276,
+              "response_bytes": [
+                23721,
+                23722
+              ],
+              "samples": 20
+            },
+            "oracle": {
+              "cpu_ms": 410.0,
+              "p50_ms": 28.130947499999998,
+              "p95_ms": 33.263962,
+              "peak_rss_kib": 34036,
+              "response_bytes": [
+                41074,
+                41075,
+                41083
+              ],
+              "samples": 20
+            }
+          }
+        }
+      ],
+      "deleted_directory": "artifacts/proof-batch-acceptance-20260915-failed-pagination",
+      "deleted_file_count": 14,
+      "deleted_files": [
+        "environment.json",
+        "001-distinct-fixture.json",
+        "001-distinct-seed.jsonl.gz",
+        "001-distinct-oracle.jsonl.gz",
+        "001-distinct-batch.jsonl.gz",
+        "008-distinct-fixture.json",
+        "008-distinct-seed.jsonl.gz",
+        "008-distinct-oracle.jsonl.gz",
+        "008-distinct-batch.jsonl.gz",
+        "064-distinct-fixture.json",
+        "064-distinct-seed.jsonl.gz",
+        "064-distinct-oracle.jsonl.gz",
+        "064-distinct-batch.jsonl.gz",
+        "summary.json"
+      ],
+      "exit_code": 1,
+      "failure": "AssertionError",
+      "name": "pagination",
+      "raw_artifact_status": "irrecoverable; the files were untracked and their original bytes and hashes were not captured in the task log",
+      "runner_commit": "9be349b2c10f17ddb7c31c66dc843be182ad3046",
+      "runner_sha256": "59ef922feb42093afab60e63c3a930762eaa4e2724904c18ba03e7a2906c19a8",
+      "started_at_utc": "2026-09-14T22:37:16.403Z"
+    },
+    {
+      "binary_sha256": "cd443d3b30bebc169c086047d4f168ea0f8af965d0cfb8c79f9df0ad1ebd7c00",
+      "cause": "The reconstructed walker required warnings to be byte-identical across pages. Partial pages carry the pagination-only warning and the final page correctly drops it; substantive warnings still require equality.",
+      "command_stdout_bytes": 2921,
+      "command_stdout_sha256": "ff2ab2d648715bf8b107ed62ede7b056132c92847b8a8c1349c558abd2f23472",
+      "completed_shape_summaries_recovered_from_task_log": [
+        {
+          "equivalence": {
+            "body_bytes": 506,
+            "objects": 2,
+            "qualified_projection_difference": {
+              "inspect.evidence[].metadata.proof_role": "stored_evidence",
+              "trace.objects[].kind": "memory_evidence"
+            },
+            "selected_entries": 1,
+            "selected_sources": 1,
+            "supports": 1
+          },
+          "logical_rpc_calls": {
+            "batch": 1,
+            "oracle": 2
+          },
+          "process_first": {
+            "batch": {
+              "cpu_ticks": 2,
+              "elapsed_ms": 23.300542,
+              "peak_rss_kib": 33588,
+              "response_bytes": 4363,
+              "rpc_calls": 1
+            },
+            "oracle": {
+              "cpu_ticks": 1,
+              "elapsed_ms": 14.167373999999999,
+              "peak_rss_kib": 33728,
+              "response_bytes": 5406,
+              "rpc_calls": 2
+            }
+          },
+          "response_digests": {
+            "batch": "b446c47ea3efd6a0d93fdd0a766aea8663b7f4425d2714065bc05672560efaba",
+            "oracle": "d78736b683cd4d9b3695c712902e29ca3b8c689cac2735a01e19b69269be99a9"
+          },
+          "shape": "001-distinct",
+          "warm": {
+            "batch": {
+              "cpu_ms": 40.0,
+              "p50_ms": 2.6381185,
+              "p95_ms": 3.201684,
+              "peak_rss_kib": 33644,
+              "response_bytes": [
+                4363,
+                4364
+              ],
+              "rpc_calls": [
+                1
+              ],
+              "samples": 20
+            },
+            "oracle": {
+              "cpu_ms": 60.0,
+              "p50_ms": 4.064538,
+              "p95_ms": 6.091419,
+              "peak_rss_kib": 33776,
+              "response_bytes": [
+                5408
+              ],
+              "rpc_calls": [
+                2
+              ],
+              "samples": 20
+            }
+          }
+        },
+        {
+          "equivalence": {
+            "body_bytes": 4048,
+            "objects": 16,
+            "qualified_projection_difference": {
+              "inspect.evidence[].metadata.proof_role": "stored_evidence",
+              "trace.objects[].kind": "memory_evidence"
+            },
+            "selected_entries": 8,
+            "selected_sources": 8,
+            "supports": 8
+          },
+          "logical_rpc_calls": {
+            "batch": 1,
+            "oracle": 9
+          },
+          "process_first": {
+            "batch": {
+              "cpu_ticks": 3,
+              "elapsed_ms": 33.188395,
+              "peak_rss_kib": 34040,
+              "response_bytes": 23721,
+              "rpc_calls": 1
+            },
+            "oracle": {
+              "cpu_ticks": 4,
+              "elapsed_ms": 42.198779,
+              "peak_rss_kib": 33920,
+              "response_bytes": 41066,
+              "rpc_calls": 9
+            }
+          },
+          "response_digests": {
+            "batch": "e18e183a2c9eca297c2ec68df52e2c34da8c8c8dd4784e794d7cdf90fa421250",
+            "oracle": "d80503783b94e7d9ea60b3def9c73df93efde6c0f844775e2b53a80ad9a6c89e"
+          },
+          "shape": "008-distinct",
+          "warm": {
+            "batch": {
+              "cpu_ms": 250.0,
+              "p50_ms": 12.795306499999999,
+              "p95_ms": 13.646608,
+              "peak_rss_kib": 34220,
+              "response_bytes": [
+                23721,
+                23722
+              ],
+              "rpc_calls": [
+                1
+              ],
+              "samples": 20
+            },
+            "oracle": {
+              "cpu_ms": 590.0,
+              "p50_ms": 36.135352499999996,
+              "p95_ms": 38.174716000000004,
+              "peak_rss_kib": 34020,
+              "response_bytes": [
+                41074,
+                41075,
+                41083
+              ],
+              "rpc_calls": [
+                9
+              ],
+              "samples": 20
+            }
+          }
+        }
+      ],
+      "deleted_directory": "artifacts/proof-batch-acceptance-20260915-failed-page-warning",
+      "deleted_file_count": 14,
+      "deleted_files": [
+        "environment.json",
+        "001-distinct-fixture.json",
+        "001-distinct-seed.jsonl.gz",
+        "001-distinct-oracle.jsonl.gz",
+        "001-distinct-batch.jsonl.gz",
+        "008-distinct-fixture.json",
+        "008-distinct-seed.jsonl.gz",
+        "008-distinct-oracle.jsonl.gz",
+        "008-distinct-batch.jsonl.gz",
+        "064-distinct-fixture.json",
+        "064-distinct-seed.jsonl.gz",
+        "064-distinct-oracle.jsonl.gz",
+        "064-distinct-batch.jsonl.gz",
+        "summary.json"
+      ],
+      "exit_code": 1,
+      "failure": "AssertionError: warnings changed between proof pages",
+      "name": "page-warning",
+      "raw_artifact_status": "irrecoverable; the files were untracked and their original bytes and hashes were not captured in the task log",
+      "runner_commit": "21b6dd2f1b4082043d5af1ef94d56fea26bb8464",
+      "runner_sha256": "3decb03b2000a3a93067ba89612875e9d36a324df46c7197e9f5ff0f29c86c27",
+      "started_at_utc": "2026-09-14T22:38:46.455Z"
+    }
+  ],
+  "contract": "kmp.proof-batch-failed-attempt-ledger.v1",
+  "deletion": {
+    "at_utc": "2026-09-14T22:49:47.690Z",
+    "command_targets": [
+      "artifacts/proof-batch-acceptance-20260915-failed-normalization",
+      "artifacts/proof-batch-acceptance-20260915-failed-fingerprint",
+      "artifacts/proof-batch-acceptance-20260915-failed-pagination",
+      "artifacts/proof-batch-acceptance-20260915-failed-page-warning"
+    ],
+    "deleted_file_count": 38,
+    "exit_code": 0,
+    "mistaken_reason": "I treated failed untracked runs as disposable scratch after the final run passed, despite the acceptance requirement to retain failed attempts."
+  },
+  "final_run_impact": "none; artifacts/proof-batch-acceptance-20260915 and its 96-operation post-capture audit were separate and remain byte-for-byte intact",
+  "integrity_status": "partial recovery after accidental deletion",
+  "recovery_limits": [
+    "No copy of the four deleted directories remains in the workspace.",
+    "The original gzip JSON-RPC traces, environment files, fixtures and partial summary files were untracked and cannot be recovered from Git.",
+    "The deleted files were not regenerated; deterministic fixtures or reruns would not be the original artifact bytes.",
+    "Completed-shape summaries below are exact JSON lines recovered from command stdout; missing timings and counts are left unknown."
+  ],
+  "recovery_source": "local Codex task CommandExecution events for this worktree; only command stdout, timestamps, commands and exit status were available"
+}
