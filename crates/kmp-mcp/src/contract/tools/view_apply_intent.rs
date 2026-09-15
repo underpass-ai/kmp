@@ -13,6 +13,7 @@ use crate::contract::schema::view_family::view_output_schema;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_view_apply_intent",
+        false,
         "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase. Absence degrades rather than failing: a ref this store does not hold is dropped from the part that named it and listed in `unhonored`, and if none of the refs an intent names exist the view does not move at all and `applied` is false. Read `unhonored` — what is missing is always named there, never silently drawn.",
         json!({
             "type": "object",

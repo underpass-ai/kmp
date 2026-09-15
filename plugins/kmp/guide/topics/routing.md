@@ -102,3 +102,16 @@ Route again after every response:
   history outside that packet; use the returned navigation actions as needed
   for the requested interval. Never present one response page or one selected
   packet as the entire interval.
+
+## Tool effect annotations
+
+Native tools declare `openWorldHint: false`: they operate on the configured
+memory and viewer rather than arbitrary public entities. They declare
+`readOnlyHint: false` because calls can persist operational usage or diagnostics,
+even when the requested operation only retrieves canonical memory.
+
+`ingest`, `write_memory`, `relabel` and `condense` declare `destructiveHint: true`
+for modes that replace current content, memberships or cards. This conservative
+review annotation does not mean they erase canonical events: accepted memory
+and card changes retain their event history. The other native tools declare
+`destructiveHint: false`. Reading history does not undo stored events.

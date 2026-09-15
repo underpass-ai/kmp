@@ -13,6 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_ingest",
+        true,
         "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
         json!({
             "type": "object",

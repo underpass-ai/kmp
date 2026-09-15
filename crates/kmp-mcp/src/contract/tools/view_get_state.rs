@@ -13,6 +13,7 @@ use crate::contract::schema::view_family::view_output_with_url_schema;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_view_get_state",
+        false,
         "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
         json!({
             "type": "object",

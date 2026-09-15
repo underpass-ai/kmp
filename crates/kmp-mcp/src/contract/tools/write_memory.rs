@@ -14,6 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_write_memory",
+        true,
         "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Use relations to link memories that already exist: the kernel validates the stored endpoints and writes only the link and its evidence. Never resubmit a stored memory as a record just to connect it. Omit options.dry_run for normal writes. Rich links, including local links, return needs_review with brief stored context before commit. Review it and use the returned continuation; changed context refreshes the review. Independent observations and honest fallback links remain one call. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
         write_memory_schema(),
         write_memory_output_schema(),

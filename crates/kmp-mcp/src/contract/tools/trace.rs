@@ -14,6 +14,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_trace",
+        false,
         "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
         json!({
             "type": "object",

@@ -13,6 +13,7 @@ use crate::contract::schema::view_family::view_output_with_url_schema;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_view_open",
+        false,
         "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
         json!({
             "type": "object",

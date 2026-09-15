@@ -112,6 +112,7 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
     }
     tool_definition_with_output(
         name,
+        false,
         description,
         input_schema,
         temporal_output_schema(name, cursor_key),
