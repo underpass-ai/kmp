@@ -7,6 +7,7 @@ should start with [Embedded KMP](../embedded/README.md).
 - [ChronoLoom scene performance](chronoloom-scene-performance.md) — retained rendering, interaction semantics and reproducible browser controls.
 - [ChronoLoom asset delivery](chronoloom-asset-performance.md) — versioned precompressed browser assets, MCP App assembly and real HTTP controls.
 - [Testing](testing.md) — the maintained local and CI verification paths.
+- [Evidence-group acceptance controls](evidence-group-evaluation.md) — #538 source-backed multi-passage controls and their evaluation boundary.
 - [Visual projection performance](visual-projection-performance.md) — snapshot-bound ChronoLoom reuse, correctness and reproducible measurements.
 - [Releasing](releasing.md) — version, artifact and tag flow.
 - [Agent-facing surface](agent-surface.md) — maintenance procedure for people and agents, including ownership, generation, validation and context cost.

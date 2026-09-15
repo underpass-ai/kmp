@@ -118,6 +118,101 @@ async fn long_source_is_omitted_whole_and_exact_inspect_preserves_qualification(
     assert_eq!(detail["object"]["text"], text);
 }
 
+/// #683: a review of a brand-new about has proposed context only. Offering a
+/// Wake for it turns a useful review action into a not_found before anything
+/// can commit.
+#[tokio::test]
+async fn review_does_not_offer_a_wake_for_a_new_proposed_about() {
+    let dir = scratch();
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+
+    let review = call(&server, "kmp_write_memory", packet()).await;
+
+    assert_eq!(review["status"], "needs_review", "{review}");
+    assert_eq!(review["accepted"], false, "{review}");
+    assert_eq!(events(dir.path()).await, 0, "review writes nothing");
+    assert_eq!(
+        review["neighborhood"]["stored_abouts"],
+        json!([]),
+        "{review}"
+    );
+    assert_eq!(review["expand_context"], json!([]), "{review}");
+    assert_eq!(resume(&server, &review).await["status"], "committed");
+}
+
+/// The owner list is not derived from the compact item list: all five visible
+/// items can be proposed while a stored same-about fact is omitted. Its Wake
+/// remains executable, and the pending review still leaves the store alone.
+#[tokio::test]
+async fn review_retains_stored_about_expansion_when_compact_items_omit_it() {
+    let dir = scratch();
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    seed(
+        &server,
+        "stored-context",
+        "observation",
+        "The earlier worker report is retained as surrounding context.",
+        "copy",
+    )
+    .await;
+    let mut proposed = packet();
+    for number in 2..=5 {
+        proposed["memories"]
+            .as_array_mut()
+            .expect("typed neighborhood fixture")
+            .push(json!({
+                "id": format!("extra-{number}"), "kind":"observation",
+                "summary":format!("R{number} records another copy observation."),
+                "evidence":format!("R{number}: another copy observation."),
+                "connect_to":[{"ref":"limit","rel":"supports","class":"evidential",
+                    "why":"The later observation supports the same copy record.",
+                    "evidence":format!("R{number}: another copy observation."),
+                    "confidence":"high"}]
+            }));
+    }
+
+    let review = call(&server, "kmp_write_memory", proposed).await;
+    let visible = review["neighborhood"]["items"]
+        .as_array()
+        .expect("typed neighborhood fixture");
+
+    assert_eq!(review["status"], "needs_review", "{review}");
+    assert_eq!(events(dir.path()).await, 1, "the seed is the only write");
+    assert!(
+        review["neighborhood"]["partial"]
+            .as_bool()
+            .expect("partial")
+    );
+    assert!(
+        visible.iter().all(|item| item["state"] == "proposed"),
+        "{review}"
+    );
+    assert_eq!(
+        review["neighborhood"]["stored_abouts"],
+        json!([ABOUT]),
+        "{review}"
+    );
+    assert_eq!(
+        review["expand_context"],
+        json!([{"tool":"kmp_wake","arguments":{"about":ABOUT,
+            "budget":{"detail":"full","max_bytes":10000}}}]),
+        "the authoritative stored owner still expands despite item omission: {review}"
+    );
+    let action = &review["expand_context"][0];
+    let expanded = call(
+        &server,
+        action["tool"].as_str().expect("native read tool"),
+        action["arguments"].clone(),
+    )
+    .await;
+    assert!(
+        expanded["scope"]["context"]
+            .as_array()
+            .is_some_and(|context| !context.is_empty()),
+        "the returned stored-context Wake executes against the existing about: {expanded}"
+    );
+}
+
 /// #683: the writer reads the neighborhood. Clocks reach it as RFC 3339, the
 /// spelling every other surface answers with, never as the kernel's internal
 /// `unix:<offset>:<nanos>` key — which is not a Unix timestamp either, so an

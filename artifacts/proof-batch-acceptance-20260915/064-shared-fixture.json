@@ -1,0 +1,2437 @@
+{
+  "about": "project:proof-batch-acceptance",
+  "idempotency_key": "proof-batch:64:shared",
+  "memory": {
+    "dimensions": [
+      {
+        "id": "proof-batch",
+        "kind": "task"
+      }
+    ],
+    "entries": [
+      {
+        "id": "project:proof-batch-acceptance:observation:000",
+        "kind": "observation",
+        "text": "Entry 000: literal π body for shared.",
+        "summary_en": "Entry 000 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "0"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:00Z",
+            "observed_at": "2026-09-01T10:00:00Z",
+            "ingested_at": "2026-09-01T10:00:00Z",
+            "valid_from": "2026-09-01T10:00:00Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 1
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:001",
+        "kind": "observation",
+        "text": "Entry 001: literal π body for shared.",
+        "summary_en": "Entry 001 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "1"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:01Z",
+            "observed_at": "2026-09-01T10:00:01Z",
+            "ingested_at": "2026-09-01T10:00:01Z",
+            "valid_from": "2026-09-01T10:00:01Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 2
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:002",
+        "kind": "observation",
+        "text": "Entry 002: literal π body for shared.",
+        "summary_en": "Entry 002 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "2"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:02Z",
+            "observed_at": "2026-09-01T10:00:02Z",
+            "ingested_at": "2026-09-01T10:00:02Z",
+            "valid_from": "2026-09-01T10:00:02Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 3
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:003",
+        "kind": "observation",
+        "text": "Entry 003: literal π body for shared.",
+        "summary_en": "Entry 003 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "3"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:03Z",
+            "observed_at": "2026-09-01T10:00:03Z",
+            "ingested_at": "2026-09-01T10:00:03Z",
+            "valid_from": "2026-09-01T10:00:03Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 4
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:004",
+        "kind": "observation",
+        "text": "Entry 004: literal π body for shared.",
+        "summary_en": "Entry 004 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "4"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:04Z",
+            "observed_at": "2026-09-01T10:00:04Z",
+            "ingested_at": "2026-09-01T10:00:04Z",
+            "valid_from": "2026-09-01T10:00:04Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 5
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:005",
+        "kind": "observation",
+        "text": "Entry 005: literal π body for shared.",
+        "summary_en": "Entry 005 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "5"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:05Z",
+            "observed_at": "2026-09-01T10:00:05Z",
+            "ingested_at": "2026-09-01T10:00:05Z",
+            "valid_from": "2026-09-01T10:00:05Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 6
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:006",
+        "kind": "observation",
+        "text": "Entry 006: literal π body for shared.",
+        "summary_en": "Entry 006 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "6"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:06Z",
+            "observed_at": "2026-09-01T10:00:06Z",
+            "ingested_at": "2026-09-01T10:00:06Z",
+            "valid_from": "2026-09-01T10:00:06Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 7
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:007",
+        "kind": "observation",
+        "text": "Entry 007: literal π body for shared.",
+        "summary_en": "Entry 007 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "7"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:07Z",
+            "observed_at": "2026-09-01T10:00:07Z",
+            "ingested_at": "2026-09-01T10:00:07Z",
+            "valid_from": "2026-09-01T10:00:07Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 8
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:008",
+        "kind": "observation",
+        "text": "Entry 008: literal π body for shared.",
+        "summary_en": "Entry 008 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "8"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:08Z",
+            "observed_at": "2026-09-01T10:00:08Z",
+            "ingested_at": "2026-09-01T10:00:08Z",
+            "valid_from": "2026-09-01T10:00:08Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 9
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:009",
+        "kind": "observation",
+        "text": "Entry 009: literal π body for shared.",
+        "summary_en": "Entry 009 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "9"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:09Z",
+            "observed_at": "2026-09-01T10:00:09Z",
+            "ingested_at": "2026-09-01T10:00:09Z",
+            "valid_from": "2026-09-01T10:00:09Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 10
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:010",
+        "kind": "observation",
+        "text": "Entry 010: literal π body for shared.",
+        "summary_en": "Entry 010 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "10"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:10Z",
+            "observed_at": "2026-09-01T10:00:10Z",
+            "ingested_at": "2026-09-01T10:00:10Z",
+            "valid_from": "2026-09-01T10:00:10Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 11
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:011",
+        "kind": "observation",
+        "text": "Entry 011: literal π body for shared.",
+        "summary_en": "Entry 011 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "11"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:11Z",
+            "observed_at": "2026-09-01T10:00:11Z",
+            "ingested_at": "2026-09-01T10:00:11Z",
+            "valid_from": "2026-09-01T10:00:11Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 12
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:012",
+        "kind": "observation",
+        "text": "Entry 012: literal π body for shared.",
+        "summary_en": "Entry 012 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "12"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:12Z",
+            "observed_at": "2026-09-01T10:00:12Z",
+            "ingested_at": "2026-09-01T10:00:12Z",
+            "valid_from": "2026-09-01T10:00:12Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 13
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:013",
+        "kind": "observation",
+        "text": "Entry 013: literal π body for shared.",
+        "summary_en": "Entry 013 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "13"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:13Z",
+            "observed_at": "2026-09-01T10:00:13Z",
+            "ingested_at": "2026-09-01T10:00:13Z",
+            "valid_from": "2026-09-01T10:00:13Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 14
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:014",
+        "kind": "observation",
+        "text": "Entry 014: literal π body for shared.",
+        "summary_en": "Entry 014 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "14"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:14Z",
+            "observed_at": "2026-09-01T10:00:14Z",
+            "ingested_at": "2026-09-01T10:00:14Z",
+            "valid_from": "2026-09-01T10:00:14Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 15
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:015",
+        "kind": "observation",
+        "text": "Entry 015: literal π body for shared.",
+        "summary_en": "Entry 015 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "15"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:15Z",
+            "observed_at": "2026-09-01T10:00:15Z",
+            "ingested_at": "2026-09-01T10:00:15Z",
+            "valid_from": "2026-09-01T10:00:15Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 16
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:016",
+        "kind": "observation",
+        "text": "Entry 016: literal π body for shared.",
+        "summary_en": "Entry 016 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "16"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:16Z",
+            "observed_at": "2026-09-01T10:00:16Z",
+            "ingested_at": "2026-09-01T10:00:16Z",
+            "valid_from": "2026-09-01T10:00:16Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 17
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:017",
+        "kind": "observation",
+        "text": "Entry 017: literal π body for shared.",
+        "summary_en": "Entry 017 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "17"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:17Z",
+            "observed_at": "2026-09-01T10:00:17Z",
+            "ingested_at": "2026-09-01T10:00:17Z",
+            "valid_from": "2026-09-01T10:00:17Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 18
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:018",
+        "kind": "observation",
+        "text": "Entry 018: literal π body for shared.",
+        "summary_en": "Entry 018 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "18"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:18Z",
+            "observed_at": "2026-09-01T10:00:18Z",
+            "ingested_at": "2026-09-01T10:00:18Z",
+            "valid_from": "2026-09-01T10:00:18Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 19
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:019",
+        "kind": "observation",
+        "text": "Entry 019: literal π body for shared.",
+        "summary_en": "Entry 019 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "19"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:19Z",
+            "observed_at": "2026-09-01T10:00:19Z",
+            "ingested_at": "2026-09-01T10:00:19Z",
+            "valid_from": "2026-09-01T10:00:19Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 20
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:020",
+        "kind": "observation",
+        "text": "Entry 020: literal π body for shared.",
+        "summary_en": "Entry 020 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "20"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:20Z",
+            "observed_at": "2026-09-01T10:00:20Z",
+            "ingested_at": "2026-09-01T10:00:20Z",
+            "valid_from": "2026-09-01T10:00:20Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 21
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:021",
+        "kind": "observation",
+        "text": "Entry 021: literal π body for shared.",
+        "summary_en": "Entry 021 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "21"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:21Z",
+            "observed_at": "2026-09-01T10:00:21Z",
+            "ingested_at": "2026-09-01T10:00:21Z",
+            "valid_from": "2026-09-01T10:00:21Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 22
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:022",
+        "kind": "observation",
+        "text": "Entry 022: literal π body for shared.",
+        "summary_en": "Entry 022 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "22"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:22Z",
+            "observed_at": "2026-09-01T10:00:22Z",
+            "ingested_at": "2026-09-01T10:00:22Z",
+            "valid_from": "2026-09-01T10:00:22Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 23
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:023",
+        "kind": "observation",
+        "text": "Entry 023: literal π body for shared.",
+        "summary_en": "Entry 023 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "23"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:23Z",
+            "observed_at": "2026-09-01T10:00:23Z",
+            "ingested_at": "2026-09-01T10:00:23Z",
+            "valid_from": "2026-09-01T10:00:23Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 24
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:024",
+        "kind": "observation",
+        "text": "Entry 024: literal π body for shared.",
+        "summary_en": "Entry 024 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "24"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:24Z",
+            "observed_at": "2026-09-01T10:00:24Z",
+            "ingested_at": "2026-09-01T10:00:24Z",
+            "valid_from": "2026-09-01T10:00:24Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 25
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:025",
+        "kind": "observation",
+        "text": "Entry 025: literal π body for shared.",
+        "summary_en": "Entry 025 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "25"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:25Z",
+            "observed_at": "2026-09-01T10:00:25Z",
+            "ingested_at": "2026-09-01T10:00:25Z",
+            "valid_from": "2026-09-01T10:00:25Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 26
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:026",
+        "kind": "observation",
+        "text": "Entry 026: literal π body for shared.",
+        "summary_en": "Entry 026 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "26"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:26Z",
+            "observed_at": "2026-09-01T10:00:26Z",
+            "ingested_at": "2026-09-01T10:00:26Z",
+            "valid_from": "2026-09-01T10:00:26Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 27
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:027",
+        "kind": "observation",
+        "text": "Entry 027: literal π body for shared.",
+        "summary_en": "Entry 027 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "27"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:27Z",
+            "observed_at": "2026-09-01T10:00:27Z",
+            "ingested_at": "2026-09-01T10:00:27Z",
+            "valid_from": "2026-09-01T10:00:27Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 28
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:028",
+        "kind": "observation",
+        "text": "Entry 028: literal π body for shared.",
+        "summary_en": "Entry 028 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "28"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:28Z",
+            "observed_at": "2026-09-01T10:00:28Z",
+            "ingested_at": "2026-09-01T10:00:28Z",
+            "valid_from": "2026-09-01T10:00:28Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 29
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:029",
+        "kind": "observation",
+        "text": "Entry 029: literal π body for shared.",
+        "summary_en": "Entry 029 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "29"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:29Z",
+            "observed_at": "2026-09-01T10:00:29Z",
+            "ingested_at": "2026-09-01T10:00:29Z",
+            "valid_from": "2026-09-01T10:00:29Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 30
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:030",
+        "kind": "observation",
+        "text": "Entry 030: literal π body for shared.",
+        "summary_en": "Entry 030 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "30"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:30Z",
+            "observed_at": "2026-09-01T10:00:30Z",
+            "ingested_at": "2026-09-01T10:00:30Z",
+            "valid_from": "2026-09-01T10:00:30Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 31
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:031",
+        "kind": "observation",
+        "text": "Entry 031: literal π body for shared.",
+        "summary_en": "Entry 031 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "31"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:31Z",
+            "observed_at": "2026-09-01T10:00:31Z",
+            "ingested_at": "2026-09-01T10:00:31Z",
+            "valid_from": "2026-09-01T10:00:31Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 32
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:032",
+        "kind": "observation",
+        "text": "Entry 032: literal π body for shared.",
+        "summary_en": "Entry 032 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "32"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:32Z",
+            "observed_at": "2026-09-01T10:00:32Z",
+            "ingested_at": "2026-09-01T10:00:32Z",
+            "valid_from": "2026-09-01T10:00:32Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 33
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:033",
+        "kind": "observation",
+        "text": "Entry 033: literal π body for shared.",
+        "summary_en": "Entry 033 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "33"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:33Z",
+            "observed_at": "2026-09-01T10:00:33Z",
+            "ingested_at": "2026-09-01T10:00:33Z",
+            "valid_from": "2026-09-01T10:00:33Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 34
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:034",
+        "kind": "observation",
+        "text": "Entry 034: literal π body for shared.",
+        "summary_en": "Entry 034 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "34"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:34Z",
+            "observed_at": "2026-09-01T10:00:34Z",
+            "ingested_at": "2026-09-01T10:00:34Z",
+            "valid_from": "2026-09-01T10:00:34Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 35
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:035",
+        "kind": "observation",
+        "text": "Entry 035: literal π body for shared.",
+        "summary_en": "Entry 035 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "35"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:35Z",
+            "observed_at": "2026-09-01T10:00:35Z",
+            "ingested_at": "2026-09-01T10:00:35Z",
+            "valid_from": "2026-09-01T10:00:35Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 36
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:036",
+        "kind": "observation",
+        "text": "Entry 036: literal π body for shared.",
+        "summary_en": "Entry 036 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "36"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:36Z",
+            "observed_at": "2026-09-01T10:00:36Z",
+            "ingested_at": "2026-09-01T10:00:36Z",
+            "valid_from": "2026-09-01T10:00:36Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 37
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:037",
+        "kind": "observation",
+        "text": "Entry 037: literal π body for shared.",
+        "summary_en": "Entry 037 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "37"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:37Z",
+            "observed_at": "2026-09-01T10:00:37Z",
+            "ingested_at": "2026-09-01T10:00:37Z",
+            "valid_from": "2026-09-01T10:00:37Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 38
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:038",
+        "kind": "observation",
+        "text": "Entry 038: literal π body for shared.",
+        "summary_en": "Entry 038 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "38"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:38Z",
+            "observed_at": "2026-09-01T10:00:38Z",
+            "ingested_at": "2026-09-01T10:00:38Z",
+            "valid_from": "2026-09-01T10:00:38Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 39
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:039",
+        "kind": "observation",
+        "text": "Entry 039: literal π body for shared.",
+        "summary_en": "Entry 039 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "39"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:39Z",
+            "observed_at": "2026-09-01T10:00:39Z",
+            "ingested_at": "2026-09-01T10:00:39Z",
+            "valid_from": "2026-09-01T10:00:39Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 40
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:040",
+        "kind": "observation",
+        "text": "Entry 040: literal π body for shared.",
+        "summary_en": "Entry 040 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "40"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:40Z",
+            "observed_at": "2026-09-01T10:00:40Z",
+            "ingested_at": "2026-09-01T10:00:40Z",
+            "valid_from": "2026-09-01T10:00:40Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 41
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:041",
+        "kind": "observation",
+        "text": "Entry 041: literal π body for shared.",
+        "summary_en": "Entry 041 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "41"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:41Z",
+            "observed_at": "2026-09-01T10:00:41Z",
+            "ingested_at": "2026-09-01T10:00:41Z",
+            "valid_from": "2026-09-01T10:00:41Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 42
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:042",
+        "kind": "observation",
+        "text": "Entry 042: literal π body for shared.",
+        "summary_en": "Entry 042 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "42"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:42Z",
+            "observed_at": "2026-09-01T10:00:42Z",
+            "ingested_at": "2026-09-01T10:00:42Z",
+            "valid_from": "2026-09-01T10:00:42Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 43
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:043",
+        "kind": "observation",
+        "text": "Entry 043: literal π body for shared.",
+        "summary_en": "Entry 043 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "43"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:43Z",
+            "observed_at": "2026-09-01T10:00:43Z",
+            "ingested_at": "2026-09-01T10:00:43Z",
+            "valid_from": "2026-09-01T10:00:43Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 44
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:044",
+        "kind": "observation",
+        "text": "Entry 044: literal π body for shared.",
+        "summary_en": "Entry 044 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "44"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:44Z",
+            "observed_at": "2026-09-01T10:00:44Z",
+            "ingested_at": "2026-09-01T10:00:44Z",
+            "valid_from": "2026-09-01T10:00:44Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 45
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:045",
+        "kind": "observation",
+        "text": "Entry 045: literal π body for shared.",
+        "summary_en": "Entry 045 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "45"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:45Z",
+            "observed_at": "2026-09-01T10:00:45Z",
+            "ingested_at": "2026-09-01T10:00:45Z",
+            "valid_from": "2026-09-01T10:00:45Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 46
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:046",
+        "kind": "observation",
+        "text": "Entry 046: literal π body for shared.",
+        "summary_en": "Entry 046 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "46"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:46Z",
+            "observed_at": "2026-09-01T10:00:46Z",
+            "ingested_at": "2026-09-01T10:00:46Z",
+            "valid_from": "2026-09-01T10:00:46Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 47
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:047",
+        "kind": "observation",
+        "text": "Entry 047: literal π body for shared.",
+        "summary_en": "Entry 047 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "47"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:47Z",
+            "observed_at": "2026-09-01T10:00:47Z",
+            "ingested_at": "2026-09-01T10:00:47Z",
+            "valid_from": "2026-09-01T10:00:47Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 48
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:048",
+        "kind": "observation",
+        "text": "Entry 048: literal π body for shared.",
+        "summary_en": "Entry 048 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "48"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:48Z",
+            "observed_at": "2026-09-01T10:00:48Z",
+            "ingested_at": "2026-09-01T10:00:48Z",
+            "valid_from": "2026-09-01T10:00:48Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 49
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:049",
+        "kind": "observation",
+        "text": "Entry 049: literal π body for shared.",
+        "summary_en": "Entry 049 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "49"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:49Z",
+            "observed_at": "2026-09-01T10:00:49Z",
+            "ingested_at": "2026-09-01T10:00:49Z",
+            "valid_from": "2026-09-01T10:00:49Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 50
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:050",
+        "kind": "observation",
+        "text": "Entry 050: literal π body for shared.",
+        "summary_en": "Entry 050 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "50"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:50Z",
+            "observed_at": "2026-09-01T10:00:50Z",
+            "ingested_at": "2026-09-01T10:00:50Z",
+            "valid_from": "2026-09-01T10:00:50Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 51
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:051",
+        "kind": "observation",
+        "text": "Entry 051: literal π body for shared.",
+        "summary_en": "Entry 051 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "51"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:51Z",
+            "observed_at": "2026-09-01T10:00:51Z",
+            "ingested_at": "2026-09-01T10:00:51Z",
+            "valid_from": "2026-09-01T10:00:51Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 52
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:052",
+        "kind": "observation",
+        "text": "Entry 052: literal π body for shared.",
+        "summary_en": "Entry 052 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "52"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:52Z",
+            "observed_at": "2026-09-01T10:00:52Z",
+            "ingested_at": "2026-09-01T10:00:52Z",
+            "valid_from": "2026-09-01T10:00:52Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 53
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:053",
+        "kind": "observation",
+        "text": "Entry 053: literal π body for shared.",
+        "summary_en": "Entry 053 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "53"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:53Z",
+            "observed_at": "2026-09-01T10:00:53Z",
+            "ingested_at": "2026-09-01T10:00:53Z",
+            "valid_from": "2026-09-01T10:00:53Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 54
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:054",
+        "kind": "observation",
+        "text": "Entry 054: literal π body for shared.",
+        "summary_en": "Entry 054 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "54"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:54Z",
+            "observed_at": "2026-09-01T10:00:54Z",
+            "ingested_at": "2026-09-01T10:00:54Z",
+            "valid_from": "2026-09-01T10:00:54Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 55
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:055",
+        "kind": "observation",
+        "text": "Entry 055: literal π body for shared.",
+        "summary_en": "Entry 055 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "55"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:55Z",
+            "observed_at": "2026-09-01T10:00:55Z",
+            "ingested_at": "2026-09-01T10:00:55Z",
+            "valid_from": "2026-09-01T10:00:55Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 56
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:056",
+        "kind": "observation",
+        "text": "Entry 056: literal π body for shared.",
+        "summary_en": "Entry 056 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "56"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:56Z",
+            "observed_at": "2026-09-01T10:00:56Z",
+            "ingested_at": "2026-09-01T10:00:56Z",
+            "valid_from": "2026-09-01T10:00:56Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 57
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:057",
+        "kind": "observation",
+        "text": "Entry 057: literal π body for shared.",
+        "summary_en": "Entry 057 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "57"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:57Z",
+            "observed_at": "2026-09-01T10:00:57Z",
+            "ingested_at": "2026-09-01T10:00:57Z",
+            "valid_from": "2026-09-01T10:00:57Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 58
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:058",
+        "kind": "observation",
+        "text": "Entry 058: literal π body for shared.",
+        "summary_en": "Entry 058 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "58"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:58Z",
+            "observed_at": "2026-09-01T10:00:58Z",
+            "ingested_at": "2026-09-01T10:00:58Z",
+            "valid_from": "2026-09-01T10:00:58Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 59
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:059",
+        "kind": "observation",
+        "text": "Entry 059: literal π body for shared.",
+        "summary_en": "Entry 059 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "59"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:59Z",
+            "observed_at": "2026-09-01T10:00:59Z",
+            "ingested_at": "2026-09-01T10:00:59Z",
+            "valid_from": "2026-09-01T10:00:59Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 60
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:060",
+        "kind": "observation",
+        "text": "Entry 060: literal π body for shared.",
+        "summary_en": "Entry 060 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "60"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:01:00Z",
+            "observed_at": "2026-09-01T10:01:00Z",
+            "ingested_at": "2026-09-01T10:01:00Z",
+            "valid_from": "2026-09-01T10:01:00Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 61
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:061",
+        "kind": "observation",
+        "text": "Entry 061: literal π body for shared.",
+        "summary_en": "Entry 061 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "61"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:01:01Z",
+            "observed_at": "2026-09-01T10:01:01Z",
+            "ingested_at": "2026-09-01T10:01:01Z",
+            "valid_from": "2026-09-01T10:01:01Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 62
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:062",
+        "kind": "observation",
+        "text": "Entry 062: literal π body for shared.",
+        "summary_en": "Entry 062 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "62"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:01:02Z",
+            "observed_at": "2026-09-01T10:01:02Z",
+            "ingested_at": "2026-09-01T10:01:02Z",
+            "valid_from": "2026-09-01T10:01:02Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 63
+          }
+        ]
+      },
+      {
+        "id": "project:proof-batch-acceptance:observation:063",
+        "kind": "observation",
+        "text": "Entry 063: literal π body for shared.",
+        "summary_en": "Entry 063 literal body.",
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "63"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:01:03Z",
+            "observed_at": "2026-09-01T10:01:03Z",
+            "ingested_at": "2026-09-01T10:01:03Z",
+            "valid_from": "2026-09-01T10:01:03Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 64
+          }
+        ]
+      }
+    ],
+    "relations": [
+      {
+        "from": "project:proof-batch-acceptance:observation:000",
+        "to": "project:proof-batch-acceptance:observation:001",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 000 precedes 001.",
+        "evidence": "Signed chain register 000->001.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:001",
+        "to": "project:proof-batch-acceptance:observation:002",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 001 precedes 002.",
+        "evidence": "Signed chain register 001->002.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:002",
+        "to": "project:proof-batch-acceptance:observation:003",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 002 precedes 003.",
+        "evidence": "Signed chain register 002->003.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:003",
+        "to": "project:proof-batch-acceptance:observation:004",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 003 precedes 004.",
+        "evidence": "Signed chain register 003->004.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:004",
+        "to": "project:proof-batch-acceptance:observation:005",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 004 precedes 005.",
+        "evidence": "Signed chain register 004->005.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:005",
+        "to": "project:proof-batch-acceptance:observation:006",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 005 precedes 006.",
+        "evidence": "Signed chain register 005->006.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:006",
+        "to": "project:proof-batch-acceptance:observation:007",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 006 precedes 007.",
+        "evidence": "Signed chain register 006->007.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:007",
+        "to": "project:proof-batch-acceptance:observation:008",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 007 precedes 008.",
+        "evidence": "Signed chain register 007->008.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:008",
+        "to": "project:proof-batch-acceptance:observation:009",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 008 precedes 009.",
+        "evidence": "Signed chain register 008->009.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:009",
+        "to": "project:proof-batch-acceptance:observation:010",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 009 precedes 010.",
+        "evidence": "Signed chain register 009->010.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:010",
+        "to": "project:proof-batch-acceptance:observation:011",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 010 precedes 011.",
+        "evidence": "Signed chain register 010->011.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:011",
+        "to": "project:proof-batch-acceptance:observation:012",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 011 precedes 012.",
+        "evidence": "Signed chain register 011->012.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:012",
+        "to": "project:proof-batch-acceptance:observation:013",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 012 precedes 013.",
+        "evidence": "Signed chain register 012->013.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:013",
+        "to": "project:proof-batch-acceptance:observation:014",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 013 precedes 014.",
+        "evidence": "Signed chain register 013->014.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:014",
+        "to": "project:proof-batch-acceptance:observation:015",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 014 precedes 015.",
+        "evidence": "Signed chain register 014->015.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:015",
+        "to": "project:proof-batch-acceptance:observation:016",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 015 precedes 016.",
+        "evidence": "Signed chain register 015->016.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:016",
+        "to": "project:proof-batch-acceptance:observation:017",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 016 precedes 017.",
+        "evidence": "Signed chain register 016->017.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:017",
+        "to": "project:proof-batch-acceptance:observation:018",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 017 precedes 018.",
+        "evidence": "Signed chain register 017->018.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:018",
+        "to": "project:proof-batch-acceptance:observation:019",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 018 precedes 019.",
+        "evidence": "Signed chain register 018->019.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:019",
+        "to": "project:proof-batch-acceptance:observation:020",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 019 precedes 020.",
+        "evidence": "Signed chain register 019->020.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:020",
+        "to": "project:proof-batch-acceptance:observation:021",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 020 precedes 021.",
+        "evidence": "Signed chain register 020->021.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:021",
+        "to": "project:proof-batch-acceptance:observation:022",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 021 precedes 022.",
+        "evidence": "Signed chain register 021->022.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:022",
+        "to": "project:proof-batch-acceptance:observation:023",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 022 precedes 023.",
+        "evidence": "Signed chain register 022->023.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:023",
+        "to": "project:proof-batch-acceptance:observation:024",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 023 precedes 024.",
+        "evidence": "Signed chain register 023->024.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:024",
+        "to": "project:proof-batch-acceptance:observation:025",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 024 precedes 025.",
+        "evidence": "Signed chain register 024->025.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:025",
+        "to": "project:proof-batch-acceptance:observation:026",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 025 precedes 026.",
+        "evidence": "Signed chain register 025->026.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:026",
+        "to": "project:proof-batch-acceptance:observation:027",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 026 precedes 027.",
+        "evidence": "Signed chain register 026->027.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:027",
+        "to": "project:proof-batch-acceptance:observation:028",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 027 precedes 028.",
+        "evidence": "Signed chain register 027->028.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:028",
+        "to": "project:proof-batch-acceptance:observation:029",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 028 precedes 029.",
+        "evidence": "Signed chain register 028->029.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:029",
+        "to": "project:proof-batch-acceptance:observation:030",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 029 precedes 030.",
+        "evidence": "Signed chain register 029->030.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:030",
+        "to": "project:proof-batch-acceptance:observation:031",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 030 precedes 031.",
+        "evidence": "Signed chain register 030->031.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:031",
+        "to": "project:proof-batch-acceptance:observation:032",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 031 precedes 032.",
+        "evidence": "Signed chain register 031->032.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:032",
+        "to": "project:proof-batch-acceptance:observation:033",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 032 precedes 033.",
+        "evidence": "Signed chain register 032->033.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:033",
+        "to": "project:proof-batch-acceptance:observation:034",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 033 precedes 034.",
+        "evidence": "Signed chain register 033->034.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:034",
+        "to": "project:proof-batch-acceptance:observation:035",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 034 precedes 035.",
+        "evidence": "Signed chain register 034->035.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:035",
+        "to": "project:proof-batch-acceptance:observation:036",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 035 precedes 036.",
+        "evidence": "Signed chain register 035->036.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:036",
+        "to": "project:proof-batch-acceptance:observation:037",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 036 precedes 037.",
+        "evidence": "Signed chain register 036->037.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:037",
+        "to": "project:proof-batch-acceptance:observation:038",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 037 precedes 038.",
+        "evidence": "Signed chain register 037->038.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:038",
+        "to": "project:proof-batch-acceptance:observation:039",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 038 precedes 039.",
+        "evidence": "Signed chain register 038->039.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:039",
+        "to": "project:proof-batch-acceptance:observation:040",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 039 precedes 040.",
+        "evidence": "Signed chain register 039->040.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:040",
+        "to": "project:proof-batch-acceptance:observation:041",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 040 precedes 041.",
+        "evidence": "Signed chain register 040->041.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:041",
+        "to": "project:proof-batch-acceptance:observation:042",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 041 precedes 042.",
+        "evidence": "Signed chain register 041->042.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:042",
+        "to": "project:proof-batch-acceptance:observation:043",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 042 precedes 043.",
+        "evidence": "Signed chain register 042->043.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:043",
+        "to": "project:proof-batch-acceptance:observation:044",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 043 precedes 044.",
+        "evidence": "Signed chain register 043->044.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:044",
+        "to": "project:proof-batch-acceptance:observation:045",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 044 precedes 045.",
+        "evidence": "Signed chain register 044->045.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:045",
+        "to": "project:proof-batch-acceptance:observation:046",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 045 precedes 046.",
+        "evidence": "Signed chain register 045->046.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:046",
+        "to": "project:proof-batch-acceptance:observation:047",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 046 precedes 047.",
+        "evidence": "Signed chain register 046->047.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:047",
+        "to": "project:proof-batch-acceptance:observation:048",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 047 precedes 048.",
+        "evidence": "Signed chain register 047->048.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:048",
+        "to": "project:proof-batch-acceptance:observation:049",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 048 precedes 049.",
+        "evidence": "Signed chain register 048->049.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:049",
+        "to": "project:proof-batch-acceptance:observation:050",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 049 precedes 050.",
+        "evidence": "Signed chain register 049->050.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:050",
+        "to": "project:proof-batch-acceptance:observation:051",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 050 precedes 051.",
+        "evidence": "Signed chain register 050->051.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:051",
+        "to": "project:proof-batch-acceptance:observation:052",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 051 precedes 052.",
+        "evidence": "Signed chain register 051->052.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:052",
+        "to": "project:proof-batch-acceptance:observation:053",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 052 precedes 053.",
+        "evidence": "Signed chain register 052->053.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:053",
+        "to": "project:proof-batch-acceptance:observation:054",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 053 precedes 054.",
+        "evidence": "Signed chain register 053->054.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:054",
+        "to": "project:proof-batch-acceptance:observation:055",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 054 precedes 055.",
+        "evidence": "Signed chain register 054->055.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:055",
+        "to": "project:proof-batch-acceptance:observation:056",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 055 precedes 056.",
+        "evidence": "Signed chain register 055->056.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:056",
+        "to": "project:proof-batch-acceptance:observation:057",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 056 precedes 057.",
+        "evidence": "Signed chain register 056->057.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:057",
+        "to": "project:proof-batch-acceptance:observation:058",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 057 precedes 058.",
+        "evidence": "Signed chain register 057->058.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:058",
+        "to": "project:proof-batch-acceptance:observation:059",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 058 precedes 059.",
+        "evidence": "Signed chain register 058->059.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:059",
+        "to": "project:proof-batch-acceptance:observation:060",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 059 precedes 060.",
+        "evidence": "Signed chain register 059->060.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:060",
+        "to": "project:proof-batch-acceptance:observation:061",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 060 precedes 061.",
+        "evidence": "Signed chain register 060->061.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:061",
+        "to": "project:proof-batch-acceptance:observation:062",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 061 precedes 062.",
+        "evidence": "Signed chain register 061->062.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      },
+      {
+        "from": "project:proof-batch-acceptance:observation:062",
+        "to": "project:proof-batch-acceptance:observation:063",
+        "rel": "depends_on",
+        "class": "causal",
+        "confidence": "high",
+        "why": "Chain step 062 precedes 063.",
+        "evidence": "Signed chain register 062->063.",
+        "clocks": {
+          "observed_at": "2026-09-02T00:00:00Z",
+          "ingested_at": "2026-09-02T00:00:01Z"
+        }
+      }
+    ],
+    "evidence": [
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:000",
+        "supports": [
+          "project:proof-batch-acceptance:observation:000",
+          "project:proof-batch-acceptance:observation:001",
+          "project:proof-batch-acceptance:observation:002",
+          "project:proof-batch-acceptance:observation:003",
+          "project:proof-batch-acceptance:observation:004",
+          "project:proof-batch-acceptance:observation:005",
+          "project:proof-batch-acceptance:observation:006",
+          "project:proof-batch-acceptance:observation:007"
+        ],
+        "text": "Source 000: exact λ evidence for project:proof-batch-acceptance:observation:000,project:proof-batch-acceptance:observation:001,project:proof-batch-acceptance:observation:002,project:proof-batch-acceptance:observation:003,project:proof-batch-acceptance:observation:004,project:proof-batch-acceptance:observation:005,project:proof-batch-acceptance:observation:006,project:proof-batch-acceptance:observation:007. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:shared:000",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "0"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:001",
+        "supports": [
+          "project:proof-batch-acceptance:observation:008",
+          "project:proof-batch-acceptance:observation:009",
+          "project:proof-batch-acceptance:observation:010",
+          "project:proof-batch-acceptance:observation:011",
+          "project:proof-batch-acceptance:observation:012",
+          "project:proof-batch-acceptance:observation:013",
+          "project:proof-batch-acceptance:observation:014",
+          "project:proof-batch-acceptance:observation:015"
+        ],
+        "text": "Source 001: exact λ evidence for project:proof-batch-acceptance:observation:008,project:proof-batch-acceptance:observation:009,project:proof-batch-acceptance:observation:010,project:proof-batch-acceptance:observation:011,project:proof-batch-acceptance:observation:012,project:proof-batch-acceptance:observation:013,project:proof-batch-acceptance:observation:014,project:proof-batch-acceptance:observation:015. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:shared:001",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "1"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:002",
+        "supports": [
+          "project:proof-batch-acceptance:observation:016",
+          "project:proof-batch-acceptance:observation:017",
+          "project:proof-batch-acceptance:observation:018",
+          "project:proof-batch-acceptance:observation:019",
+          "project:proof-batch-acceptance:observation:020",
+          "project:proof-batch-acceptance:observation:021",
+          "project:proof-batch-acceptance:observation:022",
+          "project:proof-batch-acceptance:observation:023"
+        ],
+        "text": "Source 002: exact λ evidence for project:proof-batch-acceptance:observation:016,project:proof-batch-acceptance:observation:017,project:proof-batch-acceptance:observation:018,project:proof-batch-acceptance:observation:019,project:proof-batch-acceptance:observation:020,project:proof-batch-acceptance:observation:021,project:proof-batch-acceptance:observation:022,project:proof-batch-acceptance:observation:023. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:shared:002",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "2"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:003",
+        "supports": [
+          "project:proof-batch-acceptance:observation:024",
+          "project:proof-batch-acceptance:observation:025",
+          "project:proof-batch-acceptance:observation:026",
+          "project:proof-batch-acceptance:observation:027",
+          "project:proof-batch-acceptance:observation:028",
+          "project:proof-batch-acceptance:observation:029",
+          "project:proof-batch-acceptance:observation:030",
+          "project:proof-batch-acceptance:observation:031"
+        ],
+        "text": "Source 003: exact λ evidence for project:proof-batch-acceptance:observation:024,project:proof-batch-acceptance:observation:025,project:proof-batch-acceptance:observation:026,project:proof-batch-acceptance:observation:027,project:proof-batch-acceptance:observation:028,project:proof-batch-acceptance:observation:029,project:proof-batch-acceptance:observation:030,project:proof-batch-acceptance:observation:031. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:shared:003",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "3"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:004",
+        "supports": [
+          "project:proof-batch-acceptance:observation:032",
+          "project:proof-batch-acceptance:observation:033",
+          "project:proof-batch-acceptance:observation:034",
+          "project:proof-batch-acceptance:observation:035",
+          "project:proof-batch-acceptance:observation:036",
+          "project:proof-batch-acceptance:observation:037",
+          "project:proof-batch-acceptance:observation:038",
+          "project:proof-batch-acceptance:observation:039"
+        ],
+        "text": "Source 004: exact λ evidence for project:proof-batch-acceptance:observation:032,project:proof-batch-acceptance:observation:033,project:proof-batch-acceptance:observation:034,project:proof-batch-acceptance:observation:035,project:proof-batch-acceptance:observation:036,project:proof-batch-acceptance:observation:037,project:proof-batch-acceptance:observation:038,project:proof-batch-acceptance:observation:039. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:shared:004",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "4"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:005",
+        "supports": [
+          "project:proof-batch-acceptance:observation:040",
+          "project:proof-batch-acceptance:observation:041",
+          "project:proof-batch-acceptance:observation:042",
+          "project:proof-batch-acceptance:observation:043",
+          "project:proof-batch-acceptance:observation:044",
+          "project:proof-batch-acceptance:observation:045",
+          "project:proof-batch-acceptance:observation:046",
+          "project:proof-batch-acceptance:observation:047"
+        ],
+        "text": "Source 005: exact λ evidence for project:proof-batch-acceptance:observation:040,project:proof-batch-acceptance:observation:041,project:proof-batch-acceptance:observation:042,project:proof-batch-acceptance:observation:043,project:proof-batch-acceptance:observation:044,project:proof-batch-acceptance:observation:045,project:proof-batch-acceptance:observation:046,project:proof-batch-acceptance:observation:047. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:shared:005",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "5"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:006",
+        "supports": [
+          "project:proof-batch-acceptance:observation:048",
+          "project:proof-batch-acceptance:observation:049",
+          "project:proof-batch-acceptance:observation:050",
+          "project:proof-batch-acceptance:observation:051",
+          "project:proof-batch-acceptance:observation:052",
+          "project:proof-batch-acceptance:observation:053",
+          "project:proof-batch-acceptance:observation:054",
+          "project:proof-batch-acceptance:observation:055"
+        ],
+        "text": "Source 006: exact λ evidence for project:proof-batch-acceptance:observation:048,project:proof-batch-acceptance:observation:049,project:proof-batch-acceptance:observation:050,project:proof-batch-acceptance:observation:051,project:proof-batch-acceptance:observation:052,project:proof-batch-acceptance:observation:053,project:proof-batch-acceptance:observation:054,project:proof-batch-acceptance:observation:055. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:shared:006",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "6"
+        }
+      },
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:007",
+        "supports": [
+          "project:proof-batch-acceptance:observation:056",
+          "project:proof-batch-acceptance:observation:057",
+          "project:proof-batch-acceptance:observation:058",
+          "project:proof-batch-acceptance:observation:059",
+          "project:proof-batch-acceptance:observation:060",
+          "project:proof-batch-acceptance:observation:061",
+          "project:proof-batch-acceptance:observation:062",
+          "project:proof-batch-acceptance:observation:063"
+        ],
+        "text": "Source 007: exact λ evidence for project:proof-batch-acceptance:observation:056,project:proof-batch-acceptance:observation:057,project:proof-batch-acceptance:observation:058,project:proof-batch-acceptance:observation:059,project:proof-batch-acceptance:observation:060,project:proof-batch-acceptance:observation:061,project:proof-batch-acceptance:observation:062,project:proof-batch-acceptance:observation:063. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:shared:007",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "shared",
+          "ordinal": "7"
+        }
+      }
+    ]
+  }
+}

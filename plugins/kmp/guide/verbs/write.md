@@ -164,8 +164,11 @@ whole instead of clipped before a negation or condition. Unknown clocks remain
 unknown. `links.from` and `links.to` index stored items in this packet only.
 `partial`, `omitted` and `omitted_conflicts` disclose excluded items; the last
 counts omitted facts participating in explicit conflicts, not unique disputes.
-`expand_context` offers full-detail reads in the explicitly consulted abouts.
-Those reads may include broader context and pages; finish relevant pages.
+`stored_abouts` names the existing-memory owners consulted before this command,
+even when the compact `items` list omitted each stored item. `expand_context`
+offers full-detail reads only for those stored owners: a new proposed about has
+no stored context to Wake. Those reads may include broader context and pages;
+finish relevant pages.
 
 After reviewing, execute `next_actions[0]` to resume the unchanged packet, or
 correct it and submit again. With `context_id` the existing continuation store

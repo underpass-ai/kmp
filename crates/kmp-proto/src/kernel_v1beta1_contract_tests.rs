@@ -104,6 +104,20 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
         ]
     );
     assert_eq!(
+        message_field_names(memory_file, "WriteNeighborhood"),
+        vec![
+            "token",
+            "items",
+            "eligible",
+            "omitted",
+            "omitted_conflicts",
+            "abouts",
+            "partial",
+            "links",
+            "stored_abouts"
+        ]
+    );
+    assert_eq!(
         message_field_names(memory_file, "MemoryBudget"),
         vec!["tokens", "detail", "depth", "max_entries", "max_bytes"]
     );

@@ -9,7 +9,8 @@ pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
     json!({
         "neighborhood": response.neighborhood.as_ref().map(|view| json!({
             "token": view.token, "eligible": view.eligible, "omitted": view.omitted,
-            "omitted_conflicts": view.omitted_conflicts, "abouts": view.abouts, "partial": view.partial,
+            "omitted_conflicts": view.omitted_conflicts, "stored_abouts": view.stored_abouts,
+            "abouts": view.abouts, "partial": view.partial,
             "links": view.links.iter().map(|link| json!({"from":link.from,"rel":link.rel,"to":link.to})).collect::<Vec<_>>(),
             "items": view.items.iter().map(|item| json!({
                 "about": item.about, "ref": item.r#ref, "state": item.state,

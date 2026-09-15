@@ -206,6 +206,9 @@ message WriteNeighborhood {
   repeated string abouts = 6;
   bool partial = 7;
   repeated NeighborhoodLink links = 8;
+  // Existing memory owners consulted before this uncommitted command. Unlike
+  // items, this remains complete when compact review omits stored context.
+  repeated string stored_abouts = 9;
 }
 
 // Indices address stored items in this compact packet.

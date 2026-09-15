@@ -1861,7 +1861,7 @@
             "type": "boolean"
           },
           "expand_context": {
-            "description": "Explicit-about native reads to expand omitted surroundings. Complete their relevant pages.",
+            "description": "Native reads only for stored_abouts to expand omitted stored surroundings. Complete their relevant pages.",
             "type": "array"
           },
           "feedback": {
@@ -1963,7 +1963,7 @@
             "type": "object"
           },
           "neighborhood": {
-            "description": "Bounded literal context: stored/proposed items, exact refs, clocks, reasons, omissions and token. Proximity does not prove a relation; expand partial context when needed.",
+            "description": "Bounded literal context: stored/proposed items, exact refs, clocks, reasons, omissions, token and complete stored_abouts ownership. Proximity does not prove a relation; expand partial stored context when needed.",
             "type": "object"
           },
           "next_actions": {

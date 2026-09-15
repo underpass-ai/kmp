@@ -126,3 +126,63 @@ async fn incoming_identity_keeps_its_stored_arrow_and_foreign_about_is_excluded(
         Some("Record: p same_entity_as s.")
     );
 }
+
+#[tokio::test]
+async fn account_reassignment_keeps_the_account_and_each_temporal_owner_distinct() {
+    let mut mutations = vec![
+        node("s"),
+        node("account"),
+        node("alice"),
+        node("bob"),
+        edge("s", "account", "uses_background", Some(EARLY)),
+        edge("account", "alice", "assigned_to", Some(EARLY)),
+        edge("account", "bob", "assigned_to", Some(LATE)),
+    ];
+    for id in ["s", "account", "alice", "bob"] {
+        mutations.push(label(id, "account", "A17", EARLY));
+    }
+    let (_dir, store) = store(mutations).await;
+    let mut query = request(vec![role(
+        "owner",
+        &["uses_background", "assigned_to"],
+        vec![],
+    )]);
+    query.temporal =
+        TemporalSelection::as_of(TemporalCursor::Time(EARLY.into()), TemporalAxis::Observed)
+            .expect("cut");
+    let early = store
+        .load_evidence_paths(&query)
+        .await
+        .expect("early owner");
+    assert_eq!(early.candidates.len(), 1);
+    assert_eq!(early.candidates[0].nodes, ["s", "account", "alice"]);
+
+    query.temporal =
+        TemporalSelection::as_of(TemporalCursor::Time(LATE.into()), TemporalAxis::Observed)
+            .expect("cut");
+    let later = store
+        .load_evidence_paths(&query)
+        .await
+        .expect("later owners");
+    assert_eq!(later.candidates.len(), 2);
+    assert_eq!(
+        later
+            .candidates
+            .iter()
+            .map(|candidate| candidate.nodes.last().expect("owner").as_str())
+            .collect::<std::collections::BTreeSet<_>>(),
+        ["alice", "bob"].into()
+    );
+    assert!(
+        later
+            .groups
+            .iter()
+            .all(|group| group.bindings.domains.is_empty())
+    );
+    assert!(
+        later
+            .relations
+            .iter()
+            .all(|relation| relation.relation_type != "same_entity_as")
+    );
+}
