@@ -36,13 +36,19 @@ integrating product, not here.
 
 ## Local checks
 
-For documentation-only changes, run the focused documentation contracts:
+Choose checks for the documentation you changed. For public READMEs and the
+plugin capability inventory:
 
 ```bash
-bash scripts/ci/documentation-spine.sh
+cargo test --locked -p kmp-release --test public_readme_contract
 python3 scripts/ci/kmp-capability-contract.py
-python3 scripts/ci/kmp-agent-routing-contract.py
 ```
+
+The overview block in `plugins/kmp/README.md` is canonical; synchronize it
+with `cargo run --locked --quiet -p kmp-release -- readme sync`. For installed
+guide changes, follow the source, generation and behavioral checks in the
+[agent surface procedure](docs/development/agent-surface.md). Do not hand-edit
+generated guides or add editorial CI gates.
 
 For Rust changes, start with:
 
@@ -73,7 +79,8 @@ binary must never guess which engine owns an existing store.
 
 ## Pull Requests
 
-Good PRs here are small, explicit, and technically narrow.
+Start new branches from current `origin/main` and explicitly target `main`
+when opening a PR. Keep the change focused and include its validation.
 
 Please include:
 

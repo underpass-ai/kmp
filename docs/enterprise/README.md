@@ -19,8 +19,10 @@ real requirement.
 | Security | No memory network boundary | TLS/mTLS, identity and authorization boundaries |
 | Observability | Local logs and quality journal | Structured logs and optional OTLP pipeline |
 
-The agent-facing MCP server still advertises the same fifteen tools. The plugin
-and skills do not become a second protocol.
+The agent-facing MCP server uses the shared memory contract. The plugin and
+skills do not become a second protocol. Backend support is not universal:
+`kmp_summaries_audit` is unavailable over gRPC, and the embedded loopback viewer
+requires a local kernel. Check the live catalogue and backend errors.
 
 ## Architecture
 

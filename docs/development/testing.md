@@ -15,7 +15,12 @@ The pull-request gate is defined by
 [`.github/workflows/quality-gate.yml`](../../.github/workflows/quality-gate.yml).
 Do not infer current coverage from archived testing prose.
 
-## Fast local checks
+## Select local checks for the change
+
+For documentation, use the focused checks in [Contributing](../../CONTRIBUTING.md)
+and the [agent surface procedure](agent-surface.md) when installed guidance
+changes. The commands below cover broader Rust and retrieval changes; a full
+workspace test or retrieval baseline is not a quick prose check.
 
 ```bash
 cargo fmt --all -- --check
@@ -109,7 +114,7 @@ Inspect a proposed route locally without running it:
 
 ```bash
 python3 scripts/ci/quality-gate-plan.py --path crates/kmp-adapter-valkey/src/lib.rs
-python3 scripts/ci/quality-gate-plan.py --path docs/architecture/index.md
+python3 scripts/ci/quality-gate-plan.py --path docs/architecture/README.md
 python3 scripts/ci/quality-gate-plan.py --self-test
 ```
 

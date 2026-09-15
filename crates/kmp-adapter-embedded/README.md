@@ -13,16 +13,16 @@ server, no cluster, no daemon.
 ## One engine
 
 The ports are written once against a small storage seam. Every new directory
-is SQLite and records format 2. No retired engine is linked.
+is SQLite and records store format 3. No retired engine is linked.
 
 | Engine | `FORMAT_VERSION` | Store file | Availability |
 | --- | --- | --- | --- |
-| SQLite, WAL mode | 2 | `store/kernel.sqlite3` | active; always available |
+| SQLite, WAL mode | 3 | `store/kernel.sqlite3` | active; always available |
 
 Two agent hosts can open the same project memory, readers do not block the
 writer, and a second writer waits for the commit lock. SQLite passes the full
-conformance, `kill -9` recovery and two-process no-lost-events suites. See
-ADR-018. An unsupported store format is detected and rejected without touching
+conformance, `kill -9` recovery and two-process no-lost-events suites. See the
+[recovery runbook](https://github.com/underpass-ai/kmp/blob/main/docs/runbooks/embedded-recovery.md). An unsupported store format is detected and rejected without touching
 its bytes; preserve it, export with an explicitly archived compatible binary,
 then import the portable bundle into an empty current store.
 

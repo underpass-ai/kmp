@@ -2,7 +2,8 @@
 
 Embedded KMP is the default product path. The coding-agent host starts
 `kmp-mcp` as a local child process, communicates over stdio and runs the kernel
-inside that process. No KMP server, database, account or API key is required.
+inside that process. No separate KMP server, database server, account or API
+key is required.
 
 ## Install
 
@@ -23,7 +24,10 @@ codex plugin add kmp@underpass
 
 For Codex, ask the agent to run `kmp-setup`. Restart the host once after a
 setup or plugin update, because a running session keeps the MCP inventory it
-started with.
+started with. Then run `kmp-guide` in Codex or `/kmp:guide` in Claude Code
+to synchronize the installed guides into the selected store. This explicit
+step writes memory; setup only installs the assets. A fresh store can report
+`GUIDE_UNAVAILABLE` until it has matching guides.
 
 The plugin must be the single MCP owner. Do not combine it with standalone
 global `mcp_servers.kmp` or retired `mcp_servers.kernel-memory` wiring.
@@ -93,8 +97,8 @@ no store. A directory holding memory this engine cannot open is refused with
 the reason and the repair: KMP never migrates, moves, converts or overwrites an
 existing store, and the refused directory keeps every byte it had.
 
-SQLite permits multiple local agent hosts to share one store. To recover a
-format-1 store, stop its writers and preserve the directory. Use an explicitly
+SQLite permits multiple local agent hosts to share one store. To recover an
+unsupported store, stop its writers and preserve the directory. Use an explicitly
 archived compatible exporter to create a portable bundle, then import it into
 an empty current store. The recovery runbook defines that external contract.
 
@@ -149,11 +153,12 @@ Run `kmp-mcp --help` for the live command contract.
 | `viewer [addr]` | Serve the viewer without an MCP host session. |
 | `uninstall [--store <path> \| --engine <path>] [--apply]` | Preview the whole installation, one exact store or one exact engine; the preview marks pieces a live host still holds, apply refuses live owners, and it runs only when explicitly requested. |
 
-The ten MCP memory tools are a separate surface advertised by `tools/list`.
+The MCP tools are a separate surface advertised by the live `tools/list`
+catalogue; CLI verbs and model tools are not interchangeable inventories.
 
 `--about` is repeatable and matches `root_node_id` byte-for-byte. A requested
 about with no events fails before the destination is created. Filtered bundles
-are complete format-2 bundles: their header names only the included abouts and
+are complete format-3 bundles (`bundle_format: 3`, `event_format: 2`): their header names only the included abouts and
 its count, digest and range cover only the filtered payload. `event_range` is
 bundle-local, so filtered payload positions are renumbered from one; aggregate
 revisions and refs are preserved.

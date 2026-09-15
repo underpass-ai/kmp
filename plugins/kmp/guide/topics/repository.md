@@ -12,12 +12,13 @@ export and inspect its diff, then use `kmp-mcp export --repair-pending` to
 acknowledge recovery. The normal export intentionally does not clear an
 in-flight marker that could belong to another SQLite writer.
 
-It is one JSON object per line in sequence order, so an append-only log
-appears in `git diff` as appended lines. A session that recorded three
-decisions is three new lines plus the header update, and each line carries who
-wrote it and the rationale of every relation, verbatim. The format-2 header
-names the snapshot, creation time, event range, about coverage and SHA-256, so
-a saved copy can be verified before restore.
+The bundle contains a header followed by one JSON event per line in sequence
+order. An event can contain several memories and relations, so the number of
+new lines is not the number of decisions. The payload preserves stored
+authorship and relation rationale. The format-3 header (`bundle_format: 3`,
+`event_format: 2`) names the snapshot, creation time, event range, about
+coverage and SHA-256, so a saved copy can be verified before restore. The
+portable event format and the on-disk store format are separate contracts.
 
 Use named snapshots when a release or risky change needs a recovery point:
 

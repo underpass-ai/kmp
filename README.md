@@ -45,7 +45,7 @@ KMP gives the agent a typed, temporal memory instead of a bag of text:
 The normal path runs entirely on your machine. No KMP account. No hosted
 memory server. No Underpass cloud.
 
-## Install. Run setup. Done.
+## Install and initialize your memory
 
 ### Codex CLI
 
@@ -72,7 +72,12 @@ kmp-mcp info
 kmp-mcp doctor
 ```
 
-That is the happy path. The plugin owns the MCP registration, so do not add a
+Then ask Codex to run `kmp-guide`, or run `/kmp:guide` in Claude Code. This
+loads the installed agent and human guides into the selected store. Setup
+installs assets without writing memory; a fresh store can return
+`GUIDE_UNAVAILABLE` until the explicit guide sync runs.
+
+The plugin owns the MCP registration, so do not add a
 second KMP server by hand. Store selection and repair live in
 [Embedded KMP](docs/embedded/README.md).
 
@@ -84,12 +89,12 @@ You normally ask for the outcome. The KMP skill chooses the memory moves.
 |:--|:--|:--|
 | “Continue the KMP documentation work.” | Wakes `project:kmp` before re-deriving it. | Current decisions, constraints and next actions. |
 | “Why did we choose SQLite?” | Asks memory and follows the stored evidence. | A grounded answer, or `UNKNOWN`. |
-| “What happened yesterday?” | Resolves the interval and navigates every temporal page. | Ordered memory from that period. |
+| “What does KMP remember from yesterday?” | Resolves the interval and navigates every temporal page. | Ordered memory from that period. |
 | “Why was the launch postponed in March?” | Asks memory standing within March: only what fell inside competes, and the lifecycles are read as they stood then. | A grounded answer from that time, or `UNKNOWN` naming the nearest match outside the span. |
 | “Remember that retries are capped at two because logs showed amplification.” | Records the decision, its evidence and meaningful relations. | Durable state with an auditable why. |
 | “Show the proof between this incident and that decision.” | Traces the typed path and inspects its evidence. | The stored connection, rationale and sources. |
 | “Undo that decision.” | Writes a state that supersedes the old one. | Both decisions remain visible in time. |
-| “Save the project memory.” | Publishes the maintained project bundle and shows its diff. | Reviewable `.kmp/memory.jsonl`. |
+| “Save the project memory.” | Exports the maintained project bundle and shows its diff. | Reviewable `.kmp/memory.jsonl`. |
 
 KMP is memory, not surveillance. Store durable decisions and evidence, not
 transcripts.
@@ -162,7 +167,7 @@ agent identity and progressive guidance. `tools/list` is the authority.
 | `kmp_near` | Inspect the temporal neighborhood around a cursor. |
 | `kmp_rewind` | Move backward through memory. |
 | `kmp_forward` | Move forward through memory. |
-| `kmp_trace` | Prove the path between two refs owned by an explicit `about`. |
+| `kmp_trace` | Audit a path between two refs, or search for evidence from seed refs; inspect returned support and completeness. |
 | `kmp_inspect` | Inspect one object inside an explicit `about`, with its links and evidence. |
 | `kmp_write_memory` | Validate and record a decision, constraint or outcome. |
 | `kmp_ingest` | Ingest an exact canonical memory graph. |
@@ -192,12 +197,15 @@ the relation vocabulary.
 | Viewer | Read-only loopback HTTP, normally rooted at `http://127.0.0.1:7317/`, behind a random per-session capability. |
 | External services | None required. |
 | Underpass | Receives no memory and operates no service in this path. |
-| Updates | Setup may contact GitHub Releases for checksummed packages. |
+| Updates | Setup and updates contact GitHub Releases for checksummed packages; the Claude session hook can check releases daily. |
+| Local metadata | Agent identities and guide delivery records live outside memory retrieval; quality diagnostics use a separate local journal. |
 | Cloud agents | Evidence returned to a cloud agent follows that host's data policy. |
 
 `.kernel/` is machine state and is ignored by git. A project-scoped store also
-maintains `.kmp/memory.jsonl`; it leaves your machine only if you deliberately
-commit or copy it.
+maintains `.kmp/memory.jsonl`. Export and Git commit are local operations;
+pushing, syncing or sharing the bundle makes its contents available elsewhere.
+Review its diff before sharing. Evidence read by the agent is also subject to
+the host's data policy, independently of whether you share the bundle.
 
 ## Language without flattening the evidence
 
@@ -226,11 +234,11 @@ another language, is too thin, repeats the text, or drops an identifier the
 text carries, and ranking makes the same reading, so such a summary carries
 nothing. A citation the summary carried says so: `matched_via: summary`, with
 the question's words the rendering supplied in `summary_terms`.
-`kmp_write_memory` takes it as `current.summary_en`, and a strict write
+`kmp_write_memory` takes it as `memories[].summary_en`, and a strict write
 requires it when the memory is not written in English. A memory written
 before summaries existed still owes one: `kmp-mcp summaries pending` lists
 them, the doctor counts them, and the agent attaches each with
-`kmp_write_memory` and the intent `record_summary`, the stored text untouched.
+`kmp_write_memory` with `search_summaries` containing `ref` and `summary_en`, the stored text untouched.
 
 Questions in Chinese, Japanese or Thai are not segmented by word yet. Their
 stored memory remains byte-exact and inspectable; word-based semantic
@@ -306,8 +314,8 @@ question. That is safer than a confident invention.
 
 Run the host's `kmp-doctor` workflow and follow the
 [missing-tools runbook](docs/runbooks/mcp-tools-missing.md). The usual suspects
-are a stale host session, duplicate MCP ownership, a missing binary or another
-process holding the embedded store.
+are a stale host session, duplicate MCP ownership, a missing binary or an
+unsupported store format. Current SQLite stores support multiple local hosts.
 
 ### Is enterprise KMP paid?
 
