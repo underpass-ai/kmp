@@ -1,0 +1,296 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "KMP by Underpass",
+    "subtitle": "Memory with evidence",
+    "description": "KMP stores decisions, evidence and their relationships in local memory. Recover prior work, find the sources behind a decision, navigate its history and record new knowledge while preserving previous events. Compact cards retain their own revision history. ChronoLoom displays the same memory and evidence paths. The MCP server runs locally over stdio; evidence returned to the host model follows the host’s data policies.",
+    "category": "DEVELOPER_TOOLS"
+  },
+  "tools": {
+    "kmp_ingest": {
+      "annotations": {
+        "destructiveHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Appends canonical memory events and updates their current projections in the configured store.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Can replace the current content of existing references while retaining prior canonical events for replay."
+      }
+    },
+    "kmp_write_memory": {
+      "annotations": {
+        "destructiveHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Records memories, relationships or summaries and may persist write-review state in the configured store.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "An explicit existing reference can replace current memory content while prior canonical events remain available for replay."
+      }
+    },
+    "kmp_wake": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_ask": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_relate": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_goto": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_near": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_rewind": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_forward": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_trace": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_inspect": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_relabel": {
+      "annotations": {
+        "destructiveHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Records label-membership changes as events and updates current memberships in the configured store.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Can remove current label memberships and change selection visibility while retaining the earlier membership events."
+      }
+    },
+    "kmp_condense": {
+      "annotations": {
+        "destructiveHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Appends an authored card revision and updates its current projection and maintained project bundle.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Can replace the currently selected authored card while preserving earlier card revisions in replayable event history."
+      }
+    },
+    "kmp_summaries_audit": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
+      }
+    },
+    "kmp_view_open": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Opens or rehydrates a bounded local memory view and can persist operational usage metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Changes viewer state without deleting or replacing canonical memory."
+      }
+    },
+    "kmp_view_apply_intent": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Changes the local view focus, selection, filters or temporal position with revision checks.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Makes reversible navigation changes without modifying canonical memory history."
+      }
+    },
+    "kmp_view_get_state": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves local view state and can persist operational usage metadata.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete memory or change the selected view state."
+      }
+    },
+    "kmp_guide": {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Registers or resumes agent identity, contexts and guide-delivery records in local operational storage.",
+        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
+        "destructive_justification": "Does not delete canonical memory or perform destructive administration."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Record a decision with evidence and resume it.",
+      "user_prompt": "Use KMP to remember that the sample project chose SQLite for local operation because the application must work offline, then recover that decision.",
+      "file_attachment_urls": null,
+      "tools_triggered": "kmp_guide, kmp_write_memory, kmp_wake",
+      "expected_output": "Records the decision with its supplied rationale and evidence and recovers it from the same memory scope.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Answer from evidence and disclose missing knowledge.",
+      "user_prompt": "Ask KMP why the sample project chose SQLite and whether it recorded a decision to use PostgreSQL.",
+      "file_attachment_urls": null,
+      "tools_triggered": "kmp_ask, kmp_inspect",
+      "expected_output": "Returns the stored rationale with evidence and reports missing knowledge for an unrecorded decision without inventing it.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Navigate recorded history with explicit temporal boundaries.",
+      "user_prompt": "Use KMP to find the sample project decision as it was recorded on September 1, then show the preceding and following entries and nearby context.",
+      "file_attachment_urls": null,
+      "tools_triggered": "kmp_goto, kmp_rewind, kmp_forward, kmp_near",
+      "expected_output": "Returns the requested temporal selections with their clocks and evidence, preserving pagination and leaving stored history unchanged.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Audit relationships and view the evidence path.",
+      "user_prompt": "Use KMP to show the evidence connecting the sample project decision to its supporting observation, and open that path in ChronoLoom.",
+      "file_attachment_urls": null,
+      "tools_triggered": "kmp_relate, kmp_trace, kmp_inspect, kmp_view_open, kmp_view_apply_intent, kmp_view_get_state",
+      "expected_output": "Shows stored links and evidence, distinguishes proposals from established relationships, and displays the requested path in the local viewer.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Revise a compact card with source and revision checks.",
+      "user_prompt": "Use KMP to write a short card for the long synthetic evidence body, revise it after rereading the source, and show the earlier card through a historical compact read.",
+      "file_attachment_urls": null,
+      "tools_triggered": "kmp_inspect, kmp_condense, kmp_trace",
+      "expected_output": "Stores both authored revisions in event history, rejects stale source or card expectations, and selects the eligible earlier card without changing canonical evidence.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Unrelated general-knowledge request.",
+      "user_prompt": "Explain photosynthesis.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Does not invoke KMP because the request does not concern stored memory.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Open public-web search outside the configured memory.",
+      "user_prompt": "Search the web for today’s cheapest flights to Madrid.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Does not invoke KMP because it does not search public travel providers.",
+      "expected_output_url": null
+    },
+    {
+      "description": "External communication outside memory operations.",
+      "user_prompt": "Email my team the meeting agenda.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Does not invoke KMP to send email because it has no email delivery capability.",
+      "expected_output_url": null
+    }
+  ]
+}

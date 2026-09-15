@@ -9,6 +9,13 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- Native MCP tools now declare explicit read-only, open-world and destructive
+  annotations. Current-state replacement modes are labeled conservatively;
+  canonical memory and authored card events remain preserved. The submission
+  worksheet includes per-tool justifications and synthetic review scenarios.
+
 ## [0.18.8] - 2026-09-15
 
 ### Fixed
