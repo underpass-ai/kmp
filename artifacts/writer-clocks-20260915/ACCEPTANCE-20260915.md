@@ -79,6 +79,37 @@ audit must report the boundary rather than describe an automated inspection as
 human review. Delivery of context is not proof of comprehension, and this
 single writer has no comparison arm from which to infer causal improvement.
 
+Sol completed this protocol on final main. The accepted representation has six
+entries, five relations and eleven evidence items. It separates J4 at 09:00,
+C7 at 09:07, the quantity-only correction at 09:08, unresolved R3 conflict at
+09:09, the 10:00 source receipt and the 10:15 association. Its five relations
+preserve `transfer -> verified_by -> C7`, `63 -> corrects -> 62`,
+`61 -> contradicts -> 63`, and both older constraints. Relation occurrence and
+validity remain absent. An exact retry replayed the accepted receipt and its
+original ingestion clock.
+
+The first packet was rejected for invalid kinds. Sol then noticed a reversed
+`verified_by` direction in its own proposal, consulted the served neighborhood
+and guide, corrected it, completed the context pages and resumed the opaque
+continuation. This is observed behavior from one writer, not a causal comparison
+or proof of comprehension. `source_coverage` remains `not_assessed`.
+
+The source and instructions accidentally omitted the seeded about identifier.
+Three guessed Wake calls returned `not_found`; the coordinator then supplied
+only the exact seeded about, `project:fresh-final-main-n41`. Those failures and
+the correction remain in the trace. They do not become source facts or an
+expected semantic answer.
+
+The complete session contains 33 native calls, 20,040 request bytes, 438,931
+response bytes and 113,088 visible `o200k_base` tokens. Recorded local call
+latency totals 1,221.360 ms, median 16.200 ms, nearest-rank p95 84.829 ms and
+maximum 285.749 ms. These are driver-side local timings, not a benchmark. The
+driver made no model/API calls.
+
+`CHRONOLOOM-REVIEW.md` names the exact six refs and human checklist on a
+byte-identical store copy. Human review is still pending, so #683's ordering
+condition is preserved and no independent reader has run.
+
 ## Reproduction
 
 ```bash
