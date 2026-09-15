@@ -1,7 +1,7 @@
 {
   "git_commit": "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
   "model": "gpt-5.6-sol",
-  "reasoning_effort": "low",
+  "reasoning_effort": "not_captured",
   "about": "project:fresh-final-main-n41",
   "binary": {
     "path": "target/debug/kmp-mcp",
@@ -15,7 +15,7 @@
     "driver.py": "6e25f00417403ce95e1f126578045d7211f86c7034b0465c906f149ea01b0d8a",
     "fresh-final-main-native.jsonl": "e8fdb70a08db622c18c6cd918415309f04bda31af4351194e557b0b41564b05f",
     "fresh-final-main-report.md": "3b0b6ed7a110ee2ead50d325332cd53c073d1463ff1edea4d82ae576bc89105e",
-    "fresh-final-main-store/kernel.sqlite3": "3a9a0918767fa2599e19b058c3181e935d042ee8d17419e2c93b60bd89481211"
+    "fresh-final-main-store/artifacts/writer-clocks-20260915/fresh-final-main-store/store/kernel.sqlite3": "3a9a0918767fa2599e19b058c3181e935d042ee8d17419e2c93b60bd89481211"
   },
   "accepted": {
     "entries": 6,

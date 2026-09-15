@@ -21,6 +21,12 @@ store; it is recorded in the native trace before the writer's first call. The
 fresh writer receives the source and instructions, not the seed payload or any
 expected response.
 
+`fresh-final-main-metrics.json` is the initially published derived measurement;
+`fresh-final-main-metrics-v1.json` preserves it with its known limits.
+`fresh-final-main-metrics-v2.json` is authoritative: it uses the stated
+nearest-rank formula and separates hidden preparation from driver-emitted
+responses. None of these counts measures actual host context.
+
 ## Recorded independent writer
 
 `fresh-luna-report.md` and `fresh-luna-native.jsonl.gz` retain a fresh

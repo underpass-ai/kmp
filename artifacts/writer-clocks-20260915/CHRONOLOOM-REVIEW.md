@@ -6,9 +6,9 @@ store. Both database files had SHA-256
 before the view was opened. View state is camera state on the copy and does not
 change memory records. No independent reader has run.
 
-Open the live loopback view:
-
-`http://127.0.0.1:41345/?k=03d9d6a114df64dee1922be5fcc72b2efbf788fc24b3593ba4545f8d9cc5f528`
+The live loopback capability is supplied directly to the reviewer. It is
+session-local access material and is intentionally absent from this public
+artifact.
 
 The prepared view uses the observed axis, episode zoom, `task` and `source`
 lanes, and evidential/constraint relations. It focuses these records:

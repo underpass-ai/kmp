@@ -101,8 +101,11 @@ the correction remain in the trace. They do not become source facts or an
 expected semantic answer.
 
 The complete session contains 33 native calls, 20,040 request bytes, 438,931
-response bytes and 113,088 visible `o200k_base` tokens. Recorded local call
-latency totals 1,221.360 ms, median 16.200 ms, nearest-rank p95 84.829 ms and
+response bytes and 113,088 total native request/response `o200k_base` tokens,
+including initialization, catalogue and the hidden seed RPC. The v2 metrics
+separately report preparation, writer-interactive calls and driver-emitted
+responses; none measures actual model-host context. Recorded local call
+latency totals 1,221.360 ms, median 16.200 ms, nearest-rank p95 211.706 ms and
 maximum 285.749 ms. These are driver-side local timings, not a benchmark. The
 driver made no model/API calls.
 

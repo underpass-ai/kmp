@@ -3,6 +3,7 @@
 import argparse
 from collections import Counter
 import json
+import math
 from pathlib import Path
 import statistics
 
@@ -11,7 +12,7 @@ import tiktoken
 
 def percentile(values, fraction):
     ordered = sorted(values)
-    return ordered[min(len(ordered) - 1, round((len(ordered) - 1) * fraction))]
+    return ordered[max(0, math.ceil(len(ordered) * fraction) - 1)]
 
 
 def main():
@@ -37,13 +38,26 @@ def main():
             statuses[structured["status"]] += 1
         if call["response"].get("result", {}).get("isError"):
             rejected.append(request["id"])
-        if structured.get("summary", "").startswith("UNKNOWN"):
+        if structured.get("answer") == "UNKNOWN" or structured.get("summary", "").startswith("UNKNOWN"):
             unknown.append(request["id"])
     latencies = [call["latency_ms"] for call in calls]
     request_tokens = sum(len(encoder.encode(
         json.dumps(call["request"], ensure_ascii=False, separators=(",", ":")))) for call in calls)
     response_tokens = sum(len(encoder.encode(
         json.dumps(call["response"], ensure_ascii=False, separators=(",", ":")))) for call in calls)
+    preparation = [call for call in calls if call["request"]["id"] <= 3]
+    interactive = [call for call in calls if call["request"]["id"] > 3]
+    emitted = [call for call in calls if call["request"]["id"] != 3]
+    def totals(selected):
+        return {
+            "calls": len(selected),
+            "request_bytes": sum(call["request_bytes"] for call in selected),
+            "response_bytes": sum(call["response_bytes"] for call in selected),
+            "request_tokens": sum(len(encoder.encode(json.dumps(
+                call["request"], ensure_ascii=False, separators=(",", ":")))) for call in selected),
+            "response_tokens": sum(len(encoder.encode(json.dumps(
+                call["response"], ensure_ascii=False, separators=(",", ":")))) for call in selected),
+        }
     result = {
         "trace": str(args.trace),
         "tokenizer": f"tiktoken {tiktoken.__version__} o200k_base",
@@ -53,7 +67,16 @@ def main():
         "response_bytes": sum(call["response_bytes"] for call in calls),
         "request_tokens": request_tokens,
         "response_tokens": response_tokens,
-        "visible_tokens": request_tokens + response_tokens,
+        "native_request_response_tokens": request_tokens + response_tokens,
+        "preparation_initialize_list_and_hidden_seed": totals(preparation),
+        "writer_interactive_native_calls": totals(interactive),
+        "driver_emitted_responses": {
+            "responses": len(emitted),
+            "bytes": sum(call["response_bytes"] for call in emitted),
+            "tokens": sum(len(encoder.encode(json.dumps(
+                call["response"], ensure_ascii=False, separators=(",", ":")))) for call in emitted),
+            "scope": "Responses printed by the driver except the hidden seed response; not measured host context."
+        },
         "latency_ms": {
             "sum": sum(latencies),
             "mean": statistics.mean(latencies),
