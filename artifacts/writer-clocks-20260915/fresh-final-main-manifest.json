@@ -1,0 +1,42 @@
+{
+  "git_commit": "fc352d7d37ac0480cc79120a6288bfd446fa4c86",
+  "model": "gpt-5.6-sol",
+  "reasoning_effort": "not_captured",
+  "about": "project:fresh-final-main-n41",
+  "binary": {
+    "path": "target/debug/kmp-mcp",
+    "sha256": "8ff8ca3217639aa61d72d258b0c8b880803e3bd7d8705fb666d14bd38ca72675"
+  },
+  "guide_sha256": "252ca0a37f4bd2a1ce44060c921a0fdee4cc289333241653dd9acd0015dbe2f1",
+  "files": {
+    "FRESH-SOURCE.md": "aec6a6fa06aa74994338399ec083b6760d501da242a3944e1e9ae606a5a7fa0c",
+    "FRESH-WRITER-INSTRUCTIONS.md": "c9f8e936916328ede1b5df5581b56496b036bb6e6d8d8ff4dd62571dddb6b591",
+    "FRESH-SEED-REQUEST.json": "78e856f5cb7292b91d4459c24603bfcc56448353d62b2ece69ad881804a22ee2",
+    "driver.py": "6e25f00417403ce95e1f126578045d7211f86c7034b0465c906f149ea01b0d8a",
+    "fresh-final-main-native.jsonl": "e8fdb70a08db622c18c6cd918415309f04bda31af4351194e557b0b41564b05f",
+    "fresh-final-main-report.md": "3b0b6ed7a110ee2ead50d325332cd53c073d1463ff1edea4d82ae576bc89105e",
+    "fresh-final-main-store/artifacts/writer-clocks-20260915/fresh-final-main-store/store/kernel.sqlite3": "3a9a0918767fa2599e19b058c3181e935d042ee8d17419e2c93b60bd89481211"
+  },
+  "accepted": {
+    "entries": 6,
+    "relations": 5,
+    "evidence": 11,
+    "receipt": "receipt:v1:project%3Afresh-final-main-n41:fresh-final-main-n41-write-v1",
+    "ingested_at": "2026-09-15T15:40:38.773013764Z",
+    "replay_observed": true,
+    "source_coverage": "not_assessed"
+  },
+  "preparation_correction": {
+    "missing_field": "about",
+    "value_supplied_after_three_not_found_wakes": "project:fresh-final-main-n41",
+    "source_or_expected_answer_supplied": false
+  },
+  "independent_reader_run": false,
+  "human_chronoloom_review": {
+    "status": "accepted",
+    "view_revision": 2,
+    "visible_focus": "J4 selected with verified_by path to C7",
+    "response": "OK",
+    "scope": "bounded conformity with the displayed J4-focused view"
+  }
+}

@@ -14,6 +14,7 @@ import selectors
 import subprocess
 import sys
 import tempfile
+import time
 
 
 def digest(path):
@@ -33,12 +34,21 @@ class Client:
     def rpc(self, method, params):
         self.counter += 1
         request = {'jsonrpc': '2.0', 'id': self.counter, 'method': method, 'params': params}
-        self.process.stdin.write(json.dumps(request, ensure_ascii=False) + '\n')
+        request_wire = json.dumps(request, ensure_ascii=False, separators=(',', ':'))
+        started = time.perf_counter_ns()
+        self.process.stdin.write(request_wire + '\n')
         self.process.stdin.flush()
         if not self.selector.select(60):
             raise TimeoutError(f'MCP did not answer {method}')
-        response = json.loads(self.process.stdout.readline())
-        self.trace.write(json.dumps({'request': request, 'response': response}, ensure_ascii=False) + '\n')
+        response_wire = self.process.stdout.readline()
+        elapsed_ns = time.perf_counter_ns() - started
+        response = json.loads(response_wire)
+        self.trace.write(json.dumps({
+            'request': request, 'response': response,
+            'request_bytes': len(request_wire.encode()),
+            'response_bytes': len(response_wire.rstrip('\n').encode()),
+            'latency_ms': elapsed_ns / 1_000_000,
+        }, ensure_ascii=False) + '\n')
         self.trace.flush()
         return response
 
@@ -61,8 +71,8 @@ def emit(value):
 def run(args):
     binary = args.binary.resolve()
     root = Path(__file__).resolve().parents[2]
-    source = Path(__file__).with_name('SOURCE.md')
-    instructions = Path(__file__).with_name('WRITER-INSTRUCTIONS.md')
+    source = (args.source or Path(__file__).with_name('SOURCE.md')).resolve()
+    instructions = (args.instructions or Path(__file__).with_name('WRITER-INSTRUCTIONS.md')).resolve()
     args.trace.parent.mkdir(parents=True, exist_ok=True)
     scratch = root / 'tmp'
     scratch.mkdir(exist_ok=True)
@@ -96,6 +106,20 @@ def run(args):
                 ('tools/list', {}),
             ]:
                 emit(client.rpc(method, params))
+            if args.seed_request:
+                seeded = json.loads(args.seed_request.read_text())
+                response = client.rpc(
+                    'tools/call',
+                    {'name': seeded['tool'], 'arguments': seeded['arguments']},
+                )
+                content = response.get('result', {}).get('structuredContent', {})
+                if content.get('status') not in ('committed', 'replayed'):
+                    raise RuntimeError(f'isolated seed was not accepted: {response}')
+                trace.write(json.dumps({
+                    'preparation': 'source-backed isolated seed accepted',
+                    'seed_request_sha256': digest(args.seed_request),
+                }) + '\n')
+                trace.flush()
             for line in sys.stdin:
                 line = line.strip()
                 if line == 'quit':
@@ -123,4 +147,7 @@ if __name__ == '__main__':
     parser.add_argument('--trace', type=Path, required=True)
     parser.add_argument('--store', type=Path)
     parser.add_argument('--plugin-root', type=Path)
+    parser.add_argument('--source', type=Path)
+    parser.add_argument('--instructions', type=Path)
+    parser.add_argument('--seed-request', type=Path)
     run(parser.parse_args())

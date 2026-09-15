@@ -1,0 +1,43 @@
+{
+  "trace": "artifacts/writer-clocks-20260915/fresh-final-main-native.jsonl",
+  "tokenizer": "tiktoken 0.14.0 o200k_base",
+  "calls": 33,
+  "calls_by_name": {
+    "initialize": 1,
+    "kmp_ask": 2,
+    "kmp_goto": 3,
+    "kmp_guide": 6,
+    "kmp_inspect": 3,
+    "kmp_wake": 11,
+    "kmp_write_memory": 6,
+    "tools/list": 1
+  },
+  "request_bytes": 20040,
+  "response_bytes": 438931,
+  "request_tokens": 6068,
+  "response_tokens": 107020,
+  "visible_tokens": 113088,
+  "latency_ms": {
+    "sum": 1221.359766,
+    "mean": 37.010902,
+    "median": 16.20017,
+    "p95_nearest_rank": 84.829445,
+    "maximum": 285.749002
+  },
+  "write_statuses": {
+    "committed": 2,
+    "needs_review": 2,
+    "rejected": 1,
+    "replayed": 1
+  },
+  "error_response_ids": [
+    9,
+    10,
+    11,
+    14,
+    15,
+    18
+  ],
+  "unknown_response_ids": [],
+  "model_calls_by_driver": 0
+}
