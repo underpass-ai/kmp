@@ -172,19 +172,21 @@ impl KernelMcpServer {
             return self.handle_kmp_guide(id, arguments, start).await;
         }
 
-        let resolved = match {
+        let resolved_result = {
             let _eval539_span =
                 kmp_domain::eval539_profile::span("dispatch.resolve_read_arguments");
             self.resolve_read_arguments(name, arguments)
-        } {
+        };
+        let resolved = match resolved_result {
             Ok(resolved) => resolved,
             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
         };
         let arguments = resolved.as_ref().unwrap_or(arguments);
-        let guidance = match {
+        let guidance_result = {
             let _eval539_span = kmp_domain::eval539_profile::span("dispatch.guidance_prepare");
             super::call_guidance::CallGuidance::prepare(self, arguments)
-        } {
+        };
+        let guidance = match guidance_result {
             Ok(guidance) => guidance,
             Err(error) => return jsonrpc_result(id, tool_error_result(name, arguments, &error)),
         };

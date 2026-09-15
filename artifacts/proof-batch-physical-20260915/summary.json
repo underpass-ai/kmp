@@ -1,0 +1,320 @@
+[
+  {
+    "shape": "001-distinct",
+    "preparation_ms": 43.087593,
+    "startup_initialize_ms": {
+      "oracle": 8.202853,
+      "batch": 10.987554
+    },
+    "shared_total_response_budget_bytes": 8000000,
+    "equivalence": {
+      "selected_entries": 1,
+      "selected_sources": 1,
+      "objects": 2,
+      "supports": 1,
+      "body_bytes": 506,
+      "qualified_projection_difference": {
+        "inspect.evidence[].metadata.proof_role": "stored_evidence",
+        "trace.objects[].kind": "memory_evidence"
+      }
+    },
+    "logical_rpc_calls": {
+      "oracle": 2,
+      "batch": 1
+    },
+    "process_first": {
+      "oracle": {
+        "elapsed_ms": 15.510348,
+        "response_bytes": 5406,
+        "cpu_ticks": 2,
+        "peak_rss_kib": 33360,
+        "rpc_calls": 2,
+        "total_client_ms": 16.228348
+      },
+      "batch": {
+        "elapsed_ms": 24.230241,
+        "response_bytes": 4363,
+        "cpu_ticks": 2,
+        "peak_rss_kib": 33232,
+        "rpc_calls": 1,
+        "total_client_ms": 24.742848
+      }
+    },
+    "warm": {
+      "oracle": {
+        "samples": 10,
+        "p50_ms": 6.7654465,
+        "p95_ms": 9.074149,
+        "cpu_ms": 50.0,
+        "peak_rss_kib": 33408,
+        "response_bytes": [
+          5408
+        ],
+        "rpc_calls": [
+          2
+        ],
+        "total_client_p50_ms": 7.661766,
+        "total_client_p95_ms": 9.734948
+      },
+      "batch": {
+        "samples": 10,
+        "p50_ms": 3.4732760000000003,
+        "p95_ms": 3.895227,
+        "cpu_ms": 30.0,
+        "peak_rss_kib": 33352,
+        "response_bytes": [
+          4363,
+          4364
+        ],
+        "rpc_calls": [
+          1
+        ],
+        "total_client_p50_ms": 3.904779,
+        "total_client_p95_ms": 4.330042
+      }
+    },
+    "response_digests": {
+      "oracle": "d78736b683cd4d9b3695c712902e29ca3b8c689cac2735a01e19b69269be99a9",
+      "batch": "b446c47ea3efd6a0d93fdd0a766aea8663b7f4425d2714065bc05672560efaba"
+    }
+  },
+  {
+    "shape": "008-distinct",
+    "preparation_ms": 91.059484,
+    "startup_initialize_ms": {
+      "oracle": 11.620161,
+      "batch": 8.25919
+    },
+    "shared_total_response_budget_bytes": 8000000,
+    "equivalence": {
+      "selected_entries": 8,
+      "selected_sources": 8,
+      "objects": 16,
+      "supports": 8,
+      "body_bytes": 4048,
+      "qualified_projection_difference": {
+        "inspect.evidence[].metadata.proof_role": "stored_evidence",
+        "trace.objects[].kind": "memory_evidence"
+      }
+    },
+    "logical_rpc_calls": {
+      "oracle": 9,
+      "batch": 1
+    },
+    "process_first": {
+      "oracle": {
+        "elapsed_ms": 50.254436,
+        "response_bytes": 41066,
+        "cpu_ticks": 5,
+        "peak_rss_kib": 33576,
+        "rpc_calls": 9,
+        "total_client_ms": 53.722603
+      },
+      "batch": {
+        "elapsed_ms": 22.208788,
+        "response_bytes": 23721,
+        "cpu_ticks": 2,
+        "peak_rss_kib": 33752,
+        "rpc_calls": 1,
+        "total_client_ms": 23.142547
+      }
+    },
+    "warm": {
+      "oracle": {
+        "samples": 10,
+        "p50_ms": 47.4419715,
+        "p95_ms": 50.44912,
+        "cpu_ms": 360.0,
+        "peak_rss_kib": 33660,
+        "response_bytes": [
+          41074,
+          41075,
+          41083
+        ],
+        "rpc_calls": [
+          9
+        ],
+        "total_client_p50_ms": 51.565982,
+        "total_client_p95_ms": 54.009707
+      },
+      "batch": {
+        "samples": 10,
+        "p50_ms": 11.736105,
+        "p95_ms": 12.15136,
+        "cpu_ms": 100.0,
+        "peak_rss_kib": 33864,
+        "response_bytes": [
+          23721,
+          23722
+        ],
+        "rpc_calls": [
+          1
+        ],
+        "total_client_p50_ms": 12.643488,
+        "total_client_p95_ms": 12.962223
+      }
+    },
+    "response_digests": {
+      "oracle": "d80503783b94e7d9ea60b3def9c73df93efde6c0f844775e2b53a80ad9a6c89e",
+      "batch": "e18e183a2c9eca297c2ec68df52e2c34da8c8c8dd4784e794d7cdf90fa421250"
+    }
+  },
+  {
+    "shape": "064-distinct",
+    "preparation_ms": 140.350381,
+    "startup_initialize_ms": {
+      "oracle": 8.715013,
+      "batch": 13.056927
+    },
+    "shared_total_response_budget_bytes": 8000000,
+    "equivalence": {
+      "selected_entries": 64,
+      "selected_sources": 64,
+      "objects": 128,
+      "supports": 64,
+      "body_bytes": 32384,
+      "qualified_projection_difference": {
+        "inspect.evidence[].metadata.proof_role": "stored_evidence",
+        "trace.objects[].kind": "memory_evidence"
+      }
+    },
+    "logical_rpc_calls": {
+      "oracle": 65,
+      "batch": 8
+    },
+    "process_first": {
+      "oracle": {
+        "elapsed_ms": 357.842231,
+        "response_bytes": 326719,
+        "cpu_ticks": 28,
+        "peak_rss_kib": 34892,
+        "rpc_calls": 65,
+        "total_client_ms": 383.947718
+      },
+      "batch": {
+        "elapsed_ms": 360.056629,
+        "response_bytes": 199306,
+        "cpu_ticks": 36,
+        "peak_rss_kib": 36132,
+        "rpc_calls": 8,
+        "total_client_ms": 366.871004
+      }
+    },
+    "warm": {
+      "oracle": {
+        "samples": 10,
+        "p50_ms": 434.4087535,
+        "p95_ms": 466.194585,
+        "cpu_ms": 3370.0,
+        "peak_rss_kib": 35656,
+        "response_bytes": [
+          326792
+        ],
+        "rpc_calls": [
+          65
+        ],
+        "total_client_p50_ms": 471.088789,
+        "total_client_p95_ms": 501.765694
+      },
+      "batch": {
+        "samples": 10,
+        "p50_ms": 241.2323455,
+        "p95_ms": 260.081139,
+        "cpu_ms": 2340.0,
+        "peak_rss_kib": 36140,
+        "response_bytes": [
+          199314,
+          199320,
+          199322
+        ],
+        "rpc_calls": [
+          8
+        ],
+        "total_client_p50_ms": 251.530461,
+        "total_client_p95_ms": 270.903237
+      }
+    },
+    "response_digests": {
+      "oracle": "fa0e81163f31dc6099cb389606b582e18bccc215702cc1d86a9f1fde6ea754a9",
+      "batch": "41243841f82e430ea405928c3c0fe99bc19c1eed6df9e4b3c6df091a5e8b8e41"
+    }
+  },
+  {
+    "shape": "064-shared",
+    "preparation_ms": 238.23419,
+    "startup_initialize_ms": {
+      "oracle": 8.170901,
+      "batch": 12.547904
+    },
+    "shared_total_response_budget_bytes": 8000000,
+    "equivalence": {
+      "selected_entries": 64,
+      "selected_sources": 8,
+      "objects": 72,
+      "supports": 64,
+      "body_bytes": 8792,
+      "qualified_projection_difference": {
+        "inspect.evidence[].metadata.proof_role": "stored_evidence",
+        "trace.objects[].kind": "memory_evidence"
+      }
+    },
+    "logical_rpc_calls": {
+      "oracle": 65,
+      "batch": 7
+    },
+    "process_first": {
+      "oracle": {
+        "elapsed_ms": 459.376153,
+        "response_bytes": 389961,
+        "cpu_ticks": 39,
+        "peak_rss_kib": 34760,
+        "rpc_calls": 65,
+        "total_client_ms": 490.079194
+      },
+      "batch": {
+        "elapsed_ms": 285.750352,
+        "response_bytes": 165328,
+        "cpu_ticks": 28,
+        "peak_rss_kib": 35604,
+        "rpc_calls": 7,
+        "total_client_ms": 294.373029
+      }
+    },
+    "warm": {
+      "oracle": {
+        "samples": 10,
+        "p50_ms": 499.48337649999996,
+        "p95_ms": 535.316458,
+        "cpu_ms": 4220.0,
+        "peak_rss_kib": 35520,
+        "response_bytes": [
+          390034
+        ],
+        "rpc_calls": [
+          65
+        ],
+        "total_client_p50_ms": 538.662599,
+        "total_client_p95_ms": 574.338619
+      },
+      "batch": {
+        "samples": 10,
+        "p50_ms": 238.440508,
+        "p95_ms": 239.355355,
+        "cpu_ms": 2320.0,
+        "peak_rss_kib": 35624,
+        "response_bytes": [
+          165335
+        ],
+        "rpc_calls": [
+          7
+        ],
+        "total_client_p50_ms": 247.655504,
+        "total_client_p95_ms": 248.247247
+      }
+    },
+    "response_digests": {
+      "oracle": "03593bb49d2d4c9800fd9cf692acbc369d98d2e6ca95ffcd2d825cbd4f2f0497",
+      "batch": "da4803ff2672192046f5fd365f564e4590904c46a6cb418ae0fe4911635870a8"
+    }
+  }
+]

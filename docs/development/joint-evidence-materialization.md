@@ -157,10 +157,10 @@ bytes and 199,322 joint bytes).
 
 | Shape | Warm client p50 ms oracle → joint | RPCs | SQLite statements p50 per complete operation oracle → joint | VM steps p50 oracle → joint |
 | --- | ---: | ---: | ---: | ---: |
-| 1 distinct | 10.01 → 5.92 | 2 → 1 | 26 → 11 | 277 → 135 |
-| 8 distinct | 60.80 → 12.91 | 9 → 1 | 222 → 81 | 2,785 → 1,177 |
-| 64 distinct | 373.08 → 236.91 | 65 → 8 | 1,790 → 5,128 | 22,945 → 76,168 |
-| 64 shared | 420.32 → 189.10 | 65 → 7 | 2,686 → 3,703 | 38,121 → 58,807 |
+| 1 distinct | 7.66 → 3.90 | 2 → 1 | 26 → 11 | 277 → 135 |
+| 8 distinct | 51.57 → 12.64 | 9 → 1 | 222 → 81 | 2,785 → 1,177 |
+| 64 distinct | 471.09 → 251.53 | 65 → 8 | 1,790 → 5,128 | 22,945 → 76,168 |
+| 64 shared | 538.66 → 247.66 | 65 → 7 | 2,686 → 3,703 | 38,121 → 58,807 |
 
 The high-degree joint path reduces round trips, response bytes and observed
 client latency while executing more SQLite statements and VM steps because

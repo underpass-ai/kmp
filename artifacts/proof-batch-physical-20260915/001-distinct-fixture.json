@@ -1,0 +1,56 @@
+{
+  "about": "project:proof-batch-acceptance",
+  "idempotency_key": "proof-batch:1:distinct",
+  "memory": {
+    "dimensions": [
+      {
+        "id": "proof-batch",
+        "kind": "task"
+      }
+    ],
+    "entries": [
+      {
+        "id": "project:proof-batch-acceptance:observation:000",
+        "kind": "observation",
+        "text": "Entry 000: literal π body for distinct.",
+        "summary_en": "Entry 000 literal body.",
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "0"
+        },
+        "coordinates": [
+          {
+            "dimension": "task",
+            "scope_id": "proof-batch",
+            "occurred_at": "2026-09-01T10:00:00Z",
+            "observed_at": "2026-09-01T10:00:00Z",
+            "ingested_at": "2026-09-01T10:00:00Z",
+            "valid_from": "2026-09-01T10:00:00Z",
+            "valid_until": "2026-10-01T00:00:00Z",
+            "sequence": 1
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "evidence": [
+      {
+        "id": "evidence:project:proof-batch-acceptance:source:000",
+        "supports": [
+          "project:proof-batch-acceptance:observation:000"
+        ],
+        "text": "Source 000: exact λ evidence for project:proof-batch-acceptance:observation:000. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "source": "fixture-register:distinct:000",
+        "time": "2026-09-01T09:00:00Z",
+        "support_clocks": {
+          "observed_at": "2026-09-01T09:00:01Z",
+          "ingested_at": "2026-09-01T09:00:02Z"
+        },
+        "metadata": {
+          "fixture": "distinct",
+          "ordinal": "0"
+        }
+      }
+    ]
+  }
+}

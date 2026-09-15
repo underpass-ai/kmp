@@ -1,0 +1,1501 @@
+{
+  "auditor": "proof_batch_physical_audit.py",
+  "auditor_sha256": "4c14e4b9f8368ffe81f95d95ba16751fadafaaf5dd994b101496e1987a356fd4",
+  "captures": {
+    "001-distinct": {
+      "sha256": "bbde9c0b6bdfbb2695055c036e669a53a65206b4d3ab2f779b09e9f45aa0955c",
+      "sides": {
+        "batch": {
+          "complete_operations": {
+            "count": 14,
+            "profile_ns": {
+              "p50": 0.0,
+              "p95": 1000000,
+              "total": 1000000
+            },
+            "rows": {
+              "p50": 9.0,
+              "p95": 9,
+              "total": 126
+            },
+            "statements": {
+              "p50": 11.0,
+              "p95": 11,
+              "total": 154
+            },
+            "vm_steps": {
+              "p50": 135.0,
+              "p95": 135,
+              "total": 1890
+            }
+          },
+          "phase_totals": {
+            "rpc.dispatch": {
+              "calls": 14,
+              "inclusive_ns": 47549425
+            },
+            "rpc.dispatch/backend.trace": {
+              "calls": 14,
+              "inclusive_ns": 23380768
+            },
+            "rpc.dispatch/backend.trace/envelope.tool_result": {
+              "calls": 14,
+              "inclusive_ns": 593951
+            },
+            "rpc.dispatch/backend.trace/mapping.trace_search": {
+              "calls": 14,
+              "inclusive_ns": 3411549
+            },
+            "rpc.dispatch/backend.trace/projection.relation_page_budget": {
+              "calls": 14,
+              "inclusive_ns": 3156412
+            },
+            "rpc.dispatch/backend.trace/projection.trace": {
+              "calls": 14,
+              "inclusive_ns": 1437037
+            },
+            "rpc.dispatch/backend.trace/search.target.total": {
+              "calls": 14,
+              "inclusive_ns": 9343620
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize": {
+              "calls": 14,
+              "inclusive_ns": 5183435
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency": {
+              "calls": 14,
+              "inclusive_ns": 1010607
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 14,
+              "inclusive_ns": 119008
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 14,
+              "inclusive_ns": 605728
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_node": {
+              "calls": 28,
+              "inclusive_ns": 1817805
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 28,
+              "inclusive_ns": 538336
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/bodies.read_batch": {
+              "calls": 14,
+              "inclusive_ns": 654223
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/bodies.read_batch/adapter.read_tx.get": {
+              "calls": 28,
+              "inclusive_ns": 234704
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection": {
+              "calls": 14,
+              "inclusive_ns": 3999321
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency": {
+              "calls": 14,
+              "inclusive_ns": 1422829
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 14,
+              "inclusive_ns": 153392
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 14,
+              "inclusive_ns": 906782
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node": {
+              "calls": 14,
+              "inclusive_ns": 1529054
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 14,
+              "inclusive_ns": 721471
+            },
+            "rpc.dispatch/dispatch.guidance_prepare": {
+              "calls": 14,
+              "inclusive_ns": 13936
+            },
+            "rpc.dispatch/dispatch.project_read_passages": {
+              "calls": 14,
+              "inclusive_ns": 5504
+            },
+            "rpc.dispatch/dispatch.record_tool_success": {
+              "calls": 14,
+              "inclusive_ns": 235824
+            },
+            "rpc.dispatch/dispatch.resolve_read_arguments": {
+              "calls": 14,
+              "inclusive_ns": 10160
+            },
+            "rpc.dispatch/dispatch.validate_schema": {
+              "calls": 14,
+              "inclusive_ns": 19836215
+            },
+            "rpc.dispatch/encoding.jsonrpc_string": {
+              "calls": 14,
+              "inclusive_ns": 2020862
+            },
+            "rpc.dispatch/encoding.jsonrpc_value": {
+              "calls": 14,
+              "inclusive_ns": 554320
+            }
+          },
+          "tools": {
+            "kmp_trace": {
+              "body_batches": 14,
+              "body_single_reads": 0,
+              "body_slots": 28,
+              "logical_read_calls": 126,
+              "nesting_errors": 0,
+              "rpc_profiles": 14,
+              "sql_rows": {
+                "p50": 9.0,
+                "p95": 9,
+                "total": 126
+              },
+              "sql_statements": {
+                "p50": 11.0,
+                "p95": 11,
+                "total": 154
+              },
+              "sqlite_profile_ns": {
+                "p50": 0.0,
+                "p95": 1000000,
+                "total": 1000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 135.0,
+                "p95": 135,
+                "total": 1890
+              }
+            }
+          }
+        },
+        "oracle": {
+          "complete_operations": {
+            "count": 14,
+            "profile_ns": {
+              "p50": 0.0,
+              "p95": 1000000,
+              "total": 2000000
+            },
+            "rows": {
+              "p50": 19.0,
+              "p95": 41,
+              "total": 288
+            },
+            "statements": {
+              "p50": 26.0,
+              "p95": 32,
+              "total": 370
+            },
+            "vm_steps": {
+              "p50": 277.0,
+              "p95": 308,
+              "total": 3909
+            }
+          },
+          "phase_totals": {
+            "rpc.dispatch": {
+              "calls": 28,
+              "inclusive_ns": 66980409
+            },
+            "rpc.dispatch/backend.inspect": {
+              "calls": 14,
+              "inclusive_ns": 37051296
+            },
+            "rpc.dispatch/backend.inspect/adapter.read_tx.get": {
+              "calls": 98,
+              "inclusive_ns": 2783212
+            },
+            "rpc.dispatch/backend.inspect/adapter.read_tx.scan_str3_by_first": {
+              "calls": 70,
+              "inclusive_ns": 1864253
+            },
+            "rpc.dispatch/backend.inspect/bodies.read_single": {
+              "calls": 28,
+              "inclusive_ns": 1314431
+            },
+            "rpc.dispatch/backend.inspect/bodies.read_single/adapter.read_tx.get": {
+              "calls": 28,
+              "inclusive_ns": 873648
+            },
+            "rpc.dispatch/backend.inspect/envelope.tool_result": {
+              "calls": 14,
+              "inclusive_ns": 599167
+            },
+            "rpc.dispatch/backend.inspect/mapping.inspect": {
+              "calls": 14,
+              "inclusive_ns": 672672
+            },
+            "rpc.dispatch/backend.inspect/projection.inspect": {
+              "calls": 14,
+              "inclusive_ns": 1215789
+            },
+            "rpc.dispatch/backend.trace": {
+              "calls": 14,
+              "inclusive_ns": 13796734
+            },
+            "rpc.dispatch/backend.trace/envelope.tool_result": {
+              "calls": 14,
+              "inclusive_ns": 214256
+            },
+            "rpc.dispatch/backend.trace/mapping.trace_search": {
+              "calls": 14,
+              "inclusive_ns": 729151
+            },
+            "rpc.dispatch/backend.trace/projection.relation_page_budget": {
+              "calls": 14,
+              "inclusive_ns": 1440974
+            },
+            "rpc.dispatch/backend.trace/projection.trace": {
+              "calls": 14,
+              "inclusive_ns": 428671
+            },
+            "rpc.dispatch/backend.trace/search.target.total": {
+              "calls": 14,
+              "inclusive_ns": 5698748
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection": {
+              "calls": 14,
+              "inclusive_ns": 5525164
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency": {
+              "calls": 14,
+              "inclusive_ns": 1910975
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 14,
+              "inclusive_ns": 451952
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 14,
+              "inclusive_ns": 980720
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node": {
+              "calls": 14,
+              "inclusive_ns": 2171663
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 14,
+              "inclusive_ns": 1129792
+            },
+            "rpc.dispatch/dispatch.guidance_prepare": {
+              "calls": 28,
+              "inclusive_ns": 19600
+            },
+            "rpc.dispatch/dispatch.project_read_passages": {
+              "calls": 28,
+              "inclusive_ns": 8752
+            },
+            "rpc.dispatch/dispatch.record_tool_success": {
+              "calls": 28,
+              "inclusive_ns": 408638
+            },
+            "rpc.dispatch/dispatch.resolve_read_arguments": {
+              "calls": 28,
+              "inclusive_ns": 15056
+            },
+            "rpc.dispatch/dispatch.validate_schema": {
+              "calls": 28,
+              "inclusive_ns": 10720674
+            },
+            "rpc.dispatch/encoding.jsonrpc_string": {
+              "calls": 28,
+              "inclusive_ns": 2125180
+            },
+            "rpc.dispatch/encoding.jsonrpc_value": {
+              "calls": 28,
+              "inclusive_ns": 712448
+            }
+          },
+          "tools": {
+            "kmp_inspect": {
+              "body_batches": 0,
+              "body_single_reads": 28,
+              "body_slots": 28,
+              "logical_read_calls": 196,
+              "nesting_errors": 0,
+              "rpc_profiles": 14,
+              "sql_rows": {
+                "p50": 16.0,
+                "p95": 38,
+                "total": 246
+              },
+              "sql_statements": {
+                "p50": 21.0,
+                "p95": 27,
+                "total": 300
+              },
+              "sqlite_profile_ns": {
+                "p50": 0.0,
+                "p95": 0,
+                "total": 0
+              },
+              "sqlite_vm_steps": {
+                "p50": 221.0,
+                "p95": 252,
+                "total": 3125
+              }
+            },
+            "kmp_trace": {
+              "body_batches": 0,
+              "body_single_reads": 0,
+              "body_slots": 0,
+              "logical_read_calls": 42,
+              "nesting_errors": 0,
+              "rpc_profiles": 14,
+              "sql_rows": {
+                "p50": 3.0,
+                "p95": 3,
+                "total": 42
+              },
+              "sql_statements": {
+                "p50": 5.0,
+                "p95": 5,
+                "total": 70
+              },
+              "sqlite_profile_ns": {
+                "p50": 0.0,
+                "p95": 1000000,
+                "total": 2000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 56.0,
+                "p95": 56,
+                "total": 784
+              }
+            }
+          }
+        }
+      },
+      "source": "001-distinct-physical.json"
+    },
+    "008-distinct": {
+      "sha256": "0f6381f94a7e3102e470e80d9d4d3eb0e6dba4a515c5a202588d269d2b62959f",
+      "sides": {
+        "batch": {
+          "complete_operations": {
+            "count": 14,
+            "profile_ns": {
+              "p50": 1000000.0,
+              "p95": 3000000,
+              "total": 14000000
+            },
+            "rows": {
+              "p50": 79.0,
+              "p95": 79,
+              "total": 1106
+            },
+            "statements": {
+              "p50": 81.0,
+              "p95": 81,
+              "total": 1134
+            },
+            "vm_steps": {
+              "p50": 1177.0,
+              "p95": 1177,
+              "total": 16478
+            }
+          },
+          "phase_totals": {
+            "rpc.dispatch": {
+              "calls": 14,
+              "inclusive_ns": 149854369
+            },
+            "rpc.dispatch/backend.trace": {
+              "calls": 14,
+              "inclusive_ns": 126415775
+            },
+            "rpc.dispatch/backend.trace/envelope.tool_result": {
+              "calls": 14,
+              "inclusive_ns": 2187628
+            },
+            "rpc.dispatch/backend.trace/mapping.trace_search": {
+              "calls": 14,
+              "inclusive_ns": 14062656
+            },
+            "rpc.dispatch/backend.trace/projection.relation_page_budget": {
+              "calls": 14,
+              "inclusive_ns": 9789830
+            },
+            "rpc.dispatch/backend.trace/projection.trace": {
+              "calls": 14,
+              "inclusive_ns": 6612998
+            },
+            "rpc.dispatch/backend.trace/search.target.total": {
+              "calls": 14,
+              "inclusive_ns": 85051427
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize": {
+              "calls": 14,
+              "inclusive_ns": 43411786
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency": {
+              "calls": 112,
+              "inclusive_ns": 11498575
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 112,
+              "inclusive_ns": 1505502
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 112,
+              "inclusive_ns": 6955864
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_node": {
+              "calls": 224,
+              "inclusive_ns": 19319755
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 224,
+              "inclusive_ns": 5341997
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/bodies.read_batch": {
+              "calls": 14,
+              "inclusive_ns": 4004412
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/bodies.read_batch/adapter.read_tx.get": {
+              "calls": 224,
+              "inclusive_ns": 1824543
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection": {
+              "calls": 14,
+              "inclusive_ns": 41186586
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency": {
+              "calls": 210,
+              "inclusive_ns": 21061444
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 112,
+              "inclusive_ns": 1593439
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 210,
+              "inclusive_ns": 13399933
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node": {
+              "calls": 112,
+              "inclusive_ns": 12105999
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 112,
+              "inclusive_ns": 4599687
+            },
+            "rpc.dispatch/dispatch.guidance_prepare": {
+              "calls": 14,
+              "inclusive_ns": 11600
+            },
+            "rpc.dispatch/dispatch.project_read_passages": {
+              "calls": 14,
+              "inclusive_ns": 6384
+            },
+            "rpc.dispatch/dispatch.record_tool_success": {
+              "calls": 14,
+              "inclusive_ns": 242320
+            },
+            "rpc.dispatch/dispatch.resolve_read_arguments": {
+              "calls": 14,
+              "inclusive_ns": 8672
+            },
+            "rpc.dispatch/dispatch.validate_schema": {
+              "calls": 14,
+              "inclusive_ns": 10566323
+            },
+            "rpc.dispatch/encoding.jsonrpc_string": {
+              "calls": 14,
+              "inclusive_ns": 8201828
+            },
+            "rpc.dispatch/encoding.jsonrpc_value": {
+              "calls": 14,
+              "inclusive_ns": 2175870
+            }
+          },
+          "tools": {
+            "kmp_trace": {
+              "body_batches": 14,
+              "body_single_reads": 0,
+              "body_slots": 224,
+              "logical_read_calls": 1106,
+              "nesting_errors": 0,
+              "rpc_profiles": 14,
+              "sql_rows": {
+                "p50": 79.0,
+                "p95": 79,
+                "total": 1106
+              },
+              "sql_statements": {
+                "p50": 81.0,
+                "p95": 81,
+                "total": 1134
+              },
+              "sqlite_profile_ns": {
+                "p50": 1000000.0,
+                "p95": 3000000,
+                "total": 14000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 1177.0,
+                "p95": 1177,
+                "total": 16478
+              }
+            }
+          }
+        },
+        "oracle": {
+          "complete_operations": {
+            "count": 14,
+            "profile_ns": {
+              "p50": 2000000.0,
+              "p95": 5000000,
+              "total": 26000000
+            },
+            "rows": {
+              "p50": 207.0,
+              "p95": 229,
+              "total": 2920
+            },
+            "statements": {
+              "p50": 222.0,
+              "p95": 228,
+              "total": 3114
+            },
+            "vm_steps": {
+              "p50": 2785.0,
+              "p95": 2816,
+              "total": 39021
+            }
+          },
+          "phase_totals": {
+            "rpc.dispatch": {
+              "calls": 126,
+              "inclusive_ns": 491815219
+            },
+            "rpc.dispatch/backend.inspect": {
+              "calls": 112,
+              "inclusive_ns": 392318828
+            },
+            "rpc.dispatch/backend.inspect/adapter.read_tx.get": {
+              "calls": 980,
+              "inclusive_ns": 34880819
+            },
+            "rpc.dispatch/backend.inspect/adapter.read_tx.scan_str3_by_first": {
+              "calls": 658,
+              "inclusive_ns": 21557994
+            },
+            "rpc.dispatch/backend.inspect/bodies.read_single": {
+              "calls": 224,
+              "inclusive_ns": 13633644
+            },
+            "rpc.dispatch/backend.inspect/bodies.read_single/adapter.read_tx.get": {
+              "calls": 224,
+              "inclusive_ns": 9300822
+            },
+            "rpc.dispatch/backend.inspect/envelope.tool_result": {
+              "calls": 112,
+              "inclusive_ns": 5376203
+            },
+            "rpc.dispatch/backend.inspect/mapping.inspect": {
+              "calls": 112,
+              "inclusive_ns": 6302409
+            },
+            "rpc.dispatch/backend.inspect/projection.inspect": {
+              "calls": 112,
+              "inclusive_ns": 11592481
+            },
+            "rpc.dispatch/backend.trace": {
+              "calls": 14,
+              "inclusive_ns": 52225086
+            },
+            "rpc.dispatch/backend.trace/envelope.tool_result": {
+              "calls": 14,
+              "inclusive_ns": 541038
+            },
+            "rpc.dispatch/backend.trace/mapping.trace_search": {
+              "calls": 14,
+              "inclusive_ns": 2313117
+            },
+            "rpc.dispatch/backend.trace/projection.relation_page_budget": {
+              "calls": 14,
+              "inclusive_ns": 2486512
+            },
+            "rpc.dispatch/backend.trace/projection.trace": {
+              "calls": 14,
+              "inclusive_ns": 1633757
+            },
+            "rpc.dispatch/backend.trace/search.target.total": {
+              "calls": 14,
+              "inclusive_ns": 38061374
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection": {
+              "calls": 14,
+              "inclusive_ns": 37671678
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency": {
+              "calls": 210,
+              "inclusive_ns": 19361433
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 112,
+              "inclusive_ns": 1788142
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 210,
+              "inclusive_ns": 11986561
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node": {
+              "calls": 112,
+              "inclusive_ns": 10905122
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 112,
+              "inclusive_ns": 4213835
+            },
+            "rpc.dispatch/dispatch.guidance_prepare": {
+              "calls": 126,
+              "inclusive_ns": 92720
+            },
+            "rpc.dispatch/dispatch.project_read_passages": {
+              "calls": 126,
+              "inclusive_ns": 44304
+            },
+            "rpc.dispatch/dispatch.record_tool_success": {
+              "calls": 126,
+              "inclusive_ns": 2076124
+            },
+            "rpc.dispatch/dispatch.resolve_read_arguments": {
+              "calls": 126,
+              "inclusive_ns": 70160
+            },
+            "rpc.dispatch/dispatch.validate_schema": {
+              "calls": 126,
+              "inclusive_ns": 12558320
+            },
+            "rpc.dispatch/encoding.jsonrpc_string": {
+              "calls": 126,
+              "inclusive_ns": 15760718
+            },
+            "rpc.dispatch/encoding.jsonrpc_value": {
+              "calls": 126,
+              "inclusive_ns": 5291835
+            }
+          },
+          "tools": {
+            "kmp_inspect": {
+              "body_batches": 0,
+              "body_single_reads": 224,
+              "body_slots": 224,
+              "logical_read_calls": 1862,
+              "nesting_errors": 0,
+              "rpc_profiles": 112,
+              "sql_rows": {
+                "p50": 23.0,
+                "p95": 23,
+                "total": 2486
+              },
+              "sql_statements": {
+                "p50": 24.0,
+                "p95": 24,
+                "total": 2652
+              },
+              "sqlite_profile_ns": {
+                "p50": 0.0,
+                "p95": 1000000,
+                "total": 23000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 291.0,
+                "p95": 291,
+                "total": 31489
+              }
+            },
+            "kmp_trace": {
+              "body_batches": 0,
+              "body_single_reads": 0,
+              "body_slots": 0,
+              "logical_read_calls": 434,
+              "nesting_errors": 0,
+              "rpc_profiles": 14,
+              "sql_rows": {
+                "p50": 31.0,
+                "p95": 31,
+                "total": 434
+              },
+              "sql_statements": {
+                "p50": 33.0,
+                "p95": 33,
+                "total": 462
+              },
+              "sqlite_profile_ns": {
+                "p50": 0.0,
+                "p95": 1000000,
+                "total": 3000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 538.0,
+                "p95": 538,
+                "total": 7532
+              }
+            }
+          }
+        }
+      },
+      "source": "008-distinct-physical.json"
+    },
+    "064-distinct": {
+      "sha256": "74e2983e270870426bbeea9c324301bd57facfea19220eab94264eee8c6a6948",
+      "sides": {
+        "batch": {
+          "complete_operations": {
+            "count": 14,
+            "profile_ns": {
+              "p50": 17000000.0,
+              "p95": 21000000,
+              "total": 232000000
+            },
+            "rows": {
+              "p50": 5112.0,
+              "p95": 5112,
+              "total": 71568
+            },
+            "statements": {
+              "p50": 5128.0,
+              "p95": 5128,
+              "total": 71792
+            },
+            "vm_steps": {
+              "p50": 76168.0,
+              "p95": 76168,
+              "total": 1066352
+            }
+          },
+          "phase_totals": {
+            "rpc.dispatch": {
+              "calls": 112,
+              "inclusive_ns": 3237388929
+            },
+            "rpc.dispatch/backend.trace": {
+              "calls": 112,
+              "inclusive_ns": 3099294557
+            },
+            "rpc.dispatch/backend.trace/envelope.tool_result": {
+              "calls": 112,
+              "inclusive_ns": 20152839
+            },
+            "rpc.dispatch/backend.trace/mapping.trace_search": {
+              "calls": 112,
+              "inclusive_ns": 825917707
+            },
+            "rpc.dispatch/backend.trace/projection.relation_page_budget": {
+              "calls": 112,
+              "inclusive_ns": 89277691
+            },
+            "rpc.dispatch/backend.trace/projection.trace": {
+              "calls": 112,
+              "inclusive_ns": 55550795
+            },
+            "rpc.dispatch/backend.trace/search.target.total": {
+              "calls": 112,
+              "inclusive_ns": 2028751636
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize": {
+              "calls": 112,
+              "inclusive_ns": 1098170475
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency": {
+              "calls": 7168,
+              "inclusive_ns": 237686997
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 7168,
+              "inclusive_ns": 30515909
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 7168,
+              "inclusive_ns": 135425446
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_node": {
+              "calls": 14336,
+              "inclusive_ns": 552709514
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 14336,
+              "inclusive_ns": 123989654
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/bodies.read_batch": {
+              "calls": 112,
+              "inclusive_ns": 110087237
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/bodies.read_batch/adapter.read_tx.get": {
+              "calls": 14336,
+              "inclusive_ns": 49035850
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection": {
+              "calls": 112,
+              "inclusive_ns": 922923445
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency": {
+              "calls": 14224,
+              "inclusive_ns": 451196416
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 7168,
+              "inclusive_ns": 33549761
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 14224,
+              "inclusive_ns": 261556862
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node": {
+              "calls": 7168,
+              "inclusive_ns": 293737672
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 7168,
+              "inclusive_ns": 79759212
+            },
+            "rpc.dispatch/dispatch.guidance_prepare": {
+              "calls": 112,
+              "inclusive_ns": 102384
+            },
+            "rpc.dispatch/dispatch.project_read_passages": {
+              "calls": 112,
+              "inclusive_ns": 54240
+            },
+            "rpc.dispatch/dispatch.record_tool_success": {
+              "calls": 112,
+              "inclusive_ns": 2119198
+            },
+            "rpc.dispatch/dispatch.resolve_read_arguments": {
+              "calls": 112,
+              "inclusive_ns": 72112
+            },
+            "rpc.dispatch/dispatch.validate_schema": {
+              "calls": 112,
+              "inclusive_ns": 23866404
+            },
+            "rpc.dispatch/encoding.jsonrpc_string": {
+              "calls": 112,
+              "inclusive_ns": 75454337
+            },
+            "rpc.dispatch/encoding.jsonrpc_value": {
+              "calls": 112,
+              "inclusive_ns": 19623111
+            }
+          },
+          "tools": {
+            "kmp_trace": {
+              "body_batches": 112,
+              "body_single_reads": 0,
+              "body_slots": 14336,
+              "logical_read_calls": 71568,
+              "nesting_errors": 0,
+              "rpc_profiles": 112,
+              "sql_rows": {
+                "p50": 639.0,
+                "p95": 639,
+                "total": 71568
+              },
+              "sql_statements": {
+                "p50": 641.0,
+                "p95": 641,
+                "total": 71792
+              },
+              "sqlite_profile_ns": {
+                "p50": 2000000.0,
+                "p95": 5000000,
+                "total": 232000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 9521.0,
+                "p95": 9521,
+                "total": 1066352
+              }
+            }
+          }
+        },
+        "oracle": {
+          "complete_operations": {
+            "count": 14,
+            "profile_ns": {
+              "p50": 18500000.0,
+              "p95": 28000000,
+              "total": 252000000
+            },
+            "rows": {
+              "p50": 1719.0,
+              "p95": 1741,
+              "total": 24088
+            },
+            "statements": {
+              "p50": 1790.0,
+              "p95": 1796,
+              "total": 25066
+            },
+            "vm_steps": {
+              "p50": 22945.0,
+              "p95": 22976,
+              "total": 321261
+            }
+          },
+          "phase_totals": {
+            "rpc.dispatch": {
+              "calls": 910,
+              "inclusive_ns": 4404289448
+            },
+            "rpc.dispatch/backend.inspect": {
+              "calls": 896,
+              "inclusive_ns": 3686260898
+            },
+            "rpc.dispatch/backend.inspect/adapter.read_tx.get": {
+              "calls": 8036,
+              "inclusive_ns": 293093609
+            },
+            "rpc.dispatch/backend.inspect/adapter.read_tx.scan_str3_by_first": {
+              "calls": 5362,
+              "inclusive_ns": 164908491
+            },
+            "rpc.dispatch/backend.inspect/bodies.read_single": {
+              "calls": 1792,
+              "inclusive_ns": 125196834
+            },
+            "rpc.dispatch/backend.inspect/bodies.read_single/adapter.read_tx.get": {
+              "calls": 1792,
+              "inclusive_ns": 89749080
+            },
+            "rpc.dispatch/backend.inspect/envelope.tool_result": {
+              "calls": 896,
+              "inclusive_ns": 65215172
+            },
+            "rpc.dispatch/backend.inspect/mapping.inspect": {
+              "calls": 896,
+              "inclusive_ns": 59123909
+            },
+            "rpc.dispatch/backend.inspect/projection.inspect": {
+              "calls": 896,
+              "inclusive_ns": 131428720
+            },
+            "rpc.dispatch/backend.trace": {
+              "calls": 14,
+              "inclusive_ns": 304386875
+            },
+            "rpc.dispatch/backend.trace/envelope.tool_result": {
+              "calls": 14,
+              "inclusive_ns": 4203210
+            },
+            "rpc.dispatch/backend.trace/mapping.trace_search": {
+              "calls": 14,
+              "inclusive_ns": 14971901
+            },
+            "rpc.dispatch/backend.trace/projection.relation_page_budget": {
+              "calls": 14,
+              "inclusive_ns": 15076348
+            },
+            "rpc.dispatch/backend.trace/projection.trace": {
+              "calls": 14,
+              "inclusive_ns": 12199168
+            },
+            "rpc.dispatch/backend.trace/search.target.total": {
+              "calls": 14,
+              "inclusive_ns": 247226943
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection": {
+              "calls": 14,
+              "inclusive_ns": 245767042
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency": {
+              "calls": 1778,
+              "inclusive_ns": 129429169
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 896,
+              "inclusive_ns": 9922622
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 1778,
+              "inclusive_ns": 80130880
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node": {
+              "calls": 896,
+              "inclusive_ns": 67991987
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 896,
+              "inclusive_ns": 22862844
+            },
+            "rpc.dispatch/dispatch.guidance_prepare": {
+              "calls": 910,
+              "inclusive_ns": 804863
+            },
+            "rpc.dispatch/dispatch.project_read_passages": {
+              "calls": 910,
+              "inclusive_ns": 464367
+            },
+            "rpc.dispatch/dispatch.record_tool_success": {
+              "calls": 910,
+              "inclusive_ns": 16047127
+            },
+            "rpc.dispatch/dispatch.resolve_read_arguments": {
+              "calls": 910,
+              "inclusive_ns": 595950
+            },
+            "rpc.dispatch/dispatch.validate_schema": {
+              "calls": 910,
+              "inclusive_ns": 25858309
+            },
+            "rpc.dispatch/encoding.jsonrpc_string": {
+              "calls": 910,
+              "inclusive_ns": 212404165
+            },
+            "rpc.dispatch/encoding.jsonrpc_value": {
+              "calls": 910,
+              "inclusive_ns": 62825931
+            }
+          },
+          "tools": {
+            "kmp_inspect": {
+              "body_batches": 0,
+              "body_single_reads": 1792,
+              "body_slots": 1792,
+              "logical_read_calls": 15190,
+              "nesting_errors": 0,
+              "rpc_profiles": 896,
+              "sql_rows": {
+                "p50": 23.0,
+                "p95": 23,
+                "total": 20518
+              },
+              "sql_statements": {
+                "p50": 24.0,
+                "p95": 24,
+                "total": 21468
+              },
+              "sqlite_profile_ns": {
+                "p50": 0.0,
+                "p95": 1000000,
+                "total": 229000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 291.0,
+                "p95": 291,
+                "total": 259633
+              }
+            },
+            "kmp_trace": {
+              "body_batches": 0,
+              "body_single_reads": 0,
+              "body_slots": 0,
+              "logical_read_calls": 3570,
+              "nesting_errors": 0,
+              "rpc_profiles": 14,
+              "sql_rows": {
+                "p50": 255.0,
+                "p95": 255,
+                "total": 3570
+              },
+              "sql_statements": {
+                "p50": 257.0,
+                "p95": 257,
+                "total": 3598
+              },
+              "sqlite_profile_ns": {
+                "p50": 1000000.0,
+                "p95": 4000000,
+                "total": 23000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 4402.0,
+                "p95": 4402,
+                "total": 61628
+              }
+            }
+          }
+        }
+      },
+      "source": "064-distinct-physical.json"
+    },
+    "064-shared": {
+      "sha256": "84486dc71765d623e7874fc6eeceb0c1d1dbfa6ee9046fd734b8dcea42325fb7",
+      "sides": {
+        "batch": {
+          "complete_operations": {
+            "count": 14,
+            "profile_ns": {
+              "p50": 13000000.0,
+              "p95": 23000000,
+              "total": 193000000
+            },
+            "rows": {
+              "p50": 3689.0,
+              "p95": 3689,
+              "total": 51646
+            },
+            "statements": {
+              "p50": 3703.0,
+              "p95": 3703,
+              "total": 51842
+            },
+            "vm_steps": {
+              "p50": 58807.0,
+              "p95": 58807,
+              "total": 823298
+            }
+          },
+          "phase_totals": {
+            "rpc.dispatch": {
+              "calls": 98,
+              "inclusive_ns": 3116229981
+            },
+            "rpc.dispatch/backend.trace": {
+              "calls": 98,
+              "inclusive_ns": 2915731765
+            },
+            "rpc.dispatch/backend.trace/envelope.tool_result": {
+              "calls": 98,
+              "inclusive_ns": 28360203
+            },
+            "rpc.dispatch/backend.trace/mapping.trace_search": {
+              "calls": 98,
+              "inclusive_ns": 1044057477
+            },
+            "rpc.dispatch/backend.trace/projection.relation_page_budget": {
+              "calls": 98,
+              "inclusive_ns": 146100203
+            },
+            "rpc.dispatch/backend.trace/projection.trace": {
+              "calls": 98,
+              "inclusive_ns": 75134139
+            },
+            "rpc.dispatch/backend.trace/search.target.total": {
+              "calls": 98,
+              "inclusive_ns": 1527473893
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize": {
+              "calls": 98,
+              "inclusive_ns": 716169009
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency": {
+              "calls": 6272,
+              "inclusive_ns": 241046213
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 6272,
+              "inclusive_ns": 51077058
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 6272,
+              "inclusive_ns": 119894679
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_node": {
+              "calls": 7056,
+              "inclusive_ns": 272818329
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 7056,
+              "inclusive_ns": 57564009
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/bodies.read_batch": {
+              "calls": 98,
+              "inclusive_ns": 51905771
+            },
+            "rpc.dispatch/backend.trace/search.target.total/proof.target.materialize/bodies.read_batch/adapter.read_tx.get": {
+              "calls": 7056,
+              "inclusive_ns": 25529363
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection": {
+              "calls": 98,
+              "inclusive_ns": 805382286
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency": {
+              "calls": 12446,
+              "inclusive_ns": 398731972
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 6272,
+              "inclusive_ns": 32443393
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 12446,
+              "inclusive_ns": 230196008
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node": {
+              "calls": 6272,
+              "inclusive_ns": 253496491
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 6272,
+              "inclusive_ns": 66846276
+            },
+            "rpc.dispatch/dispatch.guidance_prepare": {
+              "calls": 98,
+              "inclusive_ns": 124624
+            },
+            "rpc.dispatch/dispatch.project_read_passages": {
+              "calls": 98,
+              "inclusive_ns": 93616
+            },
+            "rpc.dispatch/dispatch.record_tool_success": {
+              "calls": 98,
+              "inclusive_ns": 2644173
+            },
+            "rpc.dispatch/dispatch.resolve_read_arguments": {
+              "calls": 98,
+              "inclusive_ns": 94688
+            },
+            "rpc.dispatch/dispatch.validate_schema": {
+              "calls": 98,
+              "inclusive_ns": 23323374
+            },
+            "rpc.dispatch/encoding.jsonrpc_string": {
+              "calls": 98,
+              "inclusive_ns": 124389552
+            },
+            "rpc.dispatch/encoding.jsonrpc_value": {
+              "calls": 98,
+              "inclusive_ns": 27084406
+            }
+          },
+          "tools": {
+            "kmp_trace": {
+              "body_batches": 98,
+              "body_single_reads": 0,
+              "body_slots": 7056,
+              "logical_read_calls": 51646,
+              "nesting_errors": 0,
+              "rpc_profiles": 98,
+              "sql_rows": {
+                "p50": 527.0,
+                "p95": 527,
+                "total": 51646
+              },
+              "sql_statements": {
+                "p50": 529.0,
+                "p95": 529,
+                "total": 51842
+              },
+              "sqlite_profile_ns": {
+                "p50": 2000000.0,
+                "p95": 4000000,
+                "total": 193000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 8401.0,
+                "p95": 8401,
+                "total": 823298
+              }
+            }
+          }
+        },
+        "oracle": {
+          "complete_operations": {
+            "count": 14,
+            "profile_ns": {
+              "p50": 29000000.0,
+              "p95": 34000000,
+              "total": 386000000
+            },
+            "rows": {
+              "p50": 3056.0,
+              "p95": 3078,
+              "total": 42806
+            },
+            "statements": {
+              "p50": 2686.0,
+              "p95": 2692,
+              "total": 37610
+            },
+            "vm_steps": {
+              "p50": 38121.0,
+              "p95": 38152,
+              "total": 533725
+            }
+          },
+          "phase_totals": {
+            "rpc.dispatch": {
+              "calls": 910,
+              "inclusive_ns": 5759356595
+            },
+            "rpc.dispatch/backend.inspect": {
+              "calls": 896,
+              "inclusive_ns": 4880861854
+            },
+            "rpc.dispatch/backend.inspect/adapter.read_tx.get": {
+              "calls": 14308,
+              "inclusive_ns": 393827722
+            },
+            "rpc.dispatch/backend.inspect/adapter.read_tx.scan_str3_by_first": {
+              "calls": 11634,
+              "inclusive_ns": 259250250
+            },
+            "rpc.dispatch/backend.inspect/bodies.read_single": {
+              "calls": 1792,
+              "inclusive_ns": 131388430
+            },
+            "rpc.dispatch/backend.inspect/bodies.read_single/adapter.read_tx.get": {
+              "calls": 1792,
+              "inclusive_ns": 95940324
+            },
+            "rpc.dispatch/backend.inspect/envelope.tool_result": {
+              "calls": 896,
+              "inclusive_ns": 78980806
+            },
+            "rpc.dispatch/backend.inspect/mapping.inspect": {
+              "calls": 896,
+              "inclusive_ns": 70336669
+            },
+            "rpc.dispatch/backend.inspect/projection.inspect": {
+              "calls": 896,
+              "inclusive_ns": 157862872
+            },
+            "rpc.dispatch/backend.trace": {
+              "calls": 14,
+              "inclusive_ns": 341026041
+            },
+            "rpc.dispatch/backend.trace/envelope.tool_result": {
+              "calls": 14,
+              "inclusive_ns": 5686666
+            },
+            "rpc.dispatch/backend.trace/mapping.trace_search": {
+              "calls": 14,
+              "inclusive_ns": 20240693
+            },
+            "rpc.dispatch/backend.trace/projection.relation_page_budget": {
+              "calls": 14,
+              "inclusive_ns": 20996053
+            },
+            "rpc.dispatch/backend.trace/projection.trace": {
+              "calls": 14,
+              "inclusive_ns": 15353276
+            },
+            "rpc.dispatch/backend.trace/search.target.total": {
+              "calls": 14,
+              "inclusive_ns": 266730393
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection": {
+              "calls": 14,
+              "inclusive_ns": 265293689
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency": {
+              "calls": 1778,
+              "inclusive_ns": 141654035
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.get": {
+              "calls": 896,
+              "inclusive_ns": 12059706
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_adjacency/adapter.read_tx.scan_str3_page": {
+              "calls": 1778,
+              "inclusive_ns": 86628354
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node": {
+              "calls": 896,
+              "inclusive_ns": 71705379
+            },
+            "rpc.dispatch/backend.trace/search.target.total/search.target.selection/adapter.trace_node/adapter.read_tx.get": {
+              "calls": 896,
+              "inclusive_ns": 23343557
+            },
+            "rpc.dispatch/dispatch.guidance_prepare": {
+              "calls": 910,
+              "inclusive_ns": 879904
+            },
+            "rpc.dispatch/dispatch.project_read_passages": {
+              "calls": 910,
+              "inclusive_ns": 566816
+            },
+            "rpc.dispatch/dispatch.record_tool_success": {
+              "calls": 910,
+              "inclusive_ns": 17986872
+            },
+            "rpc.dispatch/dispatch.resolve_read_arguments": {
+              "calls": 910,
+              "inclusive_ns": 687519
+            },
+            "rpc.dispatch/dispatch.validate_schema": {
+              "calls": 910,
+              "inclusive_ns": 26210557
+            },
+            "rpc.dispatch/encoding.jsonrpc_string": {
+              "calls": 910,
+              "inclusive_ns": 310770491
+            },
+            "rpc.dispatch/encoding.jsonrpc_value": {
+              "calls": 910,
+              "inclusive_ns": 76612984
+            }
+          },
+          "tools": {
+            "kmp_inspect": {
+              "body_batches": 0,
+              "body_single_reads": 1792,
+              "body_slots": 1792,
+              "logical_read_calls": 27734,
+              "nesting_errors": 0,
+              "rpc_profiles": 896,
+              "sql_rows": {
+                "p50": 44.0,
+                "p95": 44,
+                "total": 39236
+              },
+              "sql_statements": {
+                "p50": 38.0,
+                "p95": 38,
+                "total": 34012
+              },
+              "sqlite_profile_ns": {
+                "p50": 0.0,
+                "p95": 1000000,
+                "total": 351000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 529.0,
+                "p95": 529,
+                "total": 472097
+              }
+            },
+            "kmp_trace": {
+              "body_batches": 0,
+              "body_single_reads": 0,
+              "body_slots": 0,
+              "logical_read_calls": 3570,
+              "nesting_errors": 0,
+              "rpc_profiles": 14,
+              "sql_rows": {
+                "p50": 255.0,
+                "p95": 255,
+                "total": 3570
+              },
+              "sql_statements": {
+                "p50": 257.0,
+                "p95": 257,
+                "total": 3598
+              },
+              "sqlite_profile_ns": {
+                "p50": 2000000.0,
+                "p95": 6000000,
+                "total": 35000000
+              },
+              "sqlite_vm_steps": {
+                "p50": 4402.0,
+                "p95": 4402,
+                "total": 61628
+              }
+            }
+          }
+        }
+      },
+      "source": "064-shared-physical.json"
+    }
+  },
+  "contract": "kmp.proof-batch-physical-audit.v1",
+  "limitations": [
+    "inclusive phase totals overlap and must not be summed as exclusive wall time",
+    "SQLite profile time is observer-reported statement execution time, not physical disk I/O",
+    "VmHWM remains process-wide in summary.json and is not attributed to one query"
+  ],
+  "scope": "opt-in per-RPC inclusive phases and actual embedded SQLite trace_v2 events"
+}

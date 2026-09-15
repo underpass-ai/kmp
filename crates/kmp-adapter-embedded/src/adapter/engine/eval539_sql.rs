@@ -63,7 +63,7 @@ mod tests {
     #[ignore = "experimental observer: run EVAL539_PROFILE=1 with --ignored"]
     fn prepared_cached_vm_work_is_per_execution_and_partial_rows_are_counted() {
         assert!(eval539_profile::enabled(), "run with EVAL539_PROFILE=1");
-        let connection = Connection::open_in_memory().unwrap();
+        let connection = Connection::open_in_memory().expect("in-memory SQLite opens");
         install(&connection);
         let mut observed = Vec::new();
         for _ in 0..3 {
@@ -71,9 +71,9 @@ mod tests {
             {
                 let mut statement = connection
                     .prepare_cached("SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3")
-                    .unwrap();
-                let mut rows = statement.query([]).unwrap();
-                assert!(rows.next().unwrap().is_some());
+                    .expect("control statement prepares");
+                let mut rows = statement.query([]).expect("control query starts");
+                assert!(rows.next().expect("first control row reads").is_some());
                 // Deliberately stop before SQLITE_DONE: resetting/dropping must
                 // still report exactly the VM work and row consumed this run.
             }
