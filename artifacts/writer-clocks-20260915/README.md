@@ -14,6 +14,13 @@ python3 artifacts/writer-clocks-20260915/driver.py \
   --trace artifacts/writer-clocks-20260915/attempt.native.jsonl
 ```
 
+For the final-main acceptance run, supply `FRESH-SOURCE.md`,
+`FRESH-WRITER-INSTRUCTIONS.md`, and `FRESH-SEED-REQUEST.json` with the matching
+driver options. The seed creates only source-backed older context in a new
+store; it is recorded in the native trace before the writer's first call. The
+fresh writer receives the source and instructions, not the seed payload or any
+expected response.
+
 ## Recorded independent writer
 
 `fresh-luna-report.md` and `fresh-luna-native.jsonl.gz` retain a fresh

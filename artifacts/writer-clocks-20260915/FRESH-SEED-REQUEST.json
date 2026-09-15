@@ -1,0 +1,40 @@
+{
+  "tool": "kmp_write_memory",
+  "arguments": {
+    "about": "project:fresh-final-main-n41",
+    "actor": "fixture-author",
+    "idempotency_key": "fresh-final-main-n41-seed-v1",
+    "observed_at": "2026-08-20T08:00:00Z",
+    "memories": [
+      {
+        "id": "archive-limit",
+        "kind": "constraint",
+        "labels": {"task": ["archive-transfer"]},
+        "summary": "Archive transfers must not exceed 64 MiB.",
+        "evidence": "Policy P4: archive transfers are limited to 64 MiB."
+      },
+      {
+        "id": "encryption-rule",
+        "kind": "constraint",
+        "labels": {"task": ["archive-transfer"]},
+        "summary": "Archive destinations must be encrypted.",
+        "evidence": "Policy P7: every archive destination must be encrypted."
+      },
+      {
+        "id": "older-reading",
+        "kind": "observation",
+        "labels": {"task": ["archive-transfer"]},
+        "occurred_at": "2026-08-19T16:00:00Z",
+        "summary": "An earlier calibration recorded 60 MiB.",
+        "evidence": "Calibration K2 recorded 60 MiB for a different transfer."
+      },
+      {
+        "id": "unrelated",
+        "kind": "constraint",
+        "labels": {"task": ["garden"]},
+        "summary": "The garden gate must stay closed.",
+        "evidence": "Garden rule G1 says the gate stays closed."
+      }
+    ]
+  }
+}
