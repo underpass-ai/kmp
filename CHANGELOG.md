@@ -9,6 +9,24 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- Authored Condense card revisions now enter append-only event history in the
+  same transaction as their projections. Rebuild and portable export/import
+  preserve those revisions without changing canonical memory bodies or proof.
+- Historical compact reads select the card version available at the requested
+  time. Successful Condense writes also update the maintained project bundle.
+
+### Changed
+
+- SQLite stores upgrade automatically from format 3 to format 4. Existing cards
+  become explicit baseline events; previously overwritten revisions cannot be
+  recovered. Stop older KMP processes before upgrading a shared store.
+- Portable bundles containing card events use event format 3; memory-only
+  exports retain format 2. Older engines reject the upgraded store and card
+  bundles. After adopting legacy cards, export the project bundle before the
+  next guarded write if its maintained bundle is behind the store.
+
 ## [0.18.7] - 2026-09-15
 
 ### Fixed
