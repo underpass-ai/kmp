@@ -1,9 +1,9 @@
 {
   "auditor": "proof_batch_physical_audit.py",
-  "auditor_sha256": "4c14e4b9f8368ffe81f95d95ba16751fadafaaf5dd994b101496e1987a356fd4",
+  "auditor_sha256": "6fb6adc8bb78d1bf0cd728bf99937c98ab6f7b68541fff21810e46e7a56c0282",
   "captures": {
     "001-distinct": {
-      "sha256": "bbde9c0b6bdfbb2695055c036e669a53a65206b4d3ab2f779b09e9f45aa0955c",
+      "sha256": "165761d8475f55fc606626d533875c3ea2c746f230afa652b5c9920057a01054",
       "sides": {
         "batch": {
           "complete_operations": {
@@ -372,10 +372,10 @@
           }
         }
       },
-      "source": "001-distinct-physical.json"
+      "source": "001-distinct-physical.json.gz"
     },
     "008-distinct": {
-      "sha256": "0f6381f94a7e3102e470e80d9d4d3eb0e6dba4a515c5a202588d269d2b62959f",
+      "sha256": "ca577f127b46dad06870a749da044872ebe03a50f51d473c6726fd60b835de70",
       "sides": {
         "batch": {
           "complete_operations": {
@@ -744,10 +744,10 @@
           }
         }
       },
-      "source": "008-distinct-physical.json"
+      "source": "008-distinct-physical.json.gz"
     },
     "064-distinct": {
-      "sha256": "74e2983e270870426bbeea9c324301bd57facfea19220eab94264eee8c6a6948",
+      "sha256": "4b8663033823e90156bb5d2a310a5b434d38b97818783d228e3185c29ef0580e",
       "sides": {
         "batch": {
           "complete_operations": {
@@ -1116,10 +1116,10 @@
           }
         }
       },
-      "source": "064-distinct-physical.json"
+      "source": "064-distinct-physical.json.gz"
     },
     "064-shared": {
-      "sha256": "84486dc71765d623e7874fc6eeceb0c1d1dbfa6ee9046fd734b8dcea42325fb7",
+      "sha256": "5a5115f82a67aeda77ec8b4a76ca7cbc4e248e003b9786e0771964aee4e33605",
       "sides": {
         "batch": {
           "complete_operations": {
@@ -1488,7 +1488,7 @@
           }
         }
       },
-      "source": "064-shared-physical.json"
+      "source": "064-shared-physical.json.gz"
     }
   },
   "contract": "kmp.proof-batch-physical-audit.v1",

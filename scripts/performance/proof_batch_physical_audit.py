@@ -106,9 +106,10 @@ def main() -> None:
         raise SystemExit("usage: proof_batch_physical_audit.py ARTIFACT_DIR [OUTPUT]")
     root = Path(sys.argv[1]).resolve()
     captures = {}
-    for path in sorted(root.glob("*-physical.json")):
-        shape = path.name.removesuffix("-physical.json")
-        sides = json.loads(path.read_text())
+    for path in sorted(root.glob("*-physical.json.gz")):
+        shape = path.name.removesuffix("-physical.json.gz")
+        with gzip.open(path, "rt") as source:
+            sides = json.load(source)
         captures[shape] = {
             "source": path.name,
             "sha256": digest(path),

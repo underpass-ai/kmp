@@ -173,6 +173,10 @@ process still does not imply an empty operating-system cache.
 
 `proof_batch_physical_audit.py` reconstructs complete operations from the
 preserved JSON-RPC traces, joins each request id to its physical profile and
-writes `physical-summary.json`, including capture and auditor hashes. The
+writes `physical-summary.json`, including capture and auditor hashes. Raw
+physical profiles are preserved losslessly as `*-physical.json.gz`;
+`compression-manifest.json` records each original and compressed hash, and the
+decompressed bytes were verified against the originals from commit `bd7681a8`.
+The
 previous 38 lost failed-attempt files remain lost and are only described by
 `failed-attempt-ledger.json`; this follow-up does not recreate them.

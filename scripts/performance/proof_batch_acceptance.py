@@ -471,10 +471,17 @@ def main() -> None:
                     client.close()
                 for trace in traces.values():
                     trace.close()
-                dump(out / f"{name}-physical.json", {
-                    side: profile_rows(shape / side / "stderr.log")
-                    for side in ["oracle", "batch"]
-                })
+                with gzip.open(out / f"{name}-physical.json.gz", "wt") as physical:
+                    json.dump(
+                        {
+                            side: profile_rows(shape / side / "stderr.log")
+                            for side in ["oracle", "batch"]
+                        },
+                        physical,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    )
+                    physical.write("\n")
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 
