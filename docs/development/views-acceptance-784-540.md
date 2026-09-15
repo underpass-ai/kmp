@@ -1,7 +1,7 @@
 # Acceptance matrix: Condense candidates and consolidated views
 
-This matrix closes the acceptance audit for #784 and #540 against the merged
-implementations, rather than treating their merge as acceptance by itself. It
+This matrix supports closing #784 and keeps #540 open for its remaining total
+formation/consolidation/retrieval/reader cost criterion. It
 links the versioned controls, generated local artifacts, and the focused tests
 rerun on `fc352d7d37ac0480cc79120a6288bfd446fa4c86` on 15 September 2026.
 
@@ -12,8 +12,7 @@ neither recreates them nor relabels older measurements as a new run.
 
 ## #784 — Condense candidates
 
-Delivered by #802 (`3de9cf36f81fe8dfc3f216fe7f1cf598263ba23b`, not
-`3de9c084`); replayed against main `4b97b15f` before the subsequent main
+Delivered by #802 (`3de9cf36f81fe8dfc3f216fe7f1cf598263ba23b`); replayed against main `4b97b15f` before the subsequent main
 integrations. The candidate contract and replay procedure are
 in [condense-candidates.md](condense-candidates.md).
 
@@ -75,3 +74,14 @@ controls and their counterexamples. Re-running them without fresh independent
 readers would not add acceptance evidence. In particular, this evaluation does
 not prove a general quality gain or a lower total cost; it only reports the
 observed control results and costs.
+
+## Remaining task for #540
+
+Capture one new formation/consolidation run with its source-only input, complete
+proposal/rejection/retry trace, preparation time, and externally reported model
+usage when available. Join that record to the already preserved projection and
+reader costs under one declared accounting boundary. Report unavailable cost
+components explicitly and retain the existing short-source regression. Existing
+semantic and temporal controls do not need to be repeated unless that work changes
+the implementation. The current manually formed fixture cannot retrospectively
+establish its missing formation cost.
