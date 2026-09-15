@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.18.8] - 2026-09-15
+
 ### Fixed
 
 - Authored Condense card revisions now enter append-only event history in the
@@ -1830,7 +1832,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.7...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.8...HEAD
+[0.18.8]: https://github.com/underpass-ai/kmp/compare/v0.18.7...v0.18.8
 [0.18.7]: https://github.com/underpass-ai/kmp/compare/v0.18.6...v0.18.7
 [0.18.6]: https://github.com/underpass-ai/kmp/compare/v0.18.5...v0.18.6
 [0.18.5]: https://github.com/underpass-ai/kmp/compare/v0.18.4...v0.18.5
