@@ -1,0 +1,37 @@
+{
+  "name": "kmp",
+  "version": "0.1.11+codex.20260818222635",
+  "description": "Discover and operate KMP agent memory from Codex: wires the kernel-memory MCP server, teaches the ten moves, and diagnoses a broken setup.",
+  "author": {
+    "name": "Underpass AI"
+  },
+  "repository": "https://github.com/underpass-ai/kmp",
+  "license": "Apache-2.0",
+  "keywords": [
+    "memory",
+    "mcp",
+    "kmp",
+    "graph",
+    "temporal",
+    "context-recovery"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "KMP legacy local (0.1.11)",
+    "shortDescription": "Legacy local source; use KMP from Underpass",
+    "longDescription": "Legacy local KMP 0.1.11 source kept for reference. The maintained plugin is kmp@underpass from https://github.com/underpass-ai/kmp.git. Install or update that source, preserve the selected memory store, and restart the session to load its tools.",
+    "developerName": "Underpass AI",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Recover what you know about this project before touching any file.",
+      "Store this decision and its reasons in memory.",
+      "Show me the memory relations around this incident.",
+      "Diagnose why KMP memory is not answering."
+    ],
+    "websiteURL": "https://underpassai.com/"
+  }
+}

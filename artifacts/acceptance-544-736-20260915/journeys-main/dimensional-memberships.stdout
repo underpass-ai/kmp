@@ -1,0 +1,1 @@
+{"checks": ["distinct facets and multiple aliases", "one memory per selection", "one-membership correction preserves source and clocks", "shared visual selection"], "calls_in_lesson": 11, "model_calls": 0}

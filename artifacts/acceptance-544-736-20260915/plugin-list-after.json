@@ -1,0 +1,140 @@
+{
+  "source": "fresh local Codex app-server, existing configuration; filtered to KMP",
+  "codex_version": "codex-cli 0.154.0",
+  "model_calls": 0,
+  "mutations": 0,
+  "marketplaces": [
+    {
+      "name": "personal",
+      "path": "/home/gx10a/.agents/plugins/marketplace.json",
+      "interface": {
+        "displayName": "Personal"
+      },
+      "plugins": [
+        {
+          "id": "kmp@personal",
+          "remotePluginId": null,
+          "version": null,
+          "localVersion": "0.1.11+codex.20260818222635",
+          "name": "kmp",
+          "shareContext": null,
+          "source": {
+            "type": "local",
+            "path": "/home/gx10a/plugins/kmp"
+          },
+          "installed": false,
+          "installedAt": null,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "installPolicySource": null,
+          "mustShowInstallationInterstitial": null,
+          "authPolicy": "ON_INSTALL",
+          "availability": "AVAILABLE",
+          "disabledReason": null,
+          "eligiblePlanTypes": null,
+          "interface": {
+            "displayName": "KMP legacy local (0.1.11)",
+            "shortDescription": "Legacy local source; use KMP from Underpass",
+            "longDescription": "Legacy local KMP 0.1.11 source kept for reference. The maintained plugin is kmp@underpass from https://github.com/underpass-ai/kmp.git. Install or update that source, preserve the selected memory store, and restart the session to load its tools.",
+            "developerName": "Underpass AI",
+            "category": "Developer Tools",
+            "capabilities": [
+              "Interactive"
+            ],
+            "websiteUrl": "https://underpassai.com/",
+            "privacyPolicyUrl": null,
+            "termsOfServiceUrl": null,
+            "defaultPrompt": [
+              "Recover what you know about this project before touching any file.",
+              "Store this decision and its reasons in memory.",
+              "Show me the memory relations around this incident."
+            ],
+            "brandColor": null,
+            "composerIcon": null,
+            "composerIconUrl": null,
+            "logo": null,
+            "logoDark": null,
+            "logoUrl": null,
+            "logoUrlDark": null,
+            "screenshots": [],
+            "screenshotUrls": []
+          },
+          "keywords": [
+            "memory",
+            "mcp",
+            "kmp",
+            "graph",
+            "temporal",
+            "context-recovery"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "underpass",
+      "path": "/home/gx10a/.codex/.tmp/marketplaces/underpass/.agents/plugins/marketplace.json",
+      "interface": {
+        "displayName": "Underpass"
+      },
+      "plugins": [
+        {
+          "id": "kmp@underpass",
+          "remotePluginId": null,
+          "version": null,
+          "localVersion": "0.18.5",
+          "name": "kmp",
+          "shareContext": null,
+          "source": {
+            "type": "local",
+            "path": "/home/gx10a/.codex/.tmp/marketplaces/underpass/plugins/kmp"
+          },
+          "installed": true,
+          "installedAt": null,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "installPolicySource": null,
+          "mustShowInstallationInterstitial": null,
+          "authPolicy": "ON_INSTALL",
+          "availability": "AVAILABLE",
+          "disabledReason": null,
+          "eligiblePlanTypes": null,
+          "interface": {
+            "displayName": "KMP by Underpass",
+            "shortDescription": "Temporal, navigable memory for coding agents",
+            "longDescription": "Wire the local kmp MCP server, learn when to reach for memory before re-deriving context, and diagnose a broken setup. Runs the embedded kernel \u2014 no service, database or network required.",
+            "developerName": "Underpass AI",
+            "category": "Developer Tools",
+            "capabilities": [
+              "Interactive"
+            ],
+            "websiteUrl": "https://underpassai.com/",
+            "privacyPolicyUrl": null,
+            "termsOfServiceUrl": null,
+            "defaultPrompt": [
+              "Recover what you know about this project before touching any file.",
+              "Store this decision and its reasons in memory.",
+              "Show me the memory relations around this incident."
+            ],
+            "brandColor": null,
+            "composerIcon": null,
+            "composerIconUrl": null,
+            "logo": null,
+            "logoDark": null,
+            "logoUrl": null,
+            "logoUrlDark": null,
+            "screenshots": [],
+            "screenshotUrls": []
+          },
+          "keywords": [
+            "memory",
+            "mcp",
+            "kmp",
+            "graph",
+            "temporal",
+            "context-recovery"
+          ]
+        }
+      ]
+    }
+  ]
+}

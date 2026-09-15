@@ -1,0 +1,51 @@
+[
+  {
+    "pid": 802254,
+    "executable": "/home/gx10a/.local/bin/kmp-mcp",
+    "executable_sha256": "c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910",
+    "configured_store": "",
+    "cwd": "/home/gx10a/Documents/ai"
+  },
+  {
+    "pid": 802280,
+    "executable": "/home/gx10a/.local/bin/kmp-mcp",
+    "executable_sha256": "c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910",
+    "configured_store": "",
+    "cwd": "/home/gx10a/Documents/ai"
+  },
+  {
+    "pid": 802304,
+    "executable": "/home/gx10a/.local/bin/kmp-mcp",
+    "executable_sha256": "c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910",
+    "configured_store": "",
+    "cwd": "/home/gx10a/Documents/ai"
+  },
+  {
+    "pid": 802484,
+    "executable": "/home/gx10a/.local/bin/kmp-mcp",
+    "executable_sha256": "c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910",
+    "configured_store": "",
+    "cwd": "/home/gx10a/Documents/ai"
+  },
+  {
+    "pid": 1179559,
+    "executable": "/home/gx10a/.local/bin/kmp-mcp",
+    "executable_sha256": "c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910",
+    "configured_store": "",
+    "cwd": "/home/gx10a/Documents/ai"
+  },
+  {
+    "pid": 1182001,
+    "executable": "/home/gx10a/.local/bin/kmp-mcp",
+    "executable_sha256": "c24712dfcc44c2293d4fb520ff8eb7f91ebb0b8c5a7de52aafc9c4c5caa2c910",
+    "configured_store": "",
+    "cwd": "/home/gx10a/Documents/ai"
+  },
+  {
+    "pid": 1211072,
+    "executable": "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/target/debug/kmp-mcp",
+    "executable_sha256": "8ff8ca3217639aa61d72d258b0c8b880803e3bd7d8705fb666d14bd38ca72675",
+    "configured_store": "artifacts/writer-clocks-20260915/fresh-final-main-store",
+    "cwd": "/home/gx10a/Documents/ai/kmp-accept-writer-20260915/artifacts/writer-clocks-20260915/fresh-final-main-store"
+  }
+]

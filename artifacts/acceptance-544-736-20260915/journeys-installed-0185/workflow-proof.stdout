@@ -1,0 +1,1 @@
+{"checks": ["every source keeps its declared kind, literal text and evidence", "every authored relation preserves target, class, rationale, evidence and confidence", "complete temporal enumeration contains exactly the intended memories", "the shared view selects the intended source on the observed clock"], "calls_in_lesson": 33, "model_calls": 0}
