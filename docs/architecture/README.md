@@ -39,7 +39,9 @@ flowchart TB
 
 The plugin is not a kernel adapter. It packages discovery and orchestration.
 `kmp-mcp` is the protocol boundary. Both composition roots call the same
-application use cases and expose the same fifteen MCP tools.
+application use cases through the MCP contract. Backend availability is
+explicit: summaries audit is unavailable over gRPC, and the embedded loopback
+viewer needs the local kernel. The live `tools/list` defines discovery.
 
 ## Layer ownership
 
