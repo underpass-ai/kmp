@@ -32,5 +32,11 @@
     "source_or_expected_answer_supplied": false
   },
   "independent_reader_run": false,
-  "human_chronoloom_review": "pending"
+  "human_chronoloom_review": {
+    "status": "accepted",
+    "view_revision": 2,
+    "visible_focus": "J4 selected with verified_by path to C7",
+    "response": "OK",
+    "scope": "bounded conformity with the displayed J4-focused view"
+  }
 }

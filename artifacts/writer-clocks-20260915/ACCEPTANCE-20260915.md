@@ -109,9 +109,12 @@ latency totals 1,221.360 ms, median 16.200 ms, nearest-rank p95 211.706 ms and
 maximum 285.749 ms. These are driver-side local timings, not a benchmark. The
 driver made no model/API calls.
 
-`CHRONOLOOM-REVIEW.md` names the exact six refs and human checklist on a
-byte-identical store copy. Human review is still pending, so #683's ordering
-condition is preserved and no independent reader has run.
+`CHRONOLOOM-REVIEW.md` names the exact refs and human checklist on a
+byte-identical store copy. At the user's request, ChronoLoom revision 2 centered
+and selected J4 and visibly showed its `verified_by` path to C7. The user then
+replied “OK”. This bounded response satisfies #683's required human review
+boundary; it is not expanded into a criterion-by-criterion statement. No
+independent reader has run, nor is one required solely to accept #683.
 
 ## Reproduction
 

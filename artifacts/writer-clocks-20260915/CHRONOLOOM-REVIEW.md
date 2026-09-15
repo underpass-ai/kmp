@@ -35,5 +35,17 @@ Please check the visible graph against the source:
 
 The explicit time range took priority over simultaneous trace framing, which
 ChronoLoom reported as unhonored. The focused refs and selected correction were
-honored. Human approval or a finding should be recorded before any independent
-experimental reader is started.
+honored.
+
+## Human review outcome
+
+The shared view was then moved to revision 2 at the user's request, centered on
+the J4 transfer with J4 selected and the visible audit path
+`J4 -> verified_by -> C7`. The occurrence axis and moment zoom were active, and
+no time range overrode that trace. After the UI visibly showed J4 and C7 in
+that state, the user replied **“OK”**.
+
+This records bounded human conformity with the displayed J4-focused view. It
+does not invent a criterion-by-criterion review statement. The required human
+review boundary for issue 683 is satisfied. No independent experimental reader
+was run before or after that response as part of this acceptance.
