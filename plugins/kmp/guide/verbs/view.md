@@ -24,6 +24,10 @@ Before continuing the conversation after a shared-view interaction, call
 the agent's last intent, and the next answer must continue from what both are
 actually looking at.
 
+The scene axis uses UTC. Narrowing the time window reveals hours and minutes,
+with seconds at finer scales; date context remains visible across day boundaries.
+Axis label precision does not change the selected clock or stored timestamps.
+
 ## The viewer, when it offers itself
 
 `kmp_write_memory` sometimes comes back with a `viewer` block:

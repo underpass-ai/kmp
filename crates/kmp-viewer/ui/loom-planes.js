@@ -9,7 +9,6 @@ KMP_APP.planes = (() => {
       this.group = group;
       this.container = container;
       this.records = new Map();
-      this.date = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
       this.leaders = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       this.leaders.classList.add("plane-leaders");
       container.append(this.leaders);
@@ -71,14 +70,24 @@ KMP_APP.planes = (() => {
         if (record.subtitle.textContent !== caption) record.subtitle.textContent = caption;
         record.label.point.set(-470, plane.y + 140, plane.z);
         labels.push(record.label);
-        record.ticks.forEach((tick, i) => {
+        const tickTimes = record.ticks.map((_, i) => {
           const rank = layout.times.length ? Math.round((layout.times.length - 1) * i / 3) : 0;
-          const time = state.scale === "elapsed" ? state.from + (state.to - state.from) * i / 3 : layout.times[rank];
+          return state.scale === "elapsed"
+            ? state.from + (state.to - state.from) * i / 3
+            : layout.times[rank];
+        });
+        const tickLabels = KMP_LOOM.planeTickLabels(tickTimes, state.from, state.to);
+        record.ticks.forEach((tick, i) => {
+          const time = tickTimes[i];
           const visible = (plane.index === 0 || state.mode === "flat") && time !== undefined;
           tick.element.hidden = !visible;
           if (!visible) return;
-          const text = this.date.format(time);
-          if (tick.element.textContent !== text) tick.element.textContent = text;
+          const text = tickLabels[i];
+          if (tick.element.textContent !== text) {
+            tick.element.textContent = text;
+            tick.axisWidth = undefined;
+            tick.axisHeight = undefined;
+          }
           tick.point.set(state.scale === "elapsed" ? -410 + 820 * i / 3 : layout.timeX(time), plane.y - 118, plane.z);
           labels.push(tick);
         });
