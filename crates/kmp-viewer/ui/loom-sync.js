@@ -15,6 +15,17 @@ KMP_APP.sync = (() => {
 
   const VIEW_ID = "default";
   let frameGeneration = 0;
+  let applyDepth = 0;
+
+  function beginApply() {
+    applyDepth += 1;
+    sync.applying = true;
+  }
+
+  function endApply() {
+    applyDepth -= 1;
+    sync.applying = applyDepth > 0;
+  }
 
   async function viewOpen() {
     try {
@@ -91,7 +102,7 @@ KMP_APP.sync = (() => {
     clearTimeout(sync.reportTimer);
     sync.humanPending = false;
     sync.reportGeneration = (sync.reportGeneration || 0) + 1;
-    sync.applying = true;
+    beginApply();
     try {
       // The labels the snapshot carries are the kernel's filter; they are
       // adopted before any projection is asked for, and a change reloads.
@@ -211,7 +222,8 @@ KMP_APP.sync = (() => {
         }
       }
     } finally {
-      sync.applying = false;
+      // Another application may still be loading or changing the shared view.
+      endApply();
     }
   }
 
@@ -367,6 +379,8 @@ KMP_APP.sync = (() => {
 
   return {
     VIEW_ID,
+    beginApply,
+    endApply,
     viewOpen,
     startViewPolling,
     adoptAgentState,

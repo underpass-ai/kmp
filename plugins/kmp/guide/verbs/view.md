@@ -19,6 +19,10 @@ moved the view and the revision conflicts, get the current state and rebase
 the intent on it instead of retrying blind. Do not call `kmp_view_open` again
 to navigate an already-open view.
 
+When snapshot applications and about loads overlap in the browser, human view
+reports stay suppressed until all applications finish or fail. An intermediate application
+state must not be echoed back as human navigation.
+
 Before continuing the conversation after a shared-view interaction, call
 `kmp_view_get_state`. The person may have clicked, filtered, panned or undone
 the agent's last intent, and the next answer must continue from what both are

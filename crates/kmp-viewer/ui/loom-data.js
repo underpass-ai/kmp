@@ -213,7 +213,7 @@ KMP_APP.data = (() => {
     { deferProjection = false, preserveOverview = false } = {},
   ) {
     const previouslyApplying = sync.applying;
-    sync.applying = true;
+    KMP_APP.sync.beginApply();
     try {
       const generation = ++model.loadGeneration;
       // Episode carries exact cluster endpoints without downloading entry
@@ -307,12 +307,11 @@ KMP_APP.data = (() => {
       KMP_APP.viewport.setClock(view.clock, true, false);
       if (!deferProjection) await loadProjection();
       KMP_APP.panels.renderAbouts();
-      sync.applying = previouslyApplying;
       if (announce && !previouslyApplying) await KMP_APP.sync.viewOpen();
     } catch (error) {
       showError(error.message);
     } finally {
-      sync.applying = previouslyApplying;
+      KMP_APP.sync.endApply();
     }
   }
 
