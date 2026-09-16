@@ -1035,6 +1035,130 @@ test("viewOpen adopts the aggregate's revision and starts the long poll", async 
   assert.ok(calls.some((call) => call.name === "panels.renderProvenance"));
 });
 
+for (const operations of [["agent", "agent"], ["load", "agent"], ["agent", "load"], ["load", "load"]]) {
+  for (const settledFirst of [0, 1]) {
+    for (const fails of [false, true]) {
+      test(`overlapping applications suppress human reports until both settle (${operations.join("/")}, ${settledFirst} first, ${fails ? "failure" : "success"})`, async () => {
+        const { app, context } = loom();
+        const { model, view } = app.state;
+        model.about = "project:x";
+        view.full = { t0: 0, t1: 10000 };
+        const timers = new Map();
+        let timerId = 0;
+        context.setTimeout = (fn) => {
+          timers.set(++timerId, fn);
+          return timerId;
+        };
+        context.clearTimeout = (id) => timers.delete(id);
+        const flushTimers = async () => {
+          const callbacks = [...timers.values()];
+          timers.clear();
+          for (const fn of callbacks) await fn();
+        };
+        const posted = [];
+        app.api.call = async (path, params) => {
+          assert.equal(path, "/api/view/report");
+          posted.push(params);
+          return { view_revision: 3 };
+        };
+        const loads = [];
+        const deferredLoad = () => new Promise((resolve, reject) => loads.push({ resolve, reject }));
+        app.data.loadProjection = deferredLoad;
+        app.api.fetchProjection = deferredLoad;
+        const probe = {
+          entries: [], bins: [], relations: [], page: { total: 1 },
+          clusters: [{ from: new Date(1000).toISOString(), to: new Date(7000).toISOString(), dimension: "d", total: 1 }],
+        };
+        app.data.loadObservability = async () => {};
+        const state = (revision, from, to) => ({
+          view_revision: revision,
+          about: "project:x",
+          clock: view.clock,
+          focus: { time_range: { from: new Date(from).toISOString(), to: new Date(to).toISOString() } },
+          projection: {},
+        });
+        // Polling and a takeover conflict can apply snapshots concurrently.
+        // Observe rejections immediately so the failure case stays handled.
+        const pending = operations.map((operation, index) => {
+          const applying = operation === "load"
+            ? app.data.loadAbout("project:x", false, { deferProjection: true })
+            : app.sync.applyAgentState(state(index + 1, 1000, 7000));
+          return applying.then(() => null, (error) => error);
+        });
+        try {
+          assert.equal(loads.length, 2);
+          const failure = new Error("projection unavailable");
+          if (fails) loads[settledFirst].reject(failure);
+          else loads[settledFirst].resolve(probe);
+          // loadAbout handles its read error; agent application propagates it.
+          assert.equal(await pending[settledFirst], fails && operations[settledFirst] === "agent" ? failure : null);
+
+          app.sync.reportView();
+          await flushTimers();
+          assert.equal(posted.length, 0, "a manual report must not publish a partially applied view");
+
+          loads[1 - settledFirst].resolve(probe);
+          assert.equal(await pending[1 - settledFirst], null);
+          app.sync.reportView();
+          await flushTimers();
+          assert.equal(posted.length, 1, "human reporting resumes after every application settles");
+          assert.equal(posted[0].about, "project:x");
+          assert.equal(posted[0].from, new Date(Math.round(view.t0)).toISOString());
+          assert.equal(posted[0].to, new Date(Math.round(view.t1)).toISOString());
+        } finally {
+          for (const load of loads) load.resolve(probe);
+          await Promise.all(pending);
+          timers.clear();
+        }
+      });
+    }
+  }
+}
+
+test("an announced load keeps reporting suppressed when polling starts another application", async () => {
+  const { app, context } = loom();
+  const { model, view, sync } = app.state;
+  app.api.fetchProjection = async () => ({
+    entries: [], bins: [], relations: [], page: { total: 1 },
+    clusters: [{ from: new Date(1000).toISOString(), to: new Date(7000).toISOString(), dimension: "d", total: 1 }],
+  });
+  const releases = [];
+  app.data.loadProjection = () => new Promise((resolve) => releases.push(resolve));
+  const snapshot = (revision) => ({
+    view_revision: revision, about: "project:x", clock: view.clock,
+    focus: {}, projection: {},
+  });
+  let polls = 0;
+  const posted = [];
+  app.api.call = async (path, params) => {
+    if (path === "/api/view/open") return snapshot(1);
+    if (path === "/api/view") {
+      if (++polls === 1) return snapshot(2);
+      return new Promise(() => {});
+    }
+    assert.equal(path, "/api/view/report");
+    posted.push(params);
+    return snapshot(3);
+  };
+  const loading = app.data.loadAbout("project:x");
+  await loading;
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(releases.length, 1, "the poll has started applying the next snapshot");
+  assert.equal(sync.applying, true, "finishing the outer load must retain the poll's guard");
+
+  context.setTimeout = (fn) => { fn(); return 0; };
+  context.clearTimeout = () => {};
+  app.sync.reportView();
+  assert.equal(posted.length, 0);
+  releases[0]();
+  await new Promise((resolve) => setImmediate(resolve));
+  app.sync.reportView();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(posted.length, 1, "reporting resumes after the nested applications finish");
+  assert.equal(model.about, "project:x");
+  assert.equal(sync.applying, false);
+});
+
 test("a view-sync failure keeps the loom drawing", async () => {
   const { app, calls } = loom();
   app.state.model.about = "project:x";
