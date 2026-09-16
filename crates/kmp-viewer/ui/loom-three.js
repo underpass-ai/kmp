@@ -2,6 +2,39 @@
 KMP_APP.three = (() => {
   const { THREE, OrbitControls } = KMP_THREE;
   const { fittedCamera } = KMP_APP.camera;
+  function layoutAxisLabels(projected, w, h) {
+    const occupied = [];
+    for (const label of projected.filter((l) => l.type === "axis")) {
+      const outside =
+        label.outside ||
+        label.x < 0 ||
+        label.x > w ||
+        label.y < 0 ||
+        label.y > h;
+      const metrics = label.source || label;
+      if (metrics.axisWidth === undefined) {
+        const measured = label.element.offsetWidth;
+        if (measured > 0) metrics.axisWidth = measured;
+      }
+      if (metrics.axisHeight === undefined) {
+        const measured = label.element.offsetHeight;
+        if (measured > 0) metrics.axisHeight = measured;
+      }
+      const width = metrics.axisWidth || 0;
+      const height = metrics.axisHeight || 15;
+      const overlap = occupied.some(
+        (o) =>
+          Math.abs(o.x - label.x) < (o.width + width) / 2 + 4 &&
+          Math.abs(o.y - label.y) < (o.height + height) / 2 + 3,
+      );
+      label.element.hidden = outside || overlap;
+      if (!outside && !overlap) {
+        label.element.style.left = label.x + "px";
+        label.element.style.top = label.y + "px";
+        occupied.push({ ...label, width, height });
+      }
+    }
+  }
   const kindColors = {
     decision: "#91a9ee",
     constraint: "#d5b571",
@@ -334,6 +367,7 @@ KMP_APP.three = (() => {
         const p = point.project(this.camera);
         return {
           ...label,
+          source: label,
           x: ((p.x + 1) * w) / 2,
           y: ((1 - p.y) * h) / 2,
           outside: p.z < -1 || p.z > 1,
@@ -377,26 +411,9 @@ KMP_APP.three = (() => {
           label.leader.setAttribute("y2", label.y);
         }
       }
-      const occupied = [];
-      for (const label of projected.filter((l) => l.type === "axis")) {
-        const outside =
-          label.outside ||
-          label.x < 0 ||
-          label.x > w ||
-          label.y < 0 ||
-          label.y > h;
-        const overlap = occupied.some(
-          (o) => Math.abs(o.x - label.x) < 52 && Math.abs(o.y - label.y) < 15,
-        );
-        label.element.hidden = outside || overlap;
-        if (!outside && !overlap) {
-          label.element.style.left = label.x + "px";
-          label.element.style.top = label.y + "px";
-          occupied.push(label);
-        }
-      }
+      layoutAxisLabels(projected, w, h);
     }
   }
 
-  return { MemoryScene };
+  return { MemoryScene, layoutAxisLabels };
 })();

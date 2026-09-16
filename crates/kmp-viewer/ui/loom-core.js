@@ -538,6 +538,51 @@ const KMP_LOOM = (() => {
     return iso.slice(11, 19);
   }
 
+  const UTC_DATE = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    timeZone: "UTC",
+  });
+  const UTC_DATE_YEAR = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  function utcDay(ms) {
+    return new Date(ms).toISOString().slice(0, 10);
+  }
+
+  /* Scene ticks have four fixed slots, so their precision follows the
+     displayed window rather than the event that happens to occupy a slot.
+     A date is repeated on every label when the window crosses UTC midnight;
+     this keeps a compressed event-density lens understandable too. */
+  function planeTickLabels(times, from, to) {
+    const values = times.map(Number);
+    const step = axisTicks(from, to, 4).step;
+    const contextTimes = [from, ...values, to].filter(Number.isFinite);
+    const firstDay = contextTimes.length ? utcDay(contextTimes[0]) : null;
+    const crossesDay = contextTimes.some((ms) => utcDay(ms) !== firstDay);
+    const firstYear = contextTimes.length ? new Date(contextTimes[0]).getUTCFullYear() : null;
+    const crossesYear = contextTimes.some((ms) => new Date(ms).getUTCFullYear() !== firstYear);
+    const date = (ms) => (crossesYear ? UTC_DATE_YEAR : UTC_DATE).format(ms);
+    const render = (ms, precision) => {
+      if (!Number.isFinite(ms)) return "";
+      const clock = tickLabel(ms, precision);
+      if (precision >= 86400e3) return date(ms);
+      if (crossesDay) return `${date(ms)} ${clock}`;
+      return clock;
+    };
+    let labels = values.map((ms) => render(ms, step));
+    /* Event-density can place several samples in one minute. Keep all four
+       slots useful by refining only when the first pass would collide. */
+    if (new Set(labels).size < labels.length && step >= 60e3) {
+      labels = values.map((ms) => render(ms, 1e3));
+    }
+    return labels;
+  }
+
   /* ---------------- relations ----------------
      Classes carry meaning; color is never the only channel — each class has
      its own dash pattern and weight, and structural threads fade first. */
@@ -727,6 +772,7 @@ const KMP_LOOM = (() => {
     axisTicks,
     screenAxisTicks,
     tickLabel,
+    planeTickLabels,
     arcStyle,
     classifyEdges,
     prism,
