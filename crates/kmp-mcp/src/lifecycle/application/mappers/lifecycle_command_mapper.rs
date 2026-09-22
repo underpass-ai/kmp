@@ -25,6 +25,7 @@ impl LifecycleCommandMapper {
             .map(|host| match host.as_str() {
                 "claude" => Ok(Host::Claude),
                 "codex" => Ok(Host::Codex),
+                "hermes" => Ok(Host::Hermes),
                 _ => Err(LifecycleError::InvalidHostResponse(format!(
                     "unsupported lifecycle host `{host}`"
                 ))),

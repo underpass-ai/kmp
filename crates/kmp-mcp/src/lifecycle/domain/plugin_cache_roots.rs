@@ -23,7 +23,10 @@ impl PluginCacheRoots {
     /// A path is named, never required to exist: a machine with one host
     /// installed simply has one cache, and looking into the other finds
     /// nothing to collect. A root that is not absolute is not a cache this
-    /// process may touch, and is left out.
+    /// process may touch, and is left out. Hermes is deliberately absent:
+    /// it holds no versioned plugin cache — its skills live as plain
+    /// directories in `$HERMES_HOME/skills`, mirrored wholesale by the
+    /// adapter, so there is nothing here to key by release.
     pub fn installed(&self, release: &ReleaseVersion) -> Vec<(Host, PluginRoot)> {
         [
             (Host::Claude, self.home.join(".claude/plugins/cache")),

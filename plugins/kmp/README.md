@@ -99,6 +99,21 @@ the result. Re-running it preserves the plugin as the single MCP owner.
 The native plugin is the only supported Codex owner. Do not add a second
 global `mcp_servers.kmp` table or copy prompts and AGENTS fragments beside it.
 
+**Hermes Agent** — no plugin marketplace; the native lifecycle registers the
+engine through Hermes' own CLI and mirrors the `kmp-*` skills into
+`$HERMES_HOME/skills`:
+
+```bash
+kmp-mcp setup --host hermes
+```
+
+That runs `hermes mcp add kmp --command kmp-mcp` (answering its one
+tool-enable prompt non-interactively) and copies the skill directories where
+Hermes scans for them. Finish with a Hermes restart so the MCP tools load —
+the same one-restart rule as Codex and Claude Code. `kmp-mcp doctor`
+inventories Hermes as a peer host: registration owner, skills present and
+the engine proof from `PATH`.
+
 ### Initialize the selected store
 
 After setup and the host restart, ask Codex to run `kmp-guide`, or run

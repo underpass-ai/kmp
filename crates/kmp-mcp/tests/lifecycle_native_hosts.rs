@@ -116,3 +116,62 @@ fn codex_clean_install_accepts_an_existing_local_marketplace_snapshot() {
     assert_eq!(installed.host(), Host::Codex);
     assert!(processes.is_exhausted());
 }
+
+#[test]
+fn hermes_convergence_registers_through_its_own_cli() {
+    let config = command(
+        "hermes",
+        &["config", "get", "mcp_servers"],
+        true,
+        "other:\n  command: uvx\n  enabled: true\n",
+    );
+    let registered = command(
+        "hermes",
+        &["config", "get", "mcp_servers"],
+        true,
+        "kmp:\n  command: kmp-mcp\n  enabled: true\n",
+    );
+    let processes = FakeProcessExecutor::expecting(vec![
+        config,
+        command(
+            "sh",
+            &["-c", "echo Y | hermes mcp add kmp --command kmp-mcp"],
+            true,
+            "  ✓ Saved 'kmp' to ~/.hermes/config.yaml (18/18 tools enabled)\n",
+        ),
+        registered,
+    ]);
+    let gateway = NativeHostGateway::new(&processes);
+
+    let installed = gateway
+        .provision(
+            Host::Hermes,
+            &ReleaseVersion::parse("0.18.9").expect("version"),
+        )
+        .expect("Hermes installation");
+
+    assert_eq!(installed.host(), Host::Hermes);
+    assert!(installed.is_enabled());
+    assert!(processes.is_exhausted());
+}
+
+#[test]
+fn hermes_runtime_status_reads_the_config_surface() {
+    let processes = FakeProcessExecutor::expecting(vec![command(
+        "hermes",
+        &["config", "get", "mcp_servers"],
+        true,
+        "kmp:\n  command: kmp-mcp\n  enabled: true\n",
+    )]);
+    let gateway = NativeHostGateway::new(&processes);
+
+    let status = gateway
+        .runtime_status(Host::Hermes)
+        .expect("runtime status");
+
+    assert_eq!(
+        status,
+        kmp_mcp::lifecycle::domain::host_runtime_status::HostRuntimeStatus::Registered
+    );
+    assert!(processes.is_exhausted());
+}

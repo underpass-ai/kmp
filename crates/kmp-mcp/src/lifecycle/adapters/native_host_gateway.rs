@@ -1,8 +1,10 @@
 use crate::lifecycle::adapters::codex_plugin_cache::CodexPluginCache;
+use crate::lifecycle::adapters::hermes_host_adapter::HermesHostAdapter;
 use crate::lifecycle::adapters::mappers::claude_installation_mapper::ClaudeInstallationMapper;
 use crate::lifecycle::adapters::mappers::claude_runtime_status_mapper::ClaudeRuntimeStatusMapper;
 use crate::lifecycle::adapters::mappers::codex_installation_mapper::CodexInstallationMapper;
 use crate::lifecycle::adapters::mappers::codex_runtime_status_mapper::CodexRuntimeStatusMapper;
+use crate::lifecycle::adapters::mappers::hermes_runtime_status_mapper::HermesRuntimeStatusMapper;
 use crate::lifecycle::domain::engine_executable::EngineExecutable;
 use crate::lifecycle::domain::engine_install_dir::EngineInstallDir;
 use crate::lifecycle::domain::host::Host;
@@ -15,11 +17,13 @@ use crate::lifecycle::ports::host_gateway::HostGateway;
 use crate::lifecycle::ports::process_executor::ProcessExecutor;
 use crate::lifecycle::ports::process_output::ProcessOutput;
 
-/// Native Claude/Codex adapter. Their JSON contracts end at the mappers.
+/// Native Claude/Codex/Hermes adapter. Their JSON and YAML contracts end at
+/// the mappers.
 pub struct NativeHostGateway<'a> {
     processes: &'a dyn ProcessExecutor,
     codex_cache: CodexPluginCache,
     marketplace: MarketplaceSource,
+    hermes: Option<HermesHostAdapter<'a>>,
 }
 
 impl<'a> NativeHostGateway<'a> {
@@ -28,6 +32,7 @@ impl<'a> NativeHostGateway<'a> {
             processes,
             codex_cache: CodexPluginCache::from_environment(),
             marketplace: MarketplaceSource,
+            hermes: HermesHostAdapter::new(processes).ok(),
         }
     }
 
@@ -39,23 +44,37 @@ impl<'a> NativeHostGateway<'a> {
             processes,
             codex_cache: CodexPluginCache::new(codex_home),
             marketplace: MarketplaceSource,
+            hermes: HermesHostAdapter::new(processes).ok(),
         }
+    }
+
+    fn hermes(&self) -> Result<&HermesHostAdapter<'a>, LifecycleError> {
+        self.hermes.as_ref().ok_or_else(|| {
+            LifecycleError::HostNotInstalled(
+                "no HOME resolves, so the Hermes host cannot be inspected".to_string(),
+            )
+        })
     }
 
     fn inventory_host(&self, host: Host) -> Result<Vec<HostInstallation>, LifecycleError> {
         if !self.processes.is_available(host.executable()) {
             return Ok(Vec::new());
         }
-        let output = match host {
-            Host::Claude => self.required(host, &["plugin", "list", "--json"]),
-            Host::Codex => self.required(
-                host,
-                &["plugin", "list", "--marketplace", "underpass", "--json"],
-            ),
-        }?;
         match host {
-            Host::Claude => ClaudeInstallationMapper::map(output.stdout()),
+            Host::Hermes => Ok(self
+                .hermes()?
+                .installation(&ReleaseVersion::current())?
+                .into_iter()
+                .collect()),
+            Host::Claude => {
+                let output = self.required(host, &["plugin", "list", "--json"])?;
+                ClaudeInstallationMapper::map(output.stdout())
+            }
             Host::Codex => {
+                let output = self.required(
+                    host,
+                    &["plugin", "list", "--marketplace", "underpass", "--json"],
+                )?;
                 CodexInstallationMapper::map_inventory(output.stdout(), &self.codex_cache)
             }
         }
@@ -100,6 +119,11 @@ impl<'a> NativeHostGateway<'a> {
         );
         let output = self.required(Host::Codex, &["plugin", "add", "kmp@underpass", "--json"])?;
         CodexInstallationMapper::map_add_result(output.stdout())
+    }
+
+    fn refresh_hermes(&self) -> Result<HostInstallation, LifecycleError> {
+        self.hermes()?
+            .refresh(&ReleaseVersion::current(), Self::plugin_root().as_deref())
     }
 
     fn provision_claude(&self) -> Result<HostInstallation, LifecycleError> {
@@ -154,6 +178,23 @@ impl<'a> NativeHostGateway<'a> {
         let output = self.required(Host::Codex, &["plugin", "add", "kmp@underpass", "--json"])?;
         CodexInstallationMapper::map_add_result(output.stdout())
     }
+
+    fn provision_hermes(&self) -> Result<HostInstallation, LifecycleError> {
+        self.hermes()?
+            .provision(&ReleaseVersion::current(), Self::plugin_root().as_deref())
+    }
+
+    /// The plugin tree skills mirror from. A development checkout carries
+    /// one beside this binary; a machine without it converges the MCP
+    /// registration alone.
+    fn plugin_root() -> Option<std::path::PathBuf> {
+        let mut path = std::env::current_exe().ok()?;
+        for _ in 0..4 {
+            path = path.parent()?.to_path_buf();
+        }
+        let candidate = path.join("plugins/kmp");
+        candidate.is_dir().then_some(candidate)
+    }
 }
 
 impl HostGateway for NativeHostGateway<'_> {
@@ -185,6 +226,10 @@ impl HostGateway for NativeHostGateway<'_> {
                 let output = self.required(host, &["mcp", "list", "--json"])?;
                 CodexRuntimeStatusMapper::map(output.stdout())
             }
+            Host::Hermes => {
+                let output = self.required(host, &["config", "get", "mcp_servers"])?;
+                HermesRuntimeStatusMapper::map(output.stdout())
+            }
         }
     }
 
@@ -206,6 +251,7 @@ impl HostGateway for NativeHostGateway<'_> {
                         "Codex declares `kmp-mcp`, but no executable resolves on PATH".to_string(),
                     )
                 }),
+            Host::Hermes => self.hermes()?.runtime_engine(),
         }
     }
 
@@ -224,6 +270,7 @@ impl HostGateway for NativeHostGateway<'_> {
         let installation = match host {
             Host::Claude => self.provision_claude()?,
             Host::Codex => self.provision_codex()?,
+            Host::Hermes => self.provision_hermes()?,
         };
         installation.require_release(target)?;
         Ok(installation)
@@ -244,6 +291,7 @@ impl HostGateway for NativeHostGateway<'_> {
         let installation = match host {
             Host::Claude => self.refresh_claude()?,
             Host::Codex => self.refresh_codex()?,
+            Host::Hermes => self.refresh_hermes()?,
         };
         installation.require_release(target)?;
         Ok(installation)

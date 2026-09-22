@@ -21,6 +21,7 @@ impl LifecycleCliParser {
             match arguments[position] {
                 "--claude" => hosts.push("claude".to_string()),
                 "--codex" => hosts.push("codex".to_string()),
+                "--hermes" => hosts.push("hermes".to_string()),
                 "--dry-run" => dry_run = true,
                 "--no-lexical-bridge" => decline_bridge = true,
                 "--lexical-bridge" => {

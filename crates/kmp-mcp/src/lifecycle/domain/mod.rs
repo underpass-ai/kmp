@@ -11,6 +11,7 @@ pub mod engine_executable;
 pub mod engine_install_dir;
 pub mod engine_proof;
 pub mod found_engine;
+pub mod hermes_skill_dir;
 pub mod host;
 pub mod host_connection_verification;
 pub mod host_convergence;
