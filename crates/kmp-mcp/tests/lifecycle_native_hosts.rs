@@ -144,10 +144,7 @@ fn hermes_convergence_registers_through_its_own_cli() {
     let gateway = NativeHostGateway::new(&processes);
 
     let installed = gateway
-        .provision(
-            Host::Hermes,
-            &ReleaseVersion::parse("0.18.9").expect("version"),
-        )
+        .provision(Host::Hermes, &ReleaseVersion::current())
         .expect("Hermes installation");
 
     assert_eq!(installed.host(), Host::Hermes);
