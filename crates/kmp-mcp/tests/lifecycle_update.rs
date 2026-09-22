@@ -102,10 +102,12 @@ fn unpinned_update_uses_latest_and_converges_both_hosts_and_the_shared_engine() 
 #[test]
 fn setup_of_current_plugins_uses_the_running_release_without_mutating_host_managers() {
     let target = ReleaseVersion::current();
+    // A machine of the two-plugin-host era: Hermes is not on PATH.
     let hosts = FakeHostGateway::with_installations(vec![
         installation(Host::Claude, target.as_str(), "/tmp/claude"),
         installation(Host::Codex, target.as_str(), "/tmp/codex"),
-    ]);
+    ])
+    .on_path(vec![Host::Claude, Host::Codex]);
     let releases = FakeReleaseRepository::publishing(target.clone());
     let engines = FakeEngineStore::running(EngineArtifact::verified(
         target.clone(),
@@ -131,7 +133,9 @@ fn setup_of_current_plugins_uses_the_running_release_without_mutating_host_manag
 #[test]
 fn clean_setup_provisions_both_native_hosts_from_the_running_binary() {
     let target = ReleaseVersion::current();
-    let hosts = FakeHostGateway::with_installations(Vec::new());
+    // A machine of the two-plugin-host era: Hermes is not on PATH.
+    let hosts =
+        FakeHostGateway::with_installations(Vec::new()).on_path(vec![Host::Claude, Host::Codex]);
     let releases = FakeReleaseRepository::publishing(target.clone());
     let engines = FakeEngineStore::running(EngineArtifact::verified(
         target.clone(),

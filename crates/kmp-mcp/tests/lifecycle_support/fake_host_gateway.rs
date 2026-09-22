@@ -19,6 +19,7 @@ pub struct FakeHostGateway {
     refreshes: Mutex<Vec<Host>>,
     refreshed_version: Option<ReleaseVersion>,
     runtime_status: Option<HostRuntimeStatus>,
+    hosts_on_path: Option<Vec<Host>>,
 }
 
 impl FakeHostGateway {
@@ -29,7 +30,16 @@ impl FakeHostGateway {
             refreshes: Mutex::new(Vec::new()),
             refreshed_version: None,
             runtime_status: None,
+            hosts_on_path: None,
         }
+    }
+
+    /// Simulates a machine where only these host executables resolve. Tests
+    /// that exercise the two-plugin-host era keep their shape by leaving
+    /// Hermes off PATH.
+    pub fn on_path(mut self, hosts: Vec<Host>) -> Self {
+        self.hosts_on_path = Some(hosts);
+        self
     }
 
     /// Makes every host report the same runtime status, so a diagnosis can be
@@ -78,6 +88,7 @@ impl FakeHostGateway {
         let root = match host {
             Host::Claude => "/tmp/claude",
             Host::Codex => "/tmp/codex",
+            Host::Hermes => "/tmp/hermes",
         };
         HostInstallation::discovered(
             host,
@@ -90,7 +101,10 @@ impl FakeHostGateway {
 
 impl HostGateway for FakeHostGateway {
     fn available_hosts(&self) -> Vec<Host> {
-        Host::CONVERGENCE_ORDER.to_vec()
+        match &self.hosts_on_path {
+            Some(hosts) => hosts.clone(),
+            None => Host::CONVERGENCE_ORDER.to_vec(),
+        }
     }
 
     fn inventory(&self) -> Result<Vec<HostInstallation>, LifecycleError> {
@@ -104,6 +118,7 @@ impl HostGateway for FakeHostGateway {
         Ok(match host {
             Host::Claude => HostRuntimeStatus::Connected,
             Host::Codex => HostRuntimeStatus::Registered,
+            Host::Hermes => HostRuntimeStatus::Registered,
         })
     }
 

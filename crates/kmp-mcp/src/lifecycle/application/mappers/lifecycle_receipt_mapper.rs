@@ -5,7 +5,6 @@ use crate::lifecycle::application::dto::lifecycle_host_dto::LifecycleHostDto;
 use crate::lifecycle::application::dto::lifecycle_receipt_dto::LifecycleReceiptDto;
 use crate::lifecycle::domain::bridge_installation::BridgeInstallation;
 use crate::lifecycle::domain::convergence_status::ConvergenceStatus;
-use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::lifecycle_action::LifecycleAction;
 use crate::lifecycle::domain::lifecycle_receipt::LifecycleReceipt;
 
@@ -33,11 +32,7 @@ impl LifecycleReceiptMapper {
                 .hosts()
                 .iter()
                 .map(|host| LifecycleHostDto {
-                    host: match host.host() {
-                        Host::Claude => "claude",
-                        Host::Codex => "codex",
-                    }
-                    .to_string(),
+                    host: host.host().to_string(),
                     status: match host.status() {
                         ConvergenceStatus::PlannedChange => "planned_change",
                         ConvergenceStatus::Changed => "changed",

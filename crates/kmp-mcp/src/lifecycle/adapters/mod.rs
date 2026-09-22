@@ -12,6 +12,7 @@ pub mod filesystem_engine_store;
 pub mod filesystem_plugin_cache;
 pub mod filesystem_store_catalog;
 pub mod github_release_repository;
+pub mod hermes_host_adapter;
 pub mod info_report;
 pub mod jsonl_store_index;
 pub mod lifecycle_cli_parser;
@@ -31,5 +32,7 @@ pub mod store_removal_guard;
 pub mod store_session_lease;
 pub mod system_process_executor;
 pub(crate) mod telemetry_probe;
+#[cfg(test)]
+pub(crate) mod tests_support;
 pub mod uninstall_report;
 pub(crate) mod viewer_probe;
