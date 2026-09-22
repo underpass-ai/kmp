@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-22
+
 ### Added
 
 - Hermes Agent converges as a third native host in the kmp-mcp lifecycle,
@@ -1851,7 +1853,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.18.9...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/underpass-ai/kmp/compare/v0.18.9...v0.19.0
 [0.18.9]: https://github.com/underpass-ai/kmp/compare/v0.18.8...v0.18.9
 [0.18.8]: https://github.com/underpass-ai/kmp/compare/v0.18.7...v0.18.8
 [0.18.7]: https://github.com/underpass-ai/kmp/compare/v0.18.6...v0.18.7
