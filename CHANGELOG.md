@@ -9,6 +9,16 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- Hermes Agent converges as a third native host in the kmp-mcp lifecycle,
+  alongside Claude Code and Codex. Registration runs through Hermes' own CLI
+  (`hermes mcp add kmp --command kmp-mcp`), skills mirror from the plugin tree
+  into `$HERMES_HOME/skills`, and runtime status is read from
+  `hermes config get mcp_servers` as registration evidence — never hand-edited
+  config. Hermes consumes the shared engine by PATH name and owns no versioned
+  plugin cache.
+
 ## [0.18.9] - 2026-09-15
 
 ### Changed
