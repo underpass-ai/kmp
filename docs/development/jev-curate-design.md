@@ -148,9 +148,20 @@ a relation, not on the relation.
 
 - **When:** a curated pair has no dimension label (dimension kind plus
   `scope_id`) in common.
-- **What Jev is asked:** a `choice` over the labels the selected abouts
-  already use, plus `new` and `none`. For `new`, the agent names the label;
-  Jev never invents one.
+- **What Jev is asked.** The labels are the dynamic `key=value` labels
+  (#507–#514, v0.12.0): N free labels per entry, with the key in
+  `dimension` and the value in `scope_id`. The suggestion is therefore one
+  `key=value`, chosen in two steps against the catalogue the about already
+  has (the `labels[]` that wake lists):
+  1. A `choice` for the **key**: the keys in use, plus `new` and `none`.
+  2. A `choice` for the **value** within that key: its values in use, plus
+     `new`.
+
+  For `new`, the agent names the key or the value; Jev never invents one. The
+  existing rule still applies ("one value, one key per about; the key is
+  fixed on first use"), so a value already stored under another key cannot be
+  offered under a different one. A new key or value goes through
+  `labels_new` and its "does it resemble one we already have?" guard (#510).
 - **Both nodes share it.** The suggestion is one label applied to both
   memories, so they end up sharing it. From then on `kmp_relate` reads the
   pair inside a shared scope (its `coordinate` relations and the proposal
