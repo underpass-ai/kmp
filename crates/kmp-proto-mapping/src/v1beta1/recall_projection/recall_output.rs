@@ -13,6 +13,7 @@ use super::metadata::{append_warning, attach_metadata};
 use super::plan::{ProjectionPlan, section_lengths};
 use super::projection_error::RecallProjectionError;
 use super::projection_outcome::ProjectionOutcome;
+use super::reused_core::{CORE_REUSED, retain_expansion, reuses_core, skeleton};
 use super::text_shortening::truncate_json_text;
 
 pub fn project_recall_output(
@@ -54,6 +55,9 @@ pub fn project_recall_output_typed(
         error
     })?;
     plan.progress_bytes = actions::progress_bytes(&plan, &selection_hash, &budget);
+    // A continuation sends only new expansion items: the caller holds the
+    // first page's core, and the cursor already binds that core by hash.
+    let core_reused = reuses_core(offset, budget.repeat_core);
 
     // Size the core against one worst-case metadata envelope so its bytes do
     // not change with detail, cursor offset, or an advisory-token override.
@@ -66,14 +70,20 @@ pub fn project_recall_output_typed(
     // A ceiling below the stable floor is not an error any more (#439): the
     // caller gets the floor — the zero-text core — with a warning naming it,
     // which costs one call instead of training every caller to over-budget.
-    let (core, core_text_shortened, floor_mode) = match fit_core(
-        &plan,
-        &plan.items,
-        0,
-        plan.items.len(),
-        &selection_hash,
-        &core_budget,
-    ) {
+    let fitted = if core_reused {
+        // Nothing of the core travels, so nothing of it is shortened.
+        Some((plan.core.clone(), false))
+    } else {
+        fit_core(
+            &plan,
+            &plan.items,
+            0,
+            plan.items.len(),
+            &selection_hash,
+            &core_budget,
+        )
+    };
+    let (core, core_text_shortened, floor_mode) = match fitted {
         Some((core, shortened)) => (core, shortened, false),
         None => {
             let mut zero = plan.core.clone();
@@ -85,7 +95,12 @@ pub fn project_recall_output_typed(
     plan.core_lengths = section_lengths(&plan.core);
 
     let mut selected = Vec::new();
-    let mut planning = plan.core.clone();
+    let base = if core_reused {
+        skeleton(&eligible, offset)
+    } else {
+        plan.core.clone()
+    };
+    let mut planning = base.clone();
     attach_metadata(
         &mut planning,
         &plan,
@@ -98,8 +113,15 @@ pub fn project_recall_output_typed(
         core_text_shortened,
         true,
     );
+    if core_reused {
+        planning["projection"][CORE_REUSED] = true.into();
+    }
     let mut planned_bytes = serialized_bytes(&planning);
-    let mut lengths = plan.core_lengths.clone();
+    let mut lengths = if core_reused {
+        Default::default()
+    } else {
+        plan.core_lengths.clone()
+    };
 
     for item in eligible.iter().skip(offset).take(budget.page_entries) {
         let comma_bytes = usize::from(lengths.get(&item.section).copied().unwrap_or(0) > 0);
@@ -119,7 +141,9 @@ pub fn project_recall_output_typed(
         selected.push(*item);
     }
 
-    if selected.is_empty() && offset < eligible.len() && !floor_mode {
+    // A continuation without the core cannot be too large for it: when no
+    // item fits, the page says it stalled and proposes a sufficient budget.
+    if selected.is_empty() && offset < eligible.len() && !floor_mode && !core_reused {
         // Never manufacture a continuation that cannot advance. `fit_core`
         // reserves one item, so reaching this branch means the hard byte
         // ceiling cannot carry both the stable core and any expansion. In
@@ -132,7 +156,7 @@ pub fn project_recall_output_typed(
     // The exact final measurement protects the hard byte ceiling and estimator
     // compatibility without the old serialize-and-drop O(n²) loop.
     loop {
-        let mut projected = plan.core.clone();
+        let mut projected = base.clone();
         for item in &selected {
             push_array(&mut projected, item.section.path(), item.value.clone());
         }
@@ -148,12 +172,16 @@ pub fn project_recall_output_typed(
             core_text_shortened,
             false,
         );
+        if core_reused {
+            projected["projection"][CORE_REUSED] = true.into();
+            retain_expansion(&mut projected);
+        }
         let used_bytes = stabilize_used_bytes(&mut projected);
         if used_bytes <= budget.byte_limit {
             return Ok(ProjectionOutcome::Projected(projected));
         }
         if selected.pop().is_none() {
-            if floor_mode {
+            if floor_mode || core_reused {
                 // The floor exceeds the requested ceiling by definition.
                 // Return it anyway, saying so: min(content, floor) beats an
                 // error the caller can only answer by over-budgeting.

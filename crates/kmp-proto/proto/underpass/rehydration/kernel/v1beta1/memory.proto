@@ -378,7 +378,10 @@ message WakeResponse {
   // The cursor is the caller's to carry — the kernel does not track readers.
   optional TemporalCursor resume_cursor = 5;
   RecallProjection projection = 6;
-  RecallTruncation truncation = 7;
+  // Retired: every count it carried is in `projection` (budget, page,
+  // excluded_by_detail, selection_omitted, core_text_shortened).
+  reserved 7;
+  reserved "truncation";
   // The catalogue of the abouts this wake read: every (key, value) pair
   // their entries stand in, with how many stand in it and the latest
   // instant any was observed. Read it before labelling a new memory, so a
@@ -463,7 +466,10 @@ message AskResponse {
   Proof proof = 4;
   repeated string warnings = 5;
   RecallProjection projection = 6;
-  RecallTruncation truncation = 7;
+  // Retired: every count it carried is in `projection` (budget, page,
+  // excluded_by_detail, selection_omitted, core_text_shortened).
+  reserved 7;
+  reserved "truncation";
   // `AskRequest.asked_as`, echoed byte for byte so a response says what the
   // user asked as well as what the kernel searched. Empty when none was given.
   string asked_as = 8;
@@ -1478,6 +1484,10 @@ message RecallProjection {
   // Retired prose field. New responses leave it unset; there is no fallback.
   optional string next_action = 9;
   RecallCall next_call = 10;
+  // True on a continuation that omits the stable core: combine its
+  // expansion items with the first page's core and earlier pages. Set
+  // PageRequest.repeat_core to receive the core again.
+  bool core_reused = 11;
 }
 
 // An executable native recall call. JSON preserves integer arguments without
@@ -1510,26 +1520,9 @@ message RecallProjectionSection {
   uint64 returned_on_page = 3;
   uint64 eligible = 4;
   uint64 total = 5;
-  // Eligible expansion after this page; excludes repeated core and prior pages.
+  // Eligible expansion after this page; excludes the core and prior pages.
   // Zero does not establish semantic sufficiency or include detail/cap omissions.
   uint64 remaining = 6;
-}
-
-message RecallTruncation {
-  bool truncated = 1;
-  // Echo of the compatibility planning hint; retained on the v1 wire shape.
-  uint32 token_limit = 2;
-  uint64 byte_limit = 3;
-  RecallOmitted omitted = 4;
-}
-
-message RecallOmitted {
-  uint64 page_items = 1;
-  uint64 prior_page_items = 2;
-  uint64 remaining_page_items = 3;
-  uint64 excluded_by_detail = 4;
-  uint64 selection_items = 5;
-  bool core_text_shortened = 6;
 }
 
 // Machine-readable detail for a Wake/Ask continuation failure: ABORTED for
@@ -1604,6 +1597,13 @@ message PageRequest {
   uint32 entries = 1;
   // Opaque continuation cursor returned by PageInfo.next_cursor.
   string cursor = 2;
+  // Wake and Ask only; other reads ignore it. A recall continuation (cursor
+  // past the first page) carries only its new expansion items and marks
+  // RecallProjection.core_reused: the stable core (summary, answer, scope,
+  // pinned proof, the first line of each list, warnings) travels once, on
+  // the first page. True returns that core again, for a caller that lost
+  // the first page; the cursor still binds it to the same selection.
+  bool repeat_core = 3;
 }
 
 message PageInfo {

@@ -131,19 +131,6 @@
       ]
     },
     "summary": "string",
-    "truncation": {
-      "byte_limit": "integer",
-      "omitted": {
-        "core_text_shortened": "boolean",
-        "excluded_by_detail": "integer",
-        "page_items": "integer",
-        "prior_page_items": "integer",
-        "remaining_page_items": "integer",
-        "selection_items": "integer"
-      },
-      "token_limit": "integer",
-      "truncated": "boolean"
-    },
     "warnings": [
       "string"
     ]

@@ -147,6 +147,10 @@ pub(crate) fn recall_page_schema() -> Value {
                 "type": "string",
                 "minLength": 1,
                 "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary."
+            },
+            "repeat_core": {
+                "type": "boolean",
+                "description": "True: this continuation also resends the first page's core."
             }
         }
     })

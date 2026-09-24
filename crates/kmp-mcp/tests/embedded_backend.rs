@@ -1167,13 +1167,13 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
         "{ask}"
     );
     assert_eq!(ask["proof"]["confidence"], "high");
-    assert_eq!(ask["truncation"]["truncated"], true);
+    // `projection` is the one progress block and names every omission.
+    assert!(ask.get("truncation").is_none(), "{ask}");
     assert!(
-        ask["truncation"]["omitted"]
-            .as_object()
-            .is_some_and(|omitted| omitted
-                .values()
-                .any(|count| count.as_u64().unwrap_or(0) > 0)),
+        ask["projection"]["page"]["has_more"] == true
+            || ask["projection"]["excluded_by_detail"].as_u64() > Some(0)
+            || ask["projection"]["selection_omitted"].as_u64() > Some(0)
+            || ask["projection"]["core_text_shortened"] == true,
         "{ask}"
     );
 
@@ -1443,7 +1443,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
                     .is_some_and(|relations| relations.iter().any(|rel| rel == "updates_state")),
                 "the partial update must remain visible in proof: {ask}"
             );
-            assert!(ask["truncation"]["truncated"].is_boolean(), "{ask}");
+            assert!(ask["projection"]["page"]["has_more"].is_boolean(), "{ask}");
             assert!(
                 ask["projection"]["budget"]["used_bytes"]
                     .as_u64()

@@ -34,9 +34,9 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9662
+        "used_bytes": 9448
       },
-      "contract": "kmp.recall.projection.v1",
+      "contract": "kmp.recall.projection.v2",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 7,
@@ -260,19 +260,6 @@
       ]
     },
     "summary": "Retrieved 5 memory items for: Where is Rachel moving?",
-    "truncation": {
-      "byte_limit": 10000,
-      "omitted": {
-        "core_text_shortened": false,
-        "excluded_by_detail": 7,
-        "page_items": 5,
-        "prior_page_items": 0,
-        "remaining_page_items": 5,
-        "selection_items": 0
-      },
-      "token_limit": 2400,
-      "truncated": true
-    },
     "warnings": [
       "recall expansion pending; see projection.sections.*.remaining and execute projection.next_action"
     ]

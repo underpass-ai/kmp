@@ -73,3 +73,28 @@ fn writer_neighborhood_and_search_limits_do_not_invent_read_continuations() {
         assert_eq!(result["content"][0]["text"], body["summary"]);
     }
 }
+
+#[test]
+fn an_incremental_recall_continuation_gets_a_constant_text_not_its_json() {
+    let pending = json!({"proof":{"evidence":[{"id":"evidence:9","text":"A long stored body."}]},
+        "projection":{"core_reused":true,"page":{"has_more":true,"returned":1},
+        "next_action":{"tool":"kmp_ask","arguments":{"about":"p","question":"q"}}},
+        "warnings":["recall expansion pending"]});
+    let text = tool_success_result(pending)["content"][0]["text"]
+        .as_str()
+        .expect("text")
+        .to_string();
+    assert!(text.starts_with("READ_INCOMPLETE:"), "{text}");
+    assert!(!text.contains("A long stored body."), "{text}");
+    assert!(text.contains("first page"), "{text}");
+
+    let last = json!({"wake":{"current_state":["State 9"]},
+        "projection":{"core_reused":true,"page":{"has_more":false,"returned":1}},
+        "warnings":["final continuation page"]});
+    let text = tool_success_result(last)["content"][0]["text"]
+        .as_str()
+        .expect("text")
+        .to_string();
+    assert!(!text.starts_with("READ_INCOMPLETE:"), "{text}");
+    assert!(!text.contains("State 9"), "{text}");
+}

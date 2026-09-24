@@ -1,5 +1,9 @@
-//! The projection and truncation envelope a recall page carries: what was
-//! returned, what remains, and the call that reads the rest.
+//! The projection envelope a recall page carries: what was returned, what
+//! remains, why anything else is absent, and the call that reads the rest.
+//! It is the page's one progress block; every omission cause has its own
+//! counter here (prior pages in `page.offset`, pending delivery in
+//! `sections.*.remaining`, detail in `excluded_by_detail`, the entries cap in
+//! `selection_omitted`, shortened prose in `core_text_shortened`).
 
 use std::borrow::Borrow;
 
@@ -10,7 +14,7 @@ use super::budget::{DEFAULT_MAX_BYTES, ProjectionBudget};
 use super::cursor::make_cursor;
 use super::plan::{ProjectionItem, ProjectionPlan, Section};
 
-pub const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v1";
+pub const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v2";
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn attach_metadata<E, S>(
@@ -104,7 +108,17 @@ pub(super) fn attach_metadata<E, S>(
         } else {
             Some(cursor.as_str())
         };
-        actions::call(&plan.arguments, continuation, Some(max_bytes))
+        if planning {
+            // Size against one envelope whatever tier was asked for: the
+            // longest detail word, so the fitted core never depends on it.
+            let mut arguments = plan.arguments.clone();
+            if arguments.is_object() {
+                arguments["budget"]["detail"] = json!(super::budget::LONGEST_DETAIL);
+            }
+            actions::call(&arguments, continuation, Some(max_bytes))
+        } else {
+            actions::call(&plan.arguments, continuation, Some(max_bytes))
+        }
     });
     value["projection"] = json!({
         "contract": PROJECTION_CONTRACT,
@@ -129,20 +143,6 @@ pub(super) fn attach_metadata<E, S>(
         "next_action": next_action
     });
     if truncated {
-        let remaining_page_items = eligible.len().saturating_sub(next_offset);
-        value["truncation"] = json!({
-            "truncated": true,
-            "token_limit": budget.token_limit,
-            "byte_limit": budget.byte_limit,
-            "omitted": {
-                "page_items": if planning { eligible.len() } else { eligible.len().saturating_sub(selected.len()) },
-                "prior_page_items": if planning { eligible.len() } else { offset },
-                "remaining_page_items": if planning { eligible.len() } else { remaining_page_items },
-                "excluded_by_detail": excluded_by_detail,
-                "selection_items": plan.selection_omitted,
-                "core_text_shortened": core_text_shortened
-            }
-        });
         let warning = if planning {
             // Reserve the longest warning we actually emit, rather than a
             // separate planning paragraph that displaces usable evidence.
@@ -164,8 +164,6 @@ pub(super) fn attach_metadata<E, S>(
             FINAL
         };
         append_warning(value, warning);
-    } else if let Some(object) = value.as_object_mut() {
-        object.remove("truncation");
     }
 }
 

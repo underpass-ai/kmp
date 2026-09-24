@@ -4,7 +4,9 @@ A call without `page.cursor` or `continuation` starts (or restarts) the
 selection: the server's restart action after shortened core prose asks the
 consumer to discard the partial reconstruction, so only pages since the last
 start form the packet. Pages then merge by identity: evidence by id, state and
-action lines by exact text, claims and path hops by their whole content.
+action lines by exact text, claims and path hops by their whole content. A
+continuation marked `projection.core_reused` carries only new items; the core
+(summary, scope, answer) stays the one its first page delivered.
 """
 from dataclasses import dataclass, field
 import json
@@ -82,6 +84,11 @@ def _at(structured, dotted):
     return value
 
 
+def core_reused(structured):
+    """The page is a continuation that omits the stable core (kmp.recall.projection.v2)."""
+    return (structured.get('projection') or {}).get('core_reused') is True
+
+
 def declares_unbounded_state(structured):
     """The page says current_state is about context whose time is not bounded by the selection."""
     scope = structured.get('scope') or {}
@@ -89,9 +96,14 @@ def declares_unbounded_state(structured):
             and scope.get('context_time') == 'unbounded')
 
 
-def selection_strings(structured):
-    """Strings under the paths the page itself declares as its selection."""
-    paths = (structured.get('scope') or {}).get('selection') or []
+def selection_paths(structured):
+    return (structured.get('scope') or {}).get('selection') or []
+
+
+def selection_strings(structured, paths=None):
+    """Strings under the selection paths: the page's own, or (for a
+    continuation without a core) those its first page declared."""
+    paths = selection_paths(structured) if paths is None else paths
     return [text for path in paths if isinstance(path, str) for text in _strings(_at(structured, path))]
 
 
@@ -99,12 +111,20 @@ def build_packet(calls):
     starts = [index for index, call in enumerate(calls) if is_start(call.arguments)]
     selected = calls[starts[-1]:] if starts else calls
     packet, seen = Packet(), {}
+    declared_paths = []
     for call in selected:
         structured = call.structured
         packet.pages += 1
         packet.final = structured
-        packet.selection_strings += selection_strings(structured)
-        packet.context_unbounded.append(declares_unbounded_state(structured))
+        # An incremental continuation (`projection.core_reused`) carries no
+        # core, scope included: the declaration on the page that carried it
+        # still governs the items this page adds.
+        if core_reused(structured):
+            packet.selection_strings += selection_strings(structured, declared_paths)
+        else:
+            declared_paths = selection_paths(structured)
+            packet.selection_strings += selection_strings(structured)
+            packet.context_unbounded.append(declares_unbounded_state(structured))
         wake = structured.get('wake') or {}
         proof = structured.get('proof') or {}
         for item in proof.get('evidence') or []:

@@ -97,19 +97,25 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
             if body["projection"]["core_text_shortened"] != true {
                 for section in &sections {
                     let key = section[1..].replace('/', ".");
-                    let skip = if recall && collected_core {
+                    // An incremental continuation carries only new items;
+                    // one that repeats the core carries it first again.
+                    let repeated_core =
+                        recall && collected_core && body["projection"]["core_reused"] != true;
+                    let skip = if repeated_core {
                         body["projection"]["sections"][&key]["core"]
                             .as_u64()
                             .unwrap_or(0) as usize
                     } else {
                         0
                     };
+                    if recall && collected_core {
+                        assert_eq!(body["projection"]["core_reused"], true, "{tool}: {body}");
+                    }
                     recovered.get_mut(section).expect("collector").extend(
                         body.pointer(section)
-                            .expect("section")
-                            .as_array()
-                            .expect("items")
-                            .iter()
+                            .and_then(Value::as_array)
+                            .into_iter()
+                            .flatten()
                             .skip(skip)
                             .cloned(),
                     );

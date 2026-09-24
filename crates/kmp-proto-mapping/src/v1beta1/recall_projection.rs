@@ -17,6 +17,7 @@ mod proof_value;
 mod recall_output;
 mod request_arguments;
 mod response_value;
+mod reused_core;
 mod scalars;
 mod serialized_size;
 mod text_shortening;
@@ -37,6 +38,8 @@ pub use typed_recall::{project_ask_response, project_wake_response};
 mod action_tests;
 #[cfg(test)]
 mod budget_tests;
+#[cfg(test)]
+mod continuation_tests;
 #[cfg(test)]
 mod core_fit_tests;
 #[cfg(test)]

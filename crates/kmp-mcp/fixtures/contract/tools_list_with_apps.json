@@ -1585,6 +1585,10 @@
                 "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies.",
                 "minimum": 1,
                 "type": "integer"
+              },
+              "repeat_core": {
+                "description": "True: this continuation also resends the first page's core.",
+                "type": "boolean"
               }
             },
             "type": "object"
@@ -1856,6 +1860,10 @@
                 "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies.",
                 "minimum": 1,
                 "type": "integer"
+              },
+              "repeat_core": {
+                "description": "True: this continuation also resends the first page's core.",
+                "type": "boolean"
               }
             },
             "type": "object"

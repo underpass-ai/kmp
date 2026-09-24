@@ -21,9 +21,16 @@ def check(saved, client, authored):
         while True:
             pages += 1
             assert pages < 100
+            # A continuation carries only new items (projection.core_reused);
+            # the core arrived with the first page and is not repeated.
+            reused = page['projection'].get('core_reused') is True
+            assert reused == bool(collected), (tool, 'continuations reuse the core')
             for path, counts in page['projection']['sections'].items():
-                skip = counts['core'] if path in collected else 0
-                collected.setdefault(path, []).extend(section(page, path)[skip:])
+                try:
+                    values = section(page, path)
+                except KeyError:
+                    values = []
+                collected.setdefault(path, []).extend(values)
                 assert counts['remaining'] == counts['eligible'] - len(collected[path]), (tool, path)
             accounting = page['projection']['page']
             assert sum(c['remaining'] for c in page['projection']['sections'].values()) == (

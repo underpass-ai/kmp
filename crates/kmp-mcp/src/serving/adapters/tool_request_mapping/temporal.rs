@@ -183,6 +183,12 @@ impl TemporalOptionsMapper {
                 .unwrap_or_default(),
             cursor: JsonFieldReader::optional_string_field(page, "cursor", "page.cursor")?
                 .unwrap_or_default(),
+            repeat_core: JsonFieldReader::optional_bool_field(
+                page,
+                "repeat_core",
+                "page.repeat_core",
+            )?
+            .unwrap_or(false),
         }))
     }
 

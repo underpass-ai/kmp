@@ -31,13 +31,11 @@ fn oversized_expansion_explains_stall_and_resumes_at_larger_budget() {
     assert_eq!(stalled["projection"]["page"]["returned"], 0);
     assert_eq!(stalled["projection"]["page"]["has_more"], true);
     assert_eq!(stalled["projection"]["page"]["next_cursor"], cursor);
-    assert_eq!(stalled["because"], packet["because"]);
-    assert!(
-        stalled["projection"]["next_action"]["arguments"]["budget"]["max_bytes"]
-            .as_u64()
-            .expect("proposed allowance")
-            > 10_000
-    );
+    // The continuation carries no core, so nothing of it is shortened: the
+    // page says it stalled and proposes a budget the item fits in.
+    assert_eq!(stalled["projection"]["core_reused"], true);
+    assert!(stalled.get("because").is_none());
+    assert_eq!(stalled["projection"]["core_text_shortened"], false);
     assert!(
         stalled["warnings"]
             .as_array()
@@ -45,11 +43,44 @@ fn oversized_expansion_explains_stall_and_resumes_at_larger_budget() {
             .iter()
             .any(|w| w
                 .as_str()
+                .is_some_and(|w| w.contains("cannot advance at this byte budget")))
+    );
+    let advance = stalled["projection"]["next_action"]["arguments"].clone();
+    assert_eq!(advance["page"]["cursor"], cursor);
+    assert!(
+        advance["budget"]["max_bytes"]
+            .as_u64()
+            .expect("proposed allowance")
+            > 10_000
+    );
+    let advanced = projected(packet.clone(), advance);
+    assert_eq!(advanced["projection"]["page"]["returned"], 1);
+    assert!(
+        advanced["proof"]["evidence"]
+            .as_array()
+            .expect("advanced evidence")
+            .contains(&packet["proof"]["evidence"][1])
+    );
+
+    // Rehydrating the core at the same budget still has to shorten it, and
+    // then restarts the selection as before.
+    let mut rehydrate = args.clone();
+    rehydrate["page"]["repeat_core"] = json!(true);
+    let rehydrated = projected(packet.clone(), rehydrate);
+    assert_eq!(rehydrated["because"], packet["because"]);
+    assert_eq!(rehydrated["projection"]["core_text_shortened"], true);
+    assert!(
+        rehydrated["warnings"]
+            .as_array()
+            .expect("warnings")
+            .iter()
+            .any(|w| w
+                .as_str()
                 .is_some_and(|w| w.contains("discard the partial reconstruction")))
     );
-    assert_eq!(stalled["projection"]["core_text_shortened"], true);
-    let restoration = stalled["projection"]["next_action"]["arguments"].clone();
+    let restoration = rehydrated["projection"]["next_action"]["arguments"].clone();
     assert!(restoration.pointer("/page/cursor").is_none());
+    assert!(restoration.pointer("/page/repeat_core").is_none());
     let restored = projected(packet.clone(), restoration);
     assert_eq!(restored["projection"]["core_text_shortened"], false);
     assert_eq!(restored["projection"]["page"]["offset"], 0);
@@ -187,7 +218,10 @@ fn all_abouts_wake_with_a_shortened_core_advances_every_page() {
             returned > 0,
             "every continuation must make progress: {output}"
         );
-        assert_eq!(output["projection"]["core_text_shortened"], true);
+        // Page 1 carries the shortened core; a continuation carries none.
+        let first_page = expected_offset == 0;
+        assert_eq!(output["projection"]["core_text_shortened"], first_page);
+        assert_eq!(output["projection"]["core_reused"] == true, !first_page);
         assert!(
             serde_json::to_vec(&output).expect("projection bytes").len() <= 4_000,
             "the progress guarantee must preserve the byte ceiling"

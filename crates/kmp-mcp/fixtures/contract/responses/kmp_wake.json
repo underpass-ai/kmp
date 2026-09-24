@@ -27,9 +27,9 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9686
+        "used_bytes": 9469
       },
-      "contract": "kmp.recall.projection.v1",
+      "contract": "kmp.recall.projection.v2",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 23,
@@ -247,19 +247,6 @@
       ]
     },
     "summary": "Objective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: none recorded",
-    "truncation": {
-      "byte_limit": 10000,
-      "omitted": {
-        "core_text_shortened": false,
-        "excluded_by_detail": 23,
-        "page_items": 30,
-        "prior_page_items": 0,
-        "remaining_page_items": 30,
-        "selection_items": 0
-      },
-      "token_limit": 1600,
-      "truncated": true
-    },
     "wake": {
       "causal_spine": [
         {

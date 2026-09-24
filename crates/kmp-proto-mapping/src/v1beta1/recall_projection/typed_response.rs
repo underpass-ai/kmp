@@ -4,9 +4,8 @@
 use std::collections::BTreeSet;
 
 use kmp_proto::v1beta1::{
-    AskResponse, MemoryEvidence, MemoryLabel, RecallOmitted, RecallProjection,
-    RecallProjectionBudget, RecallProjectionPage, RecallProjectionSection, RecallTruncation,
-    SupersededMemory, WakeClaim, WakeResponse,
+    AskResponse, MemoryEvidence, MemoryLabel, RecallProjection, RecallProjectionBudget,
+    RecallProjectionPage, RecallProjectionSection, SupersededMemory, WakeClaim, WakeResponse,
 };
 use prost_types::Timestamp;
 use serde_json::Value;
@@ -54,7 +53,15 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
         .collect();
     response.warnings = strings_at(value, "/warnings");
     response.projection = value.get("projection").and_then(projection_from_value);
-    response.truncation = value.get("truncation").and_then(truncation_from_value);
+    if core_reused(&response.projection) {
+        // A continuation carries no core: nothing of it survives from the
+        // fresh read this page was cut from.
+        response.resume_cursor = None;
+        response.dimension_selection = None;
+        if let Some(proof) = response.proof.as_mut() {
+            clear_proof_core(proof, value);
+        }
+    }
     response
 }
 
@@ -106,7 +113,13 @@ pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskRe
     }
     response.warnings = strings_at(value, "/warnings");
     response.projection = value.get("projection").and_then(projection_from_value);
-    response.truncation = value.get("truncation").and_then(truncation_from_value);
+    if core_reused(&response.projection) {
+        // A continuation carries no core: nothing of it survives from the
+        // fresh read this page was cut from.
+        if let Some(proof) = response.proof.as_mut() {
+            clear_proof_core(proof, value);
+        }
+    }
     response
 }
 
@@ -280,26 +293,29 @@ fn projection_from_value(value: &Value) -> Option<RecallProjection> {
             .get("next_action")
             .filter(|value| value.is_object())
             .map(actions::call_from_value),
+        core_reused: value
+            .get("core_reused")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
     })
 }
 
-fn truncation_from_value(value: &Value) -> Option<RecallTruncation> {
-    Some(RecallTruncation {
-        truncated: value.get("truncated")?.as_bool()?,
-        token_limit: u32_at(value, "/token_limit"),
-        byte_limit: u64_at(value, "/byte_limit"),
-        omitted: Some(RecallOmitted {
-            page_items: u64_at(value, "/omitted/page_items"),
-            prior_page_items: u64_at(value, "/omitted/prior_page_items"),
-            remaining_page_items: u64_at(value, "/omitted/remaining_page_items"),
-            excluded_by_detail: u64_at(value, "/omitted/excluded_by_detail"),
-            selection_items: u64_at(value, "/omitted/selection_items"),
-            core_text_shortened: value
-                .pointer("/omitted/core_text_shortened")
-                .and_then(Value::as_bool)
-                .unwrap_or(false),
-        }),
-    })
+fn core_reused(projection: &Option<RecallProjection>) -> bool {
+    projection
+        .as_ref()
+        .is_some_and(|projection| projection.core_reused)
+}
+
+/// Keep only the proof items this continuation carries.
+fn clear_proof_core(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
+    let empty = Value::Object(Default::default());
+    apply_proof_value(proof, value.get("proof").unwrap_or(&empty));
+    proof.interval = None;
+    proof.axis = 0;
+    proof.as_of = None;
+    proof.nearest_outside = None;
+    proof.abouts_selected.clear();
+    proof.abouts_empty_in_selection.clear();
 }
 
 fn memory_label_from_value(value: &Value) -> MemoryLabel {

@@ -166,6 +166,17 @@ que recupera el objeto nuevo aunque las páginas anteriores lo reutilizasen. Ver
 recorrido, incluida la primera página; omitir un cuerpo repetido no autoriza
 resumir ni eliminar evidencia.
 
+Wake y Ask envían su núcleo estable una sola vez: una continuación
+(`page.cursor` más allá de la primera página) devuelve sólo los elementos de
+expansión nuevos, marca `projection.core_reused=true` y no repite resumen,
+respuesta, `scope`, prueba fijada ni avisos del núcleo. `page.repeat_core=true`
+lo devuelve otra vez al host que perdió la primera página; la acción que
+propone esa respuesta vuelve a la continuación incremental. `projection` es el
+único bloque de progreso (el antiguo `truncation` repetía sus contadores).
+Probar que la primera página más todas las continuaciones reproduce la lectura
+completa con presupuesto grande, y que el cursor sigue rechazando otra
+selección con y sin `repeat_core`.
+
 Al cambiar etiquetas temporales, probar una entrada antigua con una pertenencia
 posterior: ésta no puede satisfacer un selector ni aparecer en las coordenadas
 del Goto anterior. Mantener etiquetas múltiples y filtros de otras dimensiones
