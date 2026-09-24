@@ -41,7 +41,7 @@ fn classify_default(
     // ── L0 Summary ──────────────────────────────────────────────────
     sections.push(TieredSection {
         tier: ResolutionTier::L0Summary,
-        content: render_l0_summary(bundle, options),
+        content: render_l0_summary(bundle),
     });
 
     if max_tier < ResolutionTier::L1CausalSpine {
@@ -172,7 +172,7 @@ fn classify_resume_focused(
     // L0: compact summary (same as default)
     sections.push(TieredSection {
         tier: ResolutionTier::L0Summary,
-        content: render_l0_summary(bundle, options),
+        content: render_l0_summary(bundle),
     });
 
     if max_tier < ResolutionTier::L1CausalSpine {
@@ -231,8 +231,11 @@ fn classify_resume_focused(
     sections
 }
 
+/// What the L0 summary's `Next:` line says when memory records no action.
+pub const NO_RECORDED_ACTION: &str = "none recorded";
+
 /// Compact L0 summary: objective, status, blocker, next action.
-fn render_l0_summary(bundle: &KmpBundle, options: &ContextRenderOptions) -> String {
+fn render_l0_summary(bundle: &KmpBundle) -> String {
     let root = bundle.root_node();
     let objective = if root.summary().trim().is_empty() {
         root.title().to_string()
@@ -250,27 +253,10 @@ fn render_l0_summary(bundle: &KmpBundle, options: &ContextRenderOptions) -> Stri
         .and_then(|r| r.explanation().rationale())
         .unwrap_or("none identified");
 
-    // Next action: highest-priority causal/motivational relationship
-    let next_action = bundle
-        .relationships()
-        .iter()
-        .filter(|r| {
-            matches!(
-                r.explanation().semantic_class(),
-                RelationSemanticClass::Causal | RelationSemanticClass::Motivational
-            )
-        })
-        .min_by_key(|r| r.explanation().semantic_class().salience_rank())
-        .map(|r| {
-            let target = r.target_node_id();
-            let focus_label = if options.focus_node_id.as_deref() == Some(target) {
-                " (focus)"
-            } else {
-                ""
-            };
-            format!("{} → {}{}", r.relationship_type(), target, focus_label)
-        })
-        .unwrap_or_else(|| "continue".to_string());
+    // Next action: the graph records no action type, and a causal or
+    // motivational link says what happened, not what is pending — reading
+    // `updates_state → x` as the next step turned history into a task.
+    let next_action = NO_RECORDED_ACTION;
 
     format!("Objective: {objective}\nStatus: {status}\nBlocker: {blocker}\nNext: {next_action}")
 }
@@ -567,7 +553,7 @@ mod tests {
         let l0 = &sections[0].content;
 
         assert!(l0.contains("Blocker: waiting for approval"));
-        assert!(l0.contains("Next: TRIGGERS"));
+        assert!(l0.contains("Next: none recorded"), "{l0}");
     }
 
     #[test]

@@ -1193,8 +1193,11 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
         }),
     )
     .await;
-    assert_eq!(
-        wake["wake"]["next_actions"][0], "triggers → project:large-recall:claim:gate-action",
+    // The causal link stays in the spine; it is history, not a recorded task.
+    assert!(
+        wake["wake"]["next_actions"]
+            .as_array()
+            .is_none_or(Vec::is_empty),
         "{wake}"
     );
     assert_eq!(
