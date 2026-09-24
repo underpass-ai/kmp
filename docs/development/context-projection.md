@@ -5,8 +5,9 @@ new evidence or consolidate stored memories. The host opts in with
 `KMP_MCP_PASSAGES=shared` (`inline` is the default), or with
 `KernelMcpServer::with_shared_passages(true)`. Stdio, including its viewer path,
 and HTTP environment setup select the same mode. No input schemas or verbs change.
-The initialized host advertises the representation and its read output schemas
-include the optional `passages` and `citations` tables. A host embedding the server chooses its
+The initialized host advertises the representation and, when output schemas
+are advertised (`KMP_MCP_OUTPUT_SCHEMAS=1`), its read output schemas include
+the optional `passages` and `citations` tables. A host embedding the server chooses its
 mode explicitly; construction does not read global process state.
 
 A typed prose slot can contain `{"passage":"p1"}`. `passages.p1` in that same

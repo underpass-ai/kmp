@@ -705,6 +705,61 @@ fn the_advertised_tool_definitions_match_their_reviewed_fixture() {
         &kmp_mcp::kmp_mcp_tools_list_result_with_apps(true),
         "the advertised tool definitions with MCP Apps negotiated",
     );
+
+    // The opt-in catalogue (`KMP_MCP_OUTPUT_SCHEMAS=1`) carries the output
+    // schemas the default one omits. Pinned so the `structuredContent`
+    // contract stays reviewed even though it is no longer advertised.
+    pin(
+        &contract.join("tools_list_with_output_schemas.json"),
+        &kmp_mcp::kmp_mcp_tools_list_result_with_output_schemas(false),
+        "the tool definitions with output schemas",
+    );
+}
+
+/// The default catalogue omits every `outputSchema` and nothing else: the
+/// opt-in one, stripped of them, is the default byte for byte, on both the
+/// plain and the MCP Apps surface. Tools that declared a schema keep it there.
+#[tokio::test]
+async fn output_schemas_are_advertised_only_on_opt_in() {
+    for apps in [false, true] {
+        let lean = kmp_mcp::kmp_mcp_tools_list_result_with_apps(apps);
+        let full = kmp_mcp::kmp_mcp_tools_list_result_with_output_schemas(apps);
+        let lean_tools = lean["tools"].as_array().expect("tools");
+        for tool in lean_tools {
+            assert!(tool.get("outputSchema").is_none(), "{}", tool["name"]);
+        }
+        let mut stripped = full.clone();
+        for tool in stripped["tools"].as_array_mut().expect("tools") {
+            tool.as_object_mut().expect("tool").remove("outputSchema");
+        }
+        assert_eq!(stripped, lean, "apps={apps}");
+        let declared = full["tools"]
+            .as_array()
+            .expect("tools")
+            .iter()
+            .filter(|tool| tool.get("outputSchema").is_some())
+            .count();
+        assert!(declared >= 18, "apps={apps}: {declared} output schemas");
+    }
+
+    // The served catalogue follows the server's choice, not the library's.
+    for (enabled, expected) in [
+        (false, kmp_mcp::kmp_mcp_tools_list_result()),
+        (
+            true,
+            kmp_mcp::kmp_mcp_tools_list_result_with_output_schemas(false),
+        ),
+    ] {
+        let server = KernelMcpServer::fixture().with_output_schemas(enabled);
+        let raw = server
+            .handle_json_line(
+                &json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}).to_string(),
+            )
+            .await
+            .expect("tools/list answers");
+        let served: Value = serde_json::from_str(&raw).expect("JSON-RPC");
+        assert_eq!(served["result"], expected, "output_schemas={enabled}");
+    }
 }
 
 #[tokio::test]

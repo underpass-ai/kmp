@@ -676,6 +676,20 @@ de la petición siguiente. La llamada sin contexto sigue siendo explícita.
 El ejemplo `budget-proof` ejecuta ambos caminos. Son recomendaciones de
 mantenimiento y pruebas de comportamiento; no nuevos gates editoriales.
 
+### Output schemas bajo demanda
+
+`tools/list` no anuncia `outputSchema` por defecto; MCP lo hace opcional y
+`structuredContent` se sigue devolviendo. Los schemas siguen en código
+(`contract/`) como contrato de las respuestas y los tests validan contra
+`tools_list_result()` o `kmp_mcp_tools_list_result_with_output_schemas`, nunca
+contra el catálogo por defecto. `KMP_MCP_OUTPUT_SCHEMAS=1` los anuncia para un
+host que valide la salida; sin definir equivale a `0` y cualquier otro valor
+detiene el arranque. `serving/output_schema_projection.rs` los quita al final, después
+de cualquier proyección que los amplíe; una proyección que parchee
+`outputSchema` debe comprobar antes que existe. `fixtures/contract/tools_list_with_output_schemas.json`
+fija el catálogo con schemas; `tools_list.json` y `tools_list_with_apps.json`
+fijan el anunciado.
+
 ### Proyección opcional de pasajes compartidos
 
 `KMP_MCP_PASSAGES=shared` activa la representación en el host; no cambia los

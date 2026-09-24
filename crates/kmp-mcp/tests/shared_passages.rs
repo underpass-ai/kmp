@@ -20,7 +20,16 @@ async fn rpc(server: &KernelMcpServer, method: &str) -> Value {
 
 #[tokio::test]
 async fn only_the_opted_in_host_advertises_shared_prose_and_input_calls_do_not_change() {
-    let server = KernelMcpServer::fixture();
+    // Output schemas are opt-in; without them the shared tables have nothing
+    // to extend, and must not invent a partial `outputSchema`.
+    let lean = KernelMcpServer::fixture().with_shared_passages(true);
+    for tool in rpc(&lean, "tools/list").await["tools"]
+        .as_array()
+        .expect("array")
+    {
+        assert!(tool.get("outputSchema").is_none(), "{}", tool["name"]);
+    }
+    let server = KernelMcpServer::fixture().with_output_schemas(true);
     let inline = rpc(&server, "tools/list").await;
     let server = server.with_shared_passages(true);
     let shared = rpc(&server, "tools/list").await;

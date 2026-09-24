@@ -210,6 +210,35 @@ E01 is +14, from the larger `tools/list` catalogue.
 Not delivered: T01 and G03, the 512-byte recovery budget, latency and cache
 temperature, H4/H5. The report lists them as limitations.
 
+### C1 — Catalogue without output schemas
+
+Every session pays `tools/list` at startup, and the output schemas were 43 %
+of it. Claude Code presents MCP tools to the model with their input parameters
+only (observed in the host's own tool listing), so there `outputSchema` was
+transport cost with no reader. Other hosts are unverified, so the schemas are
+opt-in rather than deleted: MCP makes `outputSchema` optional and
+`structuredContent` is still returned without it.
+
+- Default `tools/list` omits every `outputSchema`; nothing else changes.
+- `KMP_MCP_OUTPUT_SCHEMAS=1` (stdio, viewer and HTTP startup) advertises them;
+  unset or `0` omits them, any other value refuses to start.
+- The schemas stay in `contract/` and tests validate against them there.
+  `fixtures/contract/tools_list_with_output_schemas.json` pins the opt-in
+  catalogue and is byte-identical to the previous `tools_list.json`.
+- Shared passages extend a read's `outputSchema` only when it is advertised.
+
+Measured on the pinned fixtures, whole document as compact JSON
+(`ensure_ascii=False`), `tiktoken 0.14.0` / `o200k_base`, `encode_ordinary`:
+
+| Catalogue | Bytes before | Bytes after | Tokens before | Tokens after |
+| --- | ---: | ---: | ---: | ---: |
+| Default (`tools_list.json`) | 248,704 | 137,654 | 51,629 | 29,460 (−42.9 %) |
+| MCP Apps (`tools_list_with_apps.json`) | 253,687 | 142,637 | 52,825 | 30,655 (−42.0 %) |
+| Opt-in (`KMP_MCP_OUTPUT_SCHEMAS=1`) | 248,704 | 248,704 | 51,629 | 51,629 |
+
+Contract break, named: a client that read `outputSchema` from the default
+catalogue must now set `KMP_MCP_OUTPUT_SCHEMAS=1`.
+
 ### Backlog, gated by I3 measurements
 
 | Review item | Starts when |
@@ -230,6 +259,7 @@ temperature, H4/H5. The report lists them as limitations.
 | I2 | `fix/544-wake-state` | #837 | merged; state from live memories, `Next: none recorded` |
 | I2b | `fix/544-wake-scope` | #840 | merged; hops join sources by the graph (W03), spine without bookkeeping (W04), no endpoint over-citation (W01) |
 | I3 | `feat/544-wake-oracle` | #839 | merged; against #840 (c88472b9) the candidate passes W01–W04/A01/E01 and is smaller on every wake and ask journey; E01 +14. Weighted −6.9 % at 4096 B, −1.0 % at 10000 B |
+| C1 — catalogue without output schemas | `feat/544-lean-catalogue` | draft | default `tools/list` 51,629 → 29,460 tokens (−42.9 %), 248,704 → 137,654 bytes; `KMP_MCP_OUTPUT_SCHEMAS=1` restores the previous catalogue byte for byte |
 | Next | PR 3 | — | pinned core evidence repeats on every page (+463 tokens in W01 at 10000 B); incremental continuations |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a

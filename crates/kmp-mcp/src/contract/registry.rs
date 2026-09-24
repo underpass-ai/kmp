@@ -24,6 +24,31 @@ pub(crate) fn declared_tool_names() -> Vec<String> {
         .collect()
 }
 
+/// What `tools/list` advertises. The output schemas stay in the contract —
+/// tests validate `structuredContent` against them and a host may opt in — but
+/// by default they are not advertised: MCP makes `outputSchema` optional, and
+/// at least one host (Claude Code) presents tools to the model with their
+/// input parameters only, so the schemas were pure startup transport there.
+pub(crate) fn advertised_tools_list(apps: bool, output_schemas: bool) -> Value {
+    let result = tools_list_result_with_apps(apps);
+    if output_schemas {
+        result
+    } else {
+        without_output_schemas(result)
+    }
+}
+
+/// Drops every tool's `outputSchema`, leaving the rest byte-for-byte intact.
+pub(crate) fn without_output_schemas(mut result: Value) -> Value {
+    for tool in result["tools"].as_array_mut().into_iter().flatten() {
+        if let Some(tool) = tool.as_object_mut() {
+            tool.remove("outputSchema");
+        }
+    }
+    result
+}
+
+/// The full contract, output schemas included.
 pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
     let mut result = tools_list_core();
     if let Some(tools) = result["tools"].as_array_mut() {

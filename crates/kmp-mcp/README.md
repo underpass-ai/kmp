@@ -39,6 +39,11 @@ you configure one.
 | `grpc` | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
 | `fixture` | the reference examples from the contract | nothing — it answers from embedded fixtures |
 
+`tools/list` omits each tool's `outputSchema` by default; the answers still
+carry `structuredContent`. A host that validates structured output sets
+`KMP_MCP_OUTPUT_SCHEMAS=1` to have the schemas advertised (`0` or unset omits
+them).
+
 `embedded` is the one to start with: no server, no cluster, memory that
 survives the session on your own disk. It also brings its own
 [ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) up at
