@@ -99,19 +99,48 @@ and `evidence` for the items it accepts.
 
 1. The verb checks `review_token` against the current selection and content.
    Any change returns a conflict with a fresh `review` action.
-2. Each accepted item becomes an entry in the `relations[]` packet that
+2. **Pre-write check.** Before anything reaches the planner, Jev judges each
+   accepted item again, this time with the `why` and `evidence` the agent
+   wrote. Everything goes in one request:
+   - a `noul` asking whether `why` and `evidence` support `rel` between the
+     two texts;
+   - a `choice` for the best type.
+
+   An item is doubted when the `noul` is below 0.3, or when a different type
+   has confidence ≥ 0.7. These are the same thresholds as `suspect`. A
+   doubted item is not written. It comes back in `doubted[]` with Jev's
+   findings, the agent's text unchanged, and a bound `apply` continuation, so
+   the agent can correct it or confirm it as it is. Confirming means sending
+   `confirm_doubted: true` for that `item_id`. Jev can ask for another look;
+   it cannot refuse a write. The findings are frozen by the digest of the
+   accepted items, so a continuation never calls Jev again. If Jev is
+   unavailable, the check is skipped with a warning and the write proceeds.
+3. Each remaining item becomes an entry in the `relations[]` packet that
    `kmp_write_memory` accepts: `from`, `to`, `rel`, `why`, `evidence`,
    `confidence`. Cross-about equivalences carry their relate proposal in
    `read_context.relate_proposals`.
-3. The packet goes through **the same planner** as `kmp_write_memory`, not a
-   copy of it. `strict`, the evidence requirement, `needs_review` with its
-   continuation and `review_token`, and idempotency behave identically. A Rich
-   relation that needs review returns `needs_review` from `kmp_curate`, with
-   the same neighbourhood.
-4. Provenance of each written relation records `curated_with: <model>`, and
-   `proposed_by` when it is `jev`.
-5. `rel` must stay within what the item allows. Across abouts that means the
+4. The packet goes through **the same path** as `kmp_write_memory`.
+   `write_dispatch.rs` is refactored so that one function (compile with
+   `build_relation_plan`, attach the receipt context, call `kmp_ingest`, map
+   the result) serves both tools. It is not copied. `strict`, the evidence
+   requirement, `needs_review` with its neighbourhood and `review_token`, and
+   idempotency therefore behave identically. The kernel still does the
+   review; a Rich relation returns `needs_review` from `kmp_curate` with the
+   same neighbourhood, and Jev's pre-write findings for that item are attached
+   to it.
+5. Provenance: the planner has no free-form metadata for relations. The
+   shared path gains an internal hook that sets `evidence[].metadata` on the
+   ingest packet, which the ingest already accepts:
+   `curated_with: <model>`, plus `proposed_by` when it is `jev`.
+   `kmp_write_memory` never sets it. `actor` stays the caller's identity.
+6. `rel` must stay within what the item allows. Across abouts that means the
    two equivalences only. An item not present in the review is rejected.
+
+**Later, as a separate spec.** The same pre-write check could annotate
+`needs_review` in `kmp_write_memory` itself. The hook sits in
+`write_dispatch.rs`, before `kmp_ingest`, so it covers the embedded and gRPC
+backends alike. It would be opt-in per store, advisory only, and decided
+after `kmp_curate` has measured how often Jev's doubts are right.
 
 ## Shared TypeSafe client (PR 1)
 
@@ -150,6 +179,9 @@ This generalises the client from `feat/jev-rerank`
 - **Contract:**
   - `review_token` binds selection, arguments and content.
   - `apply` rejects unknown items and changed content.
+  - Pre-write check: a doubted item is withheld with findings, and is
+    written after `confirm_doubted`. A Jev failure writes with a warning. A
+    continuation makes no second Jev call.
   - A parity test shows `apply` and `kmp_write_memory` produce the same
     relations, the same `needs_review` and the same replay for the same
     packet.
