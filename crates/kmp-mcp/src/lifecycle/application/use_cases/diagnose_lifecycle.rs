@@ -3,6 +3,7 @@ use crate::lifecycle::domain::host_connection_verification::HostConnectionVerifi
 use crate::lifecycle::domain::host_installation::HostInstallation;
 use crate::lifecycle::domain::lifecycle_diagnosis::LifecycleDiagnosis;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
+use crate::lifecycle::domain::plugin_tree_parity::PluginTreeParity;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
 use crate::lifecycle::ports::engine_store::EngineStore;
 use crate::lifecycle::ports::host_gateway::HostGateway;
@@ -61,12 +62,15 @@ impl<'a> DiagnoseLifecycle<'a> {
         for installation in &installed {
             findings.extend(self.diagnose_host(installation, &target));
         }
-        let enabled = installed
+        // The same trees the convergence compares: a Hermes home is never a
+        // marketplace plugin tree (#849).
+        let trees = installed
             .iter()
             .filter(|installation| installation.participates_in_convergence())
+            .filter(|installation| installation.host().installs_plugin_tree())
             .collect::<Vec<_>>();
-        if enabled.len() > 1 {
-            findings.push(self.diagnose_parity(&enabled));
+        if trees.len() > 1 {
+            findings.push(self.diagnose_parity(&trees));
         }
         LifecycleDiagnosis::from_findings(findings)
     }
@@ -173,20 +177,31 @@ impl<'a> DiagnoseLifecycle<'a> {
     fn diagnose_parity(&self, installations: &[&HostInstallation]) -> LifecycleFinding {
         let digests = installations
             .iter()
-            .map(|installation| self.engines.digest_tree(installation.root()))
+            .map(|installation| {
+                self.engines
+                    .digest_tree(installation.root())
+                    .map(|digest| (installation.host(), digest))
+            })
             .collect::<Result<Vec<_>, _>>();
-        match digests {
-            Ok(digests) if digests.windows(2).all(|pair| pair[0] == pair[1]) => {
-                LifecycleFinding::new(
-                    DiagnosticSeverity::Ok,
-                    "Claude Code and Codex plugin trees are byte-for-byte identical",
-                )
-                .with_detail(digests[0].to_string())
-            }
-            Ok(_) => LifecycleFinding::new(
+        match digests.map(PluginTreeParity::of) {
+            Ok(PluginTreeParity::Identical(digest)) => LifecycleFinding::new(
+                DiagnosticSeverity::Ok,
+                "Claude Code and Codex plugin trees are byte-for-byte identical",
+            )
+            .with_detail(digest.to_string()),
+            Ok(PluginTreeParity::Unobserved) => LifecycleFinding::new(
+                DiagnosticSeverity::Warn,
+                "no native plugin tree was observed to compare",
+            ),
+            Ok(divergent @ PluginTreeParity::Divergent(_)) => LifecycleFinding::new(
                 DiagnosticSeverity::Fail,
                 "Claude Code and Codex plugin trees differ",
             )
+            .with_detail(format!(
+                "{} disagree: {}",
+                divergent.hosts(),
+                divergent.digests()
+            ))
             .with_detail("run `kmp-mcp update` and require one exact marketplace snapshot"),
             Err(error) => LifecycleFinding::new(
                 DiagnosticSeverity::Fail,

@@ -252,6 +252,157 @@ fn update_rejects_non_identical_codex_and_claude_plugin_trees() {
     );
 }
 
+// #849: Hermes ships skills and an MCP registration, not the marketplace
+// plugin tree. Its installation root is the whole Hermes home, so digesting it
+// beside the Claude and Codex trees could never match.
+fn three_host_machine() -> FakeHostGateway {
+    FakeHostGateway::with_installations(vec![
+        installation(Host::Claude, "0.4.2", "/tmp/claude"),
+        installation(Host::Codex, "0.4.2", "/tmp/codex"),
+        installation(Host::Hermes, "0.4.2", "/tmp/hermes"),
+    ])
+}
+
+fn marketplace_digest() -> String {
+    format!("sha256:{}", "a".repeat(64))
+}
+
+#[test]
+fn update_with_hermes_installed_proves_parity_only_between_marketplace_trees() {
+    let hosts = three_host_machine();
+    let target = version("0.5.2");
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::empty();
+
+    let receipt = UpdateKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(
+        LifecycleAction::Update,
+        BTreeSet::new(),
+        Some(target),
+    ))
+    .expect("Hermes beside identical Claude and Codex trees must converge");
+
+    assert_eq!(
+        hosts.refreshes(),
+        vec![Host::Claude, Host::Codex, Host::Hermes],
+        "Hermes still converges; it only stays out of the tree comparison"
+    );
+    assert_eq!(
+        receipt.plugin_tree().map(ToString::to_string),
+        Some(marketplace_digest())
+    );
+}
+
+#[test]
+fn clean_setup_with_hermes_on_path_converges_all_three_hosts() {
+    let target = ReleaseVersion::current();
+    let hosts = FakeHostGateway::with_installations(Vec::new()).on_path(vec![
+        Host::Claude,
+        Host::Codex,
+        Host::Hermes,
+    ]);
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::running(EngineArtifact::verified(
+        target.clone(),
+        b"running-engine".to_vec(),
+    ));
+
+    let receipt = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(LifecycleAction::Setup, BTreeSet::new(), None))
+    .expect("clean setup with Hermes on PATH");
+
+    assert_eq!(
+        hosts.provisions(),
+        vec![Host::Claude, Host::Codex, Host::Hermes]
+    );
+    assert_eq!(receipt.hosts().len(), 3);
+    assert_eq!(
+        receipt.plugin_tree().map(ToString::to_string),
+        Some(marketplace_digest())
+    );
+}
+
+#[test]
+fn a_hermes_only_update_claims_no_marketplace_tree() {
+    let hosts = FakeHostGateway::with_installations(vec![installation(
+        Host::Hermes,
+        "0.4.2",
+        "/tmp/hermes",
+    )]);
+    let target = version("0.5.2");
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::empty();
+
+    let receipt = UpdateKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(
+        LifecycleAction::Update,
+        BTreeSet::new(),
+        Some(target),
+    ))
+    .expect("Hermes-only update");
+
+    assert_eq!(
+        receipt.plugin_tree(),
+        None,
+        "a Hermes home is not a plugin tree and must not be reported as one"
+    );
+}
+
+#[test]
+fn a_tree_mismatch_names_the_hosts_whose_trees_differ() {
+    let hosts = three_host_machine();
+    let target = version("0.5.2");
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::empty().with_divergent_trees();
+
+    let error = UpdateKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(
+        LifecycleAction::Update,
+        BTreeSet::new(),
+        Some(target),
+    ))
+    .expect_err("different Claude and Codex trees must still fail");
+
+    assert!(matches!(error, LifecycleError::TreeMismatch(_)));
+    let detail = error.to_string();
+    for named in [
+        "claude",
+        "codex",
+        &marketplace_digest(),
+        &format!("sha256:{}", "b".repeat(64)),
+    ] {
+        assert!(detail.contains(named), "`{detail}` does not name `{named}`");
+    }
+    assert!(
+        !detail.contains("hermes"),
+        "`{detail}` blames Hermes, which installs no plugin tree"
+    );
+}
+
 #[test]
 fn update_proves_the_release_before_mutating_any_host() {
     let target = version("0.5.2");

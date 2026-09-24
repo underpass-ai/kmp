@@ -151,3 +151,57 @@ fn the_tool_surface_is_reported_as_the_binarys_own_declaration() {
         "installed/enabled, declared tools and the connection are three facts: {headlines:?}"
     );
 }
+
+/// #849: the doctor compares the same trees the convergence compares. A
+/// Hermes home is not a marketplace plugin tree, so identical Claude and Codex
+/// trees are reported identical while Hermes is installed beside them.
+#[test]
+fn hermes_beside_identical_plugin_trees_is_not_a_parity_failure() {
+    let hosts = FakeHostGateway::with_installations(vec![
+        installed(Host::Claude, "/tmp/claude"),
+        installed(Host::Codex, "/tmp/codex"),
+        installed(Host::Hermes, "/tmp/hermes"),
+    ]);
+    let engines = FakeEngineStore::empty();
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    let parity = one(
+        &findings,
+        "Claude Code and Codex plugin trees are byte-for-byte identical",
+    );
+    assert_eq!(parity.severity(), DiagnosticSeverity::Ok);
+    assert!(
+        !findings
+            .iter()
+            .any(|finding| finding.headline().contains("plugin trees differ")),
+        "Hermes produced a false parity failure: {:?}",
+        findings
+            .iter()
+            .map(LifecycleFinding::headline)
+            .collect::<Vec<_>>()
+    );
+}
+
+/// A real divergence still fails, and says which hosts disagree.
+#[test]
+fn a_parity_failure_names_the_hosts_whose_trees_differ() {
+    let hosts = FakeHostGateway::with_installations(vec![
+        installed(Host::Claude, "/tmp/claude"),
+        installed(Host::Codex, "/tmp/codex"),
+        installed(Host::Hermes, "/tmp/hermes"),
+    ]);
+    let engines = FakeEngineStore::empty().with_divergent_trees();
+    let findings = DiagnoseLifecycle::new(&hosts, &engines)
+        .execute()
+        .findings()
+        .to_vec();
+
+    let parity = one(&findings, "Claude Code and Codex plugin trees differ");
+    assert_eq!(parity.severity(), DiagnosticSeverity::Fail);
+    assert!(says(&parity, "claude"));
+    assert!(says(&parity, "codex"));
+    assert!(!says(&parity, "hermes"));
+}
