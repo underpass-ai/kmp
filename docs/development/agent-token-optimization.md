@@ -158,8 +158,11 @@ generated from `report.json`.
 
 | Increment | Branch | PR | State |
 | --- | --- | --- | --- |
-| Plan + CI scope | `docs/544-token-plan` | — | in progress |
-| I0 | `feat/544-token-meter` | — | implemented locally |
-| I1 | `fix/544-wake-evidence-refs` | — | pending |
-| I2 | `fix/544-wake-state` | — | pending |
-| I3 | `feat/544-wake-oracle` | — | pending |
+| Plan + CI scope | `docs/544-token-plan` | #834 | merged |
+| I0 | `feat/544-token-meter` | #836 | merged; legacy totals reproduced exactly on the 2026-09-15 captures |
+| I1 | `fix/544-wake-evidence-refs` | #835 | merged; contract wake pins 3 cited sources in page 1 (was 0) |
+| I2 | `fix/544-wake-state` | #837 | draft; state from live memories, `Next: none recorded` |
+| I3 | `feat/544-wake-oracle` | — | next |
+
+Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
+contract break is acceptable when it serves that. Breaks are named in each PR.
