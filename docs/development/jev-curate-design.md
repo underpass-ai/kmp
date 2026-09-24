@@ -151,14 +151,19 @@ a relation, not on the relation.
 - **What Jev is asked:** a `choice` over the labels the selected abouts
   already use, plus `new` and `none`. For `new`, the agent names the label;
   Jev never invents one.
+- **Both nodes share it.** The suggestion is one label applied to both
+  memories, so they end up sharing it. From then on `kmp_relate` reads the
+  pair inside a shared scope (its `coordinate` relations and the proposal
+  scope), and a later `kmp_curate` review counts that shared label as a
+  kernel signal.
 - **How it is applied:** the agent applies it with `kmp_relabel`, which
   already guards labels that resemble stored ones. This needs no change to
   the relation model. Today `relations[]` refuses `labels` and `labels_new`
   (`write/relation_planner.rs:45`, `:388`), and it stays that way.
 - **Where it would appear:** as a fourth list in `kmp_curate review`,
   `labels`, with one item per pair: `from`, `to`, `suggested_label`, Jev's
-  probabilities and confidence, and a bound `kmp_relabel` action for each
-  node.
+  probabilities and confidence, and a bound `kmp_relabel` action that adds the
+  same label to both nodes.
 - **Status:** not in this plan. It is the next step once `kmp_curate` has
   measured precision. Labels on the relation itself were considered and are
   not pursued.
