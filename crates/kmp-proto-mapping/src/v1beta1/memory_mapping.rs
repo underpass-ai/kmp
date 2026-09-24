@@ -22,6 +22,7 @@ mod lexicon;
 mod memory_catalog;
 mod memory_lifecycle;
 mod morphology;
+mod pair_scope;
 mod queries;
 mod question_intent;
 mod question_vocabulary;
@@ -70,7 +71,7 @@ pub use queries::{
     wake_query_from_proto,
 };
 pub use relabel::{relabel_command_from_proto, relabel_response_from_outcome};
-pub use relate::relate_response_from_result;
+pub use relate::{curate_reading_from_result, relate_response_from_result};
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
     trace_response_from_result, wake_response_from_result,

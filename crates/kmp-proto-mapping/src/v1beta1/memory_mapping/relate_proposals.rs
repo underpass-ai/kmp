@@ -14,6 +14,7 @@ use kmp_domain::{ProposalSignal, ProposedLink, RelatedFact, cap_proposals_per_fa
 
 use super::lexical_bridge::LexicalBridge;
 use super::morphology::Morphology;
+use super::pair_scope::PairScope;
 use super::search_terms::informative_terms;
 
 /// The share of concepts two English summaries must have in common.
@@ -38,6 +39,7 @@ pub(super) fn propose_links(
     words: &[FactWords],
     morphology: &Morphology,
     bridge: &LexicalBridge,
+    scope: PairScope,
 ) -> Vec<ProposedLink> {
     let scopes_by_ref = facts
         .iter()
@@ -64,7 +66,7 @@ pub(super) fn propose_links(
     let mut proposals = Vec::new();
     for (index, first) in words.iter().enumerate() {
         for second in &words[index + 1..] {
-            if first.about == second.about {
+            if scope == PairScope::AcrossAbouts && first.about == second.about {
                 continue;
             }
             let mut signals = Vec::new();
@@ -221,5 +223,55 @@ mod tests {
             !rare.contains_key("2026"),
             "carried by every fact: {rare:?}"
         );
+    }
+
+    fn words(ref_id: &str, about: &str, text: &str) -> FactWords {
+        FactWords {
+            ref_id: ref_id.into(),
+            about: about.into(),
+            text: text.into(),
+            summary_en: None,
+        }
+    }
+
+    fn two_facts_sharing_ticket_in_one_about() -> (Vec<RelatedFact>, Vec<FactWords>) {
+        let words = vec![
+            words("a:1", "a", "Ticket #4711 blocks the release."),
+            words("a:2", "a", "The fix for #4711 shipped."),
+            words("a:3", "a", "The canteen menu was posted."),
+        ];
+        let facts = words
+            .iter()
+            .map(|w| {
+                RelatedFact::new(
+                    w.ref_id.clone(),
+                    "a",
+                    Vec::new(),
+                    kmp_domain::FactState::Current,
+                )
+                .expect("fact")
+            })
+            .collect();
+        (facts, words)
+    }
+
+    #[test]
+    fn any_scope_pairs_facts_of_one_about_and_across_scope_never_does() {
+        let (facts, words) = two_facts_sharing_ticket_in_one_about();
+        let morphology = Morphology::default();
+        let bridge = LexicalBridge::none();
+        assert!(
+            propose_links(
+                &facts,
+                &words,
+                &morphology,
+                &bridge,
+                PairScope::AcrossAbouts
+            )
+            .is_empty()
+        );
+        let within = propose_links(&facts, &words, &morphology, &bridge, PairScope::Any);
+        assert_eq!(within.len(), 1, "{within:?}");
+        assert_eq!(within[0].signals()[0].name(), "identifier");
     }
 }
