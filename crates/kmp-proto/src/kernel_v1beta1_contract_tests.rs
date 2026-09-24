@@ -233,13 +233,14 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
     );
     assert_eq!(
         message_field_names(memory_file, "RecallProjectionSection"),
+        // `eligible` and `total` are retired (fields 4 and 5 reserved): the
+        // lean sections derive them from the counts that remain.
         vec![
             "name",
             "core",
             "returned_on_page",
-            "eligible",
-            "total",
-            "remaining"
+            "remaining",
+            "excluded_by_detail"
         ]
     );
     // Retired: `projection` carries every count the truncation report did.
