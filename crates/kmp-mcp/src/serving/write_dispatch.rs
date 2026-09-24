@@ -16,10 +16,7 @@ use crate::serving::tool_result::{tool_error_result, tool_success_result};
 use crate::write::existing_entry::ExistingEntry;
 use crate::write::validation_error::WriteValidationError;
 use crate::write::validation_errors::WriteValidationErrors;
-use crate::write::{
-    build_batch_plan, build_relation_plan, build_summary_plan, write_commit_result,
-    write_dry_run_result,
-};
+use crate::write::{build_batch_plan, build_relation_plan, build_summary_plan};
 
 impl KernelMcpServer {
     pub(super) async fn handle_kmp_write_memory(
@@ -71,46 +68,9 @@ impl KernelMcpServer {
             }
         };
 
-        let mut ingest_arguments = plan.ingest_arguments.clone();
-        ingest_arguments["receipt_context"] = crate::write::receipt::receipt_context(&plan);
-        // A declared link is reviewed before it commits, whichever shape
-        // declared it. Only a search rendering writes no relation at all.
-        if plan.operation != crate::write::operation::WriteOperation::SearchSummaries {
-            ingest_arguments["neighborhood_review"] = serde_json::json!(
-                arguments
-                    .get("review_token")
-                    .and_then(Value::as_str)
-                    .unwrap_or("")
-            );
-        }
-        match self
-            .backend
-            .call_tool("kmp_ingest", &ingest_arguments)
-            .await
-        {
-            Ok(result) => {
-                let ingest_result = result.get("structuredContent").cloned().unwrap_or(result);
-                let result = tool_success_result(
-                    if let Some(neighborhood) = ingest_result
-                        .get("neighborhood")
-                        .filter(|value| value.is_object())
-                    {
-                        super::write_review_result::pending_review(
-                            arguments,
-                            &plan,
-                            neighborhood.clone(),
-                        )
-                    } else if plan.dry_run {
-                        write_dry_run_result(&plan, ingest_result, self.backend_name())
-                    } else {
-                        write_commit_result(
-                            &plan,
-                            ingest_result,
-                            self.viewer_invitation(),
-                            self.orphaned_bundle_notice(),
-                        )
-                    },
-                );
+        match self.commit_write_plan(arguments, &plan, None).await {
+            Ok(value) => {
+                let result = tool_success_result(value);
                 record_tool_success(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
