@@ -1,3 +1,5 @@
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/write_neighborhood_fixture.rs"]
 mod fixture;
 use fixture::*;
@@ -52,7 +54,7 @@ async fn changed_neighborhood_refreshes_and_a_corrected_proposal_cannot_reuse_th
         refreshed["neighborhood"]["token"]
     );
     assert_eq!(events(dir.path()).await, 1);
-    let mut corrected = refreshed["next_actions"][0]["arguments"].clone();
+    let mut corrected = bound_action::bound_arguments(&server, &refreshed["next_actions"][0]);
     corrected["memories"][1]["summary"] = json!("R4 records 74 MB; R5 disagrees at 82 MB.");
     let correction = call(&server, "kmp_write_memory", corrected).await;
     assert_eq!(correction["status"], "needs_review");

@@ -1,4 +1,6 @@
 //! A changed selection must never be presented as the next page of an old read.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/relation_read_fixture.rs"]
 mod fixture;
 use fixture::{ABOUT, SECTIONS, call, seed};
@@ -53,8 +55,9 @@ async fn relation_continuations_execute_without_reconstructing_selection() {
         assert!(!expected.is_empty());
         query["page"] = json!({"entries":1});
         let mut actual = Vec::new();
+        let mut returned = query.clone();
         for _ in 0..expected.len() {
-            let page = call(&server, tool, query.clone()).await;
+            let page = call(&server, tool, returned.clone()).await;
             assert_eq!(page["page"]["offset"], actual.len());
             actual.extend(
                 sections
@@ -69,8 +72,11 @@ async fn relation_continuations_execute_without_reconstructing_selection() {
             assert_eq!(action["tool"], tool);
             let mut previous = query.clone();
             previous["page"]["cursor"] = page["page"]["next_cursor"].clone();
-            assert_eq!(action["arguments"], previous, "all bound arguments survive");
-            query = action["arguments"].clone();
+            let bound = bound_action::bound_arguments(&server, action);
+            assert_eq!(bound, previous, "all bound arguments survive");
+            // Execute the returned handle itself, not its reconstruction.
+            returned = action["arguments"].clone();
+            query = bound;
         }
         assert_eq!(actual, expected);
     }
@@ -114,7 +120,7 @@ async fn trace_rejects_new_endpoint_and_changed_proof_on_a_later_page() {
         "to":format!("{ABOUT}:observation:0"),"page":{"entries":1},"budget":{"max_bytes":100000}});
     let first = call(&server, "kmp_trace", args).await;
     let original = first["next_actions"][0]["arguments"].clone();
-    let mut changed = original.clone();
+    let mut changed = bound_action::bound_arguments(&server, &first["next_actions"][0]);
     changed["from"] = json!(format!("{ABOUT}:observation:2"));
     let fresh = conflict(&server, "kmp_trace", changed).await;
     assert_eq!(fresh["trace"][0]["from"], format!("{ABOUT}:observation:2"));

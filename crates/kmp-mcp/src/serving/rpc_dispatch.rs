@@ -206,10 +206,10 @@ impl KernelMcpServer {
             .await;
         let result = match guidance {
             Some(guidance) => {
-                let result = self.shorten_read_actions(&guidance, result);
+                let result = self.shorten_read_actions(Some(&guidance), result);
                 self.complete_work_guidance(name, arguments, &guidance, result)
             }
-            None => result,
+            None => self.shorten_read_actions(None, result),
         };
         self.project_read_passages(name, result)
     }

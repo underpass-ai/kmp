@@ -268,35 +268,17 @@
       "has_more": false,
       "next_cursor": null,
       "offset": 0,
-      "omitted": {
-        "details": 0,
-        "evidence": 0,
-        "incoming": 0,
-        "outgoing": 0,
-        "raw": 0
-      },
       "required_bytes": "<stamped at call time>",
       "returned": 18,
       "sections": {
         "evidence": {
-          "remaining": 0,
-          "returned_on_page": 5,
-          "total": 5
+          "returned_on_page": 5
         },
         "incoming": {
-          "remaining": 0,
-          "returned_on_page": 12,
-          "total": 12
-        },
-        "outgoing": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
+          "returned_on_page": 12
         },
         "raw": {
-          "remaining": 0,
-          "returned_on_page": 1,
-          "total": 1
+          "returned_on_page": 1
         }
       },
       "total": 18

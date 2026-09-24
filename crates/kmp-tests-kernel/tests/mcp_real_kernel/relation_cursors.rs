@@ -92,7 +92,11 @@ async fn same_success(
         call_http_tool(http, 200, tool, arguments.clone()).await,
         call_tool(embedded, 200, tool, arguments).await,
     ] {
-        assert_eq!(actual["result"], result, "{tool} transport parity");
+        assert_eq!(
+            comparable(&actual["result"]),
+            comparable(&result),
+            "{tool} transport parity"
+        );
     }
     result
 }

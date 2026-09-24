@@ -17,7 +17,7 @@ def check(saved, client, authored):
         whole = client.call(tool, whole_args)
         assert whole['projection']['next_action'] is None
         page = saved[name]
-        pages, restarts, collected = 0, 0, {}
+        pages, restarts, collected, eligible = 0, 0, {}, {}
         while True:
             pages += 1
             assert pages < 100
@@ -31,21 +31,29 @@ def check(saved, client, authored):
                 except KeyError:
                     values = []
                 collected.setdefault(path, []).extend(values)
-                assert counts['remaining'] == counts['eligible'] - len(collected[path]), (tool, path)
+                # Lean counters: zeros are omitted and eligible is derived from
+                # the page that carries the core (core + returned + remaining).
+                if not reused:
+                    eligible[path] = len(values) + counts.get('remaining', 0)
+                assert counts.get('remaining', 0) == eligible[path] - len(collected[path]), (tool, path)
             accounting = page['projection']['page']
-            assert sum(c['remaining'] for c in page['projection']['sections'].values()) == (
+            assert sum(c.get('remaining', 0) for c in page['projection']['sections'].values()) == (
                 accounting['total'] - accounting['offset'] - accounting['returned'])
             action = page['projection']['next_action']
             if action is None:
                 break
             assert action['tool'] == tool
             args = action['arguments']
-            for key in ('about', 'question', 'asked_as', 'axis', 'interval', 'role', 'intent'):
-                assert args.get(key) == original.get(key), key
-            assert args['dimensions']['selectors'] == original['dimensions']['selectors']
-            if 'cursor' not in args.get('page', {}):
+            # A continuation is a handle the server resolves to the complete
+            # call; only a restart restates the request.
+            if list(args) != ['continuation']:
+                for key in ('about', 'question', 'asked_as', 'axis', 'interval', 'role', 'intent'):
+                    assert args.get(key) == original.get(key), key
+                assert args['dimensions']['selectors'] == original['dimensions']['selectors']
+                assert 'cursor' not in args.get('page', {})
                 assert page['projection']['core_text_shortened']
                 collected.clear()
+                eligible.clear()
                 restarts += 1
             page = client.call(tool, args)
         assert not page['projection']['core_text_shortened']

@@ -83,54 +83,7 @@
       "returned": 1,
       "sections": {
         "entries": {
-          "remaining": 0,
-          "returned_on_page": 1,
-          "total": 1
-        },
-        "proof.conflicts": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "proof.evidence": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "proof.expired": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "proof.matched_relations": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "proof.matched_terms": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "proof.missing": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "proof.path": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "proof.superseded": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "raw_refs": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
+          "returned_on_page": 1
         }
       },
       "total": 1

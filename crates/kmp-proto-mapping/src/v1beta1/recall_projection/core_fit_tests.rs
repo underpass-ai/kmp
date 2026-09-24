@@ -3,7 +3,7 @@
 
 use std::collections::BTreeSet;
 
-use serde_json::json;
+use serde_json::{Value, json};
 
 use super::core_fit::{
     reset_serialization_passes, serialization_passes, serialized_bytes, stabilize_used_bytes,
@@ -149,11 +149,14 @@ fn core_is_identical_across_detail_modes_when_text_must_shorten() {
     // how many eligible items fit beside each tier's metadata.
     for field in ["evidence", "path"] {
         let name = format!("proof.{field}");
-        let core = compact["projection"]["sections"][&name]["core"]
-            .as_u64()
-            .expect("core count") as usize;
+        let core_of = |output: &Value| {
+            output["projection"]["sections"][&name]["core"]
+                .as_u64()
+                .unwrap_or(0) as usize
+        };
+        let core = core_of(&compact);
         for output in [&balanced, &full] {
-            assert_eq!(output["projection"]["sections"][&name]["core"], core);
+            assert_eq!(core_of(output), core);
             assert_eq!(
                 &compact["proof"][field].as_array().expect("proof section")[..core],
                 &output["proof"][field].as_array().expect("proof section")[..core]

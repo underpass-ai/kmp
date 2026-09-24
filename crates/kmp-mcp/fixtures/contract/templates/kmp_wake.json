@@ -28,16 +28,7 @@
       "excluded_by_detail": "integer",
       "next_action": {
         "arguments": {
-          "about": "string",
-          "budget": {
-            "depth": "integer",
-            "detail": "string",
-            "max_bytes": "integer",
-            "tokens": "integer"
-          },
-          "page": {
-            "cursor": "string"
-          }
+          "continuation": "string"
         },
         "tool": "string"
       },
@@ -51,39 +42,24 @@
       },
       "sections": {
         "labels": {
-          "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         },
         "proof.evidence": {
           "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "remaining": "integer"
         },
         "proof.path": {
-          "core": "integer",
-          "eligible": "integer",
+          "excluded_by_detail": "integer",
           "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         },
         "wake.causal_spine": {
           "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         },
         "wake.current_state": {
           "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         }
       },
       "selection_omitted": "integer"

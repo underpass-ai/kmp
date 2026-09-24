@@ -253,8 +253,7 @@ fn projection_from_value(value: &Value) -> Option<RecallProjection> {
             core: u64_at(section, "/core"),
             returned_on_page: u64_at(section, "/returned_on_page"),
             remaining: u64_at(section, "/remaining"),
-            eligible: u64_at(section, "/eligible"),
-            total: u64_at(section, "/total"),
+            excluded_by_detail: u64_at(section, "/excluded_by_detail"),
         })
         .collect();
     Some(RecallProjection {

@@ -102,7 +102,7 @@ fn pages_reconstruct_the_full_proof_without_changing_the_answer() {
                 .expect("sections")
                 .values()
             {
-                assert_eq!(section["remaining"], 0);
+                assert!(section.get("remaining").is_none(), "zero is omitted");
             }
             assert!(
                 page["warnings"]

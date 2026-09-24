@@ -785,7 +785,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle for the pending write and its review token; use alone. Resuming rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -1449,7 +1449,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone, or with page.repeat_core=true. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -1610,7 +1610,7 @@
           }
         },
         "then": {
-          "maxProperties": 1
+          "maxProperties": 2
         },
         "type": "object"
       },
@@ -1729,7 +1729,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone, or with page.repeat_core=true. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -1885,7 +1885,7 @@
           }
         },
         "then": {
-          "maxProperties": 1
+          "maxProperties": 2
         },
         "type": "object"
       },
@@ -1972,7 +1972,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -2290,7 +2290,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -2684,7 +2684,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -3403,7 +3403,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },

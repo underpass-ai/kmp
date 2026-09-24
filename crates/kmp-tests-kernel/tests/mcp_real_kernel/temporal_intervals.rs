@@ -3,7 +3,7 @@ use axum::Router;
 use kmp_mcp::{GrpcKernelMcpBackend, KernelMcpServer, KernelMcpToolBackend};
 use serde_json::json;
 
-use super::{call_http_tool, call_tool};
+use super::{call_http_tool, call_tool, comparable};
 
 pub(super) async fn check(
     direct: &GrpcKernelMcpBackend,
@@ -28,9 +28,10 @@ pub(super) async fn check(
             let native = call_tool(stdio, 700 + calls, tool, arguments.clone()).await;
             let remote = call_http_tool(http, 700 + calls, tool, arguments.clone()).await;
             let local = call_tool(embedded, 700 + calls, tool, arguments.clone()).await;
-            assert_eq!(native["result"], expected, "{movement} stdio");
-            assert_eq!(remote["result"], expected, "{movement} HTTP");
-            assert_eq!(local["result"], expected, "{movement} embedded");
+            let view = comparable(&expected);
+            assert_eq!(comparable(&native["result"]), view, "{movement} stdio");
+            assert_eq!(comparable(&remote["result"]), view, "{movement} HTTP");
+            assert_eq!(comparable(&local["result"]), view, "{movement} embedded");
             let content = &expected["structuredContent"];
             assert_eq!(content["temporal"]["interval"], interval);
             returned.extend(

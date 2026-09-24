@@ -513,6 +513,12 @@ fn redact_cursor_digest(text: &str) -> Option<String> {
         .then(|| format!("{head}:{REDACTED}"))
 }
 
+fn is_handle(text: &str) -> bool {
+    text.strip_prefix("read_").is_some_and(|suffix| {
+        suffix.len() == 32 && suffix.bytes().all(|byte| byte.is_ascii_hexdigit())
+    })
+}
+
 fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
@@ -531,12 +537,15 @@ fn redact(value: &mut Value) {
                 .and_then(|page| page.get("minimum_progress_bytes"))
                 .is_some_and(Value::is_number)
                 && let Some(action) = fields.get_mut("next_action")
-                && action.is_object()
+                && action.pointer("/arguments/budget").is_some()
             {
                 action["arguments"]["budget"]["max_bytes"] = json!(REDACTED);
             }
             for (key, child) in fields.iter_mut() {
                 if VOLATILE_KEYS.contains(&key.as_str()) && !child.is_object() {
+                    *child = json!(REDACTED);
+                } else if key == "continuation" && child.as_str().is_some_and(is_handle) {
+                    // A returned call handle is 128 random bits (#544 C3).
                     *child = json!(REDACTED);
                 } else if let Some(text) = child.as_str()
                     && let Some(masked) = redact_cursor_digest(text)

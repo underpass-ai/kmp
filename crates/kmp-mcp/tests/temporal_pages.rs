@@ -1,4 +1,6 @@
 //! Exercise returned actions against real memory, including complete proof recovery.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
@@ -105,9 +107,11 @@ async fn returned_actions_reconstruct_entries_and_proof_without_losing_selection
         assert!(pages < 50, "must advance");
         let action = &page["next_actions"][0];
         assert_eq!(action["tool"], "kmp_time");
-        assert_eq!(action["arguments"]["move"], "forward");
-        assert_eq!(action["arguments"]["dimensions"], query()["dimensions"]);
-        assert_eq!(action["arguments"]["axis"], "observed");
+        // A page continuation is a handle to the complete call, move included.
+        let bound = bound_action::bound_arguments(&server, action);
+        assert_eq!(bound["move"], "forward");
+        assert_eq!(bound["dimensions"], query()["dimensions"]);
+        assert_eq!(bound["axis"], "observed");
         let previous = page["page"]["offset"].as_u64().expect("count");
         page = call(
             &server,
@@ -134,7 +138,7 @@ async fn changed_selection_or_proof_rejects_cursor_but_budget_can_change() {
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded server");
     let written = seed(&server).await;
     let page = call(&server, "kmp_time", query()).await;
-    let args = page["next_actions"][0]["arguments"].clone();
+    let args = bound_action::bound_arguments(&server, &page["next_actions"][0]);
     assert!(args["page"]["cursor"].is_string());
     let mut changed = args.clone();
     changed["axis"] = json!("ingested");
@@ -189,7 +193,7 @@ async fn an_indivisible_item_returns_a_retry_that_makes_progress() {
     );
     assert!(
         retried.to_string().len() as u64
-            <= action["arguments"]["budget"]["max_bytes"]
+            <= bound_action::bound_arguments(&server, action)["budget"]["max_bytes"]
                 .as_u64()
                 .expect("count")
     );

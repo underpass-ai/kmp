@@ -40,6 +40,23 @@
         ],
         "text": "Rachel named Denver twice in the same conversation.",
         "time": "2026-04-12T15:00:00Z"
+      },
+      {
+        "id": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
+        "metadata": {
+          "proof_role": "stored_evidence"
+        },
+        "source": "kmp_write_memory:parity-test:relation:uses_background",
+        "support_clocks": {
+          "ingested_at": "<stamped at call time>",
+          "observed_at": "2026-04-12T16:00:00Z"
+        },
+        "supports": [
+          "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
+          "question:parity:claim:denver"
+        ],
+        "text": "The claim is the store's only prior entry.",
+        "time": "2026-04-12T16:00:00Z"
       }
     ],
     "links": {
@@ -49,14 +66,7 @@
     "next_actions": [
       {
         "arguments": {
-          "about": "question:parity",
-          "budget": {
-            "max_bytes": 2500
-          },
-          "page": {
-            "cursor": "kmpi1:2:<stamped at call time>"
-          },
-          "ref": "question:parity:claim:denver"
+          "continuation": "<stamped at call time>"
         },
         "tool": "kmp_inspect"
       }
@@ -70,37 +80,17 @@
     "page": {
       "guidance": "Inspect is partial. Execute next_actions and combine the returned expansion items. The full response requires <stamped at call time> bytes; minimum_progress_bytes, when present, is the allowance for at least one next item.",
       "has_more": true,
-      "next_cursor": "kmpi1:2:<stamped at call time>",
+      "next_cursor": "kmpi1:3:<stamped at call time>",
       "offset": 0,
-      "omitted": {
-        "details": 0,
-        "evidence": 3,
-        "incoming": 12,
-        "outgoing": 0,
-        "raw": 0
-      },
       "required_bytes": "<stamped at call time>",
-      "returned": 2,
+      "returned": 3,
       "sections": {
         "evidence": {
-          "remaining": 3,
-          "returned_on_page": 2,
-          "total": 5
+          "remaining": 2,
+          "returned_on_page": 3
         },
         "incoming": {
-          "remaining": 12,
-          "returned_on_page": 0,
-          "total": 12
-        },
-        "outgoing": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
-        },
-        "raw": {
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 0
+          "remaining": 12
         }
       },
       "total": 17

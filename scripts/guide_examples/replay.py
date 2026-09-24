@@ -48,6 +48,21 @@ def bind(value, saved):
     return value
 
 
+def resumed_packet(template, arguments, saved, authored):
+    """A resumed review is a short handle to the packet that was reviewed.
+
+    The server retains that packet with its review token (#544 C3); a
+    lesson's checks compare stored text with the authored packet, so the
+    resume step stands for the packet its review step authored.
+    """
+    if (isinstance(template, str) and template.startswith('${')
+            and list(arguments) == ['continuation']):
+        source = template[2:-1].split('.')[0]
+        if saved.get(source, {}).get('status') == 'needs_review':
+            return authored[source]
+    return arguments
+
+
 def redact(value):
     if isinstance(value, dict):
         return {key: redact(item) for key, item in value.items()}
@@ -116,7 +131,7 @@ def run(args):
                     else:
                         complete(result)
                     saved[call['save_as']] = result
-                    authored[call['save_as']] = arguments
+                    authored[call['save_as']] = resumed_packet(call['arguments'], arguments, saved, authored)
                 checks = LESSONS[args.lesson](saved, client, authored)
                 summary = {'lesson': str(lesson.relative_to(ROOT)), 'calls_in_lesson': len(calls), 'guide_reads': guide_reads,
                            'checks': checks, 'model_calls': 0, 'results': redact(saved)}

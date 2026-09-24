@@ -36,7 +36,7 @@
         "tokens_advisory": 2400,
         "used_bytes": "<verified shortened byte count>"
       },
-      "contract": "kmp.recall.projection.v2",
+      "contract": "kmp.recall.projection.v3",
       "core_text_shortened": true,
       "detail": "compact",
       "excluded_by_detail": 13,
@@ -64,18 +64,12 @@
       },
       "sections": {
         "proof.evidence": {
-          "core": 5,
-          "eligible": 5,
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 5
+          "core": 5
         },
         "proof.path": {
-          "core": 0,
-          "eligible": 3,
+          "excluded_by_detail": 13,
           "remaining": 2,
-          "returned_on_page": 1,
-          "total": 16
+          "returned_on_page": 1
         }
       },
       "selection_omitted": 0

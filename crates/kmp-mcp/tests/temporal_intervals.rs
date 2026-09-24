@@ -1,4 +1,6 @@
 //! Native interval reads preserve their bounds and keep earlier proof without later knowledge.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
@@ -112,11 +114,12 @@ async fn direct_intervals_follow_returned_calls_in_both_directions_without_bound
             }
             assert!(calls < 50, "returned calls must advance");
             assert_eq!(actions[0]["tool"], "kmp_time");
-            assert_eq!(actions[0]["arguments"]["move"], time_move);
             args = actions[0]["arguments"].clone();
-            assert_eq!(args["interval"], query()["interval"]);
-            assert_eq!(args["axis"], query()["axis"]);
-            assert_eq!(args["dimensions"], query()["dimensions"]);
+            let bound = bound_action::bound_arguments(&server, &actions[0]);
+            assert_eq!(bound["move"], time_move);
+            assert_eq!(bound["interval"], query()["interval"]);
+            assert_eq!(bound["axis"], query()["axis"]);
+            assert_eq!(bound["dimensions"], query()["dimensions"]);
         }
         refs.sort_by_key(Value::to_string);
         let mut expected = vec![

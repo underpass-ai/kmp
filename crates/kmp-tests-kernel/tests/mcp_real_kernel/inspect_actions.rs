@@ -79,7 +79,11 @@ async fn same_success(
         call_http_tool(http, 900, "kmp_inspect", arguments.clone()).await,
         call_tool(embedded, 900, "kmp_inspect", arguments).await,
     ] {
-        assert_eq!(actual["result"], result, "Inspect action transport parity");
+        assert_eq!(
+            comparable(&actual["result"]),
+            comparable(&result),
+            "Inspect action transport parity"
+        );
     }
     result
 }

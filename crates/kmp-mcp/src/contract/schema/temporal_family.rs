@@ -166,7 +166,7 @@ pub(crate) fn temporal_output_schema() -> Value {
         "offset".into(),
         described("integer", "Expansion items reconstructed before this page."),
     );
-    properties.insert("sections".into(), described("object", "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof."));
+    properties.insert("sections".into(), described("object", "Per-section returned_on_page and remaining; a zero counter and a section with none are omitted. Append each section across pages before concluding from proof."));
     properties.insert("minimum_progress_bytes".into(), described("integer", "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item."));
     output_object(json!({
         "summary": described("string", "Concise description of the temporal selection."),
