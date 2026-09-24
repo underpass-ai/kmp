@@ -170,7 +170,6 @@ pub(super) fn typed_ask_fixture(path_count: usize) -> AskResponse {
         }),
         warnings: Vec::new(),
         projection: None,
-        truncation: None,
         asked_as: String::new(),
     }
 }
@@ -202,7 +201,6 @@ pub(super) fn typed_wake_fixture(path_count: usize) -> WakeResponse {
         warnings: Vec::new(),
         resume_cursor: None,
         projection: None,
-        truncation: None,
     }
 }
 

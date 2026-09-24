@@ -69,6 +69,8 @@ fn request() -> AskRequest {
 
 fn check_progress(value: &Value, previous: &mut BTreeMap<String, u64>) {
     let projection = &value["projection"];
+    // A continuation carries only its new items; page 1 alone holds the core.
+    let core_reused = projection["core_reused"] == true;
     let mut pending = 0;
     for (name, section) in projection["sections"].as_object().expect("sections") {
         let core = section["core"].as_u64().expect("core");
@@ -78,13 +80,17 @@ fn check_progress(value: &Value, previous: &mut BTreeMap<String, u64>) {
         let earlier = previous.entry(name.clone()).or_default();
         assert_eq!(core + *earlier + returned + remaining, eligible, "{name}");
         let pointer = format!("/{}", name.replace('.', "/"));
+        let carried = value
+            .pointer(&pointer)
+            .and_then(Value::as_array)
+            .map_or(0, Vec::len) as u64;
         assert_eq!(
-            value
-                .pointer(&pointer)
-                .and_then(Value::as_array)
-                .expect("section values")
-                .len() as u64,
-            core + returned
+            carried,
+            if core_reused {
+                returned
+            } else {
+                core + returned
+            }
         );
         *earlier += returned;
         pending += remaining;

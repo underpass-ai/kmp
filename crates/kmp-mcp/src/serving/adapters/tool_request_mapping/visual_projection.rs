@@ -34,6 +34,7 @@ impl VisualProjectionRequestMapper {
                     .unwrap_or(512),
                 cursor: JsonFieldReader::optional_string_field(object, "cursor", "cursor")?
                     .unwrap_or_default(),
+                repeat_core: false,
             }),
             budget: Some(MemoryBudget {
                 depth: JsonFieldReader::optional_positive_u32_field(object, "depth", "depth")?

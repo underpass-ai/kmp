@@ -12,6 +12,9 @@ pub(super) enum Detail {
     Full,
 }
 
+/// The longest `budget.detail` word a request can carry.
+pub(super) const LONGEST_DETAIL: &str = "balanced";
+
 impl Detail {
     pub(super) fn parse(value: &str) -> Result<Self, String> {
         match value {
@@ -38,6 +41,10 @@ pub(super) struct ProjectionBudget {
     pub(super) detail: Detail,
     pub(super) max_entries: Option<usize>,
     pub(super) page_entries: usize,
+    /// On a continuation, return the stable core again instead of only the
+    /// new expansion items: the rehydration path for a caller that lost the
+    /// first page.
+    pub(super) repeat_core: bool,
 }
 
 impl ProjectionBudget {
@@ -88,12 +95,19 @@ impl ProjectionBudget {
         {
             return Err("page.cursor must be a non-empty opaque string".to_string());
         }
+        let repeat_core = match page.and_then(|page| page.get("repeat_core")) {
+            None => false,
+            Some(value) => value
+                .as_bool()
+                .ok_or_else(|| "page.repeat_core must be a boolean".to_string())?,
+        };
         Ok(Self {
             token_limit,
             byte_limit,
             detail,
             max_entries,
             page_entries,
+            repeat_core,
         })
     }
 }

@@ -153,6 +153,7 @@ async fn condense_candidates_are_byte_identical_on_embedded_and_grpc_pages()
     request.page = Some(kmp_proto::v1beta1::PageRequest {
         entries: 1,
         cursor: String::new(),
+        repeat_core: false,
     });
 
     let search = trace_search_request_from_proto(&request)?.expect("valid candidate fixture");

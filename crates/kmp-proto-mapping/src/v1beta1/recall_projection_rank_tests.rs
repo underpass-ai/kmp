@@ -43,6 +43,7 @@ fn request(cursor: Option<String>) -> AskRequest {
         page: Some(kmp_proto::v1beta1::PageRequest {
             entries: 1,
             cursor: cursor.unwrap_or_default(),
+            repeat_core: false,
         }),
         ..Default::default()
     }
@@ -54,10 +55,12 @@ fn ask_pages_preserve_retrieval_rank_instead_of_sorting_evidence_ids() {
     let mut cursor = None;
     let mut observed = Vec::new();
     loop {
+        let first_page = cursor.is_none();
         let projected = project_ask_response(response.clone(), &request(cursor)).expect("page");
         let rendered = ask_value(&projected);
         assert!(serde_json::to_vec(&rendered).expect("bytes").len() <= 4000);
-        assert_eq!(projected.answer, "UNKNOWN");
+        // The answer is core: page 1 carries it, continuations do not.
+        assert_eq!(projected.answer, if first_page { "UNKNOWN" } else { "" });
         assert!(projected.because.is_empty());
         observed.extend(
             projected

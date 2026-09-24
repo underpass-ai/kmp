@@ -61,5 +61,43 @@ class AsOfTest(unittest.TestCase):
                                                   scope=bounded))))
 
 
+def incremental(items=(), state=()):
+    """A kmp.recall.projection.v2 continuation: new items only, no core."""
+    page = {'projection': {'core_reused': True, 'next_action': None, 'core_text_shortened': False,
+                           'page': {'has_more': False}, 'excluded_by_detail': 0,
+                           'selection_omitted': 0, 'sections': {'proof.evidence': {'remaining': 0}}}}
+    if items:
+        page['proof'] = {'evidence': list(items)}
+    if state:
+        page['wake'] = {'current_state': list(state)}
+    return page
+
+
+def judge_pages(pages):
+    first = {'about': 'fixture:t', 'budget': {'max_bytes': 4096}}
+    rest = [{**first, 'page': {'cursor': f'kmp1:{n}:h'}} for n in range(1, len(pages))]
+    trace = trace_of(journey_events(pages, [first] + rest), 't04-b4096')
+    return evaluate_journey(DATED, trace, RECORD, {'lift': LATER_REF}, None,
+                            contract('kmp.wake_claim.v2'))
+
+
+class IncrementalContinuationTest(unittest.TestCase):
+    def test_a_continuation_without_a_core_keeps_the_first_page_declaration(self):
+        pending = wake_page([claim_v2()], [evidence()], state=STATE[:1], has_more=True,
+                            scope=UNBOUNDED_SCOPE, next_action={'tool': 'kmp_wake'})
+        result = judge_pages([pending, incremental(state=STATE[1:])])
+        self.assertTrue(excluded(result))
+        self.assertTrue(result['metrics']['state_declared_unbounded_context'])
+        self.assertTrue(result['quality_pass'], result['quality_failures'])
+
+    def test_a_later_memory_in_a_continuation_selection_still_fails(self):
+        later = evidence(text=LATER, identifier='detail:' + LATER_REF, source=LATER_REF)
+        pending = wake_page([claim_v2()], [evidence()], state=STATE[:1], has_more=True,
+                            scope=UNBOUNDED_SCOPE, next_action={'tool': 'kmp_wake'})
+        result = judge_pages([pending, incremental(items=[later])])
+        self.assertFalse(excluded(result))
+        self.assertFalse(result['quality_pass'])
+
+
 if __name__ == '__main__':
     unittest.main()

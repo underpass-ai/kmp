@@ -36,7 +36,7 @@
         "tokens_advisory": 2400,
         "used_bytes": "<verified shortened byte count>"
       },
-      "contract": "kmp.recall.projection.v1",
+      "contract": "kmp.recall.projection.v2",
       "core_text_shortened": true,
       "detail": "compact",
       "excluded_by_detail": 13,
@@ -213,19 +213,6 @@
       ]
     },
     "summary": "Retrieved 5 memory items for: Where is Rachel moving?",
-    "truncation": {
-      "byte_limit": 7500,
-      "omitted": {
-        "core_text_shortened": true,
-        "excluded_by_detail": 13,
-        "page_items": 2,
-        "prior_page_items": 0,
-        "remaining_page_items": 2,
-        "selection_items": 0
-      },
-      "token_limit": 2400,
-      "truncated": true
-    },
     "warnings": [
       "recall core prose was shortened; execute projection.next_action to restart and discard the partial reconstruction before reading more expansion"
     ]

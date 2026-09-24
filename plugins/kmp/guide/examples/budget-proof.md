@@ -812,8 +812,10 @@ requests deliberately begin at 512 bytes, with the same clock, interval and
 component filter. Send the returned `arguments` unchanged to its `tool`.
 If `core_text_shortened` is true, the action omits `page.cursor`: discard that
 partial reconstruction and restart at the proposed allowance to restore the
-full core. Otherwise append only the expansions beyond each section's `core`
-count. Continue until `next_action` is null; `has_more=false` alone only says
+full core. Otherwise keep the first page and append each continuation's
+items: a continuation carries no core (`projection.core_reused`), and
+`page.repeat_core=true` sends it again to a host that lost the first page.
+Continue until `next_action` is null; `has_more=false` alone only says
 that expansion has finished. A fixed budget may leave the result partial.
 A cursor conflict returns `feedback[].action` for a fresh selection; never
 combine the old pages with the restarted selection.

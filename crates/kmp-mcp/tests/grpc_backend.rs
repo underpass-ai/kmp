@@ -802,7 +802,6 @@ impl KernelMemoryService for FakeMemoryService {
             resume_cursor: None,
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
         };
         Ok(Response::new(
             project_wake_response(response, &request)
@@ -825,7 +824,6 @@ impl KernelMemoryService for FakeMemoryService {
             proof: Some(proof(&request.about, "claim:typed-answer")),
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
             asked_as: String::new(),
         };
         Ok(Response::new(

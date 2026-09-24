@@ -376,7 +376,7 @@ mod tests {
         );
         assert_eq!(
             keys(&wake_properties["page"]),
-            expected(&["cursor", "entries"])
+            expected(&["cursor", "entries", "repeat_core"])
         );
         assert_eq!(
             keys(&schema("kmp_inspect")["properties"]["budget"]),

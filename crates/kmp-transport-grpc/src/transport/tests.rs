@@ -1477,7 +1477,6 @@ async fn memory_service_wake_and_ask_read_live_context() {
     );
     assert!(ask.because.is_empty());
     assert!(ask.projection.is_some());
-    assert!(ask.truncation.is_some());
     assert!(
         ask.warnings
             .iter()
@@ -1800,6 +1799,7 @@ async fn memory_service_returns_typed_stale_recall_cursor_details() {
         page: Some(PageRequest {
             entries: 1,
             cursor: String::new(),
+            repeat_core: false,
         }),
         as_of: None,
         interval: None,
@@ -2160,6 +2160,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
             page: Some(PageRequest {
                 entries: 1,
                 cursor: String::new(),
+                repeat_core: false,
             }),
         }))
         .await
@@ -2188,6 +2189,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
             page: Some(PageRequest {
                 entries: 1,
                 cursor: "not-a-trace-cursor".to_string(),
+                repeat_core: false,
             }),
         }))
         .await
@@ -2209,6 +2211,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
             page: Some(PageRequest {
                 entries: MAX_TRACE_PAGE_ENTRIES as u32 + 1,
                 cursor: String::new(),
+                repeat_core: false,
             }),
         }))
         .await

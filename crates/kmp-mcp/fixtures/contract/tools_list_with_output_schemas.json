@@ -2342,6 +2342,10 @@
                 "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies.",
                 "minimum": 1,
                 "type": "integer"
+              },
+              "repeat_core": {
+                "description": "True: this continuation also resends the first page's core.",
+                "type": "boolean"
               }
             },
             "type": "object"
@@ -2372,7 +2376,7 @@
         "additionalProperties": false,
         "properties": {
           "labels": {
-            "description": "The catalogue of the abouts this wake read: every label their entries stand in, as `about`, `key` (the dimension kind), `value` (the scope id), `entries` and `last_observed_at`. The current about first, then by use. Read it before naming a label on a new memory, so an existing one is reused instead of guessed. The most used labels are the first expansion the packet fills; the rest follow the causal spine, and `truncation` reports what did not fit. Nothing of the core is shortened to make room for a label.",
+            "description": "The catalogue of the abouts this wake read: every label their entries stand in, as `about`, `key` (the dimension kind), `value` (the scope id), `entries` and `last_observed_at`. The current about first, then by use. Read it before naming a label on a new memory, so an existing one is reused instead of guessed. The most used labels are the first expansion the packet fills; the rest follow the causal spine, and `projection` reports what did not fit. Nothing of the core is shortened to make room for a label.",
             "type": "array"
           },
           "projection": {
@@ -2383,8 +2387,12 @@
                 "type": "object"
               },
               "contract": {
-                "description": "The projection contract version, e.g. kmp.recall.projection.v1.",
+                "description": "The projection contract version, e.g. kmp.recall.projection.v2.",
                 "type": "string"
+              },
+              "core_reused": {
+                "description": "Present and true on a continuation that omits the stable core: it carries only new expansion items. Combine them with the first page's core and earlier pages; page.repeat_core=true returns the core again.",
+                "type": "boolean"
               },
               "core_text_shortened": {
                 "description": "Whether stable core prose had to be shortened to fit max_bytes.",
@@ -2460,7 +2468,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
+                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding the core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -2695,28 +2703,6 @@
           "summary": {
             "description": "Four-line L0 resume summary: objective, status, blocker, and next action.",
             "type": "string"
-          },
-          "truncation": {
-            "additionalProperties": false,
-            "properties": {
-              "byte_limit": {
-                "description": "Normative serialized-byte ceiling applied.",
-                "type": "integer"
-              },
-              "omitted": {
-                "description": "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.",
-                "type": "object"
-              },
-              "token_limit": {
-                "description": "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent.",
-                "type": "integer"
-              },
-              "truncated": {
-                "description": "Always true when this optional object is present.",
-                "type": "boolean"
-              }
-            },
-            "type": "object"
           },
           "wake": {
             "additionalProperties": false,
@@ -3015,6 +3001,10 @@
                 "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies.",
                 "minimum": 1,
                 "type": "integer"
+              },
+              "repeat_core": {
+                "description": "True: this continuation also resends the first page's core.",
+                "type": "boolean"
               }
             },
             "type": "object"
@@ -3067,8 +3057,12 @@
                 "type": "object"
               },
               "contract": {
-                "description": "The projection contract version, e.g. kmp.recall.projection.v1.",
+                "description": "The projection contract version, e.g. kmp.recall.projection.v2.",
                 "type": "string"
+              },
+              "core_reused": {
+                "description": "Present and true on a continuation that omits the stable core: it carries only new expansion items. Combine them with the first page's core and earlier pages; page.repeat_core=true returns the core again.",
+                "type": "boolean"
               },
               "core_text_shortened": {
                 "description": "Whether stable core prose had to be shortened to fit max_bytes.",
@@ -3144,7 +3138,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
+                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding the core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -3239,28 +3233,6 @@
           "summary": {
             "description": "States whether nothing was retrieved, retrieved evidence did not bear on the question, or evidence was retained.",
             "type": "string"
-          },
-          "truncation": {
-            "additionalProperties": false,
-            "properties": {
-              "byte_limit": {
-                "description": "Normative serialized-byte ceiling applied.",
-                "type": "integer"
-              },
-              "omitted": {
-                "description": "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.",
-                "type": "object"
-              },
-              "token_limit": {
-                "description": "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent.",
-                "type": "integer"
-              },
-              "truncated": {
-                "description": "Always true when this optional object is present.",
-                "type": "boolean"
-              }
-            },
-            "type": "object"
           },
           "warnings": {
             "description": "Non-empty warnings qualify success; retain them.",

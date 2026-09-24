@@ -185,7 +185,6 @@ pub fn wake_response_from_result(
     Ok(WakeResponse {
         dimension_selection: None,
         projection: selection_projection,
-        truncation: None,
         resume_cursor,
         labels,
         summary,
@@ -539,7 +538,6 @@ pub fn ask_response_from_result(
     }
     Ok(AskResponse {
         projection: selection_projection,
-        truncation: None,
         summary: if answer == UNANSWERED {
             // Say which of the two happened. "Found nothing" and "found
             // things that do not answer this" lead to different next moves:
@@ -2337,13 +2335,9 @@ mod wake_cap_tests {
                     ),
                     original_answer
                 );
-                for (projection, truncation, count) in [
-                    (
-                        wake.projection.expect("fixture"),
-                        wake.truncation,
-                        wake_count,
-                    ),
-                    (ask.projection.expect("fixture"), ask.truncation, ask_count),
+                for (projection, count) in [
+                    (wake.projection.expect("fixture"), wake_count),
+                    (ask.projection.expect("fixture"), ask_count),
                 ] {
                     let omitted = cap.map_or(0, |_| count - 1) as u64;
                     assert_eq!(
@@ -2351,12 +2345,6 @@ mod wake_cap_tests {
                         "{detail:?}, cap={cap:?}"
                     );
                     assert!(!projection.page.expect("fixture").has_more);
-                    assert_eq!(
-                        truncation
-                            .and_then(|t| t.omitted)
-                            .map_or(0, |o| o.selection_items),
-                        omitted
-                    );
                 }
             }
         }

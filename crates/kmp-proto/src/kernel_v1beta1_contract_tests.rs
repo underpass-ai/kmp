@@ -144,7 +144,6 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "warnings",
             "resume_cursor",
             "projection",
-            "truncation",
             "labels",
             "dimension_selection",
         ]
@@ -173,7 +172,6 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "proof",
             "warnings",
             "projection",
-            "truncation",
             "asked_as",
         ]
     );
@@ -215,6 +213,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "core_text_shortened",
             "next_action",
             "next_call",
+            "core_reused",
         ]
     );
     assert_eq!(
@@ -243,21 +242,16 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "remaining"
         ]
     );
-    assert_eq!(
-        message_field_names(memory_file, "RecallTruncation"),
-        vec!["truncated", "token_limit", "byte_limit", "omitted"]
-    );
-    assert_eq!(
-        message_field_names(memory_file, "RecallOmitted"),
-        vec![
-            "page_items",
-            "prior_page_items",
-            "remaining_page_items",
-            "excluded_by_detail",
-            "selection_items",
-            "core_text_shortened",
-        ]
-    );
+    // Retired: `projection` carries every count the truncation report did.
+    for retired in ["RecallTruncation", "RecallOmitted"] {
+        assert!(
+            memory_file
+                .message_type
+                .iter()
+                .all(|message| message.name() != retired),
+            "{retired} was retired"
+        );
+    }
     assert_eq!(
         message_field_names(memory_file, "RecallCursorError"),
         vec!["reason", "cursor", "message", "restart"]

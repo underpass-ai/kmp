@@ -1,9 +1,9 @@
 //! Rendering a wake or ask response as the JSON the recall projection works
-//! on, including the projection and truncation envelopes it already carries.
+//! on, including the projection envelope it already carries.
 
 use kmp_proto::v1beta1::{
-    AnswerReason, AskResponse, MemoryEvidence, MemoryLabel, RecallProjection, RecallTruncation,
-    WakeClaim, WakeResponse,
+    AnswerReason, AskResponse, MemoryEvidence, MemoryLabel, RecallProjection, WakeClaim,
+    WakeResponse,
 };
 use serde_json::{Map, Value, json};
 
@@ -11,6 +11,7 @@ use super::actions;
 use super::normalization::{normalized_answer_reason, normalized_ask_answer};
 use super::proof_value::{empty_proof_value, proof_value, temporal_cursor_value};
 use super::request_arguments::dimension_selection_value;
+use super::reused_core::{CORE_REUSED, retain_expansion};
 use super::scalars::{detail_label, insert_non_empty, insert_timestamp};
 
 pub fn wake_value(response: &WakeResponse) -> Value {
@@ -39,11 +40,7 @@ pub fn wake_value(response: &WakeResponse) -> Value {
         "resume_cursor": response.resume_cursor.as_ref().map(temporal_cursor_value).unwrap_or(Value::Null),
         "warnings": response.warnings
     });
-    attach_typed_projection(
-        &mut value,
-        response.projection.as_ref(),
-        response.truncation.as_ref(),
-    );
+    attach_typed_projection(&mut value, response.projection.as_ref());
     value
 }
 
@@ -68,27 +65,20 @@ pub fn ask_value(response: &AskResponse) -> Value {
     if !response.asked_as.is_empty() {
         value["asked_as"] = Value::String(response.asked_as.clone());
     }
-    attach_typed_projection(
-        &mut value,
-        response.projection.as_ref(),
-        response.truncation.as_ref(),
-    );
+    attach_typed_projection(&mut value, response.projection.as_ref());
     value
 }
 
-fn attach_typed_projection(
-    value: &mut Value,
-    projection: Option<&RecallProjection>,
-    truncation: Option<&RecallTruncation>,
-) {
-    let Some(object) = value.as_object_mut() else {
+fn attach_typed_projection(value: &mut Value, projection: Option<&RecallProjection>) {
+    let Some(projection) = projection else {
         return;
     };
-    if let Some(projection) = projection {
+    if let Some(object) = value.as_object_mut() {
         object.insert("projection".to_string(), projection_value(projection));
     }
-    if let Some(truncation) = truncation {
-        object.insert("truncation".to_string(), truncation_value(truncation));
+    if projection.core_reused {
+        // The continuation the projection sized: new expansion items only.
+        retain_expansion(value);
     }
 }
 
@@ -108,7 +98,7 @@ fn projection_value(projection: &RecallProjection) -> Value {
     }
     let budget = projection.budget.unwrap_or_default();
     let page = projection.page.clone().unwrap_or_default();
-    json!({
+    let mut value = json!({
         "contract": projection.contract,
         "detail": detail_label(projection.detail),
         "budget": {
@@ -129,24 +119,11 @@ fn projection_value(projection: &RecallProjection) -> Value {
         "selection_omitted": projection.selection_omitted,
         "core_text_shortened": projection.core_text_shortened,
         "next_action": projection.next_call.as_ref().map(actions::call_value).unwrap_or(Value::Null)
-    })
-}
-
-fn truncation_value(truncation: &RecallTruncation) -> Value {
-    let omitted = truncation.omitted.unwrap_or_default();
-    json!({
-        "truncated": truncation.truncated,
-        "token_limit": truncation.token_limit,
-        "byte_limit": truncation.byte_limit,
-        "omitted": {
-            "page_items": omitted.page_items,
-            "prior_page_items": omitted.prior_page_items,
-            "remaining_page_items": omitted.remaining_page_items,
-            "excluded_by_detail": omitted.excluded_by_detail,
-            "selection_items": omitted.selection_items,
-            "core_text_shortened": omitted.core_text_shortened
-        }
-    })
+    });
+    if projection.core_reused {
+        value[CORE_REUSED] = json!(true);
+    }
+    value
 }
 
 fn wake_claim_value(claim: &WakeClaim) -> Value {

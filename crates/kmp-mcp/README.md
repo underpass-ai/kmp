@@ -147,7 +147,7 @@ Current status:
   latest `observed_at`; the current about first, then by use. Read it before
   naming a label on a new memory; the most used labels are the first
   expansion the packet fills, the rest follow the causal spine, and
-  `truncation` says what did not fit;
+  `projection` says what did not fit;
 - `kmp_write_memory` takes `labels`, `key: value` pairs for any facet that
   catalogues the about beside the well-known `scope.process`, `scope.task`
   and `scope.episode`; each becomes a coordinate with the write's clocks, a

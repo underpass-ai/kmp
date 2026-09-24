@@ -122,7 +122,6 @@ mod tests {
             }),
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
             asked_as: String::new(),
         };
 
@@ -212,7 +211,6 @@ mod tests {
             }),
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
             asked_as: String::new(),
         };
         let legacy = json!({
@@ -360,7 +358,6 @@ mod tests {
             }),
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
         };
         let _budget = MemoryBudget {
             tokens: 1,

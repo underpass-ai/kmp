@@ -81,7 +81,11 @@ fn bounded_ask_roundtrip_retains_every_projected_field() {
                 budget.max_bytes = 30_000;
             }
             assert!(cursors.len() <= 32, "finite fixture must finish");
-            request.page = Some(kmp_proto::v1beta1::PageRequest { cursor, entries: 0 });
+            request.page = Some(kmp_proto::v1beta1::PageRequest {
+                cursor,
+                entries: 0,
+                repeat_core: false,
+            });
         }
     }
 }
@@ -112,10 +116,17 @@ fn shortened_typed_evidence_keeps_identity_text_and_budget() {
         let result = project_ask_response(response.clone(), &request).expect("typed page");
         let actual = ask_value(&result);
         assert_eq!(actual["proof"]["evidence"], generic["proof"]["evidence"]);
-        assert!(
+        // Page 1 carries the shortened core; a continuation carries none.
+        let first_page = actual["projection"]["page"]["offset"] == 0;
+        assert_eq!(
             actual["projection"]["core_text_shortened"]
                 .as_bool()
-                .expect("shortened")
+                .expect("shortened"),
+            first_page
+        );
+        assert_eq!(
+            result.projection.as_ref().expect("projection").core_reused,
+            !first_page
         );
         for reason in &result.because {
             let proof = result.proof.as_ref().expect("proof");
@@ -134,7 +145,11 @@ fn shortened_typed_evidence_keeps_identity_text_and_budget() {
         }
         let cursor = page.next_cursor.expect("cursor");
         assert!(seen.insert(cursor.clone()), "cursor must advance");
-        request.page = Some(kmp_proto::v1beta1::PageRequest { cursor, entries: 0 });
+        request.page = Some(kmp_proto::v1beta1::PageRequest {
+            cursor,
+            entries: 0,
+            repeat_core: false,
+        });
     }
     panic!("continuation did not terminate");
 }
@@ -155,6 +170,7 @@ fn typed_ask_projection_round_trips_exact_bytes_and_cursor() {
         page: Some(kmp_proto::v1beta1::PageRequest {
             entries: 4,
             cursor: String::new(),
+            repeat_core: false,
         }),
         ..Default::default()
     };
@@ -212,6 +228,7 @@ fn typed_wake_projection_round_trips_exact_bytes_and_cursor() {
         page: Some(kmp_proto::v1beta1::PageRequest {
             entries: 4,
             cursor: String::new(),
+            repeat_core: false,
         }),
         ..Default::default()
     };

@@ -112,15 +112,25 @@ async fn verify_admission_and_pagination(separate_channels: bool) {
     let mut pages = 0;
     loop {
         let response = call(&server, 3 + pages, "kmp_ask", arguments.clone()).await;
-        assert_eq!(response["answer"], "UNKNOWN");
-        assert!(
-            response["because"]
-                .as_array()
-                .expect("citations")
-                .is_empty()
-        );
+        if pages == 0 {
+            assert_eq!(response["answer"], "UNKNOWN");
+            assert!(
+                response["because"]
+                    .as_array()
+                    .expect("citations")
+                    .is_empty()
+            );
+        } else {
+            // The answer is core: continuations carry only new evidence.
+            assert_eq!(response["projection"]["core_reused"], true);
+            assert!(response.get("answer").is_none());
+        }
         assert!(serde_json::to_vec(&response).expect("JSON").len() <= 4000);
-        for item in response["proof"]["evidence"].as_array().expect("proof") {
+        for item in response["proof"]["evidence"]
+            .as_array()
+            .into_iter()
+            .flatten()
+        {
             if item["metadata"]["reached_by"] == "semantic" {
                 if separate_channels {
                     assert_eq!(item["metadata"]["retrieval_channel"], "bm25");

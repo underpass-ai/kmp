@@ -1,7 +1,7 @@
 //! Response shapes more than one tool advertises.
 //!
 //! One concept: the blocks that recur across verbs — a page, a proof, a
-//! projection envelope, a truncation report, a quality report, warnings. A
+//! projection envelope, a quality report, warnings. A
 //! shape used by a single verb belongs with that verb, not here; these earn
 //! their place by having two or more.
 //!
@@ -17,7 +17,6 @@ pub(crate) fn warnings_output_schema() -> Value {
 pub(crate) fn recall_envelope_properties() -> Value {
     json!({
         "projection": projection_output_schema(),
-        "truncation": truncation_output_schema(),
         "warnings": warnings_output_schema()
     })
 }
@@ -96,7 +95,7 @@ fn projection_output_schema() -> Value {
         "When stalled or core_text_shortened, a sufficient byte allowance for the unshortened core and expansion progress. The returned action adds 10000 bytes for useful expansion instead of negotiating only one item.",
     );
     output_object(json!({
-        "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v1."),
+        "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v2."),
         "budget": described("object", "The normative byte ceiling, bytes actually used, and retained token-planning hint."),
         "detail": described("string", "compact | balanced | full — the detail tier that was served."),
         "excluded_by_detail": described(
@@ -114,17 +113,10 @@ fn projection_output_schema() -> Value {
             }
         },
         "page": page,
-        "sections": described("object", "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding repeated core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage."),
+        "sections": described("object", "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding the core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage."),
         "selection_omitted": described("integer", "Items excluded by budget.max_entries before paging."),
-        "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes.")
-    }))
-}
-fn truncation_output_schema() -> Value {
-    output_object(json!({
-        "truncated": described("boolean", "Always true when this optional object is present."),
-        "token_limit": described("integer", "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent."),
-        "byte_limit": described("integer", "Normative serialized-byte ceiling applied."),
-        "omitted": described("object", "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.")
+        "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes."),
+        "core_reused": described("boolean", "Present and true on a continuation that omits the stable core: it carries only new expansion items. Combine them with the first page's core and earlier pages; page.repeat_core=true returns the core again.")
     }))
 }
 pub(crate) fn quality_output_schema() -> Value {
