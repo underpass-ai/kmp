@@ -10,6 +10,9 @@ pub const GRPC_TLS_CA_PATH_ENV: &str = "KMP_KERNEL_GRPC_TLS_CA_PATH";
 pub const GRPC_TLS_CERT_PATH_ENV: &str = "KMP_KERNEL_GRPC_TLS_CERT_PATH";
 pub const GRPC_TLS_KEY_PATH_ENV: &str = "KMP_KERNEL_GRPC_TLS_KEY_PATH";
 pub const GRPC_TLS_DOMAIN_NAME_ENV: &str = "KMP_KERNEL_GRPC_TLS_DOMAIN_NAME";
+/// Bearer key for the optional TypeSafe judgement adapter. Never logged.
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+pub const TYPESAFE_API_KEY_ENV: &str = "TYPESAFE_API_KEY";
 
 pub(crate) fn optional_env_path(name: &str) -> Option<PathBuf> {
     optional_env_string(name).map(PathBuf::from)

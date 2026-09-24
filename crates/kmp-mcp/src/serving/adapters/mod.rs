@@ -10,6 +10,10 @@ mod semantic_rank_response;
 mod semantic_retriever_config;
 pub(crate) mod tool_request_mapping;
 #[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+mod typesafe_api_key;
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+mod typesafe_config;
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
 mod typesafe_request_body;
 #[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
 mod typesafe_wire_response;
