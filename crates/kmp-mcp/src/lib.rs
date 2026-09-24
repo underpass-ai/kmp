@@ -13,6 +13,8 @@ pub mod summaries;
 pub mod viewer;
 
 mod contract;
+#[allow(dead_code)] // consumed by EmbeddedCurateTool (jev plan 2a, Task 4)
+mod curate;
 mod projection;
 mod serving;
 mod write;
