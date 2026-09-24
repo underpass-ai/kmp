@@ -142,26 +142,26 @@ and `evidence` for the items it accepts.
 backends alike. It would be opt-in per store, advisory only, and decided
 after `kmp_curate` has measured how often Jev's doubts are right.
 
-**Later, to evaluate: Jev choosing a dynamic label.** Jev could suggest which
-dynamic label (dimension kind plus `scope_id`) fits. It would ask a `choice`
-over the labels the selected abouts already use, plus `new` and `none`. For
-`new`, the agent names the label; Jev never invents one. Today relations
-carry no labels: labels belong to memories, and `relations[]` refuses
-`labels` and `labels_new` (`write/relation_planner.rs:45`, `:388`). That
-leaves two readings:
+**Later: Jev suggesting a dynamic label for the nodes.** Decided on
+2026-09-24: the label goes on the nodes, meaning the memories at both ends of
+a relation, not on the relation.
 
-1. **Label the pair's memories.** When a curated pair shares no label, Jev
-   suggests one the two memories should both stand in. The agent applies it
-   with `kmp_relabel`, which already exists and guards labels that resemble
-   stored ones. This needs no change to the relation model and could enter
-   `kmp_curate review` as a fourth list, `labels`.
-2. **Labels on the relation itself.** A relation would get its own fiber
-   (the pair, not a value), so relations could be filtered and laid out by
-   label, for example in ChronoLoom. This is a change to the relation model
-   and the write contract, and needs its own spec and decision.
-
-Neither is in this plan. Option 1 is the natural next step once `kmp_curate`
-has measured precision.
+- **When:** a curated pair has no dimension label (dimension kind plus
+  `scope_id`) in common.
+- **What Jev is asked:** a `choice` over the labels the selected abouts
+  already use, plus `new` and `none`. For `new`, the agent names the label;
+  Jev never invents one.
+- **How it is applied:** the agent applies it with `kmp_relabel`, which
+  already guards labels that resemble stored ones. This needs no change to
+  the relation model. Today `relations[]` refuses `labels` and `labels_new`
+  (`write/relation_planner.rs:45`, `:388`), and it stays that way.
+- **Where it would appear:** as a fourth list in `kmp_curate review`,
+  `labels`, with one item per pair: `from`, `to`, `suggested_label`, Jev's
+  probabilities and confidence, and a bound `kmp_relabel` action for each
+  node.
+- **Status:** not in this plan. It is the next step once `kmp_curate` has
+  measured precision. Labels on the relation itself were considered and are
+  not pursued.
 
 ## Shared TypeSafe client (PR 1)
 
