@@ -26,8 +26,8 @@ def evidence(text=BODY, identifier=EVIDENCE_ID, source='kmp_write_memory:w', own
 
 
 def wake_page(claims, items, state=None, has_more=False, next_action=None, shortened=False,
-              next_actions=(), path=(), missing=()):
-    return {'wake': {'current_state': list(state if state is not None else ['(observation) ' + SUMMARY]),
+              next_actions=(), path=(), missing=(), scope=None):
+    return {'scope': scope or {},'wake': {'current_state': list(state if state is not None else ['(observation) ' + SUMMARY]),
                      'causal_spine': claims, 'next_actions': list(next_actions), 'open_loops': []},
             'proof': {'evidence': items, 'path': list(path), 'missing': list(missing)},
             'summary': 'Objective: t\nNext: none recorded',
@@ -35,6 +35,11 @@ def wake_page(claims, items, state=None, has_more=False, next_action=None, short
                            'page': {'has_more': has_more}, 'excluded_by_detail': 0,
                            'selection_omitted': 0,
                            'sections': {'proof.evidence': {'remaining': 1 if has_more else 0}}}}
+
+
+UNBOUNDED_SCOPE = {'context': ['summary', 'wake.current_state', 'wake.next_actions'],
+                   'context_time': 'unbounded', 'request': ['wake.objective'],
+                   'selection': ['proof', 'resume_cursor', 'wake.causal_spine', 'wake.guardrails']}
 
 
 def claim_v2(refs=(EVIDENCE_ID,)):

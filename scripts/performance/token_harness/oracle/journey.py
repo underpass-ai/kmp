@@ -3,7 +3,7 @@ from .calls import tool_calls
 from .checks import (contract_violations, cited_refs, disguised_refs, historical_actions,
                      merged_identical_bodies, support_bookkeeping, unresolved_refs, usable_unit)
 from .completeness import requested_scope_exhausted, selected_packet_complete, transport_complete
-from .obligations import all_satisfied, judge_all
+from .obligations import all_satisfied, judge_all, state_hits
 from .packet import build_packet
 from ..scenarios.model import ObligationKind as K
 
@@ -45,6 +45,8 @@ def evaluate_journey(scenario, trace, record, refs, readback, adapter):
     state_missing = [row for row in obligations if row['kind'] == K.STATE_MENTIONS.value
                      and row['satisfied'] is not True]
     actions = historical_actions(packet)
+    later_in_context = [line for o in scenario.obligations if o.kind is K.AS_OF_EXCLUDES
+                        for line in state_hits(o, packet, refs)]
     violations = contract_violations(packet, adapter)
     merged = merged_identical_bodies(packet)
     completeness = {
@@ -61,6 +63,8 @@ def evaluate_journey(scenario, trace, record, refs, readback, adapter):
         'support_displacement_count': len(state_missing) if bookkeeping else 0,
         'historical_relation_as_action_count': len(actions),
         'contract_violation_count': len(violations),
+        'post_as_of_memory_in_state_count': len(later_in_context),
+        'state_declared_unbounded_context': packet.state_is_unbounded_context,
         'identical_body_merged_citation_count': len(merged),
         'cited_reference_count': len({ref for _, ref in cited}),
         'rpc_calls': len(calls),
@@ -81,4 +85,5 @@ def evaluate_journey(scenario, trace, record, refs, readback, adapter):
             'detail': {'unresolved_refs': unresolved[:20], 'disguised_refs': disguised[:20],
                        'support_lines_in_state': bookkeeping[:10], 'historical_actions': actions,
                        'contract_violations': sorted(set(violations))[:10],
+                       'post_as_of_state_lines': later_in_context[:10],
                        'driver_outcome': record.get('outcome')}}

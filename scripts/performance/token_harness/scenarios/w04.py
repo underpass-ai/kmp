@@ -27,7 +27,7 @@ SCENARIO = Scenario(
     ),
     journey=JourneySpec('kmp_wake', {'about': ABOUT, 'as_of': {'time': '2026-09-10T00:00:00Z'}}),
     obligations=(Obligation(K.STATE_MENTIONS, FREEZE), Obligation(K.EVIDENCE_BODY, E_FREEZE),
-                 Obligation(K.STATE_EXCLUDES, LIFT, 'lift')),
+                 Obligation(K.AS_OF_EXCLUDES, LIFT, 'lift')),
     unit_bodies=(E_FREEZE,),
     stored_bodies=(FREEZE, LIFT, E_FREEZE, E_LIFT, WHY),
 )

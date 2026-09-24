@@ -3,14 +3,15 @@ PRIMARY_REPRESENTATION = 'json_compact_lexical_v1'
 ORACLE_COLUMNS = ('unresolved_evidence_reference_count', 'evidence_body_disguised_as_ref_count',
                   'support_bookkeeping_in_state_count', 'support_displacement_count',
                   'historical_relation_as_action_count', 'identical_body_merged_citation_count',
-                  'contract_violation_count')
+                  'contract_violation_count', 'post_as_of_memory_in_state_count')
 SHORT = {'unresolved_evidence_reference_count': 'unresolved refs',
          'evidence_body_disguised_as_ref_count': 'body as ref',
          'support_bookkeeping_in_state_count': 'supports lines in state',
          'support_displacement_count': 'displaced memories',
          'historical_relation_as_action_count': 'relation as action',
          'identical_body_merged_citation_count': 'equal bodies merged',
-         'contract_violation_count': 'contract violations'}
+         'contract_violation_count': 'contract violations',
+         'post_as_of_memory_in_state_count': 'post-as_of memory in state (figure)'}
 
 
 def _cell(value):

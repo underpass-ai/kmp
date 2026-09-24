@@ -15,7 +15,13 @@ class ObligationKind(str, Enum):
     # The text (a memory summary) appears in some wake.current_state line.
     STATE_MENTIONS = 'state_mentions'
     # Neither the text nor the canonical ref of `local_id` is shown as state.
+    # Used for dimensional exclusion: requested dimensions bind context too.
     STATE_EXCLUDES = 'state_excludes'
+    # A memory later than as_of is not presented as holding at as_of. When the
+    # packet declares wake.current_state as time-unbounded context (scope), the
+    # check moves to the declared selection (proof, causal spine); otherwise
+    # the state surfaces must exclude it too.
+    AS_OF_EXCLUDES = 'as_of_excludes'
     # proof.evidence holds an item whose text equals the stored body exactly.
     EVIDENCE_BODY = 'evidence_body'
     # At least `count` evidence items carry this body with distinct ids and sources.

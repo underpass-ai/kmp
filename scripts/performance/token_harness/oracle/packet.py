@@ -33,10 +33,17 @@ class Packet:
     because: list = field(default_factory=list)
     missing: list = field(default_factory=list)
     final: dict = field(default_factory=dict)
+    selection_strings: list = field(default_factory=list)  # every string under scope.selection
+    context_unbounded: list = field(default_factory=list)  # per page: state declared unbounded context
 
     @property
     def evidence_ids(self):
         return set(self.evidence)
+
+    @property
+    def state_is_unbounded_context(self):
+        """Every page of the packet declares current_state as time-unbounded context."""
+        return bool(self.context_unbounded) and all(self.context_unbounded)
 
     @property
     def declared_missing(self):
@@ -57,6 +64,37 @@ def _extend_unique(target, values, seen):
             target.append(value)
 
 
+def _strings(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from _strings(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _strings(item)
+
+
+def _at(structured, dotted):
+    value = structured
+    for part in dotted.split('.'):
+        value = value.get(part) if isinstance(value, dict) else None
+    return value
+
+
+def declares_unbounded_state(structured):
+    """The page says current_state is about context whose time is not bounded by the selection."""
+    scope = structured.get('scope') or {}
+    return ('wake.current_state' in (scope.get('context') or [])
+            and scope.get('context_time') == 'unbounded')
+
+
+def selection_strings(structured):
+    """Strings under the paths the page itself declares as its selection."""
+    paths = (structured.get('scope') or {}).get('selection') or []
+    return [text for path in paths if isinstance(path, str) for text in _strings(_at(structured, path))]
+
+
 def build_packet(calls):
     starts = [index for index, call in enumerate(calls) if is_start(call.arguments)]
     selected = calls[starts[-1]:] if starts else calls
@@ -65,6 +103,8 @@ def build_packet(calls):
         structured = call.structured
         packet.pages += 1
         packet.final = structured
+        packet.selection_strings += selection_strings(structured)
+        packet.context_unbounded.append(declares_unbounded_state(structured))
         wake = structured.get('wake') or {}
         proof = structured.get('proof') or {}
         for item in proof.get('evidence') or []:

@@ -24,6 +24,21 @@ def _bodies(packet, text):
             if isinstance(item, dict) and item.get('text') == text]
 
 
+def _needles(obligation, refs):
+    return [obligation.text] + ([refs[obligation.local_id]] if obligation.local_id in refs else [])
+
+
+def state_hits(obligation, packet, refs):
+    """Raw fact: state surfaces that name the excluded memory (reported as a figure)."""
+    return [line for line in _state_surfaces(packet)
+            if any(needle in line for needle in _needles(obligation, refs))]
+
+
+def selection_hits(obligation, packet, refs):
+    return [text for text in packet.selection_strings
+            if any(needle in text for needle in _needles(obligation, refs))]
+
+
 def judge(obligation, packet, refs, readback):
     """True, False, or None when the evidence to judge it was never captured."""
     kind = obligation.kind
@@ -34,6 +49,12 @@ def judge(obligation, packet, refs, readback):
         if obligation.local_id and obligation.local_id not in refs:
             return None  # fixture ref not recorded: cannot judge exclusion by identity
         return not any(needle in line for line in _state_surfaces(packet) for needle in needles)
+    if kind is K.AS_OF_EXCLUDES:
+        if obligation.local_id and obligation.local_id not in refs:
+            return None
+        if packet.state_is_unbounded_context:
+            return not selection_hits(obligation, packet, refs)
+        return not state_hits(obligation, packet, refs) and not selection_hits(obligation, packet, refs)
     if kind is K.EVIDENCE_BODY:
         return any(item.get('id') and item.get('source') for item in _bodies(packet, obligation.text))
     if kind is K.DISTINCT_PROVENANCE:

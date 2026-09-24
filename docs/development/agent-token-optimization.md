@@ -182,19 +182,26 @@ $H compare --baseline-run $A/baseline --baseline-metrics ... --candidate-run $A/
 $H render --report $A/report.json --control $A/aa-baseline.json.gz --out docs/development/agent-token-optimization-report.md
 ```
 
-Run of 2026-09-24 (baseline `main` a22b6402, candidate `fix/544-wake-state`
-8170492b, which carries I1 as b75ccadc rather than the integration merge):
-the candidate passes W01, W02, A01 and E01 and fails two scenarios.
+W04 follows the wake scope contract (`crates/kmp-mcp/tests/wake_scope.rs`):
+`current_state` is about context. When the packet declares it in
+`scope.context` with `scope.context_time == "unbounded"`, a memory later than
+`as_of` may appear there. The oracle then requires the declared
+`scope.selection` (proof, causal spine, resume cursor, guardrails) to exclude
+it. Without that declaration, state must exclude it too. The raw count stays
+visible as `post_as_of_memory_in_state_count`.
 
-- W04: at `as_of` 2026-09-10 the candidate's `current_state` lists
-  "(decision) Lift the schema freeze after the audit closed.", observed
-  2026-09-20. I2's "unbounded context is never shown as state at `as_of`" does
-  not hold yet; the baseline fails the same obligation through the lift's ref
-  in `--supports-->` lines.
-- W03: each `proof.path` hop cites both sources that hold the identical body,
-  in both variants. Wake claims in the candidate cite only their own source;
-  the path hops (`normalized_proof_relation`) do not.
+Run of 2026-09-24 (baseline `main` a22b6402, candidate `fix/544-wake-scope`
+f171b3a7, PR #840): the candidate passes W01, W02, W03, A01 and E01, and fails
+W04 at both budgets.
 
+- W04: at `as_of` 2026-09-10 the declared selection still names the lift
+  (observed 2026-09-20). `wake.causal_spine` carries the structural claims
+  `fixture:w04 -> evidence:…lift…:current` and `…:relation:1` ("Memory anchor
+  includes this evidence item."). `proof` itself excludes the lift. The lift
+  also appears twice in `current_state` (the memory and its `supersedes`
+  line), which the declared unbounded context allows.
+- W01 is larger in the candidate: +1267 tokens at 4096 and +2589 at 10000
+  (4 calls instead of 3). This is a quality fix, not compression.
 Not delivered: T01 and G03, the 512-byte recovery budget, latency and cache
 temperature, H4/H5. The report lists them as limitations.
 
@@ -216,7 +223,7 @@ temperature, H4/H5. The report lists them as limitations.
 | I0 | `feat/544-token-meter` | #836 | merged; legacy totals reproduced exactly on the 2026-09-15 captures |
 | I1 | `fix/544-wake-evidence-refs` | #835 | merged; contract wake pins 3 cited sources in page 1 (was 0) |
 | I2 | `fix/544-wake-state` | #837 | draft; state from live memories, `Next: none recorded` |
-| I3 | `feat/544-wake-oracle` | — | local commits, not pushed; candidate passes W01/W02/A01/E01, fails W03 (path cites equal-body sources) and W04 (later memory as state at `as_of`) |
+| I3 | `feat/544-wake-oracle` | #839 | draft; against #840 the candidate passes W01–W03/A01/E01 and fails W04 (causal spine names anchor→evidence claims of a memory later than `as_of`) |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
 contract break is acceptable when it serves that. Breaks are named in each PR.

@@ -1,12 +1,12 @@
 {
   "schema_version": "kmp.token.oracle.v1",
   "run": "baseline",
-  "manifest_sha256": "f1a3f24685822cabe8897d491eeaab05ff71162339cfe44fcf08bf74606c8a0d",
+  "manifest_sha256": "a242950f52f649a271f5e6cdc6db55d770f47c06c1c66ec34124a99d94a5b756",
   "variant": "baseline",
   "wake_contract": "kmp.wake_claim.v1",
   "driver_version": "kmp.native_driver.v1",
-  "scenarios_digest": "6be0ed5bf2c99eb09dede63a8e95c12eda2042e23c5e921f3eb92926626d66c1",
-  "capture_scenarios_digest": "6be0ed5bf2c99eb09dede63a8e95c12eda2042e23c5e921f3eb92926626d66c1",
+  "scenarios_digest": "b954b0e4b68b30720758bc758705c8fcaa6b3835e429f7422b558b53c7bf8d7d",
+  "capture_scenarios_digest": "b954b0e4b68b30720758bc758705c8fcaa6b3835e429f7422b558b53c7bf8d7d",
   "capture_failures": [],
   "captured_cases": [
     "a01",
@@ -41,6 +41,8 @@
         "support_displacement_count": 3,
         "historical_relation_as_action_count": 1,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 15,
         "rpc_calls": 3,
@@ -133,6 +135,7 @@
           "depends_on → fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61"
         ],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 3,
@@ -164,6 +167,8 @@
         "support_displacement_count": 3,
         "historical_relation_as_action_count": 1,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 15,
         "rpc_calls": 3,
@@ -256,6 +261,7 @@
           "depends_on → fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61"
         ],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 3,
@@ -298,6 +304,8 @@
         "support_displacement_count": 2,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 6,
         "rpc_calls": 9,
@@ -362,6 +370,7 @@
         ],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 9,
@@ -404,6 +413,8 @@
         "support_displacement_count": 2,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 6,
         "rpc_calls": 1,
@@ -468,6 +479,7 @@
         ],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 1,
@@ -499,6 +511,8 @@
         "support_displacement_count": 1,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 2,
         "cited_reference_count": 5,
         "rpc_calls": 9,
@@ -548,6 +562,7 @@
         ],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 9,
@@ -579,6 +594,8 @@
         "support_displacement_count": 1,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 2,
         "cited_reference_count": 5,
         "rpc_calls": 1,
@@ -628,6 +645,7 @@
         ],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 1,
@@ -662,6 +680,8 @@
         "support_displacement_count": 1,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 4,
+        "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 3,
         "rpc_calls": 6,
@@ -690,7 +710,7 @@
           "satisfied": true
         },
         {
-          "kind": "state_excludes",
+          "kind": "as_of_excludes",
           "text": "Lift the schema freeze after the audit closed.",
           "local_id": "lift",
           "count": 1,
@@ -719,6 +739,12 @@
         ],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+        ],
         "driver_outcome": {
           "status": "completed",
           "calls": 6,
@@ -753,6 +779,8 @@
         "support_displacement_count": 1,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 4,
+        "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 3,
         "rpc_calls": 1,
@@ -781,7 +809,7 @@
           "satisfied": true
         },
         {
-          "kind": "state_excludes",
+          "kind": "as_of_excludes",
           "text": "Lift the schema freeze after the audit closed.",
           "local_id": "lift",
           "count": 1,
@@ -810,6 +838,12 @@
         ],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+        ],
         "driver_outcome": {
           "status": "completed",
           "calls": 1,
@@ -845,6 +879,8 @@
         "support_displacement_count": 0,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": false,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 2,
         "rpc_calls": 2,
@@ -874,6 +910,7 @@
         "support_lines_in_state": [],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 2,
@@ -909,6 +946,8 @@
         "support_displacement_count": 0,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": false,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 2,
         "rpc_calls": 1,
@@ -938,6 +977,7 @@
         "support_lines_in_state": [],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 1,
@@ -985,6 +1025,8 @@
         "support_displacement_count": 0,
         "historical_relation_as_action_count": 0,
         "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": false,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 0,
         "rpc_calls": 1,
@@ -1021,6 +1063,7 @@
         "support_lines_in_state": [],
         "historical_actions": [],
         "contract_violations": [],
+        "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
           "calls": 1,

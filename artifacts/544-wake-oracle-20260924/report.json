@@ -1,8 +1,8 @@
 {
   "schema_version": "kmp.token.compare.v1",
-  "label": "main-a22b6402-vs-fix-544-wake-state-8170492b",
+  "label": "main-a22b6402-vs-fix-544-wake-scope-f171b3a7",
   "evidence_scope": "native_replay",
-  "harness_code_sha256": "6c03fba7ca26c47943bd309287fd7c34251ed2c34c240bb612e95664a4861788",
+  "harness_code_sha256": "285248e05c8e52d37659eecf4da1b26d621296bc50805f74cba0568ddf4c97ca",
   "model_calls": 0,
   "tokenizers": [
     {
@@ -22,7 +22,7 @@
   ],
   "baseline": {
     "run": "baseline",
-    "manifest_sha256": "f1a3f24685822cabe8897d491eeaab05ff71162339cfe44fcf08bf74606c8a0d",
+    "manifest_sha256": "a242950f52f649a271f5e6cdc6db55d770f47c06c1c66ec34124a99d94a5b756",
     "variant": "baseline",
     "binary_sha256": "d391f6a96a6163aba6a011e14552fff531eb4f3f7cf0b65e4c8aabe0971485f9",
     "build_provenance": {
@@ -51,23 +51,23 @@
     },
     "wake_contract": "kmp.wake_claim.v1",
     "driver_version": "kmp.native_driver.v1",
-    "scenarios_digest": "6be0ed5bf2c99eb09dede63a8e95c12eda2042e23c5e921f3eb92926626d66c1",
-    "harness_code_sha256": "33330cb4ade3e55da9c98956cd4013d80905285983652de2c97fedd6ef9ddbdd",
+    "scenarios_digest": "b954b0e4b68b30720758bc758705c8fcaa6b3835e429f7422b558b53c7bf8d7d",
+    "harness_code_sha256": "285248e05c8e52d37659eecf4da1b26d621296bc50805f74cba0568ddf4c97ca",
     "capture_failures": [],
     "journeys": 11,
     "incomplete_journeys": []
   },
   "candidate": {
     "run": "candidate",
-    "manifest_sha256": "36a639e166f89ed35049118cc8dcf35a90ba88a2a2ada241bcb8b39db657c1f0",
+    "manifest_sha256": "ba11346513aab5bbfa3e4e7ff63897703d3911adcf84f160866f1a2b9f7b3278",
     "variant": "candidate",
-    "binary_sha256": "15fe273737e17715f5cb58ec8aa54ba2cb1629cb97fb407b918e20b28ff78791",
+    "binary_sha256": "9a969e20c6f4d174373dc8ebdcbc2627bf246d2bd58df08491b802e395c0db68",
     "build_provenance": {
       "kind": "local release build; binary copied to a scratch path before capture",
       "variant": "candidate",
-      "branch": "fix/544-wake-state",
-      "commit": "8170492b5588b4fda1b251274c1f96e41e17d314",
-      "tree": "9b533d3588ed993ffd0721d1e8caf942c7a46518",
+      "branch": "fix/544-wake-scope",
+      "commit": "f171b3a7ec2307d3970db87a756e0393ea9cc8a3",
+      "tree": "33035b69fac0c7471cf2571e040940a21c9f2f00",
       "worktree_clean": true,
       "command": [
         "cargo",
@@ -84,12 +84,12 @@
       "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
       "binary_version": "kmp-mcp 0.19.0 (store format 4 (sqlite))",
-      "binary_sha256": "15fe273737e17715f5cb58ec8aa54ba2cb1629cb97fb407b918e20b28ff78791"
+      "binary_sha256": "9a969e20c6f4d174373dc8ebdcbc2627bf246d2bd58df08491b802e395c0db68"
     },
     "wake_contract": "kmp.wake_claim.v2",
     "driver_version": "kmp.native_driver.v1",
-    "scenarios_digest": "6be0ed5bf2c99eb09dede63a8e95c12eda2042e23c5e921f3eb92926626d66c1",
-    "harness_code_sha256": "33330cb4ade3e55da9c98956cd4013d80905285983652de2c97fedd6ef9ddbdd",
+    "scenarios_digest": "b954b0e4b68b30720758bc758705c8fcaa6b3835e429f7422b558b53c7bf8d7d",
+    "harness_code_sha256": "285248e05c8e52d37659eecf4da1b26d621296bc50805f74cba0568ddf4c97ca",
     "capture_failures": [],
     "journeys": 11,
     "incomplete_journeys": []
@@ -111,8 +111,8 @@
     "rows": 44,
     "conclusions": {
       "descriptive_only": 6,
-      "quality_fix_not_equivalent_compression": 16,
-      "quality_regression_or_failure": 16,
+      "quality_fix_not_equivalent_compression": 24,
+      "quality_regression_or_failure": 8,
       "reference_increase_with_quality_pass": 6
     }
   },
@@ -124,8 +124,8 @@
       "n": 11,
       "excluded_without_both_counts": 0,
       "baseline_tokens": 1790,
-      "candidate_tokens": 602,
-      "weighted_reduction": 0.6636871508379889,
+      "candidate_tokens": 653,
+      "weighted_reduction": 0.635195530726257,
       "median_delta_tokens": 0.0,
       "worst_regression": {
         "journey": "w02-b10000",
@@ -133,8 +133,8 @@
       },
       "conclusions": {
         "descriptive_only": 3,
-        "quality_fix_not_equivalent_compression": 4,
-        "quality_regression_or_failure": 4
+        "quality_fix_not_equivalent_compression": 6,
+        "quality_regression_or_failure": 2
       }
     },
     {
@@ -144,8 +144,8 @@
       "n": 5,
       "excluded_without_both_counts": 0,
       "baseline_tokens": 319,
-      "candidate_tokens": 235,
-      "weighted_reduction": 0.2633228840125392,
+      "candidate_tokens": 288,
+      "weighted_reduction": 0.09717868338557989,
       "median_delta_tokens": 1.0,
       "worst_regression": {
         "journey": "w02-b10000",
@@ -153,8 +153,8 @@
       },
       "conclusions": {
         "descriptive_only": 1,
-        "quality_fix_not_equivalent_compression": 2,
-        "quality_regression_or_failure": 2
+        "quality_fix_not_equivalent_compression": 3,
+        "quality_regression_or_failure": 1
       }
     },
     {
@@ -164,17 +164,17 @@
       "n": 5,
       "excluded_without_both_counts": 0,
       "baseline_tokens": 1450,
-      "candidate_tokens": 346,
-      "weighted_reduction": 0.7613793103448276,
-      "median_delta_tokens": -225.0,
+      "candidate_tokens": 344,
+      "weighted_reduction": 0.7627586206896552,
+      "median_delta_tokens": -227.0,
       "worst_regression": {
         "journey": "a01-b4096",
         "delta_tokens": 0
       },
       "conclusions": {
         "descriptive_only": 1,
-        "quality_fix_not_equivalent_compression": 2,
-        "quality_regression_or_failure": 2
+        "quality_fix_not_equivalent_compression": 3,
+        "quality_regression_or_failure": 1
       }
     },
     {
@@ -201,17 +201,17 @@
       "budget_group": "all",
       "n": 11,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 631767,
-      "candidate_tokens": 612412,
-      "weighted_reduction": 0.0306362947099168,
-      "median_delta_tokens": -55.0,
+      "baseline_tokens": 631847,
+      "candidate_tokens": 615433,
+      "weighted_reduction": 0.0259778079186892,
+      "median_delta_tokens": -62.0,
       "worst_regression": {
-        "journey": "w03-b10000",
-        "delta_tokens": 128
+        "journey": "w01-b10000",
+        "delta_tokens": 2589
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 4,
-        "quality_regression_or_failure": 4,
+        "quality_fix_not_equivalent_compression": 6,
+        "quality_regression_or_failure": 2,
         "reference_increase_with_quality_pass": 3
       }
     },
@@ -221,17 +221,17 @@
       "budget_group": "b10000",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 277258,
-      "candidate_tokens": 277326,
-      "weighted_reduction": -0.0002452589285071305,
-      "median_delta_tokens": 14.0,
+      "baseline_tokens": 277270,
+      "candidate_tokens": 279427,
+      "weighted_reduction": -0.0077794207811880955,
+      "median_delta_tokens": -62.0,
       "worst_regression": {
-        "journey": "w03-b10000",
-        "delta_tokens": 128
+        "journey": "w01-b10000",
+        "delta_tokens": 2589
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 2,
-        "quality_regression_or_failure": 2,
+        "quality_fix_not_equivalent_compression": 3,
+        "quality_regression_or_failure": 1,
         "reference_increase_with_quality_pass": 1
       }
     },
@@ -241,17 +241,17 @@
       "budget_group": "b4096",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 301798,
-      "candidate_tokens": 282361,
-      "weighted_reduction": 0.06440400532806712,
-      "median_delta_tokens": -4499.0,
+      "baseline_tokens": 301866,
+      "candidate_tokens": 283281,
+      "weighted_reduction": 0.06156705293077058,
+      "median_delta_tokens": -4491.0,
       "worst_regression": {
-        "journey": "a01-b4096",
-        "delta_tokens": 14
+        "journey": "w01-b4096",
+        "delta_tokens": 1267
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 2,
-        "quality_regression_or_failure": 2,
+        "quality_fix_not_equivalent_compression": 3,
+        "quality_regression_or_failure": 1,
         "reference_increase_with_quality_pass": 1
       }
     },
@@ -279,17 +279,17 @@
       "budget_group": "all",
       "n": 11,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 631767,
-      "candidate_tokens": 612412,
-      "weighted_reduction": 0.0306362947099168,
-      "median_delta_tokens": -55.0,
+      "baseline_tokens": 631847,
+      "candidate_tokens": 615433,
+      "weighted_reduction": 0.0259778079186892,
+      "median_delta_tokens": -62.0,
       "worst_regression": {
-        "journey": "w03-b10000",
-        "delta_tokens": 128
+        "journey": "w01-b10000",
+        "delta_tokens": 2589
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 4,
-        "quality_regression_or_failure": 4,
+        "quality_fix_not_equivalent_compression": 6,
+        "quality_regression_or_failure": 2,
         "reference_increase_with_quality_pass": 3
       }
     },
@@ -299,17 +299,17 @@
       "budget_group": "b10000",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 277258,
-      "candidate_tokens": 277326,
-      "weighted_reduction": -0.0002452589285071305,
-      "median_delta_tokens": 14.0,
+      "baseline_tokens": 277270,
+      "candidate_tokens": 279427,
+      "weighted_reduction": -0.0077794207811880955,
+      "median_delta_tokens": -62.0,
       "worst_regression": {
-        "journey": "w03-b10000",
-        "delta_tokens": 128
+        "journey": "w01-b10000",
+        "delta_tokens": 2589
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 2,
-        "quality_regression_or_failure": 2,
+        "quality_fix_not_equivalent_compression": 3,
+        "quality_regression_or_failure": 1,
         "reference_increase_with_quality_pass": 1
       }
     },
@@ -319,17 +319,17 @@
       "budget_group": "b4096",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 301798,
-      "candidate_tokens": 282361,
-      "weighted_reduction": 0.06440400532806712,
-      "median_delta_tokens": -4499.0,
+      "baseline_tokens": 301866,
+      "candidate_tokens": 283281,
+      "weighted_reduction": 0.06156705293077058,
+      "median_delta_tokens": -4491.0,
       "worst_regression": {
-        "journey": "a01-b4096",
-        "delta_tokens": 14
+        "journey": "w01-b4096",
+        "delta_tokens": 1267
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 2,
-        "quality_regression_or_failure": 2,
+        "quality_fix_not_equivalent_compression": 3,
+        "quality_regression_or_failure": 1,
         "reference_increase_with_quality_pass": 1
       }
     },
@@ -357,18 +357,18 @@
       "budget_group": "all",
       "n": 11,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 52202,
-      "candidate_tokens": 36822,
-      "weighted_reduction": 0.2946247270219532,
-      "median_delta_tokens": 0.0,
+      "baseline_tokens": 52256,
+      "candidate_tokens": 39677,
+      "weighted_reduction": 0.24071876913655843,
+      "median_delta_tokens": -77.0,
       "worst_regression": {
-        "journey": "w03-b10000",
-        "delta_tokens": 113
+        "journey": "w01-b10000",
+        "delta_tokens": 2479
       },
       "conclusions": {
         "descriptive_only": 3,
-        "quality_fix_not_equivalent_compression": 4,
-        "quality_regression_or_failure": 4
+        "quality_fix_not_equivalent_compression": 6,
+        "quality_regression_or_failure": 2
       }
     },
     {
@@ -377,18 +377,18 @@
       "budget_group": "b10000",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 15843,
-      "candidate_tokens": 15913,
-      "weighted_reduction": -0.004418355109512051,
-      "median_delta_tokens": 6.0,
+      "baseline_tokens": 15851,
+      "candidate_tokens": 17839,
+      "weighted_reduction": -0.1254179547031733,
+      "median_delta_tokens": -77.0,
       "worst_regression": {
-        "journey": "w03-b10000",
-        "delta_tokens": 113
+        "journey": "w01-b10000",
+        "delta_tokens": 2479
       },
       "conclusions": {
         "descriptive_only": 1,
-        "quality_fix_not_equivalent_compression": 2,
-        "quality_regression_or_failure": 2
+        "quality_fix_not_equivalent_compression": 3,
+        "quality_regression_or_failure": 1
       }
     },
     {
@@ -397,18 +397,18 @@
       "budget_group": "b4096",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 35905,
-      "candidate_tokens": 20455,
-      "weighted_reduction": 0.43030218632502437,
-      "median_delta_tokens": -3584.0,
+      "baseline_tokens": 35951,
+      "candidate_tokens": 21384,
+      "weighted_reduction": 0.40519039804177914,
+      "median_delta_tokens": -3594.0,
       "worst_regression": {
-        "journey": "a01-b4096",
-        "delta_tokens": 0
+        "journey": "w01-b4096",
+        "delta_tokens": 1369
       },
       "conclusions": {
         "descriptive_only": 1,
-        "quality_fix_not_equivalent_compression": 2,
-        "quality_regression_or_failure": 2
+        "quality_fix_not_equivalent_compression": 3,
+        "quality_regression_or_failure": 1
       }
     },
     {
@@ -438,10 +438,10 @@
       "budget": 4096,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 60699,
-      "candidate_tokens": 60563,
-      "delta_tokens": -136,
-      "reduction_fraction": 0.002240564094960378,
+      "baseline_tokens": 60707,
+      "candidate_tokens": 61974,
+      "delta_tokens": 1267,
+      "reduction_fraction": -0.020870739782891595,
       "baseline_rpc": 3,
       "candidate_rpc": 3,
       "first_supported_unit": {
@@ -455,14 +455,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 60699,
-        "memory_tokens": 8624,
+        "tokens": 60707,
+        "memory_tokens": 8632,
         "startup_tokens": 52075,
         "utf8_bytes": 279000,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57670,
+        "tokens_until_first_supported_unit": 57676,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -475,15 +475,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 60563,
-        "memory_tokens": 8474,
+        "tokens": 61974,
+        "memory_tokens": 9885,
         "startup_tokens": 52089,
-        "utf8_bytes": 278163,
+        "utf8_bytes": 282461,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57708,
-        "tokens_until_task_ready": 57708,
+        "tokens_until_first_supported_unit": 57828,
+        "tokens_until_task_ready": 57828,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -495,10 +495,10 @@
       "budget": 4096,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 60699,
-      "candidate_tokens": 60563,
-      "delta_tokens": -136,
-      "reduction_fraction": 0.002240564094960378,
+      "baseline_tokens": 60707,
+      "candidate_tokens": 61974,
+      "delta_tokens": 1267,
+      "reduction_fraction": -0.020870739782891595,
       "baseline_rpc": 3,
       "candidate_rpc": 3,
       "first_supported_unit": {
@@ -512,14 +512,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 60699,
-        "memory_tokens": 8624,
+        "tokens": 60707,
+        "memory_tokens": 8632,
         "startup_tokens": 52075,
         "utf8_bytes": 279000,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57670,
+        "tokens_until_first_supported_unit": 57676,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -532,15 +532,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 60563,
-        "memory_tokens": 8474,
+        "tokens": 61974,
+        "memory_tokens": 9885,
         "startup_tokens": 52089,
-        "utf8_bytes": 278163,
+        "utf8_bytes": 282461,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57708,
-        "tokens_until_task_ready": 57708,
+        "tokens_until_first_supported_unit": 57828,
+        "tokens_until_task_ready": 57828,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -552,10 +552,10 @@
       "budget": 4096,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 8097,
-      "candidate_tokens": 8049,
-      "delta_tokens": -48,
-      "reduction_fraction": 0.005928121526491293,
+      "baseline_tokens": 8103,
+      "candidate_tokens": 9472,
+      "delta_tokens": 1369,
+      "reduction_fraction": -0.1689497716894977,
       "baseline_rpc": 3,
       "candidate_rpc": 3,
       "first_supported_unit": {
@@ -569,8 +569,8 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 8097,
-        "memory_tokens": 8097,
+        "tokens": 8103,
+        "memory_tokens": 8103,
         "startup_tokens": 0,
         "utf8_bytes": 26524,
         "absent_units": {
@@ -578,7 +578,7 @@
         },
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 5261,
+        "tokens_until_first_supported_unit": 5267,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -591,17 +591,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 8049,
-        "memory_tokens": 8049,
+        "tokens": 9472,
+        "memory_tokens": 9472,
         "startup_tokens": 0,
-        "utf8_bytes": 25961,
+        "utf8_bytes": 30275,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 5364,
-        "tokens_until_task_ready": 5364,
+        "tokens_until_first_supported_unit": 5489,
+        "tokens_until_task_ready": 5489,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -614,9 +614,9 @@
       "representation_id": "content_blocks_standalone_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 218,
-      "candidate_tokens": 112,
-      "delta_tokens": -106,
-      "reduction_fraction": 0.48623853211009177,
+      "candidate_tokens": 107,
+      "delta_tokens": -111,
+      "reduction_fraction": 0.5091743119266054,
       "baseline_rpc": 3,
       "candidate_rpc": 3,
       "first_supported_unit": {
@@ -652,17 +652,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 112,
-        "memory_tokens": 112,
+        "tokens": 107,
+        "memory_tokens": 107,
         "startup_tokens": 0,
-        "utf8_bytes": 527,
+        "utf8_bytes": 511,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 84,
-        "tokens_until_task_ready": 84,
+        "tokens_until_first_supported_unit": 79,
+        "tokens_until_task_ready": 79,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -674,12 +674,12 @@
       "budget": 10000,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 60571,
-      "candidate_tokens": 60516,
-      "delta_tokens": -55,
-      "reduction_fraction": 0.0009080252926317875,
+      "baseline_tokens": 60583,
+      "candidate_tokens": 63172,
+      "delta_tokens": 2589,
+      "reduction_fraction": -0.04273476057639932,
       "baseline_rpc": 3,
-      "candidate_rpc": 3,
+      "candidate_rpc": 4,
       "first_supported_unit": {
         "baseline": 1,
         "candidate": 1
@@ -691,14 +691,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 60571,
-        "memory_tokens": 8496,
+        "tokens": 60583,
+        "memory_tokens": 8508,
         "startup_tokens": 52075,
         "utf8_bytes": 278516,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 55031,
+        "tokens_until_first_supported_unit": 55035,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -711,15 +711,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 60516,
-        "memory_tokens": 8427,
+        "tokens": 63172,
+        "memory_tokens": 11083,
         "startup_tokens": 52089,
-        "utf8_bytes": 277979,
+        "utf8_bytes": 286593,
         "absent_units": {},
-        "rpc": 3,
+        "rpc": 4,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 55268,
-        "tokens_until_task_ready": 55268,
+        "tokens_until_first_supported_unit": 55193,
+        "tokens_until_task_ready": 55193,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -731,12 +731,12 @@
       "budget": 10000,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 60571,
-      "candidate_tokens": 60516,
-      "delta_tokens": -55,
-      "reduction_fraction": 0.0009080252926317875,
+      "baseline_tokens": 60583,
+      "candidate_tokens": 63172,
+      "delta_tokens": 2589,
+      "reduction_fraction": -0.04273476057639932,
       "baseline_rpc": 3,
-      "candidate_rpc": 3,
+      "candidate_rpc": 4,
       "first_supported_unit": {
         "baseline": 1,
         "candidate": 1
@@ -748,14 +748,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 60571,
-        "memory_tokens": 8496,
+        "tokens": 60583,
+        "memory_tokens": 8508,
         "startup_tokens": 52075,
         "utf8_bytes": 278516,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 55031,
+        "tokens_until_first_supported_unit": 55035,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -768,15 +768,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 60516,
-        "memory_tokens": 8427,
+        "tokens": 63172,
+        "memory_tokens": 11083,
         "startup_tokens": 52089,
-        "utf8_bytes": 277979,
+        "utf8_bytes": 286593,
         "absent_units": {},
-        "rpc": 3,
+        "rpc": 4,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 55268,
-        "tokens_until_task_ready": 55268,
+        "tokens_until_first_supported_unit": 55193,
+        "tokens_until_task_ready": 55193,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -788,12 +788,12 @@
       "budget": 10000,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 7922,
-      "candidate_tokens": 7928,
-      "delta_tokens": 6,
-      "reduction_fraction": -0.0007573844988639232,
+      "baseline_tokens": 7930,
+      "candidate_tokens": 10409,
+      "delta_tokens": 2479,
+      "reduction_fraction": -0.31261034047919295,
       "baseline_rpc": 3,
-      "candidate_rpc": 3,
+      "candidate_rpc": 4,
       "first_supported_unit": {
         "baseline": 1,
         "candidate": 1
@@ -805,8 +805,8 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 7922,
-        "memory_tokens": 7922,
+        "tokens": 7930,
+        "memory_tokens": 7930,
         "startup_tokens": 0,
         "utf8_bytes": 25936,
         "absent_units": {
@@ -814,7 +814,7 @@
         },
         "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 2794,
+        "tokens_until_first_supported_unit": 2798,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -827,17 +827,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 7928,
-        "memory_tokens": 7928,
+        "tokens": 10409,
+        "memory_tokens": 10409,
         "startup_tokens": 0,
-        "utf8_bytes": 25574,
+        "utf8_bytes": 33541,
         "absent_units": {
           "not_a_tool_result": 2
         },
-        "rpc": 3,
+        "rpc": 4,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 3046,
-        "tokens_until_task_ready": 3046,
+        "tokens_until_first_supported_unit": 2971,
+        "tokens_until_task_ready": 2971,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -850,11 +850,11 @@
       "representation_id": "content_blocks_standalone_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 221,
-      "candidate_tokens": 134,
-      "delta_tokens": -87,
-      "reduction_fraction": 0.3936651583710407,
+      "candidate_tokens": 187,
+      "delta_tokens": -34,
+      "reduction_fraction": 0.15384615384615385,
       "baseline_rpc": 3,
-      "candidate_rpc": 3,
+      "candidate_rpc": 4,
       "first_supported_unit": {
         "baseline": 1,
         "candidate": 1
@@ -888,14 +888,14 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 134,
-        "memory_tokens": 134,
+        "tokens": 187,
+        "memory_tokens": 187,
         "startup_tokens": 0,
-        "utf8_bytes": 627,
+        "utf8_bytes": 881,
         "absent_units": {
           "not_a_tool_result": 2
         },
-        "rpc": 3,
+        "rpc": 4,
         "first_supported_unit": 1,
         "tokens_until_first_supported_unit": 53,
         "tokens_until_task_ready": 53,
@@ -911,9 +911,9 @@
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 63603,
-      "candidate_tokens": 55900,
-      "delta_tokens": -7703,
-      "reduction_fraction": 0.12111063943524676,
+      "candidate_tokens": 55689,
+      "delta_tokens": -7914,
+      "reduction_fraction": 0.12442809301448045,
       "baseline_rpc": 9,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -946,15 +946,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55900,
-        "memory_tokens": 3811,
+        "tokens": 55689,
+        "memory_tokens": 3600,
         "startup_tokens": 52089,
-        "utf8_bytes": 264002,
+        "utf8_bytes": 263175,
         "absent_units": {},
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55900,
-        "tokens_until_task_ready": 55900,
+        "tokens_until_first_supported_unit": 55689,
+        "tokens_until_task_ready": 55689,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -967,9 +967,9 @@
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 63603,
-      "candidate_tokens": 55900,
-      "delta_tokens": -7703,
-      "reduction_fraction": 0.12111063943524676,
+      "candidate_tokens": 55689,
+      "delta_tokens": -7914,
+      "reduction_fraction": 0.12442809301448045,
       "baseline_rpc": 9,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1002,15 +1002,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55900,
-        "memory_tokens": 3811,
+        "tokens": 55689,
+        "memory_tokens": 3600,
         "startup_tokens": 52089,
-        "utf8_bytes": 264002,
+        "utf8_bytes": 263175,
         "absent_units": {},
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55900,
-        "tokens_until_task_ready": 55900,
+        "tokens_until_first_supported_unit": 55689,
+        "tokens_until_task_ready": 55689,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1023,9 +1023,9 @@
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 9609,
-      "candidate_tokens": 3535,
-      "delta_tokens": -6074,
-      "reduction_fraction": 0.6321157248412946,
+      "candidate_tokens": 3324,
+      "delta_tokens": -6285,
+      "reduction_fraction": 0.6540743053387449,
       "baseline_rpc": 9,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1060,17 +1060,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 3535,
-        "memory_tokens": 3535,
+        "tokens": 3324,
+        "memory_tokens": 3324,
         "startup_tokens": 0,
-        "utf8_bytes": 12273,
+        "utf8_bytes": 11447,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 3535,
-        "tokens_until_task_ready": 3535,
+        "tokens_until_first_supported_unit": 3324,
+        "tokens_until_task_ready": 3324,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1123,7 +1123,7 @@
         "tokens": 56,
         "memory_tokens": 56,
         "startup_tokens": 0,
-        "utf8_bytes": 262,
+        "utf8_bytes": 261,
         "absent_units": {
           "not_a_tool_result": 2
         },
@@ -1143,9 +1143,9 @@
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54535,
-      "candidate_tokens": 54658,
-      "delta_tokens": 123,
-      "reduction_fraction": -0.0022554322911891448,
+      "candidate_tokens": 54473,
+      "delta_tokens": -62,
+      "reduction_fraction": 0.0011368845695424957,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1178,15 +1178,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54658,
-        "memory_tokens": 2569,
+        "tokens": 54473,
+        "memory_tokens": 2384,
         "startup_tokens": 52089,
-        "utf8_bytes": 259731,
+        "utf8_bytes": 259032,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54658,
-        "tokens_until_task_ready": 54658,
+        "tokens_until_first_supported_unit": 54473,
+        "tokens_until_task_ready": 54473,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1199,9 +1199,9 @@
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54535,
-      "candidate_tokens": 54658,
-      "delta_tokens": 123,
-      "reduction_fraction": -0.0022554322911891448,
+      "candidate_tokens": 54473,
+      "delta_tokens": -62,
+      "reduction_fraction": 0.0011368845695424957,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1234,15 +1234,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54658,
-        "memory_tokens": 2569,
+        "tokens": 54473,
+        "memory_tokens": 2384,
         "startup_tokens": 52089,
-        "utf8_bytes": 259731,
+        "utf8_bytes": 259032,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54658,
-        "tokens_until_task_ready": 54658,
+        "tokens_until_first_supported_unit": 54473,
+        "tokens_until_task_ready": 54473,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1255,9 +1255,9 @@
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 2333,
-      "candidate_tokens": 2441,
-      "delta_tokens": 108,
-      "reduction_fraction": -0.04629232747535362,
+      "candidate_tokens": 2256,
+      "delta_tokens": -77,
+      "reduction_fraction": 0.033004714959279896,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1292,17 +1292,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 2441,
-        "memory_tokens": 2441,
+        "tokens": 2256,
+        "memory_tokens": 2256,
         "startup_tokens": 0,
-        "utf8_bytes": 8549,
+        "utf8_bytes": 7850,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 2441,
-        "tokens_until_task_ready": 2441,
+        "tokens_until_first_supported_unit": 2256,
+        "tokens_until_task_ready": 2256,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1374,10 +1374,10 @@
       "budget": 4096,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 63090,
-      "candidate_tokens": 55977,
-      "delta_tokens": -7113,
-      "reduction_fraction": 0.11274369947693771,
+      "baseline_tokens": 63210,
+      "candidate_tokens": 55749,
+      "delta_tokens": -7461,
+      "reduction_fraction": 0.11803512102515425,
       "baseline_rpc": 9,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1385,20 +1385,20 @@
         "candidate": 2
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 63090,
-        "memory_tokens": 11015,
+        "tokens": 63210,
+        "memory_tokens": 11135,
         "startup_tokens": 52075,
         "utf8_bytes": 288682,
         "absent_units": {},
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 56990,
+        "tokens_until_first_supported_unit": 57045,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1411,19 +1411,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55977,
-        "memory_tokens": 3888,
+        "tokens": 55749,
+        "memory_tokens": 3660,
         "startup_tokens": 52089,
-        "utf8_bytes": 263924,
+        "utf8_bytes": 263117,
         "absent_units": {},
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55977,
-        "tokens_until_task_ready": 55977,
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ]
+        "tokens_until_first_supported_unit": 55749,
+        "tokens_until_task_ready": 55749,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1433,10 +1431,10 @@
       "budget": 4096,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 63090,
-      "candidate_tokens": 55977,
-      "delta_tokens": -7113,
-      "reduction_fraction": 0.11274369947693771,
+      "baseline_tokens": 63210,
+      "candidate_tokens": 55749,
+      "delta_tokens": -7461,
+      "reduction_fraction": 0.11803512102515425,
       "baseline_rpc": 9,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1444,20 +1442,20 @@
         "candidate": 2
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 63090,
-        "memory_tokens": 11015,
+        "tokens": 63210,
+        "memory_tokens": 11135,
         "startup_tokens": 52075,
         "utf8_bytes": 288682,
         "absent_units": {},
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 56990,
+        "tokens_until_first_supported_unit": 57045,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1470,19 +1468,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55977,
-        "memory_tokens": 3888,
+        "tokens": 55749,
+        "memory_tokens": 3660,
         "startup_tokens": 52089,
-        "utf8_bytes": 263924,
+        "utf8_bytes": 263117,
         "absent_units": {},
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55977,
-        "tokens_until_task_ready": 55977,
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ]
+        "tokens_until_first_supported_unit": 55749,
+        "tokens_until_task_ready": 55749,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1492,10 +1488,10 @@
       "budget": 4096,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 9405,
-      "candidate_tokens": 3661,
-      "delta_tokens": -5744,
-      "reduction_fraction": 0.6107389686337055,
+      "baseline_tokens": 9485,
+      "candidate_tokens": 3428,
+      "delta_tokens": -6057,
+      "reduction_fraction": 0.6385872430152872,
       "baseline_rpc": 9,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1503,14 +1499,14 @@
         "candidate": 2
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 9405,
-        "memory_tokens": 9405,
+        "tokens": 9485,
+        "memory_tokens": 9485,
         "startup_tokens": 0,
         "utf8_bytes": 32528,
         "absent_units": {
@@ -1518,7 +1514,7 @@
         },
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 4219,
+        "tokens_until_first_supported_unit": 4259,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1531,21 +1527,19 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 3661,
-        "memory_tokens": 3661,
+        "tokens": 3428,
+        "memory_tokens": 3428,
         "startup_tokens": 0,
-        "utf8_bytes": 12361,
+        "utf8_bytes": 11531,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 3661,
-        "tokens_until_task_ready": 3661,
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ]
+        "tokens_until_first_supported_unit": 3428,
+        "tokens_until_task_ready": 3428,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1556,9 +1550,9 @@
       "representation_id": "content_blocks_standalone_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 443,
-      "candidate_tokens": 57,
-      "delta_tokens": -386,
-      "reduction_fraction": 0.871331828442438,
+      "candidate_tokens": 62,
+      "delta_tokens": -381,
+      "reduction_fraction": 0.8600451467268623,
       "baseline_rpc": 9,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1566,10 +1560,10 @@
         "candidate": 2
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 443,
@@ -1594,21 +1588,19 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 57,
-        "memory_tokens": 57,
+        "tokens": 62,
+        "memory_tokens": 62,
         "startup_tokens": 0,
-        "utf8_bytes": 275,
+        "utf8_bytes": 298,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57,
-        "tokens_until_task_ready": 57,
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ]
+        "tokens_until_first_supported_unit": 62,
+        "tokens_until_task_ready": 62,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1619,9 +1611,9 @@
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54614,
-      "candidate_tokens": 54742,
-      "delta_tokens": 128,
-      "reduction_fraction": -0.0023437213901197494,
+      "candidate_tokens": 54478,
+      "delta_tokens": -136,
+      "reduction_fraction": 0.0024902039770022338,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1629,10 +1621,10 @@
         "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 54614,
@@ -1655,19 +1647,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54742,
-        "memory_tokens": 2653,
+        "tokens": 54478,
+        "memory_tokens": 2389,
         "startup_tokens": 52089,
-        "utf8_bytes": 259675,
+        "utf8_bytes": 258756,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54742,
-        "tokens_until_task_ready": 54742,
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ]
+        "tokens_until_first_supported_unit": 54478,
+        "tokens_until_task_ready": 54478,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1678,9 +1668,9 @@
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54614,
-      "candidate_tokens": 54742,
-      "delta_tokens": 128,
-      "reduction_fraction": -0.0023437213901197494,
+      "candidate_tokens": 54478,
+      "delta_tokens": -136,
+      "reduction_fraction": 0.0024902039770022338,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1688,10 +1678,10 @@
         "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 54614,
@@ -1714,19 +1704,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54742,
-        "memory_tokens": 2653,
+        "tokens": 54478,
+        "memory_tokens": 2389,
         "startup_tokens": 52089,
-        "utf8_bytes": 259675,
+        "utf8_bytes": 258756,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54742,
-        "tokens_until_task_ready": 54742,
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ]
+        "tokens_until_first_supported_unit": 54478,
+        "tokens_until_task_ready": 54478,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1737,9 +1725,9 @@
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 2433,
-      "candidate_tokens": 2546,
-      "delta_tokens": 113,
-      "reduction_fraction": -0.04644471845458282,
+      "candidate_tokens": 2282,
+      "delta_tokens": -151,
+      "reduction_fraction": 0.062063296341964655,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1747,10 +1735,10 @@
         "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 2433,
@@ -1775,21 +1763,19 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 2546,
-        "memory_tokens": 2546,
+        "tokens": 2282,
+        "memory_tokens": 2282,
         "startup_tokens": 0,
-        "utf8_bytes": 8564,
+        "utf8_bytes": 7645,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 2546,
-        "tokens_until_task_ready": 2546,
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ]
+        "tokens_until_first_supported_unit": 2282,
+        "tokens_until_task_ready": 2282,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1810,10 +1796,10 @@
         "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 27,
@@ -1849,10 +1835,8 @@
         "first_supported_unit": 1,
         "tokens_until_first_supported_unit": 28,
         "tokens_until_task_ready": 28,
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ]
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1862,10 +1846,10 @@
       "budget": 4096,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 59749,
-      "candidate_tokens": 55250,
-      "delta_tokens": -4499,
-      "reduction_fraction": 0.07529833135282599,
+      "baseline_tokens": 59689,
+      "candidate_tokens": 55198,
+      "delta_tokens": -4491,
+      "reduction_fraction": 0.07523999396873796,
       "baseline_rpc": 6,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1879,14 +1863,14 @@
       "conclusion_reason": "candidate fails the oracle",
       "baseline": {
         "captured": true,
-        "tokens": 59749,
-        "memory_tokens": 7674,
+        "tokens": 59689,
+        "memory_tokens": 7614,
         "startup_tokens": 52075,
         "utf8_bytes": 276795,
         "absent_units": {},
         "rpc": 6,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 57360,
+        "tokens_until_first_supported_unit": 57316,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1898,14 +1882,14 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55250,
-        "memory_tokens": 3161,
+        "tokens": 55198,
+        "memory_tokens": 3109,
         "startup_tokens": 52089,
-        "utf8_bytes": 261663,
+        "utf8_bytes": 261461,
         "absent_units": {},
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55250,
+        "tokens_until_first_supported_unit": 55198,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1920,10 +1904,10 @@
       "budget": 4096,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 59749,
-      "candidate_tokens": 55250,
-      "delta_tokens": -4499,
-      "reduction_fraction": 0.07529833135282599,
+      "baseline_tokens": 59689,
+      "candidate_tokens": 55198,
+      "delta_tokens": -4491,
+      "reduction_fraction": 0.07523999396873796,
       "baseline_rpc": 6,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1937,14 +1921,14 @@
       "conclusion_reason": "candidate fails the oracle",
       "baseline": {
         "captured": true,
-        "tokens": 59749,
-        "memory_tokens": 7674,
+        "tokens": 59689,
+        "memory_tokens": 7614,
         "startup_tokens": 52075,
         "utf8_bytes": 276795,
         "absent_units": {},
         "rpc": 6,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 57360,
+        "tokens_until_first_supported_unit": 57316,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1956,14 +1940,14 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55250,
-        "memory_tokens": 3161,
+        "tokens": 55198,
+        "memory_tokens": 3109,
         "startup_tokens": 52089,
-        "utf8_bytes": 261663,
+        "utf8_bytes": 261461,
         "absent_units": {},
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55250,
+        "tokens_until_first_supported_unit": 55198,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1978,10 +1962,10 @@
       "budget": 4096,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 6473,
-      "candidate_tokens": 2889,
-      "delta_tokens": -3584,
-      "reduction_fraction": 0.5536845357639425,
+      "baseline_tokens": 6433,
+      "candidate_tokens": 2839,
+      "delta_tokens": -3594,
+      "reduction_fraction": 0.5586817969842997,
       "baseline_rpc": 6,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -1995,8 +1979,8 @@
       "conclusion_reason": "candidate fails the oracle",
       "baseline": {
         "captured": true,
-        "tokens": 6473,
-        "memory_tokens": 6473,
+        "tokens": 6433,
+        "memory_tokens": 6433,
         "startup_tokens": 0,
         "utf8_bytes": 22324,
         "absent_units": {
@@ -2004,7 +1988,7 @@
         },
         "rpc": 6,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 4488,
+        "tokens_until_first_supported_unit": 4456,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -2016,16 +2000,16 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 2889,
-        "memory_tokens": 2889,
+        "tokens": 2839,
+        "memory_tokens": 2839,
         "startup_tokens": 0,
-        "utf8_bytes": 10000,
+        "utf8_bytes": 9809,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 2889,
+        "tokens_until_first_supported_unit": 2839,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -2041,9 +2025,9 @@
       "representation_id": "content_blocks_standalone_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 287,
-      "candidate_tokens": 62,
-      "delta_tokens": -225,
-      "reduction_fraction": 0.7839721254355401,
+      "candidate_tokens": 60,
+      "delta_tokens": -227,
+      "reduction_fraction": 0.7909407665505227,
       "baseline_rpc": 6,
       "candidate_rpc": 2,
       "first_supported_unit": {
@@ -2078,16 +2062,16 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 62,
-        "memory_tokens": 62,
+        "tokens": 60,
+        "memory_tokens": 60,
         "startup_tokens": 0,
-        "utf8_bytes": 295,
+        "utf8_bytes": 284,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 2,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 62,
+        "tokens_until_first_supported_unit": 60,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -2103,9 +2087,9 @@
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54168,
-      "candidate_tokens": 54026,
-      "delta_tokens": -142,
-      "reduction_fraction": 0.002621473932949343,
+      "candidate_tokens": 53920,
+      "delta_tokens": -248,
+      "reduction_fraction": 0.004578348840643923,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -2138,14 +2122,14 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54026,
-        "memory_tokens": 1937,
+        "tokens": 53920,
+        "memory_tokens": 1831,
         "startup_tokens": 52089,
-        "utf8_bytes": 257498,
+        "utf8_bytes": 257106,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54026,
+        "tokens_until_first_supported_unit": 53920,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -2161,9 +2145,9 @@
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54168,
-      "candidate_tokens": 54026,
-      "delta_tokens": -142,
-      "reduction_fraction": 0.002621473932949343,
+      "candidate_tokens": 53920,
+      "delta_tokens": -248,
+      "reduction_fraction": 0.004578348840643923,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -2196,14 +2180,14 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54026,
-        "memory_tokens": 1937,
+        "tokens": 53920,
+        "memory_tokens": 1831,
         "startup_tokens": 52089,
-        "utf8_bytes": 257498,
+        "utf8_bytes": 257106,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54026,
+        "tokens_until_first_supported_unit": 53920,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -2219,9 +2203,9 @@
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 1967,
-      "candidate_tokens": 1810,
-      "delta_tokens": -157,
-      "reduction_fraction": 0.07981698017285206,
+      "candidate_tokens": 1704,
+      "delta_tokens": -263,
+      "reduction_fraction": 0.1337061514997458,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -2256,16 +2240,16 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 1810,
-        "memory_tokens": 1810,
+        "tokens": 1704,
+        "memory_tokens": 1704,
         "startup_tokens": 0,
-        "utf8_bytes": 6347,
+        "utf8_bytes": 5955,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 1810,
+        "tokens_until_first_supported_unit": 1704,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -3002,6 +2986,8 @@
           "support_displacement_count": 3,
           "historical_relation_as_action_count": 1,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 15,
           "rpc_calls": 3,
@@ -3059,6 +3045,7 @@
             "depends_on → fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61"
           ],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 3,
@@ -3094,6 +3081,8 @@
           "support_displacement_count": 3,
           "historical_relation_as_action_count": 1,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 15,
           "rpc_calls": 3,
@@ -3151,6 +3140,7 @@
             "depends_on → fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61"
           ],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 3,
@@ -3185,6 +3175,8 @@
           "support_displacement_count": 2,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 6,
           "rpc_calls": 9,
@@ -3222,6 +3214,7 @@
           ],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 9,
@@ -3256,6 +3249,8 @@
           "support_displacement_count": 2,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 6,
           "rpc_calls": 1,
@@ -3293,6 +3288,7 @@
           ],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -3328,6 +3324,8 @@
           "support_displacement_count": 1,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 2,
           "cited_reference_count": 5,
           "rpc_calls": 9,
@@ -3356,6 +3354,7 @@
           ],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 9,
@@ -3391,6 +3390,8 @@
           "support_displacement_count": 1,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 2,
           "cited_reference_count": 5,
           "rpc_calls": 1,
@@ -3419,6 +3420,7 @@
           ],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -3453,6 +3455,8 @@
           "support_displacement_count": 1,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 4,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 3,
           "rpc_calls": 6,
@@ -3468,7 +3472,7 @@
             "satisfied": false
           },
           {
-            "kind": "state_excludes",
+            "kind": "as_of_excludes",
             "text": "Lift the schema freeze after the audit closed.",
             "local_id": "lift",
             "count": 1,
@@ -3490,6 +3494,12 @@
           ],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+          ],
           "driver_outcome": {
             "status": "completed",
             "calls": 6,
@@ -3524,6 +3534,8 @@
           "support_displacement_count": 1,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 4,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 3,
           "rpc_calls": 1,
@@ -3539,7 +3551,7 @@
             "satisfied": false
           },
           {
-            "kind": "state_excludes",
+            "kind": "as_of_excludes",
             "text": "Lift the schema freeze after the audit closed.",
             "local_id": "lift",
             "count": 1,
@@ -3561,6 +3573,12 @@
           ],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+          ],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -3593,6 +3611,8 @@
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 2,
           "rpc_calls": 2,
@@ -3606,6 +3626,7 @@
           "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 2,
@@ -3638,6 +3659,8 @@
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 2,
           "rpc_calls": 1,
@@ -3651,6 +3674,7 @@
           "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -3683,6 +3707,8 @@
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 0,
           "rpc_calls": 1,
@@ -3696,6 +3722,7 @@
           "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -3730,6 +3757,8 @@
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 9,
           "rpc_calls": 3,
@@ -3743,6 +3772,7 @@
           "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 3,
@@ -3775,11 +3805,13 @@
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 9,
-          "rpc_calls": 3,
+          "rpc_calls": 4,
           "selection_restarts": 0,
-          "mandatory_continuations": 2
+          "mandatory_continuations": 3
         },
         "unmet_obligations": [],
         "detail": {
@@ -3788,9 +3820,10 @@
           "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
-            "calls": 3,
+            "calls": 4,
             "error": null
           }
         }
@@ -3816,10 +3849,12 @@
           },
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
-          "support_bookkeeping_in_state_count": 2,
+          "support_bookkeeping_in_state_count": 0,
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 4,
           "rpc_calls": 2,
@@ -3830,12 +3865,10 @@
         "detail": {
           "unresolved_refs": [],
           "disguised_refs": [],
-          "support_lines_in_state": [
-            "Relationship evidence:fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb:current --supports--> fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb [evidential] because Evidence supports this memory entry.",
-            "Relationship evidence:fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28:current --supports--> fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28 [evidential] because Evidence supports this memory entry."
-          ],
+          "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 2,
@@ -3864,10 +3897,12 @@
           },
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
-          "support_bookkeeping_in_state_count": 2,
+          "support_bookkeeping_in_state_count": 0,
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 4,
           "rpc_calls": 1,
@@ -3878,12 +3913,10 @@
         "detail": {
           "unresolved_refs": [],
           "disguised_refs": [],
-          "support_lines_in_state": [
-            "Relationship evidence:fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb:current --supports--> fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb [evidential] because Evidence supports this memory entry.",
-            "Relationship evidence:fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28:current --supports--> fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28 [evidential] because Evidence supports this memory entry."
-          ],
+          "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -3893,10 +3926,8 @@
       },
       {
         "journey": "w03-b4096",
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ],
+        "quality_pass": true,
+        "quality_failures": [],
         "completeness": {
           "transport_complete": true,
           "selected_packet_complete": true,
@@ -3914,11 +3945,13 @@
           },
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
-          "support_bookkeeping_in_state_count": 2,
+          "support_bookkeeping_in_state_count": 0,
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
-          "identical_body_merged_citation_count": 2,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
           "cited_reference_count": 4,
           "rpc_calls": 2,
           "selection_restarts": 1,
@@ -3928,12 +3961,10 @@
         "detail": {
           "unresolved_refs": [],
           "disguised_refs": [],
-          "support_lines_in_state": [
-            "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75 [evidential] because Evidence supports this memory entry.",
-            "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904 [evidential] because Evidence supports this memory entry."
-          ],
+          "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 2,
@@ -3943,10 +3974,8 @@
       },
       {
         "journey": "w03-b10000",
-        "quality_pass": false,
-        "quality_failures": [
-          "identical_body_merged_citation_count"
-        ],
+        "quality_pass": true,
+        "quality_failures": [],
         "completeness": {
           "transport_complete": true,
           "selected_packet_complete": true,
@@ -3964,11 +3993,13 @@
           },
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
-          "support_bookkeeping_in_state_count": 2,
+          "support_bookkeeping_in_state_count": 0,
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
-          "identical_body_merged_citation_count": 2,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
           "cited_reference_count": 4,
           "rpc_calls": 1,
           "selection_restarts": 0,
@@ -3978,12 +4009,10 @@
         "detail": {
           "unresolved_refs": [],
           "disguised_refs": [],
-          "support_lines_in_state": [
-            "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75 [evidential] because Evidence supports this memory entry.",
-            "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904 [evidential] because Evidence supports this memory entry."
-          ],
+          "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -4011,10 +4040,12 @@
           "task_ready": null,
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
-          "support_bookkeeping_in_state_count": 1,
+          "support_bookkeeping_in_state_count": 0,
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 2,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 2,
           "rpc_calls": 2,
@@ -4023,7 +4054,7 @@
         },
         "unmet_obligations": [
           {
-            "kind": "state_excludes",
+            "kind": "as_of_excludes",
             "text": "Lift the schema freeze after the audit closed.",
             "local_id": "lift",
             "count": 1,
@@ -4033,11 +4064,13 @@
         "detail": {
           "unresolved_refs": [],
           "disguised_refs": [],
-          "support_lines_in_state": [
-            "Relationship evidence:fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22:current --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry."
-          ],
+          "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [
+            "(decision) Lift the schema freeze after the audit closed.",
+            "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+          ],
           "driver_outcome": {
             "status": "completed",
             "calls": 2,
@@ -4065,10 +4098,12 @@
           "task_ready": null,
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
-          "support_bookkeeping_in_state_count": 1,
+          "support_bookkeeping_in_state_count": 0,
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 2,
+          "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 2,
           "rpc_calls": 1,
@@ -4077,7 +4112,7 @@
         },
         "unmet_obligations": [
           {
-            "kind": "state_excludes",
+            "kind": "as_of_excludes",
             "text": "Lift the schema freeze after the audit closed.",
             "local_id": "lift",
             "count": 1,
@@ -4087,11 +4122,13 @@
         "detail": {
           "unresolved_refs": [],
           "disguised_refs": [],
-          "support_lines_in_state": [
-            "Relationship evidence:fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22:current --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry."
-          ],
+          "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [
+            "(decision) Lift the schema freeze after the audit closed.",
+            "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+          ],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -4124,6 +4161,8 @@
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 2,
           "rpc_calls": 2,
@@ -4137,6 +4176,7 @@
           "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 2,
@@ -4169,6 +4209,8 @@
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 2,
           "rpc_calls": 1,
@@ -4182,6 +4224,7 @@
           "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
@@ -4214,6 +4257,8 @@
           "support_displacement_count": 0,
           "historical_relation_as_action_count": 0,
           "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 0,
           "rpc_calls": 1,
@@ -4227,6 +4272,7 @@
           "support_lines_in_state": [],
           "historical_actions": [],
           "contract_violations": [],
+          "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
             "calls": 1,
