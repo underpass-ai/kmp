@@ -24,9 +24,18 @@ write a word. So Jev suggests a type and doubts a reason, and you write every
 4. Page with the returned `review_token` and `page.cursor`. The review is frozen
    under that token, so later pages call nothing and cannot change. A token
    that has expired asks for a fresh review.
-5. To act on an item, read both refs with Inspect. Decide the relation yourself,
-   then write it through `kmp_write_memory` with your own why and evidence.
-   Writing in this verb arrives later.
+5. To declare items, read both refs with Inspect and decide for yourself. Then
+   call `mode:"apply"` with `review_token`, `actor` and `accepted`: each item is
+   `{item_id, why, evidence}` and may add `rel`, `confidence` or `reverse`.
+   Before anything is written, Jev reads your why and evidence once more:
+   - An item it doubts comes back in `curate.doubted`, unwritten. Correct it,
+     or send it again with `confirm_doubted:true`. Jev can ask for another look;
+     it cannot refuse a write.
+   - The rest goes through `kmp_write_memory`'s own plan and neighbourhood
+     review. A `needs_review` answer's next action resumes this same apply.
+   - Only items whose `from` belongs to `about` are written. Others come back
+     in `curate.rejected` with the reason.
+   - Written evidence carries `curated_by: kmp_curate` and the Jev model.
 
 Jev is opt-in for each store: put `typesafe.json` beside it
 (`{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}`)

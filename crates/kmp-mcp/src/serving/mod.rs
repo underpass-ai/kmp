@@ -4,6 +4,7 @@
 
 pub(crate) mod adapters;
 pub(crate) mod backend_choice;
+mod curate_dispatch;
 pub(crate) mod environment;
 mod existing_entry_read;
 pub(crate) mod grpc_tls_config;

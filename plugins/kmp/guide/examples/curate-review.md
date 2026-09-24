@@ -36,15 +36,19 @@ is more, a `next_actions` call. An item looks like:
 {"tool":"kmp_inspect","arguments":{"about":"<about>","ref":"<ref-a>"}}
 ```
 
-## 4. Declare it, in your words
+## 4. Apply it, in your words
 
 ```json
-{"tool":"kmp_write_memory","arguments":{
- "about":"<about>","actor":"<your-name>",
- "relations":[{"from":"<ref-b>","to":"<ref-a>","rel":"supports",
+{"tool":"kmp_curate","arguments":{
+ "mode":"apply","about":"<about>","actor":"<your-name>","review_token":"<review_token>",
+ "accepted":[{"item_id":"m0","rel":"supports",
    "why":"<one checkable sentence you wrote>","evidence":"<what in the sources shows it>"}]}}
 ```
 
-A rich relation first answers `needs_review` with its neighbourhood. Resume
-with the returned action. A `suspect` item is a prompt to reread, not a
-verdict. Nothing here retracts a stored relation.
+- If Jev doubts your why, the item comes back in `curate.doubted`, unwritten.
+  Reread it, then correct it or add `"confirm_doubted":true`.
+- A rich relation answers `needs_review` with its neighbourhood. Run the
+  returned `next_actions[0]` unchanged: it is this same apply, carrying
+  `write_review_token`.
+- A `suspect` item is a prompt to reread, not a verdict. Nothing here retracts
+  a stored relation.

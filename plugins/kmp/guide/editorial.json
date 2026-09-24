@@ -75,7 +75,7 @@
           "id": "verb:curate",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The tool contract in crates/kmp-mcp/src/contract/tools/curate.rs and the curate context in crates/kmp-mcp/src/curate: review reads the relate selection through curate_reading_from_result, which opens the kernel proposer to same-about pairs and does not page; ReviewRelations asks the JudgementModel port only closed questions (choice among writer relation types plus none, cross-about restricted to equivalences; noul for contradiction and support) and never uses an answer as text; findings are frozen by review_token in an in-process cache. The TypeSafe adapter is opt-in per store through typesafe.json and TYPESAFE_API_KEY, validates every answer against the question sent, and degrades to untyped kernel pairs with a warning. tests/curate_review.rs and the use-case tests prove paging, degradation and thresholds.",
+          "evidence": "The tool contract in crates/kmp-mcp/src/contract/tools/curate.rs and the curate context in crates/kmp-mcp/src/curate: review reads the relate selection through curate_reading_from_result, which opens the kernel proposer to same-about pairs and does not page; ReviewRelations asks the JudgementModel port only closed questions (choice among writer relation types plus none, cross-about restricted to equivalences; noul for contradiction and support) and never uses an answer as text; findings are frozen by review_token in an in-process cache. Apply resolves accepted items against that frozen review in the embedded store, freezes a Jev pre-write check of the agent's own why and evidence by digest, and commits through commit_write_plan, the path kmp_write_memory uses, adding curated_by evidence metadata; tests/curate.rs proves review, doubt, needs_review resume, commit, replay and provenance. The TypeSafe adapter is opt-in per store through typesafe.json and TYPESAFE_API_KEY, validates every answer against the question sent, and degrades to untyped kernel pairs with a warning. tests/curate_review.rs and the use-case tests prove paging, degradation and thresholds.",
           "guide_title": "Curate: find missing and doubtful relations with Jev, then write them yourself",
           "text_file": "verbs/curate.md"
         },
@@ -300,7 +300,7 @@
           "depth": "advanced",
           "text_file": "examples/curate-review.md",
           "example_title": "Review two abouts' relations, page the frozen review, and declare one yourself",
-          "evidence": "Four complete call shapes with explicit placeholders: review across two abouts, a page by review_token, an Inspect of both refs, and a kmp_write_memory relations declaration with the agent's own why and evidence."
+          "evidence": "Four complete call shapes with explicit placeholders: review across two abouts, a page by review_token, an Inspect of both refs, and a kmp_curate apply with the agent's own why and evidence, including doubted and needs_review handling."
         },
         {
           "id": "example:shared-resumption",

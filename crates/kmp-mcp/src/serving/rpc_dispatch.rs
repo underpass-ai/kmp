@@ -232,6 +232,12 @@ impl KernelMcpServer {
             return self.handle_kmp_relabel(id, arguments, start).await;
         }
 
+        // Curation reviews on the backend; applying writes, so it goes
+        // through the writer's own commit path from here.
+        if name == "kmp_curate" && arguments.get("mode").and_then(Value::as_str) == Some("apply") {
+            return self.handle_kmp_curate_apply(id, arguments, start).await;
+        }
+
         // Raw ingest keeps the about boundary whole. The kernel admits one
         // relation across abouts — an equivalence a writer declared from a
         // kmp_relate proposal — but only `kmp_write_memory` may declare it:

@@ -168,3 +168,15 @@ idempotency. Their evidence metadata records that curation produced them.
   original store.
 
 ## Deviations recorded during execution
+- Tasks 2 and 3 were committed together: the use case's types have no
+  consumer until the backend serves `prepare_apply`, and clippy denies dead
+  code.
+- `CurateReview::numbered()` now owns the `m<n>`/`s<n>` ids, and the review DTO
+  and `PrepareApply` both read them, so they cannot disagree.
+- The pre-check digest excludes `confirm_doubted`, so confirming an item
+  reuses the frozen doubts instead of calling Jev again.
+- The curate output schema is the writer's output schema plus review's fields
+  and `curate`, because `apply` answers with the writer's result.
+  `write_memory_output_schema` became `pub(crate)`.
+- `tests/curate_review.rs` was renamed `tests/curate.rs`. It proves that the
+  written evidence carries `curated_by: kmp_curate` through `kmp_inspect`.

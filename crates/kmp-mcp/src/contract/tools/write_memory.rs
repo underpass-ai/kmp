@@ -222,7 +222,7 @@ pub(crate) fn read_context_schema() -> Value {
     })
 }
 
-fn write_memory_output_schema() -> Value {
+pub(crate) fn write_memory_output_schema() -> Value {
     output_object(json!({
         "feedback": json!({
             "type": "array",
