@@ -27,7 +27,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9469
+        "used_bytes": 9736
       },
       "contract": "kmp.recall.projection.v2",
       "core_text_shortened": false,
@@ -283,11 +283,11 @@
         }
       ],
       "current_state": [
-        "(claim) The Boulder start date is the one that stands.",
-        "(decision) Pin the answered surface, not only the advertised one.",
-        "(semantic_delta) Rachel is moving to Boulder, not Denver.",
-        "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy... (semantic_delta): From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one.",
-        "Relationship question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631 --semantic_delta_from--> question:parity:claim:denver [causal] because The later statement corrects the earlier one. step=1"
+        "question:parity:claim:boulder-current (claim): The Boulder start date is the one that stands.",
+        "Relationship question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631 --semantic_delta_from--> question:parity:claim:denver [causal] because The later statement corrects the earlier one. step=1",
+        "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151 (decision): Pin the answered surface, not only the advertised one.",
+        "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631 (semantic_delta): From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one.",
+        "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3 (semantic_delta): Rachel is moving to Boulder, not Denver."
       ],
       "guardrails": [],
       "next_actions": [],

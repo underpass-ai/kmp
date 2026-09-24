@@ -49,19 +49,29 @@ pub(super) fn rendered_current_state(
     let (live, retired): (Vec<_>, Vec<_>) = bundle
         .neighbor_nodes()
         .iter()
-        .filter(|node| entries.contains(node.node_id()) && !node.summary().trim().is_empty())
+        .filter(|node| !node.summary().trim().is_empty())
+        .filter(|node| {
+            // A graph written without memory lanes (a kernel bundle, a
+            // golden fixture) has no `contains_entry`: its neighbours are its
+            // memories, sources aside.
+            if entries.is_empty() {
+                !matches!(node.node_kind(), "memory_evidence" | "evidence")
+            } else {
+                entries.contains(node.node_id())
+            }
+        })
         .partition(|node| {
             !lifecycle.is_superseded(node.node_id()) && !lifecycle.is_expired(node.node_id())
         });
-    // The title repeats the summary for most written memories; say it once.
+    // The ref is how a reader follows a memory up; the title mostly repeats
+    // the summary, so it is left out.
     let memory_line = |node: &&kmp_domain::BundleNode| {
-        let summary = node.summary().trim();
-        let title = node.title().trim();
-        if title.is_empty() || title == summary || summary.starts_with(title) {
-            format!("({}) {summary}", node.node_kind())
-        } else {
-            format!("{title} ({}): {summary}", node.node_kind())
-        }
+        format!(
+            "{} ({}): {}",
+            node.node_id(),
+            node.node_kind(),
+            node.summary().trim()
+        )
     };
     let details = bundle
         .node_details()
@@ -87,7 +97,8 @@ pub(super) fn rendered_current_state(
         .collect::<Vec<_>>();
     // Stable: within a rank the renderer's order stands.
     sections.sort_by_key(|(rank, _)| *rank);
-    live.iter()
+    let state = live
+        .iter()
         .map(memory_line)
         .chain(
             sections
@@ -96,5 +107,16 @@ pub(super) fn rendered_current_state(
         )
         .chain(retired.iter().map(memory_line))
         .take(STATE_LINES)
-        .collect::<Vec<_>>()
+        .collect::<Vec<_>>();
+    // Never an empty state for an about that rendered something.
+    if state.is_empty() {
+        return rendered
+            .sections
+            .iter()
+            .filter(|section| !section.content.trim().is_empty())
+            .take(STATE_LINES)
+            .map(|section| section.content.clone())
+            .collect();
+    }
+    state
 }

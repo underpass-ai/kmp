@@ -159,3 +159,67 @@ fn the_causal_spine_carries_no_containment_or_support_bookkeeping() {
         );
     }
 }
+
+#[test]
+fn a_graph_without_memory_lanes_still_states_its_memories() {
+    let bundle = KmpBundle::new(
+        CaseId::new("root:case").expect("case"),
+        Role::new("developer").expect("role"),
+        node("root:case", "case", "Case root."),
+        vec![
+            node("task:migrate", "task", "Migrate the billing tables."),
+            node(
+                "decision:freeze",
+                "decision",
+                "Freeze writes during cutover.",
+            ),
+        ],
+        vec![
+            edge(
+                "root:case",
+                "task:migrate",
+                "HAS_TASK",
+                RelationSemanticClass::Structural,
+            ),
+            edge(
+                "root:case",
+                "decision:freeze",
+                "RECORDS",
+                RelationSemanticClass::Structural,
+            ),
+        ],
+        Vec::new(),
+        BundleMetadata::initial("test"),
+    )
+    .expect("bundle");
+    let rendered = render_graph_bundle(&bundle);
+    let result = GetContextResult {
+        read_revision: None,
+        bundle,
+        rendered,
+        requested_scopes: Vec::new(),
+        served_at: std::time::SystemTime::UNIX_EPOCH,
+        timing: None,
+    };
+    let response = wake_response_from_result("resume", None, result, &TemporalSelection::Frontier)
+        .expect("wake");
+    let state = current_state(&response);
+
+    assert!(
+        position(state, "Migrate the billing tables.").is_some(),
+        "{state:#?}"
+    );
+    assert!(
+        position(state, "Freeze writes during cutover.").is_some(),
+        "{state:#?}"
+    );
+}
+
+#[test]
+fn each_stated_memory_carries_its_ref() {
+    let response = wake();
+    let state = current_state(&response);
+
+    let line = &state[position(state, "Serve reads from the v2 cache.").expect("live decision")];
+    assert!(line.starts_with("decision:cache-v2 "), "{line}");
+}
