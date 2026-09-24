@@ -27,7 +27,7 @@ env:
   CARGO_INCREMENTAL: 0
   # The crates the current refactor iterates on. Widen or narrow per phase;
   # the full gate on ready-for-review still proves the whole workspace.
-  DEV_PACKAGES: -p kmp-mcp
+  DEV_PACKAGES: -p kmp-mcp -p kmp-proto-mapping
 
 jobs:
   dev-lint:
