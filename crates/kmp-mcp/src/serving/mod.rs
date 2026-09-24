@@ -11,6 +11,14 @@ pub(crate) mod grpc_tls_mode;
 mod guide_dispatch;
 mod guide_repair;
 pub(crate) mod json_rpc;
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+pub(crate) mod judgement_answer;
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+pub(crate) mod judgement_question;
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+pub(crate) mod judgement_request;
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+pub(crate) mod judgement_response;
 pub(crate) mod kernel_mcp_server;
 mod output_schema_projection;
 mod passage_projection;

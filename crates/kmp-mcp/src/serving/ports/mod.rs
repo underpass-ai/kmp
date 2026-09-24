@@ -1,3 +1,5 @@
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+pub(crate) mod judgement_model;
 pub(crate) mod kernel_tool_backend;
 pub(crate) mod kernel_tool_future;
 pub(crate) mod semantic_candidate_provider;
