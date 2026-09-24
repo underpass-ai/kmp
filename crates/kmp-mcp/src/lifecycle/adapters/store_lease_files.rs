@@ -42,8 +42,8 @@ pub(crate) fn open_store_lease(data_home: &Path, store: &Path) -> Result<(File, 
     Ok((file, path))
 }
 
-pub(crate) fn active_store_message(data_home: &Path, store: &Path) -> String {
-    let holders = live_store_holders(store, &store_lease_path(data_home, store));
+pub(crate) fn active_store_message(store: &Path) -> String {
+    let holders = live_store_holders(store);
     let owner = if holders.is_empty() {
         "another KMP host".to_string()
     } else {
@@ -56,9 +56,8 @@ pub(crate) fn active_store_message(data_home: &Path, store: &Path) -> String {
 }
 
 #[cfg(target_os = "linux")]
-pub(crate) fn live_store_holders(store: &Path, lease: &Path) -> Vec<String> {
+pub(crate) fn live_store_holders(store: &Path) -> Vec<String> {
     let store = std::fs::canonicalize(store).unwrap_or_else(|_| store.to_path_buf());
-    let lease = std::fs::canonicalize(lease).unwrap_or_else(|_| lease.to_path_buf());
     let own_pid = std::process::id();
     let Ok(processes) = std::fs::read_dir("/proc") else {
         return Vec::new();
@@ -80,7 +79,10 @@ pub(crate) fn live_store_holders(store: &Path, lease: &Path) -> Vec<String> {
             .flatten()
             .flatten()
             .filter_map(|fd| std::fs::read_link(fd.path()).ok())
-            .any(|open| open == lease || open.starts_with(&store));
+            // The lease file itself is not evidence: a host that knows the
+            // lease is caught by its lock, and a child caught between fork
+            // and exec still shows a copy of whatever its parent had open.
+            .any(|open| open.starts_with(&store));
         if !holds_path {
             continue;
         }
@@ -103,6 +105,6 @@ pub(crate) fn live_store_holders(store: &Path, lease: &Path) -> Vec<String> {
 }
 
 #[cfg(not(target_os = "linux"))]
-pub(crate) fn live_store_holders(_store: &Path, _lease: &Path) -> Vec<String> {
+pub(crate) fn live_store_holders(_store: &Path) -> Vec<String> {
     Vec::new()
 }
