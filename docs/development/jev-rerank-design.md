@@ -1,7 +1,7 @@
 # Optional remote evidence re-ranking with TypeSafe Jev — design
 
-Status: approved design, being implemented. Branch `feat/jev-rerank`, on top of
-`feat/jev-curate` (#855), whose TypeSafe client it reuses.
+Status: implemented and measured (see Execution record). It reuses the
+TypeSafe client that `kmp_curate` (#855) introduced.
 
 ## Goal
 
