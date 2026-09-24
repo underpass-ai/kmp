@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
+use kmp_application::queries::NO_RECORDED_ACTION;
 use kmp_application::{
     GetContextPathResult, GetContextResult, GraphRelationshipView, InspectMemoryResult,
     MemoryAnswerPolicy, TemporalMemoryResult, TracePageRequest,
@@ -13,7 +14,7 @@ use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, ExpiredMemory, InspectResponse, InspectedLinks, InspectedObject,
     MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef,
     RecallProjection, TemporalCursor, TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse,
-    TemporalState, TraceResponse, WakeClaim, WakePacket, WakeResponse,
+    TemporalState, TraceResponse, WakePacket, WakeResponse,
 };
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
@@ -21,6 +22,8 @@ use super::answer_selection::was_reached_indirectly;
 use super::lexical_bridge::LexicalBridge;
 use super::scalars::ProtoMappingResult;
 use super::temporal_admission::TemporalAdmission;
+use super::wake_claim_evidence::WakeClaimEvidence;
+use super::wake_current_state::{SUPPORT_BOOKKEEPING, rendered_current_state};
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -33,8 +36,8 @@ use super::bundle_views::{
     bundle_memory_metadata, conflicts_from_relations, memory_evidence_from_bundle,
     memory_relation_from_bundle_relationship, memory_relations_from_bundle,
     persisted_memory_metadata, persisted_memory_source, proof, proto_coordinate_from_domain,
-    proto_relation_explanation, rendered_current_state, rendered_summary,
-    superseded_from_relations, temporal_evidence_from_bundle, temporal_relations_from_bundle,
+    proto_relation_explanation, rendered_summary, superseded_from_relations,
+    temporal_evidence_from_bundle, temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::memory_catalog::labels_from_bundle;
@@ -109,19 +112,32 @@ pub fn wake_response_from_result(
     let lifecycle = lifecycle_for(&bounded, &admission);
     let signals = RelationSignalIndex::read(&bounded);
     let relationships = memory_relations_from_bundle(&bounded);
-    let causal_spine = prioritize_wake_relationships(relationships.clone(), &signals);
+    // The spine explains; containment and support edges are bookkeeping the
+    // proof already carries, and a dated read can admit such an edge to a
+    // source the selection itself excludes.
+    let causal_spine = prioritize_wake_relationships(
+        relationships
+            .iter()
+            .filter(|relationship| {
+                relationship.semantic_class != MemorySemanticClass::Structural as i32
+                    && !SUPPORT_BOOKKEEPING.contains(&relationship.rel.as_str())
+            })
+            .cloned()
+            .collect(),
+        &signals,
+    );
     let full_evidence = memory_evidence_from_bundle(&result.bundle)
         .into_iter()
         .filter(|item| admission.admits(item))
         .collect::<Vec<_>>();
-    let current_state = rendered_current_state(&result.rendered, &result.bundle);
+    let current_state = rendered_current_state(&result.rendered, &result.bundle, &lifecycle);
     let summary = rendered_summary(&result.rendered);
     // The L0 summary already selects one blocker and one next action. Leaving
     // the typed lists empty made the same packet assert `Blocker:` / `Next:`
     // in prose and deny them in structure. Project those exact selections so
     // an agent does not have to choose which half of the response to trust.
     let open_loops = l0_summary_value(&summary, "Blocker:", &["none identified"]);
-    let next_actions = l0_summary_value(&summary, "Next:", &["continue"]);
+    let next_actions = l0_summary_value(&summary, "Next:", &["continue", NO_RECORDED_ACTION]);
     let guardrails = relationships
         .iter()
         .filter(|relationship| {
@@ -154,6 +170,12 @@ pub fn wake_response_from_result(
     let full_evidence = prioritize_wake_evidence(full_evidence, &lifecycle, &signals);
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
     let selection_projection = selection_cap_projection(withheld.len());
+    let claim_evidence = WakeClaimEvidence::new(&bounded, &evidence);
+    let causal_spine = causal_spine
+        .iter()
+        .take(8)
+        .map(|relationship| claim_evidence.claim(relationship))
+        .collect::<Vec<_>>();
     let resume_cursor = newest_cursor(&relationships);
 
     // The catalogue is the about's, not the selection's: what the memory
@@ -163,26 +185,13 @@ pub fn wake_response_from_result(
     Ok(WakeResponse {
         dimension_selection: None,
         projection: selection_projection,
-        truncation: None,
         resume_cursor,
         labels,
         summary,
         wake: Some(WakePacket {
             objective: intent.to_string(),
             current_state,
-            causal_spine: causal_spine
-                .iter()
-                .take(8)
-                .map(|relationship| WakeClaim {
-                    claim: format!("{} -> {}", relationship.source_ref, relationship.target_ref),
-                    because: if relationship.why.is_empty() {
-                        "Kernel relationship path selected this edge.".to_string()
-                    } else {
-                        relationship.why.clone()
-                    },
-                    evidence_ref: relationship.evidence.clone(),
-                })
-                .collect(),
+            causal_spine,
             open_loops,
             next_actions,
             guardrails,
@@ -529,7 +538,6 @@ pub fn ask_response_from_result(
     }
     Ok(AskResponse {
         projection: selection_projection,
-        truncation: None,
         summary: if answer == UNANSWERED {
             // Say which of the two happened. "Found nothing" and "found
             // things that do not answer this" lead to different next moves:
@@ -2327,13 +2335,9 @@ mod wake_cap_tests {
                     ),
                     original_answer
                 );
-                for (projection, truncation, count) in [
-                    (
-                        wake.projection.expect("fixture"),
-                        wake.truncation,
-                        wake_count,
-                    ),
-                    (ask.projection.expect("fixture"), ask.truncation, ask_count),
+                for (projection, count) in [
+                    (wake.projection.expect("fixture"), wake_count),
+                    (ask.projection.expect("fixture"), ask_count),
                 ] {
                     let omitted = cap.map_or(0, |_| count - 1) as u64;
                     assert_eq!(
@@ -2341,12 +2345,6 @@ mod wake_cap_tests {
                         "{detail:?}, cap={cap:?}"
                     );
                     assert!(!projection.page.expect("fixture").has_more);
-                    assert_eq!(
-                        truncation
-                            .and_then(|t| t.omitted)
-                            .map_or(0, |o| o.selection_items),
-                        omitted
-                    );
                 }
             }
         }

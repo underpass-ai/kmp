@@ -122,7 +122,6 @@ mod tests {
             }),
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
             asked_as: String::new(),
         };
 
@@ -212,7 +211,6 @@ mod tests {
             }),
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
             asked_as: String::new(),
         };
         let legacy = json!({
@@ -342,7 +340,8 @@ mod tests {
                 causal_spine: vec![WakeClaim {
                     claim: "claim".to_string(),
                     because: "because".to_string(),
-                    evidence_ref: "evidence:1".to_string(),
+                    evidence_refs: vec!["evidence:1".to_string()],
+                    evidence: String::new(),
                 }],
                 open_loops: Vec::new(),
                 next_actions: Vec::new(),
@@ -359,7 +358,6 @@ mod tests {
             }),
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
         };
         let _budget = MemoryBudget {
             tokens: 1,
@@ -373,7 +371,7 @@ mod tests {
 
         assert_eq!(value["wake"]["current_state"][0], "state");
         assert_eq!(
-            value["wake"]["causal_spine"][0]["evidence_ref"],
+            value["wake"]["causal_spine"][0]["evidence_refs"][0],
             "evidence:1"
         );
         // The bookmark a caller carries to kmp_forward, so catching up is

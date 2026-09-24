@@ -61,9 +61,9 @@ impl KernelMcpServer {
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    self.passage_tools(tools_list_result_with_apps(
+                    self.output_schema_tools(self.passage_tools(tools_list_result_with_apps(
                         self.apps_negotiated.load(Ordering::SeqCst),
-                    )),
+                    ))),
                 )
             }),
             Some("resources/list") if self.apps_negotiated.load(Ordering::SeqCst) => {
@@ -146,6 +146,24 @@ impl KernelMcpServer {
             );
         }
 
+        // The four per-move tools became one. Their names answer with the
+        // call that replaces them rather than a bare unknown tool.
+        if let Some(movement) = crate::contract::TimeMove::retired(name) {
+            return jsonrpc_result(
+                id,
+                tool_error_result(
+                    name,
+                    arguments,
+                    &ToolError::unknown_tool(format!(
+                        "{name} was replaced by kmp_time: call kmp_time with \"move\": \"{}\" and \
+                         the cursor as `{}`; the other arguments are unchanged.",
+                        movement.as_str(),
+                        movement.cursor_key()
+                    )),
+                ),
+            );
+        }
+
         // Before anything reads them: the schemas declare
         // `additionalProperties: false`, so an argument the tool does not have
         // is refused here rather than dropped and answered anyway.
@@ -188,10 +206,10 @@ impl KernelMcpServer {
             .await;
         let result = match guidance {
             Some(guidance) => {
-                let result = self.shorten_read_actions(&guidance, result);
+                let result = self.shorten_read_actions(Some(&guidance), result);
                 self.complete_work_guidance(name, arguments, &guidance, result)
             }
-            None => result,
+            None => self.shorten_read_actions(None, result),
         };
         self.project_read_passages(name, result)
     }

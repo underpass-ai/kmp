@@ -1,4 +1,6 @@
 //! Refusal -> targeted lesson -> source-backed correction, through native MCP.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_adapter_embedded::{EmbeddedKernelStore, verify_bundle};
@@ -54,8 +56,9 @@ async fn read_help(server: &KernelMcpServer, result: &Value) {
             pages += 1;
             assert!(pages <= 32, "lesson continuation must finish: {page}");
             let continuation = &page["next_actions"][0];
-            assert_eq!(continuation["arguments"]["ref"], args["ref"]);
-            assert_eq!(continuation["arguments"]["about"], args["about"]);
+            let bound = bound_action::bound_arguments(server, continuation);
+            assert_eq!(bound["ref"], args["ref"]);
+            assert_eq!(bound["about"], args["about"]);
             let next = call(
                 server,
                 continuation["tool"].as_str().expect("continuation tool"),

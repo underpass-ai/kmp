@@ -394,11 +394,11 @@ their source and relation types before making an identity claim.
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"name_at_alias","arguments":{"about":"example:guide:alias-ownership","at":{"ref":"${alias.generated_refs.0}"},"axis":"occurred","dimensions":{"selectors":[{"key":"alias","op":"in","values":["Nora"]}]},"window":{"before_entries":5,"after_entries":0},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":60000}}}
+{"tool":"kmp_time","save_as":"name_at_alias","arguments":{"move":"goto","about":"example:guide:alias-ownership","at":{"ref":"${alias.generated_refs.0}"},"axis":"occurred","dimensions":{"selectors":[{"key":"alias","op":"in","values":["Nora"]}]},"window":{"before_entries":5,"after_entries":0},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":60000}}}
 ```
 
 ```json
-{"tool":"kmp_near","save_as":"name_slice","arguments":{"about":"example:guide:alias-ownership","around":{"ref":"${alias.generated_refs.0}"},"axis":"occurred","dimensions":{"selectors":[{"key":"alias","op":"in","values":["Nora"]}]},"window":{"before_entries":5,"after_entries":5},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":60000}}}
+{"tool":"kmp_time","save_as":"name_slice","arguments":{"move":"near","about":"example:guide:alias-ownership","around":{"ref":"${alias.generated_refs.0}"},"axis":"occurred","dimensions":{"selectors":[{"key":"alias","op":"in","values":["Nora"]}]},"window":{"before_entries":5,"after_entries":5},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":60000}}}
 ```
 
 ```json
@@ -418,7 +418,7 @@ outside the observed cut. A group can contain context that the answer does
 not need; inspect the relation types before deciding what each member proves.
 
 ```json
-{"tool":"kmp_goto","save_as":"alias_dependencies","arguments":{"about":"example:guide:alias-ownership","at":{"ref":"${alias.generated_refs.0}"},"axis":"observed","limit":{"entries":1},"include":{"dependencies":true},"budget":{"max_bytes":100000}}}
+{"tool":"kmp_time","save_as":"alias_dependencies","arguments":{"move":"goto","about":"example:guide:alias-ownership","at":{"ref":"${alias.generated_refs.0}"},"axis":"observed","limit":{"entries":1},"include":{"dependencies":true},"budget":{"max_bytes":100000}}}
 ```
 
 If we already know the older directory entry, keep it as the selected memory
@@ -427,7 +427,7 @@ chooses the question's inclusive cutoff. The later explicit alias relation
 can now supply proof. This does not turn the same-name visitor into Elena.
 
 ```json
-{"tool":"kmp_goto","save_as":"directory_with_later_proof","arguments":{"about":"example:guide:alias-ownership","at":{"time":"2026-09-02T09:00:00Z"},"refs":["${elena.generated_refs.0}"],"axis":"observed","limit":{"entries":1},"include":{"dependencies":true},"budget":{"max_bytes":100000}}}
+{"tool":"kmp_time","save_as":"directory_with_later_proof","arguments":{"move":"goto","about":"example:guide:alias-ownership","at":{"time":"2026-09-02T09:00:00Z"},"refs":["${elena.generated_refs.0}"],"axis":"observed","limit":{"entries":1},"include":{"dependencies":true},"budget":{"max_bytes":100000}}}
 ```
 
 Follow the account's timeline with `near`, using the catalogue's exact
@@ -435,7 +435,7 @@ account value. The two assignment memories should remain distinct. Trace
 from the new one to the old one to see the explicit replacement proof.
 
 ```json
-{"tool":"kmp_near","save_as":"account_history","arguments":{"about":"example:guide:alias-ownership","around":{"ref":"${rui.generated_refs.0}"},"axis":"occurred","dimensions":{"selectors":[{"key":"account","op":"in","values":["@oak"]}]},"window":{"before_entries":5,"after_entries":5},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"account_history","arguments":{"move":"near","about":"example:guide:alias-ownership","around":{"ref":"${rui.generated_refs.0}"},"axis":"occurred","dimensions":{"selectors":[{"key":"account","op":"in","values":["@oak"]}]},"window":{"before_entries":5,"after_entries":5},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":50000}}}
 ```
 
 ```json

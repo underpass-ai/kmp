@@ -41,11 +41,12 @@ fn scratch() -> tempfile::TempDir {
 }
 
 async fn assert_support(server: &KernelMcpServer, cut: &str, expected: bool) {
-    for tool in ["kmp_wake", "kmp_goto"] {
+    for tool in ["kmp_wake", "kmp_time"] {
         let mut args = json!({"about":ABOUT,"axis":"observed","budget":{"max_bytes":200000}});
         if tool == "kmp_wake" {
             args["as_of"] = json!({"time":cut});
         } else {
+            args["move"] = json!("goto");
             args["at"] = json!({"time":cut});
             args["refs"] = json!([ENTRY]);
             args["include"] = json!({"evidence":true,"relations":true});
@@ -77,15 +78,15 @@ async fn old_source_gains_support_only_when_the_association_is_observed() {
 async fn read_source(server: &KernelMcpServer, axis: &str, cut: &str, interval: bool) -> Value {
     let mut args = json!({"about":ABOUT,"axis":axis,"budget":{"max_bytes":200000},
         "include":{"evidence":true,"relations":true}});
-    let tool = if interval {
+    args["move"] = if interval {
         args["interval"] = json!({"end":cut});
-        "kmp_forward"
+        json!("forward")
     } else {
         args["at"] = json!({"time":cut});
         args["refs"] = json!([ENTRY]);
-        "kmp_goto"
+        json!("goto")
     };
-    let result = call(server, tool, args).await;
+    let result = call(server, "kmp_time", args).await;
     result["proof"]["evidence"]
         .as_array()
         .expect("evidence")

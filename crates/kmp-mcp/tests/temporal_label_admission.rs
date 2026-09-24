@@ -54,7 +54,7 @@ async fn seed(server: &KernelMcpServer) {
 }
 
 fn query() -> Value {
-    json!({"about":ABOUT,"at":{"time":CUT},"axis":"observed","refs":[FACT],
+    json!({"move":"goto","about":ABOUT,"at":{"time":CUT},"axis":"observed","refs":[FACT],
         "include":{"dependencies":true},"limit":{"entries":20},"budget":{"max_bytes":1_000_000}})
 }
 
@@ -69,7 +69,7 @@ async fn entry_and_dependency_predicates_and_coordinates_obey_goto_cut() {
     let directory = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(directory.path()).expect("server");
     seed(&server).await;
-    let full = call(&server, "kmp_goto", query()).await;
+    let full = call(&server, "kmp_time", query()).await;
     assert_eq!(full["proof"]["entries"][0]["ref"], SOURCE, "{full}");
     assert_no_late_coordinates(&full["entries"][0]);
     assert_no_late_coordinates(&full["proof"]["entries"][0]);
@@ -82,7 +82,7 @@ async fn entry_and_dependency_predicates_and_coordinates_obey_goto_cut() {
     let mut filtered = query();
     filtered["dimensions"] = json!({"mode":"only","include":["task"],
         "selectors":[{"key":"env","op":"in","values":["prod"]}]});
-    let response = call(&server, "kmp_goto", filtered.clone()).await;
+    let response = call(&server, "kmp_time", filtered.clone()).await;
     assert_eq!(response["entries"][0]["ref"], FACT);
     assert_eq!(
         response["entries"][0]["coordinates"]
@@ -97,18 +97,18 @@ async fn entry_and_dependency_predicates_and_coordinates_obey_goto_cut() {
     );
     filtered["refs"] = json!([SOURCE]);
     assert_eq!(
-        call(&server, "kmp_goto", filtered.clone()).await["entries"],
+        call(&server, "kmp_time", filtered.clone()).await["entries"],
         json!([])
     );
     filtered["dimensions"]["selectors"] = json!([{"key":"env","op":"notexists"}]);
     assert_eq!(
-        call(&server, "kmp_goto", filtered.clone()).await["entries"][0]["ref"],
+        call(&server, "kmp_time", filtered.clone()).await["entries"][0]["ref"],
         SOURCE
     );
     filtered["dimensions"]["selectors"] = json!([{"key":"env","op":"in","values":["prod"]}]);
     filtered["at"]["time"] = json!(LATE);
     assert_eq!(
-        call(&server, "kmp_goto", filtered).await["entries"][0]["ref"],
+        call(&server, "kmp_time", filtered).await["entries"][0]["ref"],
         SOURCE
     );
 }
@@ -118,10 +118,10 @@ async fn historical_response_continuations_reconstruct_the_same_coordinates_and_
     let directory = tempfile::tempdir().expect("store");
     let server = KernelMcpServer::embedded(directory.path()).expect("server");
     seed(&server).await;
-    let full = call(&server, "kmp_goto", query()).await;
+    let full = call(&server, "kmp_time", query()).await;
     let mut args = query();
     args["page"] = json!({"entries":1});
-    let mut page = call(&server, "kmp_goto", args).await;
+    let mut page = call(&server, "kmp_time", args).await;
     let pointers = full["page"]["sections"]
         .as_object()
         .expect("sections")

@@ -15,10 +15,16 @@ pub(super) fn call(arguments: &Value, cursor: Option<&str>, max_bytes: Option<us
     if !arguments.is_object() {
         arguments = json!({});
     }
+    // Rehydrating the core is one call, never a standing choice: the action
+    // a page proposes always goes back to incremental continuations.
+    if let Some(page) = arguments.get_mut("page").and_then(Value::as_object_mut) {
+        page.remove("repeat_core");
+        if cursor.is_none() {
+            page.remove("cursor");
+        }
+    }
     if let Some(cursor) = cursor {
         arguments["page"]["cursor"] = json!(cursor);
-    } else if let Some(page) = arguments.get_mut("page").and_then(Value::as_object_mut) {
-        page.remove("cursor");
     }
     if let Some(max_bytes) = max_bytes {
         arguments["budget"]["max_bytes"] = json!(max_bytes);

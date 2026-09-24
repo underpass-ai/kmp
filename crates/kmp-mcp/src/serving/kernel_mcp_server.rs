@@ -13,6 +13,8 @@ use crate::serving::adapters::fixture_backend::FixtureKernelMcpBackend;
 
 pub struct KernelMcpServer {
     pub(super) shared_passages: bool,
+    /// Advertise each tool's `outputSchema` in `tools/list` (off by default).
+    pub(super) output_schemas: bool,
     pub(super) backend: Arc<dyn KernelMcpToolBackend>,
     pub(super) agent_directory: std::sync::OnceLock<Arc<dyn crate::guidance::AgentDirectory>>,
     pub(super) agent_directory_path: Option<std::path::PathBuf>,
@@ -89,6 +91,7 @@ impl KernelMcpServer {
     pub fn with_shared_backend(backend: Arc<dyn KernelMcpToolBackend>) -> Self {
         Self {
             shared_passages: false,
+            output_schemas: false,
             backend,
             agent_directory: std::sync::OnceLock::new(),
             agent_directory_path: None,
@@ -258,6 +261,7 @@ impl KernelMcpServer {
             )),
         }
         .and_then(Self::with_passage_format_from_env)
+        .and_then(Self::with_output_schemas_from_env)
     }
 
     pub fn from_optional_endpoint(endpoint: Option<String>) -> Self {

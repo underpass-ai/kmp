@@ -1,6 +1,8 @@
 //! E3 acceptance: the embedded backend serves KMP tools in-process and
 //! memory survives across sessions (fresh-machine criterion analog).
 
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_adapter_embedded::SqliteQualityTelemetryReader;
@@ -1021,8 +1023,9 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     let goto = call(
         &server,
         2,
-        "kmp_goto",
+        "kmp_time",
         json!({
+            "move": "goto",
             "about": "question:e3",
             "at": {"sequence": 2},
             "include": {"evidence": true, "relations": true}
@@ -1167,13 +1170,13 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
         "{ask}"
     );
     assert_eq!(ask["proof"]["confidence"], "high");
-    assert_eq!(ask["truncation"]["truncated"], true);
+    // `projection` is the one progress block and names every omission.
+    assert!(ask.get("truncation").is_none(), "{ask}");
     assert!(
-        ask["truncation"]["omitted"]
-            .as_object()
-            .is_some_and(|omitted| omitted
-                .values()
-                .any(|count| count.as_u64().unwrap_or(0) > 0)),
+        ask["projection"]["page"]["has_more"] == true
+            || ask["projection"]["excluded_by_detail"].as_u64() > Some(0)
+            || ask["projection"]["selection_omitted"].as_u64() > Some(0)
+            || ask["projection"]["core_text_shortened"] == true,
         "{ask}"
     );
 
@@ -1193,8 +1196,11 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
         }),
     )
     .await;
-    assert_eq!(
-        wake["wake"]["next_actions"][0], "triggers → project:large-recall:claim:gate-action",
+    // The causal link stays in the spine; it is history, not a recorded task.
+    assert!(
+        wake["wake"]["next_actions"]
+            .as_array()
+            .is_none_or(Vec::is_empty),
         "{wake}"
     );
     assert_eq!(
@@ -1440,7 +1446,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
                     .is_some_and(|relations| relations.iter().any(|rel| rel == "updates_state")),
                 "the partial update must remain visible in proof: {ask}"
             );
-            assert!(ask["truncation"]["truncated"].is_boolean(), "{ask}");
+            assert!(ask["projection"]["page"]["has_more"].is_boolean(), "{ask}");
             assert!(
                 ask["projection"]["budget"]["used_bytes"]
                     .as_u64()
@@ -1459,8 +1465,9 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     let before = call(
         &server,
         8,
-        "kmp_goto",
+        "kmp_time",
         json!({
+            "move": "goto",
             "about": "decision:fresh-store-default",
             "at": {"sequence": 2},
             "include": {"evidence": true, "relations": true}
@@ -1484,8 +1491,9 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     let after = call(
         &server,
         9,
-        "kmp_goto",
+        "kmp_time",
         json!({
+            "move": "goto",
             "about": "decision:fresh-store-default",
             "at": {"sequence": 3},
             "include": {"evidence": true, "relations": true}
@@ -2044,8 +2052,9 @@ async fn embedded_backend_returns_structured_not_found_errors() {
     let error = call(
         &server,
         1,
-        "kmp_goto",
+        "kmp_time",
         json!({
+            "move": "goto",
             "about": "question:unknown",
             "at": {"sequence": 1}
         }),
@@ -2144,13 +2153,15 @@ async fn inspect_negotiates_an_oversized_result_and_floors_below_the_object_floo
         }
         let continuation = &page["next_actions"][0];
         assert_eq!(continuation["tool"], "kmp_inspect");
+        // The action is a handle; read the call it stands for.
+        let bound = bound_action::bound_arguments(&server, continuation);
         if page["page"]["returned"] == 0 {
             let minimum = page["page"]["minimum_progress_bytes"]
                 .as_u64()
                 .expect("an empty page negotiates enough bytes for a whole item");
             assert!(minimum > allowance as u64, "{page}");
             assert!(
-                continuation["arguments"]["budget"]["max_bytes"]
+                bound["budget"]["max_bytes"]
                     .as_u64()
                     .expect("negotiated allowance")
                     >= minimum,
@@ -2159,7 +2170,7 @@ async fn inspect_negotiates_an_oversized_result_and_floors_below_the_object_floo
         }
         // Execute the supplied continuation, including a larger allowance when
         // the stable object and the next whole evidence item cannot fit.
-        arguments = continuation["arguments"].clone();
+        arguments = bound;
         assert!(pages < 20, "inspect continuation must make progress");
     }
     assert!(pages > 1, "fixture must exercise continuation");
@@ -2943,8 +2954,9 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .expect("trace succeeds");
     let goto = backend
         .call_tool(
-            "kmp_goto",
+            "kmp_time",
             &serde_json::json!({
+                "move": "goto",
                 "about": "question:e3",
                 "at": {"sequence": 2}
             }),
@@ -2965,7 +2977,7 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .query_since(0, Some("kmp_trace"), 10)
         .expect("trace observations query");
     let gotos = telemetry
-        .query_since(0, Some("kmp_goto"), 10)
+        .query_since(0, Some("kmp_time"), 10)
         .expect("goto observations query");
     assert_eq!(wakes.len(), 1, "wake must journal one observation");
     assert_eq!(asks.len(), 1, "ask must journal one observation");

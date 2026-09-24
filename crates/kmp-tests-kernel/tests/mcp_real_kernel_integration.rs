@@ -13,6 +13,9 @@ mod temporal_fields;
 mod temporal_intervals;
 #[path = "mcp_real_kernel/temporal_pages.rs"]
 mod temporal_pages;
+#[path = "mcp_real_kernel/transport_view.rs"]
+mod transport_view;
+use transport_view::comparable;
 
 use std::collections::BTreeSet;
 use std::error::Error;
@@ -121,20 +124,20 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
             }),
         ),
         (
-            "kmp_goto",
-            json!({"about":"project:parity-live","at":{"ref":"project:parity-live:observation:parity-after"}}),
+            "kmp_time",
+            json!({"move":"goto","about":"project:parity-live","at":{"ref":"project:parity-live:observation:parity-after"}}),
         ),
         (
-            "kmp_near",
-            json!({"about":"project:parity-live","around":{"ref":"project:parity-live:observation:parity-before"}}),
+            "kmp_time",
+            json!({"move":"near","about":"project:parity-live","around":{"ref":"project:parity-live:observation:parity-before"}}),
         ),
         (
-            "kmp_rewind",
-            json!({"about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-after"}}),
+            "kmp_time",
+            json!({"move":"rewind","about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-after"}}),
         ),
         (
-            "kmp_forward",
-            json!({"about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-before"}}),
+            "kmp_time",
+            json!({"move":"forward","about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-before"}}),
         ),
         (
             "kmp_trace",
@@ -162,16 +165,20 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         let stdio_result = call_tool(&stdio, index as u64 + 1, tool, arguments.clone()).await;
         let http_result = call_http_tool(&http, index as u64 + 1, tool, arguments.clone()).await;
         let embedded_result = call_tool(&embedded, index as u64 + 1, tool, arguments).await;
+        let direct_view = comparable(&direct_result);
         assert_eq!(
-            stdio_result["result"], direct_result,
+            comparable(&stdio_result["result"]),
+            direct_view,
             "stdio semantic result diverged for {tool}"
         );
         assert_eq!(
-            http_result["result"], direct_result,
+            comparable(&http_result["result"]),
+            direct_view,
             "HTTP semantic result diverged for {tool}"
         );
         assert_eq!(
-            embedded_result["result"], direct_result,
+            comparable(&embedded_result["result"]),
+            direct_view,
             "embedded semantic result diverged for {tool}"
         );
     }
@@ -214,9 +221,12 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         let http_page = call_http_tool(&http, request_id, "kmp_wake", page_arguments.clone()).await;
         let embedded_page =
             call_tool(&embedded, request_id, "kmp_wake", page_arguments.clone()).await;
-        assert_eq!(stdio_page["result"], direct_page);
-        assert_eq!(http_page["result"], direct_page);
-        assert_eq!(embedded_page["result"], direct_page);
+        assert_eq!(comparable(&stdio_page["result"]), comparable(&direct_page));
+        assert_eq!(comparable(&http_page["result"]), comparable(&direct_page));
+        assert_eq!(
+            comparable(&embedded_page["result"]),
+            comparable(&direct_page)
+        );
 
         let content = &direct_page["structuredContent"];
         paged_items.extend(recall_item_keys(content));
@@ -285,8 +295,8 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         &stdio,
         &http,
         &embedded,
-        "kmp_goto",
-        json!({"about":"project:parity-live","at":{"ref":"missing:temporal-ref"}}),
+        "kmp_time",
+        json!({"move":"goto","about":"project:parity-live","at":{"ref":"missing:temporal-ref"}}),
         "invalid_argument",
     )
     .await;
@@ -344,8 +354,14 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
     let stdio_write = call_tool(&stdio, 20, "kmp_write_memory", write_arguments.clone()).await;
     let http_write = call_http_tool(&http, 20, "kmp_write_memory", write_arguments.clone()).await;
     let embedded_write = call_tool(&embedded, 20, "kmp_write_memory", write_arguments).await;
-    assert_eq!(stdio_write["result"], http_write["result"]);
-    assert_eq!(stdio_write["result"], embedded_write["result"]);
+    assert_eq!(
+        comparable(&stdio_write["result"]),
+        comparable(&http_write["result"])
+    );
+    assert_eq!(
+        comparable(&stdio_write["result"]),
+        comparable(&embedded_write["result"])
+    );
     assert_eq!(
         stdio_write.pointer("/result/structuredContent/ingest_preview/dry_run"),
         Some(&Value::Bool(true)),
@@ -394,8 +410,14 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
     let http_preview = call_http_tool(&http, 21, "kmp_write_memory", batch.clone()).await;
     let embedded_preview = call_tool(&embedded, 21, "kmp_write_memory", batch.clone()).await;
     assert_tool_success(&preview);
-    assert_eq!(preview["result"], http_preview["result"]);
-    assert_eq!(preview["result"], embedded_preview["result"]);
+    assert_eq!(
+        comparable(&preview["result"]),
+        comparable(&http_preview["result"])
+    );
+    assert_eq!(
+        comparable(&preview["result"]),
+        comparable(&embedded_preview["result"])
+    );
     batch["options"]["dry_run"] = json!(false);
     let pending = call_tool(&stdio, 22, "kmp_write_memory", batch.clone()).await;
     let http_pending = call_http_tool(&http, 22, "kmp_write_memory", batch.clone()).await;
@@ -850,8 +872,9 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let temporal_forward = call_tool(
             &server,
             31,
-            "kmp_forward",
+            "kmp_time",
             json!({
+                "move": "forward",
                 "about": "question:mcp-ingest-smoke",
                 "from": {
                     "ref": "question:mcp-ingest-smoke:claim:mcp-ingest-before"

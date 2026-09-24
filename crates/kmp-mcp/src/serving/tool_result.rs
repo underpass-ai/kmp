@@ -16,6 +16,15 @@ pub(crate) fn packet_is_partial(body: &Value) -> bool {
         || body.pointer("/projection/core_text_shortened") == Some(&Value::Bool(true))
 }
 
+/// An incremental recall continuation has no summary or answer of its own:
+/// those travel with the core on the first page. Its text stays constant
+/// instead of copying the new items a second time.
+fn recall_continuation_text(body: &Value) -> Option<&'static str> {
+    (body.pointer("/projection/core_reused") == Some(&Value::Bool(true))).then_some(
+        "Recall continuation: new expansion items only; combine them with the first page's core and earlier pages.",
+    )
+}
+
 pub(crate) fn tool_success_result(structured_content: Value) -> Value {
     // `structuredContent` is the canonical response. Repeating the entire
     // pretty-printed JSON in the text block doubled every tool result and was
@@ -24,6 +33,7 @@ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
         .get("summary")
         .and_then(Value::as_str)
         .or_else(|| structured_content.get("answer").and_then(Value::as_str))
+        .or_else(|| recall_continuation_text(&structured_content))
         .map(ToString::to_string)
         .unwrap_or_else(|| {
             serde_json::to_string(&structured_content)

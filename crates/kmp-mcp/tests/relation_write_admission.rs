@@ -1,4 +1,6 @@
 //! Endpoint validation and stored-context review must finish before any attachment commits.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 
 #[path = "support/relation_write_fixture.rs"]
 pub mod fixture;
@@ -84,7 +86,8 @@ async fn a_rich_link_is_reviewed_before_it_commits_in_this_shape_too() {
     let resume = &pending["next_actions"][0];
     assert_eq!(resume["tool"], "kmp_write_memory");
     assert_eq!(
-        resume["arguments"]["review_token"], pending["neighborhood"]["token"],
+        bound_action::bound_arguments(&server, resume)["review_token"],
+        pending["neighborhood"]["token"],
         "the continuation carries the token it was served"
     );
     // The alias is untouched while the review is outstanding.

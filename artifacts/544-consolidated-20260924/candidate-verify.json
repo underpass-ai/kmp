@@ -1,0 +1,121 @@
+{
+  "run": "candidate",
+  "manifest_sha256": "3ef0e65f741d609007e73cdcda6a525636422df9ece73c6d13684da35f93e169",
+  "binary_sha256": "2d23064e6687e1fc2372ba72c7e43690c02a308a54eff5a4d33602bf717b2369",
+  "evidence_scope": "native_replay",
+  "verified_files": 37,
+  "journeys": [
+    {
+      "journey": "w01-b4096",
+      "rpc_pairs": 5,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "w01-b10000",
+      "rpc_pairs": 4,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "w02-b4096",
+      "rpc_pairs": 4,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "w02-b10000",
+      "rpc_pairs": 3,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "w03-b4096",
+      "rpc_pairs": 4,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "w03-b10000",
+      "rpc_pairs": 3,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "w04-b4096",
+      "rpc_pairs": 4,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "w04-b10000",
+      "rpc_pairs": 3,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "a01-b4096",
+      "rpc_pairs": 3,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "a01-b10000",
+      "rpc_pairs": 3,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    },
+    {
+      "journey": "e01",
+      "rpc_pairs": 3,
+      "notifications": 1,
+      "harness_events": {
+        "session_end": 1,
+        "session_start": 1
+      },
+      "failures": []
+    }
+  ],
+  "failures": [],
+  "ok": true
+}

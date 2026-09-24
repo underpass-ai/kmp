@@ -1,4 +1,6 @@
 //! Trace and Relate must honor their advertised structuredContent byte ceiling.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
 
@@ -45,7 +47,7 @@ async fn check(tool: &str, query: Value, sections: &[&str]) {
         .expect("actionable retry budget");
     assert!(allowance > 512);
     assert_eq!(floor["next_actions"][0]["tool"], tool);
-    arguments = floor["next_actions"][0]["arguments"].clone();
+    arguments = bound_action::bound_arguments(&server, &floor["next_actions"][0]);
     assert_eq!(arguments["budget"]["max_bytes"], allowance);
     let mut actual = Vec::new();
     for _ in 0..(expected.len() * 2 + 2) {
@@ -61,7 +63,7 @@ async fn check(tool: &str, query: Value, sections: &[&str]) {
                 required > current_limit,
                 "retry must increase an insufficient allowance"
             );
-            arguments = page["next_actions"][0]["arguments"].clone();
+            arguments = bound_action::bound_arguments(&server, &page["next_actions"][0]);
             continue;
         }
         assert!(
@@ -83,7 +85,7 @@ async fn check(tool: &str, query: Value, sections: &[&str]) {
         if page["page"]["has_more"] == false {
             break;
         }
-        arguments = page["next_actions"][0]["arguments"].clone();
+        arguments = bound_action::bound_arguments(&server, &page["next_actions"][0]);
     }
     assert_eq!(
         actual, expected,

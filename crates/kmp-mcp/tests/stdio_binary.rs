@@ -1,3 +1,5 @@
+#[path = "support/bound_action.rs"]
+mod bound_action;
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, ChildStdout, Command, Stdio};
 use std::sync::mpsc;
@@ -2029,11 +2031,18 @@ fn a_well_connected_memory_gets_its_summary_attached_even_when_inspect_pages_its
     // raw record is not on the first page.
     let with_links = inspect(2, serde_json::json!({"details": true, "raw": true}));
     assert_eq!(with_links["page"]["has_more"], true, "{with_links}");
-    assert_eq!(
-        with_links["page"]["sections"]["raw"]["returned_on_page"], 0,
+    // Lean sections omit a zero counter; `total` is returned plus remaining.
+    assert!(
+        with_links["page"]["sections"]["raw"]
+            .get("returned_on_page")
+            .is_none(),
         "the links fill the page and the raw record is pushed off it: {with_links}"
     );
-    let links_before = with_links["page"]["sections"]["incoming"]["total"].clone();
+    let incoming = &with_links["page"]["sections"]["incoming"];
+    let links_before = serde_json::json!(
+        incoming["returned_on_page"].as_u64().unwrap_or(0)
+            + incoming["remaining"].as_u64().unwrap_or(0)
+    );
     assert!(
         links_before
             .as_u64()
@@ -2088,8 +2097,13 @@ fn a_well_connected_memory_gets_its_summary_attached_even_when_inspect_pages_its
     );
 
     let with_links = inspect(5, serde_json::json!({"details": true, "raw": true}));
+    let incoming = &with_links["page"]["sections"]["incoming"];
     assert_eq!(
-        with_links["page"]["sections"]["incoming"]["total"], links_before,
+        serde_json::json!(
+            incoming["returned_on_page"].as_u64().unwrap_or(0)
+                + incoming["remaining"].as_u64().unwrap_or(0)
+        ),
+        links_before,
         "the attach moved no link: {with_links}"
     );
 }
@@ -2612,21 +2626,22 @@ fn relate_reads_what_two_abouts_share_and_pages_by_position() {
         "{january}"
     );
 
-    let first = call(
-        5,
-        "kmp_relate",
-        serde_json::json!({
-            "about": "service:alpha", "dimensions": both,
-            "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"},
-            "axis": "occurred",
-            "page": {"entries": 3}
-        }),
-    );
+    let paged = serde_json::json!({
+        "about": "service:alpha", "dimensions": both,
+        "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"},
+        "axis": "occurred",
+        "page": {"entries": 3}
+    });
+    let first = call(5, "kmp_relate", paged.clone());
     assert_eq!(first["facts"].as_array().map(Vec::len), Some(3), "{first}");
     assert_eq!(first["page"]["has_more"], true);
     assert_eq!(first["page"]["offset"], 0);
     assert_eq!(first["next_actions"][0]["tool"], "kmp_relate");
-    let mut continuation = first["next_actions"][0]["arguments"].clone();
+    // The returned action is a handle. Changing the page size means sending
+    // the original arguments with the returned cursor.
+    assert!(first["next_actions"][0]["arguments"]["continuation"].is_string());
+    let mut continuation = paged;
+    continuation["page"]["cursor"] = first["page"]["next_cursor"].clone();
     continuation["page"]["entries"] = serde_json::json!(100);
     let rest = call(6, "kmp_relate", continuation);
     assert_eq!(rest["page"]["offset"], 3);
@@ -3088,11 +3103,11 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
     };
     let mut expected = Vec::new();
     for axis in ["occurred", "observed", "ingested", "validity"] {
-        for (name, cursor, time) in [
-            ("kmp_goto", "at", "2026-09-04T12:00:00Z"),
-            ("kmp_near", "around", "2026-09-04T12:00:00Z"),
-            ("kmp_rewind", "from", "2026-09-04T12:00:00Z"),
-            ("kmp_forward", "from", "2026-09-01T00:00:00Z"),
+        for (time_move, cursor, time) in [
+            ("goto", "at", "2026-09-04T12:00:00Z"),
+            ("near", "around", "2026-09-04T12:00:00Z"),
+            ("rewind", "from", "2026-09-04T12:00:00Z"),
+            ("forward", "from", "2026-09-01T00:00:00Z"),
         ] {
             for (op, values, refs) in [
                 ("in", json!(["permit"]), vec!["example:labels:permit"]),
@@ -3106,7 +3121,8 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
             ] {
                 let mut args = json!({"about":"example:labels","axis":axis,"dimensions":dims(op,values),"limit":{"entries":10},"budget":{"max_bytes":30000}});
                 args[cursor] = json!({"time":time});
-                requests.push(tool(requests.len() + 1, name, args));
+                args["move"] = json!(time_move);
+                requests.push(tool(requests.len() + 1, "kmp_time", args));
                 expected.push((false, refs));
             }
         }
@@ -3170,12 +3186,12 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
         }
     }
     // A continuation must keep both the selector and the narrowed output lane.
-    let mut page_args = json!({"about":"example:labels","axis":"occurred",
+    let mut page_args = json!({"move":"forward","about":"example:labels","axis":"occurred",
         "from":{"time":"2026-09-01T00:00:00Z"},"dimensions":dims("exists",json!([])),
         "limit":{"entries":1},"budget":{"max_bytes":30000}});
     let mut paged_refs = Vec::new();
     for page_index in 0..2 {
-        let request = tool(1, "kmp_forward", page_args.clone());
+        let request = tool(1, "kmp_time", page_args.clone());
         let output = run_binary(&envs, &format!("{request}\n"));
         assert!(output.status.success(), "{output:?}");
         let response: Value = serde_json::from_slice(&output.stdout).expect("page response");
@@ -3196,7 +3212,9 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
         assert_eq!(result["selection"]["has_more"], page_index == 0);
         if page_index == 0 {
             let action = &result["next_actions"][0];
-            assert_eq!(action["tool"], "kmp_forward");
+            assert_eq!(action["tool"], "kmp_time");
+            // Navigation restates its call; only a page continuation is a handle.
+            assert_eq!(action["arguments"]["move"], "forward");
             assert_eq!(action["arguments"]["dimensions"], page_args["dimensions"]);
             page_args = action["arguments"].clone();
         }

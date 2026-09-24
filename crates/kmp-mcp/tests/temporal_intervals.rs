@@ -1,4 +1,6 @@
 //! Native interval reads preserve their bounds and keep earlier proof without later knowledge.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
@@ -78,7 +80,7 @@ async fn seed(server: &KernelMcpServer) -> Value {
 }
 
 fn query() -> Value {
-    json!({"about":"project:interval","axis":"observed",
+    json!({"move":"forward","about":"project:interval","axis":"observed",
         "interval":{"start":"2026-09-01T10:00:00Z","end":"2026-09-01T12:00:00Z"},
         "dimensions":{"mode":"only","include":["project"]},"limit":{"entries":1},
         "include":{"evidence":true,"relations":true,"raw_refs":true},"budget":{"max_bytes":50000}})
@@ -89,13 +91,14 @@ async fn direct_intervals_follow_returned_calls_in_both_directions_without_bound
     let dir = tempfile::tempdir().expect("isolated directory");
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded");
     let written = seed(&server).await;
-    for tool in ["kmp_forward", "kmp_rewind"] {
+    for time_move in ["forward", "rewind"] {
         let mut args = query();
+        args["move"] = json!(time_move);
         args["page"] = json!({"entries":2});
         let mut refs = Vec::new();
         let mut calls = 0;
         loop {
-            let result = call(&server, tool, args).await;
+            let result = call(&server, "kmp_time", args).await;
             assert_eq!(result["temporal"]["interval"], query()["interval"]);
             refs.extend(
                 result["entries"]
@@ -110,11 +113,13 @@ async fn direct_intervals_follow_returned_calls_in_both_directions_without_bound
                 break;
             }
             assert!(calls < 50, "returned calls must advance");
-            assert_eq!(actions[0]["tool"], tool);
+            assert_eq!(actions[0]["tool"], "kmp_time");
             args = actions[0]["arguments"].clone();
-            assert_eq!(args["interval"], query()["interval"]);
-            assert_eq!(args["axis"], query()["axis"]);
-            assert_eq!(args["dimensions"], query()["dimensions"]);
+            let bound = bound_action::bound_arguments(&server, &actions[0]);
+            assert_eq!(bound["move"], time_move);
+            assert_eq!(bound["interval"], query()["interval"]);
+            assert_eq!(bound["axis"], query()["axis"]);
+            assert_eq!(bound["dimensions"], query()["dimensions"]);
         }
         refs.sort_by_key(Value::to_string);
         let mut expected = vec![
@@ -133,7 +138,7 @@ async fn interval_proof_keeps_earlier_reasons_and_excludes_later_knowledge_and_r
     let written = seed(&server).await;
     let mut args = query();
     args["limit"]["entries"] = json!(10);
-    let result = call(&server, "kmp_forward", args).await;
+    let result = call(&server, "kmp_time", args).await;
     assert_eq!(result["page"]["has_more"], false);
     assert_eq!(result["selection"]["has_more"], false);
     let proof = &result["proof"];
@@ -169,7 +174,7 @@ async fn interval_proof_keeps_earlier_reasons_and_excludes_later_knowledge_and_r
     let mut until_expiry = query();
     until_expiry["limit"]["entries"] = json!(10);
     until_expiry["interval"]["end"] = json!("2026-09-01T11:30:00Z");
-    let before_expiry = call(&server, "kmp_forward", until_expiry).await;
+    let before_expiry = call(&server, "kmp_time", until_expiry).await;
     assert!(
         before_expiry["proof"]["expired"]
             .as_array()
@@ -201,7 +206,7 @@ async fn a_later_link_between_old_memories_does_not_enter_an_earlier_interval() 
     let mut args = query();
     args["limit"]["entries"] = json!(10);
     args["interval"]["end"] = json!("2026-09-01T13:01:00Z");
-    let later = call(&server, "kmp_forward", args.clone()).await;
+    let later = call(&server, "kmp_time", args.clone()).await;
     let is_late_link = |relation: &Value| {
         relation["from"] == written["local_refs"]["tie"]
             && relation["to"] == written["local_refs"]["decision"]
@@ -216,7 +221,7 @@ async fn a_later_link_between_old_memories_does_not_enter_an_earlier_interval() 
     );
     for end in ["2026-09-01T12:00:00Z", "2026-09-01T13:00:00Z"] {
         args["interval"]["end"] = json!(end);
-        let earlier = call(&server, "kmp_forward", args.clone()).await;
+        let earlier = call(&server, "kmp_time", args.clone()).await;
         assert!(
             !earlier["proof"]["path"]
                 .as_array()
@@ -240,7 +245,7 @@ async fn an_open_end_returns_history_but_does_not_assert_that_nothing_expired() 
         .expect("interval")
         .remove("end");
     arguments["limit"]["entries"] = json!(20);
-    let result = call(&server, "kmp_forward", arguments).await;
+    let result = call(&server, "kmp_time", arguments).await;
     assert!(
         result["entries"]
             .as_array()

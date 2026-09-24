@@ -78,6 +78,9 @@ impl SqliteAgentDirectory {
                 id TEXT PRIMARY KEY, context_id TEXT NOT NULL REFERENCES contexts(id),
                 tool TEXT NOT NULL, arguments TEXT NOT NULL, fingerprint TEXT NOT NULL,
                 expires_at INTEGER NOT NULL, UNIQUE(context_id,fingerprint));
+            CREATE TABLE IF NOT EXISTS open_continuations (
+                id TEXT PRIMARY KEY, tool TEXT NOT NULL, arguments TEXT NOT NULL,
+                fingerprint TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL);
             PRAGMA user_version=3;").map_err(storage)?;
         Ok(Self {
             connection: Mutex::new(connection),
@@ -252,6 +255,17 @@ impl AgentDirectory for SqliteAgentDirectory {
         id: &ReadContinuationId,
     ) -> Result<Option<ReadContinuation>, GuidanceError> {
         super::sqlite_read_continuations::load(self, id)
+    }
+
+    fn save_open(&self, call: &ReadContinuation) -> Result<ReadContinuationId, GuidanceError> {
+        super::sqlite_read_continuations::save_open(self, call)
+    }
+
+    fn load_open(
+        &self,
+        id: &ReadContinuationId,
+    ) -> Result<Option<ReadContinuation>, GuidanceError> {
+        super::sqlite_read_continuations::load_open(self, id)
     }
 
     fn context(&self, id: &AgentContextId) -> Result<AgentContext, GuidanceError> {

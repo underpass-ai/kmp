@@ -39,10 +39,19 @@ pub(super) fn memory_relation_from_bundle_relationship(
 }
 
 pub(super) fn memory_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvidence> {
+    // A source says which memories it supports; a detail with no `supports`
+    // edge stands for its own node.
+    let support_targets = support_targets_by_source(bundle);
     bundle
         .node_details()
         .iter()
-        .map(|detail| evidence_from_detail(bundle, detail, vec![detail.node_id().to_string()]))
+        .map(|detail| {
+            let supports = support_targets
+                .get(detail.node_id())
+                .cloned()
+                .unwrap_or_else(|| vec![detail.node_id().to_string()]);
+            evidence_from_detail(bundle, detail, supports)
+        })
         .collect()
 }
 
@@ -388,19 +397,24 @@ fn normalize_proof_path(
 
         for item in evidence {
             let evidence_node_ref = item.id.strip_prefix("detail:").unwrap_or(&item.id);
-            let incident = relation.source_ref == evidence_node_ref
-                || relation.target_ref == evidence_node_ref
-                || item.supports.iter().any(|supported_ref| {
-                    relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
-                });
             let why_matches = !relation.why.is_empty() && relation.why == item.text;
             let evidence_matches = !relation.evidence.is_empty() && relation.evidence == item.text;
+            let endpoint = relation.source_ref == evidence_node_ref
+                || relation.target_ref == evidence_node_ref;
+            let supports_endpoint = item.supports.iter().any(|supported_ref| {
+                relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
+            });
+            // A source that merely supports an endpoint backs that memory, not
+            // this hop; it joins the hop only when it holds the hop's own text.
+            let incident = endpoint || (supports_endpoint && (why_matches || evidence_matches));
 
-            if incident || why_matches || evidence_matches {
+            // Equal text proves nothing about provenance: a body only joins a
+            // hop through a source the graph ties to one of its endpoints.
+            if incident {
                 refs.insert(item.id.clone());
+                repeated_why |= why_matches;
+                repeated_evidence |= evidence_matches;
             }
-            repeated_why |= why_matches;
-            repeated_evidence |= evidence_matches;
         }
 
         if repeated_why {
@@ -516,78 +530,6 @@ pub(super) fn rendered_summary(rendered: &RenderedContext) -> String {
         .unwrap_or_else(|| rendered.content.clone())
 }
 
-pub(super) fn rendered_current_state(
-    rendered: &RenderedContext,
-    bundle: &KmpBundle,
-) -> Vec<String> {
-    let semantic_relationships = bundle
-        .relationships()
-        .iter()
-        .filter(|relationship| {
-            relationship.explanation().semantic_class()
-                != &kmp_domain::RelationSemanticClass::Structural
-        })
-        .map(|relationship| {
-            format!(
-                "rel:{}→{}",
-                relationship.source_node_id(),
-                relationship.target_node_id()
-            )
-        })
-        .collect::<BTreeSet<_>>();
-    let structural_relationships = bundle
-        .relationships()
-        .iter()
-        .filter(|relationship| {
-            relationship.explanation().semantic_class()
-                == &kmp_domain::RelationSemanticClass::Structural
-        })
-        .map(|relationship| {
-            format!(
-                "rel:{}→{}",
-                relationship.source_node_id(),
-                relationship.target_node_id()
-            )
-        })
-        .collect::<BTreeSet<_>>();
-    let mut sections = rendered
-        .sections
-        .iter()
-        .filter(|section| !section.content.trim().is_empty())
-        .collect::<Vec<_>>();
-    // Minimal wake packets keep the first state item. Prefer the semantic
-    // reason the graph changed, then concrete detail, then node anchors;
-    // containment bookkeeping remains available but cannot displace state.
-    sections.sort_by(|left, right| {
-        let priority = |source_id: &str| {
-            if semantic_relationships.contains(source_id) {
-                0
-            } else if source_id.starts_with("detail:") {
-                1
-            } else if structural_relationships.contains(source_id) {
-                3
-            } else {
-                2
-            }
-        };
-        (priority(&left.source_id), &left.source_id, &left.content).cmp(&(
-            priority(&right.source_id),
-            &right.source_id,
-            &right.content,
-        ))
-    });
-    let sections = sections
-        .into_iter()
-        .take(5)
-        .map(|section| section.content.clone())
-        .collect::<Vec<_>>();
-    if sections.is_empty() && !rendered.content.trim().is_empty() {
-        vec![rendered.content.clone()]
-    } else {
-        sections
-    }
-}
-
 pub(super) fn proto_coordinate_from_domain(
     coordinate: &TemporalCoordinate,
 ) -> ProtoTemporalCoordinate {
@@ -667,7 +609,6 @@ pub(super) fn proto_relation_explanation(
 mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
-    use kmp_application::queries::render_graph_bundle;
     use kmp_domain::{
         BundleMetadata, BundleNode, BundleNodeDetail, BundleRelationship, CaseId,
         RelationExplanation, RelationSemanticClass, Role,
@@ -917,43 +858,6 @@ mod tests {
                 ),
             ]
         );
-    }
-
-    #[test]
-    fn wake_state_places_semantic_context_before_anchor_and_containment() {
-        let bundle = KmpBundle::new(
-            CaseId::new("question:a").expect("case id should be valid"),
-            Role::new("developer").expect("role is valid"),
-            node("question:a", "memory_anchor"),
-            vec![
-                node("claim:selected", "claim"),
-                node("evidence:selected", "memory_evidence"),
-            ],
-            vec![
-                BundleRelationship::new(
-                    "question:a",
-                    "claim:selected",
-                    "contains_entry",
-                    RelationExplanation::new(RelationSemanticClass::Structural)
-                        .with_rationale("The anchor contains the recalled claim."),
-                ),
-                supports("evidence:selected", "claim:selected"),
-            ],
-            vec![BundleNodeDetail::new(
-                "evidence:selected",
-                "The selected evidence explains the current state.",
-                "hash-selected",
-                1,
-            )],
-            BundleMetadata::initial("test"),
-        )
-        .expect("test bundle should be valid");
-        let rendered = render_graph_bundle(&bundle);
-
-        let state = rendered_current_state(&rendered, &bundle);
-
-        assert!(state[0].contains("--supports-->"), "{state:?}");
-        assert!(!state[0].contains("contains_entry"), "{state:?}");
     }
 
     #[test]

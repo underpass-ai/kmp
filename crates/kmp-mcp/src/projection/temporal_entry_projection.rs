@@ -1,6 +1,7 @@
 //! Explicit entry projection never shortens selected text or silently drops proof.
 use serde_json::{Value, json};
 
+use crate::contract::TimeMove;
 use crate::contract::temporal_entry_field::TemporalEntryField;
 use crate::serving::ToolError;
 
@@ -45,17 +46,15 @@ impl TemporalEntryProjection {
             .pointer("/temporal/direction")
             .and_then(Value::as_str)
             .ok_or_else(|| ToolError::backend("temporal detail requires the original direction"))?;
-        let tool = match direction {
-            "goto" | "near" | "forward" | "rewind" => format!("kmp_{direction}"),
-            _ => return Err(ToolError::backend("invalid temporal detail direction")),
-        };
+        let movement = TimeMove::from_direction(direction)
+            .ok_or_else(|| ToolError::backend("invalid temporal detail direction"))?;
         // Full detail replays the selected packet. Moving to an entry ref
         // would change its cutoff and potentially discard later eligible proof.
         let mut detail = arguments.clone();
         let args = detail.as_object_mut().expect("validated arguments");
         args.remove("fields");
         args.remove("page");
-        let action = json!({"tool":tool,"arguments":detail});
+        let action = movement.action(detail);
         let entries = value["entries"]
             .as_array_mut()
             .ok_or_else(|| ToolError::backend("temporal response lacks entries"))?;

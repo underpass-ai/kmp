@@ -223,10 +223,7 @@ fn validate(groups: &[ContextGroup]) -> Result<(), String> {
                             | "kmp_inspect"
                             | "kmp_trace"
                             | "kmp_relate"
-                            | "kmp_goto"
-                            | "kmp_near"
-                            | "kmp_rewind"
-                            | "kmp_forward"
+                            | "kmp_time"
                     )
                 }) || !read["arguments"].is_object()
                     || !read["arguments"]["about"].is_string()

@@ -123,8 +123,8 @@ fn absent_or_partial_guide_repairs_in_the_same_store_and_retries_idempotently() 
         );
         let refused = call(
             &store,
-            "kmp_rewind",
-            json!({"about":"project:repair","limit":"bad"}),
+            "kmp_time",
+            json!({"move":"rewind","about":"project:repair","limit":"bad"}),
         );
         let help = &refused["structuredContent"]["help"];
         let actions = std::iter::once(help["guide"].clone())

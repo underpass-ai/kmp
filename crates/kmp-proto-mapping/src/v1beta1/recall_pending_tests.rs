@@ -5,7 +5,7 @@ use kmp_proto::v1beta1::{
     AnswerReason, AskRequest, AskResponse, MemoryConfidence, MemoryDetailLevel, MemoryEvidence,
     MemoryRelation, MemorySemanticClass, WakeRequest, WakeResponse,
 };
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use super::core_fit::serialized_bytes;
 use super::response_value::{ask_value, wake_value};
@@ -67,27 +67,50 @@ fn request() -> AskRequest {
     }
 }
 
-fn check_progress(value: &Value, previous: &mut BTreeMap<String, u64>) {
+/// Per section: (core, eligible, returned on earlier pages). Counters are
+/// lean: a zero is omitted, and `eligible` is derived from page 1, which
+/// states `core` and leaves nothing on earlier pages.
+type Progress = BTreeMap<String, (u64, u64, u64)>;
+
+fn check_progress(value: &Value, previous: &mut Progress) {
     let projection = &value["projection"];
+    // A continuation carries only its new items; page 1 alone holds the core.
+    let core_reused = projection["core_reused"] == true;
+    let count = |section: &Value, key: &str| section.get(key).and_then(Value::as_u64).unwrap_or(0);
+    let sections = projection["sections"].as_object().expect("sections");
+    if !core_reused {
+        assert!(previous.is_empty(), "only page 1 carries the core here");
+        for (name, section) in sections {
+            let core = count(section, "core");
+            let eligible = core + count(section, "returned_on_page") + count(section, "remaining");
+            previous.insert(name.clone(), (core, eligible, 0));
+        }
+    }
     let mut pending = 0;
-    for (name, section) in projection["sections"].as_object().expect("sections") {
-        let core = section["core"].as_u64().expect("core");
-        let returned = section["returned_on_page"].as_u64().expect("returned");
-        let remaining = section["remaining"].as_u64().expect("remaining");
-        let eligible = section["eligible"].as_u64().expect("eligible");
-        let earlier = previous.entry(name.clone()).or_default();
-        assert_eq!(core + *earlier + returned + remaining, eligible, "{name}");
+    for (name, (core, eligible, earlier)) in previous.iter_mut() {
+        let empty = json!({});
+        let section = sections.get(name).unwrap_or(&empty);
+        let returned = count(section, "returned_on_page");
+        let remaining = count(section, "remaining");
+        assert_eq!(*core + *earlier + returned + remaining, *eligible, "{name}");
         let pointer = format!("/{}", name.replace('.', "/"));
+        let carried = value
+            .pointer(&pointer)
+            .and_then(Value::as_array)
+            .map_or(0, Vec::len) as u64;
         assert_eq!(
-            value
-                .pointer(&pointer)
-                .and_then(Value::as_array)
-                .expect("section values")
-                .len() as u64,
-            core + returned
+            carried,
+            if core_reused {
+                returned
+            } else {
+                *core + returned
+            }
         );
         *earlier += returned;
         pending += remaining;
+    }
+    for name in sections.keys() {
+        assert!(previous.contains_key(name), "{name} appeared after page 1");
     }
     let page = &projection["page"];
     assert_eq!(
@@ -130,7 +153,7 @@ fn ask_remaining_excludes_core_and_every_prior_page_through_typed_wire() {
         request.page.as_mut().expect("page request").cursor = cursor;
     }
     assert!(seen.len() > 1);
-    assert_eq!(prior["proof.evidence"], 5);
+    assert_eq!(prior["proof.evidence"].2, 5);
 }
 
 #[test]

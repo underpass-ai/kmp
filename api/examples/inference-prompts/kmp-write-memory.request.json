@@ -390,7 +390,7 @@
               },
               "temporal_refs": {
                 "items": {
-                  "description": "Memory ref observed through kmp_goto, kmp_near, kmp_rewind, or kmp_forward before writing.",
+                  "description": "Memory ref observed through kmp_time before writing.",
                   "minLength": 1,
                   "type": "string"
                 },

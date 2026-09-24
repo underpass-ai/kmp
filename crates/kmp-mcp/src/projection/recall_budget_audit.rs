@@ -12,6 +12,16 @@ mod tests {
     #[allow(unused_imports)]
     use serde_json::{Value, json};
 
+    /// `projection` is the one progress block: it says why anything is absent.
+    fn reports_omission(value: &Value) -> bool {
+        let projection = &value["projection"];
+        projection["page"]["has_more"] == true
+            || projection["page"]["offset"].as_u64() > Some(0)
+            || projection["excluded_by_detail"].as_u64() > Some(0)
+            || projection["selection_omitted"].as_u64() > Some(0)
+            || projection["core_text_shortened"] == true
+    }
+
     /// #439: a ceiling below the stable floor returns the floor and says
     /// so, instead of an error whose only answer was to over-budget. One
     /// call, never fails, spend = the floor — and the caller is told the
@@ -98,7 +108,7 @@ mod tests {
                 .iter()
                 .all(|relation| relation["class"] != "structural")
         );
-        assert_eq!(bounded["truncation"]["truncated"], true);
+        assert!(reports_omission(&bounded));
     }
     #[test]
     fn transport_omissions_do_not_change_the_graph_frontier() {
@@ -134,7 +144,8 @@ mod tests {
         for result in [&low_budget, &high_budget] {
             assert_eq!(result["proof"]["frontier_size"], 2);
         }
-        assert_eq!(low_budget["truncation"]["truncated"], true);
+        assert!(reports_omission(&low_budget));
+        assert!(!reports_omission(&high_budget));
         assert!(high_budget.get("truncation").is_none());
         assert_eq!(low_budget["projection"]["excluded_by_detail"], 4);
         assert_eq!(high_budget["projection"]["excluded_by_detail"], 0);
@@ -197,10 +208,10 @@ mod tests {
                 <= byte_limit
         );
         assert_eq!(bounded["because"].as_array().expect("reasons").len(), 3);
-        assert_eq!(bounded["truncation"]["truncated"], true);
+        assert!(reports_omission(&bounded));
         assert_eq!(
             bounded["projection"]["contract"],
-            "kmp.recall.projection.v1"
+            "kmp.recall.projection.v3"
         );
         assert!(!bounded["warnings"].as_array().expect("warnings").is_empty());
     }
@@ -241,14 +252,10 @@ mod tests {
                     evidence >= previous_evidence,
                     "{detail} lost proof evidence when the byte budget grew to {byte_limit}"
                 );
-                if bounded
-                    .pointer("/truncation/truncated")
-                    .and_then(Value::as_bool)
-                    == Some(true)
-                {
+                if reports_omission(&bounded) {
                     assert_eq!(
                         bounded["projection"]["contract"],
-                        "kmp.recall.projection.v1"
+                        "kmp.recall.projection.v3"
                     );
                     assert!(!bounded["warnings"].as_array().expect("warnings").is_empty());
                 }
@@ -289,14 +296,10 @@ mod tests {
                 retained_state >= previous_state,
                 "wake lost state when the byte budget grew to {byte_limit}"
             );
-            if bounded
-                .pointer("/truncation/truncated")
-                .and_then(Value::as_bool)
-                == Some(true)
-            {
+            if reports_omission(&bounded) {
                 assert_eq!(
                     bounded["projection"]["contract"],
-                    "kmp.recall.projection.v1"
+                    "kmp.recall.projection.v3"
                 );
                 assert!(!bounded["warnings"].as_array().expect("warnings").is_empty());
             }
@@ -365,10 +368,9 @@ mod tests {
             );
             assert!(bounded["proof"].is_object());
             assert_eq!(bounded["proof"]["confidence"], "high");
-            assert_eq!(bounded["truncation"]["truncated"], true);
-            assert!(bounded["truncation"]["omitted"].is_object());
+            assert!(reports_omission(&bounded));
             assert_eq!(bounded["projection"]["core_text_shortened"], true);
-            assert!(bounded["truncation"].get("omitted_items").is_none());
+            assert!(bounded.get("truncation").is_none());
             assert!(
                 bounded["proof"]["missing"]
                     .as_array()
@@ -387,7 +389,7 @@ mod tests {
                 "causal_spine": [{
                     "claim": "claim",
                     "because": format!("because {}", "detail ".repeat(4_000)),
-                    "evidence_ref": "evidence:1"
+                    "evidence_refs": ["evidence:1"]
                 }],
                 "open_loops": [],
                 "next_actions": [],
@@ -411,10 +413,10 @@ mod tests {
         assert!(bounded["wake"].is_object());
         assert!(bounded["proof"].is_object());
         assert_eq!(bounded["resume_cursor"]["ref"], "decision:latest");
-        assert_eq!(bounded["truncation"]["truncated"], true);
+        assert!(reports_omission(&bounded));
         assert_eq!(bounded["projection"]["core_text_shortened"], true);
         assert_eq!(
-            bounded["wake"]["causal_spine"][0]["evidence_ref"],
+            bounded["wake"]["causal_spine"][0]["evidence_refs"][0],
             "evidence:1"
         );
     }

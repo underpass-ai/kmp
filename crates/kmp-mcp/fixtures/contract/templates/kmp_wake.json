@@ -28,16 +28,7 @@
       "excluded_by_detail": "integer",
       "next_action": {
         "arguments": {
-          "about": "string",
-          "budget": {
-            "depth": "integer",
-            "detail": "string",
-            "max_bytes": "integer",
-            "tokens": "integer"
-          },
-          "page": {
-            "cursor": "string"
-          }
+          "continuation": "string"
         },
         "tool": "string"
       },
@@ -51,46 +42,24 @@
       },
       "sections": {
         "labels": {
-          "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         },
         "proof.evidence": {
           "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "remaining": "integer"
         },
         "proof.path": {
-          "core": "integer",
-          "eligible": "integer",
+          "excluded_by_detail": "integer",
           "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         },
         "wake.causal_spine": {
           "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         },
         "wake.current_state": {
           "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "wake.next_actions": {
-          "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         }
       },
       "selection_omitted": "integer"
@@ -104,7 +73,24 @@
       "axis": "null",
       "confidence": "string",
       "conflicts": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "id": "string",
+          "metadata": {
+            "proof_role": "string"
+          },
+          "source": "string",
+          "support_clocks": {
+            "ingested_at": "string",
+            "observed_at": "string"
+          },
+          "supports": [
+            "string"
+          ],
+          "text": "string",
+          "time": "string"
+        }
+      ],
       "expired": [
         {
           "ref": "string",
@@ -165,34 +151,21 @@
       ]
     },
     "summary": "string",
-    "truncation": {
-      "byte_limit": "integer",
-      "omitted": {
-        "core_text_shortened": "boolean",
-        "excluded_by_detail": "integer",
-        "page_items": "integer",
-        "prior_page_items": "integer",
-        "remaining_page_items": "integer",
-        "selection_items": "integer"
-      },
-      "token_limit": "integer",
-      "truncated": "boolean"
-    },
     "wake": {
       "causal_spine": [
         {
           "because": "string",
           "claim": "string",
-          "evidence_ref": "string"
+          "evidence_refs": [
+            "string"
+          ]
         }
       ],
       "current_state": [
         "string"
       ],
       "guardrails": [],
-      "next_actions": [
-        "string"
-      ],
+      "next_actions": [],
       "objective": "string",
       "open_loops": []
     },

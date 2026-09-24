@@ -27,10 +27,6 @@ mod tests {
             "kernel_write_memory",
             "kernel_wake",
             "kernel_ask",
-            "kernel_goto",
-            "kernel_near",
-            "kernel_rewind",
-            "kernel_forward",
             "kernel_trace",
             "kernel_inspect",
         ];
@@ -131,7 +127,7 @@ mod tests {
             .as_array()
             .expect("tools should be an array");
 
-        assert_eq!(tools.len(), 18, "memory, view and progressive guide tools");
+        assert_eq!(tools.len(), 15, "memory, view and progressive guide tools");
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
@@ -192,36 +188,35 @@ mod tests {
         );
         assert_eq!(tools[4]["name"], "kmp_relate");
         assert_eq!(tools[4]["inputSchema"]["else"]["required"][0], "about");
-        assert_eq!(tools[11]["name"], "kmp_relabel");
+        assert_eq!(tools[8]["name"], "kmp_relabel");
         assert_eq!(
-            tools[11]["inputSchema"]["required"],
+            tools[8]["inputSchema"]["required"],
             serde_json::json!(["about", "ref", "observed_at", "why"])
         );
         // The memory tools come first and the view tools after them, so a new
         // memory verb shifts the view block by one.
-        assert_eq!(tools[12]["name"], "kmp_condense");
+        assert_eq!(tools[9]["name"], "kmp_condense");
         assert_eq!(
-            tools[12]["inputSchema"]["properties"]["scope"]["const"],
+            tools[9]["inputSchema"]["properties"]["scope"]["const"],
             "node_body"
         );
-        assert_eq!(tools[13]["name"], "kmp_summaries_audit");
-        assert_eq!(tools[14]["name"], "kmp_view_open");
-        assert_eq!(tools[5]["name"], "kmp_goto");
-        assert_eq!(tools[5]["inputSchema"]["else"]["required"][1], "at");
-        for index in [5, 6] {
-            assert_eq!(
-                tools[index]["inputSchema"]["properties"]["page"]["properties"]["cursor"]["type"],
-                "string"
-            );
-            assert_eq!(
-                tools[index]["outputSchema"]["properties"]["next_actions"]["type"],
-                "array"
-            );
-            assert_eq!(
-                tools[index]["outputSchema"]["properties"]["selection"]["properties"]["has_more"]["type"],
-                "boolean"
-            );
-        }
+        assert_eq!(tools[10]["name"], "kmp_summaries_audit");
+        assert_eq!(tools[11]["name"], "kmp_view_open");
+        assert_eq!(tools[5]["name"], "kmp_time");
+        assert_eq!(tools[5]["inputSchema"]["else"]["required"][1], "move");
+        let time = &tools[5];
+        assert_eq!(
+            time["inputSchema"]["properties"]["page"]["properties"]["cursor"]["type"],
+            "string"
+        );
+        assert_eq!(
+            time["outputSchema"]["properties"]["next_actions"]["type"],
+            "array"
+        );
+        assert_eq!(
+            time["outputSchema"]["properties"]["selection"]["properties"]["has_more"]["type"],
+            "boolean"
+        );
     }
 
     #[test]
@@ -307,12 +302,10 @@ mod tests {
             memory_keys("kmp_relate"),
             expected(&["about", "axis", "budget", "dimensions", "interval", "page"])
         );
-        for (name, cursor) in [
-            ("kmp_goto", "at"),
-            ("kmp_near", "around"),
-            ("kmp_rewind", "from"),
-            ("kmp_forward", "from"),
-        ] {
+        // One verb, one shared argument object: `move` picks the navigation
+        // and each move reads exactly one of the three cursors.
+        {
+            let name = "kmp_time";
             assert_eq!(
                 memory_keys(name),
                 expected(&[
@@ -328,14 +321,19 @@ mod tests {
                     "page", // MCP response projection; the typed query remains unchanged.
                     "refs", // Typed TemporalEntrySelection focuses entries, not proof sources.
                     "window",
-                    cursor,
+                    "move", // Selects the typed direction; not a query field.
+                    "from",
+                    "at",
+                    "around",
                 ]),
                 "{name} typed request crosswalk"
             );
-            assert_eq!(
-                keys(&schema(name)["properties"][cursor]),
-                expected(&["ref", "sequence", "time"])
-            );
+            for cursor in ["from", "at", "around"] {
+                assert_eq!(
+                    keys(&schema(name)["properties"][cursor]),
+                    expected(&["ref", "sequence", "time"])
+                );
+            }
         }
         assert_eq!(
             memory_keys("kmp_trace"),
@@ -376,7 +374,7 @@ mod tests {
         );
         assert_eq!(
             keys(&wake_properties["page"]),
-            expected(&["cursor", "entries"])
+            expected(&["cursor", "entries", "repeat_core"])
         );
         assert_eq!(
             keys(&schema("kmp_inspect")["properties"]["budget"]),
@@ -481,7 +479,7 @@ mod tests {
                 ),
             ),
             (
-                "kmp_goto",
+                "kmp_time",
                 crate::projection::temporal_from_response(TemporalMoveResponse::default()),
             ),
             (
@@ -510,20 +508,6 @@ mod tests {
             }
         }
 
-        for name in ["kmp_near", "kmp_rewind", "kmp_forward"] {
-            assert_eq!(
-                schemas[name]["properties"]
-                    .as_object()
-                    .expect("temporal properties")
-                    .keys()
-                    .collect::<Vec<_>>(),
-                schemas["kmp_goto"]["properties"]
-                    .as_object()
-                    .expect("temporal properties")
-                    .keys()
-                    .collect::<Vec<_>>()
-            );
-        }
         for field in [
             "accepted",
             "dry_run",

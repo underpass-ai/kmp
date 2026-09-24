@@ -76,14 +76,20 @@ fn pages_reconstruct_the_full_proof_without_changing_the_answer() {
             arguments["page"]["cursor"] = json!(cursor);
         }
         let page = projected(packet.clone(), arguments);
-        assert_eq!(page["answer"], expected_answer);
-        assert_eq!(page["because"], expected_because);
-        assert!(
-            page["proof"]["evidence"]
-                .as_array()
-                .expect("evidence")
-                .starts_with(&expected_core_evidence)
-        );
+        if cursor.is_none() {
+            assert_eq!(page["answer"], expected_answer);
+            assert_eq!(page["because"], expected_because);
+            assert!(
+                page["proof"]["evidence"]
+                    .as_array()
+                    .expect("evidence")
+                    .starts_with(&expected_core_evidence)
+            );
+        } else {
+            // Continuations carry new items only; page 1 holds the core.
+            assert_eq!(page["projection"]["core_reused"], true);
+            assert!(page.get("answer").is_none() && page.get("because").is_none());
+        }
         evidence.extend(evidence_set(&page));
         relations.extend(relation_values(&page));
         missing.extend(string_set(&page, "/proof/missing"));
@@ -91,7 +97,13 @@ fn pages_reconstruct_the_full_proof_without_changing_the_answer() {
 
         if page["projection"]["page"]["has_more"] == false {
             assert!(page["projection"]["page"]["next_cursor"].is_null());
-            assert_eq!(page["truncation"]["omitted"]["remaining_page_items"], 0);
+            for section in page["projection"]["sections"]
+                .as_object()
+                .expect("sections")
+                .values()
+            {
+                assert!(section.get("remaining").is_none(), "zero is omitted");
+            }
             assert!(
                 page["warnings"]
                     .as_array()

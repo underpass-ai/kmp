@@ -4,6 +4,7 @@ use sha2::{Digest, Sha256};
 
 use super::serialized_size::serialized_len;
 use super::temporal_entry_projection::TemporalEntryProjection;
+use crate::contract::TimeMove;
 use crate::serving::ToolError;
 use kmp_proto_mapping::v1beta1::recall_projection::requested_byte_limit;
 
@@ -30,7 +31,7 @@ pub(crate) struct TemporalPage {
     core: Value,
     items: Vec<(&'static str, Value)>,
     arguments: Value,
-    tool: String,
+    movement: TimeMove,
     hash: String,
     navigation: Vec<Value>,
 }
@@ -96,14 +97,8 @@ impl TemporalPage {
             .pointer("/temporal/direction")
             .and_then(Value::as_str)
             .ok_or_else(|| ToolError::backend("temporal response lacks a direction"))?;
-        let tool = match direction {
-            "goto" | "near" | "forward" | "rewind" => format!("kmp_{direction}"),
-            _ => {
-                return Err(ToolError::backend(
-                    "temporal response has an invalid direction",
-                ));
-            }
-        };
+        let movement = TimeMove::from_direction(direction)
+            .ok_or_else(|| ToolError::backend("temporal response has an invalid direction"))?;
         let fields = TemporalEntryProjection::read(arguments)?;
         let navigation = navigation(&value, arguments);
         let kernel_page = value["page"].clone();
@@ -161,7 +156,7 @@ impl TemporalPage {
             core: value,
             items,
             arguments: arguments.clone(),
-            tool,
+            movement,
             hash: format!("{:x}", hash.finalize()),
             navigation,
         })
@@ -192,7 +187,7 @@ impl TemporalPage {
             )
             .with_feedback(
                 json!({"code":"READ_SELECTION_CHANGED","field":"page.cursor",
-                    "action":{"tool":self.tool,"arguments":restart}}),
+                    "action":self.movement.action(restart)}),
             ));
         }
         let offset = offset.expect("checked");
@@ -220,7 +215,7 @@ impl TemporalPage {
     fn page_action(&self, offset: usize) -> Value {
         let mut arguments = self.arguments.clone();
         arguments["page"]["cursor"] = json!(format!("{CURSOR_VERSION}:{offset}:{}", self.hash));
-        json!({"tool":self.tool,"arguments":arguments})
+        self.movement.action(arguments)
     }
 
     fn render(&self, offset: usize, keep: usize) -> Value {
@@ -241,13 +236,23 @@ impl TemporalPage {
             }
             let count =
                 |slice: &[(&str, Value)]| slice.iter().filter(|(key, _)| key == section).count();
-            sections.insert(
-                section.trim_start_matches('/').replace('/', "."),
-                json!({
-                    "returned_on_page":count(&self.items[offset..end]),
-                    "remaining":count(&self.items[end..]), "total":count(&self.items),
-                }),
-            );
+            // Lean progress (#544 C3): no zero counter, no empty section, no
+            // `total` (earlier pages + returned_on_page + remaining).
+            let mut counts = Map::new();
+            for (key, value) in [
+                ("returned_on_page", count(&self.items[offset..end])),
+                ("remaining", count(&self.items[end..])),
+            ] {
+                if value > 0 {
+                    counts.insert(key.into(), json!(value));
+                }
+            }
+            if !counts.is_empty() {
+                sections.insert(
+                    section.trim_start_matches('/').replace('/', "."),
+                    Value::Object(counts),
+                );
+            }
         }
         result["page"] = json!({"offset":offset,"returned":end-offset,"total":self.items.len(),
             "has_more":has_more,"next_cursor":has_more.then(||format!("{CURSOR_VERSION}:{end}:{}",self.hash)),
@@ -266,7 +271,7 @@ fn navigation(value: &Value, arguments: &Value) -> Vec<Value> {
         return Vec::new();
     }
     let mut result = Vec::new();
-    let mut add = |tool: &str, reference: Option<&str>| {
+    let mut add = |movement: TimeMove, reference: Option<&str>| {
         let Some(reference) = reference.filter(|r| !r.is_empty()) else {
             return;
         };
@@ -276,22 +281,22 @@ fn navigation(value: &Value, arguments: &Value) -> Vec<Value> {
             object.remove(key);
         }
         args["from"] = json!({"ref":reference});
-        result.push(json!({"tool":tool,"arguments":args}));
+        result.push(movement.action(args));
     };
     let boundary = value.pointer("/page/next_cursor").and_then(Value::as_str);
     match value.pointer("/temporal/direction").and_then(Value::as_str) {
-        Some("goto" | "rewind") => add("kmp_rewind", boundary),
-        Some("forward") => add("kmp_forward", boundary),
+        Some("goto" | "rewind") => add(TimeMove::Rewind, boundary),
+        Some("forward") => add(TimeMove::Forward, boundary),
         Some("near") => {
             let entries = value["entries"].as_array();
             add(
-                "kmp_rewind",
+                TimeMove::Rewind,
                 entries
                     .and_then(|e| e.first())
                     .and_then(|e| e["ref"].as_str()),
             );
             add(
-                "kmp_forward",
+                TimeMove::Forward,
                 entries
                     .and_then(|e| e.last())
                     .and_then(|e| e["ref"].as_str()),

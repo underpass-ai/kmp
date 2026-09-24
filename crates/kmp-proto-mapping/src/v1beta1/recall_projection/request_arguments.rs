@@ -154,5 +154,8 @@ fn page_request_value(page: &kmp_proto::v1beta1::PageRequest) -> Value {
         value.insert("entries".to_string(), json!(page.entries));
     }
     insert_non_empty(&mut value, "cursor", &page.cursor);
+    if page.repeat_core {
+        value.insert("repeat_core".to_string(), json!(true));
+    }
     Value::Object(value)
 }

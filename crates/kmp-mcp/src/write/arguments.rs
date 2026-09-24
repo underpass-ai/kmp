@@ -13,7 +13,7 @@ pub(super) fn required_object<'a>(
 /// Refuses a stamp the kernel's own clock says has not happened yet.
 ///
 /// The read path is ordered by `observed_at`, so an entry above the present
-/// is one `kmp_forward` from a correct "now" will never return: the delta
+/// is one forward `kmp_time` move from a correct "now" will never return: the delta
 /// comes back empty and looks exactly like a quiet week. The log has no
 /// delete, so this has to be caught before the write and not explained
 /// afterwards.

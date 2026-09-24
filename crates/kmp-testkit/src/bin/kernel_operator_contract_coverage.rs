@@ -10,6 +10,9 @@ use serde::Serialize;
 use serde_json::Value;
 
 use kmp_mcp::kmp_mcp_tool_names;
+use kmp_testkit::kernel_operator::{
+    KERNEL_OPERATOR_TIME_TOOL, kernel_operator_action_time_move, kernel_operator_time_cursor_key,
+};
 use kmp_testkit::{
     kernel_operator_allowed_full_tools, kernel_operator_allowed_read_tools,
     kernel_operator_is_bounded_tool_call,
@@ -209,8 +212,12 @@ fn required_capability_ids(profile: Profile) -> Vec<Capability> {
                 group: "mode",
             },
             Capability {
-                id: "tool:kmp_near",
+                id: "tool:kmp_time",
                 group: "tool",
+            },
+            Capability {
+                id: "time.move:near",
+                group: "time_move",
             },
             Capability {
                 id: "tool:kmp_inspect",
@@ -265,7 +272,7 @@ fn required_capability_ids(profile: Profile) -> Vec<Capability> {
                 group: "writer_state",
             },
             Capability {
-                id: "writer.last_tool:kmp_near",
+                id: "writer.last_move:near",
                 group: "writer_state",
             },
             Capability {
@@ -300,20 +307,24 @@ fn required_capability_ids(profile: Profile) -> Vec<Capability> {
             group: "tool",
         },
         Capability {
-            id: "tool:kmp_near",
+            id: "tool:kmp_time",
             group: "tool",
         },
         Capability {
-            id: "tool:kmp_goto",
-            group: "tool",
+            id: "time.move:near",
+            group: "time_move",
         },
         Capability {
-            id: "tool:kmp_rewind",
-            group: "tool",
+            id: "time.move:goto",
+            group: "time_move",
         },
         Capability {
-            id: "tool:kmp_forward",
-            group: "tool",
+            id: "time.move:rewind",
+            group: "time_move",
+        },
+        Capability {
+            id: "time.move:forward",
+            group: "time_move",
         },
         Capability {
             id: "tool:kmp_trace",
@@ -419,6 +430,11 @@ fn contract_supports(
     if let Some(tool) = id.strip_prefix("tool:") {
         return tool == "stop" || (mcp_tools.contains(tool) && operator_tools.contains(tool));
     }
+    if let Some(movement) = id.strip_prefix("time.move:") {
+        return mcp_tools.contains(KERNEL_OPERATOR_TIME_TOOL)
+            && operator_tools.contains(KERNEL_OPERATOR_TIME_TOOL)
+            && kernel_operator_time_cursor_key(movement).is_some();
+    }
     match id {
         "cursor:ref" | "cursor:time" | "cursor:sequence" => bounded_temporal_cursor(id),
         "dimensions.mode:all" | "dimensions.mode:only" | "dimensions.mode:except" => {
@@ -432,7 +448,7 @@ fn contract_supports(
         "inspect.raw:false" => bounded_inspect_raw_false(),
         "mode:write_context_read"
         | "writer.last_tool:none"
-        | "writer.last_tool:kmp_near"
+        | "writer.last_move:near"
         | "writer.last_tool:kmp_inspect"
         | "writer.last_tool:kmp_trace"
         | "writer.candidate_role:previous_subtask_answer"
@@ -453,6 +469,7 @@ fn bounded_temporal_cursor(id: &str) -> bool {
         _ => return false,
     };
     let arguments = serde_json::json!({
+        "move": "near",
         "about": "about:1",
         "around": cursor,
         "dimensions": { "mode": "all", "scope": "current_about" },
@@ -461,7 +478,7 @@ fn bounded_temporal_cursor(id: &str) -> bool {
         "budget": { "depth": 3, "tokens": 2400 },
         "window": { "before_entries": 6, "after_entries": 0 }
     });
-    kernel_operator_is_bounded_tool_call("kmp_near", &arguments)
+    kernel_operator_is_bounded_tool_call(KERNEL_OPERATOR_TIME_TOOL, &arguments)
 }
 
 fn validated_dimension_mode(id: &str) -> bool {
@@ -570,8 +587,10 @@ fn observe_writer_pre_read_state(row: &Value, observed: &mut ObservedCoverage) {
         return;
     };
     match state.get("last_tool").and_then(Value::as_str) {
-        Some("kmp_near") => {
-            observed.capabilities.insert("writer.last_tool:kmp_near");
+        Some(KERNEL_OPERATOR_TIME_TOOL) => {
+            if state.get("last_move").and_then(Value::as_str) == Some("near") {
+                observed.capabilities.insert("writer.last_move:near");
+            }
         }
         Some("kmp_inspect") => {
             observed.capabilities.insert("writer.last_tool:kmp_inspect");
@@ -623,8 +642,16 @@ fn observe_action(action: &Value, observed: &mut ObservedCoverage) {
     let Some(tool) = action.get("tool").and_then(Value::as_str) else {
         return;
     };
-    *observed.target_tools.entry(tool.to_string()).or_default() += 1;
+    let movement = kernel_operator_action_time_move(action);
+    let target_tool = match movement {
+        Some(movement) => format!("{tool}:{movement}"),
+        None => tool.to_string(),
+    };
+    *observed.target_tools.entry(target_tool).or_default() += 1;
     if let Some(capability) = match_tool_capability(tool) {
+        observed.capabilities.insert(capability);
+    }
+    if let Some(capability) = movement.and_then(match_time_move_capability) {
         observed.capabilities.insert(capability);
     }
     let Some(arguments) = action.get("arguments") else {
@@ -632,9 +659,11 @@ fn observe_action(action: &Value, observed: &mut ObservedCoverage) {
     };
     observe_dimensions(arguments, observed);
     match tool {
-        "kmp_near" => observe_cursor(arguments.get("around"), observed),
-        "kmp_goto" => observe_cursor(arguments.get("at"), observed),
-        "kmp_rewind" | "kmp_forward" => observe_cursor(arguments.get("from"), observed),
+        KERNEL_OPERATOR_TIME_TOOL => {
+            if let Some(cursor_key) = movement.and_then(kernel_operator_time_cursor_key) {
+                observe_cursor(arguments.get(cursor_key), observed);
+            }
+        }
         "kmp_trace" => observe_trace_page(arguments, observed),
         "kmp_inspect"
             if arguments.pointer("/include/raw").and_then(Value::as_bool) == Some(false) =>
@@ -651,14 +680,21 @@ fn match_tool_capability(tool: &str) -> Option<&'static str> {
     match tool {
         "kmp_wake" => Some("tool:kmp_wake"),
         "kmp_ask" => Some("tool:kmp_ask"),
-        "kmp_near" => Some("tool:kmp_near"),
-        "kmp_goto" => Some("tool:kmp_goto"),
-        "kmp_rewind" => Some("tool:kmp_rewind"),
-        "kmp_forward" => Some("tool:kmp_forward"),
+        KERNEL_OPERATOR_TIME_TOOL => Some("tool:kmp_time"),
         "kmp_trace" => Some("tool:kmp_trace"),
         "kmp_inspect" => Some("tool:kmp_inspect"),
         "kmp_ingest" => Some("tool:kmp_ingest"),
         "kmp_write_memory" => Some("tool:kmp_write_memory"),
+        _ => None,
+    }
+}
+
+fn match_time_move_capability(movement: &str) -> Option<&'static str> {
+    match movement {
+        "near" => Some("time.move:near"),
+        "goto" => Some("time.move:goto"),
+        "rewind" => Some("time.move:rewind"),
+        "forward" => Some("time.move:forward"),
         _ => None,
     }
 }

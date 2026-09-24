@@ -9,6 +9,7 @@ pub(crate) mod schema;
 mod summaries_audit_surface;
 mod surface_audit;
 pub(crate) mod temporal_entry_field;
+pub(crate) mod time_move;
 pub(crate) mod tools;
 pub(crate) mod validator;
 mod view_absence_audit;
@@ -19,5 +20,9 @@ pub(crate) use handshake::{
     CHRONOLOOM_APP_URI, MCP_APP_MIME, canonical_tool_name, initialize_result_with_apps,
     resource_read_result, resources_list_result,
 };
-pub(crate) use registry::{declared_tool_names, tools_list_result, tools_list_result_with_apps};
+pub(crate) use registry::{
+    advertised_tools_list, declared_tool_names, tools_list_result, tools_list_result_with_apps,
+    without_output_schemas,
+};
+pub(crate) use time_move::{TIME_TOOL, TimeMove};
 pub(crate) use validator::{reject_unknown_arguments, validate_required_arguments};

@@ -17,6 +17,7 @@ mod proof_value;
 mod recall_output;
 mod request_arguments;
 mod response_value;
+mod reused_core;
 mod scalars;
 mod serialized_size;
 mod text_shortening;
@@ -38,9 +39,13 @@ mod action_tests;
 #[cfg(test)]
 mod budget_tests;
 #[cfg(test)]
+mod continuation_tests;
+#[cfg(test)]
 mod core_fit_tests;
 #[cfg(test)]
 mod cursor_tests;
+#[cfg(test)]
+mod lean_sections_tests;
 #[cfg(test)]
 #[path = "recall_pending_tests.rs"]
 mod pending_tests;

@@ -477,7 +477,8 @@ boundary; the point lookup can also return older state in larger histories.
 Then Forward starts strictly after 08:00. A page is a slice, not the interval.
 
 The first Forward page contains D1 and T1. Preserve it and execute
-the returned next_actions call. If the reading allowance ends here, report these refs,
+the returned next_actions call. A continuation is a short `continuation`
+handle: the server holds the complete call, cursor included. If the reading allowance ends here, report these refs,
 the covered boundary, the unchanged clock/labels/limit/budget and the exact
 continuation call shown next. Do not answer as though R1 or later records
 had already been read. A continuation goes in from.ref; do not replace it
@@ -485,9 +486,10 @@ with the last record's timestamp or restart at the original time.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "boundary",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:budget-proof",
     "at": {"time": "2026-09-01T08:00:00Z"},
     "axis": "observed",
@@ -500,10 +502,11 @@ with the last record's timestamp or restart at the original time.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "temporal_first",
   "expect_partial": true,
   "arguments": {
+    "move": "forward",
     "about": "example:guide:budget-proof",
     "from": {"time": "2026-09-01T08:00:00Z"},
     "axis": "observed",
@@ -525,7 +528,7 @@ A repeated cursor without progress is a reason to stop and report the problem.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "temporal_second",
   "arguments": "${temporal_first.next_actions.0.arguments}"
 }
@@ -539,7 +542,8 @@ R1 verified_by T1, T1 uses_background D1, D1 chosen_because C1. Each link's
 reason and evidence still need to support its own claim.
 
 Limit the response to one relation per page. Trace continuation uses
-page.cursor; the temporal next_actions above carries its own complete arguments. Keep both endpoints,
+page.cursor; like the temporal next_actions above, its continuation is a
+handle to the complete call. Keep both endpoints,
 about, depth, byte budget and page size unchanged. Save each returned edge
 and verify that new edges arrive and the opaque cursor advances; a page
 marker is not a new path selection. Trace has no offset field to inspect.
@@ -589,7 +593,8 @@ to false makes the continuation return only object.ref and object_reused=true;
 combine its evidence and links with the original object. The cursor still
 validates the full object and selection, and rejects a changed source.
 
-Inspect returns complete `next_actions`. When 512 bytes cannot fit the next
+Inspect returns `next_actions` to execute unchanged; a continuation is a
+`continuation` handle to the complete call. When 512 bytes cannot fit the next
 whole item, the retry offers at least `page.minimum_progress_bytes`. When the
 complete inspection fits the usual 10,000-byte budget, it offers that complete
 read, avoiding a separate call for every item.
@@ -773,7 +778,8 @@ Register once for this inspection of D1, already written above:
 ```
 
 The returned `next_actions[0].arguments` contains only `continuation` when the
-short form fits. It already retains the context, D1 reference, raw inclusion and
+short form fits (with or without a context, every continuation is one). It
+already retains the context, D1 reference, raw inclusion and
 larger allowance. Execute it directly:
 
 ```json
@@ -812,19 +818,24 @@ requests deliberately begin at 512 bytes, with the same clock, interval and
 component filter. Send the returned `arguments` unchanged to its `tool`.
 If `core_text_shortened` is true, the action omits `page.cursor`: discard that
 partial reconstruction and restart at the proposed allowance to restore the
-full core. Otherwise append only the expansions beyond each section's `core`
-count. Continue until `next_action` is null; `has_more=false` alone only says
+full core. Otherwise keep the first page and append each continuation's
+items: a continuation carries no core (`projection.core_reused`), and
+`page.repeat_core=true` sends it again to a host that lost the first page.
+Continue until `next_action` is null; `has_more=false` alone only says
 that expansion has finished. A fixed budget may leave the result partial.
 A cursor conflict returns `feedback[].action` for a fresh selection; never
 combine the old pages with the restarted selection.
 
-Read `projection.sections` after each call. Its `remaining` values count only
-eligible expansion after that page. Suppose `proof.evidence` reports core=5,
-eligible=24, returned_on_page=0 on the first page: remaining=19. If `proof.path`
-reports core=0, eligible=151, returned_on_page=4, remaining=147. These are
-illustrative counts, not fixed totals for PACK-8. On later pages the counts
-also subtract all earlier expansion, so do not subtract just the current page
-yourself. A shortened core still requires a restart even when some expansion
+Read `projection.sections` after each call. A zero counter is omitted, and so
+is a section with nothing to report. Its `remaining` values count only
+eligible expansion after that page. Suppose `proof.evidence` reports core=5
+and remaining=19 on the first page: 24 are eligible, none arrived beyond the
+core. If `proof.path` reports returned_on_page=4, remaining=147 and
+excluded_by_detail=20, 151 are eligible and a richer detail would add 20.
+These are illustrative counts, not fixed totals for PACK-8. `core` and
+`excluded_by_detail` appear once, on the page that carries the core. On later
+pages `remaining` already subtracts all earlier expansion, so do not subtract
+just the current page yourself. A shortened core still requires a restart even when some expansion
 has arrived. Zero remaining does not establish export completion or remove a
 detail/selection cap. In temporal or inspect results the corresponding counts
 are under `page.sections`; one remaining raw reference does not mean one

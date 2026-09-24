@@ -253,12 +253,13 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         (
-            "kmp_goto",
+            "kmp_time:goto",
             // `limit` forces a partial page, so the continuation guidance is
             // a real string rather than the null every unbounded read pins.
             // Each direction words it differently, so each needs its own call.
             json!({
                 "about": ABOUT,
+                "move": "goto",
                 "at": {"time": "2026-04-12T15:05:00Z"},
                 "axis": "occurred",
                 "limit": {"entries": 1},
@@ -273,9 +274,10 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         (
-            "kmp_near",
+            "kmp_time:near",
             json!({
                 "about": ABOUT,
+                "move": "near",
                 "around": {"time": "2026-04-12T15:00:00Z"},
                 "axis": "occurred",
                 "window": {"before_entries": 2, "after_entries": 2},
@@ -294,24 +296,26 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         (
-            "kmp_rewind",
+            "kmp_time:rewind",
             json!({
                 "about": ABOUT,
+                "move": "rewind",
                 "from": {"time": "2026-04-12T16:00:00Z"},
                 "axis": "occurred",
                 "limit": {"entries": 1}
             }),
         ),
         (
-            "kmp_forward",
+            "kmp_time:forward",
             json!({
                 "about": ABOUT,
+                "move": "forward",
                 "from": {"time": "2026-04-12T15:00:00Z"},
                 "axis": "occurred",
                 "limit": {"entries": 1},
                 // `except` is the one selection mode no other call reaches.
                 // `except` is the one selection mode no other call reaches.
-                // `scope_ids` deliberately lives on kmp_near instead: a filter
+                // `scope_ids` deliberately lives on the near move instead: a filter
                 // narrow enough to fill it here would leave one entry, cancel
                 // the partial page and take the continuation guidance with it.
                 "dimensions": {"mode": "except", "exclude": ["task"]}
@@ -322,9 +326,10 @@ fn calls() -> Vec<(&'static str, Value)> {
         // assertion anywhere. The ingest above writes a valid_until; reading
         // the validity clock is what surfaces it.
         (
-            "kmp_rewind:validity",
+            "kmp_time:rewind:validity",
             json!({
                 "about": ABOUT,
+                "move": "rewind",
                 "from": {"ref": CURRENT},
                 "axis": "validity",
                 // `scope_ids` is the one selection key no other call fills.
@@ -508,6 +513,12 @@ fn redact_cursor_digest(text: &str) -> Option<String> {
         .then(|| format!("{head}:{REDACTED}"))
 }
 
+fn is_handle(text: &str) -> bool {
+    text.strip_prefix("read_").is_some_and(|suffix| {
+        suffix.len() == 32 && suffix.bytes().all(|byte| byte.is_ascii_hexdigit())
+    })
+}
+
 fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
@@ -526,12 +537,15 @@ fn redact(value: &mut Value) {
                 .and_then(|page| page.get("minimum_progress_bytes"))
                 .is_some_and(Value::is_number)
                 && let Some(action) = fields.get_mut("next_action")
-                && action.is_object()
+                && action.pointer("/arguments/budget").is_some()
             {
                 action["arguments"]["budget"]["max_bytes"] = json!(REDACTED);
             }
             for (key, child) in fields.iter_mut() {
                 if VOLATILE_KEYS.contains(&key.as_str()) && !child.is_object() {
+                    *child = json!(REDACTED);
+                } else if key == "continuation" && child.as_str().is_some_and(is_handle) {
+                    // A returned call handle is 128 random bits (#544 C3).
                     *child = json!(REDACTED);
                 } else if let Some(text) = child.as_str()
                     && let Some(masked) = redact_cursor_digest(text)
@@ -705,6 +719,61 @@ fn the_advertised_tool_definitions_match_their_reviewed_fixture() {
         &kmp_mcp::kmp_mcp_tools_list_result_with_apps(true),
         "the advertised tool definitions with MCP Apps negotiated",
     );
+
+    // The opt-in catalogue (`KMP_MCP_OUTPUT_SCHEMAS=1`) carries the output
+    // schemas the default one omits. Pinned so the `structuredContent`
+    // contract stays reviewed even though it is no longer advertised.
+    pin(
+        &contract.join("tools_list_with_output_schemas.json"),
+        &kmp_mcp::kmp_mcp_tools_list_result_with_output_schemas(false),
+        "the tool definitions with output schemas",
+    );
+}
+
+/// The default catalogue omits every `outputSchema` and nothing else: the
+/// opt-in one, stripped of them, is the default byte for byte, on both the
+/// plain and the MCP Apps surface. Tools that declared a schema keep it there.
+#[tokio::test]
+async fn output_schemas_are_advertised_only_on_opt_in() {
+    for apps in [false, true] {
+        let lean = kmp_mcp::kmp_mcp_tools_list_result_with_apps(apps);
+        let full = kmp_mcp::kmp_mcp_tools_list_result_with_output_schemas(apps);
+        let lean_tools = lean["tools"].as_array().expect("tools");
+        for tool in lean_tools {
+            assert!(tool.get("outputSchema").is_none(), "{}", tool["name"]);
+        }
+        let mut stripped = full.clone();
+        for tool in stripped["tools"].as_array_mut().expect("tools") {
+            tool.as_object_mut().expect("tool").remove("outputSchema");
+        }
+        assert_eq!(stripped, lean, "apps={apps}");
+        let declared = full["tools"]
+            .as_array()
+            .expect("tools")
+            .iter()
+            .filter(|tool| tool.get("outputSchema").is_some())
+            .count();
+        assert!(declared >= 15, "apps={apps}: {declared} output schemas");
+    }
+
+    // The served catalogue follows the server's choice, not the library's.
+    for (enabled, expected) in [
+        (false, kmp_mcp::kmp_mcp_tools_list_result()),
+        (
+            true,
+            kmp_mcp::kmp_mcp_tools_list_result_with_output_schemas(false),
+        ),
+    ] {
+        let server = KernelMcpServer::fixture().with_output_schemas(enabled);
+        let raw = server
+            .handle_json_line(
+                &json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}).to_string(),
+            )
+            .await
+            .expect("tools/list answers");
+        let served: Value = serde_json::from_str(&raw).expect("JSON-RPC");
+        assert_eq!(served["result"], expected, "output_schemas={enabled}");
+    }
 }
 
 #[tokio::test]
@@ -845,7 +914,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 22, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 19, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         // `kmp_condense` is the one tool whose successful call cannot be

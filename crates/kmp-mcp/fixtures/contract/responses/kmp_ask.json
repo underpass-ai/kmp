@@ -34,51 +34,34 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9204
+        "used_bytes": 9169
       },
-      "contract": "kmp.recall.projection.v1",
+      "contract": "kmp.recall.projection.v3",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 7,
       "next_action": {
         "arguments": {
-          "about": "question:parity",
-          "answer_policy": "evidence_or_unknown",
-          "budget": {
-            "depth": 2,
-            "detail": "balanced",
-            "max_bytes": 10000,
-            "tokens": 2400
-          },
-          "page": {
-            "cursor": "kmp1:2:<stamped at call time>"
-          },
-          "question": "Where is Rachel moving?"
+          "continuation": "<stamped at call time>"
         },
         "tool": "kmp_ask"
       },
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:2:<stamped at call time>",
+        "next_cursor": "kmp1:4:<stamped at call time>",
         "offset": 0,
-        "returned": 2,
+        "returned": 4,
         "total": 9
       },
       "sections": {
         "proof.evidence": {
-          "core": 5,
-          "eligible": 5,
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 5
+          "core": 5
         },
         "proof.path": {
-          "core": 0,
-          "eligible": 9,
-          "remaining": 7,
-          "returned_on_page": 2,
-          "total": 16
+          "excluded_by_detail": 7,
+          "remaining": 5,
+          "returned_on_page": 4
         }
       },
       "selection_omitted": 0
@@ -198,15 +181,12 @@
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:current",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
-            "entry:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
-            "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2"
           ],
-          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
-          "rel": "updates_state",
+          "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+          "rel": "semantic_delta_from",
           "sequence": 1,
-          "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+          "to": "question:parity:claim:denver",
           "why": "The later statement corrects the earlier one."
         },
         {
@@ -218,14 +198,40 @@
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
-            "entry:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2"
           ],
-          "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
-          "rel": "semantic_delta_from",
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+          "rel": "updates_state",
+          "sequence": 1,
+          "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+          "why": "The later statement corrects the earlier one."
+        },
+        {
+          "class": "evidential",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
+          "confidence": "high",
+          "evidence": "She named Boulder after naming Denver.",
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+          "rel": "supersedes",
           "sequence": 1,
           "to": "question:parity:claim:denver",
-          "why": "The later statement corrects the earlier one."
+          "why": "The corrected city replaces the first one while the first stays readable as history."
+        },
+        {
+          "class": "evidential",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
+          "confidence": "unknown",
+          "evidence": "She named Boulder after naming Denver.",
+          "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
+          "rel": "supports",
+          "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+          "why": "Evidence supports this memory entry."
         }
       ],
       "superseded": [
@@ -237,19 +243,6 @@
       ]
     },
     "summary": "Retrieved 5 memory items for: Where is Rachel moving?",
-    "truncation": {
-      "byte_limit": 10000,
-      "omitted": {
-        "core_text_shortened": false,
-        "excluded_by_detail": 7,
-        "page_items": 7,
-        "prior_page_items": 0,
-        "remaining_page_items": 7,
-        "selection_items": 0
-      },
-      "token_limit": 2400,
-      "truncated": true
-    },
     "warnings": [
       "recall expansion pending; see projection.sections.*.remaining and execute projection.next_action"
     ]

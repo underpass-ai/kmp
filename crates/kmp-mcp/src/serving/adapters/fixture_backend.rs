@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::contract::validate_required_arguments;
+use crate::contract::{TIME_TOOL, TimeMove, validate_required_arguments};
 use crate::projection::try_enforce_recall_output_budget;
 use crate::serving::ToolError;
 use crate::serving::adapters::tool_request_mapping::VisualProjectionRequestMapper;
@@ -68,10 +68,15 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
             ASK_RESPONSE_FIXTURE,
             2400,
         ),
-        "kmp_goto" => read_fixture_tool_result(arguments, &["about"], GOTO_RESPONSE_FIXTURE),
-        "kmp_near" => read_fixture_tool_result(arguments, &["about"], NEAR_RESPONSE_FIXTURE),
-        "kmp_rewind" => read_fixture_tool_result(arguments, &["about"], REWIND_RESPONSE_FIXTURE),
-        "kmp_forward" => read_fixture_tool_result(arguments, &["about"], FORWARD_RESPONSE_FIXTURE),
+        TIME_TOOL => {
+            let fixture = match TimeMove::from_arguments(arguments)? {
+                TimeMove::Goto => GOTO_RESPONSE_FIXTURE,
+                TimeMove::Near => NEAR_RESPONSE_FIXTURE,
+                TimeMove::Rewind => REWIND_RESPONSE_FIXTURE,
+                TimeMove::Forward => FORWARD_RESPONSE_FIXTURE,
+            };
+            read_fixture_tool_result(arguments, &["about"], fixture)
+        }
         "kmp_relate" => read_fixture_tool_result(arguments, &["about"], RELATE_RESPONSE_FIXTURE),
         "kmp_trace" => read_fixture_tool_result(arguments, &["from", "to"], TRACE_RESPONSE_FIXTURE),
         "kmp_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),

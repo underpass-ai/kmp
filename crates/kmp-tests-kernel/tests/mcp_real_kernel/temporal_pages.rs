@@ -3,7 +3,7 @@ use axum::Router;
 use kmp_mcp::{GrpcKernelMcpBackend, KernelMcpServer, KernelMcpToolBackend};
 use serde_json::json;
 
-use super::{assert_error_code_parity, call_http_tool, call_tool};
+use super::{assert_error_code_parity, call_http_tool, call_tool, comparable};
 
 pub(super) async fn check(
     direct: &GrpcKernelMcpBackend,
@@ -11,12 +11,12 @@ pub(super) async fn check(
     http: &Router,
     embedded: &KernelMcpServer,
 ) {
-    let mut arguments = json!({"about":"project:parity-live",
+    let mut arguments = json!({"move":"forward","about":"project:parity-live",
         "from":{"time":"2026-08-24T00:00:00Z"},"axis":"occurred",
         "include":{"evidence":true,"relations":true,"raw_refs":true},
         "limit":{"entries":10},"budget":{"max_bytes":50000}});
     let full = direct
-        .call_tool("kmp_forward", &arguments)
+        .call_tool("kmp_time", &arguments)
         .await
         .expect("full temporal packet");
     let full = &full["structuredContent"];
@@ -37,15 +37,15 @@ pub(super) async fn check(
     let mut first_continuation = None;
     loop {
         let expected = direct
-            .call_tool("kmp_forward", &arguments)
+            .call_tool("kmp_time", &arguments)
             .await
             .expect("temporal page");
-        let native = call_tool(stdio, 100 + offset, "kmp_forward", arguments.clone()).await;
-        let http_page = call_http_tool(http, 100 + offset, "kmp_forward", arguments.clone()).await;
-        let local = call_tool(embedded, 100 + offset, "kmp_forward", arguments.clone()).await;
-        assert_eq!(native["result"], expected);
-        assert_eq!(http_page["result"], expected);
-        assert_eq!(local["result"], expected);
+        let native = call_tool(stdio, 100 + offset, "kmp_time", arguments.clone()).await;
+        let http_page = call_http_tool(http, 100 + offset, "kmp_time", arguments.clone()).await;
+        let local = call_tool(embedded, 100 + offset, "kmp_time", arguments.clone()).await;
+        assert_eq!(comparable(&native["result"]), comparable(&expected));
+        assert_eq!(comparable(&http_page["result"]), comparable(&expected));
+        assert_eq!(comparable(&local["result"]), comparable(&expected));
         let content = &expected["structuredContent"];
         assert!(content.to_string().len() <= 50000);
         assert_eq!(content["page"]["offset"], offset);
@@ -74,7 +74,8 @@ pub(super) async fn check(
         }
         assert!(offset < 500, "must advance");
         let action = &content["next_actions"][0];
-        assert_eq!(action["tool"], "kmp_forward");
+        assert_eq!(action["tool"], "kmp_time");
+        assert_eq!(action["arguments"]["move"], "forward");
         arguments = action["arguments"].clone();
         first_continuation.get_or_insert_with(|| arguments.clone());
     }
@@ -88,13 +89,7 @@ pub(super) async fn check(
     let mut changed = first_continuation.expect("fixture spans pages");
     changed["include"]["raw_refs"] = json!(false);
     assert_error_code_parity(
-        direct,
-        stdio,
-        http,
-        embedded,
-        "kmp_forward",
-        changed,
-        "conflict",
+        direct, stdio, http, embedded, "kmp_time", changed, "conflict",
     )
     .await;
 }

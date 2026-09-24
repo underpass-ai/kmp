@@ -35,8 +35,10 @@ write-memory -> ingest -> wake -> ask -> goto/near/rewind/forward -> trace -> in
 Transport bindings:
 
 - MCP tools expose `kmp_ingest`, `kmp_write_memory`, `kmp_wake`,
-  `kmp_ask`, `kmp_goto`, `kmp_near`, `kmp_rewind`,
-  `kmp_forward`, `kmp_relate`, `kmp_trace`, `kmp_inspect`, and `kmp_relabel`.
+  `kmp_ask`, `kmp_time`, `kmp_relate`, `kmp_trace`, `kmp_inspect`, and
+  `kmp_relabel`. `kmp_time` makes the four temporal moves: its `move`
+  argument (`goto`, `near`, `rewind`, `forward`) selects the kernel's
+  Goto, Near, Rewind or Forward request shown in these examples.
 - `kmp_relabel` changes the labels one existing entry stands in — labels
   added, labels taken off, and why — without rewriting its text. It binds to
   `KernelMemoryService.Relabel`; the kernel reads the entry's coordinates and

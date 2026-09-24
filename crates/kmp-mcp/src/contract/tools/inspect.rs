@@ -82,15 +82,14 @@ fn inspect_output_schema() -> Value {
             "total": described("integer", "Total evidence, outgoing-link, incoming-link and raw expansion items in the selection."),
             "has_more": described("boolean", "Whether expansion items remain after this page."),
             "next_cursor": nullable_described("string", "Opaque inspect cursor. Repeat the same bound arguments with this value in page.cursor."),
-            "omitted": described("object", "Counts still remaining after this page, by details, evidence, outgoing, incoming and raw section."),
-            "sections": described("object", "Per-section returned-on-page, remaining and total counts."),
+            "sections": described("object", "Per-section returned_on_page and remaining; a zero counter and a section with none are omitted. A section's total is its earlier pages plus both."),
             "required_bytes": described("integer", "Exact serialized bytes required by the complete inspection including its full object, even when this continuation reuses that object."),
             "minimum_progress_bytes": described("integer", "Present only when this page cannot return an expansion item. The next action offers at least this allowance, preferring the complete inspection up to the usual 10,000-byte budget. required_bytes still measures the complete inspection."),
             "guidance": nullable_described("string", "Continuation, narrowing and budget guidance when this response is partial; null for a complete first page.")
         })),
-        "next_actions": {"type":"array","description":"Complete calls for the same inspection, including an increased byte allowance when no whole item fits. Execute in order and retain earlier pages; empty when complete.","items":output_object(json!({
+        "next_actions": {"type":"array","description":"Calls that continue the same inspection, including an increased byte allowance when no whole item fits. Execute unchanged, in order, and retain earlier pages; empty when complete.","items":output_object(json!({
             "tool": {"type":"string","const":"kmp_inspect"},
-            "arguments": described("object", "The complete call, preserving about, ref, include and object reuse.")
+            "arguments": described("object", "{continuation}, a handle the server resolves to the complete call preserving about, ref, include and object reuse; or that complete call.")
         }))},
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
         "warnings": warnings_output_schema()

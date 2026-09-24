@@ -61,8 +61,8 @@ async fn explicit_contains_entry_preserves_clocks_and_rejects_unresolved_members
     for (key, value) in [("alias", "alias:neb"), ("component", "component:neb")] {
         let selected = call(
             &server,
-            "kmp_goto",
-            json!({"about": ABOUT, "at": {"time": AT},
+            "kmp_time",
+            json!({"move": "goto", "about": ABOUT, "at": {"time": AT},
             "dimensions": {"selectors": [{"key": key, "op": "in", "values": [value]}]}}),
         )
         .await;

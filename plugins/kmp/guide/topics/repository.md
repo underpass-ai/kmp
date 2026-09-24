@@ -34,8 +34,8 @@ Use named snapshots when a release or risky change needs a recovery point:
 ```bash
 kmp-mcp snapshot create pre-release
 kmp-mcp snapshot verify pre-release
-kmp-mcp snapshot read pre-release kmp_goto \
-  '{"about":"project:kmp","at":{"sequence":12}}'
+kmp-mcp snapshot read pre-release kmp_time \
+  '{"about":"project:kmp","move":"goto","at":{"sequence":12}}'
 ```
 
 The read happens in an isolated temporary store and cannot call either writer.

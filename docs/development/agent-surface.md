@@ -155,7 +155,7 @@ completa desde sus páginas contra una lectura sin paginar. En Inspect,
 `page.repeat_object=false` sólo sirve con un cursor y el objeto inicial
 conservado; `object_reused=true` y `object.ref` identifican lo reutilizado.
 Texto, metadatos, fuente y pruebas siguen vinculados al cursor, aunque no se
-repitan. Inspect devuelve la llamada completa en `next_actions`; si no cabe un
+repitan. Inspect devuelve en `next_actions` un handle a la llamada completa; si no cabe un
 elemento, su presupuesto ofrece al menos `page.minimum_progress_bytes`; prefiere
 la inspección completa cuando cabe en los 10.000 bytes habituales, para evitar
 reintentos de un elemento por llamada. Conservar el
@@ -166,6 +166,17 @@ que recupera el objeto nuevo aunque las páginas anteriores lo reutilizasen. Ver
 recorrido, incluida la primera página; omitir un cuerpo repetido no autoriza
 resumir ni eliminar evidencia.
 
+Wake y Ask envían su núcleo estable una sola vez: una continuación
+(`page.cursor` más allá de la primera página) devuelve sólo los elementos de
+expansión nuevos, marca `projection.core_reused=true` y no repite resumen,
+respuesta, `scope`, prueba fijada ni avisos del núcleo. `page.repeat_core=true`
+lo devuelve otra vez al host que perdió la primera página; la acción que
+propone esa respuesta vuelve a la continuación incremental. `projection` es el
+único bloque de progreso (el antiguo `truncation` repetía sus contadores).
+Probar que la primera página más todas las continuaciones reproduce la lectura
+completa con presupuesto grande, y que el cursor sigue rechazando otra
+selección con y sin `repeat_core`.
+
 Al cambiar etiquetas temporales, probar una entrada antigua con una pertenencia
 posterior: ésta no puede satisfacer un selector ni aparecer en las coordenadas
 del Goto anterior. Mantener etiquetas múltiples y filtros de otras dimensiones
@@ -175,7 +186,8 @@ respetan su corte superior. Esta comprobación es conductual, no editorial.
 
 En los verbos temporales, `page` cuenta elementos de entradas y prueba del mismo
 paquete; `selection` identifica la selección limitada del núcleo. Ejecutar
-`next_actions` con sus argumentos completos: primero reconstruir ese paquete y
+`next_actions` sin cambios: la continuación de página es un handle a la llamada
+completa y la navegación repite su llamada; primero reconstruir ese paquete y
 después navegar la historia que quede fuera. No convertir `page.next_cursor` en
 una referencia de memoria. Una prueba de continuación debe conservar los filtros,
 el reloj y la prueba, y comprobar que el cursor rechaza cambios del contenido.
@@ -279,6 +291,36 @@ adaptador de compatibilidad. Los errores tipados transportan `restart` y el
 MCP lo expone como `feedback[].action`. Mantener ambas copias del proto y
 comprobar ejecución equivalente en los transportes.
 
+### Acciones de continuación mínimas (#544 C3)
+
+Una página no repite la petición. El proyector (gRPC, `next_call`) sigue
+emitiendo la llamada completa; el servidor MCP la guarda y devuelve
+`{"continuation":"read_<32 hex>"}`. Sólo se acortan continuaciones: una acción
+con `page.cursor` (Wake, Ask, Trace, Relate, Inspect, verbos temporales) o una
+escritura que reanuda su revisión (`review_token`). Un reinicio sin cursor
+(`core_text_shortened`, `feedback[].action`) y la navegación temporal repiten su
+llamada porque el agente tiene que leerlas para elegir.
+
+| Pieza | Dónde |
+| --- | --- |
+| Acortar y resolver | `serving/read_continuations.rs` (`shorten_read_actions`, `resolve_read_arguments`) |
+| Almacén sin contexto | tabla `open_continuations` en `agent-users.sqlite3` junto al store (`sqlite_read_continuations.rs`); en memoria si el servidor no tiene ruta |
+| Almacén con `context_id` | `read_continuations`, como antes |
+| Esquema de entrada | `contract/registry.rs`: con `continuation` sólo se admite, en Wake/Ask, `page.repeat_core` |
+
+El handle son 128 bits aleatorios: nombra una llamada, no concede nada. HTTP
+resuelve antes de autorizar y autoriza la llamada resuelta. La llamada guardada
+conserva su cursor, así que un cambio de selección sigue rechazándose con
+`conflict` y un reinicio completo en `feedback[].action`. Otros argumentos junto
+al handle se rechazan con `invalid_argument`; para cambiar el tamaño de página o
+el presupuesto se envían los argumentos originales con `page.cursor` (el camino
+sin estado sigue vigente). Retención: 24 h, 256 llamadas por directorio, 32 KiB
+por llamada. Un handle caducado o de otro store devuelve
+`CONTINUATION_UNAVAILABLE`. Los fixtures de `tool_surface_parity` redactan el
+handle; la paridad con kernel real (`kmp-tests-kernel`) compara con los
+argumentos de continuación enmascarados, porque el backend directo no tiene
+estado de servidor.
+
 Una acción sin cursor tras `core_text_shortened` restaura el núcleo con una
 lectura nueva: descartar la reconstrucción parcial anterior. Las continuaciones
 ordinarias añaden sólo expansiones. Probar el recorrido completo contra una
@@ -293,8 +335,27 @@ LLM ni facturación del host. Estas instrucciones son documentación informativa
 
 `projection.sections.*.remaining` cuenta la cola elegible después de la página,
 sin núcleo repetido ni expansiones de páginas anteriores. Calcularlo sobre esa
-cola, no como `eligible - core - returned_on_page`, que vuelve a contar lo ya
-leído. Serializarlo también en `RecallProjectionSection` y en ambos sentidos del
+cola, no restando lo devuelto de un total, que vuelve a contar lo ya leído.
+
+Contadores de sección (`kmp.recall.projection.v3`, #544 C3). Un contador a cero
+se omite y una sección sin ninguno también. Cada causa de omisión sigue
+distinguible:
+
+| Contador | Página | Qué dice | Antes |
+| --- | --- | --- | --- |
+| `core` | la que lleva el núcleo | elementos del núcleo en la sección | igual |
+| `excluded_by_detail` | la que lleva el núcleo | excluidos por `budget.detail` en la sección | `total - eligible` |
+| `returned_on_page` | todas | expansión nueva en esta página | igual |
+| `remaining` | todas | expansión elegible pendiente | igual |
+| `eligible` | — | `core` + todos los `returned_on_page` + el último `remaining` | retirado |
+| `total` | — | `eligible + excluded_by_detail` | retirado |
+
+`page.offset` (páginas anteriores), `selection_omitted` (tope de entradas) y
+`core_text_shortened` siguen en `projection`. Proto: `RecallProjectionSection`
+reserva 4/5 (`eligible`, `total`) y añade `excluded_by_detail = 7`. Temporal e
+Inspect aplican la misma regla a `page.sections` (`returned_on_page`,
+`remaining`; sin `total`), e Inspect retira `page.omitted`, que repetía
+`remaining`. Serializarlo también en `RecallProjectionSection` y en ambos sentidos del
 mapping; los metadatos forman parte del presupuesto antes de seleccionar texto.
 Validar primera, intermedias y última página, núcleo acortado y exclusiones por
 detalle/capacidad. Cero no expresa suficiencia semántica. El reinicio del núcleo
@@ -675,6 +736,20 @@ Medir el recorrido completo y la entrada extra del schema/guía, no sólo el aho
 de la petición siguiente. La llamada sin contexto sigue siendo explícita.
 El ejemplo `budget-proof` ejecuta ambos caminos. Son recomendaciones de
 mantenimiento y pruebas de comportamiento; no nuevos gates editoriales.
+
+### Output schemas bajo demanda
+
+`tools/list` no anuncia `outputSchema` por defecto; MCP lo hace opcional y
+`structuredContent` se sigue devolviendo. Los schemas siguen en código
+(`contract/`) como contrato de las respuestas y los tests validan contra
+`tools_list_result()` o `kmp_mcp_tools_list_result_with_output_schemas`, nunca
+contra el catálogo por defecto. `KMP_MCP_OUTPUT_SCHEMAS=1` los anuncia para un
+host que valide la salida; sin definir equivale a `0` y cualquier otro valor
+detiene el arranque. `serving/output_schema_projection.rs` los quita al final, después
+de cualquier proyección que los amplíe; una proyección que parchee
+`outputSchema` debe comprobar antes que existe. `fixtures/contract/tools_list_with_output_schemas.json`
+fija el catálogo con schemas; `tools_list.json` y `tools_list_with_apps.json`
+fijan el anunciado.
 
 ### Proyección opcional de pasajes compartidos
 

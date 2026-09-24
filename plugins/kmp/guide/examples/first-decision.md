@@ -136,7 +136,7 @@ Ask should cite D1. Trace should contain D1→C1 with the exact reason and evide
 ChronoLoom should show constraint C1, decision D1 and their motivational relation. Select D1, then follow its outgoing chosen_because link to C1. A view move does not write another memory. The negative limit is explicit: these sources do not establish that an offline test passed.
 
 ```json
-{"tool":"kmp_forward","save_as":"records","arguments":{"about":"example:guide:first-decision","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"records","arguments":{"move":"forward","about":"example:guide:first-decision","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
 ```
 
 ```json

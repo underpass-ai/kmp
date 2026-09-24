@@ -4,6 +4,7 @@
 Usage: python3 scripts/performance/temporal_body_selection.py BASELINE CANDIDATE OUT SCRATCH
 Build both binaries with the same Cargo profile. OUT holds evidence; SCRATCH
 holds disposable stores. Each case is seeded once and copied after closing it.
+Temporal cases call `kmp_time` (#544 C2); pair two binaries from after that change.
 """
 import copy
 import hashlib
@@ -131,31 +132,31 @@ def queries(refs):
             "include": {"evidence": True, "relations": True, "raw_refs": True}}
     cases = []
     for axis in ["default", "occurred", "observed", "ingested", "validity"]:
-        for tool, key in [("kmp_goto", "at"), ("kmp_forward", "from"), ("kmp_rewind", "from"), ("kmp_near", "around")]:
-            q = {**copy.deepcopy(base), "axis": axis, key: {"time": "2026-09-10T10:00:06Z"}}
+        for move, key in [("goto", "at"), ("forward", "from"), ("rewind", "from"), ("near", "around")]:
+            q = {**copy.deepcopy(base), "move": move, "axis": axis, key: {"time": "2026-09-10T10:00:06Z"}}
             if axis == "default":
                 q.pop("axis")
-            if tool == "kmp_near":
+            if move == "near":
                 q.pop("limit")
                 q["window"] = {"before_entries": 2, "after_entries": 2}
-            cases.append((tool, q))
+            cases.append(("kmp_time", q))
     for deps in [False, True]:
-        q = {**copy.deepcopy(base), "at": {"time": "2026-09-10T10:00:06Z"}}
+        q = {**copy.deepcopy(base), "move": "goto", "at": {"time": "2026-09-10T10:00:06Z"}}
         q["include"]["dependencies"] = deps
-        cases.append(("kmp_goto", q))
+        cases.append(("kmp_time", q))
     for includes in [{"evidence": False, "relations": True}, {"evidence": False, "raw_refs": True}]:
-        cases.append(("kmp_forward", {**copy.deepcopy(base), "from": {"ref": refs[1]}, "include": includes}))
-    cases.append(("kmp_forward", {**copy.deepcopy(base), "interval": {
+        cases.append(("kmp_time", {**copy.deepcopy(base), "move": "forward", "from": {"ref": refs[1]}, "include": includes}))
+    cases.append(("kmp_time", {**copy.deepcopy(base), "move": "forward", "interval": {
         "start": "2026-09-10T10:00:01Z", "end": "2026-09-10T10:00:06Z"}}))
-    q = {**copy.deepcopy(base), "at": {"time": "2026-09-10T10:00:06Z"},
+    q = {**copy.deepcopy(base), "move": "goto", "at": {"time": "2026-09-10T10:00:06Z"},
          "dimensions": {"selectors": [{"key": "topic", "op": "in", "values": ["shared"]}]}}
-    cases.append(("kmp_goto", q))
+    cases.append(("kmp_time", q))
     # A lane restriction must retain the other lane needed by a whole-entry selector.
     for op in ["in", "notin"]:
-        q = {**copy.deepcopy(base), "at": {"time": "2026-09-10T10:00:06Z"},
+        q = {**copy.deepcopy(base), "move": "goto", "at": {"time": "2026-09-10T10:00:06Z"},
              "dimensions": {"mode": "only", "include": ["task"], "scope_ids": ["proof"],
                  "selectors": [{"key": "topic", "op": op, "values": ["shared"]}]}}
-        cases.append(("kmp_goto", q))
+        cases.append(("kmp_time", q))
     return cases
 
 

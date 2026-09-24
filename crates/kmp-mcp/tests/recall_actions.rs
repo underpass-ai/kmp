@@ -1,4 +1,6 @@
 //! Execute returned calls against real memory, with no reconstructed arguments.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use std::collections::BTreeMap;
@@ -102,9 +104,17 @@ async fn returned_calls_preserve_time_language_and_labels_and_reconstruct_proof(
                 for _ in 0..100 {
                     let page = call(&server, tool, args).await;
                     assert_eq!(page["projection"]["core_text_shortened"], false);
-                    assert_eq!(page["proof"]["axis"], full["proof"]["axis"]);
-                    assert_eq!(page["proof"]["interval"], full["proof"]["interval"]);
-                    assert_eq!(page["proof"]["as_of"], full["proof"]["as_of"]);
+                    // The clocks are core: page 1 carries them, and an
+                    // incremental continuation carries only new items.
+                    let core_reused = page["projection"]["core_reused"] == true;
+                    assert_eq!(core_reused, !sections.is_empty());
+                    if core_reused {
+                        assert!(page["proof"].get("axis").is_none(), "{page}");
+                    } else {
+                        assert_eq!(page["proof"]["axis"], full["proof"]["axis"]);
+                        assert_eq!(page["proof"]["interval"], full["proof"]["interval"]);
+                        assert_eq!(page["proof"]["as_of"], full["proof"]["as_of"]);
+                    }
                     let bytes = serde_json::to_vec(&page).expect("page JSON").len();
                     assert_eq!(page["projection"]["budget"]["used_bytes"], bytes);
                     assert!(bytes <= 8000);
@@ -115,18 +125,19 @@ async fn returned_calls_preserve_time_language_and_labels_and_reconstruct_proof(
                         let path = format!("/{}", name.replace('.', "/"));
                         let values = page
                             .pointer(&path)
-                            .expect("section")
-                            .as_array()
-                            .expect("array");
-                        let skip = if sections.contains_key(name) {
-                            counts["core"].as_u64().expect("core") as usize
-                        } else {
-                            0
-                        };
-                        sections
-                            .entry(name.clone())
-                            .or_default()
-                            .extend(values.iter().skip(skip).cloned());
+                            .and_then(Value::as_array)
+                            .cloned()
+                            .unwrap_or_default();
+                        assert_eq!(
+                            values.len() as u64,
+                            counts["returned_on_page"].as_u64().unwrap_or(0)
+                                + if core_reused {
+                                    0
+                                } else {
+                                    counts["core"].as_u64().unwrap_or(0)
+                                }
+                        );
+                        sections.entry(name.clone()).or_default().extend(values);
                     }
                     if page["projection"]["page"]["has_more"] == false {
                         assert!(page["projection"]["next_action"].is_null());
@@ -135,7 +146,9 @@ async fn returned_calls_preserve_time_language_and_labels_and_reconstruct_proof(
                     }
                     let action = &page["projection"]["next_action"];
                     assert_eq!(action["tool"], tool);
+                    // Execute the handle; check the call it stands for.
                     args = action["arguments"].clone();
+                    let bound = bound_action::bound_arguments(&server, action);
                     for key in [
                         "about",
                         "question",
@@ -148,13 +161,13 @@ async fn returned_calls_preserve_time_language_and_labels_and_reconstruct_proof(
                         "interval",
                         "dimensions",
                     ] {
-                        assert_eq!(args[key], initial[key], "preserve {key}");
+                        assert_eq!(bound[key], initial[key], "preserve {key}");
                     }
                     assert!(
-                        args["budget"].get("max_entries").is_none(),
+                        bound["budget"].get("max_entries").is_none(),
                         "unlimited is omitted, not invalid zero"
                     );
-                    assert_eq!(args["page"]["entries"], 1);
+                    assert_eq!(bound["page"]["entries"], 1);
                 }
                 assert!(complete, "finite proof must finish");
                 for (name, values) in sections {
@@ -186,7 +199,7 @@ async fn stalled_recall_actions_negotiate_progress_without_guessing() {
         assert_eq!(page["projection"]["page"]["returned"], 0);
         let action = &page["projection"]["next_action"];
         assert!(
-            action["arguments"]["budget"]["max_bytes"]
+            bound_action::bound_arguments(&server, action)["budget"]["max_bytes"]
                 .as_u64()
                 .expect("budget")
                 >= page["projection"]["page"]["minimum_progress_bytes"]
@@ -216,7 +229,8 @@ async fn selection_changes_and_malformed_cursors_return_executable_restarts() {
             json!({"interval":{"start":"2026-09-01T07:00:00Z"}}),
         );
         let page = call(&server, tool, initial.clone()).await;
-        let mut changed = page["projection"]["next_action"]["arguments"].clone();
+        let mut changed =
+            bound_action::bound_arguments(&server, &page["projection"]["next_action"]);
         changed["axis"] = json!("occurred");
         let error = request(&server, tool, changed.clone()).await;
         assert_eq!(error["isError"], true);

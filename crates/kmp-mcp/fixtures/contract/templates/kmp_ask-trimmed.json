@@ -48,18 +48,12 @@
       },
       "sections": {
         "proof.evidence": {
-          "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "core": "integer"
         },
         "proof.path": {
-          "core": "integer",
-          "eligible": "integer",
+          "excluded_by_detail": "integer",
           "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         }
       },
       "selection_omitted": "integer"
@@ -131,19 +125,6 @@
       ]
     },
     "summary": "string",
-    "truncation": {
-      "byte_limit": "integer",
-      "omitted": {
-        "core_text_shortened": "boolean",
-        "excluded_by_detail": "integer",
-        "page_items": "integer",
-        "prior_page_items": "integer",
-        "remaining_page_items": "integer",
-        "selection_items": "integer"
-      },
-      "token_limit": "integer",
-      "truncated": "boolean"
-    },
     "warnings": [
       "string"
     ]

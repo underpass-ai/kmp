@@ -543,7 +543,7 @@ Resume this unchanged teaching proposal only after that review:
 The inspector must preserve all six named relations and their endpoints. The scene emphasizes semantic relations; inspect the outgoing lists to check structural links rather than treating an absent explanatory arc as lost memory. The internal bookkeeping edges are different objects. No source grants Ivo approval, extends RULE1 to production or asserts PH1 passed.
 
 ```json
-{"tool":"kmp_forward","save_as":"records","arguments":{"about":"example:guide:structure-parts","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"records","arguments":{"move":"forward","about":"example:guide:structure-parts","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
 ```
 
 ```json

@@ -1,0 +1,10 @@
+{"timestamp":"2026-09-24T15:42:13.310340Z","level":"INFO","fields":{"message":"embedded backend data dir resolved","data_dir":"<store-root>/store","rule":"env","requested_engine":"sqlite"},"target":"kmp_mcp::serving::kernel_mcp_server"}
+ ██╗  ██╗███╗   ███╗██████╗
+ ██║ ██╔╝████╗ ████║██╔══██╗   Kernel Memory Protocol
+ █████╔╝ ██╔████╔██║██████╔╝   time travel over a graph, proofs attached
+ ██╔═██╗ ██║╚██╔╝██║██╔═══╝    temporal · multidimensional · auditable
+ ██║  ██╗██║ ╚═╝ ██║██║        embedded database + event store
+ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝        no external services
+
+kmp-mcp: using embedded backend (kernel in-process, sqlite engine)
+{"timestamp":"2026-09-24T15:42:13.310402Z","level":"INFO","fields":{"message":"startup succeeded","backend":"embedded","engine":"sqlite","version":"0.19.0"},"target":"kmp_mcp::cli::serve"}

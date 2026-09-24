@@ -18,6 +18,7 @@ pub(crate) async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let configured = server_from_env().await.and_then(|server| {
         server
             .with_passage_format_from_env()
+            .and_then(KernelMcpServer::with_output_schemas_from_env)
             .map_err(StartupFailure::after_the_backend_was_chosen)
     });
     let server = match configured {

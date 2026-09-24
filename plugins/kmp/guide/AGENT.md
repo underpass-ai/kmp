@@ -1,6 +1,6 @@
 # KMP agent entry
 
-Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:f3744fdce016c67b3e50`.
+Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:83bf53672f9f2b08dc59`.
 
 KMP stores facts, evidence and relations through time. The agent writes and navigates; KMP does not generate answers.
 
@@ -27,7 +27,7 @@ Read its row with `kmp_inspect` if that guidance is absent from context. Reuse i
 | Resume known work: `kmp_wake` | `guide:kmp-agent:verb:wake` |
 | Ask a semantic question: `kmp_ask` | `guide:kmp-agent:verb:ask` |
 | Compare memories across abouts: `kmp_relate` | `guide:kmp-agent:verb:relate` |
-| Navigate and zoom in time: `kmp_forward`, `kmp_goto`, `kmp_near`, `kmp_rewind` | `guide:kmp-agent:verb:time` |
+| Navigate and zoom in time: `kmp_time` | `guide:kmp-agent:verb:time` |
 | Inspect evidence and trace a connection: `kmp_inspect`, `kmp_trace` | `guide:kmp-agent:verb:audit` |
 | Condense: write a compact card bound to one body version: `kmp_condense` | `guide:kmp-agent:verb:condense` |
 | Write evidence, change labels, audit what summaries owe: `kmp_ingest`, `kmp_relabel`, `kmp_summaries_audit`, `kmp_write_memory` | `guide:kmp-agent:verb:write` |

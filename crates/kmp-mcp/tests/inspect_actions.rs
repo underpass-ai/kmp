@@ -1,4 +1,6 @@
 //! Returned inspection calls recover the selected proof without guessing arguments.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
@@ -102,6 +104,9 @@ async fn returned_calls_reconstruct_selected_inspection_and_negotiate_progress()
                 .as_u64()
                 .expect("valid inspection response") as usize;
             if size > allowance {
+                // The floor is measured with the complete action; the server
+                // then shortens a continuation to its handle (#544 C3), so
+                // the page is at most the stated floor.
                 assert!(
                     page["warnings"]
                         .as_array()
@@ -109,9 +114,14 @@ async fn returned_calls_reconstruct_selected_inspection_and_negotiate_progress()
                         .iter()
                         .any(|w| {
                             let text = w.as_str().unwrap_or_default();
-                            text.contains(&format!("{size}-byte floor"))
-                                && text.contains(&format!("max_bytes {allowance}"))
-                        })
+                            text.contains(&format!("max_bytes {allowance}"))
+                                && text
+                                    .split("the ")
+                                    .filter_map(|part| part.split_once("-byte floor"))
+                                    .filter_map(|(bytes, _)| bytes.parse::<usize>().ok())
+                                    .any(|floor| size <= floor)
+                        }),
+                    "{page}"
                 );
             }
             for path in SECTIONS {
@@ -135,17 +145,16 @@ async fn returned_calls_reconstruct_selected_inspection_and_negotiate_progress()
             }
             let action = page["next_actions"][0].clone();
             assert_eq!(action["tool"], "kmp_inspect");
-            assert_eq!(action["arguments"]["about"], ABOUT);
-            assert_eq!(action["arguments"]["ref"], refs["decision"]);
-            assert_eq!(action["arguments"]["include"], include);
-            assert_eq!(
-                action["arguments"]["page"]["cursor"],
-                page["page"]["next_cursor"]
-            );
+            // A handle to the complete call; read what it preserves.
+            let bound = bound_action::bound_arguments(&server, &action);
+            assert_eq!(bound["about"], ABOUT);
+            assert_eq!(bound["ref"], refs["decision"]);
+            assert_eq!(bound["include"], include);
+            assert_eq!(bound["page"]["cursor"], page["page"]["next_cursor"]);
             let stalled = page["page"]["returned"] == 0;
             if stalled {
                 assert!(
-                    action["arguments"]["budget"]["max_bytes"]
+                    bound["budget"]["max_bytes"]
                         .as_u64()
                         .expect("valid inspection response")
                         >= page["page"]["minimum_progress_bytes"]
@@ -157,13 +166,10 @@ async fn returned_calls_reconstruct_selected_inspection_and_negotiate_progress()
                     .expect("valid inspection response")
                     <= 10_000
                 {
-                    assert_eq!(
-                        action["arguments"]["budget"]["max_bytes"],
-                        full["page"]["required_bytes"]
-                    );
+                    assert_eq!(bound["budget"]["max_bytes"], full["page"]["required_bytes"]);
                 }
             }
-            args = action["arguments"].clone();
+            args = bound.clone();
             if reuse {
                 args["page"]["repeat_object"] = json!(false);
             }
@@ -207,7 +213,7 @@ async fn changed_object_returns_a_fresh_call_that_does_not_reuse_the_old_object(
     call(&server,"kmp_write_memory",json!({"about":ABOUT,"actor":"native-inspection",
         "observed_at":"2026-09-01T11:00:00Z","idempotency_key":"inspect-actions:summary",
         "search_summaries":[{"ref":refs["decision"],"summary_en":"D1 selects SQLite for the offline ledger export."}]})).await;
-    let mut stale = first["next_actions"][0]["arguments"].clone();
+    let mut stale = bound_action::bound_arguments(&server, &first["next_actions"][0]);
     stale["page"]["repeat_object"] = json!(false);
     let error = request(&server, "kmp_inspect", stale.clone()).await;
     assert_eq!(error["isError"], true);

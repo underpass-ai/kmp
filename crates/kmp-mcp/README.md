@@ -39,6 +39,11 @@ you configure one.
 | `grpc` | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
 | `fixture` | the reference examples from the contract | nothing — it answers from embedded fixtures |
 
+`tools/list` omits each tool's `outputSchema` by default; the answers still
+carry `structuredContent`. A host that validates structured output sets
+`KMP_MCP_OUTPUT_SCHEMAS=1` to have the schemas advertised (`0` or unset omits
+them).
+
 `embedded` is the one to start with: no server, no cluster, memory that
 survives the session on your own disk. It also brings its own
 [ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) up at
@@ -65,7 +70,7 @@ filter, pan, undo or take control yourself at any time.
 Current status:
 
 - exposes `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
-  `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
+  `kmp_time` (moves `goto`, `near`, `rewind`, `forward`),
   `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_condense`, `kmp_relabel`,
   `kmp_summaries_audit`,
   `kmp_guide`, `kmp_view_open`, `kmp_view_apply_intent`, and `kmp_view_get_state`;
@@ -142,7 +147,7 @@ Current status:
   latest `observed_at`; the current about first, then by use. Read it before
   naming a label on a new memory; the most used labels are the first
   expansion the packet fills, the rest follow the causal spine, and
-  `truncation` says what did not fit;
+  `projection` says what did not fit;
 - `kmp_write_memory` takes `labels`, `key: value` pairs for any facet that
   catalogues the about beside the well-known `scope.process`, `scope.task`
   and `scope.episode`; each becomes a coordinate with the write's clocks, a
@@ -242,10 +247,7 @@ Live backend mapping:
 | `kmp_write_memory` | writer-friendly helper that validates relation quality and compiles to `KernelMemoryService.Ingest` |
 | `kmp_wake` | `KernelMemoryService.Wake` |
 | `kmp_ask` | `KernelMemoryService.Ask` |
-| `kmp_goto` | `KernelMemoryService.Goto` |
-| `kmp_near` | `KernelMemoryService.Near` |
-| `kmp_rewind` | `KernelMemoryService.Rewind` |
-| `kmp_forward` | `KernelMemoryService.Forward` |
+| `kmp_time` | `KernelMemoryService.Goto`, `Near`, `Rewind` or `Forward`, selected by `move` |
 | `kmp_relate` | `KernelMemoryService.Relate` |
 | `kmp_trace` | `KernelMemoryService.Trace` |
 | `kmp_inspect` | `KernelMemoryService.Inspect` |

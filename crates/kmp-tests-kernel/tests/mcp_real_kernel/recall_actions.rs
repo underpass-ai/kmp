@@ -106,7 +106,11 @@ async fn same(
         call_http_tool(http, 991, tool, arguments.clone()).await,
         call_tool(embedded, 991, tool, arguments).await,
     ] {
-        assert_eq!(actual["result"], result, "{tool} action parity");
+        assert_eq!(
+            comparable(&actual["result"]),
+            comparable(&result),
+            "{tool} action parity"
+        );
     }
     result
 }

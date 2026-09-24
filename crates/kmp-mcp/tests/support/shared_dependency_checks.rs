@@ -16,7 +16,7 @@ async fn native_dependency_pages_share_returned_sources_and_keep_group_members_l
         ]})).await;
     let written = reviewed_writer::review_authored_write(&server, written).await;
     assert_eq!(written["isError"], false, "{written}");
-    let mut args = json!({"about":"project:shared-dependencies", "at":{"time":"2026-09-03T00:00:00Z"},
+    let mut args = json!({"move":"goto", "about":"project:shared-dependencies", "at":{"time":"2026-09-03T00:00:00Z"},
         "axis":"observed", "include":{"dependencies":true},"limit":{"entries":1},
         "budget":{"max_bytes":100000}});
     let mut saw_shared_dependency = false;
@@ -26,10 +26,10 @@ async fn native_dependency_pages_share_returned_sources_and_keep_group_members_l
         args.as_object_mut().expect("arguments").remove("page");
         for index in 0..40 {
             server = server.with_shared_passages(false);
-            let plain = call(&server, "kmp_goto", args.clone()).await;
+            let plain = call(&server, "kmp_time", args.clone()).await;
             assert_eq!(plain["isError"], false, "{plain}");
             server = server.with_shared_passages(true);
-            let shared = call(&server, "kmp_goto", args.clone()).await;
+            let shared = call(&server, "kmp_time", args.clone()).await;
             assert_eq!(shared["isError"], false, "{shared}");
             let body = &shared["structuredContent"];
             assert_eq!(

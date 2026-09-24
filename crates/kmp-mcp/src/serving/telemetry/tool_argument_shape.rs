@@ -89,7 +89,7 @@ fn include_raw(name: &str, arguments: &Value) -> Option<bool> {
             .get("include")
             .and_then(|include| include.get("raw"))
             .and_then(Value::as_bool),
-        "kmp_goto" | "kmp_near" | "kmp_rewind" | "kmp_forward" => arguments
+        "kmp_time" => arguments
             .get("include")
             .and_then(|include| include.get("raw_refs"))
             .and_then(Value::as_bool),

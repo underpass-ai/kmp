@@ -334,18 +334,18 @@ deduplicate refs, and discard entries at or after the end. Do not infer that
 an empty page means the complete period is empty.
 
 ```json
-{"tool":"kmp_goto","save_as":"start","arguments":{"about":"example:guide:decision-history","axis":"occurred","at":{"time":"2026-09-01T09:00:00Z"},"window":{"before_entries":0,"after_entries":0},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"start","arguments":{"move":"goto","about":"example:guide:decision-history","axis":"occurred","at":{"time":"2026-09-01T09:00:00Z"},"window":{"before_entries":0,"after_entries":0},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":50000}}}
 ```
 
 ```json
-{"tool":"kmp_forward","save_as":"later","arguments":{"about":"example:guide:decision-history","axis":"occurred","from":{"time":"2026-09-01T09:00:00Z"},"limit":{"entries":10},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"later","arguments":{"move":"forward","about":"example:guide:decision-history","axis":"occurred","from":{"time":"2026-09-01T09:00:00Z"},"limit":{"entries":10},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":50000}}}
 ```
 
 Walk backwards from the new decision. This recovers the new requirement,
 older decision and older requirement; it does not roll back the store.
 
 ```json
-{"tool":"kmp_rewind","save_as":"earlier","arguments":{"about":"example:guide:decision-history","axis":"occurred","from":{"ref":"${postgres.generated_refs.0}"},"limit":{"entries":10},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"earlier","arguments":{"move":"rewind","about":"example:guide:decision-history","axis":"occurred","from":{"ref":"${postgres.generated_refs.0}"},"limit":{"entries":10},"include":{"relations":true,"evidence":true},"budget":{"max_bytes":50000}}}
 ```
 
 Audit the new decision and both paths. Read relation direction, class, `why`

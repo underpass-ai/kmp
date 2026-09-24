@@ -2,6 +2,7 @@ use crate::projection::relation_page_budget::RelationPageBudget;
 use prost::Message;
 use serde_json::Value;
 
+use crate::contract::{TIME_TOOL, TimeMove};
 use crate::projection::{
     ask_from_response, condense_from_response, enforce_inspect_output_budget,
     enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
@@ -67,10 +68,10 @@ pub(super) async fn grpc_tool_result(
         }
         "kmp_wake" => grpc_wake(endpoint, tls, arguments).await,
         "kmp_ask" => grpc_ask(endpoint, tls, arguments).await,
-        "kmp_goto" => grpc_temporal_move(endpoint, tls, "goto", arguments).await,
-        "kmp_near" => grpc_temporal_near(endpoint, tls, arguments).await,
-        "kmp_rewind" => grpc_temporal_move(endpoint, tls, "rewind", arguments).await,
-        "kmp_forward" => grpc_temporal_move(endpoint, tls, "forward", arguments).await,
+        TIME_TOOL => match TimeMove::from_arguments(arguments)? {
+            TimeMove::Near => grpc_temporal_near(endpoint, tls, arguments).await,
+            movement => grpc_temporal_move(endpoint, tls, movement.as_str(), arguments).await,
+        },
         "kmp_relate" => grpc_relate(endpoint, tls, arguments).await,
         "kmp_trace" => grpc_trace(endpoint, tls, arguments).await,
         "kmp_inspect" => grpc_inspect(endpoint, tls, arguments).await,

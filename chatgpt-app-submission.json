@@ -68,43 +68,7 @@
         "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
       }
     },
-    "kmp_goto": {
-      "annotations": {
-        "destructiveHint": false,
-        "openWorldHint": false,
-        "readOnlyHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
-        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
-        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
-      }
-    },
-    "kmp_near": {
-      "annotations": {
-        "destructiveHint": false,
-        "openWorldHint": false,
-        "readOnlyHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
-        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
-        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
-      }
-    },
-    "kmp_rewind": {
-      "annotations": {
-        "destructiveHint": false,
-        "openWorldHint": false,
-        "readOnlyHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Retrieves or audits stored evidence without writing canonical memories, but can persist operational usage, diagnostics or guidance-delivery metadata.",
-        "open_world_justification": "Operates within the configured private memory store and local viewer rather than fetching arbitrary public entities.",
-        "destructive_justification": "Does not delete or replace canonical memories, their events or authored cards."
-      }
-    },
-    "kmp_forward": {
+    "kmp_time": {
       "annotations": {
         "destructiveHint": false,
         "openWorldHint": false,
@@ -246,7 +210,7 @@
       "description": "Navigate recorded history with explicit temporal boundaries.",
       "user_prompt": "Use KMP to find the sample project decision as it was recorded on September 1, then show the preceding and following entries and nearby context.",
       "file_attachment_urls": null,
-      "tools_triggered": "kmp_goto, kmp_rewind, kmp_forward, kmp_near",
+      "tools_triggered": "kmp_time",
       "expected_output": "Returns the requested temporal selections with their clocks and evidence, preserving pagination and leaving stored history unchanged.",
       "expected_output_url": null
     },

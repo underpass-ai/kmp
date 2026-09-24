@@ -347,7 +347,7 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
 ```
 
 ```json
-{"tool": "kmp_rewind", "save_as": "before_corrections", "arguments": {"about": "example:guide:quantities", "from": {"time": "2026-09-02T00:00:00Z"}, "axis": "observed", "dimensions": {"mode": "only", "include": ["trip"], "scope_ids": ["TRIP-7"], "selectors": [{"key": "currency", "op": "in", "values": ["EUR"]}]}, "limit": {"entries": 20}, "budget": {"max_bytes": 40000}}}
+{"tool": "kmp_time", "save_as": "before_corrections", "arguments": {"move": "rewind", "about": "example:guide:quantities", "from": {"time": "2026-09-02T00:00:00Z"}, "axis": "observed", "dimensions": {"mode": "only", "include": ["trip"], "scope_ids": ["TRIP-7"], "selectors": [{"key": "currency", "op": "in", "values": ["EUR"]}]}, "limit": {"entries": 20}, "budget": {"max_bytes": 40000}}}
 ```
 
 At this observed cutoff the EUR slice contains R-TRAIN, H-0 and M-1. It does
@@ -656,11 +656,11 @@ inclusive goto probe. Read H-0 -> H-1 as a correction by following the stored
 H-1 -> H-0 edge; direction matters. The copy and void have their own proof.
 
 ```json
-{"tool": "kmp_forward", "save_as": "eur_candidates", "arguments": {"about": "example:guide:quantities", "from": {"time": "2026-09-01T00:00:00Z"}, "axis": "observed", "dimensions": {"mode": "only", "include": ["trip"], "scope_ids": ["TRIP-7"], "selectors": [{"key": "currency", "op": "in", "values": ["EUR"]}, {"key": "role", "op": "in", "values": ["source"]}]}, "limit": {"entries": 20}, "budget": {"max_bytes": 50000}}}
+{"tool": "kmp_time", "save_as": "eur_candidates", "arguments": {"move": "forward", "about": "example:guide:quantities", "from": {"time": "2026-09-01T00:00:00Z"}, "axis": "observed", "dimensions": {"mode": "only", "include": ["trip"], "scope_ids": ["TRIP-7"], "selectors": [{"key": "currency", "op": "in", "values": ["EUR"]}, {"key": "role", "op": "in", "values": ["source"]}]}, "limit": {"entries": 20}, "budget": {"max_bytes": 50000}}}
 ```
 
 ```json
-{"tool": "kmp_forward", "save_as": "usd_candidates", "arguments": {"about": "example:guide:quantities", "from": {"time": "2026-09-01T00:00:00Z"}, "axis": "observed", "dimensions": {"mode": "only", "include": ["trip"], "scope_ids": ["TRIP-7"], "selectors": [{"key": "currency", "op": "in", "values": ["USD"]}, {"key": "role", "op": "in", "values": ["source"]}]}, "limit": {"entries": 20}, "budget": {"max_bytes": 50000}}}
+{"tool": "kmp_time", "save_as": "usd_candidates", "arguments": {"move": "forward", "about": "example:guide:quantities", "from": {"time": "2026-09-01T00:00:00Z"}, "axis": "observed", "dimensions": {"mode": "only", "include": ["trip"], "scope_ids": ["TRIP-7"], "selectors": [{"key": "currency", "op": "in", "values": ["USD"]}, {"key": "role", "op": "in", "values": ["source"]}]}, "limit": {"entries": 20}, "budget": {"max_bytes": 50000}}}
 ```
 
 ```json
@@ -953,7 +953,7 @@ Resume this unchanged teaching proposal only after that review:
 ```
 
 ```json
-{"tool": "kmp_rewind", "save_as": "before_corrections_again", "arguments": {"about": "example:guide:quantities", "from": {"time": "2026-09-02T00:00:00Z"}, "axis": "observed", "dimensions": {"mode": "only", "include": ["trip"], "scope_ids": ["TRIP-7"], "selectors": [{"key": "currency", "op": "in", "values": ["EUR"]}]}, "limit": {"entries": 20}, "budget": {"max_bytes": 40000}}}
+{"tool": "kmp_time", "save_as": "before_corrections_again", "arguments": {"move": "rewind", "about": "example:guide:quantities", "from": {"time": "2026-09-02T00:00:00Z"}, "axis": "observed", "dimensions": {"mode": "only", "include": ["trip"], "scope_ids": ["TRIP-7"], "selectors": [{"key": "currency", "op": "in", "values": ["EUR"]}]}, "limit": {"entries": 20}, "budget": {"max_bytes": 40000}}}
 ```
 
 The earlier observed selection must still contain only its original three

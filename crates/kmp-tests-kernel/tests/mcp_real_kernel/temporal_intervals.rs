@@ -3,7 +3,7 @@ use axum::Router;
 use kmp_mcp::{GrpcKernelMcpBackend, KernelMcpServer, KernelMcpToolBackend};
 use serde_json::json;
 
-use super::{call_http_tool, call_tool};
+use super::{call_http_tool, call_tool, comparable};
 
 pub(super) async fn check(
     direct: &GrpcKernelMcpBackend,
@@ -12,8 +12,9 @@ pub(super) async fn check(
     embedded: &KernelMcpServer,
 ) {
     let interval = json!({"start":"2026-08-25T00:01:00Z","end":"2026-08-25T00:03:00Z"});
-    for tool in ["kmp_forward", "kmp_rewind"] {
-        let mut arguments = json!({"about":"project:parity-live", "axis":"occurred",
+    for movement in ["forward", "rewind"] {
+        let tool = "kmp_time";
+        let mut arguments = json!({"move":movement,"about":"project:parity-live", "axis":"occurred",
             "interval":interval, "limit":{"entries":1},"page":{"entries":2},
             "include":{"evidence":true,"relations":true,"raw_refs":true},
             "budget":{"max_bytes":50000}});
@@ -27,9 +28,10 @@ pub(super) async fn check(
             let native = call_tool(stdio, 700 + calls, tool, arguments.clone()).await;
             let remote = call_http_tool(http, 700 + calls, tool, arguments.clone()).await;
             let local = call_tool(embedded, 700 + calls, tool, arguments.clone()).await;
-            assert_eq!(native["result"], expected, "{tool} stdio");
-            assert_eq!(remote["result"], expected, "{tool} HTTP");
-            assert_eq!(local["result"], expected, "{tool} embedded");
+            let view = comparable(&expected);
+            assert_eq!(comparable(&native["result"]), view, "{movement} stdio");
+            assert_eq!(comparable(&remote["result"]), view, "{movement} HTTP");
+            assert_eq!(comparable(&local["result"]), view, "{movement} embedded");
             let content = &expected["structuredContent"];
             assert_eq!(content["temporal"]["interval"], interval);
             returned.extend(
@@ -47,6 +49,7 @@ pub(super) async fn check(
             assert!(calls < 50, "must advance");
             assert_eq!(actions[0]["tool"], tool);
             arguments = actions[0]["arguments"].clone();
+            assert_eq!(arguments["move"], movement);
             assert_eq!(arguments["interval"], interval);
             assert_eq!(arguments["axis"], "occurred");
         }

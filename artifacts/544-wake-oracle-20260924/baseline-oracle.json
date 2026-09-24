@@ -1,0 +1,1075 @@
+{
+  "schema_version": "kmp.token.oracle.v1",
+  "run": "baseline",
+  "manifest_sha256": "88a8591fd4fff77c817c01de26e9b8e1a2b2f47bfbd84a2b4636c4f4c1088815",
+  "variant": "baseline",
+  "wake_contract": "kmp.wake_claim.v1",
+  "driver_version": "kmp.native_driver.v1",
+  "scenarios_digest": "b954b0e4b68b30720758bc758705c8fcaa6b3835e429f7422b558b53c7bf8d7d",
+  "capture_scenarios_digest": "b954b0e4b68b30720758bc758705c8fcaa6b3835e429f7422b558b53c7bf8d7d",
+  "capture_failures": [],
+  "captured_cases": [
+    "a01",
+    "e01",
+    "w01",
+    "w02",
+    "w03",
+    "w04"
+  ],
+  "journeys": [
+    {
+      "journey": "w01-b4096",
+      "case_id": "w01",
+      "goal_id": "orient_small_about",
+      "budget": 4096,
+      "selection": {
+        "about": "fixture:w01",
+        "budget": {
+          "max_bytes": 4096
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 2,
+          "event_index": 5
+        },
+        "task_ready": null,
+        "unresolved_evidence_reference_count": 6,
+        "evidence_body_disguised_as_ref_count": 6,
+        "support_bookkeeping_in_state_count": 5,
+        "support_displacement_count": 3,
+        "historical_relation_as_action_count": 1,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 15,
+        "rpc_calls": 3,
+        "selection_restarts": 1,
+        "mandatory_continuations": 1
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": false
+      },
+      "obligations": [
+        {
+          "kind": "state_mentions",
+          "text": "Use blue-green deploys for the ledger service.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "state_mentions",
+          "text": "A second ledger pool is provisioned.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "state_mentions",
+          "text": "Cutover is scheduled for Friday.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "evidence_body",
+          "text": "S1: the ops review chose blue-green deploys for the ledger.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "evidence_body",
+          "text": "S2: the capacity report lists pool ledger-b as ready.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "evidence_body",
+          "text": "S3: the change calendar lists the ledger cutover on Friday.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": false,
+      "quality_failures": [
+        "task_obligations_satisfied",
+        "unresolved_evidence_reference_count",
+        "evidence_body_disguised_as_ref_count",
+        "support_displacement_count",
+        "historical_relation_as_action_count"
+      ],
+      "detail": {
+        "unresolved_refs": [
+          "S1: the ops review chose blue-green deploys for the ledger.",
+          "S2: the capacity report lists pool ledger-b as ready.",
+          "S2: the second pool was provisioned for the switch.",
+          "S3: the change calendar lists the ledger cutover on Friday.",
+          "S4: the capacity sign-off cites pool ledger-b for the switch.",
+          "S5: the cutover checklist requires pool ledger-b to be ready."
+        ],
+        "disguised_refs": [
+          "S1: the ops review chose blue-green deploys for the ledger.",
+          "S2: the capacity report lists pool ledger-b as ready.",
+          "S2: the second pool was provisioned for the switch.",
+          "S3: the change calendar lists the ledger cutover on Friday.",
+          "S4: the capacity sign-off cites pool ledger-b for the switch.",
+          "S5: the cutover checklist requires pool ledger-b to be ready."
+        ],
+        "support_lines_in_state": [
+          "Relationship evidence:fixture:w01:entry:constraint:cutover-is-scheduled-for-friday-3bcfa12cf4fac109:current --supports--> fixture:w01:entry:constraint:cutover-is-scheduled-for-friday-3bcfa12cf4fac109 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:current --supports--> fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:relation:1 --supports--> fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:relation:1 --supports--> fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61:current --supports--> fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61 [evidential] because Evidence supports this memory entry."
+        ],
+        "historical_actions": [
+          "depends_on → fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61"
+        ],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 3,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "w01-b10000",
+      "case_id": "w01",
+      "goal_id": "orient_small_about",
+      "budget": 10000,
+      "selection": {
+        "about": "fixture:w01",
+        "budget": {
+          "max_bytes": 10000
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "task_ready": null,
+        "unresolved_evidence_reference_count": 6,
+        "evidence_body_disguised_as_ref_count": 6,
+        "support_bookkeeping_in_state_count": 5,
+        "support_displacement_count": 3,
+        "historical_relation_as_action_count": 1,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 15,
+        "rpc_calls": 3,
+        "selection_restarts": 0,
+        "mandatory_continuations": 2
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": false
+      },
+      "obligations": [
+        {
+          "kind": "state_mentions",
+          "text": "Use blue-green deploys for the ledger service.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "state_mentions",
+          "text": "A second ledger pool is provisioned.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "state_mentions",
+          "text": "Cutover is scheduled for Friday.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "evidence_body",
+          "text": "S1: the ops review chose blue-green deploys for the ledger.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "evidence_body",
+          "text": "S2: the capacity report lists pool ledger-b as ready.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "evidence_body",
+          "text": "S3: the change calendar lists the ledger cutover on Friday.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": false,
+      "quality_failures": [
+        "task_obligations_satisfied",
+        "unresolved_evidence_reference_count",
+        "evidence_body_disguised_as_ref_count",
+        "support_displacement_count",
+        "historical_relation_as_action_count"
+      ],
+      "detail": {
+        "unresolved_refs": [
+          "S1: the ops review chose blue-green deploys for the ledger.",
+          "S2: the capacity report lists pool ledger-b as ready.",
+          "S2: the second pool was provisioned for the switch.",
+          "S3: the change calendar lists the ledger cutover on Friday.",
+          "S4: the capacity sign-off cites pool ledger-b for the switch.",
+          "S5: the cutover checklist requires pool ledger-b to be ready."
+        ],
+        "disguised_refs": [
+          "S1: the ops review chose blue-green deploys for the ledger.",
+          "S2: the capacity report lists pool ledger-b as ready.",
+          "S2: the second pool was provisioned for the switch.",
+          "S3: the change calendar lists the ledger cutover on Friday.",
+          "S4: the capacity sign-off cites pool ledger-b for the switch.",
+          "S5: the cutover checklist requires pool ledger-b to be ready."
+        ],
+        "support_lines_in_state": [
+          "Relationship evidence:fixture:w01:entry:constraint:cutover-is-scheduled-for-friday-3bcfa12cf4fac109:current --supports--> fixture:w01:entry:constraint:cutover-is-scheduled-for-friday-3bcfa12cf4fac109 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:current --supports--> fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:relation:1 --supports--> fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:relation:1 --supports--> fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61:current --supports--> fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61 [evidential] because Evidence supports this memory entry."
+        ],
+        "historical_actions": [
+          "depends_on → fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61"
+        ],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 3,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "w02-b4096",
+      "case_id": "w02",
+      "goal_id": "resume_explicit_label",
+      "budget": 4096,
+      "selection": {
+        "about": "fixture:w02",
+        "dimensions": {
+          "selectors": [
+            {
+              "key": "task",
+              "op": "in",
+              "values": [
+                "T-A"
+              ]
+            }
+          ]
+        },
+        "budget": {
+          "max_bytes": 4096
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 4,
+          "event_index": 7
+        },
+        "task_ready": null,
+        "unresolved_evidence_reference_count": 2,
+        "evidence_body_disguised_as_ref_count": 2,
+        "support_bookkeeping_in_state_count": 2,
+        "support_displacement_count": 2,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 6,
+        "rpc_calls": 9,
+        "selection_restarts": 0,
+        "mandatory_continuations": 8
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": false
+      },
+      "obligations": [
+        {
+          "kind": "state_mentions",
+          "text": "Export billing records as parquet files.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "state_mentions",
+          "text": "The parquet exporter passed the schema check.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "state_excludes",
+          "text": "Rotate the staging TLS certificates.",
+          "local_id": "b1",
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "state_excludes",
+          "text": "Two staging certificates expire this week.",
+          "local_id": "b2",
+          "count": 1,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": false,
+      "quality_failures": [
+        "task_obligations_satisfied",
+        "unresolved_evidence_reference_count",
+        "evidence_body_disguised_as_ref_count",
+        "support_displacement_count"
+      ],
+      "detail": {
+        "unresolved_refs": [
+          "S1: the billing sync notes choose parquet for exports.",
+          "S2: the exporter CI run shows the schema check passing."
+        ],
+        "disguised_refs": [
+          "S1: the billing sync notes choose parquet for exports.",
+          "S2: the exporter CI run shows the schema check passing."
+        ],
+        "support_lines_in_state": [
+          "Relationship evidence:fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb:current --supports--> fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28:current --supports--> fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28 [evidential] because Evidence supports this memory entry."
+        ],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 9,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "w02-b10000",
+      "case_id": "w02",
+      "goal_id": "resume_explicit_label",
+      "budget": 10000,
+      "selection": {
+        "about": "fixture:w02",
+        "dimensions": {
+          "selectors": [
+            {
+              "key": "task",
+              "op": "in",
+              "values": [
+                "T-A"
+              ]
+            }
+          ]
+        },
+        "budget": {
+          "max_bytes": 10000
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "task_ready": null,
+        "unresolved_evidence_reference_count": 2,
+        "evidence_body_disguised_as_ref_count": 2,
+        "support_bookkeeping_in_state_count": 2,
+        "support_displacement_count": 2,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 6,
+        "rpc_calls": 1,
+        "selection_restarts": 0,
+        "mandatory_continuations": 0
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": false
+      },
+      "obligations": [
+        {
+          "kind": "state_mentions",
+          "text": "Export billing records as parquet files.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "state_mentions",
+          "text": "The parquet exporter passed the schema check.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "state_excludes",
+          "text": "Rotate the staging TLS certificates.",
+          "local_id": "b1",
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "state_excludes",
+          "text": "Two staging certificates expire this week.",
+          "local_id": "b2",
+          "count": 1,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": false,
+      "quality_failures": [
+        "task_obligations_satisfied",
+        "unresolved_evidence_reference_count",
+        "evidence_body_disguised_as_ref_count",
+        "support_displacement_count"
+      ],
+      "detail": {
+        "unresolved_refs": [
+          "S1: the billing sync notes choose parquet for exports.",
+          "S2: the exporter CI run shows the schema check passing."
+        ],
+        "disguised_refs": [
+          "S1: the billing sync notes choose parquet for exports.",
+          "S2: the exporter CI run shows the schema check passing."
+        ],
+        "support_lines_in_state": [
+          "Relationship evidence:fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb:current --supports--> fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28:current --supports--> fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28 [evidential] because Evidence supports this memory entry."
+        ],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 1,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "w03-b4096",
+      "case_id": "w03",
+      "goal_id": "orient_identical_bodies",
+      "budget": 4096,
+      "selection": {
+        "about": "fixture:w03",
+        "budget": {
+          "max_bytes": 4096
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 4,
+          "event_index": 7
+        },
+        "task_ready": null,
+        "unresolved_evidence_reference_count": 1,
+        "evidence_body_disguised_as_ref_count": 1,
+        "support_bookkeeping_in_state_count": 2,
+        "support_displacement_count": 1,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
+        "identical_body_merged_citation_count": 2,
+        "cited_reference_count": 5,
+        "rpc_calls": 9,
+        "selection_restarts": 0,
+        "mandatory_continuations": 8
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": false
+      },
+      "obligations": [
+        {
+          "kind": "state_mentions",
+          "text": "Disk usage on node-7 reached 91 percent.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "distinct_provenance",
+          "text": "Monitoring export: node-7 disk at 91 percent at 09:00 UTC.",
+          "local_id": null,
+          "count": 2,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": false,
+      "quality_failures": [
+        "task_obligations_satisfied",
+        "unresolved_evidence_reference_count",
+        "evidence_body_disguised_as_ref_count",
+        "support_displacement_count",
+        "identical_body_merged_citation_count"
+      ],
+      "detail": {
+        "unresolved_refs": [
+          "Monitoring export: node-7 disk at 91 percent at 09:00 UTC."
+        ],
+        "disguised_refs": [
+          "Monitoring export: node-7 disk at 91 percent at 09:00 UTC."
+        ],
+        "support_lines_in_state": [
+          "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904 [evidential] because Evidence supports this memory entry."
+        ],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 9,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "w03-b10000",
+      "case_id": "w03",
+      "goal_id": "orient_identical_bodies",
+      "budget": 10000,
+      "selection": {
+        "about": "fixture:w03",
+        "budget": {
+          "max_bytes": 10000
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "task_ready": null,
+        "unresolved_evidence_reference_count": 1,
+        "evidence_body_disguised_as_ref_count": 1,
+        "support_bookkeeping_in_state_count": 2,
+        "support_displacement_count": 1,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": true,
+        "identical_body_merged_citation_count": 2,
+        "cited_reference_count": 5,
+        "rpc_calls": 1,
+        "selection_restarts": 0,
+        "mandatory_continuations": 0
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": false
+      },
+      "obligations": [
+        {
+          "kind": "state_mentions",
+          "text": "Disk usage on node-7 reached 91 percent.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "distinct_provenance",
+          "text": "Monitoring export: node-7 disk at 91 percent at 09:00 UTC.",
+          "local_id": null,
+          "count": 2,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": false,
+      "quality_failures": [
+        "task_obligations_satisfied",
+        "unresolved_evidence_reference_count",
+        "evidence_body_disguised_as_ref_count",
+        "support_displacement_count",
+        "identical_body_merged_citation_count"
+      ],
+      "detail": {
+        "unresolved_refs": [
+          "Monitoring export: node-7 disk at 91 percent at 09:00 UTC."
+        ],
+        "disguised_refs": [
+          "Monitoring export: node-7 disk at 91 percent at 09:00 UTC."
+        ],
+        "support_lines_in_state": [
+          "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904 [evidential] because Evidence supports this memory entry."
+        ],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 1,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "w04-b4096",
+      "case_id": "w04",
+      "goal_id": "dated_wake",
+      "budget": 4096,
+      "selection": {
+        "about": "fixture:w04",
+        "as_of": {
+          "time": "2026-09-10T00:00:00Z"
+        },
+        "budget": {
+          "max_bytes": 4096
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 4,
+          "event_index": 7
+        },
+        "task_ready": null,
+        "unresolved_evidence_reference_count": 1,
+        "evidence_body_disguised_as_ref_count": 1,
+        "support_bookkeeping_in_state_count": 4,
+        "support_displacement_count": 1,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 4,
+        "state_declared_unbounded_context": true,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 3,
+        "rpc_calls": 6,
+        "selection_restarts": 0,
+        "mandatory_continuations": 5
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": false
+      },
+      "obligations": [
+        {
+          "kind": "state_mentions",
+          "text": "Freeze schema changes during the audit.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "evidence_body",
+          "text": "S1: the audit kickoff notes freeze all schema changes.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "as_of_excludes",
+          "text": "Lift the schema freeze after the audit closed.",
+          "local_id": "lift",
+          "count": 1,
+          "satisfied": false
+        }
+      ],
+      "quality_pass": false,
+      "quality_failures": [
+        "task_obligations_satisfied",
+        "unresolved_evidence_reference_count",
+        "evidence_body_disguised_as_ref_count",
+        "support_displacement_count"
+      ],
+      "detail": {
+        "unresolved_refs": [
+          "S1: the audit kickoff notes freeze all schema changes."
+        ],
+        "disguised_refs": [
+          "S1: the audit kickoff notes freeze all schema changes."
+        ],
+        "support_lines_in_state": [
+          "Relationship evidence:fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22:current --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry."
+        ],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+        ],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 6,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "w04-b10000",
+      "case_id": "w04",
+      "goal_id": "dated_wake",
+      "budget": 10000,
+      "selection": {
+        "about": "fixture:w04",
+        "as_of": {
+          "time": "2026-09-10T00:00:00Z"
+        },
+        "budget": {
+          "max_bytes": 10000
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "task_ready": null,
+        "unresolved_evidence_reference_count": 1,
+        "evidence_body_disguised_as_ref_count": 1,
+        "support_bookkeeping_in_state_count": 4,
+        "support_displacement_count": 1,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 4,
+        "state_declared_unbounded_context": true,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 3,
+        "rpc_calls": 1,
+        "selection_restarts": 0,
+        "mandatory_continuations": 0
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": false
+      },
+      "obligations": [
+        {
+          "kind": "state_mentions",
+          "text": "Freeze schema changes during the audit.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": false
+        },
+        {
+          "kind": "evidence_body",
+          "text": "S1: the audit kickoff notes freeze all schema changes.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "as_of_excludes",
+          "text": "Lift the schema freeze after the audit closed.",
+          "local_id": "lift",
+          "count": 1,
+          "satisfied": false
+        }
+      ],
+      "quality_pass": false,
+      "quality_failures": [
+        "task_obligations_satisfied",
+        "unresolved_evidence_reference_count",
+        "evidence_body_disguised_as_ref_count",
+        "support_displacement_count"
+      ],
+      "detail": {
+        "unresolved_refs": [
+          "S1: the audit kickoff notes freeze all schema changes."
+        ],
+        "disguised_refs": [
+          "S1: the audit kickoff notes freeze all schema changes."
+        ],
+        "support_lines_in_state": [
+          "Relationship evidence:fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22:current --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry."
+        ],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+          "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+          "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+        ],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 1,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "a01-b4096",
+      "case_id": "a01",
+      "goal_id": "ask_short_source",
+      "budget": 4096,
+      "selection": {
+        "about": "fixture:a01",
+        "question": "Which PostgreSQL version runs on the staging database?",
+        "budget": {
+          "max_bytes": 4096
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "task_ready": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "unresolved_evidence_reference_count": 0,
+        "evidence_body_disguised_as_ref_count": 0,
+        "support_bookkeeping_in_state_count": 0,
+        "support_displacement_count": 0,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": false,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 2,
+        "rpc_calls": 2,
+        "selection_restarts": 1,
+        "mandatory_continuations": 0
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": true
+      },
+      "obligations": [
+        {
+          "kind": "evidence_body",
+          "text": "S1: the staging inventory lists PostgreSQL 16.4 on db-stg-1.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": true,
+      "quality_failures": [],
+      "detail": {
+        "unresolved_refs": [],
+        "disguised_refs": [],
+        "support_lines_in_state": [],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 2,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "a01-b10000",
+      "case_id": "a01",
+      "goal_id": "ask_short_source",
+      "budget": 10000,
+      "selection": {
+        "about": "fixture:a01",
+        "question": "Which PostgreSQL version runs on the staging database?",
+        "budget": {
+          "max_bytes": 10000
+        }
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "task_ready": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "unresolved_evidence_reference_count": 0,
+        "evidence_body_disguised_as_ref_count": 0,
+        "support_bookkeeping_in_state_count": 0,
+        "support_displacement_count": 0,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": false,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 2,
+        "rpc_calls": 1,
+        "selection_restarts": 0,
+        "mandatory_continuations": 0
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": false,
+        "task_obligations_satisfied": true
+      },
+      "obligations": [
+        {
+          "kind": "evidence_body",
+          "text": "S1: the staging inventory lists PostgreSQL 16.4 on db-stg-1.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": true,
+      "quality_failures": [],
+      "detail": {
+        "unresolved_refs": [],
+        "disguised_refs": [],
+        "support_lines_in_state": [],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 1,
+          "error": null
+        }
+      }
+    },
+    {
+      "journey": "e01",
+      "case_id": "e01",
+      "goal_id": "simple_write_receipt",
+      "budget": null,
+      "selection": {
+        "about": "fixture:e01",
+        "actor": "journey-writer",
+        "observed_at": "2026-09-05T07:00:00Z",
+        "idempotency_key": "journey-e01",
+        "memories": [
+          {
+            "id": "backup",
+            "kind": "observation",
+            "summary": "The nightly backup job moved to 02:30 UTC.",
+            "evidence": "S1: the scheduler change log moves the nightly backup to 02:30 UTC.",
+            "labels": {
+              "source": [
+                "S1"
+              ]
+            }
+          }
+        ]
+      },
+      "contract": "kmp.wake_claim.v1",
+      "metrics": {
+        "first_supported_unit": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "task_ready": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
+        "unresolved_evidence_reference_count": 0,
+        "evidence_body_disguised_as_ref_count": 0,
+        "support_bookkeeping_in_state_count": 0,
+        "support_displacement_count": 0,
+        "historical_relation_as_action_count": 0,
+        "contract_violation_count": 0,
+        "post_as_of_memory_in_state_count": 0,
+        "state_declared_unbounded_context": false,
+        "identical_body_merged_citation_count": 0,
+        "cited_reference_count": 0,
+        "rpc_calls": 1,
+        "selection_restarts": 0,
+        "mandatory_continuations": 0
+      },
+      "completeness": {
+        "transport_complete": true,
+        "selected_packet_complete": true,
+        "requested_scope_exhausted": null,
+        "task_obligations_satisfied": true
+      },
+      "obligations": [
+        {
+          "kind": "write_accepted",
+          "text": null,
+          "local_id": "backup",
+          "count": 1,
+          "satisfied": true
+        },
+        {
+          "kind": "readback_body",
+          "text": "S1: the scheduler change log moves the nightly backup to 02:30 UTC.",
+          "local_id": null,
+          "count": 1,
+          "satisfied": true
+        }
+      ],
+      "quality_pass": true,
+      "quality_failures": [],
+      "detail": {
+        "unresolved_refs": [],
+        "disguised_refs": [],
+        "support_lines_in_state": [],
+        "historical_actions": [],
+        "contract_violations": [],
+        "post_as_of_state_lines": [],
+        "driver_outcome": {
+          "status": "completed",
+          "calls": 1,
+          "error": null
+        }
+      }
+    }
+  ]
+}

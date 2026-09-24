@@ -7,8 +7,10 @@ rationale and limit. Read the source and prerequisite writes before a selected
 call; a binding to an earlier result is not a ref you can invent.
 
 This index was reviewed against the development tools/list on September 8,
-2026: fifteen tools, ten memory kinds and thirty-one writer relations. It is
-an informative map, not a CI gate or a promise that another LLM has learned
+2026: fifteen tools, ten memory kinds and thirty-one writer relations. Four
+of those tools, Goto, Near, Rewind and Forward, are now the moves of one
+`kmp_time` tool; its rows keep one concrete call per move. It is an
+informative map, not a CI gate or a promise that another LLM has learned
 these choices. Runtime names and allowed classes come from tools/list.
 
 A `save_as` name identifies the exact JSON call inside its lesson. In KMP,
@@ -25,10 +27,10 @@ returned-ref bindings, expected evidence and negative limits.
 | `kmp_wake` | [preference-delta](./preference-delta.md), `present` | A compact catalogue does not include every expanded proof item. |
 | `kmp_ask` | [first-decision](./first-decision.md), `answer` | For absent evidence, use the terminal UNKNOWN case in budget-proof. |
 | `kmp_relate` | [distributed-incident](./distributed-incident.md), `related` | A proposal does not write or prove an equivalence. |
-| `kmp_goto` | [decision-history](./decision-history.md), `start` | Keep the requested clock and the inclusive boundary. |
-| `kmp_near` | [alias-ownership](./alias-ownership.md), `account_history` | Copy the returned ref; nearby mentions are not proven identities. |
-| `kmp_rewind` | [decision-history](./decision-history.md), `earlier` | An older decision remains historical after replacement. |
-| `kmp_forward` | [budget-proof](./budget-proof.md), `temporal_first` | Continue temporal_second; exclude the interval end. |
+| `kmp_time`, `goto` | [decision-history](./decision-history.md), `start` | Keep the requested clock and the inclusive boundary. |
+| `kmp_time`, `near` | [alias-ownership](./alias-ownership.md), `account_history` | Copy the returned ref; nearby mentions are not proven identities. |
+| `kmp_time`, `rewind` | [decision-history](./decision-history.md), `earlier` | An older decision remains historical after replacement. |
+| `kmp_time`, `forward` | [budget-proof](./budget-proof.md), `temporal_first` | Continue temporal_second; exclude the interval end. |
 | `kmp_trace` | [first-decision](./first-decision.md), `packet_proof` | For an absent path, use no_path in budget-proof. |
 | `kmp_inspect` | [first-decision](./first-decision.md), `constraint_read` | If a page is partial, finish it before claiming full evidence. |
 | `kmp_relabel` | [labels-negation](./labels-negation.md), `canonical_label` | Rename a label without inventing identity or replacing the source. |

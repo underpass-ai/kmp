@@ -46,20 +46,16 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
             json!({"about":ABOUT,"axis":"observed","interval":interval,"dimensions":dimensions}),
         ),
     ];
-    for (tool, key, cursor) in [
-        (
-            "kmp_forward",
-            "from",
-            json!({"time":"2026-09-09T00:00:00Z"}),
-        ),
-        ("kmp_rewind", "from", json!({"time":"2026-09-10T00:00:00Z"})),
-        ("kmp_goto", "at", json!({"ref":refs["decision"]})),
-        ("kmp_near", "around", json!({"ref":refs["source"]})),
+    for (time_move, key, cursor) in [
+        ("forward", "from", json!({"time":"2026-09-09T00:00:00Z"})),
+        ("rewind", "from", json!({"time":"2026-09-10T00:00:00Z"})),
+        ("goto", "at", json!({"ref":refs["decision"]})),
+        ("near", "around", json!({"ref":refs["source"]})),
     ] {
-        let mut args = json!({"about":ABOUT,"axis":"observed","interval":interval,"dimensions":dimensions,
+        let mut args = json!({"move":time_move,"about":ABOUT,"axis":"observed","interval":interval,"dimensions":dimensions,
             "include":{"evidence":true,"relations":true,"raw_refs":true},"limit":{"entries":10},"window":{"before_entries":5,"after_entries":5}});
         args[key] = cursor;
-        queries.push((tool, args));
+        queries.push(("kmp_time", args));
     }
     for (tool, mut args) in queries {
         args["budget"] = json!({"max_bytes":1000000,"detail":"full","depth":4});
@@ -97,19 +93,25 @@ async fn short_recall_temporal_trace_and_relate_preserve_complete_evidence() {
             if body["projection"]["core_text_shortened"] != true {
                 for section in &sections {
                     let key = section[1..].replace('/', ".");
-                    let skip = if recall && collected_core {
+                    // An incremental continuation carries only new items;
+                    // one that repeats the core carries it first again.
+                    let repeated_core =
+                        recall && collected_core && body["projection"]["core_reused"] != true;
+                    let skip = if repeated_core {
                         body["projection"]["sections"][&key]["core"]
                             .as_u64()
                             .unwrap_or(0) as usize
                     } else {
                         0
                     };
+                    if recall && collected_core {
+                        assert_eq!(body["projection"]["core_reused"], true, "{tool}: {body}");
+                    }
                     recovered.get_mut(section).expect("collector").extend(
                         body.pointer(section)
-                            .expect("section")
-                            .as_array()
-                            .expect("items")
-                            .iter()
+                            .and_then(Value::as_array)
+                            .into_iter()
+                            .flatten()
                             .skip(skip)
                             .cloned(),
                     );

@@ -209,8 +209,9 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
     let forward = call_tool(
         &server,
         7,
-        "kmp_forward",
+        "kmp_time",
         json!({
+            "move": "forward",
             "about": "question:temporal",
             "from": {
                 "ref": "claim:rachel-denver"
@@ -275,8 +276,9 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
     let near = call_tool(
         &server,
         8,
-        "kmp_near",
+        "kmp_time",
         json!({
+            "move": "near",
             "about": "question:temporal",
             "around": {
                 "time": "2026-04-12T15:03:00Z"
@@ -312,8 +314,9 @@ async fn grpc_backend_maps_temporal_raw_refs_to_kernel_memory_service() {
     let forward = call_tool(
         &server,
         17,
-        "kmp_forward",
+        "kmp_time",
         json!({
+            "move": "forward",
             "about": "question:temporal",
             "from": {
                 "ref": "claim:rachel-denver"
@@ -791,7 +794,8 @@ impl KernelMemoryService for FakeMemoryService {
                 causal_spine: vec![WakeClaim {
                     claim: "Typed wake claim.".to_string(),
                     because: "KernelMemoryService.Wake returned it.".to_string(),
-                    evidence_ref: "evidence:typed".to_string(),
+                    evidence_refs: vec!["evidence:typed".to_string()],
+                    evidence: String::new(),
                 }],
                 open_loops: Vec::new(),
                 next_actions: Vec::new(),
@@ -801,7 +805,6 @@ impl KernelMemoryService for FakeMemoryService {
             resume_cursor: None,
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
         };
         Ok(Response::new(
             project_wake_response(response, &request)
@@ -824,7 +827,6 @@ impl KernelMemoryService for FakeMemoryService {
             proof: Some(proof(&request.about, "claim:typed-answer")),
             warnings: Vec::new(),
             projection: None,
-            truncation: None,
             asked_as: String::new(),
         };
         Ok(Response::new(
