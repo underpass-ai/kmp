@@ -6583,7 +6583,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "dimensions": {
@@ -6732,7 +6731,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
