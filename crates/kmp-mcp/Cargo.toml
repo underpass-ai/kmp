@@ -42,6 +42,11 @@ tracing-appender = "0.2.3"
 tracing-subscriber.workspace = true
 wait-timeout.workspace = true
 
+# Process-owned store leases (`F_SETLK`): a child never inherits them, so a
+# spawn cannot lend a host's claim to another process between fork and exec.
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "1.1.4", default-features = false, features = ["fs", "std"] }
+
 [dev-dependencies]
 kmp-adapter-embedded.workspace = true
 kmp-transport-grpc.workspace = true
