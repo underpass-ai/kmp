@@ -18,7 +18,7 @@ const STATE_LINES: usize = 5;
 
 /// Relations that record where a memory's support or placement comes from,
 /// not what the memory says.
-const SUPPORT_BOOKKEEPING: &[&str] = &["supports", "has_evidence", "records"];
+pub(super) const SUPPORT_BOOKKEEPING: &[&str] = &["supports", "has_evidence", "records"];
 
 pub(super) fn rendered_current_state(
     rendered: &RenderedContext,

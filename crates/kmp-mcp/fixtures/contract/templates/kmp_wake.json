@@ -127,7 +127,24 @@
       "matched_terms": [],
       "missing": [],
       "nearest_outside": "null",
-      "path": [],
+      "path": [
+        {
+          "class": "string",
+          "clocks": {
+            "ingested_at": "string",
+            "observed_at": "string"
+          },
+          "confidence": "string",
+          "evidence_refs": [
+            "string"
+          ],
+          "from": "string",
+          "rel": "string",
+          "sequence": "integer",
+          "to": "string",
+          "why": "string"
+        }
+      ],
       "superseded": [
         {
           "ref": "string",

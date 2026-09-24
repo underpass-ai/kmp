@@ -144,3 +144,18 @@ fn a_historical_relation_is_not_a_next_action() {
         "{next}"
     );
 }
+
+#[test]
+fn the_causal_spine_carries_no_containment_or_support_bookkeeping() {
+    let response = wake();
+    let spine = &response.wake.as_ref().expect("wake packet").causal_spine;
+
+    assert!(!spine.is_empty());
+    for claim in spine {
+        assert!(
+            !claim.claim.starts_with("lane ") && !claim.claim.starts_with("evidence:"),
+            "{}",
+            claim.claim
+        );
+    }
+}
