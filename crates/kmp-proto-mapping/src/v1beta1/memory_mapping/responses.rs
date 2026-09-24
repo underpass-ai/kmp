@@ -221,7 +221,7 @@ pub fn wake_response_from_result(
 
 /// The lifecycles as they stand where the recall stands: at the instant the
 /// caller named, or at the memory's own frontier.
-fn lifecycle_for(bundle: &KmpBundle, admission: &TemporalAdmission) -> MemoryLifecycle {
+pub(super) fn lifecycle_for(bundle: &KmpBundle, admission: &TemporalAdmission) -> MemoryLifecycle {
     match admission.lifecycle_instant() {
         Some(instant) => MemoryLifecycle::read_at(bundle, instant, admission.axis()),
         None => MemoryLifecycle::read(bundle),
@@ -337,9 +337,13 @@ pub fn ask_response_from_result(
         .semantic
         .as_ref()
         .is_some_and(|ranking| !ranking.matches_question(question))
+        || retrieval
+            .rerank
+            .as_ref()
+            .is_some_and(|ranking| !ranking.matches_question(question))
     {
         return Err(super::scalars::invalid_argument(
-            "semantic ranking belongs to a different question",
+            "semantic or rerank ranking belongs to a different question",
         ));
     }
     let lexical_identity =
@@ -372,9 +376,22 @@ pub fn ask_response_from_result(
         .map(|item| &item.id)
         .collect::<std::collections::BTreeSet<_>>()
         .len();
+    // A remote judgement reorders what the selection admitted. It joins the
+    // fusion like any other channel: the cited core stays lexical, and an
+    // entry only it reached stays indirect.
+    let reranked = retrieval
+        .rerank
+        .as_ref()
+        .map(|ranking| ranker.rerank_candidates(ranking, &candidate_evidence))
+        .unwrap_or_default();
+    let rerank_count = reranked.len();
+    let mut supplemental = semantic;
+    if !reranked.is_empty() {
+        supplemental.push(reranked);
+    }
     let relevant_evidence = super::hybrid_evidence::fuse_evidence(
         ranker.rank(question, policy, candidate_evidence),
-        semantic,
+        supplemental,
     );
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
     let selection_projection = selection_cap_projection(withheld.len());
@@ -530,6 +547,13 @@ pub fn ask_response_from_result(
         .unwrap_or_default();
 
     let mut warnings = question_rendering_warnings(question, asked_as);
+    if let Some(ranking) = &retrieval.rerank {
+        warnings.push(format!(
+            "evidence rerank by {} ordered {rerank_count}/{} judged entries against admitted live text; it orders proof after the cited core and does not establish an answer",
+            ranking.model(),
+            ranking.len()
+        ));
+    }
     if let Some(ranking) = &retrieval.semantic {
         warnings.push(format!(
             "semantic retrieval resolved {semantic_count}/{} proposed entries against admitted live text; similarity extends proof and does not establish an answer",

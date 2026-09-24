@@ -3,6 +3,7 @@ use kmp_domain::TemporalSelection;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
+use super::rerank_candidate_ranking::RerankCandidateRanking;
 use super::semantic_candidate_ranking::SemanticCandidateRanking;
 
 /// Context selected by the application, optionally accompanied by an external
@@ -11,6 +12,7 @@ use super::semantic_candidate_ranking::SemanticCandidateRanking;
 pub struct AskRetrievalContext {
     pub(super) result: GetContextResult,
     pub(super) semantic: Option<SemanticCandidateRanking>,
+    pub(super) rerank: Option<RerankCandidateRanking>,
     pub(super) lexical_cache: Option<std::sync::Arc<super::lexical_index_cache::LexicalIndexCache>>,
 }
 
@@ -19,6 +21,7 @@ impl From<GetContextResult> for AskRetrievalContext {
         Self {
             result,
             semantic: None,
+            rerank: None,
             lexical_cache: None,
         }
     }
@@ -76,6 +79,39 @@ impl AskRetrievalContext {
 
     pub fn with_semantic_candidates(mut self, ranking: SemanticCandidateRanking) -> Self {
         self.semantic = Some(ranking);
+        self
+    }
+
+    /// The passages a remote judge may reorder: the ranker's own order first,
+    /// then admitted live entries it did not keep, so a paraphrase with no
+    /// word in common can still be read. At most `limit`, unique by entry
+    /// and exact text, and nothing the selection does not admit.
+    pub fn rerank_pool(
+        &self,
+        question: &str,
+        policy: kmp_application::MemoryAnswerPolicy,
+        temporal: &TemporalSelection,
+        bridge: &super::lexical_bridge::LexicalBridge,
+        limit: usize,
+    ) -> super::scalars::ProtoMappingResult<Vec<super::semantic_source::SemanticSource>> {
+        use super::temporal_admission::TemporalAdmission;
+        let admission = TemporalAdmission::read(&self.result.bundle, temporal)?;
+        let bounded = admission.bound(&self.result.bundle);
+        let lifecycle = super::responses::lifecycle_for(&bounded, &admission);
+        let ranker =
+            super::answer_ranker::AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle);
+        let mut candidates = super::bundle_views::answer_evidence_from_bundle(&self.result.bundle)
+            .into_iter()
+            .filter(|item| admission.admits(item))
+            .collect::<Vec<_>>();
+        for evidence in &mut candidates {
+            admission.bound_supports(evidence);
+        }
+        Ok(ranker.rerank_pool(question, policy, candidates, limit))
+    }
+
+    pub fn with_rerank_candidates(mut self, ranking: RerankCandidateRanking) -> Self {
+        self.rerank = Some(ranking);
         self
     }
 }

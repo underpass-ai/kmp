@@ -91,6 +91,56 @@ impl<'a> AnswerEvidenceRanker<'a> {
         ranking.resolve_channels(&live)
     }
 
+    /// A remote judge's order, resolved against the live admitted pool only.
+    pub(super) fn rerank_candidates(
+        &self,
+        ranking: &super::rerank_candidate_ranking::RerankCandidateRanking,
+        evidence: &[MemoryEvidence],
+    ) -> Vec<MemoryEvidence> {
+        let live = evidence
+            .iter()
+            .filter(|item| {
+                self.context.temporal_state(item) == CandidateTemporalState::CurrentOrUnspecified
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        ranking.resolve(&live)
+    }
+
+    /// What a remote judge may read: this ranker's order, then the live
+    /// admitted entries it did not keep, unique by entry and exact text.
+    pub(super) fn rerank_pool(
+        &self,
+        question: &str,
+        policy: MemoryAnswerPolicy,
+        candidates: Vec<MemoryEvidence>,
+        limit: usize,
+    ) -> Vec<super::semantic_source::SemanticSource> {
+        use sha2::{Digest, Sha256};
+        let ranked = self.rank(question, policy, candidates.clone());
+        let mut seen = BTreeSet::new();
+        let mut pool = Vec::new();
+        for item in ranked.iter().chain(candidates.iter()) {
+            if pool.len() >= limit {
+                break;
+            }
+            if self.context.temporal_state(item) != CandidateTemporalState::CurrentOrUnspecified {
+                continue;
+            }
+            let hash = format!("{:x}", Sha256::digest(item.text.as_bytes()));
+            for entry_ref in &item.supports {
+                if pool.len() < limit && seen.insert((entry_ref.clone(), hash.clone())) {
+                    pool.push(super::semantic_source::SemanticSource {
+                        entry_ref: entry_ref.clone(),
+                        text: item.text.clone(),
+                        text_sha256: hash.clone(),
+                    });
+                }
+            }
+        }
+        pool
+    }
+
     /// A ranker over a bundle with no table, which is what the tests of
     /// everything above the table read with.
     #[cfg(test)]

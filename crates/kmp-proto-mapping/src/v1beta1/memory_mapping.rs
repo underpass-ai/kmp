@@ -36,6 +36,9 @@ mod relation_feature;
 mod relation_reach;
 mod relation_signal_index;
 mod relevance_key;
+mod rerank_candidate_ranking;
+#[cfg(test)]
+mod rerank_recall_tests;
 mod responses;
 mod scalars;
 mod search_terms;
@@ -72,6 +75,7 @@ pub use queries::{
 };
 pub use relabel::{relabel_command_from_proto, relabel_response_from_outcome};
 pub use relate::{curate_reading_from_result, relate_response_from_result};
+pub use rerank_candidate_ranking::RerankCandidateRanking;
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
     trace_response_from_result, wake_response_from_result,

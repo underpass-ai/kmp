@@ -1,4 +1,5 @@
 use super::super::embedded_errors::{kernel_error, mapping_error};
+use super::super::judgement_reranker::JudgementReranker;
 use super::read_telemetry::EmbeddedReadTelemetry;
 use crate::projection::ask_from_response;
 use crate::serving::adapters::tool_request_mapping::AskRequestMapper;
@@ -18,6 +19,7 @@ pub(crate) struct EmbeddedAskTool<'a> {
     telemetry: EmbeddedReadTelemetry<'a>,
     bridge: &'a LexicalBridge,
     semantic: &'a Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
+    rerank: &'a Result<Option<Arc<JudgementReranker>>, String>,
     lexical_cache: &'a Arc<kmp_proto_mapping::v1beta1::LexicalIndexCache>,
 }
 
@@ -27,6 +29,7 @@ impl<'a> EmbeddedAskTool<'a> {
         telemetry: EmbeddedReadTelemetry<'a>,
         bridge: &'a LexicalBridge,
         semantic: &'a Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
+        rerank: &'a Result<Option<Arc<JudgementReranker>>, String>,
         lexical_cache: &'a Arc<kmp_proto_mapping::v1beta1::LexicalIndexCache>,
     ) -> Self {
         Self {
@@ -34,6 +37,7 @@ impl<'a> EmbeddedAskTool<'a> {
             telemetry,
             bridge,
             semantic,
+            rerank,
             lexical_cache,
         }
     }
@@ -60,29 +64,53 @@ impl<'a> EmbeddedAskTool<'a> {
             .observe("kmp_ask", &result.bundle, &result.rendered.quality);
         let mut retrieval =
             AskRetrievalContext::from(result).with_lexical_cache(Arc::clone(self.lexical_cache));
-        let mut warning = None;
+        let mut warnings = Vec::new();
+        let continuation = arguments
+            .get("page")
+            .and_then(|p| p.get("cursor"))
+            .is_some();
         match self.semantic {
             Ok(Some(provider)) => {
                 let sources = retrieval
                     .semantic_sources(&temporal)
                     .map_err(|status| mapping_error(&status))?;
                 let outcome = provider
-                    .rank(
-                        &question,
-                        &sources,
-                        arguments
-                            .get("page")
-                            .and_then(|p| p.get("cursor"))
-                            .is_some(),
-                    )
+                    .rank(&question, &sources, continuation)
                     .await
                     .map_err(ToolError::invalid_argument)?;
                 if let Some(ranking) = outcome.ranking {
                     retrieval = retrieval.with_semantic_candidates(ranking);
                 }
-                warning = outcome.warning;
+                warnings.extend(outcome.warning);
             }
-            Err(error) => warning = Some(format!("semantic retrieval disabled: {error}")),
+            Err(error) => warnings.push(format!("semantic retrieval disabled: {error}")),
+            Ok(None) => {}
+        }
+        // Remote re-ranking reads the admitted pool in the ranker's order and
+        // then what the ranker left out; it reorders proof, never the answer.
+        match self.rerank {
+            Ok(Some(reranker)) => {
+                let pool = retrieval
+                    .rerank_pool(
+                        &question,
+                        policy,
+                        &temporal,
+                        self.bridge,
+                        reranker.pool_size(),
+                    )
+                    .map_err(|status| mapping_error(&status))?;
+                if !pool.is_empty() {
+                    let outcome = reranker
+                        .rank(&question, &pool, continuation)
+                        .await
+                        .map_err(ToolError::invalid_argument)?;
+                    if let Some(ranking) = outcome.ranking {
+                        retrieval = retrieval.with_rerank_candidates(ranking);
+                    }
+                    warnings.extend(outcome.warning);
+                }
+            }
+            Err(error) => warnings.push(format!("evidence rerank disabled: {error}")),
             Ok(None) => {}
         }
         let mut response = ask_response_from_result(
@@ -95,9 +123,7 @@ impl<'a> EmbeddedAskTool<'a> {
             &temporal,
         )
         .map_err(|status| mapping_error(&status))?;
-        if let Some(warning) = warning {
-            response.warnings.push(warning);
-        }
+        response.warnings.extend(warnings);
         let response = project_ask_response(response, &request)
             .map_err(crate::projection::recall_error::projection)?;
         Ok(tool_success_result(ask_from_response(response)))
