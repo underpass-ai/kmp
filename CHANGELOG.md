@@ -9,6 +9,53 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-09-24
+
+### Changed
+
+- The default `tools/list` catalogue no longer advertises `outputSchema`, and
+  the four time verbs are one `kmp_time` tool with a required `move`
+  (`rewind`, `forward`, `goto`, `near`). Fifteen tools instead of eighteen;
+  a session starts with 25,214 reference tokens instead of 52,075 (o200k_base).
+  `KMP_MCP_OUTPUT_SCHEMAS=1` restores the output schemas byte for byte.
+- Wake cites evidence by identity: `causal_spine[].evidence_refs` resolve to
+  `proof.evidence` ids from the graph, and relation prose that no stored source
+  holds stays inline in `evidence`. `current_state` lists live memories as
+  `<ref> (<kind>): <summary>` before explanatory relations; containment and
+  support edges stay in the proof and out of the state and the spine.
+- Proof paths join a hop to a source only through the graph (an endpoint, or a
+  source supporting an endpoint that holds the hop's own text). Equal text in an
+  unrelated source is no longer cited.
+- Continuation pages carry only new items: the core is sent once, and
+  `page.repeat_core=true` sends it again to a host that lost page 1.
+  Continuation actions are short handles (`{"continuation":"read_…"}`) whose
+  calls the server retains for 24 hours; the original arguments plus
+  `page.cursor` still work. Progress is one lean `projection` block
+  (`kmp.recall.projection.v3`).
+- Measured on eleven native journeys against 0.19.0: every journey passes the
+  evidence oracle (0.19.0 passed three), 17 calls instead of 37, and 52% fewer
+  reference tokens per journey. See
+  `docs/development/agent-token-optimization-report.md`.
+
+### Removed
+
+- `kmp_rewind`, `kmp_forward`, `kmp_goto` and `kmp_near`: call `kmp_time`
+  with the matching `move`. Continuation handles saved under the old names no
+  longer resolve.
+- `WakeClaim.evidence_ref` (proto field 3 reserved), `truncation`
+  (`RecallTruncation`, `RecallOmitted`), and the section counters `eligible`,
+  `total` and Inspect `page.omitted`. Cursors from earlier projection contracts
+  are rejected.
+- The L0 summary's `Next:` line no longer names a historical relation as the
+  next action; it reads `none recorded`, and Wake `next_actions` stays empty
+  unless memory records an action.
+
+### Added
+
+- `scripts/performance/token_harness`: a pinned tiktoken meter over retained
+  MCP captures, synthetic Wake/Ask/write scenarios, a deterministic evidence
+  oracle and a paired baseline/candidate comparison.
+
 ## [0.19.0] - 2026-09-22
 
 ### Added
@@ -1853,7 +1900,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.19.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.20.0...HEAD
+[0.20.0]: https://github.com/underpass-ai/kmp/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/underpass-ai/kmp/compare/v0.18.9...v0.19.0
 [0.18.9]: https://github.com/underpass-ai/kmp/compare/v0.18.8...v0.18.9
 [0.18.8]: https://github.com/underpass-ai/kmp/compare/v0.18.7...v0.18.8
