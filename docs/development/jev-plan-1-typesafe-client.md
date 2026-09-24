@@ -1508,3 +1508,11 @@ above.
 Record in the session hand-off: the commit SHAs, the test counts, the result
 of the live call (model and input tokens), and a note that the branch stays
 local until plan 2 consumes the port.
+
+## Deviations recorded during execution
+
+- Task 2: `TYPESAFE_API_KEY_ENV` also carries the temporary
+  `#[allow(dead_code)]`, because clippy flags the unused constant.
+- Task 4: the architecture gate counts `Reply` and `Received` as two types in
+  `typesafe_fixture.rs`. `serve` now returns `(headers, body)` tuples and
+  `Received` is gone.

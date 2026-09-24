@@ -15,6 +15,12 @@ mod typesafe_api_key;
 mod typesafe_batches;
 #[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
 mod typesafe_config;
+#[cfg(test)]
+mod typesafe_fixture;
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+mod typesafe_judgement;
+#[cfg(test)]
+mod typesafe_judgement_tests;
 #[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
 mod typesafe_request_body;
 #[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
