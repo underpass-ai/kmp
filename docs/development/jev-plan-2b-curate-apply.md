@@ -180,3 +180,14 @@ idempotency. Their evidence metadata records that curation produced them.
   `write_memory_output_schema` became `pub(crate)`.
 - `tests/curate_review.rs` was renamed `tests/curate.rs`. It proves that the
   written evidence carries `curated_by: kmp_curate` through `kmp_inspect`.
+- Task 5, first live run (fresh copy of the store, `project:made`): the
+  `why` "The weather was sunny that day." came back doubted at support 0.03
+  and was not written. The sound PR181 `updates_state` passed. That run found
+  a real bug: the resumed apply used frozen doubts without the checking model,
+  so `curated_with` vanished, the packet changed, the kernel token no longer
+  matched, and review ran twice. The written relation also lacked
+  `curated_with`. Fixed with `FrozenCheck` (the checking model plus its
+  doubts, frozen whole, exposed as `checked_by`). Second run: one resume to
+  `committed`, and all three evidence items carry `curated_by: kmp_curate`
+  and `jev-1.13.0`. The weak item was written only after `confirm_doubted`.
+  The pre-check cost 1 request of 1,910 input tokens.

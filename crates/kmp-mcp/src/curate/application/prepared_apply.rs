@@ -11,5 +11,8 @@ pub(crate) struct PreparedApply {
     pub doubted: Vec<ApplyDoubt>,
     pub rejected: Vec<ApplyRejection>,
     pub jev: Option<JevUsage>,
+    /// The model whose check these items passed, frozen with its doubts;
+    /// none when no check ran.
+    pub checked_by: Option<String>,
     pub warnings: Vec<String>,
 }

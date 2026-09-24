@@ -9,6 +9,7 @@ use crate::curate::domain::apply_item::ApplyItem;
 use crate::curate::domain::apply_rejection::ApplyRejection;
 use crate::curate::domain::curate_finding::CurateFinding;
 use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE, RETYPE_AT};
+use crate::curate::domain::frozen_check::FrozenCheck;
 use crate::curate::domain::jev_verdict::JevVerdict;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::serving::judgement_answer::JudgementAnswer;
@@ -31,14 +32,15 @@ impl PrepareApply<'_> {
         review: &CurateReview,
         material: &CurateMaterial,
         items: Vec<ApplyItem>,
-        frozen: Option<Vec<ApplyDoubt>>,
-    ) -> (PreparedApply, Vec<ApplyDoubt>) {
+        frozen: Option<FrozenCheck>,
+    ) -> (PreparedApply, FrozenCheck) {
         let numbered = review.numbered();
         let mut prepared = PreparedApply {
             relations: Vec::new(),
             doubted: Vec::new(),
             rejected: Vec::new(),
             jev: None,
+            checked_by: None,
             warnings: Vec::new(),
         };
         let mut confirmed = Vec::new();
@@ -123,64 +125,69 @@ impl PrepareApply<'_> {
             });
         }
 
-        let doubts = match frozen {
-            Some(doubts) => doubts,
+        let check = match frozen {
+            Some(check) => check,
             None => match self.judgement {
                 Some(model) if !prepared.relations.is_empty() => {
                     match model
                         .evaluate(&precheck_request(material, &prepared.relations))
                         .await
                     {
-                        Ok(response) => {
-                            prepared.jev = Some(JevUsage {
-                                model: model.model().to_string(),
-                                requests: response.requests,
-                                input_tokens: response.input_tokens,
-                            });
-                            prepared
-                                .relations
-                                .iter()
-                                .enumerate()
-                                .filter_map(|(n, relation)| {
-                                    let support = match response.answers.get(&format!("s{n}")) {
-                                        Some(JudgementAnswer::Noul { yes }) => *yes,
-                                        _ => return None,
-                                    };
-                                    let best = match response.answers.get(&format!("b{n}")) {
-                                        Some(JudgementAnswer::Choice {
-                                            choice,
-                                            probabilities,
-                                            confidence,
-                                        }) => JevVerdict {
-                                            choice: choice.clone(),
-                                            probabilities: probabilities.clone(),
-                                            confidence: *confidence,
-                                        },
-                                        _ => return None,
-                                    };
-                                    let doubted = support < DOUBT_BELOW
-                                        || (best.choice != relation.rel
-                                            && best.choice != NONE
-                                            && best.confidence >= RETYPE_AT);
-                                    doubted.then(|| ApplyDoubt {
-                                        item_id: relation.item_id.clone(),
-                                        support,
-                                        best,
+                        Ok(response) => FrozenCheck {
+                            checked_by: Some(model.model().to_string()),
+                            doubts: {
+                                prepared.jev = Some(JevUsage {
+                                    model: model.model().to_string(),
+                                    requests: response.requests,
+                                    input_tokens: response.input_tokens,
+                                });
+                                prepared
+                                    .relations
+                                    .iter()
+                                    .enumerate()
+                                    .filter_map(|(n, relation)| {
+                                        let support = match response.answers.get(&format!("s{n}")) {
+                                            Some(JudgementAnswer::Noul { yes }) => *yes,
+                                            _ => return None,
+                                        };
+                                        let best = match response.answers.get(&format!("b{n}")) {
+                                            Some(JudgementAnswer::Choice {
+                                                choice,
+                                                probabilities,
+                                                confidence,
+                                            }) => JevVerdict {
+                                                choice: choice.clone(),
+                                                probabilities: probabilities.clone(),
+                                                confidence: *confidence,
+                                            },
+                                            _ => return None,
+                                        };
+                                        let doubted = support < DOUBT_BELOW
+                                            || (best.choice != relation.rel
+                                                && best.choice != NONE
+                                                && best.confidence >= RETYPE_AT);
+                                        doubted.then(|| ApplyDoubt {
+                                            item_id: relation.item_id.clone(),
+                                            support,
+                                            best,
+                                        })
                                     })
-                                })
-                                .collect()
-                        }
+                                    .collect()
+                            },
+                        },
                         Err(error) => {
                             prepared.warnings.push(format!(
                                 "Jev pre-write check skipped; writing without it: {error}"
                             ));
-                            Vec::new()
+                            FrozenCheck::default()
                         }
                     }
                 }
-                _ => Vec::new(),
+                _ => FrozenCheck::default(),
             },
         };
+        prepared.checked_by = check.checked_by.clone();
+        let doubts = &check.doubts;
         let withheld = |relation: &PreparedRelation| {
             doubts.iter().any(|doubt| doubt.item_id == relation.item_id)
                 && !confirmed.contains(&relation.item_id)
@@ -196,7 +203,7 @@ impl PrepareApply<'_> {
             })
             .cloned()
             .collect();
-        (prepared, doubts)
+        (prepared, check)
     }
 }
 
@@ -345,7 +352,7 @@ mod tests {
     #[tokio::test]
     async fn a_doubted_item_is_withheld_until_confirmed() {
         let model = scripted(0.1, "supports");
-        let (prepared, doubts) = PrepareApply {
+        let (prepared, frozen) = PrepareApply {
             judgement: Some(&model),
         }
         .run("a", &review(), &material(), vec![item("m0")], None)
@@ -359,7 +366,7 @@ mod tests {
         let (again, _) = PrepareApply {
             judgement: Some(&model),
         }
-        .run("a", &review(), &material(), vec![confirmed], Some(doubts))
+        .run("a", &review(), &material(), vec![confirmed], Some(frozen))
         .await;
         assert_eq!(again.relations.len(), 1);
         assert!(again.doubted.is_empty());
@@ -373,12 +380,33 @@ mod tests {
     #[tokio::test]
     async fn a_supported_item_passes_the_check() {
         let model = scripted(0.9, "supports");
-        let (prepared, doubts) = PrepareApply {
+        let (prepared, frozen) = PrepareApply {
             judgement: Some(&model),
         }
         .run("a", &review(), &material(), vec![item("m0")], None)
         .await;
         assert_eq!(prepared.relations.len(), 1);
-        assert!(doubts.is_empty());
+        assert!(frozen.doubts.is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_resumed_apply_keeps_the_model_that_checked_it() {
+        let model = scripted(0.9, "supports");
+        let (first, frozen) = PrepareApply {
+            judgement: Some(&model),
+        }
+        .run("a", &review(), &material(), vec![item("m0")], None)
+        .await;
+        let (resumed, _) = PrepareApply {
+            judgement: Some(&model),
+        }
+        .run("a", &review(), &material(), vec![item("m0")], Some(frozen))
+        .await;
+        assert_eq!(first.checked_by.as_deref(), Some("jev-test"));
+        assert_eq!(
+            resumed.checked_by, first.checked_by,
+            "same packet, same provenance"
+        );
+        assert_eq!(*model.calls.lock().expect("calls"), 1);
     }
 }

@@ -140,7 +140,9 @@ impl KernelMcpServer {
 
         let mut metadata = Map::new();
         metadata.insert("curated_by".into(), json!(TOOL));
-        if let Some(model) = prepared["jev"]["model"].as_str() {
+        // The model that checked these items, frozen with its doubts, so a
+        // resumed apply writes the same packet and the same provenance.
+        if let Some(model) = prepared["checked_by"].as_str() {
             metadata.insert("curated_with".into(), json!(model));
         }
         if relations

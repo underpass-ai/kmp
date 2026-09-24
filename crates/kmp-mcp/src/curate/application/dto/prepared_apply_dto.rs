@@ -29,6 +29,7 @@ pub(crate) fn prepared_to_value(prepared: &PreparedApply) -> Value {
         "jev": prepared.jev.as_ref().map(|usage| json!({
             "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens,
         })),
+        "checked_by": prepared.checked_by,
         "warnings": prepared.warnings,
     })
 }
@@ -76,6 +77,7 @@ mod tests {
                 reason: "r".into(),
             }],
             jev: None,
+            checked_by: None,
             warnings: vec![],
         });
         assert_eq!(value["relations"][0]["proposed_by"], "jev");

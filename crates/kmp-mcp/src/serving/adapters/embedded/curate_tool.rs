@@ -202,12 +202,12 @@ impl<'a> EmbeddedCurateTool<'a> {
             )
         );
         let frozen = self.doubts.get(&digest);
-        let (prepared, doubts) = PrepareApply {
+        let (prepared, check) = PrepareApply {
             judgement: self.judgement,
         }
         .run(about, &review, &material, items, frozen)
         .await;
-        self.doubts.insert(digest, doubts);
+        self.doubts.insert(digest, check);
         Ok(tool_success_result(prepared_to_value(&prepared)))
     }
 }
