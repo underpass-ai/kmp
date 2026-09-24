@@ -239,6 +239,50 @@ Measured on the pinned fixtures, whole document as compact JSON
 Contract break, named: a client that read `outputSchema` from the default
 catalogue must now set `KMP_MCP_OUTPUT_SCHEMAS=1`.
 
+### PR 3 — Incremental continuation pages
+
+I3 showed Wake and Ask repeating the stable core on every continuation: in
+W01 at 10000 B the pinned spine evidence cost +463 tokens over three calls,
+and `truncation` restated `projection` on every page.
+
+- A continuation (`page.cursor` past page 1) carries only new expansion
+  items, `projection` and its own warning, and marks
+  `projection.core_reused=true`. Summary, answer, because, scope, clocks,
+  pinned proof and core warnings travel once. The cursor still binds the
+  whole core by hash, so another snapshot is still rejected.
+- `page.repeat_core=true` resends the core for a host that lost page 1
+  (compaction, reconnect); the action it proposes returns to incremental
+  pages. A continuation whose next item does not fit reports a stall and a
+  sufficient budget instead of shortening a core it does not send.
+- `truncation` is retired (JSON and proto); `projection` is the one progress
+  block and keeps every omission cause apart: `page.offset` (earlier pages),
+  `sections.*.remaining` (not yet delivered), `excluded_by_detail`,
+  `selection_omitted` (entries cap), `core_text_shortened`.
+- Reconstruction tests: page 1 plus every continuation equals a single
+  large-budget read, for typed Wake, typed Ask and the JSON projection.
+
+Contract break, named: default continuation shape, `truncation` removed
+(`WakeResponse`/`AskResponse` field 7 reserved, `RecallTruncation` and
+`RecallOmitted` deleted), `kmp.recall.projection.v2`.
+
+Measured against the integration head d339c02f (C1 included on both sides),
+same machine and harness, `o200k_base`, `json_compact_lexical_v1`, whole
+journey; all 11 journeys pass the oracle in both runs, A/A controls zero:
+
+| Journey | 4096 B | 10000 B | Calls 4096 | Calls 10000 |
+| --- | ---: | ---: | --- | --- |
+| W01 | −666 | −1,895 | 3 → 3 | 3 → 2 |
+| W02 | −2,264 | −13 | 4 → 2 | 1 → 1 |
+| W03 | −1,214 | −13 | 3 → 2 | 1 → 1 |
+| W04 | −352 | −13 | 2 → 2 | 1 → 1 |
+| A01 | −1,315 | −13 | 2 → 1 | 1 → 1 |
+| E01 (write) | +46 | | 1 → 1 | |
+
+Weighted −3.4 % at 4096 B, −1.2 % at 10000 B. Startup is +46 tokens (the
+`repeat_core` input property on two tools); every single-page read is −59 in
+memory calls (no `truncation`). W01 at 10000 B: `proof.evidence` 1,942 →
+1,532 tokens, `projection` + `truncation` 1,103 → 584.
+
 ### Backlog, gated by I3 measurements
 
 | Review item | Starts when |
@@ -260,7 +304,7 @@ catalogue must now set `KMP_MCP_OUTPUT_SCHEMAS=1`.
 | I2b | `fix/544-wake-scope` | #840 | merged; hops join sources by the graph (W03), spine without bookkeeping (W04), no endpoint over-citation (W01) |
 | I3 | `feat/544-wake-oracle` | #839 | merged; against #840 (c88472b9) the candidate passes W01–W04/A01/E01 and is smaller on every wake and ask journey; E01 +14. Weighted −6.9 % at 4096 B, −1.0 % at 10000 B |
 | C1 — catalogue without output schemas | `feat/544-lean-catalogue` | #841 | draft; default `tools/list` 51,629 → 29,460 tokens (−42.9 %), 248,704 → 137,654 bytes; `KMP_MCP_OUTPUT_SCHEMAS=1` restores the previous catalogue byte for byte |
-| Next | PR 3 | — | pinned core evidence repeats on every page (+463 tokens in W01 at 10000 B); incremental continuations |
+| PR3 — incremental continuation pages | `feat/544-incremental-pages` | #PR3 | draft; continuations carry only new items (`projection.core_reused`), `page.repeat_core=true` rehydrates, `truncation` retired; all 11 journeys pass; −3.4 % at 4096 B, −1.2 % at 10000 B, W01 −1,895 tokens and 3 → 2 calls at 10000 B |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
 contract break is acceptable when it serves that. Breaks are named in each PR.
