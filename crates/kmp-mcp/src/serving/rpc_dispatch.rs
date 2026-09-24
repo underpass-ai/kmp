@@ -61,9 +61,9 @@ impl KernelMcpServer {
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    self.passage_tools(tools_list_result_with_apps(
+                    self.output_schema_tools(self.passage_tools(tools_list_result_with_apps(
                         self.apps_negotiated.load(Ordering::SeqCst),
-                    )),
+                    ))),
                 )
             }),
             Some("resources/list") if self.apps_negotiated.load(Ordering::SeqCst) => {

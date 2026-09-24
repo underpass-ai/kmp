@@ -22,6 +22,7 @@ pub use serving::{
     GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_DOMAIN_NAME_ENV,
     GRPC_TLS_KEY_PATH_ENV, GRPC_TLS_MODE_ENV, KernelMcpBackend, KernelMcpGrpcTlsConfig,
     KernelMcpGrpcTlsMode, KernelMcpToolBackend, KernelMcpToolFuture, MCP_BACKEND_ENV,
+    OUTPUT_SCHEMAS_ENV,
 };
 /// The tools this build advertises, in the order `tools/list` returns them.
 ///
@@ -55,8 +56,9 @@ pub fn kmp_mcp_tool_error_result(
     serving::tool_result::tool_error_result(tool, arguments, error)
 }
 
+/// The default `tools/list` result: every tool without its `outputSchema`.
 pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
-    contract::tools_list_result()
+    contract::advertised_tools_list(false, false)
 }
 
 /// The surface a host that negotiated MCP Apps is offered: the same tools plus
@@ -66,7 +68,14 @@ pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
 /// only `apps = false` would leave the app surface — and the argument
 /// rejection that reads its schemas — free to drift unnoticed.
 pub fn kmp_mcp_tools_list_result_with_apps(apps: bool) -> serde_json::Value {
-    contract::tools_list_result_with_apps(apps)
+    contract::advertised_tools_list(apps, false)
+}
+
+/// The opt-in catalogue (`KMP_MCP_OUTPUT_SCHEMAS=1`): the same tools with the
+/// `outputSchema` that `structuredContent` conforms to. It is also the whole
+/// tool contract, so tests that validate answers read their schemas here.
+pub fn kmp_mcp_tools_list_result_with_output_schemas(apps: bool) -> serde_json::Value {
+    contract::advertised_tools_list(apps, true)
 }
 
 pub fn kmp_mcp_tool_names() -> Vec<String> {

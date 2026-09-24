@@ -35,7 +35,11 @@ impl KernelMcpServer {
     pub(super) fn passage_tools(&self, mut result: Value) -> Value {
         if self.shared_passages {
             for tool in result["tools"].as_array_mut().into_iter().flatten() {
-                if ReadContinuation::supports_read(tool["name"].as_str().unwrap_or_default()) {
+                // Only a schema the catalogue carries is extended; indexing an
+                // absent one would invent a partial `outputSchema`.
+                if tool.get("outputSchema").is_some()
+                    && ReadContinuation::supports_read(tool["name"].as_str().unwrap_or_default())
+                {
                     tool["outputSchema"]["properties"]["citations"] = json!({"type":"object","additionalProperties":{"type":"string"},"description":"Response-local mapping from citation handles to exact canonical refs. A graph-reference slot {citation:id} resolves here; source/record identities and original read actions remain explicit."});
                     tool["outputSchema"]["properties"]["passages"] = json!({
                         "type":"object", "additionalProperties":{"type":"string"},

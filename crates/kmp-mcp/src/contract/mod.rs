@@ -19,5 +19,8 @@ pub(crate) use handshake::{
     CHRONOLOOM_APP_URI, MCP_APP_MIME, canonical_tool_name, initialize_result_with_apps,
     resource_read_result, resources_list_result,
 };
-pub(crate) use registry::{declared_tool_names, tools_list_result, tools_list_result_with_apps};
+pub(crate) use registry::{
+    advertised_tools_list, declared_tool_names, tools_list_result, tools_list_result_with_apps,
+    without_output_schemas,
+};
 pub(crate) use validator::{reject_unknown_arguments, validate_required_arguments};

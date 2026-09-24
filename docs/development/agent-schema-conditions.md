@@ -90,6 +90,10 @@ uv run --with tiktoken==0.12.0 --with jsonschema==4.25.1 python \
   --output tmp/schema-comparison.json
 ```
 
+Since #544 C1 `tools_list.json` omits output schemas; pass
+`crates/kmp-mcp/fixtures/contract/tools_list_with_output_schemas.json` as
+`--after` to repeat this comparison, which requires them unchanged.
+
 This runs no model. Broader #544 acceptance still needs a refreshed-host
 observation and complete independent workflow evaluation. Response reductions
 and evidence-selection quality remain separately measured work.
