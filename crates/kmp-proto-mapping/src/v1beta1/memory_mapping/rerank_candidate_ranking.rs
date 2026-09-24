@@ -18,23 +18,24 @@ pub struct RerankCandidateRanking {
 }
 
 impl RerankCandidateRanking {
-    /// At most 100 unique entry refs, best first, each with the SHA-256 of
-    /// its exact text, from a pinned model.
+    /// At most 100 unique `(entry ref, SHA-256 of exact text)` identities,
+    /// best first, from a pinned model. One entry may appear once per text
+    /// that supports it: its body and each evidence text are judged apart.
     pub fn new(
         model: String,
         question: &str,
         fingerprints: Vec<(String, String)>,
     ) -> ProtoMappingResult<Self> {
-        let mut refs = BTreeSet::new();
+        let mut identities = BTreeSet::new();
         let valid = !model.trim().is_empty()
             && model.len() <= 256
             && fingerprints.len() <= 100
             && fingerprints.iter().all(|(entry_ref, fingerprint)| {
                 !entry_ref.is_empty()
                     && entry_ref.len() <= 4096
-                    && refs.insert(entry_ref)
                     && fingerprint.len() == 64
                     && fingerprint.bytes().all(|b| b.is_ascii_hexdigit())
+                    && identities.insert((entry_ref, fingerprint.to_ascii_lowercase()))
             });
         if !valid {
             return Err(invalid_argument("invalid rerank candidate ranking"));
@@ -129,9 +130,33 @@ mod tests {
     }
 
     #[test]
-    fn duplicate_refs_and_bad_fingerprints_are_refused() {
+    fn one_entry_may_be_judged_through_each_of_its_texts() {
+        // An entry is supported by its own body and by evidence text; the
+        // pool offers each text once, so identities are pairs, not refs.
+        let admitted = vec![
+            evidence("e1", "a:1", "body"),
+            evidence("e2", "a:1", "evidence"),
+        ];
+        let ranking = RerankCandidateRanking::new(
+            "m".into(),
+            "q",
+            vec![("a:1".into(), sha("evidence")), ("a:1".into(), sha("body"))],
+        )
+        .expect("two texts of one entry");
+        let resolved = ranking.resolve(&admitted);
+        assert_eq!(
+            resolved
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["e2", "e1"]
+        );
+    }
+
+    #[test]
+    fn duplicate_identities_and_bad_fingerprints_are_refused() {
         for fingerprints in [
-            vec![("a".to_string(), sha("x")), ("a".to_string(), sha("y"))],
+            vec![("a".to_string(), sha("x")), ("a".to_string(), sha("x"))],
             vec![("a".to_string(), "short".to_string())],
         ] {
             assert!(RerankCandidateRanking::new("m".into(), "q", fingerprints).is_err());

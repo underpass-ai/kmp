@@ -97,7 +97,11 @@ async fn passages_are_ordered_by_the_judgement_and_frozen_for_pages() {
     assert!(first.warning.is_none());
     let ranking = first.ranking.expect("ranking");
     let order = format!("{ranking:?}");
-    assert!(order.find("entry:b") < order.find("entry:a"), "{order}");
+    assert!(order.contains("entry:b"), "{order}");
+    assert!(
+        !order.contains("entry:a"),
+        "a passage judged unlikely to answer stays out: {order}"
+    );
     let page = reranker
         .rank("Who fixed the car?", &pool, true)
         .await

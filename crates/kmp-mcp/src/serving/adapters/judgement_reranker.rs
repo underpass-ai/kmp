@@ -18,6 +18,10 @@ use crate::serving::rerank_outcome::RerankOutcome;
 const SENT_CHARS: usize = 2_000;
 /// Frozen selections kept for continuation pages.
 const KEPT: usize = 64;
+/// Passages Jev judges less likely than this to answer are left out of the
+/// ranking: a channel that listed the whole pool would grow proof with what
+/// the judge itself thinks is irrelevant.
+const ANSWERS_AT: f64 = 0.5;
 
 /// Ask re-ranking by a remote judgement model, behind its own opt-in. One
 /// yes/no question per admitted passage — does it answer the question? —
@@ -137,12 +141,14 @@ impl JudgementReranker {
                 };
                 (yes, source)
             })
+            .filter(|(yes, _)| *yes >= ANSWERS_AT)
             .collect::<Vec<_>>();
         scored.sort_by(|left, right| {
             right
                 .0
                 .total_cmp(&left.0)
                 .then_with(|| left.1.entry_ref.cmp(&right.1.entry_ref))
+                .then_with(|| left.1.text_sha256.cmp(&right.1.text_sha256))
         });
         RerankCandidateRanking::new(
             self.model.model().to_string(),
