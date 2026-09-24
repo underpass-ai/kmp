@@ -791,7 +791,8 @@ impl KernelMemoryService for FakeMemoryService {
                 causal_spine: vec![WakeClaim {
                     claim: "Typed wake claim.".to_string(),
                     because: "KernelMemoryService.Wake returned it.".to_string(),
-                    evidence_ref: "evidence:typed".to_string(),
+                    evidence_refs: vec!["evidence:typed".to_string()],
+                    evidence: String::new(),
                 }],
                 open_loops: Vec::new(),
                 next_actions: Vec::new(),

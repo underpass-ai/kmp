@@ -13,7 +13,7 @@ use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, ExpiredMemory, InspectResponse, InspectedLinks, InspectedObject,
     MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef,
     RecallProjection, TemporalCursor, TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse,
-    TemporalState, TraceResponse, WakeClaim, WakePacket, WakeResponse,
+    TemporalState, TraceResponse, WakePacket, WakeResponse,
 };
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
@@ -21,6 +21,7 @@ use super::answer_selection::was_reached_indirectly;
 use super::lexical_bridge::LexicalBridge;
 use super::scalars::ProtoMappingResult;
 use super::temporal_admission::TemporalAdmission;
+use super::wake_claim_evidence::WakeClaimEvidence;
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -154,6 +155,12 @@ pub fn wake_response_from_result(
     let full_evidence = prioritize_wake_evidence(full_evidence, &lifecycle, &signals);
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
     let selection_projection = selection_cap_projection(withheld.len());
+    let claim_evidence = WakeClaimEvidence::new(&bounded, &evidence);
+    let causal_spine = causal_spine
+        .iter()
+        .take(8)
+        .map(|relationship| claim_evidence.claim(relationship))
+        .collect::<Vec<_>>();
     let resume_cursor = newest_cursor(&relationships);
 
     // The catalogue is the about's, not the selection's: what the memory
@@ -170,19 +177,7 @@ pub fn wake_response_from_result(
         wake: Some(WakePacket {
             objective: intent.to_string(),
             current_state,
-            causal_spine: causal_spine
-                .iter()
-                .take(8)
-                .map(|relationship| WakeClaim {
-                    claim: format!("{} -> {}", relationship.source_ref, relationship.target_ref),
-                    because: if relationship.why.is_empty() {
-                        "Kernel relationship path selected this edge.".to_string()
-                    } else {
-                        relationship.why.clone()
-                    },
-                    evidence_ref: relationship.evidence.clone(),
-                })
-                .collect(),
+            causal_spine,
             open_loops,
             next_actions,
             guardrails,

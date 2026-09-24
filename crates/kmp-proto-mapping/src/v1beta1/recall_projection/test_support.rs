@@ -191,7 +191,8 @@ pub(super) fn typed_wake_fixture(path_count: usize) -> WakeResponse {
             causal_spine: vec![WakeClaim {
                 claim: "claim:0".to_string(),
                 because: "The canonical evidence supports it.".to_string(),
-                evidence_ref: "evidence:0".to_string(),
+                evidence_refs: vec!["evidence:0".to_string()],
+                evidence: String::new(),
             }],
             open_loops: (0..4).map(|index| format!("Open loop {index}")).collect(),
             next_actions: (0..4).map(|index| format!("Next action {index}")).collect(),

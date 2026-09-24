@@ -2722,7 +2722,7 @@
             "additionalProperties": false,
             "properties": {
               "causal_spine": {
-                "description": "Highest-salience explanatory relations, each with claim, because, and evidence_ref.",
+                "description": "Highest-salience explanatory relations, each with claim and because, plus evidence_refs to proof.evidence ids or inline evidence when no stored source holds it.",
                 "type": "array"
               },
               "current_state": {

@@ -84,7 +84,7 @@ pub(crate) mod fixtures {
                 json!({
                     "claim": format!("claim {index}: {}", "specific retained detail ".repeat(4)),
                     "because": format!("reason {index}: {}", "grounded detail ".repeat(4)),
-                    "evidence_ref": format!("evidence:{index}")
+                    "evidence_refs": [format!("evidence:{index}")]
                 })
             })
             .collect::<Vec<_>>();

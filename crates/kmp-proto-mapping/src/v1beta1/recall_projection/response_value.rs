@@ -150,7 +150,14 @@ fn truncation_value(truncation: &RecallTruncation) -> Value {
 }
 
 fn wake_claim_value(claim: &WakeClaim) -> Value {
-    json!({"claim": claim.claim, "because": claim.because, "evidence_ref": claim.evidence_ref})
+    let mut value = Map::new();
+    value.insert("claim".to_string(), json!(claim.claim));
+    value.insert("because".to_string(), json!(claim.because));
+    if !claim.evidence_refs.is_empty() {
+        value.insert("evidence_refs".to_string(), json!(claim.evidence_refs));
+    }
+    insert_non_empty(&mut value, "evidence", &claim.evidence);
+    Value::Object(value)
 }
 
 fn answer_reason_value(reason: &AnswerReason, evidence: &[MemoryEvidence]) -> Value {

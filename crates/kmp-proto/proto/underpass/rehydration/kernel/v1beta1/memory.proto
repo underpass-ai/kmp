@@ -416,7 +416,16 @@ message WakePacket {
 message WakeClaim {
   string claim = 1;
   string because = 2;
-  string evidence_ref = 3;
+  // Field 3 carried the relation's evidence prose under a name the
+  // projection resolved as an id; it matched nothing and hid the source.
+  reserved 3;
+  reserved "evidence_ref";
+  // Canonical Proof.evidence ids of the stored sources that support this
+  // hop, resolved from the graph, never from matching text across abouts.
+  repeated string evidence_refs = 4;
+  // The relation's evidence text when no stored source holds it. Empty
+  // whenever evidence_refs carries the same body.
+  string evidence = 5;
 }
 
 message AskRequest {

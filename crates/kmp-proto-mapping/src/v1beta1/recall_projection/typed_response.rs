@@ -35,7 +35,8 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
             .map(|claim| WakeClaim {
                 claim: string_at(claim, "/claim"),
                 because: string_at(claim, "/because"),
-                evidence_ref: string_at(claim, "/evidence_ref"),
+                evidence_refs: strings_at(claim, "/evidence_refs"),
+                evidence: string_at(claim, "/evidence"),
             })
             .collect();
     }
