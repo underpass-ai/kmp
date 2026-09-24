@@ -329,6 +329,74 @@ and their `kernel_*` aliases are removed; call `kmp_time` with `move`.
 Continuation handles saved under an old name no longer resolve; submit the
 original read again.
 
+### C3 — Minimal continuation actions and lean progress
+
+After PR 3 every paged response still paid two costs. `next_action` restated
+the whole request beside the cursor (W02 at 4096 B: 327 bytes, 115 tokens, of
+which the cursor was 74 bytes), and the host sent that echo back as the next
+request. `projection.sections` carried five counters per section on every
+page, zeros included; Time pages listed all ten sections even when nine were
+empty (639 bytes, 181 tokens per response).
+
+- Actions. The MCP server retains the call a page proposes and returns
+  `{"continuation":"read_<32 hex>"}`: every cursor page (Wake, Ask, Trace,
+  Relate, Inspect, `kmp_time` with its `move`) and a write resuming its
+  review. The existing handle store gains a context-free table
+  (`open_continuations`) beside the store in `agent-users.sqlite3` (24 h,
+  256 calls, 32 KiB each), so a handle outlives a restarted process; a server
+  without a path keeps it in memory. HTTP resolves before it authorizes, as
+  for context handles. Restarts (`core_text_shortened`, `feedback[].action`)
+  and time navigation stay readable: the agent has to choose them.
+- Validation. Only Wake/Ask `page.repeat_core=true` may accompany a handle;
+  any other argument is `invalid_argument` naming the stateless form
+  (original arguments plus `page.cursor`), which still works. The retained
+  call keeps its cursor, so a changed selection is still `conflict` with a
+  full restart; an expired or foreign handle is `CONTINUATION_UNAVAILABLE`.
+- Progress. `projection.sections` (`kmp.recall.projection.v3`) omits zero
+  counters and empty sections. `core` and `excluded_by_detail` (was
+  `total - eligible`) appear on the page that carries the core; `eligible`
+  and `total` are retired and derivable (mapping in `agent-surface.md`).
+  Proto: `RecallProjectionSection` 4/5 reserved, `excluded_by_detail = 7`.
+  Time and Inspect `page.sections` keep `returned_on_page` and `remaining`;
+  Inspect `page.omitted`, a copy of `remaining`, is retired.
+- The catalogue's `continuation` descriptions are shorter: default
+  `tools/list` 24,899 → 24,754 tokens (116,604 → 115,847 bytes).
+
+Measured against the integration head dcb8b5d8 (C1, PR 3, C2 and #844 on both
+sides), same machine and harness, `o200k_base`, `json_compact_lexical_v1`,
+whole journey; all 11 journeys pass the oracle in both runs, call counts
+unchanged, A/A controls zero:
+
+| Journey | 4096 B | 10000 B |
+| --- | ---: | ---: |
+| W01 | −473 | −409 |
+| W02 | −434 | −199 |
+| W03 | −386 | −199 |
+| W04 | −425 | −199 |
+| A01 | −173 | −173 |
+| E01 (write) | −145 | |
+
+Weighted −1.3 % at 4096 B, −0.85 % at 10000 B (startup −145 per session).
+Summed over the 11 journeys: `next_action` 1,375 → 568 bytes (497 → 212
+tokens), `projection.sections` 5,520 → 2,269 bytes (1,672 → 602 tokens),
+continuation request arguments 1,087 → 280 bytes (409 → 124 tokens). On the
+pinned fixtures, outside the harness scenarios: a Time page's sections
+181 → 9 tokens, Inspect sections plus `omitted` 90 → 20, a write-review
+resume 173 → 27 tokens (packet of the neighborhood fixture).
+
+Contract break, named: continuation actions are handles, not complete calls;
+a client that edited an action must send the original arguments with
+`page.cursor`. `eligible`/`total` and Inspect `page.omitted` are gone. Direct
+gRPC `next_call` still carries the complete call.
+
+Deferred: the recall projection still sizes a page with the complete action,
+so the ~130 bytes a handle frees are not refilled with items; Inspect
+`page.repeat_object` cannot accompany a handle; byte counts inside warnings
+(the Inspect floor) are measured before shortening and are upper bounds;
+restart actions still echo default budget fields; the remaining per-page
+envelope (`contract`, budget echo, `false`/`null`/`0` fields) is untouched;
+the harness has no Time, Inspect, Trace or review scenario (T01/G03).
+
 ### Backlog, gated by I3 measurements
 
 | Review item | Starts when |
@@ -352,6 +420,7 @@ original read again.
 | C1 — catalogue without output schemas | `feat/544-lean-catalogue` | #841 | draft; default `tools/list` 51,629 → 29,460 tokens (−42.9 %), 248,704 → 137,654 bytes; `KMP_MCP_OUTPUT_SCHEMAS=1` restores the previous catalogue byte for byte |
 | PR3 — incremental continuation pages | `feat/544-incremental-pages` | #842 | draft; continuations carry only new items (`projection.core_reused`), `page.repeat_core=true` rehydrates, `truncation` retired; all 11 journeys pass; −3.4 % at 4096 B, −1.2 % at 10000 B, W01 −1,895 tokens and 3 → 2 calls at 10000 B |
 | C2 — one time-navigation verb | `feat/544-time-verb` | #843 | draft; `kmp_time` + `move` replaces goto/near/rewind/forward; default `tools/list` 29,506 → 24,899 tokens (−15.6 %), 137,872 → 116,604 bytes; 18 → 15 tools; temporal responses unchanged except action shape |
+| C3 — minimal continuation actions and lean progress | `feat/544-lean-actions` | #PR | draft; continuations are `{continuation}` handles to the retained call, sections without zero or derivable counters (`kmp.recall.projection.v3`); all 11 journeys pass, every one smaller: −1.3 % at 4096 B, −0.85 % at 10000 B; `next_action` 497 → 212 tokens, sections 1,672 → 602 over the run |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
 contract break is acceptable when it serves that. Breaks are named in each PR.
