@@ -219,3 +219,31 @@ fn the_cited_source_is_pinned_in_the_first_page_under_a_small_budget() {
         "the source a claim cites travels with the claim: {evidence:?}"
     );
 }
+
+#[test]
+fn a_proof_hop_does_not_cite_an_unrelated_source_with_the_same_body() {
+    let response = wake();
+    let hop = response
+        .proof
+        .as_ref()
+        .expect("proof")
+        .path
+        .iter()
+        .find(|relation| {
+            relation.source_ref == "decision:cache" && relation.target_ref == "task:rollout"
+        })
+        .expect("hop in proof path");
+
+    assert!(
+        hop.evidence_refs
+            .contains(&"detail:evidence:load-test".to_string()),
+        "{:?}",
+        hop.evidence_refs
+    );
+    assert!(
+        !hop.evidence_refs
+            .contains(&"detail:evidence:old-bench".to_string()),
+        "same body, different provenance: {:?}",
+        hop.evidence_refs
+    );
+}

@@ -23,7 +23,7 @@ use super::lexical_bridge::LexicalBridge;
 use super::scalars::ProtoMappingResult;
 use super::temporal_admission::TemporalAdmission;
 use super::wake_claim_evidence::WakeClaimEvidence;
-use super::wake_current_state::rendered_current_state;
+use super::wake_current_state::{SUPPORT_BOOKKEEPING, rendered_current_state};
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -112,7 +112,20 @@ pub fn wake_response_from_result(
     let lifecycle = lifecycle_for(&bounded, &admission);
     let signals = RelationSignalIndex::read(&bounded);
     let relationships = memory_relations_from_bundle(&bounded);
-    let causal_spine = prioritize_wake_relationships(relationships.clone(), &signals);
+    // The spine explains; containment and support edges are bookkeeping the
+    // proof already carries, and a dated read can admit such an edge to a
+    // source the selection itself excludes.
+    let causal_spine = prioritize_wake_relationships(
+        relationships
+            .iter()
+            .filter(|relationship| {
+                relationship.semantic_class != MemorySemanticClass::Structural as i32
+                    && !SUPPORT_BOOKKEEPING.contains(&relationship.rel.as_str())
+            })
+            .cloned()
+            .collect(),
+        &signals,
+    );
     let full_evidence = memory_evidence_from_bundle(&result.bundle)
         .into_iter()
         .filter(|item| admission.admits(item))
