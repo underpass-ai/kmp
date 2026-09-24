@@ -22,7 +22,8 @@ def harness_code_sha256():
 
 
 def header(counters, representations, verification):
-    return {'schema_version': SCHEMA, 'evidence_scope': 'historical_import', 'unit': UNIT_NOTE,
+    return {'schema_version': SCHEMA, 'unit': UNIT_NOTE,
+            'evidence_scope': verification.get('evidence_scope', 'historical_import'),
             'environment': {'python': sys.version, 'implementation': platform.python_implementation(),
                             'platform': platform.platform()},
             'tokenizers': [c.identity.as_dict() for c in counters],

@@ -28,5 +28,6 @@ def verify(root, max_file_bytes):
     return verified, traces, {
         'run': verified.root.name, 'manifest_sha256': verified.manifest_sha256,
         'binary_sha256': verified.manifest.get('binary_sha256'),
+        'evidence_scope': verified.manifest.get('evidence_scope', 'historical_import'),
         'verified_files': len(verified.files), 'journeys': [t.summary() for t in traces],
         'failures': failures, 'ok': not failures}
