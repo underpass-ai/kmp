@@ -171,3 +171,14 @@ fresh Ask.
 4. Operator path: on a copy of a real store with a real key, ask paraphrased
    questions with and without `rerank.json`. Record the orderings and whether
    the answer-bearing memory moved into the returned page.
+
+## Execution record
+
+- The live run found that one entry can be offered through several texts
+  (its body and its evidence). Rerank identities are therefore
+  `(ref, text SHA-256)` pairs, not refs.
+- Listing the whole pool grew proof with passages Jev judged irrelevant (from
+  9 to 26 items), so only passages with `noul` ≥ 0.5 join the ranking.
+- Measured result: no answer moved into the page on the four-question sample.
+  The limit is pool coverage, not judgement; see
+  `docs/development/evidence-rerank.md`.
