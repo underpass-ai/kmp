@@ -84,7 +84,7 @@ def _paired(report, representation):
              r['candidate_tokens'], r['delta_tokens'], r['reduction_fraction'], r['baseline_rpc'],
              r['candidate_rpc'], r['first_supported_unit']['baseline'],
              r['first_supported_unit']['candidate'], r['quality_baseline'], r['quality_candidate'],
-             r['comparable'], r['conclusion'])
+             'yes' if r['comparable'] else 'no', r['conclusion'])
             for r in report['rows'] if r['representation_id'] == representation]
     return _table(('case_id', 'journey', 'goal_id', 'encoding', 'baseline_tokens', 'candidate_tokens',
                    'delta_tokens', 'reduction_fraction', 'baseline_rpc', 'candidate_rpc',

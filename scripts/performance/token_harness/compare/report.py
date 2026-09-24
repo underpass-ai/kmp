@@ -11,6 +11,14 @@ LIMITATIONS = (
     'L1 native replay of synthetic fixtures; no agent, host context or billing was observed.',
     'Reference tokens are whole-unit counts under the declared encoder and representation.',
     'One deterministic capture per variant; ids and clocks differ between fresh stores.',
+    'Scenarios run: W01-W04, A01, E01. T01, G03 and the 512-byte recovery budget of annex A.12 '
+    'are not implemented yet.',
+    'requested_scope_exhausted is reported, not required: an orientation may end with items '
+    'excluded by detail.',
+    'support_bookkeeping_in_state_count (supports lines in current_state) is descriptive; the '
+    'verdict uses support_displacement_count, supports lines present while a required memory is '
+    'missing from state (annex A.11.2).',
+    'No latency, cache temperature, rehydration or host (H4/H5) measurement.',
 )
 
 

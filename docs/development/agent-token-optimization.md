@@ -144,6 +144,60 @@ Baseline = `main` binary, candidate = integration binary, same profile and
 machine. Report in `docs/development/agent-token-optimization-report.md`,
 generated from `report.json`.
 
+Delivered on `feat/544-wake-oracle` (same package as I0):
+
+- `scenarios/`: W01–W04, A01, E01 as data; each fixture is written through the
+  binary's own `kmp_write_memory` (review rounds followed verbatim).
+- `native/`: disposable store per scenario and variant, child environment
+  built from an allowlist with `HOME`, `XDG_*`, `CODEX_HOME` and
+  `KMP_MCP_DATA_DIR` inside a fresh temp dir; the binary's startup log must
+  confirm that directory by the `env` rule before any tool call. One process
+  per session (initialize → initialized → tools/list → calls); driver
+  `kmp.native_driver.v1` follows the server's `next_action` verbatim at 4096
+  and 10000 bytes. Traces keep wire lexemes; `<case>.fixture.jsonl`
+  (fixture_preparation) and `<case>.oracle.jsonl` (E01 read-back) are hashed
+  beside the journeys but never measured as them.
+- `oracle/`: deterministic checks; wake claim contracts `kmp.wake_claim.v1`
+  (`evidence_ref`) and `v2` (`evidence_refs`) declared per capture and
+  validated strictly. Besides the metrics named above it reports
+  `identical_body_merged_citation_count` (one hop citing two sources with the
+  same text) and `support_displacement_count`, which the verdict uses; the raw
+  count of `--supports-->` lines stays descriptive.
+- `compare/`: re-verifies both runs, binds metrics and oracle to the manifest
+  digest, rejects mixed encoders and a capture repeated under another name,
+  pairs by journey × encoding × representation with the A.14 columns; `render`
+  writes the Markdown.
+
+```bash
+H="python3 -m scripts.performance.token_harness"
+TT="uv run --no-project --with tiktoken==0.14.0 python -m scripts.performance.token_harness"
+A=artifacts/544-wake-oracle-20260924
+$H capture --binary <copy of main kmp-mcp> --variant baseline --wake-contract kmp.wake_claim.v1 \
+  --build-provenance $A/baseline-build-provenance.json --out $A/baseline
+$H capture --binary <copy of candidate kmp-mcp> --variant candidate --wake-contract kmp.wake_claim.v2 \
+  --build-provenance $A/candidate-build-provenance.json --out $A/candidate
+$TT measure --run $A/baseline --encoding o200k_base --out $A/baseline-metrics.json   # same for candidate
+$H oracle --run $A/baseline --out $A/baseline-oracle.json                             # same for candidate
+$H compare --baseline-run $A/baseline --baseline-metrics ... --candidate-run $A/candidate ... --out $A/report.json
+$H render --report $A/report.json --control $A/aa-baseline.json.gz --out docs/development/agent-token-optimization-report.md
+```
+
+Run of 2026-09-24 (baseline `main` a22b6402, candidate `fix/544-wake-state`
+8170492b, which carries I1 as b75ccadc rather than the integration merge):
+the candidate passes W01, W02, A01 and E01 and fails two scenarios.
+
+- W04: at `as_of` 2026-09-10 the candidate's `current_state` lists
+  "(decision) Lift the schema freeze after the audit closed.", observed
+  2026-09-20. I2's "unbounded context is never shown as state at `as_of`" does
+  not hold yet; the baseline fails the same obligation through the lift's ref
+  in `--supports-->` lines.
+- W03: each `proof.path` hop cites both sources that hold the identical body,
+  in both variants. Wake claims in the candidate cite only their own source;
+  the path hops (`normalized_proof_relation`) do not.
+
+Not delivered: T01 and G03, the 512-byte recovery budget, latency and cache
+temperature, H4/H5. The report lists them as limitations.
+
 ### Backlog, gated by I3 measurements
 
 | Review item | Starts when |
@@ -162,7 +216,7 @@ generated from `report.json`.
 | I0 | `feat/544-token-meter` | #836 | merged; legacy totals reproduced exactly on the 2026-09-15 captures |
 | I1 | `fix/544-wake-evidence-refs` | #835 | merged; contract wake pins 3 cited sources in page 1 (was 0) |
 | I2 | `fix/544-wake-state` | #837 | draft; state from live memories, `Next: none recorded` |
-| I3 | `feat/544-wake-oracle` | — | next |
+| I3 | `feat/544-wake-oracle` | — | local commits, not pushed; candidate passes W01/W02/A01/E01, fails W03 (path cites equal-body sources) and W04 (later memory as state at `as_of`) |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
 contract break is acceptable when it serves that. Breaks are named in each PR.

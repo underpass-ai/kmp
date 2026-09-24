@@ -106,9 +106,10 @@ def run_compare(args):
 
 
 def run_render(args):
+    from .compare.inputs import read_json
     from .compare.markdown import render
-    report = json.loads(args.report.read_text())
-    controls = [(path.name, json.loads(path.read_text())) for path in args.control or []]
+    report = read_json(args.report)
+    controls = [(path.name, read_json(path)) for path in args.control or []]
     with Path(args.out).open('x', encoding='utf-8') as target:  # never overwrite
         target.write(render(report, args.report.name, controls))
     return 0
