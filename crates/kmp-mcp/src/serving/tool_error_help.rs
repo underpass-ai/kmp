@@ -107,6 +107,7 @@ impl ToolErrorHelp {
             "kmp_wake" => ("verb:wake", "example:shared-resumption"),
             "kmp_ask" => ("verb:ask", "example:decision-history"),
             "kmp_relate" => ("verb:relate", "example:distributed-incident"),
+            "kmp_curate" => ("verb:curate", "example:curate-review"),
             "kmp_time" => ("verb:time", "example:four-clocks"),
             "kmp_inspect" => ("verb:audit", "example:budget-proof"),
             "kmp_trace" => ("verb:audit", "example:decision-history"),

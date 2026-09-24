@@ -6467,6 +6467,280 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
+      "description": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. Embedded store only.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "The current about: the review's root and the first of the selected abouts.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "axis": {
+            "description": "Clock for as_of/interval: occurred=event, observed=seen, ingested=written; validity=[valid_from,valid_until) overlaps the interval or contains the instant. Omitted: occurred, validity start, observed, ingested precedence, reported per entry. Explicit axis never substitutes another clock; applies only with as_of or interval.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 2,
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 2400,
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "context_id": {
+            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
+            "type": "string"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Bare label value or complete label ref returned by KMP.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "selectors": {
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) on axis, with at least one bound; exclusive with as_of. Only entries in the span compete, scored against its own collection. UNKNOWN reports the nearest outside match in proof.nearest_outside.",
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "max_pairs": {
+            "description": "Most missing relations to return, strongest Jev confidence first. Default 12.",
+            "maximum": 40,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "mode": {
+            "description": "`review` reads, judges and freezes; it writes nothing.",
+            "enum": [
+              "review"
+            ],
+            "type": "string"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque cursor returned by page.next_cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum number of items from missing then suspect to return in this page; default 8, at most 20.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "purpose": {
+            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
+          "review_token": {
+            "description": "A token a review returned. With it, the call pages that frozen review and reads or judges nothing again.",
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "about"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_curate",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "jev": {
+            "description": "Model, requests and input tokens spent on this review; null when Jev was not used.",
+            "type": "object"
+          },
+          "missing": {
+            "description": "Pairs nothing declares: `item_id`, `from` and `to` as {ref, about, excerpt}, `suggested_rel` (Jev's choice, `contradicts`, or null without Jev), `proposed_by` (`kernel` or `jev`), the kernel `signals` and its `pairing_why` (null for Jev pairs), and `jev` {confidence, top three options}.",
+            "type": "array"
+          },
+          "next_actions": {
+            "description": "The exact call that returns the next page of this frozen review; empty on the last page.",
+            "type": "array"
+          },
+          "page": {
+            "description": "`entries`, `total` items in the review and `next_cursor`, null on the last page.",
+            "type": "object"
+          },
+          "review_token": {
+            "description": "The frozen review's token: pass it back to page this review.",
+            "type": "string"
+          },
+          "summary": {
+            "description": "How many missing and suspect relations over how many current facts, and whether Jev was used.",
+            "type": "string"
+          },
+          "suspect": {
+            "description": "Declared relations Jev doubts: `item_id`, `from`, `to`, the declared `rel`, `support` (Jev's probability that its why and evidence hold), `suggested_rel` and `jev`. Reported only; relations are never retracted here.",
+            "type": "array"
+          },
+          "warnings": {
+            "description": "Non-empty warnings qualify success; retain them.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
       "description": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
       "inputSchema": {
         "additionalProperties": false,
@@ -7014,6 +7288,7 @@
               "audit",
               "condense",
               "relate",
+              "curate",
               "view",
               "guide"
             ],

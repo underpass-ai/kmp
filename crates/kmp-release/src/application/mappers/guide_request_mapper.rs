@@ -273,6 +273,7 @@ impl GuideRequestMapper {
             "kmp_time" => Ok("verb:time"),
             "kmp_trace" | "kmp_inspect" => Ok("verb:audit"),
             "kmp_condense" => Ok("verb:condense"),
+            "kmp_curate" => Ok("verb:curate"),
             "kmp_summaries_audit" => Ok("verb:write"),
             "kmp_view_open" | "kmp_view_apply_intent" | "kmp_view_get_state" => Ok("verb:view"),
             other => Err(ReleaseError::invalid(format!(

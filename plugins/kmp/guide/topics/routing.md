@@ -47,6 +47,7 @@ initial call valid without the verb's required arguments.
 | The user asks to see, show, open, or navigate memory — including `muéstrame`, `enséñame`, `abre` or `ver` | Finish the retrieval lane, then `kmp_view_open` and `kmp_view_apply_intent` |
 | A durable decision, constraint or outcome was reached | `kmp_write_memory` |
 | A memory that exists is catalogued wrong, or a label was decided after it was written: put a label on it or take one off, without rewriting it | `kmp_relabel` |
+| Relations of one or several abouts may be missing or doubtful: review them with Jev as a second reader, then declare the ones you confirm in your own words | `kmp_curate` |
 
 `kmp_ask` is direct-evidence retrieval. It does not walk a period — the
 temporal verbs enumerate — but it does stand where it is asked: `as_of` and

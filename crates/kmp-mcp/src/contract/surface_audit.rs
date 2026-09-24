@@ -127,7 +127,7 @@ mod tests {
             .as_array()
             .expect("tools should be an array");
 
-        assert_eq!(tools.len(), 15, "memory, view and progressive guide tools");
+        assert_eq!(tools.len(), 16, "memory, view and progressive guide tools");
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
@@ -201,7 +201,8 @@ mod tests {
             "node_body"
         );
         assert_eq!(tools[10]["name"], "kmp_summaries_audit");
-        assert_eq!(tools[11]["name"], "kmp_view_open");
+        assert_eq!(tools[11]["name"], "kmp_curate");
+        assert_eq!(tools[12]["name"], "kmp_view_open");
         assert_eq!(tools[5]["name"], "kmp_time");
         assert_eq!(tools[5]["inputSchema"]["else"]["required"][1], "move");
         let time = &tools[5];

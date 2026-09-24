@@ -453,6 +453,12 @@ fn calls() -> Vec<(&'static str, Value)> {
             "kmp_summaries_audit",
             json!({"about": ABOUT, "page": {"entries": 3}}),
         ),
+        // A review writes nothing and, without a TypeSafe opt-in beside the
+        // parity store, calls nothing remote: kernel pairs, untyped.
+        (
+            "kmp_curate",
+            json!({"mode": "review", "about": ABOUT, "budget": {"depth": 3}}),
+        ),
         ("kmp_guide", json!({"registration_key":"parity-guide"})),
     ]
 }
@@ -493,12 +499,15 @@ fn blessing() -> bool {
 /// Masking the value keeps the key pinned: a rename still fails, only the
 /// count stops being asserted. A flaky red would be worse than that, and a
 /// bless taken under the flake would pin a number every later run rejects.
-const VOLATILE_KEYS: [&str; 5] = [
+/// `review_token` binds a curate review to the relate selection fingerprint,
+/// which digests ingestion clocks; its findings stay pinned field by field.
+const VOLATILE_KEYS: [&str; 6] = [
     "at",
     "ingested_at",
     "content_hash",
     "required_bytes",
     "minimum_progress_bytes",
+    "review_token",
 ];
 const REDACTED: &str = "<stamped at call time>";
 
@@ -914,7 +923,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 19, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 20, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         // `kmp_condense` is the one tool whose successful call cannot be

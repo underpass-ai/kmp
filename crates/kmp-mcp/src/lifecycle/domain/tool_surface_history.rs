@@ -19,6 +19,9 @@ const TOOLS_ADDED_LATER: &[(&str, &str)] = &[
     // One time-navigation verb replaced the four per-move tools after the
     // published 0.19.0 release (#544 C2).
     ("kmp_time", "0.19.0"),
+    // Relation curation with TypeSafe Jev, after the published 0.20.0
+    // release. Move this to the newest published version when rebasing.
+    ("kmp_curate", "0.20.0"),
 ];
 
 /// Each tool that left the surface, beside the last release that still
