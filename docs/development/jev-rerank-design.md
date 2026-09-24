@@ -1,7 +1,7 @@
 # Optional remote evidence re-ranking with TypeSafe Jev — design
 
-Status: approved design, not implemented. Branch `feat/jev-rerank`, cut from
-`main` 943b9fbe (v0.20.0).
+Status: approved design, being implemented. Branch `feat/jev-rerank`, on top of
+`feat/jev-curate` (#855), whose TypeSafe client it reuses.
 
 ## Goal
 
@@ -43,42 +43,29 @@ carry `retry-after`.
 
 ## Components
 
-All in `kmp-mcp`, following the local semantic retriever
-(`semantic_candidate_provider.rs`, `loopback_semantic_retriever.rs`,
-`semantic_retriever_config.rs`). There is one primary type per file.
+Reuse the TypeSafe client that `kmp_curate` introduced (`JudgementModel`
+port, `TypeSafeJudgement` adapter, `typesafe.json` and `TYPESAFE_API_KEY`).
+Only the reranking itself is new.
 
-- **Port** `serving/ports/evidence_reranker.rs`: `EvidenceReranker`. It takes
-  the question, a `RerankPool` and a continuation flag, and returns
-  `Result<RerankOutcome, String>` through a boxed `Send` future, like
-  `SemanticCandidateProvider`. It proposes identities only; the mapping owns
-  admission and evidence.
-- **Adapter** `serving/adapters/typesafe_reranker.rs`: `TypeSafeReranker`. It
-  makes one request per fresh selection. `state` is the question, and each
-  pool entry becomes a `noul` question keyed `c<index>` with structured
-  instructions `{ "passage": <text>, "question": "Does \`passage\` answer the
-  question in the state?" }`. The ranking is by `noul` descending, with ties
-  broken by entry ref.
-- **Config** `serving/adapters/typesafe_reranker_config.rs`: it reads
-  `rerank.json` beside the store, at most 8 KiB, with `deny_unknown_fields`:
-
-  ```json
-  { "provider": "typesafe", "endpoint": "https://api.typesafe.ai/v1/systemone",
-    "model": "jev-1.13.0", "pool_size": 40, "timeout_ms": 20000 }
-  ```
-
-  The endpoint must be HTTPS on host `api.typesafe.ai`. `model` must be a
-  pinned version and is rejected if it ends in `-latest`. `pool_size` is
-  between 1 and 40 and `timeout_ms` between 1000 and 60000. **The key is
-  never in the file:** it is read from `TYPESAFE_API_KEY`. A missing file
-  means `Ok(None)` (off). A file without the variable, or with an invalid
-  config, leaves ordinary retrieval running and adds the warning
+- **Opt-in.** `rerank.json` beside the store (at most 8 KiB,
+  `deny_unknown_fields`): `{"pool_size": 40}`, from 1 to 40. It requires
+  `typesafe.json` as well. `typesafe.json` alone enables Jev for explicit
+  curation. Ask re-ranking sends text on every Ask and gets its own switch.
+  Without `rerank.json` nothing is sent. `rerank.json` without a working
+  TypeSafe opt-in leaves ordinary retrieval and warns
   `evidence rerank disabled: …`.
-- **Mapping** (`kmp-proto-mapping`):
-  - `RerankPool` / `RerankSource` (entry ref, text, text SHA-256), built by
-    `AskRetrievalContext::rerank_pool`.
-  - `RerankCandidateRanking`, resolved against live admitted evidence like
-    `SemanticCandidateRanking`.
-  - `AskRetrievalContext::with_rerank_ranking`.
+- **Mapping (`kmp-proto-mapping`).**
+  - `RerankCandidateRanking` (model, question digest, ordered
+    `(entry_ref, text SHA-256)`), resolved against live admitted evidence like
+    `SemanticCandidateRanking`. Items reached only through it carry
+    `reached_by=rerank` and `rerank_model`.
+  - `AskRetrievalContext::rerank_pool` and `with_rerank_candidates`.
+- **Adapter (`kmp-mcp`).** `JudgementReranker` asks one `noul` per pooled
+  passage: `{passage, question: "Does \`passage\` answer the question in the
+  state?"}`, with the question as `state`. It orders by `noul` descending,
+  breaking ties by ref, and freezes the outcome per question, pool and model
+  (up to 64) so that continuation pages never call TypeSafe again.
+  `RerankOutcome` carries the ranking and a warning.
 
 ## Data flow
 
@@ -103,9 +90,9 @@ All in `kmp-mcp`, following the local semantic retriever
    - An item that reaches proof only through this channel carries
      `reached_by=rerank` and `rerank_model=<model>`, so it cannot enter
      `because`, raise confidence or remove UNKNOWN.
-5. The response reports the remote call. A warning line names the provider,
-   the model and the number of passages sent, the same way the semantic
-   channel reports its resolution. It never contains passage text or the key.
+5. The response reports the remote call. A warning line names the model and
+   the number of passages judged, the same way the semantic channel reports
+   its resolution. It never contains passage text or the key.
 
 **Continuation stability:** as in the loopback retriever, a selection is
 frozen per fingerprint (the question, the pool's refs and hashes, and the
@@ -161,3 +148,26 @@ fresh Ask.
 - Other Jev uses: relation typing, summary audit.
 - The remote gRPC backend.
 - Per-about allow lists.
+
+## Implementation plan (3 of 3)
+
+1. `kmp-proto-mapping`:
+   - `RerankCandidateRanking` and `AskRetrievalContext::{rerank_pool, with_rerank_candidates}`.
+   - `AnswerEvidenceRanker::rerank_candidates`.
+   - The rerank channel in `ask_response_from_result`.
+   - Tests: pool order (ranked first, then the admitted remainder, with no
+     escape past admission), and core, `because` and confidence identical
+     with and without the channel, where a rescued remainder item follows the
+     core with `reached_by=rerank`.
+2. `kmp-mcp`:
+   - `RerankConfig`, `RerankOutcome` and `JudgementReranker`, wired into the
+     embedded backend and `EmbeddedAskTool`, with warnings collected in a
+     list.
+   - Tests with a deterministic judgement double: ordering, freezing,
+     continuation without a call, and failure degrading to a warning.
+   - An MCP integration test showing that `rerank.json` without
+     `typesafe.json` warns and answers as today.
+3. Docs: `docs/development/evidence-rerank.md` (user guide), CHANGELOG.
+4. Operator path: on a copy of a real store with a real key, ask paraphrased
+   questions with and without `rerank.json`. Record the orderings and whether
+   the answer-bearing memory moved into the returned page.
