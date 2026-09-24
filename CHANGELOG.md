@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-09-24
+
 ### Changed
 
 - The relation vocabulary (quality, allowed classes and when to use each
@@ -1922,7 +1924,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.20.1...HEAD
+[0.20.1]: https://github.com/underpass-ai/kmp/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/underpass-ai/kmp/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/underpass-ai/kmp/compare/v0.18.9...v0.19.0
 [0.18.9]: https://github.com/underpass-ai/kmp/compare/v0.18.8...v0.18.9
