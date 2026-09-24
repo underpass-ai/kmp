@@ -273,7 +273,13 @@ async fn bounded_pages_recover_the_same_required_passages_as_one_full_packet() {
         }
         let next = &page["next_actions"][0];
         assert_eq!(next["tool"], "kmp_time");
-        assert_eq!(next["arguments"]["move"], "goto");
+        // The action is a continuation handle; the move lives in the call
+        // the server retained behind it.
+        let retained = server
+            .resolve_read_request(json!({"method":"tools/call",
+                "params":{"name":"kmp_time","arguments":next["arguments"].clone()}}))
+            .expect("resolve continuation");
+        assert_eq!(retained["params"]["arguments"]["move"], "goto");
         page = call(
             &server,
             next["tool"].as_str().expect("tool"),
