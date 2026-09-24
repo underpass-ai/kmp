@@ -75,6 +75,30 @@ async fn native_identity_survives_restart_and_guidance_does_not_enter_memory() {
                 .contains("idempotency_key")
         );
         assert_eq!(opened["served"], json!(["write"]));
+        // The relation vocabulary left tools/list for this card; every writer
+        // relation arrives with its quality, classes and when to use it.
+        let vocabulary = opened["card"]["relation_vocabulary"]
+            .as_array()
+            .expect("write card carries the relation vocabulary");
+        for relation in [
+            "authorizes (",
+            "verified_by (",
+            "supersedes (",
+            "depends_on (",
+        ] {
+            assert!(
+                vocabulary
+                    .iter()
+                    .any(|line| line.as_str().is_some_and(|l| l.starts_with(relation))),
+                "vocabulary lists {relation}"
+            );
+        }
+        let time = success(
+            &server,
+            json!({"registration_key":"native-agent-vocabulary","topic":"time"}),
+        )
+        .await;
+        assert!(time["card"].get("relation_vocabulary").is_none());
         let action = &opened["next_actions"][0];
         let extended = call(
             &server,

@@ -59,7 +59,6 @@
             "type": "string"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "default_observation_to_ingestion": {
@@ -441,7 +440,7 @@
                       "type": "string"
                     },
                     "rel": {
-                      "description": "Relationship type. Unknown extension types are preserved but carry no writer spec; prefer the cataloged vocabulary. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; source -> relation -> target / when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; approval -> authorizes -> permitted action; permission alone does not prove execution). verified_by (rich; evidential; claim or outcome -> verified_by -> actual verifying check; approval or an earlier failure is not verification). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement -> supersedes -> entire old memory; marks the whole target SUPERSEDED, so separate independent facts first). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; excluded value or exclusion record -> excluded_from -> total or set; the target is not the excluded item). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; corrected fact -> corrects -> earlier fact; explain the specific correction without superseding the whole target). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                      "description": "Relationship type. Unknown extension types are preserved but carry no writer spec; prefer the cataloged vocabulary. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types; anemic types are an honest fallback, never a default. Quality, classes and when to use each: kmp_guide topic write.",
                       "minLength": 1,
                       "type": "string"
                     },
@@ -527,7 +526,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -781,7 +779,6 @@
             "type": "string"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "continuation": {
@@ -863,7 +860,7 @@
                         "type": "string"
                       },
                       "rel": {
-                        "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; source -> relation -> target / when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; approval -> authorizes -> permitted action; permission alone does not prove execution). verified_by (rich; evidential; claim or outcome -> verified_by -> actual verifying check; approval or an earlier failure is not verification). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement -> supersedes -> entire old memory; marks the whole target SUPERSEDED, so separate independent facts first). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; excluded value or exclusion record -> excluded_from -> total or set; the target is not the excluded item). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; corrected fact -> corrects -> earlier fact; explain the specific correction without superseding the whole target). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                        "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types; anemic types are an honest fallback, never a default. Quality, classes and when to use each: kmp_guide topic write.",
                         "enum": [
                           "follows",
                           "answers",
@@ -1052,7 +1049,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -1230,7 +1226,7 @@
                   ]
                 },
                 "rel": {
-                  "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; source -> relation -> target / when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; approval -> authorizes -> permitted action; permission alone does not prove execution). verified_by (rich; evidential; claim or outcome -> verified_by -> actual verifying check; approval or an earlier failure is not verification). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement -> supersedes -> entire old memory; marks the whole target SUPERSEDED, so separate independent facts first). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; excluded value or exclusion record -> excluded_from -> total or set; the target is not the excluded item). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; corrected fact -> corrects -> earlier fact; explain the specific correction without superseding the whole target). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                  "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types; anemic types are an honest fallback, never a default. Quality, classes and when to use each: kmp_guide topic write.",
                   "enum": [
                     "follows",
                     "answers",
@@ -1445,7 +1441,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "continuation": {
@@ -1594,7 +1589,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -1725,7 +1719,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "continuation": {
@@ -1869,7 +1862,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -1968,7 +1960,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "continuation": {
@@ -2103,7 +2094,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -2286,7 +2276,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "continuation": {
@@ -2508,7 +2497,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -2680,7 +2668,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "continuation": {
@@ -2732,7 +2719,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -3399,7 +3385,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "continuation": {
@@ -3465,7 +3450,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -3532,7 +3516,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "idempotency_key": {
@@ -3569,7 +3552,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -3664,7 +3646,6 @@
             "type": "string"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "expect": {
@@ -3707,7 +3688,6 @@
             "type": "string"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -3802,7 +3782,6 @@
             "type": "object"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "dimensions": {
@@ -3848,7 +3827,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -3902,7 +3880,6 @@
             "type": "string"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "expected_revision": {
@@ -3911,7 +3888,6 @@
             "type": "integer"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -3952,7 +3928,6 @@
             "type": "string"
           },
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "expected_revision": {
@@ -4106,7 +4081,6 @@
             "type": "object"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",
@@ -4187,11 +4161,9 @@
         "additionalProperties": false,
         "properties": {
           "context_id": {
-            "description": "Optional active context returned by kmp_guide; records use and enables concise guidance.",
             "type": "string"
           },
           "purpose": {
-            "description": "Optional recommendation purpose with context_id. Omitted: continue the selected packet.",
             "enum": [
               "continue",
               "audit",

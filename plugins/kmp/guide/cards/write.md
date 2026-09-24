@@ -38,6 +38,8 @@ Use an exact local id, such as `"check"` or `"@check"`, for another record in
 the packet. Omit `class` when the relation allows one class (`verified_by`
 completes `evidential`). `authorizes`, `chosen_because` and `confirms_selection`
 need an explicit choice. A rejected class reports `allowed_values`.
+This card's `relation_vocabulary` lists every relation as
+`name (quality; classes; when to use)`: pick the richest one the source proves.
 
 - approval -> `authorizes` -> permitted action (not proof it ran);
 - claim/outcome -> `verified_by` -> actual verifying check;

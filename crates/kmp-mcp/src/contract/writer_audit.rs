@@ -12,6 +12,7 @@ mod tests {
     #[allow(unused_imports)]
     use super::*;
 
+    use crate::contract::schema::relation_vocabulary::relation_vocabulary_lines;
     use kmp_domain::KnownMemoryRelationType;
 
     #[test]
@@ -31,10 +32,9 @@ mod tests {
                 .is_none()
         );
     }
-    /// The tool documentation is generated from the writer spec; this pins
-    /// that every cataloged type appears with its quality tier, in both the
-    /// writer's and the batch surface, so a model reading `tools/list` learns
-    /// the vocabulary the kernel will actually validate.
+    /// The vocabulary is generated from the writer spec and served by
+    /// `kmp_guide` topic `write`; `tools/list` keeps the doctrine and names
+    /// where the vocabulary lives, in both the writer's and the batch surface.
     #[test]
     fn relation_vocabulary_documentation_matches_the_writer_spec() {
         let tools = tools_list_result();
@@ -48,27 +48,35 @@ mod tests {
             .as_str()
             .expect("ingest rel carries generated documentation")
             .to_string();
+        for doc in [&writer_doc, &ingest_doc] {
+            assert!(
+                doc.contains("anemic types are an honest fallback"),
+                "documentation states the anemic-fallback doctrine"
+            );
+            assert!(
+                doc.contains("kmp_guide topic write"),
+                "documentation names where the vocabulary lives"
+            );
+        }
 
+        let lines = relation_vocabulary_lines();
         for relation_type in KnownMemoryRelationType::writer_relation_types() {
             let spec = relation_type
                 .writer_spec()
                 .expect("writer relation types carry a spec");
-            for doc in [&writer_doc, &ingest_doc] {
-                assert!(
-                    doc.contains(&format!(
-                        "{} ({};",
-                        spec.relation_type().as_str(),
-                        spec.quality().as_str()
-                    )),
-                    "documentation names `{}` with its quality tier",
-                    spec.relation_type().as_str()
-                );
-            }
+            let prefix = format!(
+                "{} ({};",
+                spec.relation_type().as_str(),
+                spec.quality().as_str()
+            );
+            assert!(
+                lines
+                    .iter()
+                    .any(|line| line.starts_with(&prefix) && line.contains(spec.reason())),
+                "the guide names `{}` with its quality tier and reason",
+                spec.relation_type().as_str()
+            );
         }
-        assert!(
-            writer_doc.contains("anemic types are an honest fallback"),
-            "documentation states the anemic-fallback doctrine"
-        );
     }
     #[test]
     fn each_verb_publishes_the_defaults_its_backend_uses() {

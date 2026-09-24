@@ -3,6 +3,7 @@ use super::json_rpc::jsonrpc_result;
 use super::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use super::tool_result::tool_error_result;
 use super::{KernelMcpServer, ToolError, tool_success_result};
+use crate::contract::schema::relation_vocabulary::relation_vocabulary_lines;
 use crate::guidance::{AgentDirectory, GuidanceError, GuideRequest, SqliteAgentDirectory};
 use serde_json::{Value, json};
 use std::time::Instant;
@@ -153,7 +154,13 @@ impl KernelMcpServer {
             "guide_changed":changed,"durable":context.durable,
             "scheme":crate::guidance::scheme(),"expanded":context.expanded,"served":context.served,
             "used":context.used.iter().map(|item| json!({"tool":item.tool,"attempts":item.attempts,"rejected":item.rejected,"unknown":item.unknown})).collect::<Vec<_>>(),
-            "card":card.map(|node| json!({"ref":node["ref"],"text":node["text"]})),
+            "card":card.map(|node| {
+                let mut card = json!({"ref":node["ref"],"text":node["text"]});
+                if request.topic.as_deref() == Some("write") {
+                    card["relation_vocabulary"] = json!(relation_vocabulary_lines());
+                }
+                card
+            }),
             "next_actions":next_actions,
         }))
     }
