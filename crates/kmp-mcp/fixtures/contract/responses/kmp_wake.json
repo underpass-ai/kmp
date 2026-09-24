@@ -27,7 +27,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9043
+        "used_bytes": 9686
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
@@ -43,7 +43,7 @@
             "tokens": 1600
           },
           "page": {
-            "cursor": "kmp1:10:<stamped at call time>"
+            "cursor": "kmp1:11:<stamped at call time>"
           }
         },
         "tool": "kmp_wake"
@@ -51,9 +51,9 @@
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:10:<stamped at call time>",
+        "next_cursor": "kmp1:11:<stamped at call time>",
         "offset": 0,
-        "returned": 10,
+        "returned": 11,
         "total": 41
       },
       "sections": {
@@ -74,8 +74,8 @@
         "proof.path": {
           "core": 0,
           "eligible": 20,
-          "remaining": 19,
-          "returned_on_page": 1,
+          "remaining": 18,
+          "returned_on_page": 2,
           "total": 43
         },
         "wake.causal_spine": {
@@ -177,22 +177,36 @@
           },
           "confidence": "high",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
             "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
-            "detail:question:parity:claim:boulder-current",
             "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail",
             "detail:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
           ],
           "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
           "rel": "semantic_delta_from",
           "sequence": 1,
           "to": "question:parity:claim:denver",
+          "why": "The later statement corrects the earlier one."
+        },
+        {
+          "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
+          "confidence": "high",
+          "evidence_refs": [
+            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
+            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
+            "detail:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+            "detail:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
+          ],
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+          "rel": "updates_state",
+          "sequence": 1,
+          "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
           "why": "The later statement corrects the earlier one."
         }
       ],
@@ -238,9 +252,9 @@
       "omitted": {
         "core_text_shortened": false,
         "excluded_by_detail": 23,
-        "page_items": 31,
+        "page_items": 30,
         "prior_page_items": 0,
-        "remaining_page_items": 31,
+        "remaining_page_items": 30,
         "selection_items": 0
       },
       "token_limit": 1600,

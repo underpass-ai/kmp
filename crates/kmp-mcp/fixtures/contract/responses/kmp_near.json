@@ -343,8 +343,6 @@
             "sequence": 1
           },
           "evidence_refs": [
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
             "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
           ],
           "from": "label:v1:question%3Aparity:agentic_process:parity",
@@ -364,13 +362,7 @@
             "sequence": 1
           },
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
           "rel": "contains_entry",
@@ -387,12 +379,7 @@
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "question:parity:claim:boulder-current",
           "rel": "supports",
@@ -408,14 +395,8 @@
           },
           "confidence": "medium",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current",
             "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
             "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail",
             "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
           ],
           "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
@@ -432,13 +413,8 @@
           },
           "confidence": "high",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
           "rel": "semantic_delta_from",
@@ -454,13 +430,8 @@
           },
           "confidence": "high",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
             "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
           "rel": "supersedes",
@@ -499,12 +470,7 @@
           "confidence": "unknown",
           "evidence_refs": [
             "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
           "rel": "supports",
@@ -519,13 +485,8 @@
           },
           "confidence": "unknown",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
             "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "evidence:question:parity:denver",
           "rel": "supports",
@@ -541,7 +502,6 @@
           "confidence": "unknown",
           "evidence_refs": [
             "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
             "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
           ],
           "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current",
@@ -557,13 +517,8 @@
           },
           "confidence": "unknown",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
             "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
           "rel": "supports",
@@ -578,7 +533,6 @@
           },
           "confidence": "unknown",
           "evidence_refs": [
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current",
             "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
             "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
           ],
@@ -595,13 +549,8 @@
           },
           "confidence": "unknown",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
             "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
           "rel": "supports",
@@ -616,13 +565,8 @@
           },
           "confidence": "unknown",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
             "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
           "rel": "supports",
@@ -633,13 +577,7 @@
           "class": "structural",
           "confidence": "unknown",
           "evidence_refs": [
-            "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
-            "detail:question:parity:claim:denver",
-            "detail:question:parity:claim:denver-detail"
+            "detail:question:parity:claim:denver"
           ],
           "from": "question:parity",
           "rel": "records",
@@ -661,8 +599,6 @@
           "class": "structural",
           "confidence": "unknown",
           "evidence_refs": [
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
             "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
           ],
           "from": "question:parity",
@@ -679,10 +615,6 @@
           "confidence": "high",
           "evidence_refs": [
             "detail:evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91",
-            "detail:evidence:question:parity:denver",
-            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
             "detail:question:parity:claim:denver",
             "detail:question:parity:claim:denver-detail"
           ],

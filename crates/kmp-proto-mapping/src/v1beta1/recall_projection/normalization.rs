@@ -79,13 +79,16 @@ pub(super) fn normalized_proof_relation(
     let mut repeated_evidence = false;
     for item in evidence {
         let evidence_node_ref = item.id.strip_prefix("detail:").unwrap_or(&item.id);
-        let incident = relation.source_ref == evidence_node_ref
-            || relation.target_ref == evidence_node_ref
-            || item.supports.iter().any(|supported_ref| {
-                relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
-            });
         let why_matches = !relation.why.is_empty() && relation.why == item.text;
         let evidence_matches = !relation.evidence.is_empty() && relation.evidence == item.text;
+        let endpoint =
+            relation.source_ref == evidence_node_ref || relation.target_ref == evidence_node_ref;
+        let supports_endpoint = item.supports.iter().any(|supported_ref| {
+            relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
+        });
+        // A source that merely supports an endpoint backs that memory, not
+        // this hop; it joins the hop only when it holds the hop's own text.
+        let incident = endpoint || (supports_endpoint && (why_matches || evidence_matches));
         // Equal text proves nothing about provenance: a body only joins a
         // hop through a source the graph ties to one of its endpoints.
         if incident {
