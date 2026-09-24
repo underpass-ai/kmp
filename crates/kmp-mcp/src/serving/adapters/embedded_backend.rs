@@ -6,6 +6,7 @@ use super::embedded::{
     EmbeddedRelateTool, EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool, EmbeddedTraceTool,
     EmbeddedVisualProjectionTool, EmbeddedWakeTool,
 };
+use super::judgement_reranker::JudgementReranker;
 use super::lexical_bridge_file::load_lexical_bridge;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
 use super::typesafe_judgement::TypeSafeJudgement;
@@ -36,6 +37,9 @@ pub struct EmbeddedKernelMcpBackend {
     /// TypeSafe Jev for `kmp_curate`, opted into per store. Off without
     /// `typesafe.json`; an error names why a present opt-in cannot run.
     judgement: Result<Option<Arc<dyn JudgementModel>>, String>,
+    /// Ask re-ranking by the same model, opted into separately because it
+    /// sends text on every Ask.
+    rerank: Result<Option<Arc<JudgementReranker>>, String>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
 }
@@ -64,6 +68,9 @@ impl EmbeddedKernelMcpBackend {
     ) -> Result<Self, String> {
         let kernel = EmbeddedKernel::open_with_engine(data_dir, engine)
             .map_err(|error| error.to_string())?;
+        let judgement =
+            TypeSafeJudgement::load(data_dir, optional_env_string(TYPESAFE_API_KEY_ENV));
+        let rerank = JudgementReranker::load(data_dir, &judgement);
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -71,7 +78,8 @@ impl EmbeddedKernelMcpBackend {
             lexical_bridge: load_lexical_bridge(data_dir),
             lexical_cache: Arc::default(),
             semantic: LoopbackSemanticRetriever::load(data_dir),
-            judgement: TypeSafeJudgement::load(data_dir, optional_env_string(TYPESAFE_API_KEY_ENV)),
+            judgement,
+            rerank,
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
         })
@@ -133,6 +141,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         telemetry,
                         &self.lexical_bridge,
                         &self.semantic,
+                        &self.rerank,
                         &self.lexical_cache,
                     )
                     .call(arguments)

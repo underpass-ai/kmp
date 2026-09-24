@@ -5,8 +5,12 @@ pub(crate) mod embedded_backend;
 pub(crate) mod embedded_errors;
 pub(crate) mod fixture_backend;
 pub(crate) mod grpc;
+mod judgement_reranker;
+#[cfg(test)]
+mod judgement_reranker_tests;
 pub(crate) mod lexical_bridge_file;
 mod loopback_semantic_retriever;
+mod rerank_config;
 pub(crate) mod retrying_embedded_backend;
 mod semantic_rank_response;
 mod semantic_retriever_config;
