@@ -1,0 +1,4409 @@
+{
+  "schema_version": "kmp.token.compare.v1",
+  "label": "consolidated-main-integration",
+  "evidence_scope": "native_replay",
+  "harness_code_sha256": "1b74193ce7b74b14e7e1f018b154e3cd3214f3b8b42a80e28927217e12ebd324",
+  "model_calls": 0,
+  "tokenizers": [
+    {
+      "library": "tiktoken",
+      "library_version": "0.14.0",
+      "encoding": "o200k_base",
+      "policy": "encode_ordinary",
+      "asset_sha256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d",
+      "pattern_sha256": "2d1b8dc11e89af71459b36004f698ab3693f59fd84f63e8ec2b49564ab857420"
+    }
+  ],
+  "representations": [
+    "mcp_json_compact_legacy_v1",
+    "json_compact_lexical_v1",
+    "structured_compact_v1",
+    "content_blocks_standalone_v1"
+  ],
+  "baseline": {
+    "run": "baseline",
+    "manifest_sha256": "63af35efe166b9ba4aa689a737db85e28c3315e25a5d100b42d8ff86facc891a",
+    "variant": "baseline",
+    "binary_sha256": "d391f6a96a6163aba6a011e14552fff531eb4f3f7cf0b65e4c8aabe0971485f9",
+    "build_provenance": {
+      "kind": "local release build; binary copied to a scratch path before capture",
+      "variant": "baseline",
+      "branch": "main",
+      "commit": "a22b6402c5ac76248fdd78b6e48a9425784c0dc8",
+      "tree": "7b08de6ea66e87c30aa2236a4a75dbed4849cf36",
+      "worktree_clean": true,
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "-p",
+        "kmp-mcp",
+        "--locked",
+        "--features",
+        "sqlite"
+      ],
+      "cargo_lock_sha256": "3ac0ecc9957f138e4ad3dd4623d8ed7e0ee3aa1a67b55accaf67a29a76bbdc00",
+      "workspace_cargo_config_sha256": "aa4afc0d2d90cf810213d38bc37a7b879ba683b518c6674e24d93b9272020cf7",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "binary_version": "kmp-mcp 0.19.0 (store format 4 (sqlite))",
+      "binary_sha256": "d391f6a96a6163aba6a011e14552fff531eb4f3f7cf0b65e4c8aabe0971485f9"
+    },
+    "wake_contract": "kmp.wake_claim.v1",
+    "driver_version": "kmp.native_driver.v1",
+    "scenarios_digest": "b954b0e4b68b30720758bc758705c8fcaa6b3835e429f7422b558b53c7bf8d7d",
+    "harness_code_sha256": "1b74193ce7b74b14e7e1f018b154e3cd3214f3b8b42a80e28927217e12ebd324",
+    "capture_failures": [],
+    "journeys": 11,
+    "startup": [
+      {
+        "encoding": "o200k_base",
+        "representation_id": "json_compact_lexical_v1",
+        "journeys": 11,
+        "methods": {
+          "initialize": {
+            "tokens": 407,
+            "utf8_bytes": 1873
+          },
+          "notifications/initialized": {
+            "tokens": 18,
+            "utf8_bytes": 66
+          },
+          "tools/list": {
+            "tokens": 51650,
+            "utf8_bytes": 248721
+          }
+        },
+        "tokens": 52075,
+        "utf8_bytes": 250660,
+        "distinct_totals": [
+          52075
+        ]
+      },
+      {
+        "encoding": "o200k_base",
+        "representation_id": "mcp_json_compact_legacy_v1",
+        "journeys": 11,
+        "methods": {
+          "initialize": {
+            "tokens": 407,
+            "utf8_bytes": 1873
+          },
+          "notifications/initialized": {
+            "tokens": 18,
+            "utf8_bytes": 66
+          },
+          "tools/list": {
+            "tokens": 51650,
+            "utf8_bytes": 248721
+          }
+        },
+        "tokens": 52075,
+        "utf8_bytes": 250660,
+        "distinct_totals": [
+          52075
+        ]
+      }
+    ],
+    "incomplete_journeys": []
+  },
+  "candidate": {
+    "run": "candidate",
+    "manifest_sha256": "3ef0e65f741d609007e73cdcda6a525636422df9ece73c6d13684da35f93e169",
+    "variant": "candidate",
+    "binary_sha256": "2d23064e6687e1fc2372ba72c7e43690c02a308a54eff5a4d33602bf717b2369",
+    "build_provenance": {
+      "kind": "local release build; binary copied to a scratch path before capture",
+      "variant": "candidate",
+      "branch": "integration/agent-token-optimization",
+      "commit": "23f95fd320670a351253a872095c3f3276c8ee2c",
+      "tree": "bbe09c85cb355b989bd8c684ab9b4fba030b2aed",
+      "worktree_clean": true,
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "-p",
+        "kmp-mcp",
+        "--locked",
+        "--features",
+        "sqlite"
+      ],
+      "cargo_lock_sha256": "3ac0ecc9957f138e4ad3dd4623d8ed7e0ee3aa1a67b55accaf67a29a76bbdc00",
+      "workspace_cargo_config_sha256": "aa4afc0d2d90cf810213d38bc37a7b879ba683b518c6674e24d93b9272020cf7",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "binary_version": "kmp-mcp 0.19.0 (store format 4 (sqlite))",
+      "binary_sha256": "2d23064e6687e1fc2372ba72c7e43690c02a308a54eff5a4d33602bf717b2369",
+      "note": "built in docs/544-consolidated-report, whose only commit past 23f95fd3 touches scripts/performance/token_harness"
+    },
+    "wake_contract": "kmp.wake_claim.v2",
+    "driver_version": "kmp.native_driver.v1",
+    "scenarios_digest": "b954b0e4b68b30720758bc758705c8fcaa6b3835e429f7422b558b53c7bf8d7d",
+    "harness_code_sha256": "1b74193ce7b74b14e7e1f018b154e3cd3214f3b8b42a80e28927217e12ebd324",
+    "capture_failures": [],
+    "journeys": 11,
+    "startup": [
+      {
+        "encoding": "o200k_base",
+        "representation_id": "json_compact_lexical_v1",
+        "journeys": 11,
+        "methods": {
+          "initialize": {
+            "tokens": 407,
+            "utf8_bytes": 1873
+          },
+          "notifications/initialized": {
+            "tokens": 18,
+            "utf8_bytes": 66
+          },
+          "tools/list": {
+            "tokens": 24789,
+            "utf8_bytes": 115941
+          }
+        },
+        "tokens": 25214,
+        "utf8_bytes": 117880,
+        "distinct_totals": [
+          25214
+        ]
+      },
+      {
+        "encoding": "o200k_base",
+        "representation_id": "mcp_json_compact_legacy_v1",
+        "journeys": 11,
+        "methods": {
+          "initialize": {
+            "tokens": 407,
+            "utf8_bytes": 1873
+          },
+          "notifications/initialized": {
+            "tokens": 18,
+            "utf8_bytes": 66
+          },
+          "tools/list": {
+            "tokens": 24789,
+            "utf8_bytes": 115941
+          }
+        },
+        "tokens": 25214,
+        "utf8_bytes": 117880,
+        "distinct_totals": [
+          25214
+        ]
+      }
+    ],
+    "incomplete_journeys": []
+  },
+  "configuration_mismatch": null,
+  "limitations": [
+    "L1 native replay of synthetic fixtures; no agent, host context or billing was observed.",
+    "Reference tokens are whole-unit counts under the declared encoder and representation.",
+    "One deterministic capture per variant; ids and clocks differ between fresh stores.",
+    "Scenarios run: W01-W04, A01, E01. T01, G03 and the 512-byte recovery budget of annex A.12 are not implemented yet.",
+    "requested_scope_exhausted is reported, not required: an orientation may end with items excluded by detail.",
+    "support_bookkeeping_in_state_count (supports lines in current_state) is descriptive; the verdict uses support_displacement_count, supports lines present while a required memory is missing from state (annex A.11.2).",
+    "No latency, cache temperature, rehydration or host (H4/H5) measurement."
+  ],
+  "summary": {
+    "tasks": 6,
+    "journeys": 11,
+    "attempts_per_journey": 1,
+    "rows": 44,
+    "conclusions": {
+      "descriptive_only": 3,
+      "quality_fix_not_equivalent_compression": 32,
+      "reference_reduction_with_quality_pass": 9
+    }
+  },
+  "cohorts": [
+    {
+      "encoding": "o200k_base",
+      "representation_id": "content_blocks_standalone_v1",
+      "budget_group": "all",
+      "n": 11,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 1790,
+      "candidate_tokens": 544,
+      "weighted_reduction": 0.6960893854748603,
+      "n_memory": 11,
+      "baseline_memory_tokens": 1790,
+      "candidate_memory_tokens": 544,
+      "memory_weighted_reduction": 0.6960893854748603,
+      "median_delta_tokens": -42.0,
+      "worst_regression": {
+        "journey": "w02-b10000",
+        "delta_tokens": 1
+      },
+      "conclusions": {
+        "descriptive_only": 2,
+        "quality_fix_not_equivalent_compression": 8,
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "content_blocks_standalone_v1",
+      "budget_group": "b10000",
+      "n": 5,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 319,
+      "candidate_tokens": 174,
+      "weighted_reduction": 0.4545454545454546,
+      "n_memory": 5,
+      "baseline_memory_tokens": 319,
+      "candidate_memory_tokens": 174,
+      "memory_weighted_reduction": 0.4545454545454546,
+      "median_delta_tokens": 1.0,
+      "worst_regression": {
+        "journey": "w02-b10000",
+        "delta_tokens": 1
+      },
+      "conclusions": {
+        "descriptive_only": 1,
+        "quality_fix_not_equivalent_compression": 4
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "content_blocks_standalone_v1",
+      "budget_group": "b4096",
+      "n": 5,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 1450,
+      "candidate_tokens": 349,
+      "weighted_reduction": 0.7593103448275862,
+      "n_memory": 5,
+      "baseline_memory_tokens": 1450,
+      "candidate_memory_tokens": 349,
+      "memory_weighted_reduction": 0.7593103448275862,
+      "median_delta_tokens": -214.0,
+      "worst_regression": {
+        "journey": "a01-b4096",
+        "delta_tokens": -42
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 4,
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "content_blocks_standalone_v1",
+      "budget_group": "write",
+      "n": 1,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 21,
+      "candidate_tokens": 21,
+      "weighted_reduction": 0.0,
+      "n_memory": 1,
+      "baseline_memory_tokens": 21,
+      "candidate_memory_tokens": 21,
+      "memory_weighted_reduction": 0.0,
+      "median_delta_tokens": 0.0,
+      "worst_regression": {
+        "journey": "e01",
+        "delta_tokens": 0
+      },
+      "conclusions": {
+        "descriptive_only": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "json_compact_lexical_v1",
+      "budget_group": "all",
+      "n": 11,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 631976,
+      "candidate_tokens": 303346,
+      "weighted_reduction": 0.5200039241996531,
+      "n_memory": 11,
+      "baseline_memory_tokens": 59151,
+      "candidate_memory_tokens": 25992,
+      "memory_weighted_reduction": 0.5605822386772836,
+      "median_delta_tokens": -28269.0,
+      "worst_regression": {
+        "journey": "e01",
+        "delta_tokens": -26861
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 8,
+        "reference_reduction_with_quality_pass": 3
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "json_compact_lexical_v1",
+      "budget_group": "b10000",
+      "n": 5,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 277270,
+      "candidate_tokens": 137607,
+      "weighted_reduction": 0.5037075774515816,
+      "n_memory": 5,
+      "baseline_memory_tokens": 16895,
+      "candidate_memory_tokens": 11537,
+      "memory_weighted_reduction": 0.3171352471145309,
+      "median_delta_tokens": -27651.0,
+      "worst_regression": {
+        "journey": "a01-b10000",
+        "delta_tokens": -26982
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 4,
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "json_compact_lexical_v1",
+      "budget_group": "b4096",
+      "n": 5,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 301995,
+      "candidate_tokens": 139889,
+      "weighted_reduction": 0.5367837215847944,
+      "n_memory": 5,
+      "baseline_memory_tokens": 41620,
+      "candidate_memory_tokens": 13819,
+      "memory_weighted_reduction": 0.6679721287842384,
+      "median_delta_tokens": -32933.0,
+      "worst_regression": {
+        "journey": "a01-b4096",
+        "delta_tokens": -28269
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 4,
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "json_compact_lexical_v1",
+      "budget_group": "write",
+      "n": 1,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 52711,
+      "candidate_tokens": 25850,
+      "weighted_reduction": 0.509590028646772,
+      "n_memory": 1,
+      "baseline_memory_tokens": 636,
+      "candidate_memory_tokens": 636,
+      "memory_weighted_reduction": 0.0,
+      "median_delta_tokens": -26861.0,
+      "worst_regression": {
+        "journey": "e01",
+        "delta_tokens": -26861
+      },
+      "conclusions": {
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "budget_group": "all",
+      "n": 11,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 631976,
+      "candidate_tokens": 303346,
+      "weighted_reduction": 0.5200039241996531,
+      "n_memory": 11,
+      "baseline_memory_tokens": 59151,
+      "candidate_memory_tokens": 25992,
+      "memory_weighted_reduction": 0.5605822386772836,
+      "median_delta_tokens": -28269.0,
+      "worst_regression": {
+        "journey": "e01",
+        "delta_tokens": -26861
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 8,
+        "reference_reduction_with_quality_pass": 3
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "budget_group": "b10000",
+      "n": 5,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 277270,
+      "candidate_tokens": 137607,
+      "weighted_reduction": 0.5037075774515816,
+      "n_memory": 5,
+      "baseline_memory_tokens": 16895,
+      "candidate_memory_tokens": 11537,
+      "memory_weighted_reduction": 0.3171352471145309,
+      "median_delta_tokens": -27651.0,
+      "worst_regression": {
+        "journey": "a01-b10000",
+        "delta_tokens": -26982
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 4,
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "budget_group": "b4096",
+      "n": 5,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 301995,
+      "candidate_tokens": 139889,
+      "weighted_reduction": 0.5367837215847944,
+      "n_memory": 5,
+      "baseline_memory_tokens": 41620,
+      "candidate_memory_tokens": 13819,
+      "memory_weighted_reduction": 0.6679721287842384,
+      "median_delta_tokens": -32933.0,
+      "worst_regression": {
+        "journey": "a01-b4096",
+        "delta_tokens": -28269
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 4,
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "budget_group": "write",
+      "n": 1,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 52711,
+      "candidate_tokens": 25850,
+      "weighted_reduction": 0.509590028646772,
+      "n_memory": 1,
+      "baseline_memory_tokens": 636,
+      "candidate_memory_tokens": 636,
+      "memory_weighted_reduction": 0.0,
+      "median_delta_tokens": -26861.0,
+      "worst_regression": {
+        "journey": "e01",
+        "delta_tokens": -26861
+      },
+      "conclusions": {
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "structured_compact_v1",
+      "budget_group": "all",
+      "n": 11,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 52342,
+      "candidate_tokens": 23864,
+      "weighted_reduction": 0.5440755034198158,
+      "n_memory": 11,
+      "baseline_memory_tokens": 52342,
+      "candidate_memory_tokens": 23864,
+      "memory_weighted_reduction": 0.5440755034198158,
+      "median_delta_tokens": -1254.0,
+      "worst_regression": {
+        "journey": "e01",
+        "delta_tokens": 0
+      },
+      "conclusions": {
+        "descriptive_only": 1,
+        "quality_fix_not_equivalent_compression": 8,
+        "reference_reduction_with_quality_pass": 2
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "structured_compact_v1",
+      "budget_group": "b10000",
+      "n": 5,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 15851,
+      "candidate_tokens": 10828,
+      "weighted_reduction": 0.3168885243833197,
+      "n_memory": 5,
+      "baseline_memory_tokens": 15851,
+      "candidate_memory_tokens": 10828,
+      "memory_weighted_reduction": 0.3168885243833197,
+      "median_delta_tokens": -791.0,
+      "worst_regression": {
+        "journey": "a01-b10000",
+        "delta_tokens": -121
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 4,
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "structured_compact_v1",
+      "budget_group": "b4096",
+      "n": 5,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 36037,
+      "candidate_tokens": 12582,
+      "weighted_reduction": 0.6508588395260426,
+      "n_memory": 5,
+      "baseline_memory_tokens": 36037,
+      "candidate_memory_tokens": 12582,
+      "memory_weighted_reduction": 0.6508588395260426,
+      "median_delta_tokens": -5116.0,
+      "worst_regression": {
+        "journey": "a01-b4096",
+        "delta_tokens": -1254
+      },
+      "conclusions": {
+        "quality_fix_not_equivalent_compression": 4,
+        "reference_reduction_with_quality_pass": 1
+      }
+    },
+    {
+      "encoding": "o200k_base",
+      "representation_id": "structured_compact_v1",
+      "budget_group": "write",
+      "n": 1,
+      "excluded_without_both_counts": 0,
+      "baseline_tokens": 454,
+      "candidate_tokens": 454,
+      "weighted_reduction": 0.0,
+      "n_memory": 1,
+      "baseline_memory_tokens": 454,
+      "candidate_memory_tokens": 454,
+      "memory_weighted_reduction": 0.0,
+      "median_delta_tokens": 0.0,
+      "worst_regression": {
+        "journey": "e01",
+        "delta_tokens": 0
+      },
+      "conclusions": {
+        "descriptive_only": 1
+      }
+    }
+  ],
+  "rows": [
+    {
+      "case_id": "w01",
+      "journey": "w01-b4096",
+      "goal_id": "orient_small_about",
+      "budget": 4096,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 60707,
+      "candidate_tokens": 31973,
+      "delta_tokens": -28734,
+      "reduction_fraction": 0.4733226810746701,
+      "baseline_rpc": 3,
+      "candidate_rpc": 3,
+      "first_supported_unit": {
+        "baseline": 2,
+        "candidate": 2
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 60707,
+        "memory_tokens": 8632,
+        "startup_tokens": 52075,
+        "utf8_bytes": 279000,
+        "absent_units": {},
+        "rpc": 3,
+        "first_supported_unit": 2,
+        "tokens_until_first_supported_unit": 57676,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 31973,
+        "memory_tokens": 6759,
+        "startup_tokens": 25214,
+        "utf8_bytes": 139600,
+        "absent_units": {},
+        "rpc": 3,
+        "first_supported_unit": 2,
+        "tokens_until_first_supported_unit": 30826,
+        "tokens_until_task_ready": 30826,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w01",
+      "journey": "w01-b4096",
+      "goal_id": "orient_small_about",
+      "budget": 4096,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 60707,
+      "candidate_tokens": 31973,
+      "delta_tokens": -28734,
+      "reduction_fraction": 0.4733226810746701,
+      "baseline_rpc": 3,
+      "candidate_rpc": 3,
+      "first_supported_unit": {
+        "baseline": 2,
+        "candidate": 2
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 60707,
+        "memory_tokens": 8632,
+        "startup_tokens": 52075,
+        "utf8_bytes": 279000,
+        "absent_units": {},
+        "rpc": 3,
+        "first_supported_unit": 2,
+        "tokens_until_first_supported_unit": 57676,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 31973,
+        "memory_tokens": 6759,
+        "startup_tokens": 25214,
+        "utf8_bytes": 139600,
+        "absent_units": {},
+        "rpc": 3,
+        "first_supported_unit": 2,
+        "tokens_until_first_supported_unit": 30826,
+        "tokens_until_task_ready": 30826,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w01",
+      "journey": "w01-b4096",
+      "goal_id": "orient_small_about",
+      "budget": 4096,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 8103,
+      "candidate_tokens": 6389,
+      "delta_tokens": -1714,
+      "reduction_fraction": 0.21152659508823893,
+      "baseline_rpc": 3,
+      "candidate_rpc": 3,
+      "first_supported_unit": {
+        "baseline": 2,
+        "candidate": 2
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 8103,
+        "memory_tokens": 8103,
+        "startup_tokens": 0,
+        "utf8_bytes": 26524,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 3,
+        "first_supported_unit": 2,
+        "tokens_until_first_supported_unit": 5267,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 6389,
+        "memory_tokens": 6389,
+        "startup_tokens": 0,
+        "utf8_bytes": 20362,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 3,
+        "first_supported_unit": 2,
+        "tokens_until_first_supported_unit": 5348,
+        "tokens_until_task_ready": 5348,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w01",
+      "journey": "w01-b4096",
+      "goal_id": "orient_small_about",
+      "budget": 4096,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 218,
+      "candidate_tokens": 113,
+      "delta_tokens": -105,
+      "reduction_fraction": 0.481651376146789,
+      "baseline_rpc": 3,
+      "candidate_rpc": 3,
+      "first_supported_unit": {
+        "baseline": 2,
+        "candidate": 2
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 218,
+        "memory_tokens": 218,
+        "startup_tokens": 0,
+        "utf8_bytes": 875,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 3,
+        "first_supported_unit": 2,
+        "tokens_until_first_supported_unit": 161,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 113,
+        "memory_tokens": 113,
+        "startup_tokens": 0,
+        "utf8_bytes": 556,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 3,
+        "first_supported_unit": 2,
+        "tokens_until_first_supported_unit": 93,
+        "tokens_until_task_ready": 93,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w01",
+      "journey": "w01-b10000",
+      "goal_id": "orient_small_about",
+      "budget": 10000,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 60583,
+      "candidate_tokens": 30763,
+      "delta_tokens": -29820,
+      "reduction_fraction": 0.49221728867834214,
+      "baseline_rpc": 3,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 60583,
+        "memory_tokens": 8508,
+        "startup_tokens": 52075,
+        "utf8_bytes": 278516,
+        "absent_units": {},
+        "rpc": 3,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 55035,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 30763,
+        "memory_tokens": 5549,
+        "startup_tokens": 25214,
+        "utf8_bytes": 135475,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 28296,
+        "tokens_until_task_ready": 28296,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w01",
+      "journey": "w01-b10000",
+      "goal_id": "orient_small_about",
+      "budget": 10000,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 60583,
+      "candidate_tokens": 30763,
+      "delta_tokens": -29820,
+      "reduction_fraction": 0.49221728867834214,
+      "baseline_rpc": 3,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 60583,
+        "memory_tokens": 8508,
+        "startup_tokens": 52075,
+        "utf8_bytes": 278516,
+        "absent_units": {},
+        "rpc": 3,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 55035,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 30763,
+        "memory_tokens": 5549,
+        "startup_tokens": 25214,
+        "utf8_bytes": 135475,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 28296,
+        "tokens_until_task_ready": 28296,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w01",
+      "journey": "w01-b10000",
+      "goal_id": "orient_small_about",
+      "budget": 10000,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 7930,
+      "candidate_tokens": 5309,
+      "delta_tokens": -2621,
+      "reduction_fraction": 0.3305170239596469,
+      "baseline_rpc": 3,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 7930,
+        "memory_tokens": 7930,
+        "startup_tokens": 0,
+        "utf8_bytes": 25936,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 3,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 2798,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 5309,
+        "memory_tokens": 5309,
+        "startup_tokens": 0,
+        "utf8_bytes": 16724,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 2949,
+        "tokens_until_task_ready": 2949,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w01",
+      "journey": "w01-b10000",
+      "goal_id": "orient_small_about",
+      "budget": 10000,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 221,
+      "candidate_tokens": 73,
+      "delta_tokens": -148,
+      "reduction_fraction": 0.669683257918552,
+      "baseline_rpc": 3,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 221,
+        "memory_tokens": 221,
+        "startup_tokens": 0,
+        "utf8_bytes": 879,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 3,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 82,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 73,
+        "memory_tokens": 73,
+        "startup_tokens": 0,
+        "utf8_bytes": 359,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53,
+        "tokens_until_task_ready": 53,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w02",
+      "journey": "w02-b4096",
+      "goal_id": "resume_explicit_label",
+      "budget": 4096,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 63555,
+      "candidate_tokens": 27342,
+      "delta_tokens": -36213,
+      "reduction_fraction": 0.5697899457163087,
+      "baseline_rpc": 9,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 63555,
+        "memory_tokens": 11480,
+        "startup_tokens": 52075,
+        "utf8_bytes": 290830,
+        "absent_units": {},
+        "rpc": 9,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 57262,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 27342,
+        "memory_tokens": 2128,
+        "startup_tokens": 25214,
+        "utf8_bytes": 125190,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26420,
+        "tokens_until_task_ready": 26420,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w02",
+      "journey": "w02-b4096",
+      "goal_id": "resume_explicit_label",
+      "budget": 4096,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 63555,
+      "candidate_tokens": 27342,
+      "delta_tokens": -36213,
+      "reduction_fraction": 0.5697899457163087,
+      "baseline_rpc": 9,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 63555,
+        "memory_tokens": 11480,
+        "startup_tokens": 52075,
+        "utf8_bytes": 290830,
+        "absent_units": {},
+        "rpc": 9,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 57262,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 27342,
+        "memory_tokens": 2128,
+        "startup_tokens": 25214,
+        "utf8_bytes": 125190,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26420,
+        "tokens_until_task_ready": 26420,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w02",
+      "journey": "w02-b4096",
+      "goal_id": "resume_explicit_label",
+      "budget": 4096,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 9577,
+      "candidate_tokens": 1867,
+      "delta_tokens": -7710,
+      "reduction_fraction": 0.8050537746684766,
+      "baseline_rpc": 9,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 9577,
+        "memory_tokens": 9577,
+        "startup_tokens": 0,
+        "utf8_bytes": 33741,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 9,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 4368,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 1867,
+        "memory_tokens": 1867,
+        "startup_tokens": 0,
+        "utf8_bytes": 6369,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1052,
+        "tokens_until_task_ready": 1052,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w02",
+      "journey": "w02-b4096",
+      "goal_id": "resume_explicit_label",
+      "budget": 4096,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 443,
+      "candidate_tokens": 73,
+      "delta_tokens": -370,
+      "reduction_fraction": 0.835214446952596,
+      "baseline_rpc": 9,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 443,
+        "memory_tokens": 443,
+        "startup_tokens": 0,
+        "utf8_bytes": 2106,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 9,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 208,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 73,
+        "memory_tokens": 73,
+        "startup_tokens": 0,
+        "utf8_bytes": 359,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53,
+        "tokens_until_task_ready": 53,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w02",
+      "journey": "w02-b10000",
+      "goal_id": "resume_explicit_label",
+      "budget": 10000,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 54535,
+      "candidate_tokens": 26978,
+      "delta_tokens": -27557,
+      "reduction_fraction": 0.5053085174658476,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 54535,
+        "memory_tokens": 2460,
+        "startup_tokens": 52075,
+        "utf8_bytes": 259253,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 54535,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26978,
+        "memory_tokens": 1764,
+        "startup_tokens": 25214,
+        "utf8_bytes": 123938,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26978,
+        "tokens_until_task_ready": 26978,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w02",
+      "journey": "w02-b10000",
+      "goal_id": "resume_explicit_label",
+      "budget": 10000,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 54535,
+      "candidate_tokens": 26978,
+      "delta_tokens": -27557,
+      "reduction_fraction": 0.5053085174658476,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 54535,
+        "memory_tokens": 2460,
+        "startup_tokens": 52075,
+        "utf8_bytes": 259253,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 54535,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26978,
+        "memory_tokens": 1764,
+        "startup_tokens": 25214,
+        "utf8_bytes": 123938,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26978,
+        "tokens_until_task_ready": 26978,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w02",
+      "journey": "w02-b10000",
+      "goal_id": "resume_explicit_label",
+      "budget": 10000,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 2333,
+      "candidate_tokens": 1636,
+      "delta_tokens": -697,
+      "reduction_fraction": 0.2987569652807544,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 2333,
+        "memory_tokens": 2333,
+        "startup_tokens": 0,
+        "utf8_bytes": 8153,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 2333,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 1636,
+        "memory_tokens": 1636,
+        "startup_tokens": 0,
+        "utf8_bytes": 5613,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1636,
+        "tokens_until_task_ready": 1636,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w02",
+      "journey": "w02-b10000",
+      "goal_id": "resume_explicit_label",
+      "budget": 10000,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 27,
+      "candidate_tokens": 28,
+      "delta_tokens": 1,
+      "reduction_fraction": -0.037037037037037035,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 27,
+        "memory_tokens": 27,
+        "startup_tokens": 0,
+        "utf8_bytes": 114,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 27,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 28,
+        "memory_tokens": 28,
+        "startup_tokens": 0,
+        "utf8_bytes": 119,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 28,
+        "tokens_until_task_ready": 28,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w03",
+      "journey": "w03-b4096",
+      "goal_id": "orient_identical_bodies",
+      "budget": 4096,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 63282,
+      "candidate_tokens": 27325,
+      "delta_tokens": -35957,
+      "reduction_fraction": 0.568202648462438,
+      "baseline_rpc": 9,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 63282,
+        "memory_tokens": 11207,
+        "startup_tokens": 52075,
+        "utf8_bytes": 288682,
+        "absent_units": {},
+        "rpc": 9,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 57078,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 27325,
+        "memory_tokens": 2111,
+        "startup_tokens": 25214,
+        "utf8_bytes": 124921,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26371,
+        "tokens_until_task_ready": 26371,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w03",
+      "journey": "w03-b4096",
+      "goal_id": "orient_identical_bodies",
+      "budget": 4096,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 63282,
+      "candidate_tokens": 27325,
+      "delta_tokens": -35957,
+      "reduction_fraction": 0.568202648462438,
+      "baseline_rpc": 9,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 63282,
+        "memory_tokens": 11207,
+        "startup_tokens": 52075,
+        "utf8_bytes": 288682,
+        "absent_units": {},
+        "rpc": 9,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 57078,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 27325,
+        "memory_tokens": 2111,
+        "startup_tokens": 25214,
+        "utf8_bytes": 124921,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26371,
+        "tokens_until_task_ready": 26371,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w03",
+      "journey": "w03-b4096",
+      "goal_id": "orient_identical_bodies",
+      "budget": 4096,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 9533,
+      "candidate_tokens": 1872,
+      "delta_tokens": -7661,
+      "reduction_fraction": 0.8036294975348789,
+      "baseline_rpc": 9,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 9533,
+        "memory_tokens": 9533,
+        "startup_tokens": 0,
+        "utf8_bytes": 32528,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 9,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 4283,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 1872,
+        "memory_tokens": 1872,
+        "startup_tokens": 0,
+        "utf8_bytes": 6171,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1024,
+        "tokens_until_task_ready": 1024,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w03",
+      "journey": "w03-b4096",
+      "goal_id": "orient_identical_bodies",
+      "budget": 4096,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 443,
+      "candidate_tokens": 73,
+      "delta_tokens": -370,
+      "reduction_fraction": 0.835214446952596,
+      "baseline_rpc": 9,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 443,
+        "memory_tokens": 443,
+        "startup_tokens": 0,
+        "utf8_bytes": 2106,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 9,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 208,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 73,
+        "memory_tokens": 73,
+        "startup_tokens": 0,
+        "utf8_bytes": 359,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53,
+        "tokens_until_task_ready": 53,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w03",
+      "journey": "w03-b10000",
+      "goal_id": "orient_identical_bodies",
+      "budget": 10000,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 54614,
+      "candidate_tokens": 26963,
+      "delta_tokens": -27651,
+      "reduction_fraction": 0.5062987512359468,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 54614,
+        "memory_tokens": 2539,
+        "startup_tokens": 52075,
+        "utf8_bytes": 259210,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 54614,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26963,
+        "memory_tokens": 1749,
+        "startup_tokens": 25214,
+        "utf8_bytes": 123670,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26963,
+        "tokens_until_task_ready": 26963,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w03",
+      "journey": "w03-b10000",
+      "goal_id": "orient_identical_bodies",
+      "budget": 10000,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 54614,
+      "candidate_tokens": 26963,
+      "delta_tokens": -27651,
+      "reduction_fraction": 0.5062987512359468,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 54614,
+        "memory_tokens": 2539,
+        "startup_tokens": 52075,
+        "utf8_bytes": 259210,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 54614,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26963,
+        "memory_tokens": 1749,
+        "startup_tokens": 25214,
+        "utf8_bytes": 123670,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26963,
+        "tokens_until_task_ready": 26963,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w03",
+      "journey": "w03-b10000",
+      "goal_id": "orient_identical_bodies",
+      "budget": 10000,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 2433,
+      "candidate_tokens": 1642,
+      "delta_tokens": -791,
+      "reduction_fraction": 0.32511302918207974,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 2433,
+        "memory_tokens": 2433,
+        "startup_tokens": 0,
+        "utf8_bytes": 8181,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 2433,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 1642,
+        "memory_tokens": 1642,
+        "startup_tokens": 0,
+        "utf8_bytes": 5416,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1642,
+        "tokens_until_task_ready": 1642,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w03",
+      "journey": "w03-b10000",
+      "goal_id": "orient_identical_bodies",
+      "budget": 10000,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 27,
+      "candidate_tokens": 28,
+      "delta_tokens": 1,
+      "reduction_fraction": -0.037037037037037035,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 27,
+        "memory_tokens": 27,
+        "startup_tokens": 0,
+        "utf8_bytes": 114,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 27,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 28,
+        "memory_tokens": 28,
+        "startup_tokens": 0,
+        "utf8_bytes": 119,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 28,
+        "tokens_until_task_ready": 28,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w04",
+      "journey": "w04-b4096",
+      "goal_id": "dated_wake",
+      "budget": 4096,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 59794,
+      "candidate_tokens": 26861,
+      "delta_tokens": -32933,
+      "reduction_fraction": 0.5507743251831287,
+      "baseline_rpc": 6,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 59794,
+        "memory_tokens": 7719,
+        "startup_tokens": 52075,
+        "utf8_bytes": 276795,
+        "absent_units": {},
+        "rpc": 6,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 57393,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26861,
+        "memory_tokens": 1647,
+        "startup_tokens": 25214,
+        "utf8_bytes": 123533,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26410,
+        "tokens_until_task_ready": 26410,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w04",
+      "journey": "w04-b4096",
+      "goal_id": "dated_wake",
+      "budget": 4096,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 59794,
+      "candidate_tokens": 26861,
+      "delta_tokens": -32933,
+      "reduction_fraction": 0.5507743251831287,
+      "baseline_rpc": 6,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 59794,
+        "memory_tokens": 7719,
+        "startup_tokens": 52075,
+        "utf8_bytes": 276795,
+        "absent_units": {},
+        "rpc": 6,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 57393,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26861,
+        "memory_tokens": 1647,
+        "startup_tokens": 25214,
+        "utf8_bytes": 123533,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26410,
+        "tokens_until_task_ready": 26410,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w04",
+      "journey": "w04-b4096",
+      "goal_id": "dated_wake",
+      "budget": 4096,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 6503,
+      "candidate_tokens": 1387,
+      "delta_tokens": -5116,
+      "reduction_fraction": 0.7867138243887437,
+      "baseline_rpc": 6,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 6503,
+        "memory_tokens": 6503,
+        "startup_tokens": 0,
+        "utf8_bytes": 22324,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 6,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 4512,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 1387,
+        "memory_tokens": 1387,
+        "startup_tokens": 0,
+        "utf8_bytes": 4743,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1043,
+        "tokens_until_task_ready": 1043,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w04",
+      "journey": "w04-b4096",
+      "goal_id": "dated_wake",
+      "budget": 4096,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 287,
+      "candidate_tokens": 73,
+      "delta_tokens": -214,
+      "reduction_fraction": 0.7456445993031359,
+      "baseline_rpc": 6,
+      "candidate_rpc": 2,
+      "first_supported_unit": {
+        "baseline": 4,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 287,
+        "memory_tokens": 287,
+        "startup_tokens": 0,
+        "utf8_bytes": 1359,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 6,
+        "first_supported_unit": 4,
+        "tokens_until_first_supported_unit": 208,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 73,
+        "memory_tokens": 73,
+        "startup_tokens": 0,
+        "utf8_bytes": 359,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53,
+        "tokens_until_task_ready": 53,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w04",
+      "journey": "w04-b10000",
+      "goal_id": "dated_wake",
+      "budget": 10000,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 54168,
+      "candidate_tokens": 26515,
+      "delta_tokens": -27653,
+      "reduction_fraction": 0.5105043568158322,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 54168,
+        "memory_tokens": 2093,
+        "startup_tokens": 52075,
+        "utf8_bytes": 257988,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 54168,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26515,
+        "memory_tokens": 1301,
+        "startup_tokens": 25214,
+        "utf8_bytes": 122349,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26515,
+        "tokens_until_task_ready": 26515,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w04",
+      "journey": "w04-b10000",
+      "goal_id": "dated_wake",
+      "budget": 10000,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 54168,
+      "candidate_tokens": 26515,
+      "delta_tokens": -27653,
+      "reduction_fraction": 0.5105043568158322,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 54168,
+        "memory_tokens": 2093,
+        "startup_tokens": 52075,
+        "utf8_bytes": 257988,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 54168,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26515,
+        "memory_tokens": 1301,
+        "startup_tokens": 25214,
+        "utf8_bytes": 122349,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26515,
+        "tokens_until_task_ready": 26515,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w04",
+      "journey": "w04-b10000",
+      "goal_id": "dated_wake",
+      "budget": 10000,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 1967,
+      "candidate_tokens": 1174,
+      "delta_tokens": -793,
+      "reduction_fraction": 0.40315200813421453,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 1967,
+        "memory_tokens": 1967,
+        "startup_tokens": 0,
+        "utf8_bytes": 6919,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1967,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 1174,
+        "memory_tokens": 1174,
+        "startup_tokens": 0,
+        "utf8_bytes": 4055,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1174,
+        "tokens_until_task_ready": 1174,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "w04",
+      "journey": "w04-b10000",
+      "goal_id": "dated_wake",
+      "budget": 10000,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 27,
+      "candidate_tokens": 28,
+      "delta_tokens": 1,
+      "reduction_fraction": -0.037037037037037035,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": false,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
+      "baseline": {
+        "captured": true,
+        "tokens": 27,
+        "memory_tokens": 27,
+        "startup_tokens": 0,
+        "utf8_bytes": 114,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 27,
+        "tokens_until_task_ready": null,
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ]
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 28,
+        "memory_tokens": 28,
+        "startup_tokens": 0,
+        "utf8_bytes": 119,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 28,
+        "tokens_until_task_ready": 28,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "a01",
+      "journey": "a01-b4096",
+      "goal_id": "ask_short_source",
+      "budget": 4096,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 54657,
+      "candidate_tokens": 26388,
+      "delta_tokens": -28269,
+      "reduction_fraction": 0.5172073110489049,
+      "baseline_rpc": 2,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 54657,
+        "memory_tokens": 2582,
+        "startup_tokens": 52075,
+        "utf8_bytes": 259355,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53341,
+        "tokens_until_task_ready": 53341,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26388,
+        "memory_tokens": 1174,
+        "startup_tokens": 25214,
+        "utf8_bytes": 121752,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26388,
+        "tokens_until_task_ready": 26388,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "a01",
+      "journey": "a01-b4096",
+      "goal_id": "ask_short_source",
+      "budget": 4096,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 54657,
+      "candidate_tokens": 26388,
+      "delta_tokens": -28269,
+      "reduction_fraction": 0.5172073110489049,
+      "baseline_rpc": 2,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 54657,
+        "memory_tokens": 2582,
+        "startup_tokens": 52075,
+        "utf8_bytes": 259355,
+        "absent_units": {},
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53341,
+        "tokens_until_task_ready": 53341,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26388,
+        "memory_tokens": 1174,
+        "startup_tokens": 25214,
+        "utf8_bytes": 121752,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26388,
+        "tokens_until_task_ready": 26388,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "a01",
+      "journey": "a01-b4096",
+      "goal_id": "ask_short_source",
+      "budget": 4096,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 2321,
+      "candidate_tokens": 1067,
+      "delta_tokens": -1254,
+      "reduction_fraction": 0.5402843601895735,
+      "baseline_rpc": 2,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 2321,
+        "memory_tokens": 2321,
+        "startup_tokens": 0,
+        "utf8_bytes": 7672,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1133,
+        "tokens_until_task_ready": 1133,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 1067,
+        "memory_tokens": 1067,
+        "startup_tokens": 0,
+        "utf8_bytes": 3470,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1067,
+        "tokens_until_task_ready": 1067,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "a01",
+      "journey": "a01-b4096",
+      "goal_id": "ask_short_source",
+      "budget": 4096,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 59,
+      "candidate_tokens": 17,
+      "delta_tokens": -42,
+      "reduction_fraction": 0.711864406779661,
+      "baseline_rpc": 2,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 59,
+        "memory_tokens": 59,
+        "startup_tokens": 0,
+        "utf8_bytes": 303,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 2,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 42,
+        "tokens_until_task_ready": 42,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 17,
+        "memory_tokens": 17,
+        "startup_tokens": 0,
+        "utf8_bytes": 84,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 17,
+        "tokens_until_task_ready": 17,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "a01",
+      "journey": "a01-b10000",
+      "goal_id": "ask_short_source",
+      "budget": 10000,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 53370,
+      "candidate_tokens": 26388,
+      "delta_tokens": -26982,
+      "reduction_fraction": 0.5055649241146711,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 53370,
+        "memory_tokens": 1295,
+        "startup_tokens": 52075,
+        "utf8_bytes": 254926,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53370,
+        "tokens_until_task_ready": 53370,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26388,
+        "memory_tokens": 1174,
+        "startup_tokens": 25214,
+        "utf8_bytes": 121754,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26388,
+        "tokens_until_task_ready": 26388,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "a01",
+      "journey": "a01-b10000",
+      "goal_id": "ask_short_source",
+      "budget": 10000,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 53370,
+      "candidate_tokens": 26388,
+      "delta_tokens": -26982,
+      "reduction_fraction": 0.5055649241146711,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 53370,
+        "memory_tokens": 1295,
+        "startup_tokens": 52075,
+        "utf8_bytes": 254926,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53370,
+        "tokens_until_task_ready": 53370,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 26388,
+        "memory_tokens": 1174,
+        "startup_tokens": 25214,
+        "utf8_bytes": 121754,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 26388,
+        "tokens_until_task_ready": 26388,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "a01",
+      "journey": "a01-b10000",
+      "goal_id": "ask_short_source",
+      "budget": 10000,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 1188,
+      "candidate_tokens": 1067,
+      "delta_tokens": -121,
+      "reduction_fraction": 0.10185185185185185,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 1188,
+        "memory_tokens": 1188,
+        "startup_tokens": 0,
+        "utf8_bytes": 3863,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1188,
+        "tokens_until_task_ready": 1188,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 1067,
+        "memory_tokens": 1067,
+        "startup_tokens": 0,
+        "utf8_bytes": 3471,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1067,
+        "tokens_until_task_ready": 1067,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "a01",
+      "journey": "a01-b10000",
+      "goal_id": "ask_short_source",
+      "budget": 10000,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 17,
+      "candidate_tokens": 17,
+      "delta_tokens": 0,
+      "reduction_fraction": 0.0,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "descriptive_only",
+      "conclusion_reason": "no reference delta",
+      "baseline": {
+        "captured": true,
+        "tokens": 17,
+        "memory_tokens": 17,
+        "startup_tokens": 0,
+        "utf8_bytes": 84,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 17,
+        "tokens_until_task_ready": 17,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 17,
+        "memory_tokens": 17,
+        "startup_tokens": 0,
+        "utf8_bytes": 84,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 17,
+        "tokens_until_task_ready": 17,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "e01",
+      "journey": "e01",
+      "goal_id": "simple_write_receipt",
+      "budget": null,
+      "representation_id": "mcp_json_compact_legacy_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 52711,
+      "candidate_tokens": 25850,
+      "delta_tokens": -26861,
+      "reduction_fraction": 0.509590028646772,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 52711,
+        "memory_tokens": 636,
+        "startup_tokens": 52075,
+        "utf8_bytes": 252776,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 52711,
+        "tokens_until_task_ready": 52711,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 25850,
+        "memory_tokens": 636,
+        "startup_tokens": 25214,
+        "utf8_bytes": 119996,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 25850,
+        "tokens_until_task_ready": 25850,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "e01",
+      "journey": "e01",
+      "goal_id": "simple_write_receipt",
+      "budget": null,
+      "representation_id": "json_compact_lexical_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 52711,
+      "candidate_tokens": 25850,
+      "delta_tokens": -26861,
+      "reduction_fraction": 0.509590028646772,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "reference_reduction_with_quality_pass",
+      "conclusion_reason": null,
+      "baseline": {
+        "captured": true,
+        "tokens": 52711,
+        "memory_tokens": 636,
+        "startup_tokens": 52075,
+        "utf8_bytes": 252776,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 52711,
+        "tokens_until_task_ready": 52711,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 25850,
+        "memory_tokens": 636,
+        "startup_tokens": 25214,
+        "utf8_bytes": 119996,
+        "absent_units": {},
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 25850,
+        "tokens_until_task_ready": 25850,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "e01",
+      "journey": "e01",
+      "goal_id": "simple_write_receipt",
+      "budget": null,
+      "representation_id": "structured_compact_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 454,
+      "candidate_tokens": 454,
+      "delta_tokens": 0,
+      "reduction_fraction": 0.0,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "descriptive_only",
+      "conclusion_reason": "no reference delta",
+      "baseline": {
+        "captured": true,
+        "tokens": 454,
+        "memory_tokens": 454,
+        "startup_tokens": 0,
+        "utf8_bytes": 1511,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 454,
+        "tokens_until_task_ready": 454,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 454,
+        "memory_tokens": 454,
+        "startup_tokens": 0,
+        "utf8_bytes": 1511,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 454,
+        "tokens_until_task_ready": 454,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    },
+    {
+      "case_id": "e01",
+      "journey": "e01",
+      "goal_id": "simple_write_receipt",
+      "budget": null,
+      "representation_id": "content_blocks_standalone_v1",
+      "encoding": "o200k_base",
+      "baseline_tokens": 21,
+      "candidate_tokens": 21,
+      "delta_tokens": 0,
+      "reduction_fraction": 0.0,
+      "baseline_rpc": 1,
+      "candidate_rpc": 1,
+      "first_supported_unit": {
+        "baseline": 1,
+        "candidate": 1
+      },
+      "quality_baseline": true,
+      "quality_candidate": true,
+      "comparable": true,
+      "conclusion": "descriptive_only",
+      "conclusion_reason": "no reference delta",
+      "baseline": {
+        "captured": true,
+        "tokens": 21,
+        "memory_tokens": 21,
+        "startup_tokens": 0,
+        "utf8_bytes": 67,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 21,
+        "tokens_until_task_ready": 21,
+        "quality_pass": true,
+        "quality_failures": []
+      },
+      "candidate": {
+        "captured": true,
+        "tokens": 21,
+        "memory_tokens": 21,
+        "startup_tokens": 0,
+        "utf8_bytes": 67,
+        "absent_units": {
+          "not_a_tool_result": 2
+        },
+        "rpc": 1,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 21,
+        "tokens_until_task_ready": 21,
+        "quality_pass": true,
+        "quality_failures": []
+      }
+    }
+  ],
+  "oracle": {
+    "baseline": [
+      {
+        "journey": "w01-b4096",
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": false
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 2,
+            "event_index": 5
+          },
+          "task_ready": null,
+          "unresolved_evidence_reference_count": 6,
+          "evidence_body_disguised_as_ref_count": 6,
+          "support_bookkeeping_in_state_count": 5,
+          "support_displacement_count": 3,
+          "historical_relation_as_action_count": 1,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 15,
+          "rpc_calls": 3,
+          "selection_restarts": 1,
+          "mandatory_continuations": 1
+        },
+        "unmet_obligations": [
+          {
+            "kind": "state_mentions",
+            "text": "Use blue-green deploys for the ledger service.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          },
+          {
+            "kind": "state_mentions",
+            "text": "A second ledger pool is provisioned.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          },
+          {
+            "kind": "state_mentions",
+            "text": "Cutover is scheduled for Friday.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          }
+        ],
+        "detail": {
+          "unresolved_refs": [
+            "S1: the ops review chose blue-green deploys for the ledger.",
+            "S2: the capacity report lists pool ledger-b as ready.",
+            "S2: the second pool was provisioned for the switch.",
+            "S3: the change calendar lists the ledger cutover on Friday.",
+            "S4: the capacity sign-off cites pool ledger-b for the switch.",
+            "S5: the cutover checklist requires pool ledger-b to be ready."
+          ],
+          "disguised_refs": [
+            "S1: the ops review chose blue-green deploys for the ledger.",
+            "S2: the capacity report lists pool ledger-b as ready.",
+            "S2: the second pool was provisioned for the switch.",
+            "S3: the change calendar lists the ledger cutover on Friday.",
+            "S4: the capacity sign-off cites pool ledger-b for the switch.",
+            "S5: the cutover checklist requires pool ledger-b to be ready."
+          ],
+          "support_lines_in_state": [
+            "Relationship evidence:fixture:w01:entry:constraint:cutover-is-scheduled-for-friday-3bcfa12cf4fac109:current --supports--> fixture:w01:entry:constraint:cutover-is-scheduled-for-friday-3bcfa12cf4fac109 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:current --supports--> fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:relation:1 --supports--> fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:relation:1 --supports--> fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61:current --supports--> fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61 [evidential] because Evidence supports this memory entry."
+          ],
+          "historical_actions": [
+            "depends_on → fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61"
+          ],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 3,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w01-b10000",
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "historical_relation_as_action_count"
+        ],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": false
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": null,
+          "unresolved_evidence_reference_count": 6,
+          "evidence_body_disguised_as_ref_count": 6,
+          "support_bookkeeping_in_state_count": 5,
+          "support_displacement_count": 3,
+          "historical_relation_as_action_count": 1,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 15,
+          "rpc_calls": 3,
+          "selection_restarts": 0,
+          "mandatory_continuations": 2
+        },
+        "unmet_obligations": [
+          {
+            "kind": "state_mentions",
+            "text": "Use blue-green deploys for the ledger service.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          },
+          {
+            "kind": "state_mentions",
+            "text": "A second ledger pool is provisioned.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          },
+          {
+            "kind": "state_mentions",
+            "text": "Cutover is scheduled for Friday.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          }
+        ],
+        "detail": {
+          "unresolved_refs": [
+            "S1: the ops review chose blue-green deploys for the ledger.",
+            "S2: the capacity report lists pool ledger-b as ready.",
+            "S2: the second pool was provisioned for the switch.",
+            "S3: the change calendar lists the ledger cutover on Friday.",
+            "S4: the capacity sign-off cites pool ledger-b for the switch.",
+            "S5: the cutover checklist requires pool ledger-b to be ready."
+          ],
+          "disguised_refs": [
+            "S1: the ops review chose blue-green deploys for the ledger.",
+            "S2: the capacity report lists pool ledger-b as ready.",
+            "S2: the second pool was provisioned for the switch.",
+            "S3: the change calendar lists the ledger cutover on Friday.",
+            "S4: the capacity sign-off cites pool ledger-b for the switch.",
+            "S5: the cutover checklist requires pool ledger-b to be ready."
+          ],
+          "support_lines_in_state": [
+            "Relationship evidence:fixture:w01:entry:constraint:cutover-is-scheduled-for-friday-3bcfa12cf4fac109:current --supports--> fixture:w01:entry:constraint:cutover-is-scheduled-for-friday-3bcfa12cf4fac109 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:current --supports--> fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:relation:1 --supports--> fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w01:entry:decision:use-blue-green-deploys-for-the-ledger-service-c678f31eba8c9080:relation:1 --supports--> fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61:current --supports--> fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61 [evidential] because Evidence supports this memory entry."
+          ],
+          "historical_actions": [
+            "depends_on → fixture:w01:entry:observation:a-second-ledger-pool-is-provisioned-059c61f19c1eed61"
+          ],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 3,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w02-b4096",
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": false
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 4,
+            "event_index": 7
+          },
+          "task_ready": null,
+          "unresolved_evidence_reference_count": 2,
+          "evidence_body_disguised_as_ref_count": 2,
+          "support_bookkeeping_in_state_count": 2,
+          "support_displacement_count": 2,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 6,
+          "rpc_calls": 9,
+          "selection_restarts": 0,
+          "mandatory_continuations": 8
+        },
+        "unmet_obligations": [
+          {
+            "kind": "state_mentions",
+            "text": "Export billing records as parquet files.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          },
+          {
+            "kind": "state_mentions",
+            "text": "The parquet exporter passed the schema check.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          }
+        ],
+        "detail": {
+          "unresolved_refs": [
+            "S1: the billing sync notes choose parquet for exports.",
+            "S2: the exporter CI run shows the schema check passing."
+          ],
+          "disguised_refs": [
+            "S1: the billing sync notes choose parquet for exports.",
+            "S2: the exporter CI run shows the schema check passing."
+          ],
+          "support_lines_in_state": [
+            "Relationship evidence:fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb:current --supports--> fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28:current --supports--> fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28 [evidential] because Evidence supports this memory entry."
+          ],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 9,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w02-b10000",
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": false
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": null,
+          "unresolved_evidence_reference_count": 2,
+          "evidence_body_disguised_as_ref_count": 2,
+          "support_bookkeeping_in_state_count": 2,
+          "support_displacement_count": 2,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 6,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [
+          {
+            "kind": "state_mentions",
+            "text": "Export billing records as parquet files.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          },
+          {
+            "kind": "state_mentions",
+            "text": "The parquet exporter passed the schema check.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          }
+        ],
+        "detail": {
+          "unresolved_refs": [
+            "S1: the billing sync notes choose parquet for exports.",
+            "S2: the exporter CI run shows the schema check passing."
+          ],
+          "disguised_refs": [
+            "S1: the billing sync notes choose parquet for exports.",
+            "S2: the exporter CI run shows the schema check passing."
+          ],
+          "support_lines_in_state": [
+            "Relationship evidence:fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb:current --supports--> fixture:w02:entry:decision:export-billing-records-as-parquet-files-019b5203854414bb [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28:current --supports--> fixture:w02:entry:observation:the-parquet-exporter-passed-the-schema-check-3da222f7ae486c28 [evidential] because Evidence supports this memory entry."
+          ],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w03-b4096",
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": false
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 4,
+            "event_index": 7
+          },
+          "task_ready": null,
+          "unresolved_evidence_reference_count": 1,
+          "evidence_body_disguised_as_ref_count": 1,
+          "support_bookkeeping_in_state_count": 2,
+          "support_displacement_count": 1,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 2,
+          "cited_reference_count": 5,
+          "rpc_calls": 9,
+          "selection_restarts": 0,
+          "mandatory_continuations": 8
+        },
+        "unmet_obligations": [
+          {
+            "kind": "state_mentions",
+            "text": "Disk usage on node-7 reached 91 percent.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          }
+        ],
+        "detail": {
+          "unresolved_refs": [
+            "Monitoring export: node-7 disk at 91 percent at 09:00 UTC."
+          ],
+          "disguised_refs": [
+            "Monitoring export: node-7 disk at 91 percent at 09:00 UTC."
+          ],
+          "support_lines_in_state": [
+            "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904 [evidential] because Evidence supports this memory entry."
+          ],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 9,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w03-b10000",
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count",
+          "identical_body_merged_citation_count"
+        ],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": false
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": null,
+          "unresolved_evidence_reference_count": 1,
+          "evidence_body_disguised_as_ref_count": 1,
+          "support_bookkeeping_in_state_count": 2,
+          "support_displacement_count": 1,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 2,
+          "cited_reference_count": 5,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [
+          {
+            "kind": "state_mentions",
+            "text": "Disk usage on node-7 reached 91 percent.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          }
+        ],
+        "detail": {
+          "unresolved_refs": [
+            "Monitoring export: node-7 disk at 91 percent at 09:00 UTC."
+          ],
+          "disguised_refs": [
+            "Monitoring export: node-7 disk at 91 percent at 09:00 UTC."
+          ],
+          "support_lines_in_state": [
+            "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-3112adb72556ba75 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904:current --supports--> fixture:w03:entry:observation:disk-usage-on-node-7-reached-91-percent-ec1334b141707904 [evidential] because Evidence supports this memory entry."
+          ],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w04-b4096",
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": false
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 4,
+            "event_index": 7
+          },
+          "task_ready": null,
+          "unresolved_evidence_reference_count": 1,
+          "evidence_body_disguised_as_ref_count": 1,
+          "support_bookkeeping_in_state_count": 4,
+          "support_displacement_count": 1,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 4,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 3,
+          "rpc_calls": 6,
+          "selection_restarts": 0,
+          "mandatory_continuations": 5
+        },
+        "unmet_obligations": [
+          {
+            "kind": "state_mentions",
+            "text": "Freeze schema changes during the audit.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          },
+          {
+            "kind": "as_of_excludes",
+            "text": "Lift the schema freeze after the audit closed.",
+            "local_id": "lift",
+            "count": 1,
+            "satisfied": false
+          }
+        ],
+        "detail": {
+          "unresolved_refs": [
+            "S1: the audit kickoff notes freeze all schema changes."
+          ],
+          "disguised_refs": [
+            "S1: the audit kickoff notes freeze all schema changes."
+          ],
+          "support_lines_in_state": [
+            "Relationship evidence:fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22:current --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry."
+          ],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+          ],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 6,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w04-b10000",
+        "quality_pass": false,
+        "quality_failures": [
+          "task_obligations_satisfied",
+          "unresolved_evidence_reference_count",
+          "evidence_body_disguised_as_ref_count",
+          "support_displacement_count"
+        ],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": false
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": null,
+          "unresolved_evidence_reference_count": 1,
+          "evidence_body_disguised_as_ref_count": 1,
+          "support_bookkeeping_in_state_count": 4,
+          "support_displacement_count": 1,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 4,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 3,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [
+          {
+            "kind": "state_mentions",
+            "text": "Freeze schema changes during the audit.",
+            "local_id": null,
+            "count": 1,
+            "satisfied": false
+          },
+          {
+            "kind": "as_of_excludes",
+            "text": "Lift the schema freeze after the audit closed.",
+            "local_id": "lift",
+            "count": 1,
+            "satisfied": false
+          }
+        ],
+        "detail": {
+          "unresolved_refs": [
+            "S1: the audit kickoff notes freeze all schema changes."
+          ],
+          "disguised_refs": [
+            "S1: the audit kickoff notes freeze all schema changes."
+          ],
+          "support_lines_in_state": [
+            "Relationship evidence:fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22:current --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry."
+          ],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:current --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because Evidence supports this memory entry.",
+            "Relationship evidence:fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf:relation:1 --supports--> fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf [evidential] because Evidence supports this memory entry.",
+            "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1"
+          ],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "a01-b4096",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 2,
+          "rpc_calls": 2,
+          "selection_restarts": 1,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 2,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "a01-b10000",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 2,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "e01",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": null,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 0,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      }
+    ],
+    "candidate": [
+      {
+        "journey": "w01-b4096",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 2,
+            "event_index": 5
+          },
+          "task_ready": {
+            "after_rpc": 2,
+            "event_index": 5
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 9,
+          "rpc_calls": 3,
+          "selection_restarts": 1,
+          "mandatory_continuations": 1
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 3,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w01-b10000",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 9,
+          "rpc_calls": 2,
+          "selection_restarts": 0,
+          "mandatory_continuations": 1
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 2,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w02-b4096",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 4,
+          "rpc_calls": 2,
+          "selection_restarts": 0,
+          "mandatory_continuations": 1
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 2,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w02-b10000",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 4,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w03-b4096",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 4,
+          "rpc_calls": 2,
+          "selection_restarts": 0,
+          "mandatory_continuations": 1
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 2,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w03-b10000",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 4,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w04-b4096",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 2,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 2,
+          "rpc_calls": 2,
+          "selection_restarts": 0,
+          "mandatory_continuations": 1
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [
+            "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1",
+            "fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf (decision): Lift the schema freeze after the audit closed."
+          ],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 2,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "w04-b10000",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 2,
+          "state_declared_unbounded_context": true,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 2,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [
+            "Relationship fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf --supersedes--> fixture:w04:entry:decision:freeze-schema-changes-during-the-audit-a5126a7d75637d22 [evidential] because The closing memo ends the freeze. step=1",
+            "fixture:w04:entry:decision:lift-the-schema-freeze-after-the-audit-closed-972f2bbc686696cf (decision): Lift the schema freeze after the audit closed."
+          ],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "a01-b4096",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 2,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "a01-b10000",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": false,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 2,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      },
+      {
+        "journey": "e01",
+        "quality_pass": true,
+        "quality_failures": [],
+        "completeness": {
+          "transport_complete": true,
+          "selected_packet_complete": true,
+          "requested_scope_exhausted": null,
+          "task_obligations_satisfied": true
+        },
+        "metrics": {
+          "first_supported_unit": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
+          "unresolved_evidence_reference_count": 0,
+          "evidence_body_disguised_as_ref_count": 0,
+          "support_bookkeeping_in_state_count": 0,
+          "support_displacement_count": 0,
+          "historical_relation_as_action_count": 0,
+          "contract_violation_count": 0,
+          "post_as_of_memory_in_state_count": 0,
+          "state_declared_unbounded_context": false,
+          "identical_body_merged_citation_count": 0,
+          "cited_reference_count": 0,
+          "rpc_calls": 1,
+          "selection_restarts": 0,
+          "mandatory_continuations": 0
+        },
+        "unmet_obligations": [],
+        "detail": {
+          "unresolved_refs": [],
+          "disguised_refs": [],
+          "support_lines_in_state": [],
+          "historical_actions": [],
+          "contract_violations": [],
+          "post_as_of_state_lines": [],
+          "driver_outcome": {
+            "status": "completed",
+            "calls": 1,
+            "error": null
+          }
+        }
+      }
+    ]
+  }
+}

@@ -22,6 +22,38 @@ LIMITATIONS = (
 )
 
 
+def startup_catalogue(side):
+    """Startup exchanges (initialize, initialized, tools/list) per method, encoding and representation.
+
+    Every session pays them once. `distinct_totals` lists each different total seen across the
+    run's complete journeys, so a catalogue that varied between sessions is visible, not averaged.
+    """
+    per_journey = {}
+    for journey in side.metrics['journeys']:
+        if not journey.get('complete'):
+            continue
+        stage = {e['exposure_id']: e for e in journey['exposures'] if e['stage'] == 'startup_catalogue'}
+        for m in journey['measurements']:
+            exposure = stage.get(m['exposure_id'])
+            if exposure is None or m['tokens'] is None:
+                continue
+            key = (m['encoding'], m['representation'])
+            methods = per_journey.setdefault(key, {}).setdefault(journey['journey'], {})
+            slot = methods.setdefault(exposure['method'], {'tokens': 0, 'utf8_bytes': 0})
+            slot['tokens'] += m['tokens']
+            slot['utf8_bytes'] += m['utf8_bytes']
+    result = []
+    for (encoding, representation), journeys in sorted(per_journey.items()):
+        first = journeys[sorted(journeys)[0]]
+        totals = sorted({sum(v['tokens'] for v in methods.values()) for methods in journeys.values()})
+        result.append({'encoding': encoding, 'representation_id': representation,
+                       'journeys': len(journeys), 'methods': dict(sorted(first.items())),
+                       'tokens': sum(v['tokens'] for v in first.values()),
+                       'utf8_bytes': sum(v['utf8_bytes'] for v in first.values()),
+                       'distinct_totals': totals})
+    return result
+
+
 def _side_header(side):
     capture = side.capture
     return {'run': side.verified.root.name, 'manifest_sha256': side.verified.manifest_sha256,
@@ -32,6 +64,7 @@ def _side_header(side):
             'harness_code_sha256': capture.get('harness_code_sha256'),
             'capture_failures': capture.get('failures', []),
             'journeys': len(side.verified.manifest.get('journeys', [])),
+            'startup': startup_catalogue(side),
             'incomplete_journeys': sorted(j['journey'] for j in side.metrics['journeys']
                                           if not j.get('complete'))}
 

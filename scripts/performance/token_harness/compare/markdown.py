@@ -110,6 +110,60 @@ def _stages(report, representation):
                    'until task ready (base)', 'until task ready (cand)'), rows)
 
 
+def _pct(fraction):
+    if fraction is None:
+        return None
+    change = -fraction * 100
+    return f'{change:+.1f} %' if change else '0.0 %'
+
+
+def _startup(report, representation):
+    rows = []
+    for name in ('baseline', 'candidate'):
+        for entry in report[name].get('startup') or []:
+            if entry['representation_id'] != representation:
+                continue
+            methods = entry['methods']
+            rows.append((name, entry['encoding'],
+                         *((methods.get(m) or {}).get('tokens')
+                           for m in ('initialize', 'notifications/initialized', 'tools/list')),
+                         entry['tokens'], entry['utf8_bytes'],
+                         ', '.join(str(t) for t in entry['distinct_totals'])))
+    return _table(('variant', 'encoding', 'initialize', 'initialized', 'tools/list', 'startup tokens',
+                   'startup bytes', 'distinct totals across sessions'), rows)
+
+
+def _journeys(report, representation):
+    rows = []
+    for r in report['rows']:
+        if r['representation_id'] != representation:
+            continue
+        base, cand = r['baseline'], r['candidate']
+        memory = (None if None in (base['memory_tokens'], cand['memory_tokens'])
+                  else cand['memory_tokens'] - base['memory_tokens'])
+        rows.append((r['journey'], r['budget'] or 'write',
+                     f'{r["baseline_rpc"]} → {r["candidate_rpc"]}',
+                     base['memory_tokens'], cand['memory_tokens'], memory,
+                     _pct(None if memory is None or not base['memory_tokens']
+                          else -memory / base['memory_tokens']),
+                     r['baseline_tokens'], r['candidate_tokens'], r['delta_tokens'],
+                     _pct(r['reduction_fraction']), r['quality_baseline'], r['quality_candidate'],
+                     r['conclusion']))
+    return _table(('journey', 'budget', 'calls', 'memory (base)', 'memory (cand)', 'memory delta',
+                   'memory change', 'with startup (base)', 'with startup (cand)', 'delta',
+                   'change', 'oracle (base)', 'oracle (cand)', 'conclusion'), rows)
+
+
+def _weighted(report, representation):
+    rows = [(c['encoding'], c['budget_group'], c['n'], c.get('baseline_memory_tokens'),
+             c.get('candidate_memory_tokens'), _pct(c.get('memory_weighted_reduction')),
+             c['baseline_tokens'], c['candidate_tokens'], _pct(c['weighted_reduction']))
+            for c in report['cohorts'] if c['representation_id'] == representation]
+    return _table(('encoding', 'group', 'n', 'memory (base)', 'memory (cand)',
+                   'memory weighted change', 'with startup (base)', 'with startup (cand)',
+                   'weighted change'), rows)
+
+
 def _cohorts(report):
     rows = [(c['encoding'], c['representation_id'], c['budget_group'], c['n'],
              c['excluded_without_both_counts'], c['baseline_tokens'], c['candidate_tokens'],
@@ -133,12 +187,25 @@ def _controls(controls):
                    'rows without counts'), rows)
 
 
-def render(report, source, controls=(), title='Agent token optimization — paired Wake report (#544 I3)'):
+def render(report, source, controls=(), title='Agent token optimization — paired Wake report (#544 I3)',
+           history=None):
     representation = PRIMARY_REPRESENTATION
     sections = ['## A/A controls', 'The same verified artifacts compared with themselves must give '
                 'zero deltas.', _controls(controls)] if controls else []
+    if history:
+        sections.append(history.strip())
     return '\n\n'.join([
         f'# {title}', _header(report, source),
+        f'## Headline (`{representation}`)',
+        '### Startup per session',
+        'initialize, notifications/initialized and tools/list, requests and responses; every '
+        'journey below pays it once.', _startup(report, representation),
+        '### Journeys',
+        '"memory" excludes startup; "with startup" is the whole journey. A negative change is a '
+        'reduction.', _journeys(report, representation),
+        '### Weighted change',
+        'change = sum(candidate) / sum(baseline) - 1 over rows with both counts; failing rows stay in.',
+        _weighted(report, representation),
         '## Conclusions', ', '.join(f'`{k}`: {v}' for k, v in report['summary']['conclusions'].items())
         + ' (rows over every representation).',
         '## Oracle per journey', _oracle(report),

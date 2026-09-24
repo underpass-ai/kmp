@@ -1,0 +1,25 @@
+{
+  "kind": "local release build; binary copied to a scratch path before capture",
+  "variant": "candidate",
+  "branch": "integration/agent-token-optimization",
+  "commit": "23f95fd320670a351253a872095c3f3276c8ee2c",
+  "tree": "bbe09c85cb355b989bd8c684ab9b4fba030b2aed",
+  "worktree_clean": true,
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "-p",
+    "kmp-mcp",
+    "--locked",
+    "--features",
+    "sqlite"
+  ],
+  "cargo_lock_sha256": "3ac0ecc9957f138e4ad3dd4623d8ed7e0ee3aa1a67b55accaf67a29a76bbdc00",
+  "workspace_cargo_config_sha256": "aa4afc0d2d90cf810213d38bc37a7b879ba683b518c6674e24d93b9272020cf7",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "binary_version": "kmp-mcp 0.19.0 (store format 4 (sqlite))",
+  "binary_sha256": "2d23064e6687e1fc2372ba72c7e43690c02a308a54eff5a4d33602bf717b2369",
+  "note": "built in docs/544-consolidated-report, whose only commit past 23f95fd3 touches scripts/performance/token_harness"
+}
