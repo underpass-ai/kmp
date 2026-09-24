@@ -13,6 +13,7 @@ pub mod summaries;
 pub mod viewer;
 
 mod contract;
+mod curate;
 mod projection;
 mod serving;
 mod write;

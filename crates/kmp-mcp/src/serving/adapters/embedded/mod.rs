@@ -1,6 +1,7 @@
 mod ask_tool;
 mod commit_native_write_guard;
 mod condense_tool;
+mod curate_tool;
 mod ingest_tool;
 mod inspect_tool;
 mod near_tool;
@@ -15,6 +16,7 @@ mod wake_tool;
 
 pub(super) use ask_tool::EmbeddedAskTool;
 pub(super) use condense_tool::EmbeddedCondenseTool;
+pub(super) use curate_tool::EmbeddedCurateTool;
 pub(super) use ingest_tool::EmbeddedIngestTool;
 pub(super) use inspect_tool::EmbeddedInspectTool;
 pub(super) use near_tool::EmbeddedNearTool;

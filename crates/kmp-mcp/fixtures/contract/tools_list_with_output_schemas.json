@@ -6467,6 +6467,837 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
+      "description": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more and withholds what it doubts until you confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. Embedded store only.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "The current about: the review's root and the first of the selected abouts.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "accepted": {
+            "description": "apply: the missing items you declare, each in your own words. Suspect items cannot be applied.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "confidence": {
+                  "enum": [
+                    "high",
+                    "medium",
+                    "low",
+                    "unknown"
+                  ],
+                  "type": "string"
+                },
+                "confirm_doubted": {
+                  "description": "Write it although Jev doubted it in an earlier apply of these items.",
+                  "type": "boolean"
+                },
+                "evidence": {
+                  "description": "What in the sources shows the link.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "item_id": {
+                  "description": "An id `m<n>` from this review.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "rel": {
+                  "description": "Overrides the suggested type; a relation a writer may declare, and across abouts only same_event_as or same_entity_as.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "reverse": {
+                  "description": "Declare it from `to` to `from`.",
+                  "type": "boolean"
+                },
+                "why": {
+                  "description": "Your one checkable sentence for the link. Jev never writes it.",
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "item_id",
+                "why",
+                "evidence"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "actor": {
+            "description": "apply: writer name; defaults to the persistent agent name when context_id is supplied.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "axis": {
+            "description": "Clock for as_of/interval: occurred=event, observed=seen, ingested=written; validity=[valid_from,valid_until) overlaps the interval or contains the instant. Omitted: occurred, validity start, observed, ingested precedence, reported per entry. Explicit axis never substitutes another clock; applies only with as_of or interval.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 2,
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 2400,
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "context_id": {
+            "type": "string"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Bare label value or complete label ref returned by KMP.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "selectors": {
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "idempotency_key": {
+            "description": "apply: logical write identity; a needs_review answer's next action carries the one to reuse.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) on axis, with at least one bound; exclusive with as_of. Only entries in the span compete, scored against its own collection. UNKNOWN reports the nearest outside match in proof.nearest_outside.",
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "max_pairs": {
+            "description": "Most missing relations to return, strongest Jev confidence first. Default 12.",
+            "maximum": 40,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "mode": {
+            "description": "`review` reads, judges and freezes; it writes nothing. `apply` writes the accepted items of a frozen review through the writer's own review.",
+            "enum": [
+              "review",
+              "apply"
+            ],
+            "type": "string"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque cursor returned by page.next_cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum number of items from missing then suspect to return in this page; default 8, at most 20.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "purpose": {
+            "enum": [
+              "continue",
+              "audit",
+              "history",
+              "answer"
+            ],
+            "type": "string"
+          },
+          "review_token": {
+            "description": "A token a review returned. With it, the call pages that frozen review and reads or judges nothing again.",
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "write_review_token": {
+            "description": "apply: the neighbourhood review token a needs_review answer returned; its next action carries it.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "about"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_curate",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "description": "True only when the canonical ingest was committed; false for a preview or pending context review.",
+            "type": "boolean"
+          },
+          "attachment": {
+            "additionalProperties": false,
+            "properties": {
+              "created": {
+                "additionalProperties": false,
+                "properties": {
+                  "evidence": {
+                    "description": "Evidence nodes created by this write. Their ids are derived from the logical write identity and the triple, so an exact retry replays onto the same node and a later link to the same pair adds a new one instead of overwriting it.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "relations": {
+                    "description": "Links this relation-only write brought into existence: from, rel, to, class, confidence, the observation the link itself carries, and the evidence node created with it. Absent observed_at means the kernel stamped its ingestion instant, never an endpoint's clock.",
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
+              "unchanged_sources": {
+                "description": "The endpoint refs this relation-only write leaves untouched. Source text, evidence, coordinates, labels, metadata and ingestion history are not rewritten.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "clock_defaults": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Memories needing implicit observation, counted once across labels.",
+                "type": "integer"
+              },
+              "observed_at": {
+                "description": "ingested_at: omitted/null observation is resolved by the kernel. Previews describe a plan, never a committed timestamp.",
+                "type": "string"
+              },
+              "provenance": {
+                "description": "Packet provenance also defaults to this write's ingestion time; search-summary updates preserve original fact clocks.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "clocks": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "entries": {
+                    "description": "Memories covered by this command.",
+                    "type": "integer"
+                  },
+                  "ingested": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "observed": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "occurred": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "relations": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "ingested": {
+                            "description": "Relations with a stored ingestion time.",
+                            "type": "integer"
+                          },
+                          "observed": {
+                            "description": "Relations with a declaration observation, independent of endpoint clocks.",
+                            "type": "integer"
+                          },
+                          "occurred": {
+                            "description": "Relations with their own event time.",
+                            "type": "integer"
+                          },
+                          "relations": {
+                            "description": "Semantic declarations in this command, excluding structural memberships.",
+                            "type": "integer"
+                          },
+                          "valid_from": {
+                            "description": "Relations with an explicit validity start.",
+                            "type": "integer"
+                          },
+                          "valid_until": {
+                            "description": "Relations with an explicit validity end.",
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Relation clock coverage; null means unavailable, not zero."
+                  },
+                  "scope": {
+                    "description": "accepted_command: clocks of this historical write, including on replay; not current graph state or source fidelity.",
+                    "type": "string"
+                  },
+                  "valid_from": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "valid_until": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "distinct_values": {
+                        "description": "Distinct instants carried by those memories.",
+                        "type": "integer"
+                      },
+                      "entries": {
+                        "description": "Memories with this clock, counted once across their memberships.",
+                        "type": "integer"
+                      },
+                      "single_value": {
+                        "description": "RFC3339 instant when there is exactly one; null for none or several. Inspect receipt for individual clocks.",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Compact canonical clock coverage. Null when unavailable; previews do not report saved clocks."
+          },
+          "coverage": {
+            "additionalProperties": false,
+            "properties": {
+              "complete": {
+                "description": "All declared records and label memberships validated; accepted determines persistence.",
+                "type": "boolean"
+              },
+              "evidence": {
+                "description": "Compiled evidence objects.",
+                "type": "integer"
+              },
+              "label_memberships": {
+                "description": "Declared per-memory key/value pairs after shared-label union.",
+                "type": "integer"
+              },
+              "memories": {
+                "description": "Declared source memories.",
+                "type": "integer"
+              },
+              "preserved_memberships": {
+                "description": "Existing memberships preserved by search_summaries. Omitted for relations, which do not enumerate or rewrite source coordinates; attachment.unchanged_sources names the untouched endpoints.",
+                "type": "integer"
+              },
+              "relations": {
+                "description": "Declared semantic links.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "submitted_packet: coverage of the declaration only.",
+                "type": "string"
+              },
+              "search_summaries": {
+                "description": "Updated search renderings.",
+                "type": "integer"
+              },
+              "source_coverage": {
+                "description": "not_assessed: KMP cannot detect facts omitted by the writer.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "curate": {
+            "description": "apply: `doubted` items Jev asks you to reread (`item_id`, `support`, `suggested_rel`, `jev`) — withheld until you correct them or send `confirm_doubted` —, `rejected` items this call cannot write with the reason, the `jev` usage of the pre-write check, and `warnings`.",
+            "type": "object"
+          },
+          "diagnostics": {
+            "description": "Planner diagnostics that qualify the write.",
+            "type": "array"
+          },
+          "dry_run": {
+            "description": "Whether this response is a validated preview that wrote nothing.",
+            "type": "boolean"
+          },
+          "expand_context": {
+            "description": "Native reads only for stored_abouts to expand omitted stored surroundings. Complete their relevant pages.",
+            "type": "array"
+          },
+          "feedback": {
+            "description": "Validation signals. Codes and paths come from validation, not message parsing. A warning can accompany acceptance; never invent missing proof.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "arguments": {
+                          "description": "Complete arguments to execute that read.",
+                          "type": "object"
+                        },
+                        "tool": {
+                          "description": "Supported reading move, not proof that the proposed relation holds.",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "allowed_values": {
+                  "description": "Valid vocabulary when the refused field has one; choose using the source, never automatically substitute a kind.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "code": {
+                  "description": "Stable rule identifier.",
+                  "type": "string"
+                },
+                "expected_type": {
+                  "description": "JSON type required by an INVALID_TYPE refusal, such as array or object.",
+                  "type": "string"
+                },
+                "field": {
+                  "description": "Argument path, for example memories[1].evidence; empty denotes the request as a whole.",
+                  "type": "string"
+                },
+                "reason": {
+                  "description": "What must be corrected using actual sources.",
+                  "type": "string"
+                },
+                "received_type": {
+                  "description": "Actual JSON type at the refused field; a JSON-encoded string remains string and is never coerced.",
+                  "type": "string"
+                },
+                "severity": {
+                  "description": "error for a refusal; warning for accepted relations whose prior context needs review.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "generated_refs": {
+            "description": "Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ingest_preview": {
+            "description": "Canonical kmp_ingest arguments. Present only on dry-run.",
+            "type": "object"
+          },
+          "jev": {
+            "description": "review: model, requests and input tokens spent; null when Jev was not used.",
+            "type": "object"
+          },
+          "labels": {
+            "additionalProperties": false,
+            "properties": {
+              "created": {
+                "description": "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it.",
+                "type": "array"
+              },
+              "resembling": {
+                "description": "After a committed non-strict write: the labels written that resemble one the about already held, each with `key`, `value`, `existing_key`, `existing_value`, `kind` and `why`. Under strict such a write is refused instead, naming both labels, unless `options.labels_new` insists.",
+                "type": "array"
+              },
+              "written": {
+                "description": "The labels this write carries, each `key` and `value`, in the order their coordinates were emitted.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "local_refs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "For a memories packet, local id to canonical memory ref. Preview refs are planned; accepted=true confirms persistence.",
+            "type": "object"
+          },
+          "missing": {
+            "description": "review: pairs nothing declares: `item_id`, `from` and `to` as {ref, about, excerpt}, `suggested_rel` (Jev's choice among the types a writer may declare, or null without Jev), `proposed_by` (`kernel` or `jev`), the kernel `signals` and its `pairing_why` (null for Jev pairs), and `jev` {confidence, top three options}.",
+            "type": "array"
+          },
+          "neighborhood": {
+            "description": "Bounded literal context: stored/proposed items, exact refs, clocks, reasons, omissions, token and complete stored_abouts ownership. Proximity does not prove a relation; expand partial stored context when needed.",
+            "type": "object"
+          },
+          "next_actions": {
+            "description": "review: the call for the next page. apply after needs_review: the kmp_curate call that resumes this exact apply. Execute unchanged.",
+            "type": "array"
+          },
+          "next_suggested_reads": {
+            "description": "Optional preview reading suggestions. Accepted writes need no routine verification; receipt.action retrieves audit detail on demand.",
+            "type": "array"
+          },
+          "page": {
+            "description": "review: `entries`, `total` items in the review and `next_cursor`, null on the last page.",
+            "type": "object"
+          },
+          "read_after_write_ready": {
+            "description": "Whether a read now observes the accepted write.",
+            "type": "boolean"
+          },
+          "receipt": {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "additionalProperties": false,
+                "properties": {
+                  "arguments": {
+                    "description": "Complete arguments. object.text holds JSON with receipt.canonical_memory, receipt.writer diagnostics and command revision/hash. It is a historical snapshot, not current graph state.",
+                    "type": "object"
+                  },
+                  "tool": {
+                    "description": "kmp_inspect; execute only when accepted detail is needed.",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "ref": {
+                "description": "Immutable accepted-command audit ref. Absent for previews and simulated backends.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "relation_quality": {
+            "description": "Preview per-relation validation. After commit, recover it with receipt.action.",
+            "type": "array"
+          },
+          "relation_quality_metrics": {
+            "description": "Preview counts and prior-context coverage; stored in the receipt after commit.",
+            "type": "object"
+          },
+          "relations": {
+            "description": "Compiled source -> relation -> target triples, in canonical ingest order. @id resolves through local_refs; other endpoints remain canonical refs. Review direction and scope against the source: acceptance does not prove semantic fidelity.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "from": {
+                  "description": "Source memory, the containing record in the request.",
+                  "type": "string"
+                },
+                "rel": {
+                  "description": "Compiled relation type.",
+                  "type": "string"
+                },
+                "to": {
+                  "description": "Target memory addressed by connect_to.ref.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "from",
+                "rel",
+                "to"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "replacement": {
+            "additionalProperties": false,
+            "properties": {
+              "memories": {
+                "description": "Memories this packet wrote at a ref the caller supplied, each with the evidence this write put on it and the observation it now carries. A supplied ref replaces whatever that entry held; use relations to add a link without replacing a source.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "review_token": {
+            "description": "review: the frozen review's token; pass it back to page or apply this review.",
+            "type": "string"
+          },
+          "status": {
+            "description": "committed appended a command; replayed returned its earlier acceptance; validated is a preview; needs_review has applied nothing and returns context to review; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure.",
+            "enum": [
+              "committed",
+              "replayed",
+              "validated",
+              "needs_review",
+              "rejected",
+              "unconfirmed",
+              "nothing_written"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "description": "review: how many missing and suspect relations over how many current facts, and whether Jev was used. apply: what was written or why nothing was.",
+            "type": "string"
+          },
+          "suspect": {
+            "description": "review: declared relations Jev doubts: `item_id`, `from`, `to`, the declared `rel`, `support` (Jev's probability that its why and evidence hold), `suggested_rel` and `jev`. Reported only; relations are never retracted here.",
+            "type": "array"
+          },
+          "validation": {
+            "additionalProperties": false,
+            "properties": {
+              "scope": {
+                "description": "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "viewer": {
+            "additionalProperties": false,
+            "properties": {
+              "tell_the_user": {
+                "description": "One-time handoff text for the human; it is not another kernel instruction.",
+                "type": "string"
+              },
+              "url": {
+                "description": "Loopback, read-only viewer URL carrying this session's capability.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "warnings": {
+            "description": "Store notices qualifying this preview or accepted write; retain them.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
       "description": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
       "inputSchema": {
         "additionalProperties": false,
@@ -7014,6 +7845,7 @@
               "audit",
               "condense",
               "relate",
+              "curate",
               "view",
               "guide"
             ],

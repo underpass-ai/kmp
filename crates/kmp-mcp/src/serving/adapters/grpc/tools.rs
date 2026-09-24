@@ -89,6 +89,12 @@ pub(super) async fn grpc_tool_result(
              serve. Run it against the embedded store, or list what is owed there with `kmp-mcp \
              summaries pending`",
         )),
+        // Curation reads Jev's opt-in and key beside the local store; a live
+        // gRPC kernel has neither.
+        "kmp_curate" => Err(ToolError::unavailable(
+            "kmp_curate runs against the embedded store, where its TypeSafe opt-in lives; \
+             live gRPC mode does not serve it",
+        )),
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
         ))),

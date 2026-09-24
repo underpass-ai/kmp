@@ -171,6 +171,7 @@ agent identity and progressive guidance. `tools/list` is the authority.
 | `kmp_relabel` | Change the labels a memory stands in — add, take off, and why — without rewriting its text. |
 | `kmp_condense` | Write a compact reader card for one stored body, bound to the exact version it was read from. |
 | `kmp_summaries_audit` | Read where an about's memories stand with respect to their English search summaries: what is missing, what the lint refuses, and what stands and still retrieves little. |
+| `kmp_curate` | Review the relations of one or several abouts with TypeSafe Jev as an opt-in second reader: pairs nothing declares, with the type Jev would choose, and declared relations whose reason Jev doubts. The agent writes every relation. |
 | `kmp_view_open` | Open or rehydrate a ChronoLoom view over an about. |
 | `kmp_view_apply_intent` | Move that view by declaring meaning — focus, clock, zoom, filters, selection — under optimistic concurrency. |
 | `kmp_view_get_state` | Read the view's semantic state, never its pixels. |

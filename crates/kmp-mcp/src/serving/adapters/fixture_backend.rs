@@ -35,6 +35,8 @@ const INSPECT_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/inspect.response.json");
 const RELABEL_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/relabel.response.json");
+const CURATE_RESPONSE_FIXTURE: &str =
+    include_str!("../../../fixtures/kernel/v1beta1/kmp/curate.response.json");
 const CONDENSE_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/condense.response.json");
 const SUMMARIES_AUDIT_RESPONSE_FIXTURE: &str =
@@ -78,6 +80,9 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
             read_fixture_tool_result(arguments, &["about"], fixture)
         }
         "kmp_relate" => read_fixture_tool_result(arguments, &["about"], RELATE_RESPONSE_FIXTURE),
+        "kmp_curate" => {
+            read_fixture_tool_result(arguments, &["mode", "about"], CURATE_RESPONSE_FIXTURE)
+        }
         "kmp_trace" => read_fixture_tool_result(arguments, &["from", "to"], TRACE_RESPONSE_FIXTURE),
         "kmp_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),
         "kmp_relabel" => read_fixture_tool_result(

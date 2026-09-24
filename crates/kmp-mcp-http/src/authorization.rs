@@ -28,7 +28,9 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
         .unwrap_or(&Value::Null);
 
     match name {
-        "kmp_ingest" | "kmp_write_memory" | "kmp_relabel" => require_scope(identity, WRITE_SCOPE)?,
+        "kmp_ingest" | "kmp_write_memory" | "kmp_relabel" | "kmp_curate" => {
+            require_scope(identity, WRITE_SCOPE)?
+        }
         "kmp_wake" | "kmp_ask" | "kmp_relate" | "kmp_time" | "kmp_trace" | "kmp_inspect" => {
             require_scope(identity, READ_SCOPE)?
         }

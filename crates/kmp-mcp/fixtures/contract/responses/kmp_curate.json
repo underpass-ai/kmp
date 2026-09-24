@@ -1,0 +1,66 @@
+{
+  "content": [
+    {
+      "text": "2 missing and 0 suspect relations in 4 facts; Jev not used",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "jev": null,
+    "missing": [
+      {
+        "from": {
+          "about": "question:parity",
+          "excerpt": "The Boulder start date is the one that stands.",
+          "ref": "question:parity:claim:boulder-current"
+        },
+        "item_id": "m0",
+        "jev": null,
+        "pairing_why": "Both name `Boulder`.",
+        "proposed_by": "kernel",
+        "signals": [
+          "entity"
+        ],
+        "suggested_rel": null,
+        "to": {
+          "about": "question:parity",
+          "excerpt": "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one.",
+          "ref": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
+        }
+      },
+      {
+        "from": {
+          "about": "question:parity",
+          "excerpt": "The Boulder start date is the one that stands.",
+          "ref": "question:parity:claim:boulder-current"
+        },
+        "item_id": "m1",
+        "jev": null,
+        "pairing_why": "Both name `Boulder`.",
+        "proposed_by": "kernel",
+        "signals": [
+          "entity"
+        ],
+        "suggested_rel": null,
+        "to": {
+          "about": "question:parity",
+          "excerpt": "Rachel is moving to Boulder, not Denver.",
+          "ref": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
+        }
+      }
+    ],
+    "next_actions": [],
+    "page": {
+      "entries": 8,
+      "next_cursor": null,
+      "total": 2
+    },
+    "review_token": "<stamped at call time>",
+    "summary": "2 missing and 0 suspect relations in 4 facts; Jev not used",
+    "suspect": [],
+    "warnings": [
+      "Jev is not configured for this store; kernel pairs are returned untyped and declared relations were not audited"
+    ]
+  }
+}

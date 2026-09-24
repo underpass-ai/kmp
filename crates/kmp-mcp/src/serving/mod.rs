@@ -4,6 +4,7 @@
 
 pub(crate) mod adapters;
 pub(crate) mod backend_choice;
+mod curate_dispatch;
 pub(crate) mod environment;
 mod existing_entry_read;
 pub(crate) mod grpc_tls_config;
@@ -11,6 +12,10 @@ pub(crate) mod grpc_tls_mode;
 mod guide_dispatch;
 mod guide_repair;
 pub(crate) mod json_rpc;
+pub(crate) mod judgement_answer;
+pub(crate) mod judgement_question;
+pub(crate) mod judgement_request;
+pub(crate) mod judgement_response;
 pub(crate) mod kernel_mcp_server;
 mod output_schema_projection;
 mod passage_projection;
@@ -29,6 +34,7 @@ pub(crate) mod unhonored_projection;
 pub(crate) mod unhonored_refs;
 mod view_dispatch;
 pub(crate) mod view_tools;
+mod write_commit;
 mod write_dispatch;
 mod write_review_result;
 

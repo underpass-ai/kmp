@@ -1,12 +1,17 @@
+use super::curate_doubt_cache::CurateDoubtCache;
+use super::curate_review_cache::CurateReviewCache;
 use super::embedded::{
-    EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedIngestTool, EmbeddedInspectTool,
-    EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool, EmbeddedRelateTool,
-    EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool, EmbeddedTraceTool,
+    EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool, EmbeddedIngestTool,
+    EmbeddedInspectTool, EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool,
+    EmbeddedRelateTool, EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool, EmbeddedTraceTool,
     EmbeddedVisualProjectionTool, EmbeddedWakeTool,
 };
 use super::lexical_bridge_file::load_lexical_bridge;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
+use super::typesafe_judgement::TypeSafeJudgement;
 use crate::contract::{TIME_TOOL, TimeMove};
+use crate::serving::environment::{TYPESAFE_API_KEY_ENV, optional_env_string};
+use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture, ToolError};
 use kmp_domain::TemporalDirection;
@@ -28,6 +33,11 @@ pub struct EmbeddedKernelMcpBackend {
     lexical_bridge: LexicalBridge,
     lexical_cache: Arc<LexicalIndexCache>,
     semantic: Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
+    /// TypeSafe Jev for `kmp_curate`, opted into per store. Off without
+    /// `typesafe.json`; an error names why a present opt-in cannot run.
+    judgement: Result<Option<Arc<dyn JudgementModel>>, String>,
+    curate_reviews: CurateReviewCache,
+    curate_doubts: CurateDoubtCache,
 }
 
 impl EmbeddedKernelMcpBackend {
@@ -61,6 +71,9 @@ impl EmbeddedKernelMcpBackend {
             lexical_bridge: load_lexical_bridge(data_dir),
             lexical_cache: Arc::default(),
             semantic: LoopbackSemanticRetriever::load(data_dir),
+            judgement: TypeSafeJudgement::load(data_dir, optional_env_string(TYPESAFE_API_KEY_ENV)),
+            curate_reviews: CurateReviewCache::default(),
+            curate_doubts: CurateDoubtCache::default(),
         })
     }
 
@@ -142,6 +155,24 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     EmbeddedRelateTool::new(&service, telemetry, &self.lexical_bridge)
                         .call(arguments)
                         .await
+                }
+                "kmp_curate" => {
+                    let (judgement, warning) = match &self.judgement {
+                        Ok(Some(model)) => (Some(model.as_ref()), None),
+                        Ok(None) => (None, None),
+                        Err(error) => (None, Some(error.as_str())),
+                    };
+                    EmbeddedCurateTool::new(
+                        &service,
+                        telemetry,
+                        &self.lexical_bridge,
+                        judgement,
+                        warning,
+                        &self.curate_reviews,
+                        &self.curate_doubts,
+                    )
+                    .call(arguments)
+                    .await
                 }
                 "kmp_trace" => {
                     EmbeddedTraceTool::new(&service, telemetry)

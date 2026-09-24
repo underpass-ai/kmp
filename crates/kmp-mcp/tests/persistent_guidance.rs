@@ -59,7 +59,7 @@ async fn native_identity_survives_restart_and_guidance_does_not_enter_memory() {
         let before = store.export_bundle().await.expect("before");
         let first = success(&server, json!({"registration_key":"native-agent-a"})).await;
         assert_eq!(first["durable"], true);
-        assert_eq!(first["scheme"].as_array().expect("scheme").len(), 9);
+        assert_eq!(first["scheme"].as_array().expect("scheme").len(), 10);
         let replay = success(&server, json!({"registration_key":"native-agent-a"})).await;
         assert_eq!(first["agent"], replay["agent"]);
         assert_eq!(first["context_id"], replay["context_id"]);

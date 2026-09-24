@@ -26,6 +26,7 @@ use super::bundle_views::{
 };
 use super::lexical_bridge::LexicalBridge;
 use super::memory_lifecycle::MemoryLifecycle;
+use super::pair_scope::PairScope;
 use super::relate_proposals::{FactWords, propose_links};
 use super::scalars::{ProtoMappingResult, proto_temporal_axis};
 use super::temporal_admission::TemporalAdmission;
@@ -34,6 +35,28 @@ pub fn relate_response_from_result(
     result: GetContextResult,
     query: &RelateMemoryQuery,
     bridge: &LexicalBridge,
+) -> ProtoMappingResult<RelateResponse> {
+    relate_response_with(result, query, bridge, PairScope::AcrossAbouts)
+}
+
+/// The whole relate reading for curation: proposals inside one about as well
+/// as across abouts, and no page, since curation freezes what it read.
+pub fn curate_reading_from_result(
+    result: GetContextResult,
+    query: &RelateMemoryQuery,
+    bridge: &LexicalBridge,
+) -> ProtoMappingResult<RelateResponse> {
+    let mut whole = query.clone();
+    whole.page.entries = Some(usize::MAX);
+    whole.page.cursor = None;
+    relate_response_with(result, &whole, bridge, PairScope::Any)
+}
+
+fn relate_response_with(
+    result: GetContextResult,
+    query: &RelateMemoryQuery,
+    bridge: &LexicalBridge,
+    scope: PairScope,
 ) -> ProtoMappingResult<RelateResponse> {
     let bundle = &result.bundle;
     let admission = TemporalAdmission::read(bundle, &query.temporal)?;
@@ -198,7 +221,7 @@ pub fn relate_response_from_result(
     // What two abouts share without either declaring it, proposed with
     // the signal that read it and stored nowhere.
     let morphology = search_morphology(&bounded);
-    let proposed = propose_links(&domain_facts, &words, &morphology, bridge)
+    let proposed = propose_links(&domain_facts, &words, &morphology, bridge, scope)
         .into_iter()
         .map(|proposal| {
             let mut link = ProtoProposedLink {

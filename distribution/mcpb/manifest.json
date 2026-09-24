@@ -77,6 +77,10 @@
       "description": "Read which memories lack an English search summary or carry a weak one, with the reasons"
     },
     {
+      "name": "kmp_curate",
+      "description": "Review the relations of one or several abouts with TypeSafe Jev as a second reader; the agent writes every relation"
+    },
+    {
       "name": "kmp_view_open",
       "description": "Open or rehydrate a ChronoLoom view over an about, so a person and an agent look at the same loom. Read-only with respect to memory."
     },

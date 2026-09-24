@@ -3,6 +3,7 @@ pub(crate) mod app_view_undo;
 pub(crate) mod app_visual_projection;
 pub(crate) mod ask;
 pub(crate) mod condense;
+pub(crate) mod curate;
 pub(crate) mod guide;
 pub(crate) mod ingest;
 pub(crate) mod inspect;

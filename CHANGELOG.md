@@ -9,6 +9,21 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `kmp_curate` reviews the relations of one or several abouts. `mode: review`
+  reads the selection the way `kmp_relate` does and writes nothing. It returns
+  `missing` pairs of current facts that nothing declares: the kernel pairs them
+  from checkable signals, now inside one about as well as across abouts, and
+  TypeSafe Jev picks partners for facts nothing else paired. Each pair carries
+  the relation type Jev would choose. It also returns `suspect` declared
+  relations whose why Jev doubts. Jev only chooses among offered options and
+  judges text, so the agent still writes every relation. Jev is opt-in per
+  store through `typesafe.json` and `TYPESAFE_API_KEY`, and the selection's
+  fact text is sent to TypeSafe. Without it, the review returns kernel pairs
+  untyped. The review is frozen under `review_token` for paging. Embedded store
+  only.
+
 ## [0.20.1] - 2026-09-24
 
 ### Changed

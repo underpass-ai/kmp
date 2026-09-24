@@ -48,6 +48,10 @@
         "topic": "relate"
       },
       {
+        "purpose": "Find missing and doubtful relations with Jev",
+        "topic": "curate"
+      },
+      {
         "purpose": "Frame memory in ChronoLoom",
         "topic": "view"
       },

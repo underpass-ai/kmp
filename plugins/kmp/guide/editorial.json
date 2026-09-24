@@ -72,6 +72,14 @@
           "text_file": "verbs/condense.md"
         },
         {
+          "id": "verb:curate",
+          "kind": "instruction",
+          "depth": "basic",
+          "evidence": "The tool contract in crates/kmp-mcp/src/contract/tools/curate.rs and the curate context in crates/kmp-mcp/src/curate: review reads the relate selection through curate_reading_from_result, which opens the kernel proposer to same-about pairs and does not page; ReviewRelations asks the JudgementModel port only closed questions (choice among writer relation types plus none, cross-about restricted to equivalences; noul for contradiction and support) and never uses an answer as text; findings are frozen by review_token in an in-process cache. Apply resolves accepted items against that frozen review in the embedded store, freezes a Jev pre-write check of the agent's own why and evidence by digest, and commits through commit_write_plan, the path kmp_write_memory uses, adding curated_by evidence metadata; tests/curate.rs proves review, doubt, needs_review resume, commit, replay and provenance. The TypeSafe adapter is opt-in per store through typesafe.json and TYPESAFE_API_KEY, validates every answer against the question sent, and degrades to untyped kernel pairs with a warning. tests/curate_review.rs and the use-case tests prove paging, degradation and thresholds.",
+          "guide_title": "Curate: find missing and doubtful relations with Jev, then write them yourself",
+          "text_file": "verbs/curate.md"
+        },
+        {
           "id": "verb:write",
           "kind": "instruction",
           "depth": "basic",
@@ -287,6 +295,14 @@
           "evidence": "Four complete call shapes with explicit placeholders: descriptor manifest, bound canonical expansion, compare-and-set Condense, and fresh compact Trace. Distinguishes page completion, per-ref body completion, record bytes, body bytes and derived orientation."
         },
         {
+          "id": "example:curate-review",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text_file": "examples/curate-review.md",
+          "example_title": "Review two abouts' relations, page the frozen review, and declare one yourself",
+          "evidence": "Four complete call shapes with explicit placeholders: review across two abouts, a page by review_token, an Inspect of both refs, and a kmp_curate apply with the agent's own why and evidence, including doubted and needs_review handling."
+        },
+        {
           "id": "example:shared-resumption",
           "kind": "instruction",
           "depth": "advanced",
@@ -444,6 +460,13 @@
           "depth": "basic",
           "text_file": "cards/condense.md",
           "evidence": "The progressive Condense card teaches descriptor-bound canonical reading, source and card compare-and-set, and a fresh compact read without named expansion arguments."
+        },
+        {
+          "id": "card:curate",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/curate.md",
+          "evidence": "The progressive Curate card teaches a frozen review, reading missing and suspect items, paging by review_token and declaring through kmp_write_memory with the agent's own why and evidence."
         },
         {
           "id": "advanced:consolidation",
@@ -813,6 +836,22 @@
           "rel": "follows",
           "class": "procedural",
           "why": "The example executes the complete descriptor, expansion, card and reuse sequence.",
+          "evidence": "The source guide names this exact reference; kmp_inspect reads the linked lesson."
+        },
+        {
+          "from": "card:curate",
+          "to": "verb:curate",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The starting card links to extended Curate guidance.",
+          "evidence": "The source guide names this exact reference; kmp_inspect reads the linked lesson."
+        },
+        {
+          "from": "verb:curate",
+          "to": "example:curate-review",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The example executes the complete review, page, inspect and declare sequence.",
           "evidence": "The source guide names this exact reference; kmp_inspect reads the linked lesson."
         },
         {
