@@ -51,6 +51,7 @@ pub use render_graph_bundle::{
     RenderedContext, RenderedSection, RenderedTier, render_graph_bundle,
     render_graph_bundle_with_options,
 };
+pub use tier_section_classifier::NO_RECORDED_ACTION;
 pub use timing_breakdown::QueryTimingBreakdown;
 pub use validate_scope::{
     ScopeValidation, ValidateScopeQuery, ValidateScopeUseCase, dedupe_scopes,

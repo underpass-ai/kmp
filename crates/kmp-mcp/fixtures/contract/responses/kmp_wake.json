@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\nObjective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
+      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\nObjective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: none recorded",
       "type": "text"
     }
   ],
@@ -27,7 +27,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 8965
+        "used_bytes": 9370
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
@@ -43,7 +43,7 @@
             "tokens": 1600
           },
           "page": {
-            "cursor": "kmp1:13:<stamped at call time>"
+            "cursor": "kmp1:14:<stamped at call time>"
           }
         },
         "tool": "kmp_wake"
@@ -51,9 +51,9 @@
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:13:<stamped at call time>",
+        "next_cursor": "kmp1:14:<stamped at call time>",
         "offset": 0,
-        "returned": 13,
+        "returned": 14,
         "total": 45
       },
       "sections": {
@@ -74,8 +74,8 @@
         "proof.path": {
           "core": 0,
           "eligible": 20,
-          "remaining": 20,
-          "returned_on_page": 0,
+          "remaining": 19,
+          "returned_on_page": 1,
           "total": 43
         },
         "wake.causal_spine": {
@@ -91,13 +91,6 @@
           "remaining": 0,
           "returned_on_page": 4,
           "total": 5
-        },
-        "wake.next_actions": {
-          "core": 1,
-          "eligible": 1,
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 1
         }
       },
       "selection_omitted": 0
@@ -173,7 +166,28 @@
       "matched_terms": [],
       "missing": [],
       "nearest_outside": null,
-      "path": [],
+      "path": [
+        {
+          "class": "causal",
+          "clocks": {
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z"
+          },
+          "confidence": "high",
+          "evidence_refs": [
+            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
+            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
+            "detail:question:parity:claim:denver",
+            "detail:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
+          ],
+          "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+          "rel": "semantic_delta_from",
+          "sequence": 1,
+          "to": "question:parity:claim:denver",
+          "why": "The later statement corrects the earlier one."
+        }
+      ],
       "superseded": [
         {
           "ref": "question:parity:claim:denver",
@@ -210,15 +224,15 @@
         "wake.guardrails"
       ]
     },
-    "summary": "Objective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
+    "summary": "Objective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: none recorded",
     "truncation": {
       "byte_limit": 10000,
       "omitted": {
         "core_text_shortened": false,
         "excluded_by_detail": 23,
-        "page_items": 32,
+        "page_items": 31,
         "prior_page_items": 0,
-        "remaining_page_items": 32,
+        "remaining_page_items": 31,
         "selection_items": 0
       },
       "token_limit": 1600,
@@ -288,16 +302,14 @@
         }
       ],
       "current_state": [
-        "Relationship evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91 --supports--> question:parity:claim:boulder-current [evidential] because Evidence supports this memory entry.",
-        "Relationship evidence:question:parity:claim:boulder-current:relation:ae7ca88390a63c91 --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry.",
-        "Relationship evidence:question:parity:denver --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry.",
-        "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current --supports--> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151 [evidential] because Evidence supports this memory entry.",
-        "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1 --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry."
+        "(claim) The Boulder start date is the one that stands.",
+        "(decision) Pin the answered surface, not only the advertised one.",
+        "(semantic_delta) Rachel is moving to Boulder, not Denver.",
+        "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy... (semantic_delta): From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one.",
+        "Relationship question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631 --semantic_delta_from--> question:parity:claim:denver [causal] because The later statement corrects the earlier one. step=1"
       ],
       "guardrails": [],
-      "next_actions": [
-        "semantic_delta_from → question:parity:claim:denver"
-      ],
+      "next_actions": [],
       "objective": "continue from live kernel memory `question:parity`",
       "open_loops": []
     },

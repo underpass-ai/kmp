@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Objective: She starts the new job in Denver in June. — She starts the new job in Denver in June.\nStatus: ACTIVE\nBlocker: none identified\nNext: continue",
+      "text": "Objective: She starts the new job in Denver in June. — She starts the new job in Denver in June.\nStatus: ACTIVE\nBlocker: none identified\nNext: none recorded",
       "type": "text"
     }
   ],
@@ -23,7 +23,7 @@
       "relationships": 1,
       "truncated": false
     },
-    "summary": "Objective: She starts the new job in Denver in June. — She starts the new job in Denver in June.\nStatus: ACTIVE\nBlocker: none identified\nNext: continue",
+    "summary": "Objective: She starts the new job in Denver in June. — She starts the new job in Denver in June.\nStatus: ACTIVE\nBlocker: none identified\nNext: none recorded",
     "trace": [
       {
         "class": "evidential",

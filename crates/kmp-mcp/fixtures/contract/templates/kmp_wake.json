@@ -84,13 +84,6 @@
           "remaining": "integer",
           "returned_on_page": "integer",
           "total": "integer"
-        },
-        "wake.next_actions": {
-          "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
         }
       },
       "selection_omitted": "integer"
@@ -134,7 +127,24 @@
       "matched_terms": [],
       "missing": [],
       "nearest_outside": "null",
-      "path": [],
+      "path": [
+        {
+          "class": "string",
+          "clocks": {
+            "ingested_at": "string",
+            "observed_at": "string"
+          },
+          "confidence": "string",
+          "evidence_refs": [
+            "string"
+          ],
+          "from": "string",
+          "rel": "string",
+          "sequence": "integer",
+          "to": "string",
+          "why": "string"
+        }
+      ],
       "superseded": [
         {
           "ref": "string",
@@ -192,9 +202,7 @@
         "string"
       ],
       "guardrails": [],
-      "next_actions": [
-        "string"
-      ],
+      "next_actions": [],
       "objective": "string",
       "open_loops": []
     },

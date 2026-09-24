@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
+use kmp_application::queries::NO_RECORDED_ACTION;
 use kmp_application::{
     GetContextPathResult, GetContextResult, GraphRelationshipView, InspectMemoryResult,
     MemoryAnswerPolicy, TemporalMemoryResult, TracePageRequest,
@@ -22,6 +23,7 @@ use super::lexical_bridge::LexicalBridge;
 use super::scalars::ProtoMappingResult;
 use super::temporal_admission::TemporalAdmission;
 use super::wake_claim_evidence::WakeClaimEvidence;
+use super::wake_current_state::rendered_current_state;
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -34,8 +36,8 @@ use super::bundle_views::{
     bundle_memory_metadata, conflicts_from_relations, memory_evidence_from_bundle,
     memory_relation_from_bundle_relationship, memory_relations_from_bundle,
     persisted_memory_metadata, persisted_memory_source, proof, proto_coordinate_from_domain,
-    proto_relation_explanation, rendered_current_state, rendered_summary,
-    superseded_from_relations, temporal_evidence_from_bundle, temporal_relations_from_bundle,
+    proto_relation_explanation, rendered_summary, superseded_from_relations,
+    temporal_evidence_from_bundle, temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::memory_catalog::labels_from_bundle;
@@ -115,14 +117,14 @@ pub fn wake_response_from_result(
         .into_iter()
         .filter(|item| admission.admits(item))
         .collect::<Vec<_>>();
-    let current_state = rendered_current_state(&result.rendered, &result.bundle);
+    let current_state = rendered_current_state(&result.rendered, &result.bundle, &lifecycle);
     let summary = rendered_summary(&result.rendered);
     // The L0 summary already selects one blocker and one next action. Leaving
     // the typed lists empty made the same packet assert `Blocker:` / `Next:`
     // in prose and deny them in structure. Project those exact selections so
     // an agent does not have to choose which half of the response to trust.
     let open_loops = l0_summary_value(&summary, "Blocker:", &["none identified"]);
-    let next_actions = l0_summary_value(&summary, "Next:", &["continue"]);
+    let next_actions = l0_summary_value(&summary, "Next:", &["continue", NO_RECORDED_ACTION]);
     let guardrails = relationships
         .iter()
         .filter(|relationship| {
