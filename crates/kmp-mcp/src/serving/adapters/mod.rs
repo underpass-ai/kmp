@@ -12,6 +12,8 @@ pub(crate) mod tool_request_mapping;
 #[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
 mod typesafe_api_key;
 #[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
+mod typesafe_batches;
+#[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
 mod typesafe_config;
 #[allow(dead_code)] // consumed by kmp_curate (jev-curate plan 2)
 mod typesafe_request_body;
