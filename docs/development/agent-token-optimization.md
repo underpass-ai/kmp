@@ -70,6 +70,22 @@ Done when the historical journeys re-measure to the same
 `mcp_json_compact_legacy_v1` totals as `surface_acceptance_metrics.py` and a
 tampered capture is rejected.
 
+Usage, from the repository root (`prepare` is the only step that touches the
+network; `verify` needs no tokenizer):
+
+```bash
+TT="uv run --no-project --with tiktoken==0.14.0 python"
+$TT -m scripts.performance.token_harness prepare        # assets into tmp/tiktoken-cache
+python3 -m scripts.performance.token_harness verify --run artifacts/<evidence>/journeys-main
+$TT -m scripts.performance.token_harness measure --run artifacts/<evidence>/journeys-main --out <new file>
+python3 -m unittest discover -s scripts/performance/token_harness/tests -t .
+KMP_RUN_TIKTOKEN_INTEGRATION=1 $TT -m unittest discover -s scripts/performance/token_harness/tests -t .
+```
+
+The replay traces keep parsed objects, not wire bytes, so on them
+`json_compact_lexical_v1` equals the legacy view; the two diverge only on
+captures that retain original lexemes.
+
 ### I1 — Wake evidence identity (review F1, PR 1 part 1)
 
 Verified: `wake_response_from_result` fills `WakeClaim.evidence_ref` with
@@ -143,7 +159,7 @@ generated from `report.json`.
 | Increment | Branch | PR | State |
 | --- | --- | --- | --- |
 | Plan + CI scope | `docs/544-token-plan` | — | in progress |
-| I0 | `feat/544-token-meter` | — | pending |
+| I0 | `feat/544-token-meter` | — | implemented locally |
 | I1 | `fix/544-wake-evidence-refs` | — | pending |
 | I2 | `fix/544-wake-state` | — | pending |
 | I3 | `feat/544-wake-oracle` | — | pending |
