@@ -9,6 +9,14 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `update`, `setup` and `doctor` no longer fail with a false plugin tree
+  mismatch when Hermes is installed. Only Claude Code and Codex, which install
+  the marketplace plugin tree, take part in tree parity; the Hermes home is no
+  longer digested as one. A real mismatch names the hosts whose trees differ
+  and their digests (#849).
+
 ## [0.20.0] - 2026-09-24
 
 ### Changed

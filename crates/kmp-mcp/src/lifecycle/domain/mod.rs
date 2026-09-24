@@ -37,6 +37,7 @@ pub mod plugin_engine_candidate;
 pub mod plugin_engine_resolution;
 pub mod plugin_engine_role;
 pub mod plugin_root;
+pub mod plugin_tree_parity;
 pub mod process_timeout;
 pub mod release_version;
 pub mod report_section;

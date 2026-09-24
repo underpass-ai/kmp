@@ -25,6 +25,13 @@ impl Host {
     pub fn owns_plugin_engine(self) -> bool {
         matches!(self, Self::Claude)
     }
+
+    /// Whether this host installs the marketplace plugin tree whose bytes must
+    /// be identical across hosts. Hermes ships skills and an MCP registration
+    /// into its own home instead, so it takes no part in tree parity (#849).
+    pub fn installs_plugin_tree(self) -> bool {
+        matches!(self, Self::Claude | Self::Codex)
+    }
 }
 
 impl fmt::Display for Host {
@@ -60,5 +67,12 @@ mod tests {
         assert!(Host::Claude.owns_plugin_engine());
         assert!(!Host::Codex.owns_plugin_engine());
         assert!(!Host::Hermes.owns_plugin_engine());
+    }
+
+    #[test]
+    fn only_the_marketplace_hosts_install_a_plugin_tree() {
+        assert!(Host::Claude.installs_plugin_tree());
+        assert!(Host::Codex.installs_plugin_tree());
+        assert!(!Host::Hermes.installs_plugin_tree());
     }
 }

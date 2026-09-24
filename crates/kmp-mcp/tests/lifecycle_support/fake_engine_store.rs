@@ -113,7 +113,11 @@ impl EngineStore for FakeEngineStore {
     }
 
     fn digest_tree(&self, root: &PluginRoot) -> Result<TreeDigest, LifecycleError> {
-        let digest = if self.divergent_trees && root.as_path().ends_with("codex") {
+        // A Hermes home is the host's whole configuration directory, never a
+        // marketplace plugin tree: it digests to its own value, always (#849).
+        let digest = if root.as_path().ends_with("hermes") {
+            "c"
+        } else if self.divergent_trees && root.as_path().ends_with("codex") {
             "b"
         } else {
             "a"

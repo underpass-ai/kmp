@@ -12,7 +12,9 @@ use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::lifecycle_plan::LifecyclePlan;
 use crate::lifecycle::domain::lifecycle_receipt::LifecycleReceipt;
 use crate::lifecycle::domain::lifecycle_request::LifecycleRequest;
+use crate::lifecycle::domain::plugin_tree_parity::PluginTreeParity;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
+use crate::lifecycle::domain::tree_digest::TreeDigest;
 use crate::lifecycle::ports::bridge_store::BridgeStore;
 use crate::lifecycle::ports::engine_store::EngineStore;
 use crate::lifecycle::ports::host_gateway::HostGateway;
@@ -175,7 +177,9 @@ impl<'a> ConvergeLifecycle<'a> {
     /// Housekeeping, never a gate, and never immediate: a cache that will not
     /// tidy up does not undo a convergence that is already proved, and a
     /// convergence that removed a live session's skill root would not be
-    /// tidying up at all (#521).
+    /// tidying up at all (#521). Only a versioned plugin cache has superseded
+    /// releases; a Hermes home is not one, and its siblings are the user's
+    /// own directories (#849).
     fn defer_superseded(
         &self,
         converged: &[HostInstallation],
@@ -184,6 +188,7 @@ impl<'a> ConvergeLifecycle<'a> {
         let defer = DeferPluginCachePruning::new(self.caches);
         converged
             .iter()
+            .filter(|installation| installation.host().installs_plugin_tree())
             .filter_map(|installation| {
                 let deferral = defer.execute(installation.root(), target);
                 (!deferral.is_empty()).then(|| (installation.host(), deferral))
@@ -199,22 +204,22 @@ impl<'a> ConvergeLifecycle<'a> {
         }
     }
 
+    /// Only hosts that install the marketplace plugin tree take part; a
+    /// Hermes home is never one, and digesting it made every three-host
+    /// convergence fail (#849).
     fn require_equal_plugin_trees(
         &self,
         installations: &[HostInstallation],
-    ) -> Result<Option<crate::lifecycle::domain::tree_digest::TreeDigest>, LifecycleError> {
-        let mut digests = installations
+    ) -> Result<Option<TreeDigest>, LifecycleError> {
+        let digests = installations
             .iter()
-            .map(|installation| self.engines.digest_tree(installation.root()))
+            .filter(|installation| installation.host().installs_plugin_tree())
+            .map(|installation| {
+                self.engines
+                    .digest_tree(installation.root())
+                    .map(|digest| (installation.host(), digest))
+            })
             .collect::<Result<Vec<_>, _>>()?;
-        let first = digests.pop();
-        if let Some(expected) = first.as_ref()
-            && digests.iter().any(|digest| digest != expected)
-        {
-            return Err(LifecycleError::TreeMismatch(
-                "Codex and Claude Code installed different KMP plugin trees".to_string(),
-            ));
-        }
-        Ok(first)
+        PluginTreeParity::of(digests).require_identical()
     }
 }
