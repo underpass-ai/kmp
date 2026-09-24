@@ -1,6 +1,8 @@
 //! E3 acceptance: the embedded backend serves KMP tools in-process and
 //! memory survives across sessions (fresh-machine criterion analog).
 
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_adapter_embedded::SqliteQualityTelemetryReader;
@@ -2151,13 +2153,15 @@ async fn inspect_negotiates_an_oversized_result_and_floors_below_the_object_floo
         }
         let continuation = &page["next_actions"][0];
         assert_eq!(continuation["tool"], "kmp_inspect");
+        // The action is a handle; read the call it stands for.
+        let bound = bound_action::bound_arguments(&server, continuation);
         if page["page"]["returned"] == 0 {
             let minimum = page["page"]["minimum_progress_bytes"]
                 .as_u64()
                 .expect("an empty page negotiates enough bytes for a whole item");
             assert!(minimum > allowance as u64, "{page}");
             assert!(
-                continuation["arguments"]["budget"]["max_bytes"]
+                bound["budget"]["max_bytes"]
                     .as_u64()
                     .expect("negotiated allowance")
                     >= minimum,
@@ -2166,7 +2170,7 @@ async fn inspect_negotiates_an_oversized_result_and_floors_below_the_object_floo
         }
         // Execute the supplied continuation, including a larger allowance when
         // the stable object and the next whole evidence item cannot fit.
-        arguments = continuation["arguments"].clone();
+        arguments = bound;
         assert!(pages < 20, "inspect continuation must make progress");
     }
     assert!(pages > 1, "fixture must exercise continuation");

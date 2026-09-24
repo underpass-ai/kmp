@@ -339,12 +339,12 @@ fn render_inspect_page(
     let end = offset.saturating_add(keep).min(items.len());
     let has_more = end < items.len();
     let partial = offset > 0 || has_more;
-    let mut omitted = Map::new();
-    omitted.insert("details".to_string(), json!(0));
+    // Lean progress (#544 C3): no zero counter, no empty section, no `total`
+    // (earlier pages + returned_on_page + remaining). `remaining` is what the
+    // retired `page.omitted` repeated.
     let mut sections = Map::new();
     let mut relationships = 0;
     for section in InspectSection::ALL {
-        let total = items.iter().filter(|item| item.section == section).count();
         let returned = items[offset.min(items.len())..end]
             .iter()
             .filter(|item| item.section == section)
@@ -356,15 +356,15 @@ fn render_inspect_page(
         if matches!(section, InspectSection::Outgoing | InspectSection::Incoming) {
             relationships += returned;
         }
-        omitted.insert(section.name().to_string(), json!(remaining));
-        sections.insert(
-            section.name().to_string(),
-            json!({
-                "returned_on_page": returned,
-                "remaining": remaining,
-                "total": total
-            }),
-        );
+        let mut counts = Map::new();
+        for (key, value) in [("returned_on_page", returned), ("remaining", remaining)] {
+            if value > 0 {
+                counts.insert(key.to_string(), json!(value));
+            }
+        }
+        if !counts.is_empty() {
+            sections.insert(section.name().to_string(), Value::Object(counts));
+        }
     }
     let next_cursor = has_more.then(|| format!("{INSPECT_CURSOR_VERSION}:{end}:{selection_hash}"));
     let guidance = if has_more {
@@ -392,7 +392,6 @@ fn render_inspect_page(
         "total": items.len(),
         "has_more": has_more,
         "next_cursor": next_cursor,
-        "omitted": omitted,
         "sections": sections,
         "required_bytes": required_bytes,
         "guidance": guidance

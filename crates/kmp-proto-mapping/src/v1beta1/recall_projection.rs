@@ -45,6 +45,8 @@ mod core_fit_tests;
 #[cfg(test)]
 mod cursor_tests;
 #[cfg(test)]
+mod lean_sections_tests;
+#[cfg(test)]
 #[path = "recall_pending_tests.rs"]
 mod pending_tests;
 #[cfg(test)]

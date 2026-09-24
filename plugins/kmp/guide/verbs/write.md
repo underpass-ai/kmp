@@ -171,9 +171,11 @@ no stored context to Wake. Those reads may include broader context and pages;
 finish relevant pages.
 
 After reviewing, execute `next_actions[0]` to resume the unchanged packet, or
-correct it and submit again. With `context_id` the existing continuation store
-retains the packet; otherwise the action carries its full arguments and
-`review_token`. Do not add arguments to a continuation. Tokens bind the exact
+correct it and submit again. The action is a `continuation` handle: the server
+retains the packet and its `review_token` (in the agent directory with
+`context_id`, in the serving process otherwise). A corrected packet is sent
+as a new call and returns a fresh review. Do not add arguments to a
+continuation. Tokens bind the exact
 logical proposal and complete selected source material, including omissions.
 A changed proposal or relevant context returns a fresh review without writing.
 A race at commit is safely retryable under the same idempotency key. An accepted

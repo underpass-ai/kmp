@@ -1035,7 +1035,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle for the pending write and its review token; use alone. Resuming rechecks context before commit. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -2206,7 +2206,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone, or with page.repeat_core=true. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -2367,7 +2367,7 @@
           }
         },
         "then": {
-          "maxProperties": 1
+          "maxProperties": 2
         },
         "type": "object"
       },
@@ -2387,7 +2387,7 @@
                 "type": "object"
               },
               "contract": {
-                "description": "The projection contract version, e.g. kmp.recall.projection.v2.",
+                "description": "The projection contract version, e.g. kmp.recall.projection.v3.",
                 "type": "string"
               },
               "core_reused": {
@@ -2408,10 +2408,10 @@
               },
               "next_action": {
                 "additionalProperties": false,
-                "description": "Execute this complete native call. It continues expansion, or restarts without page.cursor when core_text_shortened to recover the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
+                "description": "Execute this call unchanged. A continuation is {continuation}: a handle the server resolves to the complete call, cursor included. A restart when core_text_shortened is the complete call without page.cursor, recovering the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
                 "properties": {
                   "arguments": {
-                    "description": "Complete bound request; question, original wording, clock, interval and dimension filters are preserved.",
+                    "description": "Either {continuation} or the complete bound request; both preserve question, original wording, clock, interval and dimension filters.",
                     "type": "object"
                   },
                   "tool": {
@@ -2468,7 +2468,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding the core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
+                "description": "Per-section counts; a zero counter and a section with none are omitted. core and excluded_by_detail appear on the page that carries the core; returned_on_page and remaining on every page. remaining counts eligible expansion after this page, excluding the core and prior pages. eligible = core + all returned_on_page + last remaining; total = eligible + excluded_by_detail. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -2870,7 +2870,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone, or with page.repeat_core=true. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -3026,7 +3026,7 @@
           }
         },
         "then": {
-          "maxProperties": 1
+          "maxProperties": 2
         },
         "type": "object"
       },
@@ -3057,7 +3057,7 @@
                 "type": "object"
               },
               "contract": {
-                "description": "The projection contract version, e.g. kmp.recall.projection.v2.",
+                "description": "The projection contract version, e.g. kmp.recall.projection.v3.",
                 "type": "string"
               },
               "core_reused": {
@@ -3078,10 +3078,10 @@
               },
               "next_action": {
                 "additionalProperties": false,
-                "description": "Execute this complete native call. It continues expansion, or restarts without page.cursor when core_text_shortened to recover the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
+                "description": "Execute this call unchanged. A continuation is {continuation}: a handle the server resolves to the complete call, cursor included. A restart when core_text_shortened is the complete call without page.cursor, recovering the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
                 "properties": {
                   "arguments": {
-                    "description": "Complete bound request; question, original wording, clock, interval and dimension filters are preserved.",
+                    "description": "Either {continuation} or the complete bound request; both preserve question, original wording, clock, interval and dimension filters.",
                     "type": "object"
                   },
                   "tool": {
@@ -3138,7 +3138,7 @@
                 "type": "object"
               },
               "sections": {
-                "description": "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding the core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
+                "description": "Per-section counts; a zero counter and a section with none are omitted. core and excluded_by_detail appear on the page that carries the core; returned_on_page and remaining on every page. remaining counts eligible expansion after this page, excluding the core and prior pages. eligible = core + all returned_on_page + last remaining; total = eligible + excluded_by_detail. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage.",
                 "type": "object"
               },
               "selection_omitted": {
@@ -3326,7 +3326,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -3489,7 +3489,7 @@
             "type": "array"
           },
           "next_actions": {
-            "description": "Complete tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; empty at the end. Execute without reconstructing filters or cursors.",
+            "description": "tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; a continuation is a {continuation} handle to the complete call. Empty at the end. Execute unchanged, without reconstructing filters or cursors.",
             "type": "array"
           },
           "page": {
@@ -3800,7 +3800,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -4141,7 +4141,7 @@
                 "type": "integer"
               },
               "sections": {
-                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "description": "Per-section returned_on_page and remaining; a zero counter and a section with none are omitted. Append each section across pages before concluding from proof.",
                 "type": "object"
               },
               "total": {
@@ -4522,7 +4522,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -5217,7 +5217,7 @@
             "type": "array"
           },
           "next_actions": {
-            "description": "Complete tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; empty at the end. Execute without reconstructing filters or cursors.",
+            "description": "tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; a continuation is a {continuation} handle to the complete call. Empty at the end. Execute unchanged, without reconstructing filters or cursors.",
             "type": "array"
           },
           "objects": {
@@ -5496,7 +5496,7 @@
             "type": "string"
           },
           "continuation": {
-            "description": "Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again.",
+            "description": "Returned call handle; use alone. Unavailable: submit the original call again.",
             "pattern": "^read_[0-9a-fA-F]{32}$",
             "type": "string"
           },
@@ -5601,12 +5601,12 @@
             "type": "object"
           },
           "next_actions": {
-            "description": "Complete calls for the same inspection, including an increased byte allowance when no whole item fits. Execute in order and retain earlier pages; empty when complete.",
+            "description": "Calls that continue the same inspection, including an increased byte allowance when no whole item fits. Execute unchanged, in order, and retain earlier pages; empty when complete.",
             "items": {
               "additionalProperties": false,
               "properties": {
                 "arguments": {
-                  "description": "The complete call, preserving about, ref, include and object reuse.",
+                  "description": "{continuation}, a handle the server resolves to the complete call preserving about, ref, include and object reuse; or that complete call.",
                   "type": "object"
                 },
                 "tool": {
@@ -5655,10 +5655,6 @@
                 "description": "Number of expansion items reconstructed by earlier pages.",
                 "type": "integer"
               },
-              "omitted": {
-                "description": "Counts still remaining after this page, by details, evidence, outgoing, incoming and raw section.",
-                "type": "object"
-              },
               "required_bytes": {
                 "description": "Exact serialized bytes required by the complete inspection including its full object, even when this continuation reuses that object.",
                 "type": "integer"
@@ -5668,7 +5664,7 @@
                 "type": "integer"
               },
               "sections": {
-                "description": "Per-section returned-on-page, remaining and total counts.",
+                "description": "Per-section returned_on_page and remaining; a zero counter and a section with none are omitted. A section's total is its earlier pages plus both.",
                 "type": "object"
               },
               "total": {

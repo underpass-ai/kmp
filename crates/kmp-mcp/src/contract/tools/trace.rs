@@ -56,7 +56,7 @@ fn trace_output_schema() -> Value {
         "routes": described("array", "Present in bounded mode. Each candidate has a target and zero-based edge_indexes into the complete trace table, in traversal hop order. Join every page first. Start at search.from and match each stored endpoint to reconstruct traversal direction. An empty index list is a zero-hop route to from. With search.select, only selected candidate paths and their complete relations are returned."),
         "page": relation_page_output_schema("trace relations", "Opaque trace cursor; repeat it as page.cursor with selection arguments unchanged. budget.max_bytes and page.entries may vary; changed selected content or arguments return a conflict with a complete restart action."),
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
-        "next_actions": described("array", "Complete tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; empty at the end. Execute without reconstructing filters or cursors."),
+        "next_actions": described("array", "tool/arguments calls that continue this exact selection or raise an insufficient byte allowance; a continuation is a {continuation} handle to the complete call. Empty at the end. Execute unchanged, without reconstructing filters or cursors."),
         "warnings": warnings_output_schema()
     }));
     schema["properties"]["proof"]["properties"] = json!({

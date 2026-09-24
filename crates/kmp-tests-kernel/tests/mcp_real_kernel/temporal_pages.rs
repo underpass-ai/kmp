@@ -3,7 +3,7 @@ use axum::Router;
 use kmp_mcp::{GrpcKernelMcpBackend, KernelMcpServer, KernelMcpToolBackend};
 use serde_json::json;
 
-use super::{assert_error_code_parity, call_http_tool, call_tool};
+use super::{assert_error_code_parity, call_http_tool, call_tool, comparable};
 
 pub(super) async fn check(
     direct: &GrpcKernelMcpBackend,
@@ -43,9 +43,9 @@ pub(super) async fn check(
         let native = call_tool(stdio, 100 + offset, "kmp_time", arguments.clone()).await;
         let http_page = call_http_tool(http, 100 + offset, "kmp_time", arguments.clone()).await;
         let local = call_tool(embedded, 100 + offset, "kmp_time", arguments.clone()).await;
-        assert_eq!(native["result"], expected);
-        assert_eq!(http_page["result"], expected);
-        assert_eq!(local["result"], expected);
+        assert_eq!(comparable(&native["result"]), comparable(&expected));
+        assert_eq!(comparable(&http_page["result"]), comparable(&expected));
+        assert_eq!(comparable(&local["result"]), comparable(&expected));
         let content = &expected["structuredContent"];
         assert!(content.to_string().len() <= 50000);
         assert_eq!(content["page"]["offset"], offset);

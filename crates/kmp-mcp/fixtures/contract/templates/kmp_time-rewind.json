@@ -67,54 +67,7 @@
       "returned": "integer",
       "sections": {
         "entries": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "proof.conflicts": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "proof.evidence": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "proof.expired": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "proof.matched_relations": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "proof.matched_terms": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "proof.missing": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "proof.path": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "proof.superseded": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "raw_refs": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         }
       },
       "total": "integer"

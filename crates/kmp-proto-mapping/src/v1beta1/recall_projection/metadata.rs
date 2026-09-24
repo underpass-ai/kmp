@@ -2,7 +2,8 @@
 //! remains, why anything else is absent, and the call that reads the rest.
 //! It is the page's one progress block; every omission cause has its own
 //! counter here (prior pages in `page.offset`, pending delivery in
-//! `sections.*.remaining`, detail in `excluded_by_detail`, the entries cap in
+//! `sections.*.remaining`, per-section detail exclusions in
+//! `sections.*.excluded_by_detail`, detail in `excluded_by_detail`, the entries cap in
 //! `selection_omitted`, shortened prose in `core_text_shortened`).
 
 use std::borrow::Borrow;
@@ -13,8 +14,9 @@ use super::actions;
 use super::budget::{DEFAULT_MAX_BYTES, ProjectionBudget};
 use super::cursor::make_cursor;
 use super::plan::{ProjectionItem, ProjectionPlan, Section};
+use super::reused_core::reuses_core;
 
-pub const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v2";
+pub const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v3";
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn attach_metadata<E, S>(
@@ -48,6 +50,13 @@ pub(super) fn attach_metadata<E, S>(
     } else {
         String::new()
     };
+    // Lean progress (#544 C3): a section reports only counts a host cannot
+    // derive, and never a zero. `core` and `excluded_by_detail` are static:
+    // the page that carries the core states them, a continuation that reuses
+    // it does not. `eligible` is `core` plus every page's `returned_on_page`
+    // plus the last `remaining`; `total` is `eligible + excluded_by_detail`.
+    // Planning sizes every counter at its largest, so it bounds all pages.
+    let static_counts = planning || !reuses_core(offset, budget.repeat_core);
     let mut sections = Map::new();
     for section in Section::ALL {
         let core = plan.core_lengths.get(&section).copied().unwrap_or(0);
@@ -73,16 +82,30 @@ pub(super) fn attach_metadata<E, S>(
             .iter()
             .filter(|item| <E as Borrow<ProjectionItem>>::borrow(*item).section == section)
             .count();
-        sections.insert(
-            section.name().to_string(),
-            json!({
-                "core": core,
-                "returned_on_page": if planning { total } else { returned },
-                "remaining": if planning { total } else { remaining },
-                "eligible": eligible_total,
-                "total": total
-            }),
-        );
+        let mut counts = Map::new();
+        let mut insert = |key: &str, count: usize| {
+            if count > 0 {
+                counts.insert(key.to_string(), json!(count));
+            }
+        };
+        if static_counts {
+            insert("core", if planning { total } else { core });
+        }
+        insert("returned_on_page", if planning { total } else { returned });
+        insert("remaining", if planning { total } else { remaining });
+        if static_counts {
+            insert(
+                "excluded_by_detail",
+                if planning {
+                    total
+                } else {
+                    total - eligible_total
+                },
+            );
+        }
+        if !counts.is_empty() {
+            sections.insert(section.name().to_string(), Value::Object(counts));
+        }
     }
     let truncated = planning
         || has_more

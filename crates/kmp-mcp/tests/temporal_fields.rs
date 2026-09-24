@@ -1,4 +1,6 @@
 //! Reduced entries remain recoverable, while cursors still bind omitted content.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
@@ -86,7 +88,11 @@ async fn reduced_entries_recover_complete_bodies_with_original_scope_and_clock()
             "include",
             "budget",
         ] {
-            assert_eq!(action["arguments"][key], args[key], "{key}");
+            assert_eq!(
+                bound_action::bound_arguments(&server, action)[key],
+                args[key],
+                "{key}"
+            );
         }
         let expanded = call(
             &server,
@@ -159,7 +165,7 @@ async fn projected_pages_bind_omitted_content_and_fields_but_allow_a_larger_budg
     let first = call(&server, "kmp_time", args.clone()).await;
     assert_eq!(first["page"]["returned"], 1);
     assert!(first.to_string().len() <= 10000);
-    let next = first["next_actions"][0]["arguments"].clone();
+    let next = bound_action::bound_arguments(&server, &first["next_actions"][0]);
     let mut resized = next.clone();
     resized["budget"]["max_bytes"] = json!(20000);
     let second = call(&server, "kmp_time", resized).await;

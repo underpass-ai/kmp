@@ -65,12 +65,11 @@ def check(saved, client, authored):
         for field in ('why', 'evidence', 'class'):
             assert edge[field] == expected[field]
     for prior, current in zip(('first', 'second'), ('second', 'third')):
-        old, new = authored['trace_' + prior], authored['trace_' + current]
+        new = authored['trace_' + current]
         assert new == saved['trace_' + prior]['next_actions'][0]['arguments']
-        assert new['page']['cursor'] == saved['trace_' + prior]['page']['next_cursor']
-        assert {k: v for k, v in old.items() if k != 'page'} == {
-            k: v for k, v in new.items() if k != 'page'}
-        assert new['page']['entries'] == old['page']['entries'] == 1
+        # A continuation is a handle to the complete call (#544 C3); the
+        # three pages above show it kept endpoints, page size and cursor.
+        assert list(new) == ['continuation']
 
     partial, complete = saved['inspect_partial'], saved['inspect_complete']
     assert partial['page']['has_more'] and partial['page']['returned'] == 0
@@ -97,8 +96,11 @@ def check(saved, client, authored):
         assert len(pages) < 100
         action = page['next_actions'][0]
         assert action['tool'] == 'kmp_inspect'
-        assert action['arguments']['about'] == authored['inspect_partial']['about']
-        assert action['arguments']['ref'] == authored['inspect_partial']['ref']
+        # A continuation is a handle to the complete call; a restated call
+        # must keep the same selection.
+        if list(action['arguments']) != ['continuation']:
+            assert action['arguments']['about'] == authored['inspect_partial']['about']
+            assert action['arguments']['ref'] == authored['inspect_partial']['ref']
         stalled = page['page']['returned'] == 0
         page = client.call(action['tool'], action['arguments'])
         if stalled:
@@ -115,7 +117,10 @@ def check(saved, client, authored):
         'complete_expansion_equal': True,
         'full_required_bytes': whole['page']['required_bytes']}
     capped = saved['capped_recall']['projection']
-    available = saved['catalogue']['projection']['sections']['proof.evidence']['total']
+    # Lean counters on the page that carries the core: total is derived.
+    counts = saved['catalogue']['projection']['sections']['proof.evidence']
+    available = sum(counts.get(key, 0) for key in
+                    ('core', 'returned_on_page', 'remaining', 'excluded_by_detail'))
     assert capped['selection_omitted'] == available - 1 > 0
     assert not capped['page']['has_more']
     assert saved['unrelated_read']['links']['outgoing'] == []

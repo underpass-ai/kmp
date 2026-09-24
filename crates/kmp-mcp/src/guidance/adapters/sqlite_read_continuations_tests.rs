@@ -77,3 +77,52 @@ fn continuations_reject_writes_recursive_calls_oversize_and_mixed_contexts() {
     large.arguments["intent"] = json!("x".repeat(MAX_CALL_BYTES));
     assert!(save(&directory, &a, &large).is_err());
 }
+
+fn open_read(page: usize) -> ReadContinuation {
+    ReadContinuation::new(
+        "kmp_wake",
+        json!({"about":"project:a","page":{"cursor":format!("page-{page}")}}),
+    )
+    .expect("read")
+}
+
+#[test]
+fn open_continuations_survive_reconnect_deduplicate_and_expire() {
+    let dir = tempfile::tempdir().expect("store");
+    let path = dir.path().join("agents.sqlite3");
+    let directory = SqliteAgentDirectory::at(&path).expect("directory");
+    let call = open_read(1);
+    let id = save_open(&directory, &call).expect("save");
+    assert_eq!(save_open(&directory, &call).expect("replay"), id);
+    assert_ne!(save_open(&directory, &open_read(2)).expect("other"), id);
+    // Another process over the same store resolves the same handle.
+    drop(directory);
+    let directory = SqliteAgentDirectory::at(&path).expect("reconnect");
+    assert_eq!(
+        load_open(&directory, &id).expect("read"),
+        Some(call.clone())
+    );
+    assert_eq!(load(&directory, &id).expect("context table"), None);
+    directory
+        .connection
+        .lock()
+        .expect("connection")
+        .execute("UPDATE open_continuations SET expires_at=unixepoch()-1", [])
+        .expect("expire");
+    assert_eq!(load_open(&directory, &id).expect("expired"), None);
+}
+
+#[test]
+fn open_continuations_are_bounded_and_never_hold_a_context() {
+    let directory = SqliteAgentDirectory::volatile().expect("directory");
+    let oldest = save_open(&directory, &open_read(0)).expect("save");
+    for page in 1..=256 {
+        save_open(&directory, &open_read(page)).expect("save");
+    }
+    assert_eq!(load_open(&directory, &oldest).expect("evicted"), None);
+    let session = register(&directory, "bound");
+    assert!(save_open(&directory, &read(&session, 1)).is_err());
+    let large = ReadContinuation::new("kmp_wake", json!({"about":"x".repeat(MAX_CALL_BYTES + 1)}))
+        .expect("call");
+    assert!(save_open(&directory, &large).is_err());
+}

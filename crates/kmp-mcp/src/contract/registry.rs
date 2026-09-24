@@ -85,8 +85,17 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
             if crate::guidance::ReadContinuation::supports(
                 tool["name"].as_str().unwrap_or_default(),
             ) {
+                let name = tool["name"].as_str().unwrap_or_default().to_owned();
+                let recall = matches!(name.as_str(), "kmp_wake" | "kmp_ask");
+                let description = if recall {
+                    "Returned call handle; use alone, or with page.repeat_core=true. Unavailable: submit the original call again."
+                } else if name == "kmp_write_memory" {
+                    "Returned call handle for the pending write and its review token; use alone. Resuming rechecks context before commit. Unavailable: submit the original call again."
+                } else {
+                    "Returned call handle; use alone. Unavailable: submit the original call again."
+                };
                 let schema = tool["inputSchema"].as_object_mut().expect("input schema");
-                schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":"Returned call handle. Use alone on its verb. Preserves read selection or the exact pending write and review token. A write resume rechecks context before commit. Unavailable: submit the original call again."});
+                schema["properties"]["continuation"] = json!({"type":"string","pattern":"^read_[0-9a-fA-F]{32}$","description":description});
                 // Keep the shared argument object at the root. Hosts that
                 // render a root union from its branches alone otherwise lose
                 // these properties and advertise unconstrained dictionaries.
@@ -98,7 +107,12 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
                     }
                 }
                 schema.insert("if".into(), json!({"required":["continuation"]}));
-                schema.insert("then".into(), json!({"maxProperties":1}));
+                // A handle stands for the whole call; Wake/Ask may add only
+                // page.repeat_core beside it, which the server checks.
+                schema.insert(
+                    "then".into(),
+                    json!({"maxProperties": if recall { 2 } else { 1 }}),
+                );
                 schema.insert("else".into(), initial);
             }
         }

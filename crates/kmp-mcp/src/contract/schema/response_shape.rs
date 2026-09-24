@@ -95,7 +95,7 @@ fn projection_output_schema() -> Value {
         "When stalled or core_text_shortened, a sufficient byte allowance for the unshortened core and expansion progress. The returned action adds 10000 bytes for useful expansion instead of negotiating only one item.",
     );
     output_object(json!({
-        "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v2."),
+        "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v3."),
         "budget": described("object", "The normative byte ceiling, bytes actually used, and retained token-planning hint."),
         "detail": described("string", "compact | balanced | full — the detail tier that was served."),
         "excluded_by_detail": described(
@@ -104,16 +104,16 @@ fn projection_output_schema() -> Value {
         ),
         "next_action": {
             "type":["object","null"],
-            "description":"Execute this complete native call. It continues expansion, or restarts without page.cursor when core_text_shortened to recover the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
+            "description":"Execute this call unchanged. A continuation is {continuation}: a handle the server resolves to the complete call, cursor included. A restart when core_text_shortened is the complete call without page.cursor, recovering the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
             "additionalProperties":false,
             "required":["tool","arguments"],
             "properties":{
                 "tool":{"type":"string","enum":["kmp_ask","kmp_wake"]},
-                "arguments":{"type":"object","description":"Complete bound request; question, original wording, clock, interval and dimension filters are preserved."}
+                "arguments":{"type":"object","description":"Either {continuation} or the complete bound request; both preserve question, original wording, clock, interval and dimension filters."}
             }
         },
         "page": page,
-        "sections": described("object", "Per-section core, returned_on_page, remaining, eligible and total counts. remaining counts eligible expansion after this page, excluding the core and prior pages. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage."),
+        "sections": described("object", "Per-section counts; a zero counter and a section with none are omitted. core and excluded_by_detail appear on the page that carries the core; returned_on_page and remaining on every page. remaining counts eligible expansion after this page, excluding the core and prior pages. eligible = core + all returned_on_page + last remaining; total = eligible + excluded_by_detail. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage."),
         "selection_omitted": described("integer", "Items excluded by budget.max_entries before paging."),
         "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes."),
         "core_reused": described("boolean", "Present and true on a continuation that omits the stable core: it carries only new expansion items. Combine them with the first page's core and earlier pages; page.repeat_core=true returns the core again.")

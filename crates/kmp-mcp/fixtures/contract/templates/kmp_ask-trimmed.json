@@ -48,18 +48,12 @@
       },
       "sections": {
         "proof.evidence": {
-          "core": "integer",
-          "eligible": "integer",
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "core": "integer"
         },
         "proof.path": {
-          "core": "integer",
-          "eligible": "integer",
+          "excluded_by_detail": "integer",
           "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         }
       },
       "selection_omitted": "integer"

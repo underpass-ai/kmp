@@ -83,18 +83,23 @@ fn attach_typed_projection(value: &mut Value, projection: Option<&RecallProjecti
 }
 
 fn projection_value(projection: &RecallProjection) -> Value {
+    // Zero counters are omitted: an absent counter is zero (#544 C3).
     let mut sections = Map::new();
     for section in &projection.sections {
-        sections.insert(
-            section.name.clone(),
-            json!({
-                "core": section.core,
-                "returned_on_page": section.returned_on_page,
-                "remaining": section.remaining,
-                "eligible": section.eligible,
-                "total": section.total
-            }),
-        );
+        let mut counts = Map::new();
+        for (key, count) in [
+            ("core", section.core),
+            ("returned_on_page", section.returned_on_page),
+            ("remaining", section.remaining),
+            ("excluded_by_detail", section.excluded_by_detail),
+        ] {
+            if count > 0 {
+                counts.insert(key.to_string(), json!(count));
+            }
+        }
+        if !counts.is_empty() {
+            sections.insert(section.name.clone(), Value::Object(counts));
+        }
     }
     let budget = projection.budget.unwrap_or_default();
     let page = projection.page.clone().unwrap_or_default();

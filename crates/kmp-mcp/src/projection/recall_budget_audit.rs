@@ -211,7 +211,7 @@ mod tests {
         assert!(reports_omission(&bounded));
         assert_eq!(
             bounded["projection"]["contract"],
-            "kmp.recall.projection.v2"
+            "kmp.recall.projection.v3"
         );
         assert!(!bounded["warnings"].as_array().expect("warnings").is_empty());
     }
@@ -255,7 +255,7 @@ mod tests {
                 if reports_omission(&bounded) {
                     assert_eq!(
                         bounded["projection"]["contract"],
-                        "kmp.recall.projection.v2"
+                        "kmp.recall.projection.v3"
                     );
                     assert!(!bounded["warnings"].as_array().expect("warnings").is_empty());
                 }
@@ -299,7 +299,7 @@ mod tests {
             if reports_omission(&bounded) {
                 assert_eq!(
                     bounded["projection"]["contract"],
-                    "kmp.recall.projection.v2"
+                    "kmp.recall.projection.v3"
                 );
                 assert!(!bounded["warnings"].as_array().expect("warnings").is_empty());
             }

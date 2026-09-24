@@ -32,14 +32,7 @@
     "next_actions": [
       {
         "arguments": {
-          "about": "string",
-          "budget": {
-            "max_bytes": "integer"
-          },
-          "page": {
-            "cursor": "string"
-          },
-          "ref": "string"
+          "continuation": "string"
         },
         "tool": "string"
       }
@@ -55,35 +48,15 @@
       "has_more": "boolean",
       "next_cursor": "string",
       "offset": "integer",
-      "omitted": {
-        "details": "integer",
-        "evidence": "integer",
-        "incoming": "integer",
-        "outgoing": "integer",
-        "raw": "integer"
-      },
       "required_bytes": "string",
       "returned": "integer",
       "sections": {
         "evidence": {
           "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "returned_on_page": "integer"
         },
         "incoming": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "outgoing": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
-        },
-        "raw": {
-          "remaining": "integer",
-          "returned_on_page": "integer",
-          "total": "integer"
+          "remaining": "integer"
         }
       },
       "total": "integer"

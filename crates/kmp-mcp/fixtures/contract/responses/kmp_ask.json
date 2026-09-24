@@ -34,26 +34,15 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9448
+        "used_bytes": 9169
       },
-      "contract": "kmp.recall.projection.v2",
+      "contract": "kmp.recall.projection.v3",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 7,
       "next_action": {
         "arguments": {
-          "about": "question:parity",
-          "answer_policy": "evidence_or_unknown",
-          "budget": {
-            "depth": 2,
-            "detail": "balanced",
-            "max_bytes": 10000,
-            "tokens": 2400
-          },
-          "page": {
-            "cursor": "kmp1:4:<stamped at call time>"
-          },
-          "question": "Where is Rachel moving?"
+          "continuation": "<stamped at call time>"
         },
         "tool": "kmp_ask"
       },
@@ -67,18 +56,12 @@
       },
       "sections": {
         "proof.evidence": {
-          "core": 5,
-          "eligible": 5,
-          "remaining": 0,
-          "returned_on_page": 0,
-          "total": 5
+          "core": 5
         },
         "proof.path": {
-          "core": 0,
-          "eligible": 9,
+          "excluded_by_detail": 7,
           "remaining": 5,
-          "returned_on_page": 4,
-          "total": 16
+          "returned_on_page": 4
         }
       },
       "selection_omitted": 0

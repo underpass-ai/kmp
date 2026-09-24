@@ -1,4 +1,6 @@
 //! Related sources remain complete, scoped and clock-bound across native pages.
+#[path = "support/bound_action.rs"]
+mod bound_action;
 #[path = "support/reviewed_writer.rs"]
 mod reviewed_writer;
 use kmp_mcp::KernelMcpServer;
@@ -196,7 +198,10 @@ async fn pages_reconstruct_dependency_bodies_and_links_even_with_reduced_entry_f
         }
         assert!(attempt < 49, "must finish response pagination");
         let action = &page["next_actions"][0];
-        assert_eq!(action["arguments"]["include"]["dependencies"], true);
+        assert_eq!(
+            bound_action::bound_arguments(&server, action)["include"]["dependencies"],
+            true
+        );
         let offset = page["page"]["offset"].as_u64().expect("offset");
         let returned = page["page"]["returned"].as_u64().expect("returned");
         page = call(
@@ -274,7 +279,10 @@ async fn changed_dependency_invalidates_cursor_and_conflicting_include_returns_e
     args["budget"]["max_bytes"] = json!(10000);
     let first = call(&server, "kmp_time", args).await;
     let continuation = first["next_actions"][0]["arguments"].clone();
-    assert!(continuation["page"]["cursor"].is_string());
+    assert!(
+        bound_action::bound_arguments(&server, &first["next_actions"][0])["page"]["cursor"]
+            .is_string()
+    );
     call(&server, "kmp_write_memory", json!({"about":"project:dependencies", "actor":"test",
         "observed_at":"2026-09-10T10:01:00Z", "idempotency_key":"dependencies:summary",
         "search_summaries":[{"ref":receipt["local_refs"]["alias"],

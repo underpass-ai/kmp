@@ -236,13 +236,23 @@ impl TemporalPage {
             }
             let count =
                 |slice: &[(&str, Value)]| slice.iter().filter(|(key, _)| key == section).count();
-            sections.insert(
-                section.trim_start_matches('/').replace('/', "."),
-                json!({
-                    "returned_on_page":count(&self.items[offset..end]),
-                    "remaining":count(&self.items[end..]), "total":count(&self.items),
-                }),
-            );
+            // Lean progress (#544 C3): no zero counter, no empty section, no
+            // `total` (earlier pages + returned_on_page + remaining).
+            let mut counts = Map::new();
+            for (key, value) in [
+                ("returned_on_page", count(&self.items[offset..end])),
+                ("remaining", count(&self.items[end..])),
+            ] {
+                if value > 0 {
+                    counts.insert(key.into(), json!(value));
+                }
+            }
+            if !counts.is_empty() {
+                sections.insert(
+                    section.trim_start_matches('/').replace('/', "."),
+                    Value::Object(counts),
+                );
+            }
         }
         result["page"] = json!({"offset":offset,"returned":end-offset,"total":self.items.len(),
             "has_more":has_more,"next_cursor":has_more.then(||format!("{CURSOR_VERSION}:{end}:{}",self.hash)),

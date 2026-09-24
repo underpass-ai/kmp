@@ -53,9 +53,10 @@ excludes the end, without a separate boundary probe or client-side date filterin
 {"about":"project:release","move":"forward","interval":{"start":"2026-09-01T00:00:00Z","end":"2026-09-02T00:00:00Z"},"axis":"observed","limit":{"entries":10}}
 ```
 
-Execute the returned `next_actions` with their complete arguments. They retain
-the interval, clock and dimension selection across both proof pages and history
-moves. `from` remains a strict cursor when supplied; interval continuations use
+Execute the returned `next_actions` unchanged. A page continuation is a
+`continuation` handle the server resolves to the complete call; a history move
+restates its call. Both retain the interval, clock and dimension selection
+across proof pages and history moves. `from` remains a strict cursor when supplied; interval continuations use
 returned refs, never a sequence. Goto and Near can narrow their cursor/window
 with the same interval but still require their initial cursor.
 

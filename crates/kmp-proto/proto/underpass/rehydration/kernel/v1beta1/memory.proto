@@ -1514,15 +1514,22 @@ message RecallProjectionPage {
   optional uint64 minimum_progress_bytes = 6;
 }
 
+// Only counts a caller cannot derive. core and excluded_by_detail are static:
+// the page that carries the core states them, a continuation that reuses it
+// leaves them zero. A section with nothing to report is omitted. Derived:
+// eligible = core + every page's returned_on_page + the last remaining;
+// total = eligible + excluded_by_detail.
 message RecallProjectionSection {
+  reserved 4, 5;
+  reserved "eligible", "total";
   string name = 1;
   uint64 core = 2;
   uint64 returned_on_page = 3;
-  uint64 eligible = 4;
-  uint64 total = 5;
   // Eligible expansion after this page; excludes the core and prior pages.
   // Zero does not establish semantic sufficiency or include detail/cap omissions.
   uint64 remaining = 6;
+  // Items of this section the requested detail excluded from the selection.
+  uint64 excluded_by_detail = 7;
 }
 
 // Machine-readable detail for a Wake/Ask continuation failure: ABORTED for
