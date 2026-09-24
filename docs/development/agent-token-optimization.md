@@ -227,8 +227,10 @@ temperature, H4/H5. The report lists them as limitations.
 | Plan + CI scope | `docs/544-token-plan` | #834 | merged |
 | I0 | `feat/544-token-meter` | #836 | merged; legacy totals reproduced exactly on the 2026-09-15 captures |
 | I1 | `fix/544-wake-evidence-refs` | #835 | merged; contract wake pins 3 cited sources in page 1 (was 0) |
-| I2 | `fix/544-wake-state` | #837 | draft; state from live memories, `Next: none recorded` |
-| I3 | `feat/544-wake-oracle` | #839 | draft; against #840 (c88472b9) the candidate passes W01–W04/A01/E01 and is smaller on every wake and ask journey; E01 +14 |
+| I2 | `fix/544-wake-state` | #837 | merged; state from live memories, `Next: none recorded` |
+| I2b | `fix/544-wake-scope` | #840 | merged; hops join sources by the graph (W03), spine without bookkeeping (W04), no endpoint over-citation (W01) |
+| I3 | `feat/544-wake-oracle` | #839 | merged; against #840 (c88472b9) the candidate passes W01–W04/A01/E01 and is smaller on every wake and ask journey; E01 +14. Weighted −6.9 % at 4096 B, −1.0 % at 10000 B |
+| Next | PR 3 | — | pinned core evidence repeats on every page (+463 tokens in W01 at 10000 B); incremental continuations |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
 contract break is acceptable when it serves that. Breaks are named in each PR.
