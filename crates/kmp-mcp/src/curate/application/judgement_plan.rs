@@ -4,6 +4,7 @@ use kmp_domain::{KnownMemoryRelationType, MemoryRelationType};
 use serde_json::json;
 
 use crate::curate::application::curate_material::CurateMaterial;
+use crate::curate::application::prepared_relation::PreparedRelation;
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_fact::CurateFact;
 use crate::curate::domain::curate_thresholds::NONE;
@@ -154,6 +155,52 @@ pub(crate) fn suspect_request(material: &CurateMaterial) -> JudgementRequest {
     JudgementRequest {
         state: json!(
             "Declared relations between memories of one knowledge base, audited one by one."
+        ),
+        questions,
+    }
+}
+
+/// The pre-write check: for each item the agent is about to write, does its
+/// own why and evidence hold (`s<n>`), and which type fits best (`b<n>`).
+pub(crate) fn precheck_request(
+    material: &CurateMaterial,
+    items: &[PreparedRelation],
+) -> JudgementRequest {
+    let mut questions = BTreeMap::new();
+    for (n, item) in items.iter().enumerate() {
+        let crosses = material.fact(&item.from).map(|f| &f.about)
+            != material.fact(&item.to).map(|f| &f.about);
+        let base = json!({
+            "from": excerpt(text_of(material, &item.from), SENT_CHARS),
+            "to": excerpt(text_of(material, &item.to), SENT_CHARS),
+            "relation": item.rel,
+            "why": item.why,
+            "evidence": item.evidence,
+        });
+        let mut support = base.clone();
+        support["question"] =
+            json!("Do `why` and `evidence` show that `from` has the relation `relation` to `to`?");
+        questions.insert(
+            format!("s{n}"),
+            JudgementQuestion::Noul {
+                instructions: support,
+            },
+        );
+        let mut best = base;
+        best["question"] = json!(
+            "Which relation does `from` have to `to`? A later status or a newer version of the same thing is not a contradiction. Answer none when no relation holds."
+        );
+        questions.insert(
+            format!("b{n}"),
+            JudgementQuestion::Choice {
+                instructions: best,
+                options: relation_options(crosses),
+            },
+        );
+    }
+    JudgementRequest {
+        state: json!(
+            "Relations an agent is about to declare between memories of one knowledge base, checked one by one."
         ),
         questions,
     }

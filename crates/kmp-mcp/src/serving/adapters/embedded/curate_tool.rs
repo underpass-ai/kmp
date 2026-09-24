@@ -1,11 +1,16 @@
 use serde_json::{Map, Value};
+use sha2::{Digest, Sha256};
 
+use super::super::curate_doubt_cache::CurateDoubtCache;
 use super::super::curate_review_cache::CurateReviewCache;
 use super::super::embedded_errors::{kernel_error, mapping_error};
 use super::read_telemetry::EmbeddedReadTelemetry;
 use crate::curate::application::dto::curate_review_dto::review_to_value;
+use crate::curate::application::dto::prepared_apply_dto::prepared_to_value;
 use crate::curate::application::mappers::relate_material_mapper::relate_material;
+use crate::curate::application::use_cases::prepare_apply::PrepareApply;
 use crate::curate::application::use_cases::review_relations::ReviewRelations;
+use crate::curate::domain::apply_item::ApplyItem;
 use crate::serving::adapters::tool_request_mapping::RelateRequestMapper;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::{ToolError, tool_success_result};
@@ -29,6 +34,7 @@ pub(crate) struct EmbeddedCurateTool<'a> {
     judgement: Option<&'a dyn JudgementModel>,
     judgement_warning: Option<&'a str>,
     cache: &'a CurateReviewCache,
+    doubts: &'a CurateDoubtCache,
 }
 
 impl<'a> EmbeddedCurateTool<'a> {
@@ -39,6 +45,7 @@ impl<'a> EmbeddedCurateTool<'a> {
         judgement: Option<&'a dyn JudgementModel>,
         judgement_warning: Option<&'a str>,
         cache: &'a CurateReviewCache,
+        doubts: &'a CurateDoubtCache,
     ) -> Self {
         Self {
             service,
@@ -47,14 +54,21 @@ impl<'a> EmbeddedCurateTool<'a> {
             judgement,
             judgement_warning,
             cache,
+            doubts,
         }
     }
 
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
-        if arguments.get("mode").and_then(Value::as_str) != Some("review") {
-            return Err(ToolError::invalid_argument(
-                "kmp_curate mode must be review",
-            ));
+        match arguments.get("mode").and_then(Value::as_str) {
+            Some("review") => {}
+            // Internal: the apply dispatcher asks the store that froze the
+            // review to resolve and pre-check what the agent accepted.
+            Some("prepare_apply") => return self.prepare_apply(arguments).await,
+            _ => {
+                return Err(ToolError::invalid_argument(
+                    "kmp_curate mode must be review or apply",
+                ));
+            }
         }
         let about = arguments
             .get("about")
@@ -139,4 +153,87 @@ impl<'a> EmbeddedCurateTool<'a> {
             &review, &material, &about, &token, 0, entries,
         )))
     }
+
+    async fn prepare_apply(&self, arguments: &Value) -> Result<Value, ToolError> {
+        let about = arguments
+            .get("about")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ToolError::invalid_argument("kmp_curate apply requires about"))?;
+        let token = arguments
+            .get("review_token")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ToolError::invalid_argument("kmp_curate apply requires review_token"))?;
+        let (review, material) = self
+            .cache
+            .get(token)
+            .ok_or_else(|| ToolError::invalid_argument("review expired; run a fresh review"))?;
+        let accepted = arguments
+            .get("accepted")
+            .and_then(Value::as_array)
+            .filter(|items| !items.is_empty())
+            .ok_or_else(|| {
+                ToolError::invalid_argument("kmp_curate apply requires accepted items")
+            })?;
+        let items = accepted
+            .iter()
+            .map(apply_item)
+            .collect::<Result<Vec<_>, _>>()?;
+        let digest = format!(
+            "{:x}",
+            Sha256::digest(
+                format!(
+                    "kmp.curate.precheck.v1\0{about}\0{token}\0{}",
+                    // Confirmation changes nothing Jev reads, so it cannot
+                    // change the key: confirming reuses the frozen doubts.
+                    Value::Array(
+                        accepted
+                            .iter()
+                            .map(|item| {
+                                let mut item = item.clone();
+                                if let Some(object) = item.as_object_mut() {
+                                    object.remove("confirm_doubted");
+                                }
+                                item
+                            })
+                            .collect()
+                    )
+                )
+                .as_bytes()
+            )
+        );
+        let frozen = self.doubts.get(&digest);
+        let (prepared, doubts) = PrepareApply {
+            judgement: self.judgement,
+        }
+        .run(about, &review, &material, items, frozen)
+        .await;
+        self.doubts.insert(digest, doubts);
+        Ok(tool_success_result(prepared_to_value(&prepared)))
+    }
+}
+
+fn apply_item(value: &Value) -> Result<ApplyItem, ToolError> {
+    let text = |key: &str| {
+        value
+            .get(key)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|text| !text.is_empty())
+            .map(str::to_string)
+    };
+    let flag = |key: &str| value.get(key).and_then(Value::as_bool).unwrap_or(false);
+    Ok(ApplyItem {
+        item_id: text("item_id")
+            .ok_or_else(|| ToolError::invalid_argument("accepted[].item_id is required"))?,
+        why: text("why").ok_or_else(|| {
+            ToolError::invalid_argument("accepted[].why is required: the reason is yours to write")
+        })?,
+        evidence: text("evidence").ok_or_else(|| {
+            ToolError::invalid_argument("accepted[].evidence is required: say what shows it")
+        })?,
+        confidence: text("confidence"),
+        rel: text("rel"),
+        reverse: flag("reverse"),
+        confirm_doubted: flag("confirm_doubted"),
+    })
 }

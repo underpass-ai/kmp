@@ -20,22 +20,12 @@ pub(crate) fn review_to_value(
     offset: usize,
     entries: usize,
 ) -> Value {
-    let mut missing_n = 0;
-    let mut suspect_n = 0;
-    let numbered = review
-        .findings
+    let numbered = review.numbered();
+    let missing_n = numbered
         .iter()
-        .map(|finding| match finding {
-            CurateFinding::Missing { .. } => {
-                missing_n += 1;
-                (format!("m{}", missing_n - 1), finding)
-            }
-            CurateFinding::Suspect { .. } => {
-                suspect_n += 1;
-                (format!("s{}", suspect_n - 1), finding)
-            }
-        })
-        .collect::<Vec<_>>();
+        .filter(|(_, f)| matches!(f, CurateFinding::Missing { .. }))
+        .count();
+    let suspect_n = numbered.len() - missing_n;
     let mut ordered = numbered
         .iter()
         .filter(|(_, f)| matches!(f, CurateFinding::Missing { .. }))

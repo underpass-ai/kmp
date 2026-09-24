@@ -1,3 +1,4 @@
+pub(crate) mod curate_doubt_cache;
 pub(crate) mod curate_review_cache;
 mod embedded;
 pub(crate) mod embedded_backend;

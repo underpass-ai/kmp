@@ -1,3 +1,4 @@
+use super::curate_doubt_cache::CurateDoubtCache;
 use super::curate_review_cache::CurateReviewCache;
 use super::embedded::{
     EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool, EmbeddedIngestTool,
@@ -36,6 +37,7 @@ pub struct EmbeddedKernelMcpBackend {
     /// `typesafe.json`; an error names why a present opt-in cannot run.
     judgement: Result<Option<Arc<dyn JudgementModel>>, String>,
     curate_reviews: CurateReviewCache,
+    curate_doubts: CurateDoubtCache,
 }
 
 impl EmbeddedKernelMcpBackend {
@@ -71,6 +73,7 @@ impl EmbeddedKernelMcpBackend {
             semantic: LoopbackSemanticRetriever::load(data_dir),
             judgement: TypeSafeJudgement::load(data_dir, optional_env_string(TYPESAFE_API_KEY_ENV)),
             curate_reviews: CurateReviewCache::default(),
+            curate_doubts: CurateDoubtCache::default(),
         })
     }
 
@@ -166,6 +169,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         judgement,
                         warning,
                         &self.curate_reviews,
+                        &self.curate_doubts,
                     )
                     .call(arguments)
                     .await

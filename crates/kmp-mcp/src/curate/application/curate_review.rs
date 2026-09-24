@@ -14,6 +14,26 @@ pub(crate) struct CurateReview {
 }
 
 impl CurateReview {
+    /// Every finding with the id the tool shows for it: `m<n>` counts the
+    /// missing items and `s<n>` the suspect ones, each in review order. The
+    /// DTO and apply both read ids from here, so they cannot disagree.
+    pub(crate) fn numbered(&self) -> Vec<(String, &CurateFinding)> {
+        let (mut missing, mut suspect) = (0, 0);
+        self.findings
+            .iter()
+            .map(|finding| match finding {
+                CurateFinding::Missing { .. } => {
+                    missing += 1;
+                    (format!("m{}", missing - 1), finding)
+                }
+                CurateFinding::Suspect { .. } => {
+                    suspect += 1;
+                    (format!("s{}", suspect - 1), finding)
+                }
+            })
+            .collect()
+    }
+
     pub(crate) fn token(&self) -> String {
         let mut hasher = Sha256::new();
         hasher.update(b"kmp.curate.review.v1\0");
