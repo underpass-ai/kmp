@@ -1432,4 +1432,10 @@ Expected: all PASS.
 
 ## Deviations recorded during execution
 
-(Empty at start.)
+
+- Task 4: `review_to_value` also takes `about`, because the continuation
+  action it builds must name it.
+- Task 4: `context_id` is removed from the arguments before the relate
+  mapping, along with `mode`, `max_pairs`, `review_token` and `page`.
+- Task 4: the integration test moves after Task 5, because an unadvertised
+  tool is refused by argument validation.
