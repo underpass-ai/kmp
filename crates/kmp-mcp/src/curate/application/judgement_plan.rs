@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use kmp_domain::KnownMemoryRelationType;
+use kmp_domain::{KnownMemoryRelationType, MemoryRelationType};
 use serde_json::json;
 
 use crate::curate::application::curate_material::CurateMaterial;
@@ -19,11 +19,18 @@ pub(crate) fn excerpt(text: &str, chars: usize) -> String {
     text.chars().take(chars).collect()
 }
 
-/// The relation names a writer may declare, plus `none`. Across abouts only
-/// the equivalences may be declared.
+/// The relation names `relations[]` may declare, plus `none`: structural
+/// links change memberships and go through kmp_relabel, and across abouts only
+/// the equivalences may be declared. `contradicts`, `supersedes`,
+/// `updates_state` and `corrects` compete here, so a later status is told
+/// apart from a clash by the same choice.
 pub(crate) fn relation_options(crosses_abouts: bool) -> Vec<String> {
     KnownMemoryRelationType::writer_relation_types()
         .iter()
+        .filter(|relation| {
+            MemoryRelationType::new(relation.as_str())
+                .is_ok_and(|relation_type| !relation_type.is_structural())
+        })
         .filter(|relation| !crosses_abouts || relation.may_cross_abouts())
         .map(|relation| relation.as_str().to_string())
         .chain(std::iter::once(NONE.to_string()))
@@ -86,31 +93,21 @@ pub(crate) fn partner_request(
     Some((JudgementRequest { state, questions }, keys))
 }
 
-/// For each pair: its best relation type (`t<n>`) and whether the two facts
-/// contradict each other (`c<n>`).
+/// For each pair, its best relation type (`t<n>`). A contradiction is one of
+/// the options, so it has to beat `supersedes`, `updates_state` and
+/// `corrects` to be proposed.
 pub(crate) fn pair_request(material: &CurateMaterial, pairs: &[CandidatePair]) -> JudgementRequest {
     let mut questions = BTreeMap::new();
     for (n, pair) in pairs.iter().enumerate() {
-        let texts = json!({
-            "from": excerpt(text_of(material, &pair.from), SENT_CHARS),
-            "to": excerpt(text_of(material, &pair.to), SENT_CHARS),
-        });
-        let mut typed = texts.clone();
-        typed["question"] =
-            json!("Which relation does `from` have to `to`? Answer none when no relation holds.");
         questions.insert(
             format!("t{n}"),
             JudgementQuestion::Choice {
-                instructions: typed,
+                instructions: json!({
+                    "from": excerpt(text_of(material, &pair.from), SENT_CHARS),
+                    "to": excerpt(text_of(material, &pair.to), SENT_CHARS),
+                    "question": "Which relation does `from` have to `to`? A later status or a newer version of the same thing is not a contradiction. Answer none when no relation holds.",
+                }),
                 options: relation_options(pair.crosses_abouts),
-            },
-        );
-        let mut clash = texts;
-        clash["question"] = json!("Do `from` and `to` state things that cannot both be true?");
-        questions.insert(
-            format!("c{n}"),
-            JudgementQuestion::Noul {
-                instructions: clash,
             },
         );
     }

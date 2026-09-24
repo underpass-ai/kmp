@@ -47,7 +47,8 @@ One tool, `kmp_curate`, with two modes. The tool is not read-only because
 - `mode: "review"` does not write anything. Its arguments are:
   - `about`, and optionally `abouts[]` (the same selection as `kmp_relate`);
   - `dimensions`, `interval`, `budget` and `page`;
-  - `max_pairs`: default 60, maximum 200.
+  - `max_pairs`: default 12, maximum 40 (result cap), and `page.entries`:
+    default 8, maximum 20.
 - `mode: "apply"` writes through the planner. Its arguments are:
   - `review_token`, returned by the review;
   - `accepted[]`: items of `{ item_id, why, evidence, confidence, rel? }`,
@@ -90,12 +91,20 @@ the arguments and the content digest of every fact read.
 - **These findings are reported only.** KMP has no way to retract or retype
   a relation; that capability is out of scope.
 
-**`tensions`**: current facts that appear to contradict each other (a `noul`)
-and are not joined by `contradicts` or `supersedes`. They are returned as
-`missing` items with `suggested_rel: contradicts`.
+**`tensions`**: current facts that contradict each other and are not joined
+by `contradicts` or `supersedes`. They come out of the typing choice itself,
+as `missing` items with `suggested_rel: contradicts`. `contradicts` has to win
+against `supersedes`, `updates_state` and `corrects` in the same choice.
 
-Every item carries `item_id`, `from`, `to`, both facts' text verbatim, the
-`about` of each, `suggested_rel`, `proposed_by` with the kernel signals, and
+The first operator run (2026-09-24, `project:made`) asked a separate `noul`,
+"cannot both be true?", and let it override the type. All twelve items came
+back as `contradicts`, although most were a candidate PR followed by the same
+PR merged. A later status is not a clash, and only a choice among the
+alternatives tells them apart. Structural types are not offered either,
+because `relations[]` refuses them.
+
+Every item carries `item_id`, `from` and `to` (as ref, about and a 160-character
+excerpt; the 10,000-character result cap rules out full texts), the `suggested_rel`, `proposed_by` with the kernel signals, and
 `jev: { probabilities, confidence, model }`.
 
 `next_actions` holds a bound `apply` continuation. The agent fills in `why`

@@ -1,14 +1,12 @@
-use std::collections::BTreeMap;
-
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::curate_review::CurateReview;
 use crate::curate::application::jev_usage::JevUsage;
-use crate::curate::application::judgement_plan::{pair_request, partner_request, suspect_request};
+use crate::curate::application::judgement_plan::{
+    pair_request, partner_request, relation_options, suspect_request,
+};
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
-use crate::curate::domain::curate_thresholds::{
-    CONTRADICTION_AT, DOUBT_BELOW, NONE, PARTNER_AT, RETYPE_AT,
-};
+use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE, PARTNER_AT, RETYPE_AT};
 use crate::curate::domain::jev_verdict::JevVerdict;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::serving::judgement_answer::JudgementAnswer;
@@ -106,34 +104,14 @@ impl ReviewRelations<'_> {
         };
         let mut missing = Vec::new();
         for (n, pair) in pairs.into_iter().enumerate() {
-            let verdict = typed.answers.get(&format!("t{n}")).and_then(verdict_of);
-            let clash = match typed.answers.get(&format!("c{n}")) {
-                Some(JudgementAnswer::Noul { yes }) => *yes,
-                _ => 0.0,
-            };
-            let (suggested, verdict) = if clash >= CONTRADICTION_AT {
-                (
-                    "contradicts".to_string(),
-                    JevVerdict {
-                        choice: "contradicts".into(),
-                        probabilities: BTreeMap::from([
-                            ("contradicts".into(), clash),
-                            (NONE.into(), 1.0 - clash),
-                        ]),
-                        confidence: clash,
-                    },
-                )
-            } else {
-                match verdict {
-                    Some(verdict) if verdict.choice != NONE => (verdict.choice.clone(), verdict),
-                    _ => continue,
-                }
-            };
-            missing.push(CurateFinding::Missing {
-                pair,
-                suggested_rel: Some(suggested),
-                verdict: Some(verdict),
-            });
+            match typed.answers.get(&format!("t{n}")).and_then(verdict_of) {
+                Some(verdict) if verdict.choice != NONE => missing.push(CurateFinding::Missing {
+                    pair,
+                    suggested_rel: Some(verdict.choice.clone()),
+                    verdict: Some(verdict),
+                }),
+                _ => continue,
+            }
         }
         missing.sort_by(|left, right| confidence(right).total_cmp(&confidence(left)));
         missing.truncate(max_pairs);
@@ -150,8 +128,13 @@ impl ReviewRelations<'_> {
                 let Some(best) = audit.answers.get(&format!("b{n}")).and_then(verdict_of) else {
                     continue;
                 };
+                // A stored type Jev was not offered (legacy or kernel-written)
+                // cannot be matched by its choice; judge it on support alone.
+                let crosses = material.fact(&link.from).map(|fact| &fact.about)
+                    != material.fact(&link.to).map(|fact| &fact.about);
+                let offered = relation_options(crosses).contains(&link.rel);
                 if support < DOUBT_BELOW
-                    || (best.choice != link.rel && best.confidence >= RETYPE_AT)
+                    || (offered && best.choice != link.rel && best.confidence >= RETYPE_AT)
                 {
                     review.findings.push(CurateFinding::Suspect {
                         link: link.clone(),
@@ -413,5 +396,72 @@ mod tests {
         };
         assert_ne!(base.token(), other.token());
         assert_eq!(base.token(), base.clone().token());
+    }
+
+    #[tokio::test]
+    async fn a_status_update_is_not_reported_as_a_contradiction() {
+        let model = Scripted {
+            noul: 0.95,
+            choice: "updates_state",
+            confidence: 0.8,
+            calls: Mutex::new(0),
+        };
+        let review = ReviewRelations {
+            judgement: Some(&model),
+        }
+        .run(material(), 12)
+        .await;
+        let suggested = review
+            .findings
+            .iter()
+            .filter_map(|f| match f {
+                CurateFinding::Missing { suggested_rel, .. } => suggested_rel.clone(),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            !suggested.iter().any(|rel| rel == "contradicts"),
+            "{suggested:?}"
+        );
+    }
+
+    #[test]
+    fn structural_types_are_never_offered() {
+        let options = crate::curate::application::judgement_plan::relation_options(false);
+        for structural in ["contains", "member_of", "scoped_to"] {
+            assert!(!options.iter().any(|o| o == structural), "{options:?}");
+        }
+        assert!(options.iter().any(|o| o == "contradicts"));
+        assert!(options.iter().any(|o| o == "supersedes"));
+    }
+
+    #[tokio::test]
+    async fn with_nothing_to_pair_only_the_audit_is_asked() {
+        let model = Scripted {
+            noul: 0.9,
+            choice: "causes",
+            confidence: 0.9,
+            calls: Mutex::new(0),
+        };
+        let mut lone = material();
+        lone.pairs.clear();
+        lone.facts
+            .retain(|fact| fact.reference == "a1" || fact.reference == "a3");
+        let review = ReviewRelations {
+            judgement: Some(&model),
+        }
+        .run(lone, 12)
+        .await;
+        assert!(
+            review.findings.is_empty(),
+            "a type Jev was not offered is judged on support alone: {:?}",
+            review.findings
+        );
+        assert_eq!(
+            *model.calls.lock().expect("calls"),
+            1,
+            "one audit request, no pairing"
+        );
+        assert_eq!(review.jev.as_ref().map(|usage| usage.requests), Some(1));
     }
 }

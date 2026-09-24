@@ -1439,3 +1439,20 @@ Expected: all PASS.
   mapping, along with `mode`, `max_pairs`, `review_token` and `page`.
 - Task 4: the integration test moves after Task 5, because an unadvertised
   tool is refused by argument validation.
+- Task 5: the parity test marks `review_token` volatile, because it digests
+  the relate selection fingerprint, which covers ingestion clocks. Its
+  findings stay pinned. `info_report` and `persistent_guidance` count 16 tools
+  and 10 guide topics. `budget` is accepted, as in relate.
+- Task 6 (live run on a copy of the store, `project:made`, 307 facts): the
+  separate contradiction `noul` made all 12 items `contradicts`, because it
+  read status updates as clashes. It was removed. `contradicts` now competes
+  inside the typing choice, and structural types are no longer offered. The
+  second run returned `updates_state`, `supersedes`, `confirms_selection`,
+  `violates_constraint` and three `contradicts` at lower confidence:
+  3 requests, 103,564 input tokens, 25 s. It found 0 suspect relations. The
+  partner step does not run for abouts with more than 60 facts.
+- Task 6: a stored type that is not among the offered options (legacy or
+  kernel-written, such as `causes`) is judged on support alone, because Jev's
+  choice can never match it. A test for the audit-only path covers
+  `JudgementResponse::empty`. Coverage of the new code (curate context and
+  TypeSafe adapter): 95.2% of 1,620 lines.
