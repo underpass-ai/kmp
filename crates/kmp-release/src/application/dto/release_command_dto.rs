@@ -51,6 +51,8 @@ pub enum ReleaseCommandDto {
     ApplyGuideAssets {
         root: RepositoryRoot,
         binary: PathBuf,
+        /// The store to ingest into; never the user's selected store by default.
+        data_dir: PathBuf,
     },
     PackageMcpb {
         version: ReleaseVersion,

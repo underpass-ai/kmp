@@ -222,6 +222,7 @@ impl ReleaseCommandMapper {
                     "apply" => Ok(ReleaseCommandDto::ApplyGuideAssets {
                         root: selected_root,
                         binary,
+                        data_dir: PathBuf::from(Self::required(&options, "--data-dir")?),
                     }),
                     other => Err(ReleaseError::invalid(format!(
                         "unknown guide assets action `{other}`"

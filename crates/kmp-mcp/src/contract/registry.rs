@@ -65,9 +65,11 @@ pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
         tools.push(view_apply_intent::definition());
         tools.push(view_get_state::definition());
         tools.push(crate::contract::tools::guide::definition());
+        // Described once in the session instructions, not on every verb.
         for tool in tools.iter_mut().filter(|t| t["name"] != "kmp_guide") {
-            tool["inputSchema"]["properties"]["context_id"] = json!({"type":"string","description":"Optional active context returned by kmp_guide; records use and enables concise guidance."});
-            tool["inputSchema"]["properties"]["purpose"] = json!({"type":"string","enum":["continue","audit","history","answer"],"description":"Optional recommendation purpose with context_id. Omitted: continue the selected packet."});
+            tool["inputSchema"]["properties"]["context_id"] = json!({"type":"string"});
+            tool["inputSchema"]["properties"]["purpose"] =
+                json!({"type":"string","enum":["continue","audit","history","answer"]});
             if matches!(
                 tool["name"].as_str(),
                 Some("kmp_write_memory" | "kmp_relabel" | "kmp_condense")

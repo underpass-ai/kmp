@@ -36,37 +36,43 @@ pub(crate) fn writer_class_schema() -> Value {
     ));
     schema
 }
-/// The relation vocabulary, projected from the kernel's own writer spec so
-/// this documentation can never drift from what the kernel validates. The
-/// relation is where KMP carries the why; a model that only sees a bare enum
-/// writes connected-but-unexplained memory, which is the failure mode the
-/// spec exists to prevent.
+/// The schema carries the doctrine and names where the vocabulary lives; the
+/// per-relation prose is served by `kmp_guide` topic `write`, projected from
+/// the same writer spec by [`relation_vocabulary_lines`]. Every host pays for
+/// `tools/list` on every session, while only a writer needs the vocabulary.
 pub(crate) fn relation_vocabulary_description(header: &str) -> String {
-    let mut description = format!(
+    format!(
         "{header} The relation carries the explanation: non-structural classes require why, \
-         evidence and confidence. Prefer rich types — anemic types are an honest fallback for \
-         when no richer semantic dependency can be proven, never a default. Vocabulary \
-         (quality; allowed classes; source -> relation -> target / when to use):"
-    );
-    for spec in KnownMemoryRelationType::writer_relation_types()
+         evidence and confidence. Prefer rich types; anemic types are an honest fallback, \
+         never a default. Quality, classes and when to use each: kmp_guide topic write."
+    )
+}
+
+/// The relation vocabulary, projected from the kernel's own writer spec so
+/// the guide can never drift from what the kernel validates. The relation is
+/// where KMP carries the why; a model that only sees a bare enum writes
+/// connected-but-unexplained memory, which is the failure mode the spec exists
+/// to prevent. One line per relation: `name (quality; classes; when to use)`.
+pub(crate) fn relation_vocabulary_lines() -> Vec<String> {
+    KnownMemoryRelationType::writer_relation_types()
         .iter()
         .filter_map(|relation_type| relation_type.writer_spec())
-    {
-        let classes = spec
-            .allowed_classes()
-            .iter()
-            .map(|class| class.as_str())
-            .collect::<Vec<_>>()
-            .join("|");
-        description.push_str(&format!(
-            " {} ({}; {}; {}).",
-            spec.relation_type().as_str(),
-            spec.quality().as_str(),
-            classes,
-            spec.reason()
-        ));
-    }
-    description
+        .map(|spec| {
+            let classes = spec
+                .allowed_classes()
+                .iter()
+                .map(|class| class.as_str())
+                .collect::<Vec<_>>()
+                .join("|");
+            format!(
+                "{} ({}; {}; {})",
+                spec.relation_type().as_str(),
+                spec.quality().as_str(),
+                classes,
+                spec.reason()
+            )
+        })
+        .collect()
 }
 pub(crate) fn semantic_class_schema() -> Value {
     json!({

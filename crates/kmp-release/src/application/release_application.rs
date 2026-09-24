@@ -172,10 +172,18 @@ where
                 WriteGuideAssets::new(&self.file_system, engine.as_ref()).execute(&root)?;
                 Ok("KMP guide: wrote requests and memory bundle; all probes pass".to_string())
             }
-            ReleaseCommandDto::ApplyGuideAssets { root, binary } => {
+            ReleaseCommandDto::ApplyGuideAssets {
+                root,
+                binary,
+                data_dir,
+            } => {
                 let engine = self.guide_engines.create(&binary)?;
-                ApplyGuideAssets::new(&self.file_system, engine.as_ref()).execute(&root)?;
-                Ok("KMP guide: guide:kmp-agent and guide:kmp converged".to_string())
+                ApplyGuideAssets::new(&self.file_system, engine.as_ref())
+                    .execute(&root, &data_dir)?;
+                Ok(format!(
+                    "KMP guide: guide:kmp-agent and guide:kmp converged in {}",
+                    data_dir.display()
+                ))
             }
             ReleaseCommandDto::PackageMcpb {
                 version,

@@ -6,6 +6,7 @@ use crate::domain::repository_root::RepositoryRoot;
 use crate::ports::candidate_file_system::CandidateFileSystem;
 use crate::ports::guide_engine::GuideEngine;
 use crate::ports::release_file_system::ReleaseFileSystem;
+use std::path::Path;
 
 pub struct ApplyGuideAssets<'a, F, G: ?Sized> {
     file_system: &'a F,
@@ -24,7 +25,7 @@ where
         }
     }
 
-    pub fn execute(&self, root: &RepositoryRoot) -> Result<(), ReleaseError> {
+    pub fn execute(&self, root: &RepositoryRoot, data_dir: &Path) -> Result<(), ReleaseError> {
         let expected = PrepareGuideRequests::new(self.file_system, self.engine).execute(root)?;
         let path = root.join("plugins/kmp/guide/guide.requests.json");
         let actual: Vec<serde_json::Value> =
@@ -51,6 +52,6 @@ where
                 "agent Markdown does not match this guide; regenerate guide assets",
             ));
         }
-        self.engine.ingest(&requests, None)
+        self.engine.ingest(&requests, Some(data_dir))
     }
 }

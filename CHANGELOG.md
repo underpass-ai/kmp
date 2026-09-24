@@ -9,6 +9,17 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- The relation vocabulary (quality, allowed classes and when to use each
+  relation) moved from three copies in `tools/list` to `kmp_guide` topic
+  `write`, which returns it as `card.relation_vocabulary`, projected from the
+  same writer spec. The `rel` schemas keep the enum, the doctrine and a pointer
+  to the guide. `context_id` and `purpose` are described once in the session
+  instructions instead of on every verb. A session starts with 22,635 reference
+  tokens instead of 25,214 (o200k_base, −10%); the eleven native journeys still
+  pass the evidence oracle (#850).
+
 ### Fixed
 
 - `update`, `setup` and `doctor` no longer fail with a false plugin tree
@@ -16,6 +27,9 @@ Detailed notes from the early release cycle remain available in the
   the marketplace plugin tree, take part in tree parity; the Hermes home is no
   longer digested as one. A real mismatch names the hosts whose trees differ
   and their digests (#849).
+- `kmp-release guide assets apply` now requires `--data-dir` and ingests only
+  there. It used to fall through to the user's selected memory store and replace
+  the installed guide with a development one (#850).
 
 ## [0.20.0] - 2026-09-24
 
