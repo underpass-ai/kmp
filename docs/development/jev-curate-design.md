@@ -15,6 +15,12 @@ judgement model, TypeSafe Jev, each do the part the other does poorly:
 
 Jev never writes a relation and never writes a `why`.
 
+**Division of work, from the model's nature.** Jev answers only closed
+questions (`noul`, `choice`, `score`) and cannot produce words. Anything that
+is new text is therefore the agent's: a `why`, an evidence sentence, a label
+key or value. Jev chooses among options the kernel or the agent put in front
+of it, and it judges the text the agent wrote. It never fills a blank.
+
 This keeps the standing rules on relations. Every relation says why in a
 checkable sentence and carries evidence. Nothing is invented. Only
 `same_event_as` and `same_entity_as` cross abouts, and only with a
@@ -157,7 +163,10 @@ a relation, not on the relation.
   2. A `choice` for the **value** within that key: its values in use, plus
      `new`.
 
-  For `new`, the agent names the key or the value; Jev never invents one. The
+  For `new`, the agent proposes the key or the value, because Jev cannot
+  produce words. Jev then checks the agent's proposal with one `noul`: does
+  `key=value` describe both memories? A low answer comes back as a doubt, the
+  same way the pre-write check handles relations. The agent decides. The
   existing rule still applies ("one value, one key per about; the key is
   fixed on first use"), so a value already stored under another key cannot be
   offered under a different one. A new key or value goes through
