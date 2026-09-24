@@ -8,7 +8,7 @@ fn completed_temporal_entries_do_not_hide_pending_proof_in_the_first_text() {
         "selection":{"entries":2,"has_more":false},
         "page":{"has_more":true,"returned":25,"total":32,
             "sections":{"entries":{"remaining":0},"proof.path":{"remaining":7}}},
-        "next_actions":[{"tool":"kmp_goto","arguments":{"continuation":"opaque-read"}}]});
+        "next_actions":[{"tool":"kmp_time","arguments":{"continuation":"opaque-read"}}]});
     let native = serde_json::to_vec(&body).expect("body");
     let result = tool_success_result(body);
     assert_eq!(
@@ -41,7 +41,7 @@ fn shortened_recall_core_remains_partial_even_when_expansion_is_finished() {
 fn another_history_position_does_not_make_the_delivered_packet_partial() {
     let body = json!({"summary":"Returned 1 temporal entry.",
         "selection":{"has_more":true},"page":{"has_more":false},
-        "next_actions":[{"tool":"kmp_rewind","arguments":{"about":"p","from":{"ref":"older"}}}]});
+        "next_actions":[{"tool":"kmp_time","arguments":{"about":"p","move":"rewind","from":{"ref":"older"}}}]});
     let result = tool_success_result(body.clone());
     assert!(!packet_is_partial(&body));
     assert_eq!(result["structuredContent"], body);

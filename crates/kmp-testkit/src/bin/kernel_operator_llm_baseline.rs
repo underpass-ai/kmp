@@ -6,6 +6,7 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use kmp_testkit::kernel_operator::kernel_operator_action_time_move;
 use kmp_testkit::{
     LlmProvider, call_llm, detect_provider_from_model, kernel_operator_action_shape_error,
     kernel_operator_is_bounded_tool_call, kernel_operator_is_valid_action_shape,
@@ -360,7 +361,7 @@ Do not explain. Do not include markdown. Do not invent refs, scopes, or hidden m
 
 Allowed action shapes:
 
-{{"action":{{"type":"tool_call","tool":"kmp_near","arguments":{{"about":"...","around":{{"ref":"..."}},"dimensions":{{"mode":"all","scope":"current_about"}},"include":{{"evidence":true,"raw_refs":false,"relations":true}},"limit":{{"entries":12,"tokens":2400}},"budget":{{"depth":3,"tokens":2400}},"window":{{"before_entries":6,"after_entries":0}}}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_time","arguments":{{"move":"near","about":"...","around":{{"ref":"..."}},"dimensions":{{"mode":"all","scope":"current_about"}},"include":{{"evidence":true,"raw_refs":false,"relations":true}},"limit":{{"entries":12,"tokens":2400}},"budget":{{"depth":3,"tokens":2400}},"window":{{"before_entries":6,"after_entries":0}}}}}}}}
 
 {{"action":{{"type":"tool_call","tool":"kmp_inspect","arguments":{{"about":"...","ref":"...","include":{{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}}}}}
 
@@ -369,12 +370,13 @@ Allowed action shapes:
 {{"action":{{"type":"stop","answer_policy":"evidence_or_unknown","final_refs":["..."],"reason":"sufficient_evidence"}}}}
 
 Policy:
-- If there is no `last_tool`, call `kmp_near` around `current_ref`.
-- If the last tool was `kmp_near`, call `kmp_inspect` on `current_ref`.
+- `kmp_time` moves through memory time; `arguments.move` selects the move and its cursor: `near` reads `around`, `goto` reads `at`, `rewind` and `forward` read `from`. Use `move` `near` here.
+- If there is no `last_tool`, call `kmp_time` with `move` `near` around `current_ref`.
+- If the last tool was `kmp_time` with `last_move` `near`, call `kmp_inspect` on `current_ref`.
 - If the last tool was `kmp_inspect` and `trace_target_ref` is present, call `kmp_trace` from `current_ref` to `trace_target_ref`.
 - Otherwise stop.
 - Every tool call must be bounded.
-- For `kmp_near`, `kmp_inspect`, and `kmp_trace`, `arguments.about` must equal the top-level `about` value exactly.
+- For `kmp_time`, `kmp_inspect`, and `kmp_trace`, `arguments.about` must equal the top-level `about` value exactly.
 - Do not use `current_ref` as `arguments.about`.
 - `kmp_inspect.include.raw` must be false.
 - Use only tools present in `allowed_tools`.
@@ -599,13 +601,16 @@ fn unbounded_action(action: &Value) -> bool {
 
 fn action_label(action: &Value) -> String {
     match action.get("type").and_then(Value::as_str) {
-        Some("tool_call") => format!(
-            "tool_call:{}",
-            action
+        Some("tool_call") => {
+            let tool = action
                 .get("tool")
                 .and_then(Value::as_str)
-                .unwrap_or("unknown")
-        ),
+                .unwrap_or("unknown");
+            match kernel_operator_action_time_move(action) {
+                Some(movement) => format!("tool_call:{tool}:{movement}"),
+                None => format!("tool_call:{tool}"),
+            }
+        }
         Some(kind) => kind.to_string(),
         None => "invalid".to_string(),
     }
@@ -661,11 +666,14 @@ mod tests {
                 "last_tool": null,
                 "known_refs": [],
             }),
-            allowed_tools: vec!["kmp_near".to_string()],
+            allowed_tools: vec!["kmp_time".to_string()],
         };
         let prompt = build_prompt(&trajectory, 32);
         assert!(!prompt.contains("target_action"));
-        assert!(prompt.contains("kmp_near"));
+        assert!(prompt.contains(r#""tool":"kmp_time","arguments":{"move":"near""#));
+        for retired in ["kmp_near", "kmp_goto", "kmp_rewind", "kmp_forward"] {
+            assert!(!prompt.contains(retired), "{retired}");
+        }
     }
 
     #[test]
@@ -782,7 +790,7 @@ mod tests {
             task_family: "memoryarena.progressive_search".to_string(),
             mode: "read".to_string(),
             visible_state,
-            allowed_tools: vec!["kmp_near".to_string(), "kmp_inspect".to_string()],
+            allowed_tools: vec!["kmp_time".to_string(), "kmp_inspect".to_string()],
         }
     }
 }

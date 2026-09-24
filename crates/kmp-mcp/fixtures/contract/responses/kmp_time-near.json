@@ -98,9 +98,10 @@
           "include": {
             "evidence": true,
             "relations": true
-          }
+          },
+          "move": "rewind"
         },
-        "tool": "kmp_rewind"
+        "tool": "kmp_time"
       },
       {
         "arguments": {
@@ -115,9 +116,10 @@
           "include": {
             "evidence": true,
             "relations": true
-          }
+          },
+          "move": "forward"
         },
-        "tool": "kmp_forward"
+        "tool": "kmp_time"
       }
     ],
     "page": {

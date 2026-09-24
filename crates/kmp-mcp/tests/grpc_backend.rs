@@ -209,8 +209,9 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
     let forward = call_tool(
         &server,
         7,
-        "kmp_forward",
+        "kmp_time",
         json!({
+            "move": "forward",
             "about": "question:temporal",
             "from": {
                 "ref": "claim:rachel-denver"
@@ -275,8 +276,9 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
     let near = call_tool(
         &server,
         8,
-        "kmp_near",
+        "kmp_time",
         json!({
+            "move": "near",
             "about": "question:temporal",
             "around": {
                 "time": "2026-04-12T15:03:00Z"
@@ -312,8 +314,9 @@ async fn grpc_backend_maps_temporal_raw_refs_to_kernel_memory_service() {
     let forward = call_tool(
         &server,
         17,
-        "kmp_forward",
+        "kmp_time",
         json!({
+            "move": "forward",
             "about": "question:temporal",
             "from": {
                 "ref": "claim:rachel-denver"

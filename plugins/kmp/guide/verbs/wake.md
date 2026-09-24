@@ -41,7 +41,7 @@ covers. Carry it, and the next question ("what changed since I looked?") is
 one call:
 
 ```
-kmp_forward { about: "project:kmp", from: <the resume_cursor> }
+kmp_time { about: "project:kmp", move: "forward", from: <the resume_cursor> }
 ```
 
 Memory evidence does not store a mutable reader position. Agent metadata can

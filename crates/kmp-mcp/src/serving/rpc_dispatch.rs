@@ -146,6 +146,24 @@ impl KernelMcpServer {
             );
         }
 
+        // The four per-move tools became one. Their names answer with the
+        // call that replaces them rather than a bare unknown tool.
+        if let Some(movement) = crate::contract::TimeMove::retired(name) {
+            return jsonrpc_result(
+                id,
+                tool_error_result(
+                    name,
+                    arguments,
+                    &ToolError::unknown_tool(format!(
+                        "{name} was replaced by kmp_time: call kmp_time with \"move\": \"{}\" and \
+                         the cursor as `{}`; the other arguments are unchanged.",
+                        movement.as_str(),
+                        movement.cursor_key()
+                    )),
+                ),
+            );
+        }
+
         // Before anything reads them: the schemas declare
         // `additionalProperties: false`, so an argument the tool does not have
         // is refused here rather than dropped and answered anyway.

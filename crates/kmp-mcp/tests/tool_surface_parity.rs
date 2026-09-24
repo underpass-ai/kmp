@@ -253,12 +253,13 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         (
-            "kmp_goto",
+            "kmp_time:goto",
             // `limit` forces a partial page, so the continuation guidance is
             // a real string rather than the null every unbounded read pins.
             // Each direction words it differently, so each needs its own call.
             json!({
                 "about": ABOUT,
+                "move": "goto",
                 "at": {"time": "2026-04-12T15:05:00Z"},
                 "axis": "occurred",
                 "limit": {"entries": 1},
@@ -273,9 +274,10 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         (
-            "kmp_near",
+            "kmp_time:near",
             json!({
                 "about": ABOUT,
+                "move": "near",
                 "around": {"time": "2026-04-12T15:00:00Z"},
                 "axis": "occurred",
                 "window": {"before_entries": 2, "after_entries": 2},
@@ -294,24 +296,26 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         (
-            "kmp_rewind",
+            "kmp_time:rewind",
             json!({
                 "about": ABOUT,
+                "move": "rewind",
                 "from": {"time": "2026-04-12T16:00:00Z"},
                 "axis": "occurred",
                 "limit": {"entries": 1}
             }),
         ),
         (
-            "kmp_forward",
+            "kmp_time:forward",
             json!({
                 "about": ABOUT,
+                "move": "forward",
                 "from": {"time": "2026-04-12T15:00:00Z"},
                 "axis": "occurred",
                 "limit": {"entries": 1},
                 // `except` is the one selection mode no other call reaches.
                 // `except` is the one selection mode no other call reaches.
-                // `scope_ids` deliberately lives on kmp_near instead: a filter
+                // `scope_ids` deliberately lives on the near move instead: a filter
                 // narrow enough to fill it here would leave one entry, cancel
                 // the partial page and take the continuation guidance with it.
                 "dimensions": {"mode": "except", "exclude": ["task"]}
@@ -322,9 +326,10 @@ fn calls() -> Vec<(&'static str, Value)> {
         // assertion anywhere. The ingest above writes a valid_until; reading
         // the validity clock is what surfaces it.
         (
-            "kmp_rewind:validity",
+            "kmp_time:rewind:validity",
             json!({
                 "about": ABOUT,
+                "move": "rewind",
                 "from": {"ref": CURRENT},
                 "axis": "validity",
                 // `scope_ids` is the one selection key no other call fills.
@@ -739,7 +744,7 @@ async fn output_schemas_are_advertised_only_on_opt_in() {
             .iter()
             .filter(|tool| tool.get("outputSchema").is_some())
             .count();
-        assert!(declared >= 18, "apps={apps}: {declared} output schemas");
+        assert!(declared >= 15, "apps={apps}: {declared} output schemas");
     }
 
     // The served catalogue follows the server's choice, not the library's.
@@ -900,7 +905,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 22, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 19, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         // `kmp_condense` is the one tool whose successful call cannot be

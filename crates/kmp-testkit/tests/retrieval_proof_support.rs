@@ -98,7 +98,7 @@ async fn seed_source_history(server: &KernelMcpServer) -> Value {
 }
 
 fn query(refs: &Value) -> Value {
-    json!({"about":ABOUT,"at":{"time":"2026-09-10T10:00:00Z"},
+    json!({"move":"goto","about":ABOUT,"at":{"time":"2026-09-10T10:00:00Z"},
         "axis":"observed","refs":[refs["role"]],"include":{"dependencies":true},
         "limit":{"entries":1},"budget":{"max_bytes":500000}})
 }
@@ -165,8 +165,8 @@ async fn focused_role_needs_both_older_identity_and_boundary_qualifier() {
     let args = query(&refs);
     let mut control = args.clone();
     control["include"] = json!({"evidence":true,"relations":true});
-    let plain = call(&server, "kmp_goto", control).await;
-    let expanded = call(&server, "kmp_goto", args).await;
+    let plain = call(&server, "kmp_time", control).await;
+    let expanded = call(&server, "kmp_time", args).await;
     let required = ["role", "alias", "boundary"];
     let before = judge(&plain, &refs, &required);
     let after = judge(&expanded, &refs, &required);
@@ -193,7 +193,7 @@ async fn hard_labels_exclude_support_and_unfiltered_navigation_recovers_it() {
     let refs = seed(&server).await;
     let mut args = query(&refs);
     args["dimensions"] = json!({"selectors":[{"key":"source","op":"in","values":["S2"]}]});
-    let filtered = call(&server, "kmp_goto", args).await;
+    let filtered = call(&server, "kmp_time", args).await;
     let required = ["role", "alias", "boundary"];
     assert!(!judge(&filtered, &refs, &required).has_complete_support_at(10));
     assert_eq!(bodies(&filtered).len(), 1);
@@ -207,7 +207,7 @@ async fn hard_labels_exclude_support_and_unfiltered_navigation_recovers_it() {
         filtered["proof"]["groups"][0]["unavailable_in_selection"],
         0
     );
-    let fallback = call(&server, "kmp_goto", query(&refs)).await;
+    let fallback = call(&server, "kmp_time", query(&refs)).await;
     assert!(judge(&fallback, &refs, &required).has_complete_support_at(10));
 }
 
@@ -218,8 +218,8 @@ async fn chronological_read_retains_two_scoped_names_without_equating_them() {
     let refs = seed_source_history(&server).await;
     let packet = call(
         &server,
-        "kmp_forward",
-        json!({"about":ABOUT,"axis":"observed",
+        "kmp_time",
+        json!({"move":"forward","about":ABOUT,"axis":"observed",
         "interval":{"start":"2026-09-01T00:00:00Z","end":"2026-09-02T00:00:00Z"},
         "include":{"dependencies":true},"budget":{"max_bytes":500000}}),
     )
@@ -243,9 +243,9 @@ async fn bounded_pages_recover_the_same_required_passages_as_one_full_packet() {
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded");
     let refs = seed(&server).await;
     let mut args = query(&refs);
-    let full = call(&server, "kmp_goto", args.clone()).await;
+    let full = call(&server, "kmp_time", args.clone()).await;
     args["budget"]["max_bytes"] = json!(5000);
-    let mut page = call(&server, "kmp_goto", args).await;
+    let mut page = call(&server, "kmp_time", args).await;
     assert_eq!(page["page"]["has_more"], true, "exercise continuation");
     let mut joined = json!({"entries":[],"proof":{"entries":[],"evidence":[]}});
     let mut calls = 0;
@@ -272,6 +272,8 @@ async fn bounded_pages_recover_the_same_required_passages_as_one_full_packet() {
             break;
         }
         let next = &page["next_actions"][0];
+        assert_eq!(next["tool"], "kmp_time");
+        assert_eq!(next["arguments"]["move"], "goto");
         page = call(
             &server,
             next["tool"].as_str().expect("tool"),

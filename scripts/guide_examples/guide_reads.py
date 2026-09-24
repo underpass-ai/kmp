@@ -116,7 +116,7 @@ def prepare(client, root: Path, lesson: Path, mode: str):
         def guided_call(tool, args, expect_error=None):
             consult(tool_refs[tool])
             if tool in {'kmp_write_memory', 'kmp_ingest'}:
-                consult(tool_refs['kmp_goto'])  # Distinct clocks before writing.
+                consult(tool_refs['kmp_time'])  # Distinct clocks before writing.
             return native_call(tool, args, expect_error)
 
         # Native lesson calls ask for guidance on first use, reuse it on later

@@ -37,20 +37,20 @@ asking for a stable contract at that version may be semantic, while asking how
 the project reached it or whether it is the current state is temporal.
 
 When current state or a release is temporal but the user gave no boundary,
-read the real clock and start with `kmp_rewind` from now using
+read the real clock and rewind from now (`kmp_time`, `move: "rewind"`) with
 `limit: { entries: 1 }` to find the frontier. Use that ref or timestamp with
-`kmp_near` / `kmp_rewind`, and continue until the relevant decision window is
+the near or rewind move, and continue until the relevant decision window is
 covered. Do not invent a date merely to fit the bounded-interval recipe.
 
 Resolve relative dates in the user's timezone. If the timezone is genuinely
 unknown and changes the answer, ask for it. Convert a bounded calendar window
-to an explicit half-open UTC interval `[start, end)`. Pass it directly to
-`kmp_forward` for oldest first, or `kmp_rewind` for newest first. Omit `from`
-on the first interval read. KMP includes every start-time tie and excludes
-the end, without a separate boundary probe or client-side date filtering.
+to an explicit half-open UTC interval `[start, end)`. Pass it to `kmp_time`
+with `move: "forward"` for oldest first, or `"rewind"` for newest first. Omit
+`from` on the first interval read. KMP includes every start-time tie and
+excludes the end, without a separate boundary probe or client-side date filtering.
 
 ```json
-{"about":"project:release","interval":{"start":"2026-09-01T00:00:00Z","end":"2026-09-02T00:00:00Z"},"axis":"observed","limit":{"entries":10}}
+{"about":"project:release","move":"forward","interval":{"start":"2026-09-01T00:00:00Z","end":"2026-09-02T00:00:00Z"},"axis":"observed","limit":{"entries":10}}
 ```
 
 Execute the returned `next_actions` with their complete arguments. They retain
@@ -220,12 +220,12 @@ later clarification time, retaining the explicit identity link as proof.
 
 ## Goto carries proof from its historical instant
 
-`kmp_goto` selects a state at its resolved `at` cursor. Its proof uses that
-same inclusive instant and selected clock, declared in `proof.as_of` and
-`proof.axis`. A later replacement, relation or explicitly later observed
-report cannot rewrite the earlier result. This also applies when `at.ref`
-resolves to an earlier memory. Hiding the relation path does not make a
-future replacement current in `proof.superseded`.
+The goto move of `kmp_time` selects a state at its resolved `at` cursor. Its
+proof uses that same inclusive instant and selected clock, declared in
+`proof.as_of` and `proof.axis`. A later replacement, relation or explicitly
+later observed report cannot rewrite the earlier result. This also applies when
+`at.ref` resolves to an earlier memory. Hiding the relation path does not make
+a future replacement current in `proof.superseded`.
 
 For example, CSV is recorded on September 1; JSON is approved on September 3
 and takes effect on September 5. Goto on `observed` before September 3 must
@@ -257,7 +257,7 @@ without changing source time. Select the clock that answers the question; reads
 are not all ordered by observation.
 **For an explicit time, read the clock or source; do not compose a timestamp.** Local wall-clock time with a
 `Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry
-above the present — where `kmp_forward` from a correct "now" never finds
+above the present — where a forward move from a correct "now" never finds
 it, and the delta comes back empty looking exactly like a quiet week.
 
 An observation stamp more than five minutes ahead of the kernel's clock is

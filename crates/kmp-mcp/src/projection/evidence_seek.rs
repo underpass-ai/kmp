@@ -54,5 +54,5 @@ pub(super) fn attach_review(value: &mut Value, arguments: &Value) {
             read[key] = v.clone();
         }
     }
-    value["seek"]["review_context"] = json!({"tool":"kmp_goto","arguments":read});
+    value["seek"]["review_context"] = crate::contract::TimeMove::Goto.action(read);
 }

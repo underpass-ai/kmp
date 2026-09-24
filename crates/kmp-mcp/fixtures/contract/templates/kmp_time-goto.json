@@ -20,6 +20,12 @@
       ],
       "missing": [],
       "requested": {
+        "abouts": [
+          "string"
+        ],
+        "include": [
+          "string"
+        ],
         "mode": "string",
         "scope": "string"
       }
@@ -49,12 +55,23 @@
         "arguments": {
           "about": "string",
           "axis": "string",
+          "dimensions": {
+            "abouts": [
+              "string"
+            ],
+            "include": [
+              "string"
+            ],
+            "mode": "string",
+            "scope": "string"
+          },
           "from": {
             "ref": "string"
           },
           "limit": {
             "entries": "integer"
-          }
+          },
+          "move": "string"
         },
         "tool": "string"
       }
@@ -121,8 +138,8 @@
     "proof": {
       "abouts_empty_in_selection": [],
       "abouts_selected": [],
-      "as_of": "null",
-      "axis": "null",
+      "as_of": "string",
+      "axis": "string",
       "confidence": "string",
       "conflicts": [],
       "evidence": [],

@@ -16,26 +16,32 @@ use crate::contract::schema::response_shape::{
     page_output_schema, proof_output_schema, quality_output_schema, warnings_output_schema,
 };
 use crate::contract::temporal_entry_field::TemporalEntryField;
-pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key: &str) -> Value {
-    let cursor_schema = json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "time": string_schema("ISO-8601 temporal cursor."),
-            "sequence": {
-                "type": "integer",
-                "minimum": 1,
-                "description": "Sequence within a temporal coordinate and dimension scope; it is not a store-global event number."
-            },
-            "ref": string_schema("Memory ref cursor.")
-        }
-    });
+use crate::contract::time_move::{TIME_TOOL, TimeMove};
+/// The one time-navigation tool. The shared argument object stays at the
+/// root; each move's cursor requirement is a condition beside it, which the
+/// continuation wrapper moves under `else` like every other initial-call
+/// requirement. Hosts that ignore the condition still get the server's
+/// refusal from `TimeMove::from_arguments`.
+pub(crate) fn time_tool_definition(description: &str) -> Value {
+    let cursor = |text: &str| {
+        let mut schema = cursor_schema();
+        schema["description"] = json!(text);
+        schema
+    };
     let mut input_schema = json!({
         "type": "object",
         "additionalProperties": false,
-        "required": ["about", cursor_key],
+        "required": ["about", "move"],
         "properties": {
             "about": string_schema("Memory anchor or root ref to traverse from."),
+            "move": {
+                "type": "string",
+                "enum": TimeMove::ALL.map(TimeMove::as_str),
+                "description": "rewind and forward take `from` or `interval`; goto takes `at`; near takes `around`."
+            },
+            "from": cursor("rewind/forward: exclusive cursor."),
+            "at": cursor("goto: inclusive cursor."),
+            "around": cursor("near: centre cursor."),
             "refs": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"type":"string","minLength":1},
                 "description":"Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries."},
             "fields": {"type":"array", "uniqueItems":true,
@@ -99,27 +105,43 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
             "budget": budget_schema(2_400, 3)
         }
     });
-    input_schema["properties"][cursor_key] = cursor_schema;
     let mut interval = interval_schema();
     interval["minProperties"] = json!(1);
     interval["description"] = json!(
         "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it."
     );
     input_schema["properties"]["interval"] = interval;
-    if matches!(name, "kmp_forward" | "kmp_rewind") {
-        input_schema["required"] = json!(["about"]);
-        input_schema["anyOf"] = json!([{"required":[cursor_key]}, {"required":["interval"]}]);
-    }
+    input_schema["anyOf"] = json!([
+        {"properties":{"move":{"enum":["rewind","forward"]}}, "anyOf":[{"required":["from"]}, {"required":["interval"]}]},
+        {"properties":{"move":{"const":"goto"}}, "required":["at"]},
+        {"properties":{"move":{"const":"near"}}, "required":["around"]}
+    ]);
     tool_definition_with_output(
-        name,
+        TIME_TOOL,
         false,
         description,
         input_schema,
-        temporal_output_schema(name, cursor_key),
+        temporal_output_schema(),
     )
 }
 
-pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Value {
+fn cursor_schema() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "time": string_schema("ISO-8601 temporal cursor."),
+            "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Sequence within a temporal coordinate and dimension scope; it is not a store-global event number."
+            },
+            "ref": string_schema("Memory ref cursor.")
+        }
+    })
+}
+
+pub(crate) fn temporal_output_schema() -> Value {
     let mut proof = proof_output_schema(
         "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
     );

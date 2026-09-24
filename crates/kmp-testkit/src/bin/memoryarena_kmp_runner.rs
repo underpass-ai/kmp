@@ -465,7 +465,7 @@ async fn run_mcp_navigation_probe(
         call_mcp_navigation_tool(
             server,
             request_id,
-            "kmp_near",
+            "kmp_time",
             &near_probe_arguments(event, expected),
             event,
             log_mcp_navigation,
@@ -549,6 +549,7 @@ async fn call_mcp_navigation_tool(
             "event_index": event.event_index,
             "subtask_index": event.subtask_index,
             "tool": tool,
+            "move": arguments.get("move"),
             "elapsed_ms": elapsed_ms,
             "observed_refs": observed_refs.clone(),
             "observed_entry_refs": observed_entry_refs
@@ -629,6 +630,7 @@ fn build_mcp_navigation_result(
 
 fn near_probe_arguments(event: &MemoryArenaEvent, expected: &MemoryArenaExpected) -> Value {
     json!({
+        "move": "near",
         "about": event.about,
         "around": {
             "ref": expected.current_question_ref
@@ -914,9 +916,17 @@ fn summarize_run(
             .iter()
             .filter(|result| result.mcp_navigation.is_some())
             .count(),
-        mcp_navigation_near_calls: count_mcp_navigation_tool_calls(ask_results, "kmp_near"),
-        mcp_navigation_inspect_calls: count_mcp_navigation_tool_calls(ask_results, "kmp_inspect"),
-        mcp_navigation_trace_calls: count_mcp_navigation_tool_calls(ask_results, "kmp_trace"),
+        mcp_navigation_near_calls: count_mcp_navigation_tool_calls(
+            ask_results,
+            "kmp_time",
+            Some("near"),
+        ),
+        mcp_navigation_inspect_calls: count_mcp_navigation_tool_calls(
+            ask_results,
+            "kmp_inspect",
+            None,
+        ),
+        mcp_navigation_trace_calls: count_mcp_navigation_tool_calls(ask_results, "kmp_trace", None),
         mcp_navigation_known_at_clean_asks: ask_results
             .iter()
             .filter(|result| {
@@ -1010,12 +1020,22 @@ fn env_flag(key: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn count_mcp_navigation_tool_calls(ask_results: &[AskResult], tool: &str) -> usize {
+/// Counts probe calls to `tool`; for `kmp_time`, pass the move (`near`, ...) to count.
+fn count_mcp_navigation_tool_calls(
+    ask_results: &[AskResult],
+    tool: &str,
+    movement: Option<&str>,
+) -> usize {
     ask_results
         .iter()
         .filter_map(|result| result.mcp_navigation.as_ref())
         .flat_map(|navigation| navigation.calls.iter())
-        .filter(|call| call.tool == tool)
+        .filter(|call| {
+            call.tool == tool
+                && movement.is_none_or(|movement| {
+                    call.arguments.get("move").and_then(Value::as_str) == Some(movement)
+                })
+        })
         .count()
 }
 
@@ -1499,7 +1519,7 @@ mod tests {
         );
         let calls = vec![
             navigation_call_fixture(
-                "kmp_near",
+                "kmp_time",
                 json!({
                     "entries": [
                         {"ref": "memoryarena:task_type:progressive_search:task:1:subtask:1:answer"},

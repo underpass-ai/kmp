@@ -171,7 +171,7 @@ pub(crate) fn read_context_schema() -> Value {
             },
             "temporal_refs": {
                 "type": "array",
-                "items": string_schema("Memory ref observed through kmp_goto, kmp_near, kmp_rewind, or kmp_forward before writing.")
+                "items": string_schema("Memory ref observed through kmp_time before writing.")
             },
             "wake_refs": {
                 "type": "array",

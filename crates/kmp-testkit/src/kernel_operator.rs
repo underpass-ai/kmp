@@ -1,15 +1,48 @@
 use kmp_domain::{MemoryRelationQuality, MemoryRelationType, RelationSemanticClass};
 use serde_json::{Map, Value};
 
+/// MCP tool that carries every temporal move. Issue #544 merged the former
+/// `kmp_rewind`, `kmp_forward`, `kmp_goto` and `kmp_near` tools into it; the
+/// move is selected by the required `move` argument.
+pub const KERNEL_OPERATOR_TIME_TOOL: &str = "kmp_time";
+
+/// Temporal moves `kmp_time` accepts, each paired with the cursor argument it reads.
+const KERNEL_OPERATOR_TIME_MOVES: [(&str, &str); 4] = [
+    ("rewind", "from"),
+    ("forward", "from"),
+    ("goto", "at"),
+    ("near", "around"),
+];
+
+/// Cursor argument (`from`, `at` or `around`) read by a temporal move.
+pub fn kernel_operator_time_cursor_key(movement: &str) -> Option<&'static str> {
+    KERNEL_OPERATOR_TIME_MOVES
+        .iter()
+        .find(|(name, _)| *name == movement)
+        .map(|(_, cursor_key)| *cursor_key)
+}
+
+/// Move selected by a `kmp_time` call; `None` for other tools or an unknown move.
+pub fn kernel_operator_time_move<'a>(tool: &str, arguments: &'a Value) -> Option<&'a str> {
+    if tool != KERNEL_OPERATOR_TIME_TOOL {
+        return None;
+    }
+    let movement = arguments.get("move")?.as_str()?;
+    kernel_operator_time_cursor_key(movement).map(|_| movement)
+}
+
+/// Move selected by a `tool_call` action on `kmp_time`, if any.
+pub fn kernel_operator_action_time_move(action: &Value) -> Option<&str> {
+    let (tool, arguments) = action_tool_arguments(action)?;
+    kernel_operator_time_move(tool, arguments)
+}
+
 pub fn kernel_operator_allowed_read_tools() -> Vec<String> {
     [
         "kmp_wake",
         "kmp_ask",
         "kmp_relate",
-        "kmp_near",
-        "kmp_goto",
-        "kmp_rewind",
-        "kmp_forward",
+        KERNEL_OPERATOR_TIME_TOOL,
         "kmp_trace",
         "kmp_inspect",
     ]
@@ -39,15 +72,25 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                 && optional_limit(arguments, &["budget", "depth"], 8)
                 && optional_limit(arguments, &["depth"], 8)
         }
-        "kmp_near" => {
-            positive_limit(arguments, &["limit", "entries"], 64)
-                && positive_limit(arguments, &["limit", "tokens"], 16_000)
-                && optional_limit(arguments, &["budget", "tokens"], 16_000)
-                && optional_limit(arguments, &["budget", "depth"], 8)
-                && optional_limit(arguments, &["window", "before_entries"], 64)
-                && optional_limit(arguments, &["window", "after_entries"], 64)
-                && path_cursor(arguments, &["around"]).is_some()
-        }
+        KERNEL_OPERATOR_TIME_TOOL => match kernel_operator_time_move(tool, arguments) {
+            Some("near") => {
+                positive_limit(arguments, &["limit", "entries"], 64)
+                    && positive_limit(arguments, &["limit", "tokens"], 16_000)
+                    && optional_limit(arguments, &["budget", "tokens"], 16_000)
+                    && optional_limit(arguments, &["budget", "depth"], 8)
+                    && optional_limit(arguments, &["window", "before_entries"], 64)
+                    && optional_limit(arguments, &["window", "after_entries"], 64)
+                    && path_cursor(arguments, &["around"]).is_some()
+            }
+            Some(movement) => {
+                kernel_operator_time_cursor_key(movement)
+                    .is_some_and(|cursor_key| path_cursor(arguments, &[cursor_key]).is_some())
+                    && optional_limit(arguments, &["limit", "entries"], 64)
+                    && optional_limit(arguments, &["limit", "tokens"], 16_000)
+                    && optional_limit(arguments, &["budget", "tokens"], 16_000)
+            }
+            None => false,
+        },
         "kmp_relate" => {
             path_non_empty_string(arguments, &["about"])
                 && optional_limit(arguments, &["budget", "tokens"], 16_000)
@@ -69,18 +112,6 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                     .pointer("/include/raw")
                     .and_then(Value::as_bool)
                     .is_some_and(|raw| !raw)
-        }
-        "kmp_goto" => {
-            path_cursor(arguments, &["at"]).is_some()
-                && optional_limit(arguments, &["limit", "entries"], 64)
-                && optional_limit(arguments, &["limit", "tokens"], 16_000)
-                && optional_limit(arguments, &["budget", "tokens"], 16_000)
-        }
-        "kmp_rewind" | "kmp_forward" => {
-            path_cursor(arguments, &["from"]).is_some()
-                && optional_limit(arguments, &["limit", "entries"], 64)
-                && optional_limit(arguments, &["limit", "tokens"], 16_000)
-                && optional_limit(arguments, &["budget", "tokens"], 16_000)
         }
         "kmp_ask" => optional_limit(arguments, &["budget", "tokens"], 16_000),
         "kmp_write_memory" => bounded_write_memory(arguments),
@@ -117,7 +148,9 @@ pub fn kernel_operator_primary_refs(action: &Value) -> Vec<String> {
         return Vec::new();
     };
     match tool {
-        "kmp_near" => path_string(arguments, &["around", "ref"])
+        KERNEL_OPERATOR_TIME_TOOL => kernel_operator_time_move(tool, arguments)
+            .and_then(kernel_operator_time_cursor_key)
+            .and_then(|cursor_key| path_string(arguments, &[cursor_key, "ref"]))
             .map(|value| vec![value.to_string()])
             .unwrap_or_default(),
         "kmp_inspect" => path_string(arguments, &["ref"])
@@ -133,12 +166,6 @@ pub fn kernel_operator_primary_refs(action: &Value) -> Vec<String> {
             }
             refs
         }
-        "kmp_goto" => path_string(arguments, &["at", "ref"])
-            .map(|value| vec![value.to_string()])
-            .unwrap_or_default(),
-        "kmp_rewind" | "kmp_forward" => path_string(arguments, &["from", "ref"])
-            .map(|value| vec![value.to_string()])
-            .unwrap_or_default(),
         "kmp_write_memory" => arguments
             .get("memories")
             .and_then(Value::as_array)
@@ -186,10 +213,7 @@ fn validate_tool_call_shape(action: &Value) -> Result<(), String> {
     match tool {
         "kmp_wake" => validate_wake_arguments(arguments),
         "kmp_ask" => validate_ask_arguments(arguments),
-        "kmp_near" => validate_temporal_arguments(arguments, "around", "kmp_near"),
-        "kmp_goto" => validate_temporal_arguments(arguments, "at", "kmp_goto"),
-        "kmp_rewind" => validate_temporal_arguments(arguments, "from", "kmp_rewind"),
-        "kmp_forward" => validate_temporal_arguments(arguments, "from", "kmp_forward"),
+        KERNEL_OPERATOR_TIME_TOOL => validate_time_arguments(arguments),
         "kmp_relate" => validate_relate_arguments(arguments),
         "kmp_trace" => validate_trace_arguments(arguments),
         "kmp_inspect" => validate_inspect_arguments(arguments),
@@ -276,6 +300,14 @@ fn validate_ask_arguments(arguments: &Value) -> Result<(), String> {
     Ok(())
 }
 
+fn validate_time_arguments(arguments: &Value) -> Result<(), String> {
+    let movement = required_non_empty_string(arguments, "move", "action.arguments")?;
+    let cursor_key = kernel_operator_time_cursor_key(movement).ok_or_else(|| {
+        format!("action.arguments.move `{movement}` must be one of rewind, forward, goto, or near")
+    })?;
+    validate_temporal_arguments(arguments, cursor_key, KERNEL_OPERATOR_TIME_TOOL)
+}
+
 fn validate_temporal_arguments(
     arguments: &Value,
     cursor_key: &str,
@@ -285,6 +317,7 @@ fn validate_temporal_arguments(
         arguments,
         "action.arguments",
         &[
+            "move",
             "about",
             cursor_key,
             "dimensions",
@@ -1326,14 +1359,16 @@ mod tests {
 
     use super::{
         kernel_operator_action_contract_error, kernel_operator_action_shape_error,
-        kernel_operator_is_bounded_tool_call, kernel_operator_primary_refs,
+        kernel_operator_action_time_move, kernel_operator_is_bounded_tool_call,
+        kernel_operator_primary_refs,
     };
 
     #[test]
     fn bounded_tool_detection_accepts_expected_navigation_calls() {
         assert!(kernel_operator_is_bounded_tool_call(
-            "kmp_near",
+            "kmp_time",
             &json!({
+                "move": "near",
                 "around": { "time": "2026-05-14T00:00:00Z" },
                 "limit": { "entries": 12, "tokens": 2400 },
                 "budget": { "depth": 3, "tokens": 2400 },
@@ -1362,8 +1397,9 @@ mod tests {
     #[test]
     fn bounded_tool_detection_rejects_unbounded_calls() {
         assert!(!kernel_operator_is_bounded_tool_call(
-            "kmp_near",
+            "kmp_time",
             &json!({
+                "move": "near",
                 "around": { "ref": "node:1" },
                 "limit": { "entries": 500, "tokens": 2400 }
             })
@@ -1434,8 +1470,9 @@ mod tests {
             }),
             json!({
                 "type": "tool_call",
-                "tool": "kmp_near",
+                "tool": "kmp_time",
                 "arguments": {
+                    "move": "near",
                     "about": "about:1",
                     "around": { "sequence": 7 },
                     "dimensions": { "mode": "except", "exclude": ["discarded"], "scope": "all_abouts" },
@@ -1538,8 +1575,9 @@ mod tests {
     fn action_shape_rejects_ambiguous_temporal_cursor() {
         let action = json!({
             "type": "tool_call",
-            "tool": "kmp_near",
+            "tool": "kmp_time",
             "arguments": {
+                "move": "near",
                 "about": "about:1",
                 "around": { "ref": "node:1", "sequence": 1 },
                 "dimensions": { "mode": "all", "scope": "current_about" },
@@ -1568,8 +1606,9 @@ mod tests {
         ] {
             let action = json!({
                 "type": "tool_call",
-                "tool": "kmp_near",
+                "tool": "kmp_time",
                 "arguments": {
+                    "move": "near",
                     "about": "about:1",
                     "around": cursor,
                     "dimensions": { "mode": "all", "scope": "current_about" },
@@ -1628,11 +1667,88 @@ mod tests {
     }
 
     #[test]
+    fn action_contract_accepts_every_time_move_with_its_cursor_key() {
+        for (movement, cursor_key) in [
+            ("near", "around"),
+            ("goto", "at"),
+            ("rewind", "from"),
+            ("forward", "from"),
+        ] {
+            let mut arguments = json!({
+                "move": movement,
+                "about": "about:1",
+                "dimensions": { "mode": "all", "scope": "current_about" },
+                "include": { "evidence": true, "raw_refs": false, "relations": true },
+                "limit": { "entries": 12, "tokens": 2400 },
+                "budget": { "depth": 3, "tokens": 2400 },
+                "window": { "before_entries": 6, "after_entries": 0 }
+            });
+            arguments[cursor_key] = json!({ "ref": "node:1" });
+            let action = json!({ "type": "tool_call", "tool": "kmp_time", "arguments": arguments });
+
+            assert_eq!(
+                kernel_operator_action_contract_error(&action),
+                None,
+                "{movement}"
+            );
+            assert_eq!(
+                kernel_operator_primary_refs(&action),
+                ["node:1".to_string()]
+            );
+            assert_eq!(kernel_operator_action_time_move(&action), Some(movement));
+        }
+    }
+
+    #[test]
+    fn action_shape_rejects_missing_unknown_or_mismatched_time_move() {
+        let base = json!({
+            "about": "about:1",
+            "around": { "ref": "node:1" },
+            "dimensions": { "mode": "all", "scope": "current_about" },
+            "include": { "evidence": true, "raw_refs": false, "relations": true },
+            "limit": { "entries": 12, "tokens": 2400 },
+            "budget": { "depth": 3, "tokens": 2400 },
+            "window": { "before_entries": 6, "after_entries": 0 }
+        });
+        let action = |arguments: serde_json::Value| json!({ "type": "tool_call", "tool": "kmp_time", "arguments": arguments });
+
+        assert_eq!(
+            kernel_operator_action_shape_error(&action(base.clone())),
+            Some("action.arguments missing required field `move`".to_string())
+        );
+        let mut unknown = base.clone();
+        unknown["move"] = json!("sideways");
+        assert_eq!(
+            kernel_operator_action_shape_error(&action(unknown)),
+            Some(
+                "action.arguments.move `sideways` must be one of rewind, forward, goto, or near"
+                    .to_string()
+            )
+        );
+        let mut mismatched = base;
+        mismatched["move"] = json!("goto");
+        assert!(kernel_operator_action_shape_error(&action(mismatched)).is_some());
+    }
+
+    #[test]
+    fn action_shape_refuses_retired_temporal_tool_names() {
+        for retired in ["kmp_near", "kmp_goto", "kmp_rewind", "kmp_forward"] {
+            let action = json!({ "type": "tool_call", "tool": retired, "arguments": {} });
+            assert_eq!(
+                kernel_operator_action_shape_error(&action),
+                Some(format!("unsupported tool `{retired}`"))
+            );
+            assert!(!kernel_operator_is_bounded_tool_call(retired, &json!({})));
+        }
+    }
+
+    #[test]
     fn action_contract_rejects_unbounded_navigation() {
         let action = json!({
             "type": "tool_call",
-            "tool": "kmp_near",
+            "tool": "kmp_time",
             "arguments": {
+                "move": "near",
                 "about": "about:1",
                 "around": { "ref": "node:1" },
                 "dimensions": { "mode": "all", "scope": "current_about" },
@@ -1645,7 +1761,7 @@ mod tests {
 
         assert_eq!(
             kernel_operator_action_contract_error(&action),
-            Some("unbounded or invalid tool call for `kmp_near`".to_string())
+            Some("unbounded or invalid tool call for `kmp_time`".to_string())
         );
     }
 

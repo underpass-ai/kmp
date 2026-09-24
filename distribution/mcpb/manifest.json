@@ -49,20 +49,8 @@
       "description": "Answer a question from stored evidence"
     },
     {
-      "name": "kmp_goto",
-      "description": "Open memory at a time or sequence"
-    },
-    {
-      "name": "kmp_near",
-      "description": "Navigate near a memory reference"
-    },
-    {
-      "name": "kmp_rewind",
-      "description": "Move backward through memory history"
-    },
-    {
-      "name": "kmp_forward",
-      "description": "Move forward through memory history"
+      "name": "kmp_time",
+      "description": "Navigate memory history: rewind, forward, goto a time or ref, or near a memory"
     },
     {
       "name": "kmp_relate",

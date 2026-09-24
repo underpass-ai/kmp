@@ -11,12 +11,12 @@ pub(super) async fn check(
     http: &Router,
     embedded: &KernelMcpServer,
 ) {
-    let args = json!({"about":"project:parity-live","axis":"occurred",
+    let args = json!({"move":"forward","about":"project:parity-live","axis":"occurred",
         "interval":{"start":"2026-08-25T00:01:00Z","end":"2026-08-25T00:03:00Z"},
         "fields":["coordinates"],"include":{"evidence":false,"relations":false},
         "limit":{"entries":10},"budget":{"max_bytes":50000}});
     let projected = direct
-        .call_tool("kmp_forward", &args)
+        .call_tool("kmp_time", &args)
         .await
         .expect("projection");
     let mut full_args = args.clone();
@@ -25,10 +25,10 @@ pub(super) async fn check(
         .expect("arguments")
         .remove("fields");
     let full = direct
-        .call_tool("kmp_forward", &full_args)
+        .call_tool("kmp_time", &full_args)
         .await
         .expect("full packet");
-    let mut calls = vec![("kmp_forward", args, projected.clone())];
+    let mut calls = vec![("kmp_time", args, projected.clone())];
     for entry in projected["structuredContent"]["entries"]
         .as_array()
         .expect("entries")
@@ -36,6 +36,8 @@ pub(super) async fn check(
         assert!(entry.get("text").is_none() && entry.get("metadata").is_none());
         let action = &entry["detail_action"];
         let tool = action["tool"].as_str().expect("action tool");
+        assert_eq!(tool, "kmp_time");
+        assert_eq!(action["arguments"]["move"], "forward");
         let detail = direct
             .call_tool(tool, &action["arguments"])
             .await

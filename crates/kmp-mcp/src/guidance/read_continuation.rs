@@ -18,15 +18,7 @@ impl ReadContinuation {
     pub(crate) fn supports_read(tool: &str) -> bool {
         matches!(
             tool,
-            "kmp_wake"
-                | "kmp_ask"
-                | "kmp_inspect"
-                | "kmp_trace"
-                | "kmp_relate"
-                | "kmp_goto"
-                | "kmp_near"
-                | "kmp_rewind"
-                | "kmp_forward"
+            "kmp_wake" | "kmp_ask" | "kmp_inspect" | "kmp_trace" | "kmp_relate" | "kmp_time"
         )
     }
 

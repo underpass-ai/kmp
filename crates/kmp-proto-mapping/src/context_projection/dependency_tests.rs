@@ -23,7 +23,7 @@ fn group() -> ContextGroup {
             "page":{"has_more":false},"selection":{"has_more":true},
             "warnings":["More history remains; the group does not establish completion."]})],
         reads: vec![
-            json!({"tool":"kmp_goto","arguments":{"about":"project:release",
+            json!({"tool":"kmp_time","arguments":{"move":"goto","about":"project:release",
             "at":{"time":"2026-09-10T10:30:00Z"},"axis":"validity","include":{"dependencies":true}}}),
         ],
         spans: vec![],

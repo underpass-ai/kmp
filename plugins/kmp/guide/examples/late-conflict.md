@@ -753,9 +753,10 @@ purpose of comparing the event timeline and known history.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "shift_events",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:late-conflict",
     "at": {
       "time": "2026-09-01T08:00:00Z"
@@ -798,9 +799,10 @@ purpose of comparing the event timeline and known history.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "receipt_history",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:late-conflict",
     "from": {
       "time": "2026-09-02T00:00:00Z"

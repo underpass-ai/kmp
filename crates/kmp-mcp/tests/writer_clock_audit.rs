@@ -89,8 +89,8 @@ fn has_ref(result: &Value, reference: &Value) -> bool {
 async fn goto(server: &KernelMcpServer, axis: &str, time: &str) -> Value {
     call(
         server,
-        "kmp_goto",
-        json!({"about":ABOUT,"axis":axis,"at":{"time":time},
+        "kmp_time",
+        json!({"move":"goto","about":ABOUT,"axis":axis,"at":{"time":time},
             "include":{"evidence":true,"relations":true},
             "limit":{"entries":100},"budget":{"max_bytes":200000}}),
     )
@@ -106,15 +106,15 @@ async fn support_at(
 ) -> Value {
     let mut arguments = json!({"about":ABOUT,"axis":axis,
         "include":{"evidence":true,"relations":true},"budget":{"max_bytes":200000}});
-    let tool = if interval {
+    arguments["move"] = if interval {
         arguments["interval"] = json!({"end":time});
-        "kmp_forward"
+        json!("forward")
     } else {
         arguments["at"] = json!({"time":time});
         arguments["refs"] = json!([execution]);
-        "kmp_goto"
+        json!("goto")
     };
-    let result = call(server, tool, arguments).await;
+    let result = call(server, "kmp_time", arguments).await;
     result["proof"]["evidence"]
         .as_array()
         .expect("evidence")

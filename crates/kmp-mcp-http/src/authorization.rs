@@ -29,8 +29,9 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
 
     match name {
         "kmp_ingest" | "kmp_write_memory" | "kmp_relabel" => require_scope(identity, WRITE_SCOPE)?,
-        "kmp_wake" | "kmp_ask" | "kmp_relate" | "kmp_goto" | "kmp_near" | "kmp_rewind"
-        | "kmp_forward" | "kmp_trace" | "kmp_inspect" => require_scope(identity, READ_SCOPE)?,
+        "kmp_wake" | "kmp_ask" | "kmp_relate" | "kmp_time" | "kmp_trace" | "kmp_inspect" => {
+            require_scope(identity, READ_SCOPE)?
+        }
         _ => return Ok(()),
     }
 
@@ -47,7 +48,7 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
 
     match name {
         "kmp_ingest" => authorize_ingest_refs(identity, arguments)?,
-        "kmp_goto" | "kmp_near" | "kmp_forward" | "kmp_rewind" => {
+        "kmp_time" => {
             if let Some(refs) = arguments.get("refs").and_then(Value::as_array) {
                 for reference in refs.iter().filter_map(Value::as_str) {
                     authorize_ref(identity, Some(reference), None)?;
@@ -103,10 +104,6 @@ fn canonical_tool_name(name: &str) -> &str {
             "wake" => "kmp_wake",
             "ask" => "kmp_ask",
             "relate" => "kmp_relate",
-            "goto" => "kmp_goto",
-            "near" => "kmp_near",
-            "rewind" => "kmp_rewind",
-            "forward" => "kmp_forward",
             "trace" => "kmp_trace",
             "inspect" => "kmp_inspect",
             "relabel" => "kmp_relabel",
@@ -275,7 +272,7 @@ fn requests_raw(name: &str, arguments: &Value) -> bool {
             .and_then(Value::as_bool)
             .unwrap_or(false);
     }
-    matches!(name, "kmp_goto" | "kmp_near" | "kmp_rewind" | "kmp_forward")
+    name == "kmp_time"
         && arguments
             .pointer("/include/raw_refs")
             .and_then(Value::as_bool)
@@ -527,19 +524,26 @@ mod tests {
     #[test]
     fn temporal_entry_focus_requires_reference_grants() {
         let actor = identity(&[READ_SCOPE]);
-        for tool in ["kmp_goto", "kmp_near", "kmp_forward", "kmp_rewind"] {
+        for movement in ["goto", "near", "forward", "rewind"] {
+            let tool = "kmp_time";
             assert!(
                 authorize(
                     &actor,
                     &call(
                         tool,
-                        json!({"about":"project:kmp", "refs":["project:kmp:entry:one"]})
+                        json!({"about":"project:kmp", "move":movement, "refs":["project:kmp:entry:one"]})
                     )
                 )
                 .is_ok()
             );
-            assert!(authorize(&actor, &call(tool, json!({"about":"project:kmp", "refs":["project:kmp:entry:one", "project:secret:entry:two"]}))).is_err());
-            assert!(authorize(&actor, &call(tool, json!({"about":"project:kmp"}))).is_ok());
+            assert!(authorize(&actor, &call(tool, json!({"about":"project:kmp", "move":movement, "refs":["project:kmp:entry:one", "project:secret:entry:two"]}))).is_err());
+            assert!(
+                authorize(
+                    &actor,
+                    &call(tool, json!({"about":"project:kmp", "move":movement}))
+                )
+                .is_ok()
+            );
         }
     }
 

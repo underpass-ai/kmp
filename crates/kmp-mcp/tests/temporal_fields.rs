@@ -41,7 +41,7 @@ async fn seed(server: &KernelMcpServer, about: &str) -> Value {
 }
 
 fn query() -> Value {
-    json!({"about":"project:fields","axis":"observed",
+    json!({"move":"forward","about":"project:fields","axis":"observed",
         "interval":{"start":"2026-09-01T00:00:00Z","end":"2026-09-02T00:00:00Z"},
         "dimensions":{"selectors":[{"key":"project","op":"in","values":["shared"]}]},
         "include":{"evidence":false,"relations":false},"limit":{"entries":10},
@@ -57,9 +57,9 @@ async fn reduced_entries_recover_complete_bodies_with_original_scope_and_clock()
     let mut args = query();
     args["dimensions"]["scope"] = json!("abouts");
     args["dimensions"]["abouts"] = json!(["project:fields", "project:other"]);
-    let full = call(&server, "kmp_forward", args.clone()).await;
+    let full = call(&server, "kmp_time", args.clone()).await;
     args["fields"] = json!(["coordinates"]);
-    let reduced = call(&server, "kmp_forward", args.clone()).await;
+    let reduced = call(&server, "kmp_time", args.clone()).await;
     assert_eq!(reduced["entries"].as_array().expect("entries").len(), 4);
     assert_eq!(
         reduced["selection"]["fields"],
@@ -110,17 +110,14 @@ async fn empty_fields_keep_identity_and_do_not_silently_remove_requested_proof_o
     let dir = tempfile::tempdir().expect("isolated store");
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded");
     let written = seed(&server, "project:fields").await;
-    for (tool, cursor) in [
-        ("kmp_goto", "at"),
-        ("kmp_near", "around"),
-        ("kmp_rewind", "from"),
-    ] {
+    for (time_move, cursor) in [("goto", "at"), ("near", "around"), ("rewind", "from")] {
         let mut args = query();
+        args["move"] = json!(time_move);
         args[cursor] = json!({"ref":written["local_refs"]["decision"]});
         args["include"] = json!({"evidence":true,"relations":true,"raw_refs":true});
-        let full = call(&server, tool, args.clone()).await;
+        let full = call(&server, "kmp_time", args.clone()).await;
         args["fields"] = json!([]);
-        let reduced = call(&server, tool, args).await;
+        let reduced = call(&server, "kmp_time", args).await;
         assert_eq!(reduced["proof"], full["proof"]);
         assert_eq!(reduced["raw_refs"], full["raw_refs"]);
         assert!(!full["raw_refs"].as_array().expect("raw refs").is_empty());
@@ -159,32 +156,32 @@ async fn projected_pages_bind_omitted_content_and_fields_but_allow_a_larger_budg
     args["fields"] = json!([]);
     args["page"] = json!({"entries":1});
     args["budget"]["max_bytes"] = json!(10000);
-    let first = call(&server, "kmp_forward", args.clone()).await;
+    let first = call(&server, "kmp_time", args.clone()).await;
     assert_eq!(first["page"]["returned"], 1);
     assert!(first.to_string().len() <= 10000);
     let next = first["next_actions"][0]["arguments"].clone();
     let mut resized = next.clone();
     resized["budget"]["max_bytes"] = json!(20000);
-    let second = call(&server, "kmp_forward", resized).await;
+    let second = call(&server, "kmp_time", resized).await;
     assert_eq!(second["page"]["offset"], 1);
     assert_ne!(second["entries"][0]["ref"], first["entries"][0]["ref"]);
     let mut changed = next.clone();
     changed["fields"] = json!(["text"]);
     assert_eq!(
-        raw(&server, "kmp_forward", changed).await["structuredContent"]["feedback"][0]["code"],
+        raw(&server, "kmp_time", changed).await["structuredContent"]["feedback"][0]["code"],
         "READ_SELECTION_CHANGED"
     );
     call(&server,"kmp_write_memory",json!({"about":"project:fields","actor":"test",
         "observed_at":"2026-09-02T00:00:00Z","idempotency_key":"fields:change",
         "search_summaries":[{"ref":written["local_refs"]["source"],"summary_en":"S1 records the complete source and its local storage requirement."}]})).await;
-    let error = raw(&server, "kmp_forward", next).await;
+    let error = raw(&server, "kmp_time", next).await;
     assert_eq!(
         error["structuredContent"]["feedback"][0]["code"],
         "READ_SELECTION_CHANGED"
     );
     let action = &error["structuredContent"]["feedback"][0]["action"];
     assert_eq!(action["arguments"]["fields"], json!([]));
-    let fresh = call(&server, "kmp_forward", action["arguments"].clone()).await;
+    let fresh = call(&server, "kmp_time", action["arguments"].clone()).await;
     assert_eq!(
         fresh["entries"][0], first["entries"][0],
         "even unchanged visible entries must restart"
@@ -204,7 +201,7 @@ async fn invalid_field_selections_explain_the_allowed_vocabulary() {
     ] {
         let mut args = query();
         args["fields"] = fields;
-        let result = raw(&server, "kmp_forward", args).await;
+        let result = raw(&server, "kmp_time", args).await;
         assert_eq!(result["isError"], true, "{result}");
         let feedback = &result["structuredContent"]["feedback"][0];
         assert_eq!(feedback["code"], "READ_INVALID_FIELDS");
@@ -234,12 +231,13 @@ async fn expanding_a_ref_preserves_distinct_membership_clocks() {
             ],"evidence":[],"relations":[]}})).await;
     let mut args = query();
     args["dimensions"] = json!({"mode":"only","include":["timeline"]});
-    for tool in ["kmp_forward", "kmp_rewind"] {
-        let full = call(&server, tool, args.clone()).await;
+    for time_move in ["forward", "rewind"] {
+        args["move"] = json!(time_move);
+        let full = call(&server, "kmp_time", args.clone()).await;
         assert_eq!(full["entries"].as_array().expect("entries").len(), 2);
         let mut selected = args.clone();
         selected["fields"] = json!(["coordinates"]);
-        let reduced = call(&server, tool, selected).await;
+        let reduced = call(&server, "kmp_time", selected).await;
         for (entry, original) in reduced["entries"]
             .as_array()
             .expect("entries")

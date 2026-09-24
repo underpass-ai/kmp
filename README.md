@@ -163,10 +163,7 @@ agent identity and progressive guidance. `tools/list` is the authority.
 | `kmp_wake` | Recover compact state before continuing work. |
 | `kmp_ask` | Retrieve evidence for a semantic question, or `UNKNOWN`. |
 | `kmp_relate` | Read what the memories of several abouts have to do with each other in a span, off the scopes and clocks they share. |
-| `kmp_goto` | Jump to memory at a time, sequence or ref. |
-| `kmp_near` | Inspect the temporal neighborhood around a cursor. |
-| `kmp_rewind` | Move backward through memory. |
-| `kmp_forward` | Move forward through memory. |
+| `kmp_time` | Move through memory on one clock: `rewind` and `forward` page backward and forward from a cursor or through an interval, `goto` jumps to a time, sequence or ref, `near` reads the neighbourhood around one. |
 | `kmp_trace` | Audit a path between two refs, or search for evidence from seed refs; inspect returned support and completeness. |
 | `kmp_inspect` | Inspect one object inside an explicit `about`, with its links and evidence. |
 | `kmp_write_memory` | Validate and record a decision, constraint or outcome. |

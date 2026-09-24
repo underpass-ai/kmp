@@ -96,10 +96,7 @@ pub async fn read_only(bundle: &str, tool: &str, arguments: Value) -> Result<Val
         "kmp_wake",
         "kmp_ask",
         "kmp_relate",
-        "kmp_goto",
-        "kmp_near",
-        "kmp_rewind",
-        "kmp_forward",
+        "kmp_time",
         "kmp_trace",
         "kmp_inspect",
     ];

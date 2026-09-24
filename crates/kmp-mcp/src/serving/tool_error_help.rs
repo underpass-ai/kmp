@@ -107,9 +107,7 @@ impl ToolErrorHelp {
             "kmp_wake" => ("verb:wake", "example:shared-resumption"),
             "kmp_ask" => ("verb:ask", "example:decision-history"),
             "kmp_relate" => ("verb:relate", "example:distributed-incident"),
-            "kmp_goto" | "kmp_near" | "kmp_rewind" | "kmp_forward" => {
-                ("verb:time", "example:four-clocks")
-            }
+            "kmp_time" => ("verb:time", "example:four-clocks"),
             "kmp_inspect" => ("verb:audit", "example:budget-proof"),
             "kmp_trace" => ("verb:audit", "example:decision-history"),
             "kmp_view_open" | "kmp_view_get_state" | "kmp_view_apply_intent" => {

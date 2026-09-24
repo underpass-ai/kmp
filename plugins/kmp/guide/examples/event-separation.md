@@ -139,9 +139,10 @@ historical selection. Do not replace the selected temporal proof with that panel
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "occurred_before",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:execution-verification",
     "axis": "occurred",
     "at": {
@@ -162,9 +163,10 @@ historical selection. Do not replace the selected temporal proof with that panel
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "occurred_after",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:execution-verification",
     "axis": "occurred",
     "at": {
@@ -185,9 +187,10 @@ historical selection. Do not replace the selected temporal proof with that panel
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "observed_before",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:execution-verification",
     "axis": "observed",
     "at": {
@@ -208,9 +211,10 @@ historical selection. Do not replace the selected temporal proof with that panel
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "observed_after",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:execution-verification",
     "axis": "observed",
     "at": {

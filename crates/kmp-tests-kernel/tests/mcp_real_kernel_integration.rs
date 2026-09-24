@@ -121,20 +121,20 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
             }),
         ),
         (
-            "kmp_goto",
-            json!({"about":"project:parity-live","at":{"ref":"project:parity-live:observation:parity-after"}}),
+            "kmp_time",
+            json!({"move":"goto","about":"project:parity-live","at":{"ref":"project:parity-live:observation:parity-after"}}),
         ),
         (
-            "kmp_near",
-            json!({"about":"project:parity-live","around":{"ref":"project:parity-live:observation:parity-before"}}),
+            "kmp_time",
+            json!({"move":"near","about":"project:parity-live","around":{"ref":"project:parity-live:observation:parity-before"}}),
         ),
         (
-            "kmp_rewind",
-            json!({"about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-after"}}),
+            "kmp_time",
+            json!({"move":"rewind","about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-after"}}),
         ),
         (
-            "kmp_forward",
-            json!({"about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-before"}}),
+            "kmp_time",
+            json!({"move":"forward","about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-before"}}),
         ),
         (
             "kmp_trace",
@@ -285,8 +285,8 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         &stdio,
         &http,
         &embedded,
-        "kmp_goto",
-        json!({"about":"project:parity-live","at":{"ref":"missing:temporal-ref"}}),
+        "kmp_time",
+        json!({"move":"goto","about":"project:parity-live","at":{"ref":"missing:temporal-ref"}}),
         "invalid_argument",
     )
     .await;
@@ -850,8 +850,9 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let temporal_forward = call_tool(
             &server,
             31,
-            "kmp_forward",
+            "kmp_time",
             json!({
+                "move": "forward",
                 "about": "question:mcp-ingest-smoke",
                 "from": {
                     "ref": "question:mcp-ingest-smoke:claim:mcp-ingest-before"

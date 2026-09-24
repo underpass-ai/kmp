@@ -424,15 +424,17 @@ impl MemoryArenaSmartWriter {
                     "about": about,
                     "entry_ref": input.entry_ref.as_str(),
                     "target_ref": target_ref.as_str(),
-                    "tool": "kmp_near",
+                    "tool": "kmp_time",
+                    "move": "near",
                     "window": {"before_entries": 3, "after_entries": 0}
                 }),
             );
             let near = call_writer_tool_with_record(
                 server,
                 request_id,
-                "kmp_near",
+                "kmp_time",
                 &json!({
+                    "move": "near",
                     "about": about,
                     "around": {"ref": target_ref.as_str()},
                     "window": {"before_entries": 3, "after_entries": 0},
@@ -458,6 +460,7 @@ impl MemoryArenaSmartWriter {
                     "entry_ref": input.entry_ref.as_str(),
                     "target_ref": target_ref.as_str(),
                     "tool": near.tool.as_str(),
+                    "move": "near",
                     "elapsed_ms": near.elapsed_ms,
                     "observed_refs": near_observed_refs,
                     "observed_entry_refs": near_observed_entry_refs

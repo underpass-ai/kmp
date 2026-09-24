@@ -70,7 +70,7 @@ filter, pan, undo or take control yourself at any time.
 Current status:
 
 - exposes `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
-  `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
+  `kmp_time` (moves `goto`, `near`, `rewind`, `forward`),
   `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_condense`, `kmp_relabel`,
   `kmp_summaries_audit`,
   `kmp_guide`, `kmp_view_open`, `kmp_view_apply_intent`, and `kmp_view_get_state`;
@@ -247,10 +247,7 @@ Live backend mapping:
 | `kmp_write_memory` | writer-friendly helper that validates relation quality and compiles to `KernelMemoryService.Ingest` |
 | `kmp_wake` | `KernelMemoryService.Wake` |
 | `kmp_ask` | `KernelMemoryService.Ask` |
-| `kmp_goto` | `KernelMemoryService.Goto` |
-| `kmp_near` | `KernelMemoryService.Near` |
-| `kmp_rewind` | `KernelMemoryService.Rewind` |
-| `kmp_forward` | `KernelMemoryService.Forward` |
+| `kmp_time` | `KernelMemoryService.Goto`, `Near`, `Rewind` or `Forward`, selected by `move` |
 | `kmp_relate` | `KernelMemoryService.Relate` |
 | `kmp_trace` | `KernelMemoryService.Trace` |
 | `kmp_inspect` | `KernelMemoryService.Inspect` |

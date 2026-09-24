@@ -1371,10 +1371,7 @@
           "enum": [
             "kmp_wake",
             "kmp_ask",
-            "kmp_goto",
-            "kmp_near",
-            "kmp_rewind",
-            "kmp_forward",
+            "kmp_time",
             "kmp_trace",
             "kmp_relate",
             "kmp_inspect"
@@ -1873,7 +1870,7 @@
             },
             "temporal_refs": {
               "items": {
-                "description": "Memory ref observed through kmp_goto, kmp_near, kmp_rewind, or kmp_forward before writing.",
+                "description": "Memory ref observed through kmp_time before writing.",
                 "minLength": 1,
                 "type": "string"
               },
@@ -2440,7 +2437,7 @@
           "$ref": "#/$defs/warning_list"
         },
         "resume_cursor": {
-          "description": "The newest coordinate this packet covers. Save it and pass it to kmp_forward to receive only what is new. Null when nothing in the packet carries a temporal coordinate.",
+          "description": "The newest coordinate this packet covers. Save it and pass it as `from` to kmp_time with move forward to receive only what is new. Null when nothing in the packet carries a temporal coordinate.",
           "oneOf": [
             {
               "$ref": "#/$defs/temporal_cursor"
