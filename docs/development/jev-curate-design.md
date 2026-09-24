@@ -1,0 +1,180 @@
+# `kmp_curate`: relation curation with TypeSafe Jev and the calling agent — design
+
+Status: approved design, not implemented. Branch `feat/jev-curate`, cut from
+`main` 719ed5b2.
+
+## Goal
+
+Improve the relations of one or several abouts. The calling agent and a remote
+judgement model, TypeSafe Jev, each do the part the other does poorly:
+
+- **Jev** triages many pairs cheaply. It suggests a relation type, doubts
+  stored relations, and spots contradictions.
+- **The agent** reads only the promising items, writes the `why` and the
+  evidence, and commits.
+
+Jev never writes a relation and never writes a `why`.
+
+This keeps the standing rules on relations. Every relation says why in a
+checkable sentence and carries evidence. Nothing is invented. Only
+`same_event_as` and `same_entity_as` cross abouts, and only with a
+`kmp_relate` proposal and explicit proof. The rule
+"new relations generated automatically" in `agent-token-optimization.md`
+scoped the #544 token track; this verb generates candidates, not relations.
+
+## Decisions
+
+| Decision | Choice |
+| --- | --- |
+| Scope | Propose missing relations **and** audit stored ones |
+| Write authority | Propose and apply in one verb; apply reuses the `kmp_write_memory` planner |
+| Candidate pairs | Hybrid: kernel signals first, then a Jev partner choice for facts left without a pair |
+| Data leaving the machine | Opt-in per store (`typesafe.json`); without it the verb works without Jev |
+| Model | Pinned version (`jev-1.13.0`), never `-latest` |
+| Delivery | Three PRs: shared TypeSafe client → `kmp_curate` → Ask re-ranking (`feat/jev-rerank`) |
+
+## Surface
+
+One tool, `kmp_curate`, with two modes. The tool is not read-only because
+`apply` writes.
+
+- `mode: "review"` does not write anything. Its arguments are:
+  - `about`, and optionally `abouts[]` (the same selection as `kmp_relate`);
+  - `dimensions`, `interval`, `budget` and `page`;
+  - `max_pairs`: default 60, maximum 200.
+- `mode: "apply"` writes through the planner. Its arguments are:
+  - `review_token`, returned by the review;
+  - `accepted[]`: items of `{ item_id, why, evidence, confidence, rel? }`,
+    where `rel` overrides the suggestion;
+  - `idempotency_key`, plus `actor` as in `kmp_write_memory`.
+
+## Review
+
+The review returns three lists and a `review_token` bound to the selection,
+the arguments and the content digest of every fact read.
+
+**`missing`**: pairs with no declared relation between them.
+
+1. **Kernel pairs.**
+   - Inside an about, a new deterministic generator pairs facts that share
+     rare identifiers, entities, summary terms (including bridged terms) or a
+     label (dimension kind plus scope id). It reuses the signals of
+     `kmp_relate`'s proposer, restricted to one about.
+   - Across abouts, it reuses `kmp_relate`'s `proposed` pairs unchanged.
+   - Each pair carries `proposed_by`, the signals and a checkable `why` for
+     the pairing, not for the relation. The output is reproducible bit for
+     bit.
+2. **Jev partners.** Facts the kernel left without a pair are sent in one
+   request: `state` is the list of the about's facts, and each orphan asks one
+   `choice` over the others plus `none`. Pairs from this step carry
+   `proposed_by: jev` and no kernel signal, and the agent is told to read them
+   with more care.
+3. **Typing.** Every pair gets a Jev `choice` over the writer relation types
+   plus `none`. Across abouts, the options are only `same_event_as`,
+   `same_entity_as` and `none`. Pairs whose top answer is `none` are dropped.
+   The rest are ordered by Jev confidence and capped by `max_pairs`.
+
+**`suspect`**: stored relations Jev doubts.
+
+- One `noul` asks whether the `why` and the evidence support that `rel`
+  between those two facts.
+- One `choice` asks for the best type.
+- A relation is flagged when the `noul` is below 0.3, or when the best type
+  differs from the stored one with confidence ≥ 0.7.
+- **These findings are reported only.** KMP has no way to retract or retype
+  a relation; that capability is out of scope.
+
+**`tensions`**: current facts that appear to contradict each other (a `noul`)
+and are not joined by `contradicts` or `supersedes`. They are returned as
+`missing` items with `suggested_rel: contradicts`.
+
+Every item carries `item_id`, `from`, `to`, both facts' text verbatim, the
+`about` of each, `suggested_rel`, `proposed_by` with the kernel signals, and
+`jev: { probabilities, confidence, model }`.
+
+`next_actions` holds a bound `apply` continuation. The agent fills in `why`
+and `evidence` for the items it accepts.
+
+## Apply
+
+1. The verb checks `review_token` against the current selection and content.
+   Any change returns a conflict with a fresh `review` action.
+2. Each accepted item becomes an entry in the `relations[]` packet that
+   `kmp_write_memory` accepts: `from`, `to`, `rel`, `why`, `evidence`,
+   `confidence`. Cross-about equivalences carry their relate proposal in
+   `read_context.relate_proposals`.
+3. The packet goes through **the same planner** as `kmp_write_memory`, not a
+   copy of it. `strict`, the evidence requirement, `needs_review` with its
+   continuation and `review_token`, and idempotency behave identically. A Rich
+   relation that needs review returns `needs_review` from `kmp_curate`, with
+   the same neighbourhood.
+4. Provenance of each written relation records `curated_with: <model>`, and
+   `proposed_by` when it is `jev`.
+5. `rel` must stay within what the item allows. Across abouts that means the
+   two equivalences only. An item not present in the review is rejected.
+
+## Shared TypeSafe client (PR 1)
+
+This generalises the client from `feat/jev-rerank`
+(`docs/development/jev-rerank-design.md` there).
+
+- **Port** `JudgementModel`: batched `noul` and `choice` questions over one
+  `state`, returning probabilities, confidence, model and usage. Boxed `Send`
+  future.
+- **Adapter** `TypeSafeJudgement`: `POST https://api.typesafe.ai/v1/systemone`
+  with a Bearer token.
+  - It reuses the workspace `reqwest` with rustls; there is no new
+    dependency.
+  - It follows no redirects and uses no proxy. Requests and responses are
+    capped at 256 KiB.
+  - On `429` it makes at most two retries, honouring `retry-after` capped at
+    5 s.
+- **Config** `typesafe.json` beside the store, at most 8 KiB,
+  `deny_unknown_fields`: `endpoint` (HTTPS, host `api.typesafe.ai`), a pinned
+  `model`, and `timeout_ms`. The key is read from `TYPESAFE_API_KEY` only and
+  never logged, echoed or shown by `Debug`.
+- **Budget.** Requests are split so that `state` plus the longest question
+  stays within the provider's 32k tokens and each request within 64k. Fact
+  text is cut to 2,000 characters. A 60-pair review is one to three requests.
+- **Degradation.** With no config, no key or a failed call, `review` returns
+  the kernel pairs without types, and `suspect` and `tensions` come back
+  empty. A warning names the cause. The review never fails because of Jev.
+  `apply` does not call Jev.
+
+## Testing
+
+- **Domain:**
+  - The intra-about generator is reproducible bit for bit.
+  - It never pairs facts already joined.
+  - Across abouts it yields equivalences only.
+- **Contract:**
+  - `review_token` binds selection, arguments and content.
+  - `apply` rejects unknown items and changed content.
+  - A parity test shows `apply` and `kmp_write_memory` produce the same
+    relations, the same `needs_review` and the same replay for the same
+    packet.
+- **Adapter** tests against a local HTTP fixture: 200, 401, 429 with
+  `retry-after`, a malformed body, mismatched answer keys, a timeout, and
+  request splitting.
+- **Surface gates** for a new tool:
+  - `fixtures/contract/tools_list.json`;
+  - `distribution/mcpb/manifest.json`;
+  - `plugins/kmp/capabilities.json` and `scripts/ci/kmp-capability-contract.py`;
+  - `scripts/ci/mcp-registry.sh`;
+  - `scripts/ci/kmp-mcp-architecture-gate.sh` (600 lines, one type per file);
+  - the coverage floors (≥ 80 % `kmp-mcp`);
+  - the guide: `plugins/kmp/guide/verbs/curate.md`, `topics/routing.md`,
+    `topics/relations.md`, `AGENT.md` and `skills/kmp-moves/SKILL.md`.
+- **Operator path** with a real key: one real about, `review` → the agent
+  accepts some items → `apply`, then `kmp_relate` shows the new relations.
+  Record the pairs proposed, the pairs accepted and the requests and tokens
+  used in `docs/development/curate.md`, the user documentation written with
+  the implementation.
+
+## Out of scope
+
+- Retracting or retyping stored relations.
+- Transitive closure of equivalences.
+- Applying without the agent, above any threshold.
+- The remote gRPC backend.
+- Per-about allow lists for what may be sent.
