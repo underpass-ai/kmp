@@ -1,7 +1,7 @@
 {
   "schema_version": "kmp.token.oracle.v1",
   "run": "baseline",
-  "manifest_sha256": "a242950f52f649a271f5e6cdc6db55d770f47c06c1c66ec34124a99d94a5b756",
+  "manifest_sha256": "73e5c740f91d082e2d66df18467a2a8b7c4c21fb43804e27b503915cb553da2b",
   "variant": "baseline",
   "wake_contract": "kmp.wake_claim.v1",
   "driver_version": "kmp.native_driver.v1",

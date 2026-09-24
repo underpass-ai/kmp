@@ -11,7 +11,7 @@ Generated from `report.json` by `python -m scripts.performance.token_harness ren
 | variant | run | commit | binary SHA-256 | wake contract | journeys | capture failures | incomplete |
 |---|---|---|---|---|---|---|---|
 | baseline | baseline | a22b6402c5ac76248fdd78b6e48a9425784c0dc8 | d391f6a96a6163aba6a011e14552fff531eb4f3f7cf0b65e4c8aabe0971485f9 | kmp.wake_claim.v1 | 11 | 0 | 0 |
-| candidate | candidate | f171b3a7ec2307d3970db87a756e0393ea9cc8a3 | 9a969e20c6f4d174373dc8ebdcbc2627bf246d2bd58df08491b802e395c0db68 | kmp.wake_claim.v2 | 11 | 0 | 0 |
+| candidate | candidate | efb5b6aee952b7d2f66ed5478fac695dcb02643a | ec69c211018fa8e28769d396baba47aa71bd89ccbbda1d40756635d03bbdf76f | kmp.wake_claim.v2 | 11 | 0 | 0 |
 
 Limitations:
 
@@ -25,7 +25,7 @@ Limitations:
 
 ## Conclusions
 
-`descriptive_only`: 6, `quality_fix_not_equivalent_compression`: 24, `quality_regression_or_failure`: 8, `reference_increase_with_quality_pass`: 6 (rows over every representation).
+`descriptive_only`: 6, `quality_fix_not_equivalent_compression`: 32, `reference_increase_with_quality_pass`: 6 (rows over every representation).
 
 ## Oracle per journey
 
@@ -38,21 +38,21 @@ Limitations:
 | e01 | baseline | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | — |
 | e01 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | — |
 | w01-b10000 | baseline | FAIL | 6 | 6 | 5 | 3 | 1 | 0 | 0 | 0 | 1 | — | 3 | task_obligations_satisfied, unresolved_evidence_reference_count, evidence_body_disguised_as_ref_count, support_displacement_count, historical_relation_as_action_count |
-| w01-b10000 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 4 | — |
+| w01-b10000 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 3 | — |
 | w01-b4096 | baseline | FAIL | 6 | 6 | 5 | 3 | 1 | 0 | 0 | 0 | 2 | — | 3 | task_obligations_satisfied, unresolved_evidence_reference_count, evidence_body_disguised_as_ref_count, support_displacement_count, historical_relation_as_action_count |
 | w01-b4096 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 2 | 3 | — |
 | w02-b10000 | baseline | FAIL | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 1 | — | 1 | task_obligations_satisfied, unresolved_evidence_reference_count, evidence_body_disguised_as_ref_count, support_displacement_count |
 | w02-b10000 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | — |
 | w02-b4096 | baseline | FAIL | 2 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 4 | — | 9 | task_obligations_satisfied, unresolved_evidence_reference_count, evidence_body_disguised_as_ref_count, support_displacement_count |
-| w02-b4096 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 2 | 2 | — |
+| w02-b4096 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 4 | — |
 | w03-b10000 | baseline | FAIL | 1 | 1 | 2 | 1 | 0 | 2 | 0 | 0 | 1 | — | 1 | task_obligations_satisfied, unresolved_evidence_reference_count, evidence_body_disguised_as_ref_count, support_displacement_count, identical_body_merged_citation_count |
 | w03-b10000 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | — |
 | w03-b4096 | baseline | FAIL | 1 | 1 | 2 | 1 | 0 | 2 | 0 | 0 | 4 | — | 9 | task_obligations_satisfied, unresolved_evidence_reference_count, evidence_body_disguised_as_ref_count, support_displacement_count, identical_body_merged_citation_count |
-| w03-b4096 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 2 | 2 | — |
+| w03-b4096 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 3 | — |
 | w04-b10000 | baseline | FAIL | 1 | 1 | 4 | 1 | 0 | 0 | 0 | 4 | 1 | — | 1 | task_obligations_satisfied, unresolved_evidence_reference_count, evidence_body_disguised_as_ref_count, support_displacement_count |
-| w04-b10000 | candidate | FAIL | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 1 | — | 1 | task_obligations_satisfied |
+| w04-b10000 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 1 | 1 | 1 | — |
 | w04-b4096 | baseline | FAIL | 1 | 1 | 4 | 1 | 0 | 0 | 0 | 4 | 4 | — | 6 | task_obligations_satisfied, unresolved_evidence_reference_count, evidence_body_disguised_as_ref_count, support_displacement_count |
-| w04-b4096 | candidate | FAIL | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 2 | — | 2 | task_obligations_satisfied |
+| w04-b4096 | candidate | pass | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 1 | 1 | 2 | — |
 
 ### Unmet obligations
 
@@ -72,8 +72,6 @@ Limitations:
 - baseline `w04-b4096`: `as_of_excludes` "Lift the schema freeze after the audit closed." → FAIL
 - baseline `w04-b10000`: `state_mentions` "Freeze schema changes during the audit." → FAIL
 - baseline `w04-b10000`: `as_of_excludes` "Lift the schema freeze after the audit closed." → FAIL
-- candidate `w04-b4096`: `as_of_excludes` "Lift the schema freeze after the audit closed." → FAIL
-- candidate `w04-b10000`: `as_of_excludes` "Lift the schema freeze after the audit closed." → FAIL
 
 ## Paired table (`json_compact_lexical_v1`)
 
@@ -81,14 +79,14 @@ Whole-journey reference tokens: startup (initialize, initialized, tools/list) pl
 
 | case_id | journey | goal_id | encoding | baseline_tokens | candidate_tokens | delta_tokens | reduction_fraction | baseline_rpc | candidate_rpc | first unit (base) | first unit (cand) | quality_baseline | quality_candidate | comparable | conclusion |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| w01 | w01-b4096 | orient_small_about | o200k_base | 60707 | 61974 | 1267 | -0.0209 | 3 | 3 | 2 | 2 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
-| w01 | w01-b10000 | orient_small_about | o200k_base | 60583 | 63172 | 2589 | -0.0427 | 3 | 4 | 1 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
-| w02 | w02-b4096 | resume_explicit_label | o200k_base | 63603 | 55689 | -7914 | 0.1244 | 9 | 2 | 4 | 2 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
-| w02 | w02-b10000 | resume_explicit_label | o200k_base | 54535 | 54473 | -62 | 0.0011 | 1 | 1 | 1 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
-| w03 | w03-b4096 | orient_identical_bodies | o200k_base | 63210 | 55749 | -7461 | 0.1180 | 9 | 2 | 4 | 2 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
-| w03 | w03-b10000 | orient_identical_bodies | o200k_base | 54614 | 54478 | -136 | 0.0025 | 1 | 1 | 1 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
-| w04 | w04-b4096 | dated_wake | o200k_base | 59689 | 55198 | -4491 | 0.0752 | 6 | 2 | 4 | 2 | FAIL | FAIL | yes | quality_regression_or_failure |
-| w04 | w04-b10000 | dated_wake | o200k_base | 54168 | 53920 | -248 | 0.0046 | 1 | 1 | 1 | 1 | FAIL | FAIL | yes | quality_regression_or_failure |
+| w01 | w01-b4096 | orient_small_about | o200k_base | 60715 | 61198 | 483 | -0.0080 | 3 | 3 | 2 | 2 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
+| w01 | w01-b10000 | orient_small_about | o200k_base | 60595 | 61204 | 609 | -0.0101 | 3 | 3 | 1 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
+| w02 | w02-b4096 | resume_explicit_label | o200k_base | 63555 | 56783 | -6772 | 0.1066 | 9 | 4 | 4 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
+| w02 | w02-b10000 | resume_explicit_label | o200k_base | 54535 | 53912 | -623 | 0.0114 | 1 | 1 | 1 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
+| w03 | w03-b4096 | orient_identical_bodies | o200k_base | 63138 | 55654 | -7484 | 0.1185 | 9 | 3 | 4 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
+| w03 | w03-b10000 | orient_identical_bodies | o200k_base | 54614 | 53893 | -721 | 0.0132 | 1 | 1 | 1 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
+| w04 | w04-b4096 | dated_wake | o200k_base | 59734 | 54395 | -5339 | 0.0894 | 6 | 2 | 4 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
+| w04 | w04-b10000 | dated_wake | o200k_base | 54168 | 53449 | -719 | 0.0133 | 1 | 1 | 1 | 1 | FAIL | pass | yes | quality_fix_not_equivalent_compression |
 | a01 | a01-b4096 | ask_short_source | o200k_base | 54657 | 54671 | 14 | -0.0003 | 2 | 2 | 1 | 1 | pass | pass | yes | reference_increase_with_quality_pass |
 | a01 | a01-b10000 | ask_short_source | o200k_base | 53370 | 53384 | 14 | -0.0003 | 1 | 1 | 1 | 1 | pass | pass | yes | reference_increase_with_quality_pass |
 | e01 | e01 | simple_write_receipt | o200k_base | 52711 | 52725 | 14 | -0.0003 | 1 | 1 | 1 | 1 | pass | pass | yes | reference_increase_with_quality_pass |
@@ -97,14 +95,14 @@ Whole-journey reference tokens: startup (initialize, initialized, tools/list) pl
 
 | journey | startup (base) | startup (cand) | memory (base) | memory (cand) | memory delta | until first unit (base) | until first unit (cand) | until task ready (base) | until task ready (cand) |
 |---|---|---|---|---|---|---|---|---|---|
-| w01-b4096 | 52075 | 52089 | 8632 | 9885 | 1253 | 57676 | 57828 | — | 57828 |
-| w01-b10000 | 52075 | 52089 | 8508 | 11083 | 2575 | 55035 | 55193 | — | 55193 |
-| w02-b4096 | 52075 | 52089 | 11528 | 3600 | -7928 | 57284 | 55689 | — | 55689 |
-| w02-b10000 | 52075 | 52089 | 2460 | 2384 | -76 | 54535 | 54473 | — | 54473 |
-| w03-b4096 | 52075 | 52089 | 11135 | 3660 | -7475 | 57045 | 55749 | — | 55749 |
-| w03-b10000 | 52075 | 52089 | 2539 | 2389 | -150 | 54614 | 54478 | — | 54478 |
-| w04-b4096 | 52075 | 52089 | 7614 | 3109 | -4505 | 57316 | 55198 | — | — |
-| w04-b10000 | 52075 | 52089 | 2093 | 1831 | -262 | 54168 | 53920 | — | — |
+| w01-b4096 | 52075 | 52089 | 8640 | 9109 | 469 | 57682 | 58032 | — | 58032 |
+| w01-b10000 | 52075 | 52089 | 8520 | 9115 | 595 | 55039 | 55236 | — | 55236 |
+| w02-b4096 | 52075 | 52089 | 11480 | 4694 | -6786 | 57262 | 53263 | — | 53263 |
+| w02-b10000 | 52075 | 52089 | 2460 | 1823 | -637 | 54535 | 53912 | — | 53912 |
+| w03-b4096 | 52075 | 52089 | 11063 | 3565 | -7498 | 57012 | 53347 | — | 53347 |
+| w03-b10000 | 52075 | 52089 | 2539 | 1804 | -735 | 54614 | 53893 | — | 53893 |
+| w04-b4096 | 52075 | 52089 | 7659 | 2306 | -5353 | 57349 | 53426 | — | 53426 |
+| w04-b10000 | 52075 | 52089 | 2093 | 1360 | -733 | 54168 | 53449 | — | 53449 |
 | a01-b4096 | 52075 | 52089 | 2582 | 2582 | 0 | 53341 | 53355 | 53341 | 53355 |
 | a01-b10000 | 52075 | 52089 | 1295 | 1295 | 0 | 53370 | 53384 | 53370 | 53384 |
 | e01 | 52075 | 52089 | 636 | 636 | 0 | 52711 | 52725 | 52711 | 52725 |
@@ -115,21 +113,21 @@ weighted_reduction = 1 - sum(candidate) / sum(baseline) over rows with both coun
 
 | encoding | representation | group | n | excluded | baseline sum | candidate sum | weighted_reduction | median delta | worst journey | worst delta | conclusions |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| o200k_base | content_blocks_standalone_v1 | all | 11 | 0 | 1790 | 653 | 0.6352 | 0.0000 | w02-b10000 | 1 | descriptive_only: 3, quality_fix_not_equivalent_compression: 6, quality_regression_or_failure: 2 |
-| o200k_base | content_blocks_standalone_v1 | b10000 | 5 | 0 | 319 | 288 | 0.0972 | 1.0000 | w02-b10000 | 1 | descriptive_only: 1, quality_fix_not_equivalent_compression: 3, quality_regression_or_failure: 1 |
-| o200k_base | content_blocks_standalone_v1 | b4096 | 5 | 0 | 1450 | 344 | 0.7628 | -227.0000 | a01-b4096 | 0 | descriptive_only: 1, quality_fix_not_equivalent_compression: 3, quality_regression_or_failure: 1 |
+| o200k_base | content_blocks_standalone_v1 | all | 11 | 0 | 1790 | 824 | 0.5397 | 0.0000 | w02-b10000 | 1 | descriptive_only: 3, quality_fix_not_equivalent_compression: 8 |
+| o200k_base | content_blocks_standalone_v1 | b10000 | 5 | 0 | 319 | 235 | 0.2633 | 1.0000 | w02-b10000 | 1 | descriptive_only: 1, quality_fix_not_equivalent_compression: 4 |
+| o200k_base | content_blocks_standalone_v1 | b4096 | 5 | 0 | 1450 | 568 | 0.6083 | -206.0000 | a01-b4096 | 0 | descriptive_only: 1, quality_fix_not_equivalent_compression: 4 |
 | o200k_base | content_blocks_standalone_v1 | write | 1 | 0 | 21 | 21 | 0.0000 | 0.0000 | e01 | 0 | descriptive_only: 1 |
-| o200k_base | json_compact_lexical_v1 | all | 11 | 0 | 631847 | 615433 | 0.0260 | -62.0000 | w01-b10000 | 2589 | quality_fix_not_equivalent_compression: 6, quality_regression_or_failure: 2, reference_increase_with_quality_pass: 3 |
-| o200k_base | json_compact_lexical_v1 | b10000 | 5 | 0 | 277270 | 279427 | -0.0078 | -62.0000 | w01-b10000 | 2589 | quality_fix_not_equivalent_compression: 3, quality_regression_or_failure: 1, reference_increase_with_quality_pass: 1 |
-| o200k_base | json_compact_lexical_v1 | b4096 | 5 | 0 | 301866 | 283281 | 0.0616 | -4491.0000 | w01-b4096 | 1267 | quality_fix_not_equivalent_compression: 3, quality_regression_or_failure: 1, reference_increase_with_quality_pass: 1 |
+| o200k_base | json_compact_lexical_v1 | all | 11 | 0 | 631792 | 611268 | 0.0325 | -623.0000 | w01-b10000 | 609 | quality_fix_not_equivalent_compression: 8, reference_increase_with_quality_pass: 3 |
+| o200k_base | json_compact_lexical_v1 | b10000 | 5 | 0 | 277282 | 275842 | 0.0052 | -623.0000 | w01-b10000 | 609 | quality_fix_not_equivalent_compression: 4, reference_increase_with_quality_pass: 1 |
+| o200k_base | json_compact_lexical_v1 | b4096 | 5 | 0 | 301799 | 282701 | 0.0633 | -5339.0000 | w01-b4096 | 483 | quality_fix_not_equivalent_compression: 4, reference_increase_with_quality_pass: 1 |
 | o200k_base | json_compact_lexical_v1 | write | 1 | 0 | 52711 | 52725 | -0.0003 | 14.0000 | e01 | 14 | reference_increase_with_quality_pass: 1 |
-| o200k_base | mcp_json_compact_legacy_v1 | all | 11 | 0 | 631847 | 615433 | 0.0260 | -62.0000 | w01-b10000 | 2589 | quality_fix_not_equivalent_compression: 6, quality_regression_or_failure: 2, reference_increase_with_quality_pass: 3 |
-| o200k_base | mcp_json_compact_legacy_v1 | b10000 | 5 | 0 | 277270 | 279427 | -0.0078 | -62.0000 | w01-b10000 | 2589 | quality_fix_not_equivalent_compression: 3, quality_regression_or_failure: 1, reference_increase_with_quality_pass: 1 |
-| o200k_base | mcp_json_compact_legacy_v1 | b4096 | 5 | 0 | 301866 | 283281 | 0.0616 | -4491.0000 | w01-b4096 | 1267 | quality_fix_not_equivalent_compression: 3, quality_regression_or_failure: 1, reference_increase_with_quality_pass: 1 |
+| o200k_base | mcp_json_compact_legacy_v1 | all | 11 | 0 | 631792 | 611268 | 0.0325 | -623.0000 | w01-b10000 | 609 | quality_fix_not_equivalent_compression: 8, reference_increase_with_quality_pass: 3 |
+| o200k_base | mcp_json_compact_legacy_v1 | b10000 | 5 | 0 | 277282 | 275842 | 0.0052 | -623.0000 | w01-b10000 | 609 | quality_fix_not_equivalent_compression: 4, reference_increase_with_quality_pass: 1 |
+| o200k_base | mcp_json_compact_legacy_v1 | b4096 | 5 | 0 | 301799 | 282701 | 0.0633 | -5339.0000 | w01-b4096 | 483 | quality_fix_not_equivalent_compression: 4, reference_increase_with_quality_pass: 1 |
 | o200k_base | mcp_json_compact_legacy_v1 | write | 1 | 0 | 52711 | 52725 | -0.0003 | 14.0000 | e01 | 14 | reference_increase_with_quality_pass: 1 |
-| o200k_base | structured_compact_v1 | all | 11 | 0 | 52256 | 39677 | 0.2407 | -77.0000 | w01-b10000 | 2479 | descriptive_only: 3, quality_fix_not_equivalent_compression: 6, quality_regression_or_failure: 2 |
-| o200k_base | structured_compact_v1 | b10000 | 5 | 0 | 15851 | 17839 | -0.1254 | -77.0000 | w01-b10000 | 2479 | descriptive_only: 1, quality_fix_not_equivalent_compression: 3, quality_regression_or_failure: 1 |
-| o200k_base | structured_compact_v1 | b4096 | 5 | 0 | 35951 | 21384 | 0.4052 | -3594.0000 | w01-b4096 | 1369 | descriptive_only: 1, quality_fix_not_equivalent_compression: 3, quality_regression_or_failure: 1 |
+| o200k_base | structured_compact_v1 | all | 11 | 0 | 52220 | 34824 | 0.3331 | -638.0000 | w01-b10000 | 678 | descriptive_only: 3, quality_fix_not_equivalent_compression: 8 |
+| o200k_base | structured_compact_v1 | b10000 | 5 | 0 | 15859 | 14429 | 0.0902 | -638.0000 | w01-b10000 | 678 | descriptive_only: 1, quality_fix_not_equivalent_compression: 4 |
+| o200k_base | structured_compact_v1 | b4096 | 5 | 0 | 35907 | 19941 | 0.4446 | -4503.0000 | w01-b4096 | 580 | descriptive_only: 1, quality_fix_not_equivalent_compression: 4 |
 | o200k_base | structured_compact_v1 | write | 1 | 0 | 454 | 454 | 0.0000 | 0.0000 | e01 | 0 | descriptive_only: 1 |
 
 ## A/A controls

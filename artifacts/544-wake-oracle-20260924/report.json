@@ -1,6 +1,6 @@
 {
   "schema_version": "kmp.token.compare.v1",
-  "label": "main-a22b6402-vs-fix-544-wake-scope-f171b3a7",
+  "label": "main-a22b6402-vs-fix-544-wake-scope-efb5b6ae",
   "evidence_scope": "native_replay",
   "harness_code_sha256": "285248e05c8e52d37659eecf4da1b26d621296bc50805f74cba0568ddf4c97ca",
   "model_calls": 0,
@@ -22,7 +22,7 @@
   ],
   "baseline": {
     "run": "baseline",
-    "manifest_sha256": "a242950f52f649a271f5e6cdc6db55d770f47c06c1c66ec34124a99d94a5b756",
+    "manifest_sha256": "73e5c740f91d082e2d66df18467a2a8b7c4c21fb43804e27b503915cb553da2b",
     "variant": "baseline",
     "binary_sha256": "d391f6a96a6163aba6a011e14552fff531eb4f3f7cf0b65e4c8aabe0971485f9",
     "build_provenance": {
@@ -59,15 +59,15 @@
   },
   "candidate": {
     "run": "candidate",
-    "manifest_sha256": "ba11346513aab5bbfa3e4e7ff63897703d3911adcf84f160866f1a2b9f7b3278",
+    "manifest_sha256": "c4f3740b46677d05a679abaf310ac7dc98a576be6437c9d3ad0ad7f7f479de07",
     "variant": "candidate",
-    "binary_sha256": "9a969e20c6f4d174373dc8ebdcbc2627bf246d2bd58df08491b802e395c0db68",
+    "binary_sha256": "ec69c211018fa8e28769d396baba47aa71bd89ccbbda1d40756635d03bbdf76f",
     "build_provenance": {
       "kind": "local release build; binary copied to a scratch path before capture",
       "variant": "candidate",
       "branch": "fix/544-wake-scope",
-      "commit": "f171b3a7ec2307d3970db87a756e0393ea9cc8a3",
-      "tree": "33035b69fac0c7471cf2571e040940a21c9f2f00",
+      "commit": "efb5b6aee952b7d2f66ed5478fac695dcb02643a",
+      "tree": "88f7a46051fab33d2a6e8ad928d6e6f9179cb210",
       "worktree_clean": true,
       "command": [
         "cargo",
@@ -84,7 +84,7 @@
       "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
       "binary_version": "kmp-mcp 0.19.0 (store format 4 (sqlite))",
-      "binary_sha256": "9a969e20c6f4d174373dc8ebdcbc2627bf246d2bd58df08491b802e395c0db68"
+      "binary_sha256": "ec69c211018fa8e28769d396baba47aa71bd89ccbbda1d40756635d03bbdf76f"
     },
     "wake_contract": "kmp.wake_claim.v2",
     "driver_version": "kmp.native_driver.v1",
@@ -111,8 +111,7 @@
     "rows": 44,
     "conclusions": {
       "descriptive_only": 6,
-      "quality_fix_not_equivalent_compression": 24,
-      "quality_regression_or_failure": 8,
+      "quality_fix_not_equivalent_compression": 32,
       "reference_increase_with_quality_pass": 6
     }
   },
@@ -124,8 +123,8 @@
       "n": 11,
       "excluded_without_both_counts": 0,
       "baseline_tokens": 1790,
-      "candidate_tokens": 653,
-      "weighted_reduction": 0.635195530726257,
+      "candidate_tokens": 824,
+      "weighted_reduction": 0.5396648044692738,
       "median_delta_tokens": 0.0,
       "worst_regression": {
         "journey": "w02-b10000",
@@ -133,8 +132,7 @@
       },
       "conclusions": {
         "descriptive_only": 3,
-        "quality_fix_not_equivalent_compression": 6,
-        "quality_regression_or_failure": 2
+        "quality_fix_not_equivalent_compression": 8
       }
     },
     {
@@ -144,8 +142,8 @@
       "n": 5,
       "excluded_without_both_counts": 0,
       "baseline_tokens": 319,
-      "candidate_tokens": 288,
-      "weighted_reduction": 0.09717868338557989,
+      "candidate_tokens": 235,
+      "weighted_reduction": 0.2633228840125392,
       "median_delta_tokens": 1.0,
       "worst_regression": {
         "journey": "w02-b10000",
@@ -153,8 +151,7 @@
       },
       "conclusions": {
         "descriptive_only": 1,
-        "quality_fix_not_equivalent_compression": 3,
-        "quality_regression_or_failure": 1
+        "quality_fix_not_equivalent_compression": 4
       }
     },
     {
@@ -164,17 +161,16 @@
       "n": 5,
       "excluded_without_both_counts": 0,
       "baseline_tokens": 1450,
-      "candidate_tokens": 344,
-      "weighted_reduction": 0.7627586206896552,
-      "median_delta_tokens": -227.0,
+      "candidate_tokens": 568,
+      "weighted_reduction": 0.6082758620689654,
+      "median_delta_tokens": -206.0,
       "worst_regression": {
         "journey": "a01-b4096",
         "delta_tokens": 0
       },
       "conclusions": {
         "descriptive_only": 1,
-        "quality_fix_not_equivalent_compression": 3,
-        "quality_regression_or_failure": 1
+        "quality_fix_not_equivalent_compression": 4
       }
     },
     {
@@ -201,17 +197,16 @@
       "budget_group": "all",
       "n": 11,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 631847,
-      "candidate_tokens": 615433,
-      "weighted_reduction": 0.0259778079186892,
-      "median_delta_tokens": -62.0,
+      "baseline_tokens": 631792,
+      "candidate_tokens": 611268,
+      "weighted_reduction": 0.03248537493352244,
+      "median_delta_tokens": -623.0,
       "worst_regression": {
         "journey": "w01-b10000",
-        "delta_tokens": 2589
+        "delta_tokens": 609
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 6,
-        "quality_regression_or_failure": 2,
+        "quality_fix_not_equivalent_compression": 8,
         "reference_increase_with_quality_pass": 3
       }
     },
@@ -221,17 +216,16 @@
       "budget_group": "b10000",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 277270,
-      "candidate_tokens": 279427,
-      "weighted_reduction": -0.0077794207811880955,
-      "median_delta_tokens": -62.0,
+      "baseline_tokens": 277282,
+      "candidate_tokens": 275842,
+      "weighted_reduction": 0.005193268946415586,
+      "median_delta_tokens": -623.0,
       "worst_regression": {
         "journey": "w01-b10000",
-        "delta_tokens": 2589
+        "delta_tokens": 609
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 3,
-        "quality_regression_or_failure": 1,
+        "quality_fix_not_equivalent_compression": 4,
         "reference_increase_with_quality_pass": 1
       }
     },
@@ -241,17 +235,16 @@
       "budget_group": "b4096",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 301866,
-      "candidate_tokens": 283281,
-      "weighted_reduction": 0.06156705293077058,
-      "median_delta_tokens": -4491.0,
+      "baseline_tokens": 301799,
+      "candidate_tokens": 282701,
+      "weighted_reduction": 0.0632805277684817,
+      "median_delta_tokens": -5339.0,
       "worst_regression": {
         "journey": "w01-b4096",
-        "delta_tokens": 1267
+        "delta_tokens": 483
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 3,
-        "quality_regression_or_failure": 1,
+        "quality_fix_not_equivalent_compression": 4,
         "reference_increase_with_quality_pass": 1
       }
     },
@@ -279,17 +272,16 @@
       "budget_group": "all",
       "n": 11,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 631847,
-      "candidate_tokens": 615433,
-      "weighted_reduction": 0.0259778079186892,
-      "median_delta_tokens": -62.0,
+      "baseline_tokens": 631792,
+      "candidate_tokens": 611268,
+      "weighted_reduction": 0.03248537493352244,
+      "median_delta_tokens": -623.0,
       "worst_regression": {
         "journey": "w01-b10000",
-        "delta_tokens": 2589
+        "delta_tokens": 609
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 6,
-        "quality_regression_or_failure": 2,
+        "quality_fix_not_equivalent_compression": 8,
         "reference_increase_with_quality_pass": 3
       }
     },
@@ -299,17 +291,16 @@
       "budget_group": "b10000",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 277270,
-      "candidate_tokens": 279427,
-      "weighted_reduction": -0.0077794207811880955,
-      "median_delta_tokens": -62.0,
+      "baseline_tokens": 277282,
+      "candidate_tokens": 275842,
+      "weighted_reduction": 0.005193268946415586,
+      "median_delta_tokens": -623.0,
       "worst_regression": {
         "journey": "w01-b10000",
-        "delta_tokens": 2589
+        "delta_tokens": 609
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 3,
-        "quality_regression_or_failure": 1,
+        "quality_fix_not_equivalent_compression": 4,
         "reference_increase_with_quality_pass": 1
       }
     },
@@ -319,17 +310,16 @@
       "budget_group": "b4096",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 301866,
-      "candidate_tokens": 283281,
-      "weighted_reduction": 0.06156705293077058,
-      "median_delta_tokens": -4491.0,
+      "baseline_tokens": 301799,
+      "candidate_tokens": 282701,
+      "weighted_reduction": 0.0632805277684817,
+      "median_delta_tokens": -5339.0,
       "worst_regression": {
         "journey": "w01-b4096",
-        "delta_tokens": 1267
+        "delta_tokens": 483
       },
       "conclusions": {
-        "quality_fix_not_equivalent_compression": 3,
-        "quality_regression_or_failure": 1,
+        "quality_fix_not_equivalent_compression": 4,
         "reference_increase_with_quality_pass": 1
       }
     },
@@ -357,18 +347,17 @@
       "budget_group": "all",
       "n": 11,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 52256,
-      "candidate_tokens": 39677,
-      "weighted_reduction": 0.24071876913655843,
-      "median_delta_tokens": -77.0,
+      "baseline_tokens": 52220,
+      "candidate_tokens": 34824,
+      "weighted_reduction": 0.33312906932209885,
+      "median_delta_tokens": -638.0,
       "worst_regression": {
         "journey": "w01-b10000",
-        "delta_tokens": 2479
+        "delta_tokens": 678
       },
       "conclusions": {
         "descriptive_only": 3,
-        "quality_fix_not_equivalent_compression": 6,
-        "quality_regression_or_failure": 2
+        "quality_fix_not_equivalent_compression": 8
       }
     },
     {
@@ -377,18 +366,17 @@
       "budget_group": "b10000",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 15851,
-      "candidate_tokens": 17839,
-      "weighted_reduction": -0.1254179547031733,
-      "median_delta_tokens": -77.0,
+      "baseline_tokens": 15859,
+      "candidate_tokens": 14429,
+      "weighted_reduction": 0.09016961977426063,
+      "median_delta_tokens": -638.0,
       "worst_regression": {
         "journey": "w01-b10000",
-        "delta_tokens": 2479
+        "delta_tokens": 678
       },
       "conclusions": {
         "descriptive_only": 1,
-        "quality_fix_not_equivalent_compression": 3,
-        "quality_regression_or_failure": 1
+        "quality_fix_not_equivalent_compression": 4
       }
     },
     {
@@ -397,18 +385,17 @@
       "budget_group": "b4096",
       "n": 5,
       "excluded_without_both_counts": 0,
-      "baseline_tokens": 35951,
-      "candidate_tokens": 21384,
-      "weighted_reduction": 0.40519039804177914,
-      "median_delta_tokens": -3594.0,
+      "baseline_tokens": 35907,
+      "candidate_tokens": 19941,
+      "weighted_reduction": 0.44464867574567635,
+      "median_delta_tokens": -4503.0,
       "worst_regression": {
         "journey": "w01-b4096",
-        "delta_tokens": 1369
+        "delta_tokens": 580
       },
       "conclusions": {
         "descriptive_only": 1,
-        "quality_fix_not_equivalent_compression": 3,
-        "quality_regression_or_failure": 1
+        "quality_fix_not_equivalent_compression": 4
       }
     },
     {
@@ -438,10 +425,10 @@
       "budget": 4096,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 60707,
-      "candidate_tokens": 61974,
-      "delta_tokens": 1267,
-      "reduction_fraction": -0.020870739782891595,
+      "baseline_tokens": 60715,
+      "candidate_tokens": 61198,
+      "delta_tokens": 483,
+      "reduction_fraction": -0.007955200527052623,
       "baseline_rpc": 3,
       "candidate_rpc": 3,
       "first_supported_unit": {
@@ -455,14 +442,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 60707,
-        "memory_tokens": 8632,
+        "tokens": 60715,
+        "memory_tokens": 8640,
         "startup_tokens": 52075,
         "utf8_bytes": 279000,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57676,
+        "tokens_until_first_supported_unit": 57682,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -475,15 +462,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 61974,
-        "memory_tokens": 9885,
+        "tokens": 61198,
+        "memory_tokens": 9109,
         "startup_tokens": 52089,
-        "utf8_bytes": 282461,
+        "utf8_bytes": 279772,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57828,
-        "tokens_until_task_ready": 57828,
+        "tokens_until_first_supported_unit": 58032,
+        "tokens_until_task_ready": 58032,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -495,10 +482,10 @@
       "budget": 4096,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 60707,
-      "candidate_tokens": 61974,
-      "delta_tokens": 1267,
-      "reduction_fraction": -0.020870739782891595,
+      "baseline_tokens": 60715,
+      "candidate_tokens": 61198,
+      "delta_tokens": 483,
+      "reduction_fraction": -0.007955200527052623,
       "baseline_rpc": 3,
       "candidate_rpc": 3,
       "first_supported_unit": {
@@ -512,14 +499,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 60707,
-        "memory_tokens": 8632,
+        "tokens": 60715,
+        "memory_tokens": 8640,
         "startup_tokens": 52075,
         "utf8_bytes": 279000,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57676,
+        "tokens_until_first_supported_unit": 57682,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -532,15 +519,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 61974,
-        "memory_tokens": 9885,
+        "tokens": 61198,
+        "memory_tokens": 9109,
         "startup_tokens": 52089,
-        "utf8_bytes": 282461,
+        "utf8_bytes": 279772,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 57828,
-        "tokens_until_task_ready": 57828,
+        "tokens_until_first_supported_unit": 58032,
+        "tokens_until_task_ready": 58032,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -552,10 +539,10 @@
       "budget": 4096,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 8103,
-      "candidate_tokens": 9472,
-      "delta_tokens": 1369,
-      "reduction_fraction": -0.1689497716894977,
+      "baseline_tokens": 8109,
+      "candidate_tokens": 8689,
+      "delta_tokens": 580,
+      "reduction_fraction": -0.0715254655321248,
       "baseline_rpc": 3,
       "candidate_rpc": 3,
       "first_supported_unit": {
@@ -569,8 +556,8 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 8103,
-        "memory_tokens": 8103,
+        "tokens": 8109,
+        "memory_tokens": 8109,
         "startup_tokens": 0,
         "utf8_bytes": 26524,
         "absent_units": {
@@ -578,7 +565,7 @@
         },
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 5267,
+        "tokens_until_first_supported_unit": 5273,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -591,17 +578,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 9472,
-        "memory_tokens": 9472,
+        "tokens": 8689,
+        "memory_tokens": 8689,
         "startup_tokens": 0,
-        "utf8_bytes": 30275,
+        "utf8_bytes": 27586,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 3,
         "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 5489,
-        "tokens_until_task_ready": 5489,
+        "tokens_until_first_supported_unit": 5693,
+        "tokens_until_task_ready": 5693,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -674,12 +661,12 @@
       "budget": 10000,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 60583,
-      "candidate_tokens": 63172,
-      "delta_tokens": 2589,
-      "reduction_fraction": -0.04273476057639932,
+      "baseline_tokens": 60595,
+      "candidate_tokens": 61204,
+      "delta_tokens": 609,
+      "reduction_fraction": -0.010050334185988942,
       "baseline_rpc": 3,
-      "candidate_rpc": 4,
+      "candidate_rpc": 3,
       "first_supported_unit": {
         "baseline": 1,
         "candidate": 1
@@ -691,14 +678,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 60583,
-        "memory_tokens": 8508,
+        "tokens": 60595,
+        "memory_tokens": 8520,
         "startup_tokens": 52075,
         "utf8_bytes": 278516,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 55035,
+        "tokens_until_first_supported_unit": 55039,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -711,15 +698,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 63172,
-        "memory_tokens": 11083,
+        "tokens": 61204,
+        "memory_tokens": 9115,
         "startup_tokens": 52089,
-        "utf8_bytes": 286593,
+        "utf8_bytes": 279788,
         "absent_units": {},
-        "rpc": 4,
+        "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 55193,
-        "tokens_until_task_ready": 55193,
+        "tokens_until_first_supported_unit": 55236,
+        "tokens_until_task_ready": 55236,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -731,12 +718,12 @@
       "budget": 10000,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 60583,
-      "candidate_tokens": 63172,
-      "delta_tokens": 2589,
-      "reduction_fraction": -0.04273476057639932,
+      "baseline_tokens": 60595,
+      "candidate_tokens": 61204,
+      "delta_tokens": 609,
+      "reduction_fraction": -0.010050334185988942,
       "baseline_rpc": 3,
-      "candidate_rpc": 4,
+      "candidate_rpc": 3,
       "first_supported_unit": {
         "baseline": 1,
         "candidate": 1
@@ -748,14 +735,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 60583,
-        "memory_tokens": 8508,
+        "tokens": 60595,
+        "memory_tokens": 8520,
         "startup_tokens": 52075,
         "utf8_bytes": 278516,
         "absent_units": {},
         "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 55035,
+        "tokens_until_first_supported_unit": 55039,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -768,15 +755,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 63172,
-        "memory_tokens": 11083,
+        "tokens": 61204,
+        "memory_tokens": 9115,
         "startup_tokens": 52089,
-        "utf8_bytes": 286593,
+        "utf8_bytes": 279788,
         "absent_units": {},
-        "rpc": 4,
+        "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 55193,
-        "tokens_until_task_ready": 55193,
+        "tokens_until_first_supported_unit": 55236,
+        "tokens_until_task_ready": 55236,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -788,12 +775,12 @@
       "budget": 10000,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 7930,
-      "candidate_tokens": 10409,
-      "delta_tokens": 2479,
-      "reduction_fraction": -0.31261034047919295,
+      "baseline_tokens": 7938,
+      "candidate_tokens": 8616,
+      "delta_tokens": 678,
+      "reduction_fraction": -0.0854119425547997,
       "baseline_rpc": 3,
-      "candidate_rpc": 4,
+      "candidate_rpc": 3,
       "first_supported_unit": {
         "baseline": 1,
         "candidate": 1
@@ -805,8 +792,8 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 7930,
-        "memory_tokens": 7930,
+        "tokens": 7938,
+        "memory_tokens": 7938,
         "startup_tokens": 0,
         "utf8_bytes": 25936,
         "absent_units": {
@@ -814,7 +801,7 @@
         },
         "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 2798,
+        "tokens_until_first_supported_unit": 2802,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -827,17 +814,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 10409,
-        "memory_tokens": 10409,
+        "tokens": 8616,
+        "memory_tokens": 8616,
         "startup_tokens": 0,
-        "utf8_bytes": 33541,
+        "utf8_bytes": 27383,
         "absent_units": {
           "not_a_tool_result": 2
         },
-        "rpc": 4,
+        "rpc": 3,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 2971,
-        "tokens_until_task_ready": 2971,
+        "tokens_until_first_supported_unit": 3014,
+        "tokens_until_task_ready": 3014,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -850,11 +837,11 @@
       "representation_id": "content_blocks_standalone_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 221,
-      "candidate_tokens": 187,
-      "delta_tokens": -34,
-      "reduction_fraction": 0.15384615384615385,
+      "candidate_tokens": 134,
+      "delta_tokens": -87,
+      "reduction_fraction": 0.3936651583710407,
       "baseline_rpc": 3,
-      "candidate_rpc": 4,
+      "candidate_rpc": 3,
       "first_supported_unit": {
         "baseline": 1,
         "candidate": 1
@@ -888,14 +875,14 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 187,
-        "memory_tokens": 187,
+        "tokens": 134,
+        "memory_tokens": 134,
         "startup_tokens": 0,
-        "utf8_bytes": 881,
+        "utf8_bytes": 627,
         "absent_units": {
           "not_a_tool_result": 2
         },
-        "rpc": 4,
+        "rpc": 3,
         "first_supported_unit": 1,
         "tokens_until_first_supported_unit": 53,
         "tokens_until_task_ready": 53,
@@ -910,15 +897,15 @@
       "budget": 4096,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 63603,
-      "candidate_tokens": 55689,
-      "delta_tokens": -7914,
-      "reduction_fraction": 0.12442809301448045,
+      "baseline_tokens": 63555,
+      "candidate_tokens": 56783,
+      "delta_tokens": -6772,
+      "reduction_fraction": 0.10655337896310282,
       "baseline_rpc": 9,
-      "candidate_rpc": 2,
+      "candidate_rpc": 4,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
       "quality_candidate": true,
@@ -927,14 +914,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 63603,
-        "memory_tokens": 11528,
+        "tokens": 63555,
+        "memory_tokens": 11480,
         "startup_tokens": 52075,
         "utf8_bytes": 290830,
         "absent_units": {},
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 57284,
+        "tokens_until_first_supported_unit": 57262,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -946,15 +933,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55689,
-        "memory_tokens": 3600,
+        "tokens": 56783,
+        "memory_tokens": 4694,
         "startup_tokens": 52089,
-        "utf8_bytes": 263175,
+        "utf8_bytes": 266955,
         "absent_units": {},
-        "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55689,
-        "tokens_until_task_ready": 55689,
+        "rpc": 4,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53263,
+        "tokens_until_task_ready": 53263,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -966,15 +953,15 @@
       "budget": 4096,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 63603,
-      "candidate_tokens": 55689,
-      "delta_tokens": -7914,
-      "reduction_fraction": 0.12442809301448045,
+      "baseline_tokens": 63555,
+      "candidate_tokens": 56783,
+      "delta_tokens": -6772,
+      "reduction_fraction": 0.10655337896310282,
       "baseline_rpc": 9,
-      "candidate_rpc": 2,
+      "candidate_rpc": 4,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
       "quality_candidate": true,
@@ -983,14 +970,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 63603,
-        "memory_tokens": 11528,
+        "tokens": 63555,
+        "memory_tokens": 11480,
         "startup_tokens": 52075,
         "utf8_bytes": 290830,
         "absent_units": {},
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 57284,
+        "tokens_until_first_supported_unit": 57262,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1002,15 +989,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55689,
-        "memory_tokens": 3600,
+        "tokens": 56783,
+        "memory_tokens": 4694,
         "startup_tokens": 52089,
-        "utf8_bytes": 263175,
+        "utf8_bytes": 266955,
         "absent_units": {},
-        "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55689,
-        "tokens_until_task_ready": 55689,
+        "rpc": 4,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53263,
+        "tokens_until_task_ready": 53263,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1022,15 +1009,15 @@
       "budget": 4096,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 9609,
-      "candidate_tokens": 3324,
-      "delta_tokens": -6285,
-      "reduction_fraction": 0.6540743053387449,
+      "baseline_tokens": 9577,
+      "candidate_tokens": 3897,
+      "delta_tokens": -5680,
+      "reduction_fraction": 0.5930876057220424,
       "baseline_rpc": 9,
-      "candidate_rpc": 2,
+      "candidate_rpc": 4,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
       "quality_candidate": true,
@@ -1039,8 +1026,8 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 9609,
-        "memory_tokens": 9609,
+        "tokens": 9577,
+        "memory_tokens": 9577,
         "startup_tokens": 0,
         "utf8_bytes": 33741,
         "absent_units": {
@@ -1048,7 +1035,7 @@
         },
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 4384,
+        "tokens_until_first_supported_unit": 4368,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1060,17 +1047,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 3324,
-        "memory_tokens": 3324,
+        "tokens": 3897,
+        "memory_tokens": 3897,
         "startup_tokens": 0,
-        "utf8_bytes": 11447,
+        "utf8_bytes": 13515,
         "absent_units": {
           "not_a_tool_result": 2
         },
-        "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 3324,
-        "tokens_until_task_ready": 3324,
+        "rpc": 4,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1020,
+        "tokens_until_task_ready": 1020,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1083,14 +1070,14 @@
       "representation_id": "content_blocks_standalone_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 443,
-      "candidate_tokens": 56,
-      "delta_tokens": -387,
-      "reduction_fraction": 0.873589164785553,
+      "candidate_tokens": 187,
+      "delta_tokens": -256,
+      "reduction_fraction": 0.5778781038374717,
       "baseline_rpc": 9,
-      "candidate_rpc": 2,
+      "candidate_rpc": 4,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
       "quality_candidate": true,
@@ -1120,17 +1107,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 56,
-        "memory_tokens": 56,
+        "tokens": 187,
+        "memory_tokens": 187,
         "startup_tokens": 0,
-        "utf8_bytes": 261,
+        "utf8_bytes": 881,
         "absent_units": {
           "not_a_tool_result": 2
         },
-        "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 56,
-        "tokens_until_task_ready": 56,
+        "rpc": 4,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53,
+        "tokens_until_task_ready": 53,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1143,9 +1130,9 @@
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54535,
-      "candidate_tokens": 54473,
-      "delta_tokens": -62,
-      "reduction_fraction": 0.0011368845695424957,
+      "candidate_tokens": 53912,
+      "delta_tokens": -623,
+      "reduction_fraction": 0.011423856239112497,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1178,15 +1165,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54473,
-        "memory_tokens": 2384,
+        "tokens": 53912,
+        "memory_tokens": 1823,
         "startup_tokens": 52089,
-        "utf8_bytes": 259032,
+        "utf8_bytes": 256984,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54473,
-        "tokens_until_task_ready": 54473,
+        "tokens_until_first_supported_unit": 53912,
+        "tokens_until_task_ready": 53912,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1199,9 +1186,9 @@
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54535,
-      "candidate_tokens": 54473,
-      "delta_tokens": -62,
-      "reduction_fraction": 0.0011368845695424957,
+      "candidate_tokens": 53912,
+      "delta_tokens": -623,
+      "reduction_fraction": 0.011423856239112497,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1234,15 +1221,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54473,
-        "memory_tokens": 2384,
+        "tokens": 53912,
+        "memory_tokens": 1823,
         "startup_tokens": 52089,
-        "utf8_bytes": 259032,
+        "utf8_bytes": 256984,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54473,
-        "tokens_until_task_ready": 54473,
+        "tokens_until_first_supported_unit": 53912,
+        "tokens_until_task_ready": 53912,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1255,9 +1242,9 @@
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 2333,
-      "candidate_tokens": 2256,
-      "delta_tokens": -77,
-      "reduction_fraction": 0.033004714959279896,
+      "candidate_tokens": 1695,
+      "delta_tokens": -638,
+      "reduction_fraction": 0.2734676382340334,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1292,17 +1279,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 2256,
-        "memory_tokens": 2256,
+        "tokens": 1695,
+        "memory_tokens": 1695,
         "startup_tokens": 0,
-        "utf8_bytes": 7850,
+        "utf8_bytes": 5802,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 2256,
-        "tokens_until_task_ready": 2256,
+        "tokens_until_first_supported_unit": 1695,
+        "tokens_until_task_ready": 1695,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1374,15 +1361,15 @@
       "budget": 4096,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 63210,
-      "candidate_tokens": 55749,
-      "delta_tokens": -7461,
-      "reduction_fraction": 0.11803512102515425,
+      "baseline_tokens": 63138,
+      "candidate_tokens": 55654,
+      "delta_tokens": -7484,
+      "reduction_fraction": 0.1185340048782033,
       "baseline_rpc": 9,
-      "candidate_rpc": 2,
+      "candidate_rpc": 3,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
       "quality_candidate": true,
@@ -1391,14 +1378,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 63210,
-        "memory_tokens": 11135,
+        "tokens": 63138,
+        "memory_tokens": 11063,
         "startup_tokens": 52075,
         "utf8_bytes": 288682,
         "absent_units": {},
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 57045,
+        "tokens_until_first_supported_unit": 57012,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1411,15 +1398,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55749,
-        "memory_tokens": 3660,
+        "tokens": 55654,
+        "memory_tokens": 3565,
         "startup_tokens": 52089,
-        "utf8_bytes": 263117,
+        "utf8_bytes": 262812,
         "absent_units": {},
-        "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55749,
-        "tokens_until_task_ready": 55749,
+        "rpc": 3,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53347,
+        "tokens_until_task_ready": 53347,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1431,15 +1418,15 @@
       "budget": 4096,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 63210,
-      "candidate_tokens": 55749,
-      "delta_tokens": -7461,
-      "reduction_fraction": 0.11803512102515425,
+      "baseline_tokens": 63138,
+      "candidate_tokens": 55654,
+      "delta_tokens": -7484,
+      "reduction_fraction": 0.1185340048782033,
       "baseline_rpc": 9,
-      "candidate_rpc": 2,
+      "candidate_rpc": 3,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
       "quality_candidate": true,
@@ -1448,14 +1435,14 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 63210,
-        "memory_tokens": 11135,
+        "tokens": 63138,
+        "memory_tokens": 11063,
         "startup_tokens": 52075,
         "utf8_bytes": 288682,
         "absent_units": {},
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 57045,
+        "tokens_until_first_supported_unit": 57012,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1468,15 +1455,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55749,
-        "memory_tokens": 3660,
+        "tokens": 55654,
+        "memory_tokens": 3565,
         "startup_tokens": 52089,
-        "utf8_bytes": 263117,
+        "utf8_bytes": 262812,
         "absent_units": {},
-        "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55749,
-        "tokens_until_task_ready": 55749,
+        "rpc": 3,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53347,
+        "tokens_until_task_ready": 53347,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1488,15 +1475,15 @@
       "budget": 4096,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 9485,
-      "candidate_tokens": 3428,
-      "delta_tokens": -6057,
-      "reduction_fraction": 0.6385872430152872,
+      "baseline_tokens": 9437,
+      "candidate_tokens": 3074,
+      "delta_tokens": -6363,
+      "reduction_fraction": 0.6742608879940659,
       "baseline_rpc": 9,
-      "candidate_rpc": 2,
+      "candidate_rpc": 3,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
       "quality_candidate": true,
@@ -1505,8 +1492,8 @@
       "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 9485,
-        "memory_tokens": 9485,
+        "tokens": 9437,
+        "memory_tokens": 9437,
         "startup_tokens": 0,
         "utf8_bytes": 32528,
         "absent_units": {
@@ -1514,7 +1501,7 @@
         },
         "rpc": 9,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 4259,
+        "tokens_until_first_supported_unit": 4235,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1527,17 +1514,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 3428,
-        "memory_tokens": 3428,
+        "tokens": 3074,
+        "memory_tokens": 3074,
         "startup_tokens": 0,
-        "utf8_bytes": 11531,
+        "utf8_bytes": 10412,
         "absent_units": {
           "not_a_tool_result": 2
         },
-        "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 3428,
-        "tokens_until_task_ready": 3428,
+        "rpc": 3,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1125,
+        "tokens_until_task_ready": 1125,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1550,14 +1537,14 @@
       "representation_id": "content_blocks_standalone_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 443,
-      "candidate_tokens": 62,
-      "delta_tokens": -381,
-      "reduction_fraction": 0.8600451467268623,
+      "candidate_tokens": 134,
+      "delta_tokens": -309,
+      "reduction_fraction": 0.6975169300225733,
       "baseline_rpc": 9,
-      "candidate_rpc": 2,
+      "candidate_rpc": 3,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
       "quality_candidate": true,
@@ -1588,17 +1575,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 62,
-        "memory_tokens": 62,
+        "tokens": 134,
+        "memory_tokens": 134,
         "startup_tokens": 0,
-        "utf8_bytes": 298,
+        "utf8_bytes": 627,
         "absent_units": {
           "not_a_tool_result": 2
         },
-        "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 62,
-        "tokens_until_task_ready": 62,
+        "rpc": 3,
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53,
+        "tokens_until_task_ready": 53,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1611,9 +1598,9 @@
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54614,
-      "candidate_tokens": 54478,
-      "delta_tokens": -136,
-      "reduction_fraction": 0.0024902039770022338,
+      "candidate_tokens": 53893,
+      "delta_tokens": -721,
+      "reduction_fraction": 0.013201743142783901,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1647,15 +1634,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54478,
-        "memory_tokens": 2389,
+        "tokens": 53893,
+        "memory_tokens": 1804,
         "startup_tokens": 52089,
-        "utf8_bytes": 258756,
+        "utf8_bytes": 256718,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54478,
-        "tokens_until_task_ready": 54478,
+        "tokens_until_first_supported_unit": 53893,
+        "tokens_until_task_ready": 53893,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1668,9 +1655,9 @@
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54614,
-      "candidate_tokens": 54478,
-      "delta_tokens": -136,
-      "reduction_fraction": 0.0024902039770022338,
+      "candidate_tokens": 53893,
+      "delta_tokens": -721,
+      "reduction_fraction": 0.013201743142783901,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1704,15 +1691,15 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 54478,
-        "memory_tokens": 2389,
+        "tokens": 53893,
+        "memory_tokens": 1804,
         "startup_tokens": 52089,
-        "utf8_bytes": 258756,
+        "utf8_bytes": 256718,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 54478,
-        "tokens_until_task_ready": 54478,
+        "tokens_until_first_supported_unit": 53893,
+        "tokens_until_task_ready": 53893,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1725,9 +1712,9 @@
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 2433,
-      "candidate_tokens": 2282,
-      "delta_tokens": -151,
-      "reduction_fraction": 0.062063296341964655,
+      "candidate_tokens": 1697,
+      "delta_tokens": -736,
+      "reduction_fraction": 0.30250719276613236,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -1763,17 +1750,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 2282,
-        "memory_tokens": 2282,
+        "tokens": 1697,
+        "memory_tokens": 1697,
         "startup_tokens": 0,
-        "utf8_bytes": 7645,
+        "utf8_bytes": 5607,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 2282,
-        "tokens_until_task_ready": 2282,
+        "tokens_until_first_supported_unit": 1697,
+        "tokens_until_task_ready": 1697,
         "quality_pass": true,
         "quality_failures": []
       }
@@ -1846,31 +1833,31 @@
       "budget": 4096,
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 59689,
-      "candidate_tokens": 55198,
-      "delta_tokens": -4491,
-      "reduction_fraction": 0.07523999396873796,
+      "baseline_tokens": 59734,
+      "candidate_tokens": 54395,
+      "delta_tokens": -5339,
+      "reduction_fraction": 0.08937958281715606,
       "baseline_rpc": 6,
       "candidate_rpc": 2,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 59689,
-        "memory_tokens": 7614,
+        "tokens": 59734,
+        "memory_tokens": 7659,
         "startup_tokens": 52075,
         "utf8_bytes": 276795,
         "absent_units": {},
         "rpc": 6,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 57316,
+        "tokens_until_first_supported_unit": 57349,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1882,19 +1869,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55198,
-        "memory_tokens": 3109,
+        "tokens": 54395,
+        "memory_tokens": 2306,
         "startup_tokens": 52089,
-        "utf8_bytes": 261461,
+        "utf8_bytes": 258537,
         "absent_units": {},
         "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55198,
-        "tokens_until_task_ready": null,
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ]
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53426,
+        "tokens_until_task_ready": 53426,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1904,31 +1889,31 @@
       "budget": 4096,
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 59689,
-      "candidate_tokens": 55198,
-      "delta_tokens": -4491,
-      "reduction_fraction": 0.07523999396873796,
+      "baseline_tokens": 59734,
+      "candidate_tokens": 54395,
+      "delta_tokens": -5339,
+      "reduction_fraction": 0.08937958281715606,
       "baseline_rpc": 6,
       "candidate_rpc": 2,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 59689,
-        "memory_tokens": 7614,
+        "tokens": 59734,
+        "memory_tokens": 7659,
         "startup_tokens": 52075,
         "utf8_bytes": 276795,
         "absent_units": {},
         "rpc": 6,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 57316,
+        "tokens_until_first_supported_unit": 57349,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -1940,19 +1925,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 55198,
-        "memory_tokens": 3109,
+        "tokens": 54395,
+        "memory_tokens": 2306,
         "startup_tokens": 52089,
-        "utf8_bytes": 261461,
+        "utf8_bytes": 258537,
         "absent_units": {},
         "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 55198,
-        "tokens_until_task_ready": null,
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ]
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53426,
+        "tokens_until_task_ready": 53426,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -1962,25 +1945,25 @@
       "budget": 4096,
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
-      "baseline_tokens": 6433,
-      "candidate_tokens": 2839,
-      "delta_tokens": -3594,
-      "reduction_fraction": 0.5586817969842997,
+      "baseline_tokens": 6463,
+      "candidate_tokens": 1960,
+      "delta_tokens": -4503,
+      "reduction_fraction": 0.6967352622621074,
       "baseline_rpc": 6,
       "candidate_rpc": 2,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
-        "tokens": 6433,
-        "memory_tokens": 6433,
+        "tokens": 6463,
+        "memory_tokens": 6463,
         "startup_tokens": 0,
         "utf8_bytes": 22324,
         "absent_units": {
@@ -1988,7 +1971,7 @@
         },
         "rpc": 6,
         "first_supported_unit": 4,
-        "tokens_until_first_supported_unit": 4456,
+        "tokens_until_first_supported_unit": 4480,
         "tokens_until_task_ready": null,
         "quality_pass": false,
         "quality_failures": [
@@ -2000,21 +1983,19 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 2839,
-        "memory_tokens": 2839,
+        "tokens": 1960,
+        "memory_tokens": 1960,
         "startup_tokens": 0,
-        "utf8_bytes": 9809,
+        "utf8_bytes": 6702,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 2839,
-        "tokens_until_task_ready": null,
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ]
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 1184,
+        "tokens_until_task_ready": 1184,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -2025,20 +2006,20 @@
       "representation_id": "content_blocks_standalone_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 287,
-      "candidate_tokens": 60,
-      "delta_tokens": -227,
-      "reduction_fraction": 0.7909407665505227,
+      "candidate_tokens": 81,
+      "delta_tokens": -206,
+      "reduction_fraction": 0.7177700348432056,
       "baseline_rpc": 6,
       "candidate_rpc": 2,
       "first_supported_unit": {
         "baseline": 4,
-        "candidate": 2
+        "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 287,
@@ -2062,21 +2043,19 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 60,
-        "memory_tokens": 60,
+        "tokens": 81,
+        "memory_tokens": 81,
         "startup_tokens": 0,
-        "utf8_bytes": 284,
+        "utf8_bytes": 373,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 2,
-        "first_supported_unit": 2,
-        "tokens_until_first_supported_unit": 60,
-        "tokens_until_task_ready": null,
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ]
+        "first_supported_unit": 1,
+        "tokens_until_first_supported_unit": 53,
+        "tokens_until_task_ready": 53,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -2087,9 +2066,9 @@
       "representation_id": "mcp_json_compact_legacy_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54168,
-      "candidate_tokens": 53920,
-      "delta_tokens": -248,
-      "reduction_fraction": 0.004578348840643923,
+      "candidate_tokens": 53449,
+      "delta_tokens": -719,
+      "reduction_fraction": 0.013273519421060405,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -2097,10 +2076,10 @@
         "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 54168,
@@ -2122,19 +2101,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 53920,
-        "memory_tokens": 1831,
+        "tokens": 53449,
+        "memory_tokens": 1360,
         "startup_tokens": 52089,
-        "utf8_bytes": 257106,
+        "utf8_bytes": 255397,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 53920,
-        "tokens_until_task_ready": null,
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ]
+        "tokens_until_first_supported_unit": 53449,
+        "tokens_until_task_ready": 53449,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -2145,9 +2122,9 @@
       "representation_id": "json_compact_lexical_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 54168,
-      "candidate_tokens": 53920,
-      "delta_tokens": -248,
-      "reduction_fraction": 0.004578348840643923,
+      "candidate_tokens": 53449,
+      "delta_tokens": -719,
+      "reduction_fraction": 0.013273519421060405,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -2155,10 +2132,10 @@
         "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 54168,
@@ -2180,19 +2157,17 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 53920,
-        "memory_tokens": 1831,
+        "tokens": 53449,
+        "memory_tokens": 1360,
         "startup_tokens": 52089,
-        "utf8_bytes": 257106,
+        "utf8_bytes": 255397,
         "absent_units": {},
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 53920,
-        "tokens_until_task_ready": null,
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ]
+        "tokens_until_first_supported_unit": 53449,
+        "tokens_until_task_ready": 53449,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -2203,9 +2178,9 @@
       "representation_id": "structured_compact_v1",
       "encoding": "o200k_base",
       "baseline_tokens": 1967,
-      "candidate_tokens": 1704,
-      "delta_tokens": -263,
-      "reduction_fraction": 0.1337061514997458,
+      "candidate_tokens": 1233,
+      "delta_tokens": -734,
+      "reduction_fraction": 0.373157092018302,
       "baseline_rpc": 1,
       "candidate_rpc": 1,
       "first_supported_unit": {
@@ -2213,10 +2188,10 @@
         "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 1967,
@@ -2240,21 +2215,19 @@
       },
       "candidate": {
         "captured": true,
-        "tokens": 1704,
-        "memory_tokens": 1704,
+        "tokens": 1233,
+        "memory_tokens": 1233,
         "startup_tokens": 0,
-        "utf8_bytes": 5955,
+        "utf8_bytes": 4246,
         "absent_units": {
           "not_a_tool_result": 2
         },
         "rpc": 1,
         "first_supported_unit": 1,
-        "tokens_until_first_supported_unit": 1704,
-        "tokens_until_task_ready": null,
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ]
+        "tokens_until_first_supported_unit": 1233,
+        "tokens_until_task_ready": 1233,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -2275,10 +2248,10 @@
         "candidate": 1
       },
       "quality_baseline": false,
-      "quality_candidate": false,
+      "quality_candidate": true,
       "comparable": true,
-      "conclusion": "quality_regression_or_failure",
-      "conclusion_reason": "candidate fails the oracle",
+      "conclusion": "quality_fix_not_equivalent_compression",
+      "conclusion_reason": "baseline fails the oracle, candidate passes; delta descriptive",
       "baseline": {
         "captured": true,
         "tokens": 27,
@@ -2312,11 +2285,9 @@
         "rpc": 1,
         "first_supported_unit": 1,
         "tokens_until_first_supported_unit": 28,
-        "tokens_until_task_ready": null,
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ]
+        "tokens_until_task_ready": 28,
+        "quality_pass": true,
+        "quality_failures": []
       }
     },
     {
@@ -3809,9 +3780,9 @@
           "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 9,
-          "rpc_calls": 4,
+          "rpc_calls": 3,
           "selection_restarts": 0,
-          "mandatory_continuations": 3
+          "mandatory_continuations": 2
         },
         "unmet_obligations": [],
         "detail": {
@@ -3823,7 +3794,7 @@
           "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
-            "calls": 4,
+            "calls": 3,
             "error": null
           }
         }
@@ -3840,12 +3811,12 @@
         },
         "metrics": {
           "first_supported_unit": {
-            "after_rpc": 2,
-            "event_index": 5
+            "after_rpc": 1,
+            "event_index": 4
           },
           "task_ready": {
-            "after_rpc": 2,
-            "event_index": 5
+            "after_rpc": 1,
+            "event_index": 4
           },
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
@@ -3857,9 +3828,9 @@
           "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 4,
-          "rpc_calls": 2,
-          "selection_restarts": 1,
-          "mandatory_continuations": 0
+          "rpc_calls": 4,
+          "selection_restarts": 0,
+          "mandatory_continuations": 3
         },
         "unmet_obligations": [],
         "detail": {
@@ -3871,7 +3842,7 @@
           "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
-            "calls": 2,
+            "calls": 4,
             "error": null
           }
         }
@@ -3936,12 +3907,12 @@
         },
         "metrics": {
           "first_supported_unit": {
-            "after_rpc": 2,
-            "event_index": 5
+            "after_rpc": 1,
+            "event_index": 4
           },
           "task_ready": {
-            "after_rpc": 2,
-            "event_index": 5
+            "after_rpc": 1,
+            "event_index": 4
           },
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
@@ -3953,9 +3924,9 @@
           "state_declared_unbounded_context": true,
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 4,
-          "rpc_calls": 2,
-          "selection_restarts": 1,
-          "mandatory_continuations": 0
+          "rpc_calls": 3,
+          "selection_restarts": 0,
+          "mandatory_continuations": 2
         },
         "unmet_obligations": [],
         "detail": {
@@ -3967,7 +3938,7 @@
           "post_as_of_state_lines": [],
           "driver_outcome": {
             "status": "completed",
-            "calls": 2,
+            "calls": 3,
             "error": null
           }
         }
@@ -4022,22 +3993,23 @@
       },
       {
         "journey": "w04-b4096",
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ],
+        "quality_pass": true,
+        "quality_failures": [],
         "completeness": {
           "transport_complete": true,
           "selected_packet_complete": true,
           "requested_scope_exhausted": false,
-          "task_obligations_satisfied": false
+          "task_obligations_satisfied": true
         },
         "metrics": {
           "first_supported_unit": {
-            "after_rpc": 2,
-            "event_index": 5
+            "after_rpc": 1,
+            "event_index": 4
           },
-          "task_ready": null,
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
           "support_bookkeeping_in_state_count": 0,
@@ -4049,18 +4021,10 @@
           "identical_body_merged_citation_count": 0,
           "cited_reference_count": 2,
           "rpc_calls": 2,
-          "selection_restarts": 1,
-          "mandatory_continuations": 0
+          "selection_restarts": 0,
+          "mandatory_continuations": 1
         },
-        "unmet_obligations": [
-          {
-            "kind": "as_of_excludes",
-            "text": "Lift the schema freeze after the audit closed.",
-            "local_id": "lift",
-            "count": 1,
-            "satisfied": false
-          }
-        ],
+        "unmet_obligations": [],
         "detail": {
           "unresolved_refs": [],
           "disguised_refs": [],
@@ -4080,22 +4044,23 @@
       },
       {
         "journey": "w04-b10000",
-        "quality_pass": false,
-        "quality_failures": [
-          "task_obligations_satisfied"
-        ],
+        "quality_pass": true,
+        "quality_failures": [],
         "completeness": {
           "transport_complete": true,
           "selected_packet_complete": true,
           "requested_scope_exhausted": false,
-          "task_obligations_satisfied": false
+          "task_obligations_satisfied": true
         },
         "metrics": {
           "first_supported_unit": {
             "after_rpc": 1,
             "event_index": 4
           },
-          "task_ready": null,
+          "task_ready": {
+            "after_rpc": 1,
+            "event_index": 4
+          },
           "unresolved_evidence_reference_count": 0,
           "evidence_body_disguised_as_ref_count": 0,
           "support_bookkeeping_in_state_count": 0,
@@ -4110,15 +4075,7 @@
           "selection_restarts": 0,
           "mandatory_continuations": 0
         },
-        "unmet_obligations": [
-          {
-            "kind": "as_of_excludes",
-            "text": "Lift the schema freeze after the audit closed.",
-            "local_id": "lift",
-            "count": 1,
-            "satisfied": false
-          }
-        ],
+        "unmet_obligations": [],
         "detail": {
           "unresolved_refs": [],
           "disguised_refs": [],

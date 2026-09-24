@@ -1,7 +1,7 @@
 {
   "run": "candidate",
-  "manifest_sha256": "ba11346513aab5bbfa3e4e7ff63897703d3911adcf84f160866f1a2b9f7b3278",
-  "binary_sha256": "9a969e20c6f4d174373dc8ebdcbc2627bf246d2bd58df08491b802e395c0db68",
+  "manifest_sha256": "c4f3740b46677d05a679abaf310ac7dc98a576be6437c9d3ad0ad7f7f479de07",
+  "binary_sha256": "ec69c211018fa8e28769d396baba47aa71bd89ccbbda1d40756635d03bbdf76f",
   "evidence_scope": "native_replay",
   "verified_files": 37,
   "journeys": [
@@ -17,7 +17,7 @@
     },
     {
       "journey": "w01-b10000",
-      "rpc_pairs": 6,
+      "rpc_pairs": 5,
       "notifications": 1,
       "harness_events": {
         "session_end": 1,
@@ -27,7 +27,7 @@
     },
     {
       "journey": "w02-b4096",
-      "rpc_pairs": 4,
+      "rpc_pairs": 6,
       "notifications": 1,
       "harness_events": {
         "session_end": 1,
@@ -47,7 +47,7 @@
     },
     {
       "journey": "w03-b4096",
-      "rpc_pairs": 4,
+      "rpc_pairs": 5,
       "notifications": 1,
       "harness_events": {
         "session_end": 1,

@@ -1,7 +1,7 @@
 {
   "schema_version": "kmp.token.oracle.v1",
   "run": "candidate",
-  "manifest_sha256": "ba11346513aab5bbfa3e4e7ff63897703d3911adcf84f160866f1a2b9f7b3278",
+  "manifest_sha256": "c4f3740b46677d05a679abaf310ac7dc98a576be6437c9d3ad0ad7f7f479de07",
   "variant": "candidate",
   "wake_contract": "kmp.wake_claim.v2",
   "driver_version": "kmp.native_driver.v1",
@@ -149,9 +149,9 @@
         "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 9,
-        "rpc_calls": 4,
+        "rpc_calls": 3,
         "selection_restarts": 0,
-        "mandatory_continuations": 3
+        "mandatory_continuations": 2
       },
       "completeness": {
         "transport_complete": true,
@@ -214,7 +214,7 @@
         "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
-          "calls": 4,
+          "calls": 3,
           "error": null
         }
       }
@@ -244,12 +244,12 @@
       "contract": "kmp.wake_claim.v2",
       "metrics": {
         "first_supported_unit": {
-          "after_rpc": 2,
-          "event_index": 5
+          "after_rpc": 1,
+          "event_index": 4
         },
         "task_ready": {
-          "after_rpc": 2,
-          "event_index": 5
+          "after_rpc": 1,
+          "event_index": 4
         },
         "unresolved_evidence_reference_count": 0,
         "evidence_body_disguised_as_ref_count": 0,
@@ -261,9 +261,9 @@
         "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 4,
-        "rpc_calls": 2,
-        "selection_restarts": 1,
-        "mandatory_continuations": 0
+        "rpc_calls": 4,
+        "selection_restarts": 0,
+        "mandatory_continuations": 3
       },
       "completeness": {
         "transport_complete": true,
@@ -312,7 +312,7 @@
         "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
-          "calls": 2,
+          "calls": 4,
           "error": null
         }
       }
@@ -429,12 +429,12 @@
       "contract": "kmp.wake_claim.v2",
       "metrics": {
         "first_supported_unit": {
-          "after_rpc": 2,
-          "event_index": 5
+          "after_rpc": 1,
+          "event_index": 4
         },
         "task_ready": {
-          "after_rpc": 2,
-          "event_index": 5
+          "after_rpc": 1,
+          "event_index": 4
         },
         "unresolved_evidence_reference_count": 0,
         "evidence_body_disguised_as_ref_count": 0,
@@ -446,9 +446,9 @@
         "state_declared_unbounded_context": true,
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 4,
-        "rpc_calls": 2,
-        "selection_restarts": 1,
-        "mandatory_continuations": 0
+        "rpc_calls": 3,
+        "selection_restarts": 0,
+        "mandatory_continuations": 2
       },
       "completeness": {
         "transport_complete": true,
@@ -483,7 +483,7 @@
         "post_as_of_state_lines": [],
         "driver_outcome": {
           "status": "completed",
-          "calls": 2,
+          "calls": 3,
           "error": null
         }
       }
@@ -578,10 +578,13 @@
       "contract": "kmp.wake_claim.v2",
       "metrics": {
         "first_supported_unit": {
-          "after_rpc": 2,
-          "event_index": 5
+          "after_rpc": 1,
+          "event_index": 4
         },
-        "task_ready": null,
+        "task_ready": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
         "unresolved_evidence_reference_count": 0,
         "evidence_body_disguised_as_ref_count": 0,
         "support_bookkeeping_in_state_count": 0,
@@ -593,14 +596,14 @@
         "identical_body_merged_citation_count": 0,
         "cited_reference_count": 2,
         "rpc_calls": 2,
-        "selection_restarts": 1,
-        "mandatory_continuations": 0
+        "selection_restarts": 0,
+        "mandatory_continuations": 1
       },
       "completeness": {
         "transport_complete": true,
         "selected_packet_complete": true,
         "requested_scope_exhausted": false,
-        "task_obligations_satisfied": false
+        "task_obligations_satisfied": true
       },
       "obligations": [
         {
@@ -622,13 +625,11 @@
           "text": "Lift the schema freeze after the audit closed.",
           "local_id": "lift",
           "count": 1,
-          "satisfied": false
+          "satisfied": true
         }
       ],
-      "quality_pass": false,
-      "quality_failures": [
-        "task_obligations_satisfied"
-      ],
+      "quality_pass": true,
+      "quality_failures": [],
       "detail": {
         "unresolved_refs": [],
         "disguised_refs": [],
@@ -666,7 +667,10 @@
           "after_rpc": 1,
           "event_index": 4
         },
-        "task_ready": null,
+        "task_ready": {
+          "after_rpc": 1,
+          "event_index": 4
+        },
         "unresolved_evidence_reference_count": 0,
         "evidence_body_disguised_as_ref_count": 0,
         "support_bookkeeping_in_state_count": 0,
@@ -685,7 +689,7 @@
         "transport_complete": true,
         "selected_packet_complete": true,
         "requested_scope_exhausted": false,
-        "task_obligations_satisfied": false
+        "task_obligations_satisfied": true
       },
       "obligations": [
         {
@@ -707,13 +711,11 @@
           "text": "Lift the schema freeze after the audit closed.",
           "local_id": "lift",
           "count": 1,
-          "satisfied": false
+          "satisfied": true
         }
       ],
-      "quality_pass": false,
-      "quality_failures": [
-        "task_obligations_satisfied"
-      ],
+      "quality_pass": true,
+      "quality_failures": [],
       "detail": {
         "unresolved_refs": [],
         "disguised_refs": [],
