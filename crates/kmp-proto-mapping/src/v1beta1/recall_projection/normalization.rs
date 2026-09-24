@@ -86,11 +86,13 @@ pub(super) fn normalized_proof_relation(
             });
         let why_matches = !relation.why.is_empty() && relation.why == item.text;
         let evidence_matches = !relation.evidence.is_empty() && relation.evidence == item.text;
-        if incident || why_matches || evidence_matches {
+        // Equal text proves nothing about provenance: a body only joins a
+        // hop through a source the graph ties to one of its endpoints.
+        if incident {
             refs.insert(item.id.clone());
+            repeated_why |= why_matches;
+            repeated_evidence |= evidence_matches;
         }
-        repeated_why |= why_matches;
-        repeated_evidence |= evidence_matches;
     }
     if repeated_why {
         relation.why.clear();

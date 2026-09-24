@@ -32,7 +32,6 @@ pub(super) fn rendered_current_state(
         .map(|relationship| relationship.target_node_id())
         .collect::<BTreeSet<_>>();
     let mut explanatory = BTreeSet::new();
-    let mut bookkeeping = BTreeSet::new();
     for relationship in bundle.relationships() {
         let id = format!(
             "rel:{}→{}",
@@ -41,9 +40,7 @@ pub(super) fn rendered_current_state(
         );
         let structural =
             relationship.explanation().semantic_class() == &RelationSemanticClass::Structural;
-        if structural || SUPPORT_BOOKKEEPING.contains(&relationship.relationship_type()) {
-            bookkeeping.insert(id);
-        } else {
+        if !structural && !SUPPORT_BOOKKEEPING.contains(&relationship.relationship_type()) {
             explanatory.insert(id);
         }
     }
@@ -66,40 +63,38 @@ pub(super) fn rendered_current_state(
             format!("{title} ({}): {summary}", node.node_kind())
         }
     };
+    let details = bundle
+        .node_details()
+        .iter()
+        .map(|detail| format!("detail:{}", detail.node_id()))
+        .collect::<BTreeSet<_>>();
+    // The state is the about's context (the packet declares it unbounded in
+    // time); anchors, lanes, containment and support edges stay in the proof.
     let rank = |source_id: &str| {
         if explanatory.contains(source_id) {
-            0
-        } else if source_id.starts_with("detail:") {
-            1
-        } else if bookkeeping.contains(source_id) {
-            3
+            Some(0)
+        } else if details.contains(source_id) {
+            Some(1)
         } else {
-            2
+            None
         }
-    };
-    let entry_section = |source_id: &str| {
-        source_id
-            .strip_prefix("node:")
-            .is_some_and(|node_id| entries.contains(node_id))
     };
     let mut sections = rendered
         .sections
         .iter()
         .filter(|section| !section.content.trim().is_empty())
-        .filter(|section| !entry_section(&section.source_id))
+        .filter_map(|section| Some((rank(&section.source_id)?, section)))
         .collect::<Vec<_>>();
     // Stable: within a rank the renderer's order stands.
-    sections.sort_by_key(|section| rank(&section.source_id));
-    let state = live
-        .iter()
+    sections.sort_by_key(|(rank, _)| *rank);
+    live.iter()
         .map(memory_line)
-        .chain(sections.into_iter().map(|section| section.content.clone()))
+        .chain(
+            sections
+                .into_iter()
+                .map(|(_, section)| section.content.clone()),
+        )
         .chain(retired.iter().map(memory_line))
         .take(STATE_LINES)
-        .collect::<Vec<_>>();
-    if state.is_empty() && !rendered.content.trim().is_empty() {
-        vec![rendered.content.clone()]
-    } else {
-        state
-    }
+        .collect::<Vec<_>>()
 }
