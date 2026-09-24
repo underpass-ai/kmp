@@ -1,0 +1,24 @@
+{
+  "kind": "local release build; binary copied to a scratch path before capture",
+  "variant": "candidate",
+  "branch": "fix/544-wake-scope",
+  "commit": "c88472b90556afab70cd2954ff06fa5cea2f422c",
+  "tree": "fc8062573d376c88c666f8c8daf77fbd1b3cec55",
+  "worktree_clean": true,
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "-p",
+    "kmp-mcp",
+    "--locked",
+    "--features",
+    "sqlite"
+  ],
+  "cargo_lock_sha256": "3ac0ecc9957f138e4ad3dd4623d8ed7e0ee3aa1a67b55accaf67a29a76bbdc00",
+  "workspace_cargo_config_sha256": "aa4afc0d2d90cf810213d38bc37a7b879ba683b518c6674e24d93b9272020cf7",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "binary_version": "kmp-mcp 0.19.0 (store format 4 (sqlite))",
+  "binary_sha256": "f75b0c50583e7df1689ee496d3939532ca11ad66e960c6af25b30fe42111b71f"
+}

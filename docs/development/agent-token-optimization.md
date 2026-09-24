@@ -144,6 +144,72 @@ Baseline = `main` binary, candidate = integration binary, same profile and
 machine. Report in `docs/development/agent-token-optimization-report.md`,
 generated from `report.json`.
 
+Delivered on `feat/544-wake-oracle` (same package as I0):
+
+- `scenarios/`: W01–W04, A01, E01 as data; each fixture is written through the
+  binary's own `kmp_write_memory` (review rounds followed verbatim).
+- `native/`: disposable store per scenario and variant, child environment
+  built from an allowlist with `HOME`, `XDG_*`, `CODEX_HOME` and
+  `KMP_MCP_DATA_DIR` inside a fresh temp dir; the binary's startup log must
+  confirm that directory by the `env` rule before any tool call. One process
+  per session (initialize → initialized → tools/list → calls); driver
+  `kmp.native_driver.v1` follows the server's `next_action` verbatim at 4096
+  and 10000 bytes. Traces keep wire lexemes; `<case>.fixture.jsonl`
+  (fixture_preparation) and `<case>.oracle.jsonl` (E01 read-back) are hashed
+  beside the journeys but never measured as them.
+- `oracle/`: deterministic checks; wake claim contracts `kmp.wake_claim.v1`
+  (`evidence_ref`) and `v2` (`evidence_refs`) declared per capture and
+  validated strictly. Besides the metrics named above it reports
+  `identical_body_merged_citation_count` (one hop citing two sources with the
+  same text) and `support_displacement_count`, which the verdict uses; the raw
+  count of `--supports-->` lines stays descriptive.
+- `compare/`: re-verifies both runs, binds metrics and oracle to the manifest
+  digest, rejects mixed encoders and a capture repeated under another name,
+  pairs by journey × encoding × representation with the A.14 columns; `render`
+  writes the Markdown.
+
+```bash
+H="python3 -m scripts.performance.token_harness"
+TT="uv run --no-project --with tiktoken==0.14.0 python -m scripts.performance.token_harness"
+A=artifacts/544-wake-oracle-20260924
+$H capture --binary <copy of main kmp-mcp> --variant baseline --wake-contract kmp.wake_claim.v1 \
+  --build-provenance $A/baseline-build-provenance.json --out $A/baseline
+$H capture --binary <copy of candidate kmp-mcp> --variant candidate --wake-contract kmp.wake_claim.v2 \
+  --build-provenance $A/candidate-build-provenance.json --out $A/candidate
+$TT measure --run $A/baseline --encoding o200k_base --out $A/baseline-metrics.json   # same for candidate
+$H oracle --run $A/baseline --out $A/baseline-oracle.json                             # same for candidate
+$H compare --baseline-run $A/baseline --baseline-metrics ... --candidate-run $A/candidate ... --out $A/report.json
+$H render --report $A/report.json --control $A/aa-baseline.json.gz --out docs/development/agent-token-optimization-report.md
+```
+
+W04 follows the wake scope contract (`crates/kmp-mcp/tests/wake_scope.rs`):
+`current_state` is about context. When the packet declares it in
+`scope.context` with `scope.context_time == "unbounded"`, a memory later than
+`as_of` may appear there. The oracle then requires the declared
+`scope.selection` (proof, causal spine, resume cursor, guardrails) to exclude
+it. Without that declaration, state must exclude it too. The raw count stays
+visible as `post_as_of_memory_in_state_count`.
+
+Run of 2026-09-24 (baseline `main` a22b6402, candidate `fix/544-wake-scope`
+c88472b9, PR #840): the candidate passes all six scenarios at both budgets.
+The baseline passes only A01 and E01. W04 at `as_of` still lists the later
+lift in `current_state` (2 lines, reported as
+`post_as_of_memory_in_state_count`). This is allowed because the packet
+declares that field as unbounded context and the selection excludes the lift.
+
+W01 is now smaller in the candidate: −918 tokens at 4096 and −797 at 10000,
+3 calls each. Its 12 `proof.path` hops cite 27 evidence ids, the same as the
+baseline; efb5b6ae cited 62. Summed over the three responses at 10000:
+
+- `proof.evidence`: +463. The pinned spine evidence repeats on every page.
+- Savings: `current_state` −387, `causal_spine` −563, `next_actions` −96,
+  content text and summary −87 each.
+
+A01 is −5/−20 tokens with both passing (`reference_reduction_with_quality_pass`).
+E01 is +14, from the larger `tools/list` catalogue.
+Not delivered: T01 and G03, the 512-byte recovery budget, latency and cache
+temperature, H4/H5. The report lists them as limitations.
+
 ### Backlog, gated by I3 measurements
 
 | Review item | Starts when |
@@ -162,7 +228,7 @@ generated from `report.json`.
 | I0 | `feat/544-token-meter` | #836 | merged; legacy totals reproduced exactly on the 2026-09-15 captures |
 | I1 | `fix/544-wake-evidence-refs` | #835 | merged; contract wake pins 3 cited sources in page 1 (was 0) |
 | I2 | `fix/544-wake-state` | #837 | draft; state from live memories, `Next: none recorded` |
-| I3 | `feat/544-wake-oracle` | — | next |
+| I3 | `feat/544-wake-oracle` | #839 | draft; against #840 (c88472b9) the candidate passes W01–W04/A01/E01 and is smaller on every wake and ask journey; E01 +14 |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
 contract break is acceptable when it serves that. Breaks are named in each PR.
