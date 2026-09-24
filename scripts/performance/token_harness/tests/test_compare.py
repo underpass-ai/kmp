@@ -10,6 +10,7 @@ from ..application.verify import verify
 from ..compare.conclusion import Conclusion as C, Side, conclude
 from ..compare.inputs import ComparisonRejected
 from ..compare.pairing import _incompatibility
+from ..compare.markdown import render
 from ..compare.report import compare_runs
 from ..domain.errors import CaptureIntegrityError
 from ..domain.representation import RepresentationId
@@ -78,6 +79,24 @@ class CompareRunsTest(unittest.TestCase):
         report = compare_runs(self.base, self.base, 1 << 20, 'aa')
         self.assertEqual({row['delta_tokens'] for row in report['rows']}, {0})
         self.assertEqual({c['weighted_reduction'] for c in report['cohorts']}, {0.0})
+        self.assertEqual({c['memory_weighted_reduction'] for c in report['cohorts']}, {0.0})
+
+    def test_startup_is_reported_per_method_and_excluded_from_memory_change(self):
+        cand = side(self.folder.name, 'cand', {'t01-b4096': journey(['(decision) more'])})
+        report = compare_runs(self.base, cand, 1 << 20, 'x')
+        for name in ('baseline', 'candidate'):
+            (startup,) = report[name]['startup']
+            self.assertEqual(startup['tokens'], sum(m['tokens'] for m in startup['methods'].values()))
+            self.assertEqual(startup['distinct_totals'], [startup['tokens']])
+        row, (cohort, *_) = report['rows'][0], report['cohorts']
+        self.assertEqual(row['baseline']['startup_tokens'], report['baseline']['startup'][0]['tokens'])
+        memory = row['candidate']['memory_tokens'] - row['baseline']['memory_tokens']
+        self.assertEqual(memory, row['delta_tokens'])  # same startup: the whole delta is memory
+        self.assertAlmostEqual(cohort['memory_weighted_reduction'],
+                               -memory / row['baseline']['memory_tokens'])
+        rendered = render(report, 'report.json', history='## History\n\nearlier')
+        self.assertIn('### Startup per session', rendered)
+        self.assertTrue(rendered.rstrip().endswith('earlier'))
 
     def test_quality_fix_is_reported_with_its_growth(self):
         cand = side(self.folder.name, 'cand', {'t01-b4096': journey(['(decision) more'])})

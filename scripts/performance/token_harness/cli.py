@@ -110,8 +110,11 @@ def run_render(args):
     from .compare.markdown import render
     report = read_json(args.report)
     controls = [(path.name, read_json(path)) for path in args.control or []]
+    options = {'history': args.history.read_text(encoding='utf-8') if args.history else None}
+    if args.title:
+        options['title'] = args.title
     with Path(args.out).open('x', encoding='utf-8') as target:  # never overwrite
-        target.write(render(report, args.report.name, controls))
+        target.write(render(report, args.report.name, controls, **options))
     return 0
 
 
@@ -146,6 +149,9 @@ def _add_offline(commands):
     command.add_argument('--report', type=Path, required=True)
     command.add_argument('--control', type=Path, action='append', help='A/A report(s) to summarize')
     command.add_argument('--out', type=Path, required=True)
+    command.add_argument('--title', help='report heading; default: the I3 paired Wake report')
+    command.add_argument('--history', type=Path,
+                         help='hand-written Markdown section appended verbatim (earlier runs)')
 
 
 def main(argv=None):
