@@ -259,7 +259,7 @@ catalogue must now set `KMP_MCP_OUTPUT_SCHEMAS=1`.
 | I2 | `fix/544-wake-state` | #837 | merged; state from live memories, `Next: none recorded` |
 | I2b | `fix/544-wake-scope` | #840 | merged; hops join sources by the graph (W03), spine without bookkeeping (W04), no endpoint over-citation (W01) |
 | I3 | `feat/544-wake-oracle` | #839 | merged; against #840 (c88472b9) the candidate passes W01–W04/A01/E01 and is smaller on every wake and ask journey; E01 +14. Weighted −6.9 % at 4096 B, −1.0 % at 10000 B |
-| C1 — catalogue without output schemas | `feat/544-lean-catalogue` | draft | default `tools/list` 51,629 → 29,460 tokens (−42.9 %), 248,704 → 137,654 bytes; `KMP_MCP_OUTPUT_SCHEMAS=1` restores the previous catalogue byte for byte |
+| C1 — catalogue without output schemas | `feat/544-lean-catalogue` | #841 | draft; default `tools/list` 51,629 → 29,460 tokens (−42.9 %), 248,704 → 137,654 bytes; `KMP_MCP_OUTPUT_SCHEMAS=1` restores the previous catalogue byte for byte |
 | Next | PR 3 | — | pinned core evidence repeats on every page (+463 tokens in W01 at 10000 B); incremental continuations |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
