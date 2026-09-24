@@ -10,6 +10,7 @@ should start with [Embedded KMP](../embedded/README.md).
 - [Evidence-group acceptance controls](evidence-group-evaluation.md) — #538 source-backed multi-passage controls and their evaluation boundary.
 - [Visual projection performance](visual-projection-performance.md) — snapshot-bound ChronoLoom reuse, correctness and reproducible measurements.
 - [Releasing](releasing.md) — version, artifact and tag flow.
+- [Agent token optimization](agent-token-optimization.md) — #544 integration track: token meter, Wake evidence identity and paired measurement.
 - [Agent-facing surface](agent-surface.md) — maintenance procedure for people and agents, including ownership, generation, validation and context cost.
 - [Conditional argument schemas](agent-schema-conditions.md) — preserve callable fields and validate equivalent call forms against captured catalogues.
 - [Guide examples](../../plugins/kmp/guide/README.md) — authored lessons and isolated MCP replays.
