@@ -191,27 +191,22 @@ it. Without that declaration, state must exclude it too. The raw count stays
 visible as `post_as_of_memory_in_state_count`.
 
 Run of 2026-09-24 (baseline `main` a22b6402, candidate `fix/544-wake-scope`
-efb5b6ae, PR #840): the candidate passes all six scenarios at both budgets.
+c88472b9, PR #840): the candidate passes all six scenarios at both budgets.
 The baseline passes only A01 and E01. W04 at `as_of` still lists the later
 lift in `current_state` (2 lines, reported as
 `post_as_of_memory_in_state_count`). This is allowed because the packet
 declares that field as unbounded context and the selection excludes the lift.
 
-W01 is the only wake scenario where the candidate is larger: +483 tokens at
-4096 and +609 at 10000. Both variants make 3 calls. In the responses, summed
-over the three calls at 10000:
+W01 is now smaller in the candidate: −918 tokens at 4096 and −797 at 10000,
+3 calls each. Its 12 `proof.path` hops cite 27 evidence ids, the same as the
+baseline; efb5b6ae cited 62. Summed over the three responses at 10000:
 
-- `proof.path[].evidence_refs`: +1418. The same 12 hops cite 62 ids instead of
-  27, because each hop now also cites the sources that support either endpoint.
-  For example, `evidence:cutover:current --supports--> cutover` also cites the
-  pool's S5 relation evidence and both endpoint `detail:` ids.
-- `proof.evidence`: +463. The core pins the spine claim's evidence
-  (`…decision…:relation:1`, 205 tokens) and repeats it on every page.
+- `proof.evidence`: +463. The pinned spine evidence repeats on every page.
 - Savings: `current_state` −387, `causal_spine` −563, `next_actions` −96,
-  content text and summary −87 each, projection −70.
+  content text and summary −87 each.
 
-The growth is proof identity, not filler. Whether every hop should cite
-endpoint-support sources is a PR 2/PR 3 question.
+A01 is −5/−20 tokens with both passing (`reference_reduction_with_quality_pass`).
+E01 is +14, from the larger `tools/list` catalogue.
 Not delivered: T01 and G03, the 512-byte recovery budget, latency and cache
 temperature, H4/H5. The report lists them as limitations.
 
@@ -233,7 +228,7 @@ temperature, H4/H5. The report lists them as limitations.
 | I0 | `feat/544-token-meter` | #836 | merged; legacy totals reproduced exactly on the 2026-09-15 captures |
 | I1 | `fix/544-wake-evidence-refs` | #835 | merged; contract wake pins 3 cited sources in page 1 (was 0) |
 | I2 | `fix/544-wake-state` | #837 | draft; state from live memories, `Next: none recorded` |
-| I3 | `feat/544-wake-oracle` | #839 | draft; against #840 (efb5b6ae) the candidate passes W01–W04/A01/E01; W01 +483/+609 tokens from per-hop endpoint-support refs |
+| I3 | `feat/544-wake-oracle` | #839 | draft; against #840 (c88472b9) the candidate passes W01–W04/A01/E01 and is smaller on every wake and ask journey; E01 +14 |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
 contract break is acceptable when it serves that. Breaks are named in each PR.
