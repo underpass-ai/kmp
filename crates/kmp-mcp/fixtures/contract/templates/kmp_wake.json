@@ -104,7 +104,24 @@
       "axis": "null",
       "confidence": "string",
       "conflicts": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "id": "string",
+          "metadata": {
+            "proof_role": "string"
+          },
+          "source": "string",
+          "support_clocks": {
+            "ingested_at": "string",
+            "observed_at": "string"
+          },
+          "supports": [
+            "string"
+          ],
+          "text": "string",
+          "time": "string"
+        }
+      ],
       "expired": [
         {
           "ref": "string",
@@ -117,24 +134,7 @@
       "matched_terms": [],
       "missing": [],
       "nearest_outside": "null",
-      "path": [
-        {
-          "class": "string",
-          "clocks": {
-            "ingested_at": "string",
-            "observed_at": "string"
-          },
-          "confidence": "string",
-          "evidence_refs": [
-            "string"
-          ],
-          "from": "string",
-          "rel": "string",
-          "sequence": "integer",
-          "to": "string",
-          "why": "string"
-        }
-      ],
+      "path": [],
       "superseded": [
         {
           "ref": "string",
@@ -183,7 +183,9 @@
         {
           "because": "string",
           "claim": "string",
-          "evidence_ref": "string"
+          "evidence_refs": [
+            "string"
+          ]
         }
       ],
       "current_state": [

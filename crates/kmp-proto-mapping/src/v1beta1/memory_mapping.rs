@@ -52,6 +52,9 @@ mod temporal_goto_proof_tests;
 mod temporal_relation_clock_tests;
 mod term_counts;
 mod visual_projection;
+mod wake_claim_evidence;
+#[cfg(test)]
+mod wake_evidence_identity_tests;
 
 pub use ask_retrieval_context::AskRetrievalContext;
 pub use bundle_views::abouts_in_bundle;

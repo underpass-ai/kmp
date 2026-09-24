@@ -23,7 +23,9 @@ pub(super) fn wake_evidence_refs(value: &Value) -> BTreeSet<String> {
         .and_then(Value::as_array)
         .into_iter()
         .flatten()
-        .filter_map(|claim| claim.get("evidence_ref").and_then(Value::as_str))
+        .filter_map(|claim| claim.get("evidence_refs").and_then(Value::as_array))
+        .flatten()
+        .filter_map(Value::as_str)
         .map(ToString::to_string)
         .collect()
 }

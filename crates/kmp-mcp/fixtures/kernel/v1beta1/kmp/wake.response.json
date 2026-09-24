@@ -10,7 +10,7 @@
       {
         "claim": "MCP, gRPC, and NATS should be bindings, not the product shape.",
         "because": "The product needs to feel like a memory protocol, not a standards checklist.",
-        "evidence_ref": "evidence:kmp-design-direction"
+        "evidence_refs": ["evidence:kmp-design-direction"]
       }
     ],
     "open_loops": [

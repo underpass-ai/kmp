@@ -54,7 +54,7 @@ fn wake_output_schema() -> Value {
         "wake": output_object(json!({
             "objective": described("string", "The continuation intent supplied by the caller."),
             "current_state": string_array("State lines from about context, not a historical-state answer; see scope.context."),
-            "causal_spine": described("array", "Highest-salience explanatory relations, each with claim, because, and evidence_ref."),
+            "causal_spine": described("array", "Highest-salience explanatory relations, each with claim and because, plus evidence_refs to proof.evidence ids or inline evidence when no stored source holds it."),
             "open_loops": string_array("Live blocker statements reflected by the L0 summary; empty means no blocker was identified."),
             "next_actions": string_array("Next-action statements reflected by the L0 summary; empty means no concrete next action was identified."),
             "guardrails": string_array("Stored constraints the continuation should preserve.")

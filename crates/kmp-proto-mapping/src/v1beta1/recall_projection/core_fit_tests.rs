@@ -158,7 +158,7 @@ fn all_abouts_wake_with_a_shortened_core_advances_every_page() {
         "causal_spine": [{
             "claim": "claim:0",
             "because": "The first evidence item anchors the sweep.",
-            "evidence_ref": "evidence:0"
+            "evidence_refs": ["evidence:0"]
         }],
         "open_loops": ["Inspect every remaining anchor"],
         "next_actions": ["Continue with the returned cursor"],

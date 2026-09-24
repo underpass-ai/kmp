@@ -51,7 +51,7 @@ fn under_a_tight_budget_the_labels_yield_before_the_cited_proof() {
         .map(|wake| {
             wake.causal_spine
                 .iter()
-                .map(|claim| claim.evidence_ref.clone())
+                .flat_map(|claim| claim.evidence_refs.clone())
                 .collect::<BTreeSet<_>>()
         })
         .unwrap_or_default();

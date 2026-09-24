@@ -387,7 +387,7 @@ mod tests {
                 "causal_spine": [{
                     "claim": "claim",
                     "because": format!("because {}", "detail ".repeat(4_000)),
-                    "evidence_ref": "evidence:1"
+                    "evidence_refs": ["evidence:1"]
                 }],
                 "open_loops": [],
                 "next_actions": [],
@@ -414,7 +414,7 @@ mod tests {
         assert_eq!(bounded["truncation"]["truncated"], true);
         assert_eq!(bounded["projection"]["core_text_shortened"], true);
         assert_eq!(
-            bounded["wake"]["causal_spine"][0]["evidence_ref"],
+            bounded["wake"]["causal_spine"][0]["evidence_refs"][0],
             "evidence:1"
         );
     }
