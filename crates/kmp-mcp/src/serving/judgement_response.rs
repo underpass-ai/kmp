@@ -11,3 +11,15 @@ pub(crate) struct JudgementResponse {
     pub input_tokens: u64,
     pub requests: usize,
 }
+
+impl JudgementResponse {
+    /// No questions asked: nothing answered, nothing spent.
+    pub(crate) fn empty(model: &str) -> Self {
+        Self {
+            model: model.into(),
+            answers: BTreeMap::new(),
+            input_tokens: 0,
+            requests: 0,
+        }
+    }
+}

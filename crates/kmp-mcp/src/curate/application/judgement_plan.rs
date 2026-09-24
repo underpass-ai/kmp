@@ -1,0 +1,163 @@
+use std::collections::BTreeMap;
+
+use kmp_domain::KnownMemoryRelationType;
+use serde_json::json;
+
+use crate::curate::application::curate_material::CurateMaterial;
+use crate::curate::domain::candidate_pair::CandidatePair;
+use crate::curate::domain::curate_fact::CurateFact;
+use crate::curate::domain::curate_thresholds::NONE;
+use crate::serving::judgement_question::JudgementQuestion;
+use crate::serving::judgement_request::JudgementRequest;
+
+const SENT_CHARS: usize = 2_000;
+const PARTNER_CHARS: usize = 400;
+const PARTNER_FACTS: usize = 60;
+const PARTNER_ORPHANS: usize = 30;
+
+pub(crate) fn excerpt(text: &str, chars: usize) -> String {
+    text.chars().take(chars).collect()
+}
+
+/// The relation names a writer may declare, plus `none`. Across abouts only
+/// the equivalences may be declared.
+pub(crate) fn relation_options(crosses_abouts: bool) -> Vec<String> {
+    KnownMemoryRelationType::writer_relation_types()
+        .iter()
+        .filter(|relation| !crosses_abouts || relation.may_cross_abouts())
+        .map(|relation| relation.as_str().to_string())
+        .chain(std::iter::once(NONE.to_string()))
+        .collect()
+}
+
+fn text_of<'a>(material: &'a CurateMaterial, reference: &str) -> &'a str {
+    material
+        .fact(reference)
+        .map(|fact| fact.text.as_str())
+        .unwrap_or_default()
+}
+
+/// One request per about: its facts as the state, one choice per orphan over
+/// the others. Keys `f<n>` map back to refs. None when the about is too
+/// large to show whole or has nothing to pair.
+pub(crate) fn partner_request(
+    facts: &[&CurateFact],
+    orphans: &[&CurateFact],
+) -> Option<(JudgementRequest, BTreeMap<String, String>)> {
+    if facts.len() < 2 || facts.len() > PARTNER_FACTS || orphans.is_empty() {
+        return None;
+    }
+    let keys = facts
+        .iter()
+        .enumerate()
+        .map(|(n, fact)| (format!("f{n}"), fact.reference.clone()))
+        .collect::<BTreeMap<_, _>>();
+    let key_of = |reference: &str| {
+        keys.iter()
+            .find(|(_, r)| r.as_str() == reference)
+            .map(|(k, _)| k.clone())
+    };
+    let state = json!({ "facts": facts.iter().enumerate()
+        .map(|(n, fact)| (format!("f{n}"), json!(excerpt(&fact.text, PARTNER_CHARS))))
+        .collect::<serde_json::Map<_, _>>() });
+    let mut questions = BTreeMap::new();
+    for orphan in orphans.iter().take(PARTNER_ORPHANS) {
+        let Some(own) = key_of(&orphan.reference) else {
+            continue;
+        };
+        let options = keys
+            .keys()
+            .filter(|key| **key != own)
+            .cloned()
+            .chain(std::iter::once(NONE.to_string()))
+            .collect();
+        questions.insert(
+            own.clone(),
+            JudgementQuestion::Choice {
+                instructions: json!(format!(
+                    "Which fact in `facts` has the most direct relation to `facts.{own}`: \
+                     it causes, explains, supports, contradicts, answers or repeats it? \
+                     Answer none when no fact does."
+                )),
+                options,
+            },
+        );
+    }
+    Some((JudgementRequest { state, questions }, keys))
+}
+
+/// For each pair: its best relation type (`t<n>`) and whether the two facts
+/// contradict each other (`c<n>`).
+pub(crate) fn pair_request(material: &CurateMaterial, pairs: &[CandidatePair]) -> JudgementRequest {
+    let mut questions = BTreeMap::new();
+    for (n, pair) in pairs.iter().enumerate() {
+        let texts = json!({
+            "from": excerpt(text_of(material, &pair.from), SENT_CHARS),
+            "to": excerpt(text_of(material, &pair.to), SENT_CHARS),
+        });
+        let mut typed = texts.clone();
+        typed["question"] =
+            json!("Which relation does `from` have to `to`? Answer none when no relation holds.");
+        questions.insert(
+            format!("t{n}"),
+            JudgementQuestion::Choice {
+                instructions: typed,
+                options: relation_options(pair.crosses_abouts),
+            },
+        );
+        let mut clash = texts;
+        clash["question"] = json!("Do `from` and `to` state things that cannot both be true?");
+        questions.insert(
+            format!("c{n}"),
+            JudgementQuestion::Noul {
+                instructions: clash,
+            },
+        );
+    }
+    JudgementRequest {
+        state: json!("Two memories of one knowledge base, judged pair by pair."),
+        questions,
+    }
+}
+
+/// For each declared link: does its reason hold (`s<n>`), and which type
+/// fits best (`b<n>`).
+pub(crate) fn suspect_request(material: &CurateMaterial) -> JudgementRequest {
+    let mut questions = BTreeMap::new();
+    for (n, link) in material.declared.iter().enumerate() {
+        let crosses = material.fact(&link.from).map(|f| &f.about)
+            != material.fact(&link.to).map(|f| &f.about);
+        let base = json!({
+            "from": excerpt(text_of(material, &link.from), SENT_CHARS),
+            "to": excerpt(text_of(material, &link.to), SENT_CHARS),
+            "relation": link.rel,
+            "why": link.why,
+            "evidence": link.evidence,
+        });
+        let mut support = base.clone();
+        support["question"] =
+            json!("Do `why` and `evidence` show that `from` has the relation `relation` to `to`?");
+        questions.insert(
+            format!("s{n}"),
+            JudgementQuestion::Noul {
+                instructions: support,
+            },
+        );
+        let mut best = base;
+        best["question"] =
+            json!("Which relation does `from` have to `to`? Answer none when no relation holds.");
+        questions.insert(
+            format!("b{n}"),
+            JudgementQuestion::Choice {
+                instructions: best,
+                options: relation_options(crosses),
+            },
+        );
+    }
+    JudgementRequest {
+        state: json!(
+            "Declared relations between memories of one knowledge base, audited one by one."
+        ),
+        questions,
+    }
+}
