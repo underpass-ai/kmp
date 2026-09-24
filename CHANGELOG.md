@@ -23,6 +23,14 @@ Detailed notes from the early release cycle remain available in the
   fact text is sent to TypeSafe. Without it, the review returns kernel pairs
   untyped. The review is frozen under `review_token` for paging. Embedded store
   only.
+- Optional Ask re-ranking with TypeSafe Jev, enabled per store by `rerank.json`
+  on top of `typesafe.json`. Jev judges whether each admitted passage answers
+  the question: the lexical ranker's order first, then admitted entries it
+  left out, so paraphrases can be read. The order joins the RRF fusion as a
+  channel. The cited core, `because` and confidence stay lexical, and entries
+  reached only this way carry `reached_by: rerank`. The order is frozen for
+  continuation pages, and any failure leaves ordinary retrieval with a
+  warning.
 
 ## [0.20.1] - 2026-09-24
 
