@@ -743,9 +743,10 @@ permission to trace arbitrary edges across owners.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "project_recovery",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:incident-project",
     "axis": "occurred",
     "from": {
@@ -778,9 +779,10 @@ permission to trace arbitrary edges across owners.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "support_reconciliation",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:incident-support",
     "axis": "observed",
     "from": {
@@ -864,9 +866,10 @@ material is irrelevant in another task.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "occurred_start",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:incident-support",
     "axis": "occurred",
     "dimensions": {
@@ -905,9 +908,10 @@ material is irrelevant in another task.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "occurred_later",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:incident-support",
     "axis": "occurred",
     "dimensions": {
@@ -945,9 +949,10 @@ material is irrelevant in another task.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "observed_start",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:incident-support",
     "axis": "observed",
     "dimensions": {
@@ -986,9 +991,10 @@ material is irrelevant in another task.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "observed_later",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:incident-support",
     "axis": "observed",
     "dimensions": {

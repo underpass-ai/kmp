@@ -2,21 +2,22 @@
 use super::*;
 
 #[tokio::test]
-async fn all_four_temporal_tools_transport_dependency_records_and_groups() {
+async fn all_four_time_moves_transport_dependency_records_and_groups() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
     let server = KernelMcpServer::grpc(endpoint);
-    for (tool, cursor) in [
-        ("kmp_goto", "at"),
-        ("kmp_near", "around"),
-        ("kmp_rewind", "from"),
-        ("kmp_forward", "from"),
+    for (time_move, cursor) in [
+        ("goto", "at"),
+        ("near", "around"),
+        ("rewind", "from"),
+        ("forward", "from"),
     ] {
         let mut args = json!({"about":"question:temporal", "include":{"dependencies":true},
             "refs":["claim:rachel-austin"],
             "budget":{"max_bytes":100000}});
         args[cursor] = json!({"time":"2026-04-12T15:03:00Z"});
-        let result = call_tool(&server, 20, tool, args).await;
+        args["move"] = json!(time_move);
+        let result = call_tool(&server, 20, "kmp_time", args).await;
         assert_eq!(result["result"]["isError"], false, "{result}");
         let content = &result["result"]["structuredContent"];
         assert_eq!(

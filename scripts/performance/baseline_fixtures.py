@@ -32,10 +32,10 @@ def read_cases(about, refs):
     return [
         ("wake", "kmp_wake", {"about": about, "budget": budget}),
         ("ask", "kmp_ask", {"about": about, "question": "quantity 17 excludes B", "budget": budget}),
-        ("goto", "kmp_goto", {"about": about, "axis": "observed",
+        ("goto", "kmp_time", {"about": about, "move": "goto", "axis": "observed",
             "at": {"ref": refs[3]}, "limit": {"entries": 4},
             "budget": {"max_bytes": 64000}}),
-        ("forward", "kmp_forward", {"about": about, "axis": "observed",
+        ("forward", "kmp_time", {"about": about, "move": "forward", "axis": "observed",
             "from": {"ref": refs[1]}, "limit": {"entries": 4},
             "budget": {"max_bytes": 64000}}),
     ]

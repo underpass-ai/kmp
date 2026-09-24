@@ -46,7 +46,7 @@ async fn seed(server: &KernelMcpServer) -> Value {
 }
 
 fn query() -> Value {
-    json!({"about":"project:dependencies", "at":{"time":"2026-09-10T10:01:00Z"},
+    json!({"move":"goto","about":"project:dependencies", "at":{"time":"2026-09-10T10:01:00Z"},
         "axis":"observed", "include":{"dependencies":true,"raw_refs":true},
         "limit":{"entries":1}, "budget":{"max_bytes":1_000_000}})
 }
@@ -56,10 +56,10 @@ async fn dependency_option_recovers_old_source_without_changing_history_selectio
     let dir = tempfile::tempdir().expect("isolated store");
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded");
     let receipt = seed(&server).await;
-    let with = call(&server, "kmp_goto", query()).await;
+    let with = call(&server, "kmp_time", query()).await;
     let mut plain = query();
     plain["include"] = json!({"evidence":true,"relations":true,"raw_refs":true});
-    let without = call(&server, "kmp_goto", plain).await;
+    let without = call(&server, "kmp_time", plain).await;
     for key in ["entries", "coverage", "raw_refs"] {
         assert_eq!(with[key], without[key], "{key}");
     }
@@ -76,8 +76,8 @@ async fn dependency_option_recovers_old_source_without_changing_history_selectio
     let extra = &with["proof"]["entries"][0];
     let canonical = call(
         &server,
-        "kmp_forward",
-        json!({"about":"project:dependencies",
+        "kmp_time",
+        json!({"move":"forward","about":"project:dependencies",
         "axis":"observed", "interval":{"start":"2026-09-01T00:00:00Z"},
         "budget":{"max_bytes":100000}}),
     )
@@ -117,7 +117,7 @@ async fn explicit_clock_and_label_filters_do_not_admit_a_related_but_ineligible_
     let receipt = seed(&server).await;
     let mut clock = query();
     clock["axis"] = json!("occurred");
-    let response = call(&server, "kmp_goto", clock).await;
+    let response = call(&server, "kmp_time", clock).await;
     assert_eq!(
         response["proof"]["groups"][0]["member_refs"],
         json!([receipt["local_refs"]["role"]])
@@ -139,7 +139,7 @@ async fn explicit_clock_and_label_filters_do_not_admit_a_related_but_ineligible_
     );
     let mut filtered = query();
     filtered["dimensions"] = json!({"selectors":[{"key":"source","op":"in","values":["S2"]}]});
-    let response = call(&server, "kmp_goto", filtered).await;
+    let response = call(&server, "kmp_time", filtered).await;
     assert_eq!(
         response["proof"]["groups"][0]["member_refs"],
         json!([receipt["local_refs"]["role"]])
@@ -158,7 +158,7 @@ async fn pages_reconstruct_dependency_bodies_and_links_even_with_reduced_entry_f
     seed(&server).await;
     let mut args = query();
     args["fields"] = json!([]);
-    let full = call(&server, "kmp_goto", args.clone()).await;
+    let full = call(&server, "kmp_time", args.clone()).await;
     assert!(full["entries"][0].get("text").is_none());
     assert!(full["proof"]["entries"][0]["text"].is_string());
     let pointers: Vec<_> = full["page"]["sections"]
@@ -172,7 +172,7 @@ async fn pages_reconstruct_dependency_bodies_and_links_even_with_reduced_entry_f
         *recovered.pointer_mut(pointer).expect("section") = json!([]);
     }
     args["budget"]["max_bytes"] = json!(10000);
-    let mut page = call(&server, "kmp_goto", args).await;
+    let mut page = call(&server, "kmp_time", args).await;
     assert_eq!(page["page"]["has_more"], true, "fixture must require pages");
     for attempt in 0..50 {
         assert_eq!(page["selection"], full["selection"]);
@@ -242,24 +242,25 @@ async fn forward_rewind_and_near_keep_dependency_expansion_when_selecting_positi
     let dir = tempfile::tempdir().expect("isolated store");
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded");
     seed(&server).await;
-    let goto = call(&server, "kmp_goto", query()).await;
-    for (tool, cursor_key, time) in [
-        ("kmp_forward", "from", "2026-09-02T00:00:00Z"),
-        ("kmp_rewind", "from", "2026-09-10T10:01:00Z"),
-        ("kmp_near", "around", "2026-09-10T10:01:00Z"),
+    let goto = call(&server, "kmp_time", query()).await;
+    for (time_move, cursor_key, time) in [
+        ("forward", "from", "2026-09-02T00:00:00Z"),
+        ("rewind", "from", "2026-09-10T10:01:00Z"),
+        ("near", "around", "2026-09-10T10:01:00Z"),
     ] {
         let mut args = query();
         args.as_object_mut().expect("args").remove("at");
+        args["move"] = json!(time_move);
         args[cursor_key] = json!({"time":time});
         args["window"] = json!({"before_entries":1,"after_entries":0});
-        let response = call(&server, tool, args).await;
+        let response = call(&server, "kmp_time", args).await;
         assert_eq!(
             response["proof"]["groups"], goto["proof"]["groups"],
-            "{tool}"
+            "{time_move}"
         );
         assert_eq!(
             response["proof"]["entries"], goto["proof"]["entries"],
-            "{tool}"
+            "{time_move}"
         );
     }
 }
@@ -271,14 +272,14 @@ async fn changed_dependency_invalidates_cursor_and_conflicting_include_returns_e
     let receipt = seed(&server).await;
     let mut args = query();
     args["budget"]["max_bytes"] = json!(10000);
-    let first = call(&server, "kmp_goto", args).await;
+    let first = call(&server, "kmp_time", args).await;
     let continuation = first["next_actions"][0]["arguments"].clone();
     assert!(continuation["page"]["cursor"].is_string());
     call(&server, "kmp_write_memory", json!({"about":"project:dependencies", "actor":"test",
         "observed_at":"2026-09-10T10:01:00Z", "idempotency_key":"dependencies:summary",
         "search_summaries":[{"ref":receipt["local_refs"]["alias"],
             "summary_en":"The scoped register identifies Elena Vega as Nora within workshop Alba."}]})).await;
-    let error = raw(&server, "kmp_goto", continuation).await;
+    let error = raw(&server, "kmp_time", continuation).await;
     assert_eq!(error["isError"], true);
     assert_eq!(
         error["structuredContent"]["feedback"][0]["code"],
@@ -286,5 +287,5 @@ async fn changed_dependency_invalidates_cursor_and_conflicting_include_returns_e
     );
     let mut conflict = query();
     conflict["include"]["evidence"] = json!(false);
-    assert_eq!(raw(&server, "kmp_goto", conflict).await["isError"], true);
+    assert_eq!(raw(&server, "kmp_time", conflict).await["isError"], true);
 }

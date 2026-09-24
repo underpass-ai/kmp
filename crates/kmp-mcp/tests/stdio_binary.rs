@@ -3088,11 +3088,11 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
     };
     let mut expected = Vec::new();
     for axis in ["occurred", "observed", "ingested", "validity"] {
-        for (name, cursor, time) in [
-            ("kmp_goto", "at", "2026-09-04T12:00:00Z"),
-            ("kmp_near", "around", "2026-09-04T12:00:00Z"),
-            ("kmp_rewind", "from", "2026-09-04T12:00:00Z"),
-            ("kmp_forward", "from", "2026-09-01T00:00:00Z"),
+        for (time_move, cursor, time) in [
+            ("goto", "at", "2026-09-04T12:00:00Z"),
+            ("near", "around", "2026-09-04T12:00:00Z"),
+            ("rewind", "from", "2026-09-04T12:00:00Z"),
+            ("forward", "from", "2026-09-01T00:00:00Z"),
         ] {
             for (op, values, refs) in [
                 ("in", json!(["permit"]), vec!["example:labels:permit"]),
@@ -3106,7 +3106,8 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
             ] {
                 let mut args = json!({"about":"example:labels","axis":axis,"dimensions":dims(op,values),"limit":{"entries":10},"budget":{"max_bytes":30000}});
                 args[cursor] = json!({"time":time});
-                requests.push(tool(requests.len() + 1, name, args));
+                args["move"] = json!(time_move);
+                requests.push(tool(requests.len() + 1, "kmp_time", args));
                 expected.push((false, refs));
             }
         }
@@ -3170,12 +3171,12 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
         }
     }
     // A continuation must keep both the selector and the narrowed output lane.
-    let mut page_args = json!({"about":"example:labels","axis":"occurred",
+    let mut page_args = json!({"move":"forward","about":"example:labels","axis":"occurred",
         "from":{"time":"2026-09-01T00:00:00Z"},"dimensions":dims("exists",json!([])),
         "limit":{"entries":1},"budget":{"max_bytes":30000}});
     let mut paged_refs = Vec::new();
     for page_index in 0..2 {
-        let request = tool(1, "kmp_forward", page_args.clone());
+        let request = tool(1, "kmp_time", page_args.clone());
         let output = run_binary(&envs, &format!("{request}\n"));
         assert!(output.status.success(), "{output:?}");
         let response: Value = serde_json::from_slice(&output.stdout).expect("page response");
@@ -3196,7 +3197,8 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
         assert_eq!(result["selection"]["has_more"], page_index == 0);
         if page_index == 0 {
             let action = &result["next_actions"][0];
-            assert_eq!(action["tool"], "kmp_forward");
+            assert_eq!(action["tool"], "kmp_time");
+            assert_eq!(action["arguments"]["move"], "forward");
             assert_eq!(action["arguments"]["dimensions"], page_args["dimensions"]);
             page_args = action["arguments"].clone();
         }

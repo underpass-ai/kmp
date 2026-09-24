@@ -582,7 +582,7 @@ Resume this unchanged teaching proposal only after that review:
 Inspect B1 and G1 against the same R1, then A1→OP1, EX1→A1 and S1→AL1. Their relation classes are constraint, motivational and causal respectively. No record authorizes production or attributes B1 to a cause. A positive measurement is scoped to its test conditions.
 
 ```json
-{"tool":"kmp_forward","save_as":"records","arguments":{"about":"example:guide:workflow-proof","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"records","arguments":{"move":"forward","about":"example:guide:workflow-proof","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
 ```
 
 ```json

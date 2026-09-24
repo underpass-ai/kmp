@@ -258,7 +258,7 @@ async fn tools_list_exposes_declared_kmp_tools() {
 }
 
 #[tokio::test]
-async fn former_kernel_names_are_accepted_but_not_advertised() {
+async fn former_kernel_names_are_accepted_but_not_advertised_except_retired_time_aliases() {
     let calls = [
         ("kernel_ingest", sample_ingest_arguments()),
         ("kernel_write_memory", sample_write_arguments(true)),
@@ -268,34 +268,6 @@ async fn former_kernel_names_are_accepted_but_not_advertised() {
             json!({
                 "about": "question:830ce83f",
                 "question": "Where did Rachel move?"
-            }),
-        ),
-        (
-            "kernel_goto",
-            json!({
-                "about": "question:830ce83f",
-                "at": {"ref": "claim:rachel-austin"}
-            }),
-        ),
-        (
-            "kernel_near",
-            json!({
-                "about": "question:830ce83f",
-                "around": {"ref": "claim:rachel-austin"}
-            }),
-        ),
-        (
-            "kernel_rewind",
-            json!({
-                "about": "question:830ce83f",
-                "from": {"ref": "claim:rachel-austin"}
-            }),
-        ),
-        (
-            "kernel_forward",
-            json!({
-                "about": "question:830ce83f",
-                "from": {"ref": "claim:rachel-austin"}
             }),
         ),
         (
@@ -322,6 +294,35 @@ async fn former_kernel_names_are_accepted_but_not_advertised() {
         .await;
 
         assert_eq!(response["result"]["isError"], false, "alias {name}");
+    }
+
+    // The former temporal aliases went with the per-move tools: they are
+    // refused as unknown and point at kmp_time with the matching move.
+    let retired = [
+        ("kernel_goto", "goto", "at"),
+        ("kernel_near", "near", "around"),
+        ("kernel_rewind", "rewind", "from"),
+        ("kernel_forward", "forward", "from"),
+    ];
+    for (id, (name, time_move, cursor)) in retired.into_iter().enumerate() {
+        let mut arguments = json!({"about": "question:830ce83f"});
+        arguments[cursor] = json!({"ref": "claim:rachel-austin"});
+        let response = handle(json!({
+            "jsonrpc": "2.0",
+            "id": 100 + id,
+            "method": "tools/call",
+            "params": {"name": name, "arguments": arguments}
+        }))
+        .await;
+
+        assert_eq!(response["result"]["isError"], true, "retired alias {name}");
+        let text = response["result"]["content"][0]["text"]
+            .as_str()
+            .expect("tool error should include text");
+        assert!(
+            text.contains("kmp_time") && text.contains(&format!("\"move\": \"{time_move}\"")),
+            "retired alias {name} must point at kmp_time: {text}"
+        );
     }
 }
 
@@ -383,8 +384,9 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         "id": 28,
         "method": "tools/call",
         "params": {
-            "name": "kmp_near",
+            "name": "kmp_time",
             "arguments": {
+                "move": "near",
                 "about": "question:830ce83f",
                 "around": {
                     "time": "2026-04-12T15:03:00Z"

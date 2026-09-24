@@ -12,8 +12,8 @@ supersession without a reason — a supersession with no why is a deletion with
 extra steps, and it destroys the one thing the record was for.
 
 What this buys is visible only if you show it: after reverting, the current
-answer leads with the new state, and `kmp_rewind` to before the reversal
-still returns the old decision with the evidence it had. Both are true, at
+answer leads with the new state, and a `kmp_time` rewind to before the
+reversal still returns the old decision with the evidence it had. Both are true, at
 different times, and that is the whole point of keeping a log.
 
 A replaced entry comes back **marked**. `kmp_wake` and `kmp_ask` carry

@@ -679,9 +679,10 @@ The staging slice contains S4. The later RUN-8 slice contains D1.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "component_history",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:labels-negation",
     "from": {"time": "2026-09-01T00:00:00Z"},
     "axis": "occurred",
@@ -694,9 +695,10 @@ The staging slice contains S4. The later RUN-8 slice contains D1.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "same_conditions",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:labels-negation",
     "from": {"time": "2026-09-01T00:00:00Z"},
     "axis": "occurred",
@@ -709,9 +711,10 @@ The staging slice contains S4. The later RUN-8 slice contains D1.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "staging_only",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:labels-negation",
     "from": {"time": "2026-09-01T00:00:00Z"},
     "axis": "occurred",
@@ -724,9 +727,10 @@ The staging slice contains S4. The later RUN-8 slice contains D1.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "later_only",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:labels-negation",
     "from": {"time": "2026-09-01T00:00:00Z"},
     "axis": "occurred",
@@ -744,9 +748,10 @@ filter establishes a new fact or turns unknown scope into prod.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "not_staging",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:labels-negation",
     "from": {"time": "2026-09-01T00:00:00Z"},
     "axis": "occurred",
@@ -759,9 +764,10 @@ filter establishes a new fact or turns unknown scope into prod.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "known_not_staging",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:labels-negation",
     "from": {"time": "2026-09-01T00:00:00Z"},
     "axis": "occurred",

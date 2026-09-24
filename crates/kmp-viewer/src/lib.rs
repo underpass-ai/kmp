@@ -1,6 +1,6 @@
 //! A local, read-only web viewer over KMP memory: the graph, its notes, the
 //! timeline and causal traces, rendered for a human the way `kmp_wake`,
-//! `kmp_inspect`, `kmp_near` and `kmp_trace` render them for an
+//! `kmp_inspect`, `kmp_time` (near) and `kmp_trace` render them for an
 //! agent — same facade, same semantics, no parallel read model.
 //!
 //! Served in-process over an already-open kernel on purpose: the viewer sees

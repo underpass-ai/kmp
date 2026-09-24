@@ -118,15 +118,15 @@ async fn historical_proof(server: &KernelMcpServer, at: &str, exclusive: bool) -
     let mut arguments = json!({"about":ABOUT,"axis":"observed",
         "budget":{"detail":"full","max_bytes":200000},
         "include":{"evidence":true,"relations":true},"limit":{"entries":100}});
-    let tool = if exclusive {
+    arguments["move"] = if exclusive {
         arguments["interval"] = json!({"end":at});
-        "kmp_forward"
+        json!("forward")
     } else {
         arguments["at"] = json!({"time":at});
         arguments["window"] = json!({"before_entries":100,"after_entries":0});
-        "kmp_goto"
+        json!("goto")
     };
-    let result = call(server, tool, arguments).await;
+    let result = call(server, "kmp_time", arguments).await;
     assert_ne!(result["projection"]["page"]["has_more"], true, "{result}");
     result["proof"].clone()
 }

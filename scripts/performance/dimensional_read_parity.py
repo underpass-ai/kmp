@@ -42,11 +42,11 @@ def main():
             queries.append(("kmp_wake", copy.deepcopy(base)))
             queries.append(("kmp_ask", {**copy.deepcopy(base), "question": "Which quantity excludes B?"}))
             for axis in ["occurred", "observed", "ingested", "validity", "default"]:
-                query = {**copy.deepcopy(base), "at": {"time": "2026-09-10T10:00:04Z"},
+                query = {**copy.deepcopy(base), "move": "goto", "at": {"time": "2026-09-10T10:00:04Z"},
                     "axis": axis, "limit": {"entries": 3}, "include": {"evidence": True, "relations": True}}
                 if axis == "default":
                     query.pop("axis")
-                queries.append(("kmp_goto", query))
+                queries.append(("kmp_time", query))
         responses = {}
         for side, binary in [("before", before), ("after", after)]:
             shutil.copytree(scratch / "seed", scratch / side)

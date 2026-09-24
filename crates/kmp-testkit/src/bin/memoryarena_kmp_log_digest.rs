@@ -254,7 +254,7 @@ fn ingest_writer_read_done(digest: &mut Digest, value: &Value) {
         return;
     };
     let read = ReadDigest {
-        tool: owned_string_field(value, "tool").unwrap_or_else(|| "unknown".to_string()),
+        tool: logged_tool_label(value),
         target_ref: owned_string_field(value, "target_ref"),
         elapsed_ms: u128_field(value, "elapsed_ms"),
         observed_refs: string_array_field(value, "observed_entry_refs"),
@@ -359,7 +359,7 @@ fn ingest_probe_done(digest: &mut Digest, value: &Value) {
     let key = ProbeKey {
         event_index: u64_field(value, "event_index"),
         subtask_index: u64_field(value, "subtask_index"),
-        tool: owned_string_field(value, "tool").unwrap_or_else(|| "unknown".to_string()),
+        tool: logged_tool_label(value),
         request_id: u64_field(value, "request_id"),
     };
     digest.probes.insert(
@@ -618,7 +618,7 @@ fn render_probe_growth(output: &mut String, digest: &Digest) {
 
     for (subtask_index, by_tool) in by_subtask {
         let mut segments = Vec::new();
-        for tool in ["kmp_near", "kmp_trace", "kmp_inspect"] {
+        for tool in ["kmp_time:near", "kmp_trace", "kmp_inspect"] {
             let Some(probes) = by_tool.get(tool) else {
                 continue;
             };
@@ -642,6 +642,34 @@ fn render_probe_growth(output: &mut String, digest: &Digest) {
             "- subtask={subtask_index}: {}\n",
             segments.join("; ")
         ));
+    }
+}
+
+/// Tool label of a logged read: `kmp_time:<move>` for temporal reads.
+///
+/// Logs written before #544 merged the temporal tools into `kmp_time` name the
+/// move as its own tool (`kmp_near`, `kmp_goto`, `kmp_rewind`, `kmp_forward`);
+/// those legacy names are still accepted and folded into the same label so old
+/// and new runs digest alike.
+fn logged_tool_label(value: &Value) -> String {
+    let Some(tool) = value.get("tool").and_then(Value::as_str) else {
+        return "unknown".to_string();
+    };
+    let legacy_move = match tool {
+        "kmp_near" => Some("near"),
+        "kmp_goto" => Some("goto"),
+        "kmp_rewind" => Some("rewind"),
+        "kmp_forward" => Some("forward"),
+        _ => None,
+    };
+    let movement = legacy_move.or_else(|| {
+        (tool == "kmp_time")
+            .then(|| value.get("move").and_then(Value::as_str))
+            .flatten()
+    });
+    match movement {
+        Some(movement) => format!("kmp_time:{movement}"),
+        None => tool.to_string(),
     }
 }
 
@@ -996,6 +1024,7 @@ mod tests {
             serde_json::json!({
                 "event": "memoryarena_smart_writer.mcp_read.done",
                 "entry_ref": entry,
+                // Pre-#544 log line: legacy temporal tool name stays readable.
                 "tool": "kmp_near",
                 "target_ref": "memoryarena:run:r1:task_type:progressive_search:task:1:subtask:9:answer",
                 "elapsed_ms": 702,
@@ -1060,6 +1089,26 @@ mod tests {
         assert!(rendered.contains("relation=depends_on/causal(high) -> t1/s9/answer"));
         assert!(rendered.contains("quality=rich"));
         assert!(rendered.contains("commit=11514ms"));
+    }
+
+    #[test]
+    fn logged_tool_label_folds_legacy_temporal_names_into_kmp_time() {
+        for (event, expected) in [
+            (
+                serde_json::json!({ "tool": "kmp_time", "move": "near" }),
+                "kmp_time:near",
+            ),
+            (serde_json::json!({ "tool": "kmp_near" }), "kmp_time:near"),
+            (
+                serde_json::json!({ "tool": "kmp_rewind" }),
+                "kmp_time:rewind",
+            ),
+            (serde_json::json!({ "tool": "kmp_time" }), "kmp_time"),
+            (serde_json::json!({ "tool": "kmp_inspect" }), "kmp_inspect"),
+            (serde_json::json!({}), "unknown"),
+        ] {
+            assert_eq!(logged_tool_label(&event), expected);
+        }
     }
 
     #[test]

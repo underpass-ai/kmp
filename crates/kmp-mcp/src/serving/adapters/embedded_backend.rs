@@ -6,6 +6,7 @@ use super::embedded::{
 };
 use super::lexical_bridge_file::load_lexical_bridge;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
+use crate::contract::{TIME_TOOL, TimeMove};
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture, ToolError};
 use kmp_domain::TemporalDirection;
@@ -124,19 +125,16 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     .call(arguments)
                     .await
                 }
-                "kmp_goto" => {
-                    EmbeddedTemporalMoveTool::new(&service, TemporalDirection::Goto, "goto")
-                        .call(arguments)
-                        .await
-                }
-                "kmp_near" => EmbeddedNearTool::new(&service).call(arguments).await,
-                "kmp_rewind" => {
-                    EmbeddedTemporalMoveTool::new(&service, TemporalDirection::Rewind, "rewind")
-                        .call(arguments)
-                        .await
-                }
-                "kmp_forward" => {
-                    EmbeddedTemporalMoveTool::new(&service, TemporalDirection::Forward, "forward")
+                TIME_TOOL => {
+                    let (direction, name) = match TimeMove::from_arguments(arguments)? {
+                        TimeMove::Near => {
+                            return EmbeddedNearTool::new(&service).call(arguments).await;
+                        }
+                        TimeMove::Goto => (TemporalDirection::Goto, "goto"),
+                        TimeMove::Rewind => (TemporalDirection::Rewind, "rewind"),
+                        TimeMove::Forward => (TemporalDirection::Forward, "forward"),
+                    };
+                    EmbeddedTemporalMoveTool::new(&service, direction, name)
                         .call(arguments)
                         .await
                 }

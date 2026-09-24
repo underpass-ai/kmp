@@ -1021,8 +1021,9 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     let goto = call(
         &server,
         2,
-        "kmp_goto",
+        "kmp_time",
         json!({
+            "move": "goto",
             "about": "question:e3",
             "at": {"sequence": 2},
             "include": {"evidence": true, "relations": true}
@@ -1462,8 +1463,9 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     let before = call(
         &server,
         8,
-        "kmp_goto",
+        "kmp_time",
         json!({
+            "move": "goto",
             "about": "decision:fresh-store-default",
             "at": {"sequence": 2},
             "include": {"evidence": true, "relations": true}
@@ -1487,8 +1489,9 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     let after = call(
         &server,
         9,
-        "kmp_goto",
+        "kmp_time",
         json!({
+            "move": "goto",
             "about": "decision:fresh-store-default",
             "at": {"sequence": 3},
             "include": {"evidence": true, "relations": true}
@@ -2047,8 +2050,9 @@ async fn embedded_backend_returns_structured_not_found_errors() {
     let error = call(
         &server,
         1,
-        "kmp_goto",
+        "kmp_time",
         json!({
+            "move": "goto",
             "about": "question:unknown",
             "at": {"sequence": 1}
         }),
@@ -2946,8 +2950,9 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .expect("trace succeeds");
     let goto = backend
         .call_tool(
-            "kmp_goto",
+            "kmp_time",
             &serde_json::json!({
+                "move": "goto",
                 "about": "question:e3",
                 "at": {"sequence": 2}
             }),
@@ -2968,7 +2973,7 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .query_since(0, Some("kmp_trace"), 10)
         .expect("trace observations query");
     let gotos = telemetry
-        .query_since(0, Some("kmp_goto"), 10)
+        .query_since(0, Some("kmp_time"), 10)
         .expect("goto observations query");
     assert_eq!(wakes.len(), 1, "wake must journal one observation");
     assert_eq!(asks.len(), 1, "ask must journal one observation");

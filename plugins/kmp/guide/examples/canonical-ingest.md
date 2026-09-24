@@ -178,7 +178,7 @@ Set only the preview execution flag dry_run to false. The semantic content is th
 Inspect D1 and follow chosen_because to C1. The source text, event/observation times and link proof must match the compiled packet. D1 is a decision, not evidence that SQLite passed a test. A canonical replay checks representation and idempotency; validation by the writer does not remove the need for truthful source interpretation.
 
 ```json
-{"tool":"kmp_forward","save_as":"records","arguments":{"about":"example:guide:canonical-ingest","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"records","arguments":{"move":"forward","about":"example:guide:canonical-ingest","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
 ```
 
 ```json

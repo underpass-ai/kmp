@@ -44,7 +44,7 @@ async fn seed(server: &KernelMcpServer) -> Value {
 }
 
 fn query() -> Value {
-    json!({"about":"project:paging","from":{"time":"2026-09-01T00:00:00Z"},
+    json!({"move":"forward","about":"project:paging","from":{"time":"2026-09-01T00:00:00Z"},
         "axis":"observed","dimensions":{"selectors":[{"key":"project","op":"in","values":["p"]}]},
         "include":{"evidence":true,"relations":true,"raw_refs":true},"limit":{"entries":10},
         "budget":{"max_bytes":10000}})
@@ -57,9 +57,9 @@ async fn returned_actions_reconstruct_entries_and_proof_without_losing_selection
     seed(&server).await;
     let mut large = query();
     large["budget"]["max_bytes"] = json!(1_000_000);
-    let full = call(&server, "kmp_forward", large).await;
+    let full = call(&server, "kmp_time", large).await;
     assert_eq!(full["page"]["has_more"], false);
-    let mut page = call(&server, "kmp_forward", query()).await;
+    let mut page = call(&server, "kmp_time", query()).await;
     assert_eq!(
         page["page"]["has_more"], true,
         "fixture needs proof pagination"
@@ -104,7 +104,8 @@ async fn returned_actions_reconstruct_entries_and_proof_without_losing_selection
         }
         assert!(pages < 50, "must advance");
         let action = &page["next_actions"][0];
-        assert_eq!(action["tool"], "kmp_forward");
+        assert_eq!(action["tool"], "kmp_time");
+        assert_eq!(action["arguments"]["move"], "forward");
         assert_eq!(action["arguments"]["dimensions"], query()["dimensions"]);
         assert_eq!(action["arguments"]["axis"], "observed");
         let previous = page["page"]["offset"].as_u64().expect("count");
@@ -132,21 +133,21 @@ async fn changed_selection_or_proof_rejects_cursor_but_budget_can_change() {
     let dir = tempfile::tempdir().expect("isolated store directory");
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded server");
     let written = seed(&server).await;
-    let page = call(&server, "kmp_forward", query()).await;
+    let page = call(&server, "kmp_time", query()).await;
     let args = page["next_actions"][0]["arguments"].clone();
     assert!(args["page"]["cursor"].is_string());
     let mut changed = args.clone();
     changed["axis"] = json!("ingested");
-    let error = raw(&server, "kmp_forward", changed).await;
+    let error = raw(&server, "kmp_time", changed).await;
     assert_eq!(error["isError"], true);
     assert_eq!(error["structuredContent"]["error"]["code"], "conflict");
     let mut resized = args.clone();
     resized["budget"]["max_bytes"] = json!(50000);
-    call(&server, "kmp_forward", resized).await;
+    call(&server, "kmp_time", resized).await;
     call(&server,"kmp_write_memory",json!({"about":"project:paging","actor":"test",
         "observed_at":"2026-09-03T00:00:00Z","idempotency_key":"paging:change",
         "search_summaries":[{"ref":written["local_refs"]["source"],"summary_en":"An interrupted delivery was observed and recovery is still unverified."}]})).await;
-    let error = raw(&server, "kmp_forward", args).await;
+    let error = raw(&server, "kmp_time", args).await;
     assert_eq!(error["isError"], true);
     let feedback = &error["structuredContent"]["feedback"][0];
     assert_eq!(feedback["code"], "READ_SELECTION_CHANGED");
@@ -167,7 +168,7 @@ async fn an_indivisible_item_returns_a_retry_that_makes_progress() {
     seed(&server).await;
     let mut tiny = query();
     tiny["budget"]["max_bytes"] = json!(512);
-    let page = call(&server, "kmp_forward", tiny).await;
+    let page = call(&server, "kmp_time", tiny).await;
     assert_eq!(page["page"]["returned"], 0);
     assert!(
         page["page"]["minimum_progress_bytes"]
@@ -199,15 +200,15 @@ async fn goto_and_near_offer_executable_navigation_after_the_packet_is_complete(
     let dir = tempfile::tempdir().expect("isolated store directory");
     let server = KernelMcpServer::embedded(dir.path()).expect("embedded server");
     let written = seed(&server).await;
-    for (tool, cursor, expected) in [
-        ("kmp_goto", "at", vec!["kmp_rewind"]),
-        ("kmp_near", "around", vec!["kmp_rewind", "kmp_forward"]),
+    for (time_move, cursor, expected) in [
+        ("goto", "at", vec!["rewind"]),
+        ("near", "around", vec!["rewind", "forward"]),
     ] {
-        let mut args = json!({"about":"project:paging","axis":"observed",
+        let mut args = json!({"move":time_move,"about":"project:paging","axis":"observed",
             "limit":{"entries":1},"window":{"before_entries":0,"after_entries":0},
             "include":{"evidence":false,"relations":false},"budget":{"max_bytes":100000}});
         args[cursor] = json!({"ref":written["local_refs"]["policy"]});
-        let page = call(&server, tool, args.clone()).await;
+        let page = call(&server, "kmp_time", args.clone()).await;
         assert_eq!(page["page"]["has_more"], false, "response page is complete");
         assert_eq!(page["selection"]["has_more"], true, "more history remains");
         let actions = page["next_actions"].as_array().expect("array");
@@ -215,6 +216,13 @@ async fn goto_and_near_offer_executable_navigation_after_the_packet_is_complete(
             actions
                 .iter()
                 .map(|a| a["tool"].as_str().expect("string"))
+                .collect::<Vec<_>>(),
+            vec!["kmp_time"; expected.len()]
+        );
+        assert_eq!(
+            actions
+                .iter()
+                .map(|a| a["arguments"]["move"].as_str().expect("string"))
                 .collect::<Vec<_>>(),
             expected
         );
@@ -237,4 +245,52 @@ async fn goto_and_near_offer_executable_navigation_after_the_packet_is_complete(
             );
         }
     }
+}
+
+/// Hosts do not reliably evaluate the per-move conditions in the schema, so the
+/// server refuses a move without its cursor, or with another move's cursor,
+/// naming the field and the accepted call; a retired per-move name says what
+/// replaced it.
+#[tokio::test]
+async fn time_moves_refuse_a_missing_or_foreign_cursor_with_the_accepted_call() {
+    let dir = tempfile::tempdir().expect("isolated store directory");
+    let server = KernelMcpServer::embedded(dir.path()).expect("embedded server");
+    seed(&server).await;
+    let cases = [
+        (
+            json!({"about":"project:paging","at":{"time":"2026-09-01T00:00:00Z"}}),
+            "TIME_INVALID_MOVE",
+            "move",
+        ),
+        (
+            json!({"about":"project:paging","move":"goto","from":{"time":"2026-09-01T00:00:00Z"}}),
+            "TIME_CURSOR_MISMATCH",
+            "from",
+        ),
+        (
+            json!({"about":"project:paging","move":"near","interval":{"start":"2026-09-01T00:00:00Z"}}),
+            "TIME_MISSING_CURSOR",
+            "around",
+        ),
+        (
+            json!({"about":"project:paging","move":"rewind"}),
+            "TIME_MISSING_CURSOR",
+            "from",
+        ),
+    ];
+    for (arguments, code, field) in cases {
+        let refused = raw(&server, "kmp_time", arguments.clone()).await;
+        assert_eq!(refused["isError"], true, "{arguments}: {refused}");
+        let feedback = &refused["structuredContent"]["feedback"][0];
+        assert_eq!(feedback["code"], code, "{arguments}: {refused}");
+        assert_eq!(feedback["field"], field, "{arguments}: {refused}");
+    }
+    let retired = raw(
+        &server,
+        "kmp_goto",
+        json!({"about":"project:paging","at":{"time":"2026-09-01T00:00:00Z"}}),
+    )
+    .await;
+    assert_eq!(retired["isError"], true, "{retired}");
+    assert!(retired.to_string().contains("kmp_time"), "{retired}");
 }

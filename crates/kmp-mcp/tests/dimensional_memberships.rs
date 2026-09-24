@@ -69,7 +69,7 @@ fn coordinates(inspected: &Value) -> &Vec<Value> {
 }
 
 async fn selected(server: &KernelMcpServer, selectors: Value) -> Value {
-    call(server,"kmp_goto",json!({"about":ABOUT,"at":{"time":AT},"dimensions":{"selectors":selectors},"include":{"evidence":true,"relations":true}})).await
+    call(server,"kmp_time",json!({"move":"goto","about":ABOUT,"at":{"time":AT},"dimensions":{"selectors":selectors},"include":{"evidence":true,"relations":true}})).await
 }
 
 #[tokio::test]

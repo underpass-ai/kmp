@@ -237,7 +237,7 @@ Resume this unchanged teaching proposal only after that review:
 The past packet must not contain D2 or its declared delta. The present packet marks D1 superseded, while P1 stays a preference. Inspect the delta text and its outgoing semantic_delta_from edge in ChronoLoom. The renderer may show a current record beside a historical scene: use the native bounded packet for historical claims.
 
 ```json
-{"tool":"kmp_forward","save_as":"records","arguments":{"about":"example:guide:preference-delta","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
+{"tool":"kmp_time","save_as":"records","arguments":{"move":"forward","about":"example:guide:preference-delta","from":{"time":"2026-09-02T08:00:00Z"},"axis":"observed","limit":{"entries":100},"budget":{"max_bytes":50000}}}
 ```
 
 ```json

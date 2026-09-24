@@ -93,19 +93,15 @@ async fn all_nine_native_read_walks_match_inline_packets_after_expansion() {
         ),
         ("kmp_relate", json!({"about":ABOUT})),
     ];
-    for (tool, key, cursor) in [
-        (
-            "kmp_forward",
-            "from",
-            json!({"time":"2026-09-09T00:00:00Z"}),
-        ),
-        ("kmp_rewind", "from", json!({"time":"2026-09-10T00:00:00Z"})),
-        ("kmp_goto", "at", json!({"ref":refs["source"]})),
-        ("kmp_near", "around", json!({"ref":refs["source"]})),
+    for (time_move, key, cursor) in [
+        ("forward", "from", json!({"time":"2026-09-09T00:00:00Z"})),
+        ("rewind", "from", json!({"time":"2026-09-10T00:00:00Z"})),
+        ("goto", "at", json!({"ref":refs["source"]})),
+        ("near", "around", json!({"ref":refs["source"]})),
     ] {
-        let mut args = json!({"about":ABOUT,"axis":"observed","include":{"evidence":true,"relations":true,"raw_refs":true}});
+        let mut args = json!({"move":time_move,"about":ABOUT,"axis":"observed","include":{"evidence":true,"relations":true,"raw_refs":true}});
         args[key] = cursor;
-        queries.push((tool, args));
+        queries.push(("kmp_time", args));
     }
     let mut encoded_pages = 0;
     for (tool, mut args) in queries {

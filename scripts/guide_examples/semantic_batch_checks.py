@@ -45,8 +45,8 @@ def check(saved, client, authored):
             ('source', 'R1', refs['logs']), ('source', 'R2', refs['choice']),
             ('source', 'R3', request['object']['ref']),
             ('alias', 'NC', refs['logs']), ('alias', 'Nebula cache', refs['logs'])]:
-        selected = client.call('kmp_forward', {
-            'about': authored['written']['about'], 'axis': 'observed',
+        selected = client.call('kmp_time', {
+            'about': authored['written']['about'], 'move': 'forward', 'axis': 'observed',
             'interval': {'start': '2026-09-01T09:00:00Z', 'end': '2026-09-01T11:00:00Z'},
             'dimensions': {'selectors': [{'key': key, 'op': 'in', 'values': [value]}]},
             'include': {'evidence': False, 'relations': False}, 'limit': {'entries': 10},

@@ -63,9 +63,10 @@
           },
           "limit": {
             "entries": 1
-          }
+          },
+          "move": "forward"
         },
-        "tool": "kmp_forward"
+        "tool": "kmp_time"
       }
     ],
     "page": {

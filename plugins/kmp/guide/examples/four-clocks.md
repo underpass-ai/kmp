@@ -199,15 +199,15 @@ order. Use the document lane consistently so extra label coordinates do not
 duplicate entry counts. This temporal enumeration does not require Ask.
 
 ```json
-{"tool":"kmp_goto","save_as":"occurred_start","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.occurred}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"occurred_start","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.occurred}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_forward","save_as":"occurred_interval","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"}}}
+{"tool":"kmp_time","save_as":"occurred_interval","arguments":{"move":"forward","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"}}}
 ```
 
 ```json
-{"tool":"kmp_rewind","save_as":"before_end","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"}}}
+{"tool":"kmp_time","save_as":"before_end","arguments":{"move":"rewind","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"}}}
 ```
 
 ## Browse coordinates and expand one entry
@@ -217,14 +217,15 @@ metadata are explicitly omitted. The proof remains selected by the same
 `include` policy, so this is not a claim that all source text leaves context.
 Execute the returned action to expand the first entry. It preserves document
 selection, clock and interval. Copy the returned tool as well as its arguments:
-here it is `kmp_forward`. Do not substitute another verb or invent a cursor.
+here it is `kmp_time` with `move: "forward"`. Do not substitute another verb
+or move, and do not invent a cursor.
 
 ```json
-{"tool":"kmp_forward","save_as":"coordinate_browse","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"},"fields":["coordinates"]}}
+{"tool":"kmp_time","save_as":"coordinate_browse","arguments":{"move":"forward","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"},"fields":["coordinates"]}}
 ```
 
 ```json
-{"tool":"kmp_forward","save_as":"coordinate_detail","arguments":"${coordinate_browse.entries.0.detail_action.arguments}"}
+{"tool":"kmp_time","save_as":"coordinate_detail","arguments":"${coordinate_browse.entries.0.detail_action.arguments}"}
 ```
 
 The expanded entries and proof must match the full interval while the store
@@ -248,27 +249,27 @@ Validity does not mean knowledge. A validity result at D2 must not be reported
 as evidence that the reviewer or kernel knew the permit on D2.
 
 ```json
-{"tool":"kmp_goto","save_as":"day2_occurred","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day2}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"day2_occurred","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day2}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"day2_observed","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day2}"},"axis":"observed","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"day2_observed","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day2}"},"axis":"observed","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"day2_ingested","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day2}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"day2_ingested","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day2}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"day2_validity","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day2}"},"axis":"validity","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"day2_validity","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day2}"},"axis":"validity","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"before_valid","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.occurred}"},"axis":"validity","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"before_valid","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.occurred}"},"axis":"validity","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"expired","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day5}"},"axis":"validity","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"expired","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.day5}"},"axis":"validity","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 Before D2 and at the exclusive D5 end, validity returns no permit. Its
@@ -278,19 +279,19 @@ all label coordinates the same ingestion time for S1; copy one returned
 `ingested_at` exactly when locating its real commit, rather than inventing it.
 
 ```json
-{"tool":"kmp_goto","save_as":"observed_start","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.observed}"},"axis":"observed","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"observed_start","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.observed}"},"axis":"observed","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_forward","save_as":"observed_later","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.observed}"},"axis":"observed","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"observed_later","arguments":{"move":"forward","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.observed}"},"axis":"observed","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_forward","save_as":"ingested_day4","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.day4}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"ingested_day4","arguments":{"move":"forward","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.day4}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"ingested_exact","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${permit_read.raw.0.coordinates.0.ingested_at}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"ingested_exact","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${permit_read.raw.0.coordinates.0.ingested_at}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 ## Refuse a forged ingestion clock and audit the support
@@ -305,7 +306,7 @@ different operation; it is not a way to backdate a new writer observation.
 ```
 
 ```json
-{"tool":"kmp_forward","save_as":"after_refusal","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.day4}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"after_refusal","arguments":{"move":"forward","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.day4}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
 ```
 
 ```json
@@ -406,7 +407,7 @@ explicit axis, cursor, dimensions and budget.
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"occurred_after_view","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.occurred}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_time","save_as":"occurred_after_view","arguments":{"move":"goto","about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.occurred}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
 ```
 
 ```json

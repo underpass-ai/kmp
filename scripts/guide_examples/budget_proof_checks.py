@@ -39,7 +39,8 @@ def check(saved, client, authored):
     assert not first['page']['has_more'] and not second['page']['has_more']
     assert first['selection']['has_more'] and not second['selection']['has_more']
     assert authored['temporal_second'] == first['next_actions'][0]['arguments']
-    assert first['next_actions'][0]['tool'] == 'kmp_forward'
+    assert first['next_actions'][0]['tool'] == 'kmp_time'
+    assert first['next_actions'][0]['arguments']['move'] == 'forward'
     assert {e['ref'] for e in first['entries']} == {refs['decision'], refs['test']}
     assert {e['ref'] for e in second['entries']} == {refs['result'], refs['unrelated']}
     entries = boundary + first['entries'] + second['entries']
@@ -131,7 +132,7 @@ def check(saved, client, authored):
     saved['pending_checkpoints'] = {
         'interval_after_first_page': {
             'status': 'partial', 'covered_refs': [e['ref'] for e in boundary + first['entries']],
-            'next_call': {'tool': 'kmp_forward', 'arguments': authored['temporal_second']}},
+            'next_call': {'tool': 'kmp_time', 'arguments': authored['temporal_second']}},
         'inspection_at_512_bytes': {
             'status': 'partial', 'required_bytes': partial['page']['required_bytes'],
             'minimum_progress_bytes': partial['page']['minimum_progress_bytes'],

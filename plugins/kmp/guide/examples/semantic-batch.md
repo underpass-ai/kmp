@@ -228,9 +228,10 @@ known occurred_at. Retrying the exact packet keeps refs and sequences.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "before_choice",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:semantic-batch",
     "at": {
       "time": "2026-09-01T09:40:00Z"
@@ -244,9 +245,10 @@ known occurred_at. Retrying the exact packet keeps refs and sequences.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "after_choice",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:semantic-batch",
     "at": {
       "time": "2026-09-01T09:55:00Z"
@@ -343,7 +345,7 @@ infer validity dates from this request's observation time.
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"request_time","arguments":{"about":"example:guide:semantic-batch","at":{"ref":"${request.local_refs.request}"},"axis":"observed","limit":{"entries":10},"budget":{"max_bytes":30000}}}
+{"tool":"kmp_time","save_as":"request_time","arguments":{"move":"goto","about":"example:guide:semantic-batch","at":{"ref":"${request.local_refs.request}"},"axis":"observed","limit":{"entries":10},"budget":{"max_bytes":30000}}}
 ```
 
 ## Check the shared graph

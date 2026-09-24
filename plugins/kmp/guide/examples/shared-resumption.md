@@ -568,9 +568,10 @@ read and reconsideration. Never reopen the view merely to navigate.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "human_cursor",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:shared-resumption",
     "at": {
       "ref": "${after_conflict.state.selection}"
@@ -736,9 +737,10 @@ Resume this unchanged teaching proposal only after that review:
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "since_handoff",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:shared-resumption",
     "from": {
       "ref": "${recovered_handoff.object.ref}"
@@ -762,9 +764,10 @@ Resume this unchanged teaching proposal only after that review:
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "final_records",
   "arguments": {
+    "move": "forward",
     "about": "example:guide:shared-resumption",
     "from": {
       "time": "2026-09-01T08:00:00Z"

@@ -485,9 +485,10 @@ with the last record's timestamp or restart at the original time.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "boundary",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:budget-proof",
     "at": {"time": "2026-09-01T08:00:00Z"},
     "axis": "observed",
@@ -500,10 +501,11 @@ with the last record's timestamp or restart at the original time.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "temporal_first",
   "expect_partial": true,
   "arguments": {
+    "move": "forward",
     "about": "example:guide:budget-proof",
     "from": {"time": "2026-09-01T08:00:00Z"},
     "axis": "observed",
@@ -525,7 +527,7 @@ A repeated cursor without progress is a reason to stop and report the problem.
 
 ```json
 {
-  "tool": "kmp_forward",
+  "tool": "kmp_time",
   "save_as": "temporal_second",
   "arguments": "${temporal_first.next_actions.0.arguments}"
 }

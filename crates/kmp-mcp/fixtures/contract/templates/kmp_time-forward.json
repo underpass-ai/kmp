@@ -20,6 +20,9 @@
       ],
       "missing": [],
       "requested": {
+        "exclude": [
+          "string"
+        ],
         "mode": "string",
         "scope": "string"
       }
@@ -31,8 +34,11 @@
             "dimension": "string",
             "ingested_at": "string",
             "occurred_at": "string",
+            "rank": "integer",
             "scope_id": "string",
-            "sequence": "integer"
+            "sequence": "integer",
+            "valid_from": "string",
+            "valid_until": "string"
           }
         ],
         "kind": "string",
@@ -46,16 +52,19 @@
         "arguments": {
           "about": "string",
           "axis": "string",
-          "budget": {
-            "max_bytes": "integer"
+          "dimensions": {
+            "exclude": [
+              "string"
+            ],
+            "mode": "string"
           },
           "from": {
             "ref": "string"
           },
-          "include": {
-            "evidence": "boolean",
-            "relations": "boolean"
-          }
+          "limit": {
+            "entries": "integer"
+          },
+          "move": "string"
         },
         "tool": "string"
       }
@@ -126,24 +135,7 @@
       "axis": "null",
       "confidence": "string",
       "conflicts": [],
-      "evidence": [
-        {
-          "id": "string",
-          "metadata": {
-            "proof_role": "string"
-          },
-          "source": "string",
-          "support_clocks": {
-            "ingested_at": "string",
-            "observed_at": "string"
-          },
-          "supports": [
-            "string"
-          ],
-          "text": "string",
-          "time": "string"
-        }
-      ],
+      "evidence": [],
       "expired": [],
       "frontier_size": "integer",
       "interval": "null",
@@ -151,35 +143,8 @@
       "matched_terms": [],
       "missing": [],
       "nearest_outside": "null",
-      "path": [
-        {
-          "class": "string",
-          "confidence": "string",
-          "coordinate": {
-            "dimension": "string",
-            "ingested_at": "string",
-            "observed_at": "string",
-            "occurred_at": "string",
-            "scope_id": "string",
-            "sequence": "integer"
-          },
-          "evidence_refs": [
-            "string"
-          ],
-          "from": "string",
-          "rel": "string",
-          "sequence": "integer",
-          "to": "string",
-          "why": "string"
-        }
-      ],
-      "superseded": [
-        {
-          "ref": "string",
-          "superseded_by": "string",
-          "why": "string"
-        }
-      ]
+      "path": [],
+      "superseded": []
     },
     "quality": {
       "causal_density": "number",

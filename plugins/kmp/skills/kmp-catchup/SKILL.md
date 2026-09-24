@@ -6,14 +6,15 @@ description: Catch up on KMP memory since a timestamp or prior frontier. Use whe
 # KMP catchup
 
 Temporal intent has precedence over semantic Ask. Resolve relative dates in
-the user's timezone and navigate with `kmp_forward`, `kmp_rewind`, `kmp_goto`,
-or `kmp_near`; do not begin with `kmp_ask`. A catch-up enumerates a period.
+the user's timezone and navigate with `kmp_time` (`move` is `forward`,
+`rewind`, `goto` or `near`); do not begin with `kmp_ask`. A catch-up enumerates a period.
 A semantic question that merely carries a date — why something was decided
 in March — is not a catch-up: it is one `kmp_ask` with that interval as
 `interval`, or the instant as `as_of`.
 
 For a bounded interval, pass half-open UTC bounds `[start, end)` directly as
-`interval` to `kmp_forward` or `kmp_rewind`, with the clock the question needs.
+`interval` to `kmp_time` with `move: "forward"` or `move: "rewind"`, with the
+clock the question needs.
 Omit `from` on the first read. KMP includes the start, excludes the end and
 retains ties. Execute returned `next_actions`: finish the packet's entries and
 proof while `page.has_more`, then navigate remaining history while

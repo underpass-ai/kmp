@@ -124,8 +124,8 @@ and `method: kmp_relabel` while the event log keeps who did it when. Temporal re
 cursor and return visible pagination state; a partial page is never presented
 as a complete interval.
 
-`kmp_goto`, `kmp_near`, `kmp_rewind` and `kmp_forward` move through stored
-time. `kmp_relate` reads what the memories of several abouts have to do with
+`kmp_time` moves through stored time: its `goto`, `near`, `rewind` and
+`forward` moves map to the kernel's four temporal reads. `kmp_relate` reads what the memories of several abouts have to do with
 each other inside a span, off the labels they share — the same dimension
 kind and the same scope — and the clocks they read,
 since abouts are never joined by relations. `kmp_trace` and `kmp_inspect`

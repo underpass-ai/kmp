@@ -16,6 +16,18 @@ const TOOLS_ADDED_LATER: &[(&str, &str)] = &[
     ("kmp_condense", "0.17.0"),
     // The summaries audit landed after the published 0.17.0 release too.
     ("kmp_summaries_audit", "0.17.0"),
+    // One time-navigation verb replaced the four per-move tools after the
+    // published 0.19.0 release (#544 C2).
+    ("kmp_time", "0.19.0"),
+];
+
+/// Each tool that left the surface, beside the last release that still
+/// answered it. An older engine is held to it; this build and later are not.
+const TOOLS_REMOVED_LATER: &[(&str, &str)] = &[
+    ("kmp_goto", "0.19.0"),
+    ("kmp_near", "0.19.0"),
+    ("kmp_rewind", "0.19.0"),
+    ("kmp_forward", "0.19.0"),
 ];
 
 /// The tool surface an engine of `target` is held to.
@@ -44,9 +56,17 @@ pub fn expected_tool_surface(
         })
         .map(|(tool, _)| *tool)
         .collect::<BTreeSet<_>>();
+    let still_answered = TOOLS_REMOVED_LATER
+        .iter()
+        .filter(|(_, last_release_with)| {
+            let last_with = ReleaseVersion::parse(last_release_with).expect("a release version");
+            !target.is_newer_than(&last_with)
+        })
+        .map(|(tool, _)| (*tool).to_string());
     current
         .into_iter()
         .filter(|name| !not_yet.contains(name.as_str()))
+        .chain(still_answered)
         .collect()
 }
 
@@ -125,5 +145,26 @@ mod tests {
         }
         let this_build = expected_tool_surface(&ReleaseVersion::current(), current.clone());
         assert_eq!(this_build, current.into_iter().collect());
+    }
+
+    #[test]
+    fn an_engine_before_the_time_verb_answers_the_four_moves_it_replaced() {
+        let current = surface(&["kmp_ask", "kmp_time", "kmp_wake"]);
+        let older = expected_tool_surface(
+            &ReleaseVersion::parse("0.18.2").expect("v"),
+            current.clone(),
+        );
+        assert!(
+            !older.contains("kmp_time"),
+            "0.18.2 shipped before kmp_time"
+        );
+        for tool in ["kmp_goto", "kmp_near", "kmp_rewind", "kmp_forward"] {
+            assert!(older.contains(tool), "0.18.2 answers {tool}");
+        }
+        let newer = expected_tool_surface(
+            &ReleaseVersion::parse("0.20.0").expect("v"),
+            current.clone(),
+        );
+        assert_eq!(newer, current.into_iter().collect());
     }
 }

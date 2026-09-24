@@ -186,8 +186,8 @@ async fn a_second_link_to_the_same_pair_keeps_the_first_link_and_its_evidence() 
 async fn at(server: &KernelMcpServer, cut: &str, reference: &str) -> Value {
     call(
         server,
-        "kmp_goto",
-        json!({"about":ABOUT,"axis":"observed","at":{"time":cut},"refs":[reference],
+        "kmp_time",
+        json!({"move":"goto","about":ABOUT,"axis":"observed","at":{"time":cut},"refs":[reference],
             "budget":{"max_bytes":200000},"include":{"evidence":true,"relations":true}}),
     )
     .await

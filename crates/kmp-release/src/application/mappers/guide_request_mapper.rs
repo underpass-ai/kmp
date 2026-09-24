@@ -270,7 +270,7 @@ impl GuideRequestMapper {
             "kmp_wake" => Ok("verb:wake"),
             "kmp_ask" => Ok("verb:ask"),
             "kmp_relate" => Ok("verb:relate"),
-            "kmp_goto" | "kmp_near" | "kmp_rewind" | "kmp_forward" => Ok("verb:time"),
+            "kmp_time" => Ok("verb:time"),
             "kmp_trace" | "kmp_inspect" => Ok("verb:audit"),
             "kmp_condense" => Ok("verb:condense"),
             "kmp_summaries_audit" => Ok("verb:write"),

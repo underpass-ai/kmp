@@ -283,6 +283,52 @@ Weighted −3.4 % at 4096 B, −1.2 % at 10000 B. Startup is +46 tokens (the
 memory calls (no `truncation`). W01 at 10000 B: `proof.evidence` 1,942 →
 1,532 tokens, `projection` + `truncation` 1,103 → 584.
 
+### C2 — One time-navigation verb
+
+After C1 the four temporal tools were a third of the default catalogue:
+`kmp_rewind`, `kmp_forward`, `kmp_goto` and `kmp_near` carried the same
+input schema (~1,650 tokens each) and differed only in the name of their
+cursor. They are now one tool, `kmp_time`, with a required
+`move: rewind | forward | goto | near` and the union of their arguments.
+Each move keeps its cursor name — `from` (or `interval` alone) for rewind and
+forward, `at` for goto, `around` for near — so a call changes only by its name
+and one field. The guide verb was already `verb:time`.
+
+- Schema: the shared object stays at the root, as
+  `agent-schema-conditions.md` requires. The per-move requirement is a root
+  `anyOf` of three branches keyed on `move` (the same device rewind already
+  used for `from`/`interval`), which the continuation wrapper moves under
+  `else` like every other initial-call requirement.
+- Server: `TimeMove::from_arguments` refuses a missing or unknown move
+  (`TIME_INVALID_MOVE`), another move's cursor (`TIME_CURSOR_MISMATCH`) and a
+  move without its cursor (`TIME_MISSING_CURSOR`), naming the field and the
+  accepted call, before any backend reads the call. Hosts that ignore the
+  conditional schema get the same answer.
+- Semantics unchanged: every temporal response fixture is byte-identical
+  except its actions. `next_actions`, `detail_action`, `READ_SELECTION_CHANGED`
+  restarts and Trace's `review_context` now read
+  `{"tool":"kmp_time","arguments":{…,"move":"<move>"}}`.
+- Old names answer with an unknown-tool error that names `kmp_time` and the
+  move. The hidden `kernel_goto|near|rewind|forward` aliases are gone. The
+  lifecycle holds engines up to 0.19.0 to the four old tools.
+
+Measured on the pinned fixtures, whole document as compact JSON, harness
+counter (`tiktoken 0.14.0`, `o200k_base`, verified asset):
+
+| Catalogue | Bytes before | Bytes after | Tokens before | Tokens after |
+| --- | ---: | ---: | ---: | ---: |
+| Default (`tools_list.json`) | 137,872 | 116,604 | 29,506 | 24,899 (−15.6 %) |
+| MCP Apps (`tools_list_with_apps.json`) | 142,855 | 121,587 | 30,701 | 26,094 (−15.0 %) |
+| Opt-in (`KMP_MCP_OUTPUT_SCHEMAS=1`) | 248,270 | 199,384 | 51,545 | 41,601 (−19.3 %) |
+
+The four definitions cost 6,588 tokens and `kmp_time` costs 1,994. Tool count
+18 → 15 (22 → 19 with MCP Apps).
+
+Contract break, named: `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`
+and their `kernel_*` aliases are removed; call `kmp_time` with `move`.
+Continuation handles saved under an old name no longer resolve; submit the
+original read again.
+
 ### Backlog, gated by I3 measurements
 
 | Review item | Starts when |
@@ -305,6 +351,7 @@ memory calls (no `truncation`). W01 at 10000 B: `proof.evidence` 1,942 →
 | I3 | `feat/544-wake-oracle` | #839 | merged; against #840 (c88472b9) the candidate passes W01–W04/A01/E01 and is smaller on every wake and ask journey; E01 +14. Weighted −6.9 % at 4096 B, −1.0 % at 10000 B |
 | C1 — catalogue without output schemas | `feat/544-lean-catalogue` | #841 | draft; default `tools/list` 51,629 → 29,460 tokens (−42.9 %), 248,704 → 137,654 bytes; `KMP_MCP_OUTPUT_SCHEMAS=1` restores the previous catalogue byte for byte |
 | PR3 — incremental continuation pages | `feat/544-incremental-pages` | #842 | draft; continuations carry only new items (`projection.core_reused`), `page.repeat_core=true` rehydrates, `truncation` retired; all 11 journeys pass; −3.4 % at 4096 B, −1.2 % at 10000 B, W01 −1,895 tokens and 3 → 2 calls at 10000 B |
+| C2 — one time-navigation verb | `feat/544-time-verb` | #843 | draft; `kmp_time` + `move` replaces goto/near/rewind/forward; default `tools/list` 29,506 → 24,899 tokens (−15.6 %), 137,872 → 116,604 bytes; 18 → 15 tools; temporal responses unchanged except action shape |
 
 Compatibility policy (maintainer, 2026-09-24): lighter and better wins; a
 contract break is acceptable when it serves that. Breaks are named in each PR.

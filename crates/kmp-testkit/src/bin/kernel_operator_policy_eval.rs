@@ -9,6 +9,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 use serde_json::{Value, json};
 
+use kmp_testkit::kernel_operator::{
+    KERNEL_OPERATOR_TIME_TOOL, kernel_operator_action_time_move, kernel_operator_time_cursor_key,
+};
 use kmp_testkit::{kernel_operator_action_contract_error, kernel_operator_primary_refs};
 
 const EVALUATOR: &str = "kernel-operator-policy-eval-v1";
@@ -522,16 +525,27 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
         .visible_state
         .get("last_tool")
         .and_then(Value::as_str);
+    let last_move = trajectory
+        .visible_state
+        .get("last_move")
+        .and_then(Value::as_str);
     let trace_target_ref = trajectory
         .visible_state
         .get("trace_target_ref")
         .and_then(Value::as_str);
+    // `kmp_near` is the pre-#544 name of `kmp_time` move `near`; trajectories
+    // exported before the merge still carry it as `last_tool`.
+    let last_was_near = matches!(
+        (last_tool, last_move),
+        (Some(KERNEL_OPERATOR_TIME_TOOL), Some("near")) | (Some("kmp_near"), _)
+    );
 
     match last_tool {
         None => json!({
             "type": "tool_call",
-            "tool": "kmp_near",
+            "tool": KERNEL_OPERATOR_TIME_TOOL,
             "arguments": {
+                "move": "near",
                 "about": trajectory.about,
                 "around": { "ref": current_ref },
                 "dimensions": { "mode": "all", "scope": "current_about" },
@@ -541,7 +555,7 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
                 "window": { "before_entries": 6, "after_entries": 0 }
             }
         }),
-        Some("kmp_near") => json!({
+        Some(_) if last_was_near => json!({
             "type": "tool_call",
             "tool": "kmp_inspect",
             "arguments": {
@@ -566,8 +580,7 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
                 "budget": { "depth": 1, "tokens": 1600 }
             }
         }),
-        Some("kmp_trace") | Some("kmp_inspect") | Some("kmp_goto") | Some("kmp_rewind")
-        | Some("kmp_forward") | Some("kmp_ask") | Some(_) => {
+        Some(_) => {
             json!({
                 "type": "stop",
                 "answer_policy": "evidence_or_unknown",
@@ -592,7 +605,10 @@ fn action_score(target: &Value, predicted: &Value) -> ActionScore {
         score.exact_action_correct = true;
     }
     if target_type == Some("tool_call") && predicted_type == Some("tool_call") {
-        if tool(target) == tool(predicted) {
+        if tool(target) == tool(predicted)
+            && kernel_operator_action_time_move(target)
+                == kernel_operator_action_time_move(predicted)
+        {
             score.tool_correct = true;
         }
         if kernel_operator_primary_refs(target) == kernel_operator_primary_refs(predicted) {
@@ -709,7 +725,13 @@ fn ratio(count: usize, total: usize) -> f64 {
 
 fn action_label(action: &Value) -> String {
     match action_type(action) {
-        Some("tool_call") => format!("tool_call:{}", tool(action).unwrap_or("unknown")),
+        Some("tool_call") => {
+            let tool = tool(action).unwrap_or("unknown");
+            match kernel_operator_action_time_move(action) {
+                Some(movement) => format!("tool_call:{tool}:{movement}"),
+                None => format!("tool_call:{tool}"),
+            }
+        }
         Some(kind) => kind.to_string(),
         None => "invalid".to_string(),
     }
@@ -750,12 +772,7 @@ fn scope_about(action: &Value) -> Option<String> {
 
 fn target_cursor_mode(action: &Value) -> Option<&'static str> {
     let arguments = action.get("arguments")?;
-    let cursor_key = match tool(action)? {
-        "kmp_near" => "around",
-        "kmp_goto" => "at",
-        "kmp_rewind" | "kmp_forward" => "from",
-        _ => return None,
-    };
+    let cursor_key = kernel_operator_time_cursor_key(kernel_operator_action_time_move(action)?)?;
     let cursor = arguments.get(cursor_key)?.as_object()?;
     if cursor.contains_key("ref") {
         Some("ref")
@@ -842,7 +859,8 @@ mod tests {
         };
         let action = deterministic_action(&trajectory);
         assert_eq!(action_type(&action), Some("tool_call"));
-        assert_eq!(tool(&action), Some("kmp_near"));
+        assert_eq!(tool(&action), Some("kmp_time"));
+        assert_eq!(kernel_operator_action_time_move(&action), Some("near"));
         let refs = kernel_operator_primary_refs(&action);
         if refs != ["memoryarena:run:r1:task_type:progressive_search:task:1:subtask:1:question"] {
             return Err(format!("unexpected refs: {refs:?}").into());
@@ -909,8 +927,9 @@ mod tests {
         });
         let writer_target = json!({
             "type": "tool_call",
-            "tool": "kmp_near",
+            "tool": "kmp_time",
             "arguments": {
+                "move": "near",
                 "about": "about:1",
                 "around": { "ref": "node:writer" },
                 "dimensions": { "mode": "all", "scope": "current_about" },
@@ -995,8 +1014,9 @@ mod tests {
             }),
             target_action: json!({
                 "type": "tool_call",
-                "tool": "kmp_near",
+                "tool": "kmp_time",
                 "arguments": {
+                    "move": "near",
                     "about": "about:1",
                     "around": { "ref": "node:1" },
                     "dimensions": { "mode": "all", "scope": "current_about" },
@@ -1012,8 +1032,9 @@ mod tests {
             "s1".to_string(),
             json!({
                 "type": "tool_call",
-                "tool": "kmp_near",
+                "tool": "kmp_time",
                 "arguments": {
+                    "move": "near",
                     "about": "about:1",
                     "around": { "ref": "node:1" },
                     "dimensions": { "mode": "all", "scope": "current_about" },
@@ -1040,7 +1061,7 @@ mod tests {
         assert_eq!(
             summary
                 .invalid_prediction_reasons
-                .get("unbounded or invalid tool call for `kmp_near`"),
+                .get("unbounded or invalid tool call for `kmp_time`"),
             Some(&1)
         );
         Ok(())
@@ -1110,8 +1131,9 @@ mod tests {
     -> Result<(), Box<dyn Error + Send + Sync>> {
         let near_action = json!({
             "type": "tool_call",
-            "tool": "kmp_near",
+            "tool": "kmp_time",
             "arguments": {
+                "move": "near",
                 "about": "about:1",
                 "around": { "sequence": 7 },
                 "dimensions": { "mode": "all", "scope": "current_about" },
@@ -1186,8 +1208,9 @@ mod tests {
     -> Result<(), Box<dyn Error + Send + Sync>> {
         let target_near = json!({
             "type": "tool_call",
-            "tool": "kmp_near",
+            "tool": "kmp_time",
             "arguments": {
+                "move": "near",
                 "about": "about:1",
                 "around": { "sequence": 7 },
                 "dimensions": { "mode": "all", "scope": "current_about" },
@@ -1199,8 +1222,9 @@ mod tests {
         });
         let predicted_near = json!({
             "type": "tool_call",
-            "tool": "kmp_near",
+            "tool": "kmp_time",
             "arguments": {
+                "move": "near",
                 "about": "about:1",
                 "around": { "time": "2026-05-14T00:00:00Z" },
                 "dimensions": { "mode": "all", "scope": "current_about" },
@@ -1318,5 +1342,50 @@ mod tests {
         let error = result.expect_err("duplicate trajectory step ids should fail");
         assert!(error.to_string().contains("duplicate step_id"));
         Ok(())
+    }
+
+    #[test]
+    fn tool_accuracy_requires_the_same_time_move() {
+        let time_call = |movement: &str, cursor_key: &str| {
+            let mut arguments = json!({
+                "move": movement,
+                "about": "about:1",
+                "dimensions": { "mode": "all", "scope": "current_about" },
+                "include": { "evidence": true, "raw_refs": false, "relations": true },
+                "limit": { "entries": 12, "tokens": 2400 },
+                "budget": { "depth": 3, "tokens": 2400 },
+                "window": { "before_entries": 6, "after_entries": 0 }
+            });
+            arguments[cursor_key] = json!({ "ref": "node:1" });
+            json!({ "type": "tool_call", "tool": "kmp_time", "arguments": arguments })
+        };
+        let near = time_call("near", "around");
+        let goto = time_call("goto", "at");
+
+        assert!(action_score(&near, &near).tool_correct);
+        assert!(!action_score(&near, &goto).tool_correct);
+        assert_eq!(action_label(&goto), "tool_call:kmp_time:goto");
+        assert_eq!(target_cursor_mode(&goto), Some("ref"));
+    }
+
+    #[test]
+    fn deterministic_baseline_inspects_after_near_including_legacy_last_tool() {
+        for visible_state in [
+            json!({ "current_ref": "node:1", "last_tool": "kmp_time", "last_move": "near" }),
+            json!({ "current_ref": "node:1", "last_tool": "kmp_near" }),
+        ] {
+            let trajectory = Trajectory {
+                step_id: "s1".to_string(),
+                about: "about:1".to_string(),
+                mode: "read".to_string(),
+                task_family: "conformance.read.near".to_string(),
+                visible_state,
+                target_action: json!({ "type": "stop" }),
+            };
+            assert_eq!(
+                tool(&deterministic_action(&trajectory)),
+                Some("kmp_inspect")
+            );
+        }
     }
 }

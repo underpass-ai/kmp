@@ -337,8 +337,9 @@ impl LongMemEvalSmartWriter {
         let near = call_writer_tool_with_record(
             server,
             request_id,
-            "kmp_near",
+            "kmp_time",
             &json!({
+                "move": "near",
                 "about": input.about,
                 "around": {"ref": input.target_ref},
                 "window": {"before_entries": 8, "after_entries": 0},

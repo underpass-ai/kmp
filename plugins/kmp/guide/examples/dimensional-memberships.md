@@ -80,9 +80,10 @@ is valid. Matching both aliases returns the memory once.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "two_aliases",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:dimensional-memberships",
     "at": {
       "time": "2026-09-01T10:00:00Z"
@@ -158,9 +159,10 @@ Only `alias=neb` is removed. `component=neb` still exists.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "retired_alias",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:dimensional-memberships",
     "at": {
       "time": "2026-09-01T10:00:00Z"
@@ -185,9 +187,10 @@ Only `alias=neb` is removed. `component=neb` still exists.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "component",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:dimensional-memberships",
     "at": {
       "time": "2026-09-01T10:00:00Z"
@@ -212,9 +215,10 @@ Only `alias=neb` is removed. `component=neb` still exists.
 
 ```json
 {
-  "tool": "kmp_goto",
+  "tool": "kmp_time",
   "save_as": "new_alias",
   "arguments": {
+    "move": "goto",
     "about": "example:guide:dimensional-memberships",
     "at": {
       "time": "2026-09-01T10:00:00Z"
