@@ -17,13 +17,17 @@ use crate::serving::environment::{
 };
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
+use crate::serving::tool_success_result;
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture, ToolError};
 use kmp_domain::TemporalDirection;
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel};
 use kmp_proto_mapping::v1beta1::{LexicalBridge, LexicalIndexCache};
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::path::Path;
 use std::sync::Arc;
+
+/// Opt-in beside the store for relations proposed after each write.
+const WRITE_RELATIONS_FILE: &str = "write-relations.json";
 
 /// In-process kernel backend: the same JSON argument builders and response
 /// shapes as live mode, with the application service called directly instead
@@ -45,6 +49,9 @@ pub struct EmbeddedKernelMcpBackend {
     rerank: Result<Option<Arc<JudgementReranker>>, String>,
     /// Wake focused on its intent by the same model, its own opt-in.
     wake_focus: Result<Option<Arc<WakeFocusJudge>>, String>,
+    /// Relations proposed after each write, opted into by
+    /// `write-relations.json` beside `typesafe.json`.
+    write_relations: bool,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
 }
@@ -81,6 +88,7 @@ impl EmbeddedKernelMcpBackend {
         );
         let rerank = JudgementReranker::load(data_dir, &judgement);
         let wake_focus = WakeFocusJudge::load(data_dir, &judgement);
+        let write_relations = data_dir.join(WRITE_RELATIONS_FILE).is_file();
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -91,6 +99,7 @@ impl EmbeddedKernelMcpBackend {
             judgement,
             rerank,
             wake_focus,
+            write_relations,
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
         })
@@ -182,6 +191,17 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         Ok(None) => (None, None),
                         Err(error) => (None, Some(error.as_str())),
                     };
+                    // Internal: the write dispatcher asks for the relations
+                    // the memories it just wrote are missing. Off unless the
+                    // store opted in and Jev can run.
+                    let mut arguments = arguments.clone();
+                    if arguments.get("mode").and_then(Value::as_str) == Some("write_proposals") {
+                        if !self.write_relations || judgement.is_none() {
+                            return Ok(tool_success_result(json!({"enabled": false})));
+                        }
+                        arguments["mode"] = json!("review");
+                    }
+                    let arguments = &arguments;
                     EmbeddedCurateTool::new(
                         &service,
                         telemetry,

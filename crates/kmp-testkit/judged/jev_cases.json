@@ -964,6 +964,20 @@
        ]
       ]
      }
+    ],
+    "writes": [
+     {
+      "memory": {
+       "id": "w01",
+       "kind": "observation",
+       "summary": "Deploy 2.4.1 was rolled back on Saturday after card charges started failing in production.",
+       "evidence": "Incident note INC-212: rollback of 2.4.1 on Saturday."
+      },
+      "partners": [
+       "service:billing:b11",
+       "service:billing:b10"
+      ]
+     }
     ]
    }
   },
@@ -5454,6 +5468,20 @@
         "project:atlas:g31",
         "project:atlas:g32"
        ]
+      ]
+     }
+    ],
+    "writes": [
+     {
+      "memory": {
+       "id": "w01",
+       "kind": "decision",
+       "summary": "Finance proposed reverting part of the 12% price increase to slow down customer churn.",
+       "evidence": "Finance review minutes, April."
+      },
+      "partners": [
+       "project:atlas:g30",
+       "project:atlas:g05"
       ]
      }
     ]

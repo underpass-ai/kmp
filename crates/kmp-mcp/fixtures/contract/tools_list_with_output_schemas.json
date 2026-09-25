@@ -1980,6 +1980,10 @@
             "description": "Optional preview reading suggestions. Accepted writes need no routine verification; receipt.action retrieves audit detail on demand.",
             "type": "array"
           },
+          "proposed_relations": {
+            "description": "Committed memories on a store with write-relations.json: relations Jev reads as missing from them, as `review_token`, `items` ({`item_id`, `from`, `to`, `rel`, `confidence`, `to_excerpt`}) and `jev`. Nothing is written: declare the ones you confirm with kmp_curate apply, in your own why and evidence.",
+            "type": "object"
+          },
           "read_after_write_ready": {
             "description": "Whether a read now observes the accepted write.",
             "type": "boolean"
@@ -6678,6 +6682,15 @@
             },
             "type": "object"
           },
+          "focus": {
+            "description": "review: only the relations these facts are missing, typically the ones just written. Jev reads their whole about for direct partners.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
           "from": {
             "description": "paths: the fact a chain starts from, an entry ref of the selection.",
             "minLength": 1,
@@ -7180,6 +7193,10 @@
           "paths": {
             "description": "paths: up to three chains, fewest proposed steps first: `hops` of {`from`, `to` as {ref, about, excerpt} in walking order, `rel`, `declared`, `reversed` when walked against its stored direction, `confidence`, and `item_id` for a proposed step, applicable with `mode: apply`}, plus `proposed` and `confidence`.",
             "type": "array"
+          },
+          "proposed_relations": {
+            "description": "Committed memories on a store with write-relations.json: relations Jev reads as missing from them, as `review_token`, `items` ({`item_id`, `from`, `to`, `rel`, `confidence`, `to_excerpt`}) and `jev`. Nothing is written: declare the ones you confirm with kmp_curate apply, in your own why and evidence.",
+            "type": "object"
           },
           "read_after_write_ready": {
             "description": "Whether a read now observes the accepted write.",

@@ -12,6 +12,7 @@ use crate::curate::application::dto::prepared_apply_dto::prepared_to_value;
 use crate::curate::application::mappers::relate_material_mapper::relate_material;
 use crate::curate::application::use_cases::find_paths::FindPaths;
 use crate::curate::application::use_cases::prepare_apply::PrepareApply;
+use crate::curate::application::use_cases::review_focus::ReviewFocus;
 use crate::curate::application::use_cases::review_relations::ReviewRelations;
 use crate::curate::domain::apply_item::ApplyItem;
 use crate::curate::domain::candidate_pair::CandidatePair;
@@ -114,11 +115,29 @@ impl<'a> EmbeddedCurateTool<'a> {
             .and_then(Value::as_u64)
             .unwrap_or(DEFAULT_MAX_PAIRS)
             .min(MAX_PAIRS) as usize;
-        let mut review = ReviewRelations {
-            judgement: self.judgement,
-        }
-        .run(material.clone(), max_pairs)
-        .await;
+        let focus = arguments
+            .get("focus")
+            .and_then(Value::as_array)
+            .map(|refs| {
+                refs.iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let mut review = if focus.is_empty() {
+            ReviewRelations {
+                judgement: self.judgement,
+            }
+            .run(material.clone(), max_pairs)
+            .await
+        } else {
+            ReviewFocus {
+                judgement: self.judgement,
+            }
+            .run(material.clone(), &focus, max_pairs)
+            .await
+        };
         if let Some(warning) = self.judgement_warning {
             review
                 .warnings
@@ -155,6 +174,7 @@ impl<'a> EmbeddedCurateTool<'a> {
                                     | "from"
                                     | "to"
                                     | "max_hops"
+                                    | "focus"
                                     | "actor"
                             )
                         })
