@@ -1,0 +1,32 @@
+# synth-v1 Spanish-English table for crosslang_es_en / crosslang_en_es. A subject names who;
+# a fact says what they did, as a statement in each language and as a question in each
+# language. {S} is the subject in the question's language, {V} the answer (a proper name,
+# never asked). No stored word of one language shares a search key with an asked word of
+# the other (kmp_search_probe); which pairs the shipped lexical bridge covers is measured,
+# not declared (generator/bridge.py).
+# Columns: id, role, en, es, en_question, es_question (subjects leave the questions empty).
+id	role	en	es	en_question	es_question
+c01	subject	the payments team	el equipo de pagos		
+c02	subject	the kitchen staff	el personal de cocina		
+c03	subject	the night shift	el turno de noche		
+c04	subject	the harbour crew	la cuadrilla del puerto		
+c05	subject	the school board	la junta escolar		
+c06	subject	the bakery owner	la dueña de la panadería		
+c07	subject	the farm foreman	el capataz de la granja		
+c08	subject	the library volunteer group	el grupo de voluntarios de la biblioteca		
+c09	subject	the bridge engineer	la ingeniera del puente		
+c10	subject	the train driver	el maquinista del tren		
+c11	subject	the gardening society	la asociación de jardinería		
+c12	subject	the city council	el ayuntamiento		
+f01	fact	moved its spare keys to {V}	trasladó sus llaves de repuesto a {V}	Where did {S} move the spare keys?	¿Adónde trasladó {S} las llaves de repuesto?
+f02	fact	bought new chairs from {V}	compró sillas nuevas a {V}	From whom did {S} buy new chairs?	¿A quién compró {S} sillas nuevas?
+f03	fact	hired a cook named {V}	contrató a un cocinero llamado {V}	Which cook did {S} hire?	¿Qué cocinero contrató {S}?
+f04	fact	lost the red umbrella in {V}	perdió el paraguas rojo en {V}	Where did {S} lose the red umbrella?	¿Dónde perdió {S} el paraguas rojo?
+f05	fact	borrowed a ladder from {V}	pidió prestada una escalera a {V}	From whom did {S} borrow a ladder?	¿A quién pidió prestada {S} una escalera?
+f06	fact	sowed wheat near {V}	sembró trigo cerca de {V}	Where did {S} sow wheat?	¿Dónde sembró {S} trigo?
+f07	fact	sold the old truck to {V}	vendió el camión viejo a {V}	To whom did {S} sell the old truck?	¿A quién vendió {S} el camión viejo?
+f08	fact	found a leak under {V}	encontró una fuga debajo de {V}	Where did {S} find a leak?	¿Dónde encontró {S} una fuga?
+f09	fact	cleaned the windows with {V}	limpió las ventanas con {V}	What did {S} clean the windows with?	¿Con qué limpió {S} las ventanas?
+f10	fact	ordered fresh bread from {V}	encargó pan fresco a {V}	From whom did {S} order fresh bread?	¿A quién encargó {S} pan fresco?
+f11	fact	fixed the broken door using {V}	arregló la puerta rota con {V}	What did {S} fix the broken door with?	¿Con qué arregló {S} la puerta rota?
+f12	fact	sent the spring invitations through {V}	envió las invitaciones de primavera por {V}	How did {S} send the spring invitations?	¿Cómo envió {S} las invitaciones de primavera?

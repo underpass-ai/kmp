@@ -4,8 +4,11 @@
 # baseline. Offline, no model, no network: the metrics are a comparison against
 # labels, which is why this can gate a change while the task benchmarks cannot.
 #
-# The floors may rise freely. Refresh them deliberately, never to make a red
-# build green:
+# The original 35 cases keep their floors, reported on their own. The anchored
+# and negative cases around them add floors for every judged answer and
+# ceilings for false UNKNOWN and false answers (overall, with `high`
+# confidence, and per case kind). Floors may rise and ceilings fall freely.
+# Refresh them deliberately, never to make a red build green:
 #
 #   RETRIEVAL_BASELINE=write bash scripts/ci/retrieval-baseline.sh
 

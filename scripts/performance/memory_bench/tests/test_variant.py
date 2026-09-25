@@ -95,6 +95,9 @@ class VariantTest(unittest.TestCase):
         self.refuse(BASE + '\n[env]\nRUST_LOG = ""\n', 'non-empty')
         self.assertIn('KMP_MCP_ENGINE', ENV_ALLOWLIST)
         self.parse(BASE + '\n[env]\nKMP_MCP_ENGINE = "sqlite"\n')
+        self.parse(BASE + '\n[env]\nKMP_MCP_ENGINE = " SQLite "\n')  # the binary trims and folds case
+        for engine in ('postgres', 'redb', 'sqlite3'):
+            self.refuse(BASE + f'\n[env]\nKMP_MCP_ENGINE = "{engine}"\n', 'not an engine kmp-mcp accepts')
 
     def test_jev_consistency(self):
         replay = BASE.replace('jev = "off"', 'jev = "replay"')

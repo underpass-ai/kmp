@@ -3,6 +3,12 @@
 # deliberately not recorded here — a floor that rose because responses grew
 # would be a gate rewarding waste.
 #
+# The unprefixed rows score the original 35 judged cases. The all_ rows score
+# every case with a judged answer, and the guarded_ and false_answer_rate_
+# rows the cases whose right outcome includes not answering or not citing
+# something. Rows named false_ are ceilings, the inverse of a floor: they may
+# fall freely, and raising one is the reviewed change. Counts must match.
+#
 # Refresh deliberately, never to make a red build green:
 #   RETRIEVAL_BASELINE=write cargo run -p kmp-testkit --bin retrieval_kmp_scorecard
 metric	floor
@@ -13,3 +19,21 @@ recall_at_10	0.9428
 mean_reciprocal_rank	0.9071
 ndcg_at_10	0.9160
 answer_core_precision	0.8857
+false_unknown_rate	0.0572
+all_positives	42
+all_recall_at_1	0.8055
+all_recall_at_5	0.9047
+all_recall_at_10	0.9047
+all_mean_reciprocal_rank	0.8750
+all_ndcg_at_10	0.8824
+all_answer_core_precision	0.8095
+all_false_unknown_rate	0.1429
+guarded_cases	13
+guarded_false_answer_rate	0.2308
+guarded_high_false_answer_rate	0.2308
+false_answer_rate_anchor_absent	0.5000
+false_answer_rate_anchor_neighbor_existing	0.5000
+false_answer_rate_cross_about_anchor	0.0000
+false_answer_rate_near_miss_attribute	0.0000
+false_answer_rate_negated_anchor	0.0000
+false_answer_rate_singular_anchored_twin	0.0000

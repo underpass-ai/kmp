@@ -6,17 +6,23 @@ from pathlib import Path
 import sys
 
 
+def read_results(root):
+    """{shape: complete native read results} of one baseline.py output, in run order."""
+    results = {}
+    for row in json.loads((root / "results.json").read_text()):
+        with gzip.open(root / row["shape"] / "read-results.json.gz", "rt") as source:
+            results[row["shape"]] = json.load(source)
+    return results
+
+
 def main():
     before, after = (Path(value).resolve() for value in sys.argv[1:])
     left, right = [json.loads((root / "results.json").read_text()) for root in (before, after)]
     assert [r["shape"] for r in left] == [r["shape"] for r in right], "different shapes"
+    expected_all, actual_all = read_results(before), read_results(after)
     for old, new in zip(left, right):
         shape = old["shape"]
-        with gzip.open(before / shape / "read-results.json.gz", "rt") as source:
-            expected = json.load(source)
-        with gzip.open(after / shape / "read-results.json.gz", "rt") as source:
-            actual = json.load(source)
-        assert actual == expected, f"complete native response mismatch: {shape}"
+        assert actual_all[shape] == expected_all[shape], f"complete native response mismatch: {shape}"
         a = {(r["operation"], r.get("cache")): r for r in old["rows"]}
         b = {(r["operation"], r.get("cache")): r for r in new["rows"]}
         for key in a:

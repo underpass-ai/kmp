@@ -26,7 +26,7 @@ from .domain.errors import NotImplementedYet
 from .domain.jsonl import REPO_ROOT
 
 # Command -> task that implements it (bench_tasks.json).
-OWNERS = {'prepare': 'BT12', 'fetch': 'BT17', 'world': 'BT13', 'build': 'BT14',
+OWNERS = {'prepare': 'BT12', 'fetch': 'BT17', 'build': 'BT14',
           'materialize': 'BT14', 'quick-a': 'BT12', 'full': 'BT12', 'jev': 'BT11', 'aa': 'BT12',
           'compare': 'BT10', 'render': 'BT10', 'real': 'BT07', 'cache': 'BT14'}
 
@@ -56,6 +56,11 @@ def parse_topologies(text):
 
 def not_yet(args):
     raise NotImplementedYet(f'not implemented yet: {OWNERS[args.command]}')
+
+
+def run_world(args):
+    from .application.world import run_world as run
+    return run(args)
 
 
 def run_validate(args):
@@ -95,11 +100,18 @@ def build_parser():
     _stub(commands, 'prepare', 'verify the pinned tiktoken assets')
     _stub(commands, 'fetch', 'download a public dataset').add_argument(
         '--dataset', action='append', required=True)
-    world = _stub(commands, 'world', 'generate a synthetic world')
+    world = commands.add_parser('world', help='generate, check and calibrate synth-v1 worlds')
+    world.set_defaults(action=run_world)
     world.add_argument('--generator', choices=('synth-v1',), default='synth-v1')
     world.add_argument('--seed', type=int, required=True)
     world.add_argument('--levels', type=parse_levels, default=(1000, 10000, 100000))
     world.add_argument('--topology', type=parse_topologies, default=('mono', 'multi'))
+    world.add_argument('--probe', type=Path, help='kmp_search_probe (default target/release)')
+    world.add_argument('--no-probe', action='store_true',
+                       help='skip the probe oracles and the calibration (they are then reported skipped)')
+    world.add_argument('--no-nested-check', action='store_true',
+                       help='skip regenerating lower levels to check the nesting invariant')
+    world.add_argument('--out', type=Path, help='cache root (default <repo>/tmp/memory-bench)')
     _stub(commands, 'build', 'build and cache stores')
     _stub(commands, 'materialize', 'materialize a cached store for a run')
     for name, help_text in (('quick-a', 'phase A quick run'), ('full', 'ladder and public corpora')):

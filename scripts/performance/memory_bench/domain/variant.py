@@ -30,6 +30,9 @@ ENV_ALLOWLIST = ('KMP_LEXICAL_BRIDGE', 'KMP_MCP_ENGINE', 'KMP_TYPESAFE_CASSETTE'
                  'KMP_TYPESAFE_CASSETTE_MODE', 'RUST_LOG')
 PATH_ENV = ('KMP_LEXICAL_BRIDGE', 'KMP_TYPESAFE_CASSETTE')
 CASSETTE_MODES = ('replay', 'record')
+# kmp-embedded engine.rs `parse_engine` (v0.23.0): trimmed, case-insensitive, and only
+# `sqlite`; any other value makes the binary refuse to start, so it is refused here.
+ENGINES = ('sqlite',)
 SECRET_HINTS = ('KEY', 'TOKEN', 'SECRET', 'PASSWORD', 'CREDENTIAL')
 
 
@@ -229,6 +232,9 @@ def _env(fields, base_dir, read_bytes):
             raise VariantInvalid(f'{where}: a non-empty single-line string')
         if name == 'KMP_TYPESAFE_CASSETTE_MODE' and value not in CASSETTE_MODES:
             raise VariantInvalid(f'{where}: replay or record')
+        if name == 'KMP_MCP_ENGINE' and value.strip().lower() not in ENGINES:
+            raise VariantInvalid(f'{where}: {value!r} is not an engine kmp-mcp accepts '
+                                 f'({", ".join(ENGINES)}); the binary would refuse to start')
         if name not in PATH_ENV:
             items.append(EnvValue(name, value))
             continue
