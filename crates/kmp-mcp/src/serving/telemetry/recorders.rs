@@ -53,6 +53,7 @@ pub(crate) fn record_tool_error(
         error_kind = error_kind.as_str(),
         error_hash = %stable_hash(message),
         duration_ms = duration.as_millis() as u64,
+        duration_us = duration.as_micros() as u64,
         dry_run = ?arguments.dry_run,
         strict = ?arguments.strict,
         include_raw = ?arguments.include_raw,
@@ -168,6 +169,7 @@ fn log_tool_success(
         grpc_tls,
         status = "success",
         duration_ms = duration.as_millis() as u64,
+        duration_us = duration.as_micros() as u64,
         dry_run = ?arguments.dry_run,
         strict = ?arguments.strict,
         include_raw = ?arguments.include_raw,
@@ -216,7 +218,44 @@ pub(super) fn stable_hash(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::stable_hash;
+    use std::time::Duration;
+
+    use serde_json::json;
+
+    use super::{record_tool_error, record_tool_success, stable_hash};
+    use crate::serving::telemetry::ToolErrorKind;
+    use crate::serving::telemetry::captured_log::CapturedLog;
+
+    #[test]
+    fn every_tool_line_carries_its_duration_in_microseconds() {
+        let (log, _guard) = CapturedLog::start("kmp_mcp=info");
+        let duration = Duration::from_micros(2_345);
+
+        record_tool_success(
+            "embedded",
+            "off",
+            "kmp_ask",
+            &json!({}),
+            &json!({}),
+            duration,
+        );
+        record_tool_error(
+            "embedded",
+            "off",
+            "kmp_ask",
+            &json!({}),
+            ToolErrorKind::Backend,
+            "denied",
+            duration,
+        );
+
+        let lines = log.events("kmp_mcp_tool");
+        assert_eq!(lines.len(), 2);
+        for line in lines {
+            assert_eq!(line["fields"]["duration_us"], 2_345);
+            assert_eq!(line["fields"]["duration_ms"], 2);
+        }
+    }
 
     #[test]
     fn error_hash_is_stable_and_does_not_expose_message() {

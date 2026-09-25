@@ -8,13 +8,16 @@ use super::embedded::{
 };
 use super::judgement_reranker::JudgementReranker;
 use super::judgement_source::load_judgement;
-use super::lexical_bridge_file::load_lexical_bridge;
+use super::lexical_bridge_file::{lexical_bridge_path, load_lexical_bridge};
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
+use super::observed_judgement::ObservedJudgement;
+use super::store_config_report::StoreConfigReport;
 use super::wake_focus_judge::WakeFocusJudge;
 use crate::contract::{TIME_TOOL, TimeMove};
 use crate::serving::environment::{
     TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV, TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
 };
+use crate::serving::judgement_site::JudgementSite;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use crate::serving::tool_success_result;
@@ -86,16 +89,35 @@ impl EmbeddedKernelMcpBackend {
             optional_env_string(TYPESAFE_CASSETTE_ENV),
             optional_env_string(TYPESAFE_CASSETTE_MODE_ENV),
         );
-        let rerank = JudgementReranker::load(data_dir, &judgement);
-        let wake_focus = WakeFocusJudge::load(data_dir, &judgement);
+        let rerank = JudgementReranker::load(
+            data_dir,
+            &ObservedJudgement::for_site(&judgement, JudgementSite::Rerank),
+        );
+        let wake_focus = WakeFocusJudge::load(
+            data_dir,
+            &ObservedJudgement::for_site(&judgement, JudgementSite::WakeFocus),
+        );
         let write_relations = data_dir.join(WRITE_RELATIONS_FILE).is_file();
+        let lexical_bridge = load_lexical_bridge(data_dir);
+        let semantic = LoopbackSemanticRetriever::load(data_dir);
+        acknowledge_store_config(data_dir, &judgement, &rerank, &wake_focus, &semantic)
+            .at(
+                "lexical-bridge.kmpb",
+                lexical_bridge_path(data_dir),
+                if lexical_bridge.is_silent() {
+                    Err("the table is unreadable or empty".into())
+                } else {
+                    Ok(())
+                },
+            )
+            .emit();
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
             commit_native,
-            lexical_bridge: load_lexical_bridge(data_dir),
+            lexical_bridge,
             lexical_cache: Arc::default(),
-            semantic: LoopbackSemanticRetriever::load(data_dir),
+            semantic,
             judgement,
             rerank,
             wake_focus,
@@ -103,6 +125,14 @@ impl EmbeddedKernelMcpBackend {
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
         })
+    }
+
+    /// The store's judgement observed for one call site, when it can run.
+    fn observed(&self, site: JudgementSite) -> Option<ObservedJudgement> {
+        match &self.judgement {
+            Ok(Some(model)) => Some(ObservedJudgement::new(Arc::clone(model), site)),
+            _ => None,
+        }
     }
 
     /// The table `ask` bridges languages with on this store.
@@ -124,6 +154,40 @@ impl EmbeddedKernelMcpBackend {
     pub fn kernel(&self) -> &EmbeddedKernel {
         &self.kernel
     }
+}
+
+/// Which of the store's optional files took effect, and why the others did
+/// not; the lexical bridge is added by the caller that loaded it.
+fn acknowledge_store_config<A, B, C>(
+    data_dir: &Path,
+    judgement: &Result<Option<A>, String>,
+    rerank: &Result<Option<B>, String>,
+    wake_focus: &Result<Option<C>, String>,
+    semantic: &Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
+) -> StoreConfigReport {
+    fn verdict<T>(loaded: &Result<Option<T>, String>) -> Result<(), String> {
+        match loaded {
+            Ok(Some(_)) => Ok(()),
+            Ok(None) => Err("not loaded".into()),
+            Err(error) => Err(error.clone()),
+        }
+    }
+    let judged = verdict(judgement);
+    StoreConfigReport::new(data_dir)
+        .beside_store("typesafe.json", judged.clone())
+        .at(
+            "typesafe-cassette",
+            optional_env_string(TYPESAFE_CASSETTE_ENV).map(Into::into),
+            judged.clone(),
+        )
+        .beside_store("rerank.json", verdict(rerank))
+        .beside_store("wake-focus.json", verdict(wake_focus))
+        .beside_store(
+            WRITE_RELATIONS_FILE,
+            judged
+                .map_err(|error| format!("write relations need a working typesafe.json: {error}")),
+        )
+        .beside_store("semantic-retrieval.json", verdict(semantic))
 }
 
 impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
@@ -186,10 +250,11 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         .await
                 }
                 "kmp_curate" => {
-                    let (judgement, warning) = match &self.judgement {
-                        Ok(Some(model)) => (Some(model.as_ref()), None),
-                        Ok(None) => (None, None),
-                        Err(error) => (None, Some(error.as_str())),
+                    let observed = self.observed(JudgementSite::of_curate(arguments));
+                    let (judgement, warning) = match (&observed, &self.judgement) {
+                        (Some(model), _) => (Some(model as &dyn JudgementModel), None),
+                        (None, Err(error)) => (None, Some(error.as_str())),
+                        (None, Ok(_)) => (None, None),
                     };
                     // Internal: the write dispatcher asks for the relations
                     // the memories it just wrote are missing. Off unless the
@@ -234,10 +299,8 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 // the projections: a summary's earlier revisions are what
                 // say whether the text moved after it was written.
                 "kmp_summaries_audit" => {
-                    let judgement = match &self.judgement {
-                        Ok(Some(model)) => Some(model.as_ref()),
-                        _ => None,
-                    };
+                    let observed = self.observed(JudgementSite::Summaries);
+                    let judgement = observed.as_ref().map(|model| model as &dyn JudgementModel);
                     EmbeddedSummariesAuditTool::new(self.kernel.store(), judgement)
                         .call(arguments)
                         .await

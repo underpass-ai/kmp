@@ -30,6 +30,9 @@ const RERANK_WIDE: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const WRITE_RELATIONS: &str = "{}";
 const WAKE_FOCUS: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const ASK_TOP: usize = 5;
+/// A wake packet on this corpus ends well before this; a chain that does
+/// not is an error, not a silently shortened "all pages".
+const WAKE_MAX_PAGES: usize = 32;
 
 #[derive(Debug, Deserialize)]
 struct JudgedCollection {
@@ -999,16 +1002,20 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             }
             let first = delivered(&page);
             let mut all = first.clone();
-            for next_id in (401 + (arm as u64) * 100 + n as u64 * 10..).take(8) {
-                let Some(action) = page["next_action"].as_object().cloned() else {
-                    break;
-                };
-                let (Some(tool), Some(next)) = (action["tool"].as_str(), action.get("arguments"))
-                else {
-                    break;
-                };
-                page = call(server, next_id, tool, next.clone()).await?;
+            let mut pages = 1;
+            while let Some((tool, next)) = continuation(&page) {
+                if pages == WAKE_MAX_PAGES {
+                    return Err(format!(
+                        "wake `{}` still continues after {WAKE_MAX_PAGES} pages",
+                        wake.intent
+                    )
+                    .into());
+                }
+                let next_id = 400 + (arm as u64) * 100 + n as u64 * 10 + pages as u64;
+                page = call(server, next_id, &tool, next).await?;
+                refuse_unrecorded(&page)?;
                 all.push_str(&delivered(&page));
+                pages += 1;
             }
             let in_first = wake
                 .required
@@ -1032,12 +1039,13 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             scores.wake_bytes[arm * 2] += first.len() as u64;
             scores.wake_bytes[arm * 2 + 1] += all.len() as u64;
             shown.push(format!(
-                "{} {}/{} first, {}/{} all, {}B first",
+                "{} {}/{} first, {}/{} all over {} pages, {}B first",
                 if arm == 0 { "plain" } else { "focused" },
                 in_first,
                 wake.required.len(),
                 in_all,
                 wake.required.len(),
+                pages,
                 first.len()
             ));
         }
@@ -1092,6 +1100,17 @@ fn refuse_unrecorded(value: &Value) -> Result<(), Box<dyn Error>> {
         }
     }
     Ok(())
+}
+
+/// The call that continues a paged recall packet, as the server proposes it:
+/// `projection.next_action`, one `{tool, arguments}` call, null on the last
+/// page. A wake or ask page has no top-level `next_action`; reading one
+/// there never followed a continuation, so "all pages" was the first page.
+fn continuation(page: &Value) -> Option<(String, Value)> {
+    let action = page.pointer("/projection/next_action")?;
+    let tool = action["tool"].as_str()?;
+    let arguments = action.get("arguments").filter(|value| value.is_object())?;
+    Some((tool.to_string(), arguments.clone()))
 }
 
 /// What a wake actually hands the reader: its packet and the evidence it
@@ -1265,6 +1284,9 @@ fn write_baseline(
          # declarations, precheck_* the apply pre-write check, ask_* the rank of the answer in proof\n\
          # without and with re-ranking. A number may rise freely; lowering one is a reviewed change\n\
          # that says why, and a re-recorded cassette is one. `cases` is exact.\n\
+         # wake_all_pages_* follow projection.next_action to the last page; before that fix the scorecard\n\
+         # read a top-level next_action no wake carries, so \"all pages\" was only the first page and\n\
+         # wake_all_pages_plain sat at the first-page 0.9333. Following the chain raised it to 1.0000.\n\
          # Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh\n\
          metric\tfloor\n",
     );
@@ -1316,5 +1338,113 @@ fn enforce_baseline(
         Ok(())
     } else {
         Err(format!("Jev quality regressed:\n  {}", regressions.join("\n  ")).into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn continuation_is_the_call_the_projection_proposes() {
+        let call = json!({"tool": "kmp_wake", "arguments": {"continuation": "read_01"}});
+        let page = json!({"projection": {"next_action": call}});
+        assert_eq!(
+            continuation(&page),
+            Some(("kmp_wake".to_string(), json!({"continuation": "read_01"})))
+        );
+    }
+
+    #[test]
+    fn a_top_level_next_action_is_not_a_continuation() {
+        let call = json!({"tool": "kmp_wake", "arguments": {"about": "a"}});
+        assert_eq!(continuation(&json!({"next_action": call})), None);
+        assert_eq!(
+            continuation(&json!({"next_action": call, "projection": {"next_action": null}})),
+            None
+        );
+        assert_eq!(
+            continuation(&json!({"projection": {"next_action": {"tool": "kmp_wake"}}})),
+            None
+        );
+        assert_eq!(
+            continuation(&json!({"projection": {"next_action": {"arguments": {}}}})),
+            None
+        );
+    }
+
+    /// The contract the scorecard reads: a wake that does not fit its byte
+    /// allowance proposes its next page in `projection.next_action`
+    /// (`response_value.rs`, `projection_value`), never at the top level,
+    /// and following it delivers memories the first page left out.
+    #[tokio::test]
+    async fn a_paged_wake_continues_through_projection_next_action() {
+        let dir = tempfile::tempdir().expect("temporary store");
+        let server = KernelMcpServer::embedded(dir.path()).expect("embedded server");
+        let about = "project:paged";
+        let entries = (1..=24)
+            .map(|n| {
+                json!({"id": format!("{about}:e{n:02}"), "kind": "decision",
+                    "text": format!("Decision {n}: the paging team keeps the ledger number {n} \
+                                     in the eu-west-3 archive for the quarterly audit trail."),
+                    "coordinates": [{"dimension": "journal", "scope_id": "paged",
+                        "sequence": n, "occurred_at": format!("2026-03-{n:02}T10:00:00Z")}]})
+            })
+            .collect::<Vec<_>>();
+        let receipt = call(
+            &server,
+            1,
+            "kmp_ingest",
+            json!({"about": about, "idempotency_key": "paged-wake",
+                "memory": {"dimensions": [{"id": "paged", "kind": "journal"}],
+                    "entries": entries, "relations": []}}),
+        )
+        .await
+        .expect("ingest");
+        WriteReceipt::read("kmp_ingest", &receipt)
+            .require_accepted()
+            .expect("accepted");
+
+        let mut page = call(
+            &server,
+            2,
+            "kmp_wake",
+            json!({"about": about, "budget": {"max_bytes": 2048}}),
+        )
+        .await
+        .expect("first wake page");
+        assert!(page.get("next_action").is_none(), "{page}");
+        assert_eq!(
+            page["projection"]["page"]["has_more"],
+            json!(true),
+            "{page}"
+        );
+        let (tool, _) = continuation(&page).expect("projection.next_action on a paged wake");
+        assert_eq!(tool, "kmp_wake");
+
+        let first = delivered(&page);
+        let mut all = first.clone();
+        let mut pages = 1;
+        while let Some((tool, next)) = continuation(&page) {
+            assert!(pages < WAKE_MAX_PAGES, "the wake never ended");
+            page = call(&server, 2 + pages as u64, &tool, next)
+                .await
+                .expect("continued wake page");
+            assert!(page.get("next_action").is_none(), "{page}");
+            all.push_str(&delivered(&page));
+            pages += 1;
+        }
+        assert!(pages > 1);
+        assert_eq!(
+            page["projection"]["page"]["has_more"],
+            json!(false),
+            "{page}"
+        );
+        let found = |text: &str| {
+            (1..=24)
+                .filter(|n| text.contains(&format!("{about}:e{n:02}\"")))
+                .count()
+        };
+        assert!(found(&all) > found(&first), "pages added no memory");
     }
 }

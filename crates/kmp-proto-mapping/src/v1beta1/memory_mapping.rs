@@ -42,6 +42,8 @@ mod rerank_candidate_ranking;
 mod rerank_recall_tests;
 mod responses;
 mod scalars;
+mod search_probe;
+mod search_probe_terms;
 mod search_terms;
 mod semantic_candidate_ranking;
 #[cfg(test)]
@@ -82,6 +84,8 @@ pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
     trace_response_from_result, wake_response_from_result, wake_response_with_focus, wake_sources,
 };
+pub use search_probe::SearchProbe;
+pub use search_probe_terms::SearchProbeTerms;
 pub use semantic_candidate_ranking::SemanticCandidateRanking;
 pub use semantic_source::SemanticSource;
 pub use visual_projection::{

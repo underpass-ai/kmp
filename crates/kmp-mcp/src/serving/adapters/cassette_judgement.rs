@@ -7,6 +7,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use super::typesafe_request_body::typesafe_request_body;
+use crate::serving::judgement_origin::JudgementOrigin;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_response::JudgementResponse;
 use crate::serving::ports::judgement_model::JudgementModel;
@@ -48,8 +49,7 @@ impl CassetteJudgement {
     }
 
     fn key(&self, request: &JudgementRequest) -> String {
-        let body = typesafe_request_body(&self.model, &request.state, &request.questions);
-        format!("{:x}", Sha256::digest(body.to_string().as_bytes()))
+        judgement_key(&self.model, request)
     }
 
     fn persist(&self, entries: &BTreeMap<String, JudgementResponse>) -> Result<(), String> {
@@ -66,6 +66,13 @@ impl CassetteJudgement {
                 )
             })
     }
+}
+
+/// The cassette key of one request: the sha256 of the provider body it
+/// would send whole. Telemetry reports it so a line joins its cassette entry.
+pub(super) fn judgement_key(model: &str, request: &JudgementRequest) -> String {
+    let body = typesafe_request_body(model, &request.state, &request.questions);
+    format!("{:x}", Sha256::digest(body.to_string().as_bytes()))
 }
 
 fn read_entries(
@@ -108,6 +115,19 @@ impl JudgementModel for CassetteJudgement {
         request: &'a JudgementRequest,
     ) -> Pin<Box<dyn std::future::Future<Output = Result<JudgementResponse, String>> + Send + 'a>>
     {
+        Box::pin(async move { self.evaluate_traced(request).await.0 })
+    }
+
+    fn evaluate_traced<'a>(
+        &'a self,
+        request: &'a JudgementRequest,
+    ) -> Pin<
+        Box<
+            dyn std::future::Future<Output = (Result<JudgementResponse, String>, JudgementOrigin)>
+                + Send
+                + 'a,
+        >,
+    > {
         Box::pin(async move {
             let key = self.key(request);
             if let Some(recorded) = self
@@ -116,28 +136,40 @@ impl JudgementModel for CassetteJudgement {
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
                 .get(&key)
             {
-                return Ok(recorded.clone());
+                return (Ok(recorded.clone()), JudgementOrigin::CassetteHit);
             }
-            let Some(inner) = &self.inner else {
-                return Err(format!(
-                    "judgement `{key}` is not in the cassette; record it with KMP_TYPESAFE_CASSETTE_MODE=record"
-                ));
-            };
-            let response = inner.evaluate(request).await?;
-            let mut entries = self
-                .entries
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            // Another recorder (another store in the same evaluation) may
-            // have written since this one loaded; keep what it recorded.
-            if let Some(on_disk) = read_entries(&self.path, &self.model)? {
-                for (recorded_key, recorded) in on_disk {
-                    entries.entry(recorded_key).or_insert(recorded);
-                }
-            }
-            entries.insert(key, response.clone());
-            self.persist(&entries)?;
-            Ok(response)
+            (self.miss(key, request).await, JudgementOrigin::CassetteMiss)
         })
+    }
+}
+
+impl CassetteJudgement {
+    /// A request the cassette does not hold: replay fails loudly, record
+    /// asks the real model once and keeps the answer.
+    async fn miss(
+        &self,
+        key: String,
+        request: &JudgementRequest,
+    ) -> Result<JudgementResponse, String> {
+        let Some(inner) = &self.inner else {
+            return Err(format!(
+                "judgement `{key}` is not in the cassette; record it with KMP_TYPESAFE_CASSETTE_MODE=record"
+            ));
+        };
+        let response = inner.evaluate(request).await?;
+        let mut entries = self
+            .entries
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        // Another recorder (another store in the same evaluation) may
+        // have written since this one loaded; keep what it recorded.
+        if let Some(on_disk) = read_entries(&self.path, &self.model)? {
+            for (recorded_key, recorded) in on_disk {
+                entries.entry(recorded_key).or_insert(recorded);
+            }
+        }
+        entries.insert(key, response.clone());
+        self.persist(&entries)?;
+        Ok(response)
     }
 }

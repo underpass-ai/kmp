@@ -4,7 +4,10 @@ Trace lines come from guide_examples replays: paired `{request, response}`
 events, plus harness events (preparation, session markers, fixtures) that are
 metadata and never count as KMP tokens. A request without a response is an
 unpaired failure; a request without a JSON-RPC id is a notification and
-legitimately has none.
+legitimately has none. `timing` and `resources` markers (one each per exchange,
+written by the native transport) are kept aside in `calls`, with the event
+index of the exchange they describe (None for a timed-out call, which has no
+exchange), for latency and resource reports; they never count as tokens.
 """
 from collections import Counter
 from dataclasses import dataclass, field
@@ -14,7 +17,8 @@ from ..domain.exposure import Exposure, ExposureKind, Stage
 from . import strict_json
 from .stages import StageClassifier
 
-HARNESS_MARKERS = ('preparation', 'session_start', 'session_end', 'fixture')
+HARNESS_MARKERS = ('preparation', 'session_start', 'session_end', 'fixture', 'timing', 'resources')
+CALL_MARKERS = ('timing', 'resources')
 
 
 @dataclass(frozen=True)
@@ -32,6 +36,7 @@ class JourneyTrace:
     failures: list = field(default_factory=list)
     rpc_pairs: int = 0
     notifications: int = 0
+    calls: list = field(default_factory=list)  # [{event_index, rpc_id, timing, resources}], in order
 
     def summary(self):
         return {'journey': self.journey, 'rpc_pairs': self.rpc_pairs,
@@ -60,6 +65,22 @@ def _object(value, journey, index, side):
     return value
 
 
+def _attach(trace, body, marker, journey, index):
+    """Pair a `timing` marker with the exchange it follows and `resources` with its timing."""
+    if not isinstance(body, dict):
+        raise CaptureIntegrityError(f'{journey} line {index}: {marker} marker is not an object')
+    if marker == 'timing':
+        path = body.get('response_path')
+        exchange = int(path.rpartition('#')[2]) if isinstance(path, str) and '#' in path else None
+        trace.calls.append({'event_index': exchange, 'rpc_id': body.get('rpc_id'), 'timing': body,
+                            'resources': None})
+        return
+    last = trace.calls[-1] if trace.calls else None
+    if last is None or last['rpc_id'] != body.get('rpc_id') or last['resources'] is not None:
+        raise CaptureIntegrityError(f'{journey} line {index}: resources marker without its timing')
+    last['resources'] = body
+
+
 def read_trace(journey, raw):
     trace, stages = JourneyTrace(journey), StageClassifier()
     for index, text, event, spans in _lines(raw, journey):
@@ -82,6 +103,8 @@ def read_trace(journey, raw):
         if request is None and response is None:
             marker = next((key for key in HARNESS_MARKERS if key in event), 'other')
             trace.harness_events[marker] += 1
+            if marker in CALL_MARKERS:
+                _attach(trace, event[marker], marker, journey, index)
         elif response is None and 'id' not in request:
             trace.notifications += 1
             observe(ExposureKind.NOTIFICATION, 'request', stages.classify(request))

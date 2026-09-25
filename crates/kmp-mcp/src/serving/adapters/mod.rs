@@ -15,11 +15,17 @@ mod judgement_reranker_tests;
 mod judgement_source;
 pub(crate) mod lexical_bridge_file;
 mod loopback_semantic_retriever;
+mod observed_judgement;
+#[cfg(test)]
+mod observed_judgement_tests;
 mod passage_judgement;
 mod rerank_config;
 pub(crate) mod retrying_embedded_backend;
 mod semantic_rank_response;
 mod semantic_retriever_config;
+mod store_config_report;
+#[cfg(test)]
+mod store_config_report_tests;
 mod summary_meaning_judge;
 pub(crate) mod tool_request_mapping;
 mod typesafe_api_key;

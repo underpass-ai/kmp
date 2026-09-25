@@ -762,3 +762,203 @@ $MEMORY_BENCH_PRIVATE_ROOT/            outside the repository; required for priv
 - The private root has no default. The recommended value on the GX10 is
   `~/Documents/ai/artifacts/kmp-bench-private`; `private_layout` refuses any root inside
   the repository.
+
+## Telemetry (kmp-mcp log lines, BT03)
+
+`kmp-mcp` logs JSON Lines through `tracing_subscriber::fmt().json()` to stderr (a bounded,
+lossy queue: lines can be dropped if stderr is not drained) and, with the embedded
+backend, to `<data dir>/logs/kmp-mcp.log.<YYYY-MM-DD>` (UTC date, not lossy). The bench should
+parse the file journal, or drain stderr continuously. Every line has the shape
+
+```json
+{"timestamp": "2026-09-25T22:48:54.599332Z", "level": "DEBUG", "target": "kmp_mcp::judgement",
+ "fields": {"message": "...", "event": "kmp_judgement", "...": "..."}}
+```
+
+Select lines by `target` and `fields.event`; ignore `message` (human text, may change)
+and unknown fields (fields may be added, never renamed). Integers are JSON numbers.
+No line carries stored text, questions, answers, error messages or keys.
+
+Filter the bench passes (it is also what the variant `[env] RUST_LOG` is appended to):
+
+```text
+RUST_LOG=kmp_mcp=info,kmp_mcp::judgement=debug,kmp_mcp::store_config=debug
+```
+
+`RUST_LOG=kmp_mcp::judgement=debug` alone silences every other `kmp_mcp` line, including
+`kmp_mcp_tool`; always keep `kmp_mcp=info`.
+
+### `kmp_mcp_tool` (every tool call)
+
+Target `kmp_mcp::serving::telemetry::recorders`, level `INFO` on success and `WARN` on
+error, `fields.event = "kmp_mcp_tool"`. Pre-existing fields (`kmp_move`, `backend`,
+`status`, `duration_ms`, counts) are unchanged; BT03 adds:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `duration_us` | int | server-side duration of the tool call in µs (same clock as `duration_ms`) |
+
+Call record mapping: `server_us = duration_us`, `server_ms = duration_ms`. A binary
+older than BT03 has no `duration_us`: `server_us = null` with an `absent` reason.
+
+### `kmp_judgement` (every Jev evaluation)
+
+Target `kmp_mcp::judgement`, level `DEBUG` (off unless asked for; computing the line's
+`request_key` costs one SHA-256 of the request body, so it is skipped when disabled).
+One line per `JudgementModel::evaluate` a site makes, after it returns; a site may
+evaluate several times in one tool call (curate paths, focus reviews), and a call
+with a frozen selection (continuation page) evaluates nothing.
+
+```json
+{"timestamp":"2026-09-25T22:48:54.599332Z","level":"DEBUG","target":"kmp_mcp::judgement",
+ "fields":{"message":"judgement evaluated","event":"kmp_judgement","site":"rerank",
+           "model":"jev-1.13.0","source":"cassette_hit","status":"ok","questions":3,
+           "answers":3,"requests":1,"http_requests":0,"input_tokens":395,"elapsed_us":127,
+           "request_key":"a0b4a155271abd4b5cbb4c446fba3ccb7a96299de1b60a27e222b270aded6b2b"}}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `site` | enum | who spent it, below |
+| `model` | string | pinned model (`jev-1.13.0`) |
+| `source` | `remote`, `cassette_hit`, `cassette_miss` | provider over the network; answered from `KMP_TYPESAFE_CASSETTE`; not in the cassette (replay: the evaluation fails; record: the provider was asked and the answer kept) |
+| `status` | `ok`, `error` | |
+| `questions` | int | typed questions in the request (one per passage for rerank/wake focus) |
+| `answers` | int | `ok` only: answers returned |
+| `requests` | int | `ok` only: provider requests this judgement costs (budget batching, `typesafe_batches.rs`); for a cassette hit, what the recording cost |
+| `http_requests` | int | `ok` only: HTTP requests this process actually sent: `0` for `cassette_hit`, else `requests` |
+| `input_tokens` | int | `ok` only: provider-reported input tokens (summed over batches; from the cassette entry on a hit) |
+| `elapsed_us` | int | wall time of the evaluation in µs, retries included |
+| `request_key` | hex | SHA-256 of the whole request's provider body = the cassette entry key (`cassette_judgement.rs`), so a line joins its cassette/book entry |
+| `error_hash` | hex16 | `error` only: first 16 hex of SHA-256 of the error message |
+
+On `status = "error"` the token fields are absent, never `0`. Errors on the network
+path (`source = "remote"`) include timeouts and 429 after retries.
+
+Sites (stable words; new ones may be added):
+
+| `site` | Caller | Opt-in | BENCH_SPEC §7 letter |
+|---|---|---|---|
+| `rerank` | `kmp_ask` re-ranking | `rerank.json` | p |
+| `wake_focus` | `kmp_wake` with an intent | `wake-focus.json` | p |
+| `curate_review` | `kmp_curate` `mode: review` without `focus` | `typesafe.json` | r |
+| `curate_focus` | `kmp_curate` `mode: review` with `focus` | `typesafe.json` | r |
+| `write_relations` | relations proposed after a write | `write-relations.json` | r |
+| `precheck` | pre-check of accepted relations (`mode: apply`) | `typesafe.json` | t |
+| `paths` | `kmp_curate` `mode: paths` (suspects, facts on the way, pair typing) | `typesafe.json` | w/n/c |
+| `labels` | `kmp_curate` `mode: labels` | `typesafe.json` | t |
+| `summaries` | `kmp_summaries_audit` meaning check | `typesafe.json` | s/b |
+
+Call record mapping (`domain/run_record.py` `JevEvaluation`): `site`, `questions`,
+`requests`, `input_tokens`, `source` copied; `us = elapsed_us`. Lines are attributed to
+the call during which they were logged (timestamps between request write and response
+read of the same process; tool calls are serial). A binary older than BT03 emits no
+`kmp_judgement` lines: `jev = null` with reason, never `[]`. With BT03, a call on a store
+with `typesafe.json` loaded that logs no line judged nothing: `jev = {evaluations: []}`.
+
+Checked on 2026-09-26 against `crates/kmp-testkit/judged/retrieval_cases.json` with rerank
+narrow (`{"pool_size":40}`) in cassette replay through the stdio binary: 35 lines, all
+`cassette_hit`, each line's `input_tokens` and `requests` equal to the cassette entry its
+`request_key` names; the 34 distinct keys are the whole cassette (14 197 input tokens;
+one request repeats across two cases, so the lines sum to 14 595).
+
+### `kmp_store_config` and `kmp_store_config_summary` (store open)
+
+Target `kmp_mcp::store_config`, emitted once each time the embedded backend opens a
+store (the retrying backend may reopen it). Files consulted:
+
+| `file` | Where | Applied when |
+|---|---|---|
+| `typesafe.json` | beside the store | the judgement model loaded (remote, or cassette replay/record) |
+| `typesafe-cassette` | `KMP_TYPESAFE_CASSETTE` | same as `typesafe.json` |
+| `rerank.json` | beside the store | the reranker loaded (needs a working `typesafe.json`) |
+| `wake-focus.json` | beside the store | wake focus loaded (needs a working `typesafe.json`) |
+| `write-relations.json` | beside the store | a working `typesafe.json` |
+| `semantic-retrieval.json` | beside the store | the loopback semantic retriever loaded |
+| `lexical-bridge.kmpb` | `KMP_LEXICAL_BRIDGE`, else beside the store, else the machine table | the table loaded and is not empty; absent from the report when `KMP_LEXICAL_BRIDGE=none` |
+| any other `*.json` / `*.kmpb` beside the store | | never: `reason = "not read by this kmp-mcp version"` |
+
+Absent files produce no line.
+
+```json
+{"level":"DEBUG","target":"kmp_mcp::store_config",
+ "fields":{"message":"store configuration loaded","event":"kmp_store_config",
+           "data_dir":"/abs/store","file":"rerank.json","path":"/abs/store/rerank.json",
+           "sha256":"72d3e914f1d1df2b95cfa58c360c34bac7a7dfa28c017bb0406412490febaee4",
+           "bytes":16,"status":"loaded"}}
+{"level":"WARN","target":"kmp_mcp::store_config",
+ "fields":{"message":"store configuration present but ignored","event":"kmp_store_config",
+           "data_dir":"/abs/store","file":"rerank.json","path":"/abs/store/rerank.json",
+           "sha256":"...","bytes":16,"status":"ignored",
+           "reason":"rerank.json needs typesafe.json beside the store"}}
+{"level":"DEBUG","target":"kmp_mcp::store_config",
+ "fields":{"message":"store configuration read","event":"kmp_store_config_summary",
+           "data_dir":"/abs/store","loaded":"typesafe.json,typesafe-cassette,rerank.json,lexical-bridge.kmpb",
+           "ignored":""}}
+```
+
+Levels: `loaded` lines and the summary are `DEBUG` (the file is read and hashed only
+then, so an ordinary start does not hash a 13 MB bridge); `ignored` lines are `WARN` and
+appear under the default filter. `sha256` is of the file bytes as read at open time
+(`""` with `bytes = 0` if the read failed between the check and the hash). `loaded` and
+`ignored` in the summary are comma-joined `file` values in report order.
+
+Variant acknowledgement (§4): a store file named `N` is applied iff a
+`kmp_store_config` line has `file = N`, `status = "loaded"` and `sha256` equal to the
+SHA-256 the runner copied; `status = "ignored"` or no line makes the variant
+`not_applied`, reporting `reason`. A binary older than BT03 emits no such lines: every
+store file is then `not_applied` with reason "binary predates store_config telemetry".
+
+## Search probe (`kmp.bench.search_probe.v1`)
+
+`kmp_search_probe` shows what the kernel's tokenizer makes of a text, so the bench can
+explain a lexical miss without reimplementing KMP's tokenizer in Python. It is a thin
+binary over the public facade `kmp_proto_mapping::v1beta1::SearchProbe`
+(`crates/kmp-proto-mapping/src/v1beta1/memory_mapping/search_probe.rs`), which calls the
+same functions the ranker does. It opens no store, calls no model and reads no `KMP_*`
+variable: its output is a pure function of the input and the kernel build, so a probe
+result is cacheable by (binary SHA-256, input digest).
+
+```text
+cargo build --release -p kmp-testkit --bin kmp_search_probe
+target/release/kmp_search_probe probes.jsonl > terms.jsonl   # or: ... < probes.jsonl, or "-"
+```
+
+Input: JSON Lines, one request per line; blank lines are skipped. Unknown fields are
+refused. Exactly one of `text` or `texts` is required.
+
+```json
+{"id": "q-017", "about_texts": ["The deployment of the gateway was frozen during the audit."], "carries_search_summary": false, "texts": ["Which valves moved after PR #83?"]}
+```
+
+- `about_texts`: the about's own memory texts (entry texts, details, relation
+  rationale/motivation/evidence). The morphology is read once from them, as the ranker
+  reads it from the bundle (`search_morphology` in `answer_recall_context.rs`): Snowball
+  `spanish` or `english` when `LanguageVocabulary` reads one language, none for an empty,
+  too-short or evenly mixed about.
+- `carries_search_summary` (default `false`): whether the about holds a linted English
+  `search_summary`. When the language cannot be read and this is `true`, the probe stems
+  in the kernel's search language (`english`), exactly like the ranker's fallback.
+- `id` (optional, any JSON value): echoed on every output line.
+
+Output: one canonical-order JSON line per text, keys sorted, every field present.
+
+```json
+{"compound_identifiers":[],"concept_keys":["83","after","concept:movement","pr","valves"],"id":"q-017","identifiers":["#83","pr"],"index":0,"informative_terms":["83","after","moved","pr","valves"],"language":"english","line":1,"schema":"kmp.bench.search_probe.v1","search_keys":["83","after","concept:movement","pr","valv"],"text":"Which valves moved after PR #83?"}
+```
+
+| Field | Meaning |
+|---|---|
+| `line` | 1-based input line (blank lines counted) |
+| `index` | position of the text inside `texts` (0 for `text`) |
+| `language` | the Snowball language the probe stems in, or `null` (exact matching) |
+| `informative_terms` | `kmp_domain::language::informative_tokens`: folded (NFKD, no diacritics, lowercase, `ß`→`ss`) tokens split on non-alphanumerics, minus stop words and one-letter non-digits |
+| `concept_keys` | each informative term through the hand-kept concept table only (`concept:movement`, ...); unknown words unchanged |
+| `search_keys` | what the ranker compares: concept key when the table knows the word, else the Snowball stem under `language`. Equal to `AnswerCandidateTerms.text` for the same text (unit-tested) |
+| `identifiers` | `kmp_domain::language::identifiers`, folded |
+| `compound_identifiers` | always `[]` until P3 lands multi-token identifiers |
+
+All term lists are sorted and unique because the ranker compares sets. Errors (bad
+JSON, both or neither of `text`/`texts`, unreadable file, extra arguments) go to stderr as
+`kmp_search_probe: line N: ...` with exit status 2 and no partial guarantee for later
+lines; lines before the error have already been written.

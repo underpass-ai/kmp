@@ -1823,6 +1823,7 @@ dependencies = [
  "kmp-interpretation",
  "kmp-mcp",
  "kmp-proto",
+ "kmp-proto-mapping",
  "reqwest 0.12.28",
  "rusqlite",
  "serde",
