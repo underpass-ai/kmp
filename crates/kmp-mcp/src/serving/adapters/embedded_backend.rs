@@ -7,11 +7,13 @@ use super::embedded::{
     EmbeddedVisualProjectionTool, EmbeddedWakeTool,
 };
 use super::judgement_reranker::JudgementReranker;
+use super::judgement_source::load_judgement;
 use super::lexical_bridge_file::load_lexical_bridge;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
-use super::typesafe_judgement::TypeSafeJudgement;
 use crate::contract::{TIME_TOOL, TimeMove};
-use crate::serving::environment::{TYPESAFE_API_KEY_ENV, optional_env_string};
+use crate::serving::environment::{
+    TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV, TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
+};
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture, ToolError};
@@ -68,8 +70,12 @@ impl EmbeddedKernelMcpBackend {
     ) -> Result<Self, String> {
         let kernel = EmbeddedKernel::open_with_engine(data_dir, engine)
             .map_err(|error| error.to_string())?;
-        let judgement =
-            TypeSafeJudgement::load(data_dir, optional_env_string(TYPESAFE_API_KEY_ENV));
+        let judgement = load_judgement(
+            data_dir,
+            optional_env_string(TYPESAFE_API_KEY_ENV),
+            optional_env_string(TYPESAFE_CASSETTE_ENV),
+            optional_env_string(TYPESAFE_CASSETTE_MODE_ENV),
+        );
         let rerank = JudgementReranker::load(data_dir, &judgement);
         Ok(Self {
             kernel,

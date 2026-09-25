@@ -1,3 +1,7 @@
+mod cassette_judgement;
+#[cfg(test)]
+mod cassette_judgement_tests;
+mod cassette_mode;
 pub(crate) mod curate_doubt_cache;
 pub(crate) mod curate_review_cache;
 mod embedded;
@@ -8,6 +12,7 @@ pub(crate) mod grpc;
 mod judgement_reranker;
 #[cfg(test)]
 mod judgement_reranker_tests;
+mod judgement_source;
 pub(crate) mod lexical_bridge_file;
 mod loopback_semantic_retriever;
 mod rerank_config;

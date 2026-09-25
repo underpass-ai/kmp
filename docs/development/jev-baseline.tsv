@@ -1,0 +1,22 @@
+# Jev baseline: the floors `scripts/ci/jev-baseline.sh` holds TypeSafe Jev with KMP to,
+# measured on the judged corpus against the recorded cassette. missing_* score kmp_curate's
+# missing relations (found at all; typed as a reader accepts), distractors_rejected the pairs
+# that share words without a relation, suspect_* the audit against planted bad and known good
+# declarations, precheck_* the apply pre-write check, ask_* the rank of the answer in proof
+# without and with re-ranking. A number may rise freely; lowering one is a reviewed change
+# that says why, and a re-recorded cassette is one. `cases` is exact.
+# Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh
+metric	floor
+cases	1
+missing_found	1.0000
+missing_typed	0.7500
+distractors_rejected	1.0000
+suspect_recall	0.8000
+suspect_precision	1.0000
+good_declarations_kept	1.0000
+precheck_available	1.0000
+precheck_right	1.0000
+ask_mrr_plain	0.3750
+ask_mrr_rerank	0.8750
+ask_top5_plain	0.5000
+ask_top5_rerank	1.0000

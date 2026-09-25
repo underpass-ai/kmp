@@ -28,6 +28,7 @@ cargo test --workspace --locked
 python3 scripts/ci/kmp-capability-contract.py
 bash scripts/ci/retrieval-baseline.sh   # kmp_ask against the judged retrieval collection; refresh with RETRIEVAL_BASELINE=write
 bash scripts/ci/relate-baseline.sh      # kmp_relate against the judged relate collection; refresh with RELATE_BASELINE=write
+bash scripts/ci/jev-baseline.sh         # TypeSafe Jev with KMP on the judged corpus, replayed from its cassette; see jev-evaluation.md
 ```
 
 Run clippy before proposing Rust changes:

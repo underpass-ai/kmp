@@ -1,0 +1,886 @@
+{
+ "note": "Judged corpus for TypeSafe Jev with KMP: kmp_curate review (missing relations by kind, distractors, planted bad declarations), the apply pre-write check, and kmp_ask with and without re-ranking. Every expectation was written by a reader before any run; `types` lists the relation types a reader accepts for a pair, in either direction. Scored by `jev_kmp_scorecard` against recorded judgements (crates/kmp-testkit/judged/jev.cassette.json).",
+ "cases": [
+  {
+   "id": "payments-platform",
+   "probes": "Jev and the agent curating a bilingual payments journal: missing relations of each kind, paraphrases, cross-language equivalences, distractors that share words, planted bad declarations, pre-write checks and paraphrased asks.",
+   "about": "service:billing",
+   "abouts": [
+    "service:billing",
+    "service:pagos"
+   ],
+   "memories": [
+    {
+     "about": "service:billing",
+     "memory": {
+      "dimensions": [
+       {
+        "id": "billing-2026",
+        "kind": "journal"
+       }
+      ],
+      "entries": [
+       {
+        "id": "service:billing:b01",
+        "kind": "observation",
+        "text": "INC-4711: card payments failed for 40 minutes after the Valkey cluster lost its primary.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 1,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b02",
+        "kind": "observation",
+        "text": "The payments API returned HTTP 502 to checkout while the cache failover was in progress.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 2,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b03",
+        "kind": "decision",
+        "text": "We will run Valkey with three replicas instead of one so that a failover no longer drops the session cache.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 3,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b05",
+        "kind": "observation",
+        "text": "Ana Ruiz reviewed the INC-4711 postmortem and signed it off.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 4,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b06",
+        "kind": "decision",
+        "text": "Refunds for the failed card payments are issued automatically within 48 hours.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 5,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b10",
+        "kind": "decision",
+        "text": "Deploy 2.4.1 to production is scheduled for Friday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 6,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b11",
+        "kind": "observation",
+        "text": "Deploy 2.4.1 reached production on Friday at 18:00.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 7,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b12",
+        "kind": "decision",
+        "text": "Checkout retries a failed card charge twice before showing an error.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 8,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b13",
+        "kind": "decision",
+        "text": "From release 2.5, checkout retries a failed card charge once and then asks the customer for another card.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 9,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b14",
+        "kind": "observation",
+        "text": "The fraud check runs before the card is authorized.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 10,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b15",
+        "kind": "observation",
+        "text": "Card authorization happens first; the fraud check only reviews charges that were already authorized.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 11,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b16",
+        "kind": "observation",
+        "text": "Shoppers were unable to complete their purchases that Monday evening.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 12,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b20",
+        "kind": "observation",
+        "text": "Office move 2.4.1: the new printers arrive on Friday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 13,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b21",
+        "kind": "observation",
+        "text": "Ana Ruiz is organizing the team lunch on Thursday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 14,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b22",
+        "kind": "observation",
+        "text": "INC-4711 was also the code name of an unrelated marketing campaign in 2024.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 15,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b30",
+        "kind": "observation",
+        "text": "Checkout latency p95 was 1.2 s during the Black Friday load test.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 16,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b31",
+        "kind": "observation",
+        "text": "The Black Friday load test passed its 1.5 s p95 budget.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 17,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b32",
+        "kind": "decision",
+        "text": "Card data is tokenized before it leaves the checkout page.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 18,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b33",
+        "kind": "constraint",
+        "text": "PCI DSS scope must stay limited to the payment provider.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 19,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b34",
+        "kind": "observation",
+        "text": "Release 2.5 removed the legacy PayPal button from checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 20,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b35",
+        "kind": "observation",
+        "text": "Checkout shows both the card form and the legacy PayPal button.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 21,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b40",
+        "kind": "observation",
+        "text": "The nightly reconciliation job finished without mismatches.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 22,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b41",
+        "kind": "observation",
+        "text": "The nightly reconciliation job reported 312 mismatched payouts.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 23,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b42",
+        "kind": "observation",
+        "text": "The payments team moved to the fourth floor.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 24,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b43",
+        "kind": "decision",
+        "text": "Invoices are generated as PDF only.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 25,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:billing:b44",
+        "kind": "decision",
+        "text": "From April, invoices are generated as PDF and also sent as e-invoice XML.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "billing-2026",
+          "sequence": 26,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       }
+      ],
+      "relations": [
+       {
+        "from": "service:billing:b30",
+        "to": "service:billing:b31",
+        "rel": "supports",
+        "class": "evidential",
+        "why": "The measured p95 of 1.2 s is under the 1.5 s budget the load test required.",
+        "evidence": "Load test report, Black Friday rehearsal.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "service:billing:b32",
+        "to": "service:billing:b33",
+        "rel": "chosen_because",
+        "class": "motivational",
+        "why": "Tokenizing on the page keeps raw card data out of our systems, which is what keeps PCI DSS scope limited to the provider.",
+        "evidence": "PCI scoping memo.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "service:billing:b34",
+        "to": "service:billing:b35",
+        "rel": "supersedes",
+        "class": "evidential",
+        "why": "Since release 2.5 the legacy PayPal button is gone, so the earlier checkout layout no longer holds.",
+        "evidence": "Release 2.5 notes.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "service:billing:b41",
+        "to": "service:billing:b40",
+        "rel": "supports",
+        "class": "evidential",
+        "why": "Both come from the nightly reconciliation job.",
+        "evidence": "Job logs.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "service:billing:b03",
+        "to": "service:billing:b42",
+        "rel": "chosen_because",
+        "class": "motivational",
+        "why": "Moving to the fourth floor required more cache replicas.",
+        "evidence": "Facilities email.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "service:billing:b21",
+        "to": "service:billing:b11",
+        "rel": "triggers",
+        "class": "causal",
+        "why": "The team lunch triggered the production deployment.",
+        "evidence": "Calendar.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "service:billing:b43",
+        "to": "service:billing:b44",
+        "rel": "supersedes",
+        "class": "evidential",
+        "why": "The PDF-only rule replaces the April change.",
+        "evidence": "Invoicing policy.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "about": "service:pagos",
+     "memory": {
+      "dimensions": [
+       {
+        "id": "pagos-2026",
+        "kind": "journal"
+       }
+      ],
+      "entries": [
+       {
+        "id": "service:pagos:p01",
+        "kind": "observation",
+        "text": "INC-4711: los pagos con tarjeta fallaron durante 40 minutos tras perder el primario del clúster Valkey.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "pagos-2026",
+          "sequence": 1,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:pagos:p05",
+        "kind": "observation",
+        "text": "Ana Ruiz firmó el postmortem del incidente de pagos.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "pagos-2026",
+          "sequence": 2,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:pagos:p10",
+        "kind": "decision",
+        "text": "Las devoluciones se procesan en un plazo de 48 horas.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "pagos-2026",
+          "sequence": 3,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:pagos:p11",
+        "kind": "observation",
+        "text": "Finanzas confirmó que todas las devoluciones del incidente se pagaron en 36 horas.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "pagos-2026",
+          "sequence": 4,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:pagos:p12",
+        "kind": "constraint",
+        "text": "El límite diario de reembolsos es de 10.000 euros.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "pagos-2026",
+          "sequence": 5,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:pagos:p13",
+        "kind": "observation",
+        "text": "No hay límite diario para los reembolsos.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "pagos-2026",
+          "sequence": 6,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "service:pagos:p20",
+        "kind": "observation",
+        "text": "El clúster Valkey del entorno de pruebas se reinició por mantenimiento programado.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "pagos-2026",
+          "sequence": 7,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       }
+      ],
+      "relations": [
+       {
+        "from": "service:pagos:p11",
+        "to": "service:pagos:p10",
+        "rel": "supports",
+        "class": "evidential",
+        "why": "Pagar todas las devoluciones en 36 horas cumple el plazo de 48 horas.",
+        "evidence": "Informe de finanzas del incidente.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "service:pagos:p12",
+        "to": "service:pagos:p13",
+        "rel": "supports",
+        "class": "evidential",
+        "why": "Ambas hablan del límite de reembolsos.",
+        "evidence": "Política de reembolsos.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "expected": {
+    "missing": [
+     {
+      "pair": [
+       "service:billing:b10",
+       "service:billing:b11"
+      ],
+      "types": [
+       "updates_state",
+       "follows",
+       "verified_by"
+      ],
+      "kind": "status-update"
+     },
+     {
+      "pair": [
+       "service:billing:b12",
+       "service:billing:b13"
+      ],
+      "types": [
+       "supersedes",
+       "updates_state",
+       "corrects"
+      ],
+      "kind": "replacement"
+     },
+     {
+      "pair": [
+       "service:billing:b14",
+       "service:billing:b15"
+      ],
+      "types": [
+       "contradicts"
+      ],
+      "kind": "contradiction"
+     },
+     {
+      "pair": [
+       "service:billing:b01",
+       "service:billing:b02"
+      ],
+      "types": [
+       "supports",
+       "contributes_to",
+       "verified_by",
+       "same_event_as"
+      ],
+      "kind": "support"
+     },
+     {
+      "pair": [
+       "service:billing:b01",
+       "service:billing:b03"
+      ],
+      "types": [
+       "chosen_because",
+       "triggers",
+       "depends_on"
+      ],
+      "kind": "causal-decision"
+     },
+     {
+      "pair": [
+       "service:billing:b01",
+       "service:billing:b16"
+      ],
+      "types": [
+       "restates",
+       "same_event_as",
+       "supports"
+      ],
+      "kind": "paraphrase"
+     },
+     {
+      "pair": [
+       "service:billing:b01",
+       "service:pagos:p01"
+      ],
+      "types": [
+       "same_event_as"
+      ],
+      "kind": "cross-language-equivalence"
+     },
+     {
+      "pair": [
+       "service:billing:b05",
+       "service:pagos:p05"
+      ],
+      "types": [
+       "same_event_as"
+      ],
+      "kind": "cross-language-equivalence"
+     }
+    ],
+    "distractors": [
+     {
+      "pair": [
+       "service:billing:b10",
+       "service:billing:b20"
+      ],
+      "shares": "version 2.4.1 and Friday"
+     },
+     {
+      "pair": [
+       "service:billing:b05",
+       "service:billing:b21"
+      ],
+      "shares": "Ana Ruiz"
+     },
+     {
+      "pair": [
+       "service:billing:b01",
+       "service:pagos:p20"
+      ],
+      "shares": "Valkey cluster"
+     },
+     {
+      "pair": [
+       "service:billing:b01",
+       "service:billing:b22"
+      ],
+      "shares": "INC-4711"
+     }
+    ],
+    "declared_good": [
+     [
+      "service:billing:b30",
+      "supports",
+      "service:billing:b31"
+     ],
+     [
+      "service:billing:b32",
+      "chosen_because",
+      "service:billing:b33"
+     ],
+     [
+      "service:billing:b34",
+      "supersedes",
+      "service:billing:b35"
+     ],
+     [
+      "service:pagos:p11",
+      "supports",
+      "service:pagos:p10"
+     ]
+    ],
+    "declared_bad": [
+     [
+      "service:billing:b41",
+      "supports",
+      "service:billing:b40"
+     ],
+     [
+      "service:billing:b03",
+      "chosen_because",
+      "service:billing:b42"
+     ],
+     [
+      "service:billing:b21",
+      "triggers",
+      "service:billing:b11"
+     ],
+     [
+      "service:billing:b43",
+      "supersedes",
+      "service:billing:b44"
+     ],
+     [
+      "service:pagos:p12",
+      "supports",
+      "service:pagos:p13"
+     ]
+    ],
+    "precheck": [
+     {
+      "pair": [
+       "service:billing:b10",
+       "service:billing:b11"
+      ],
+      "from": "service:billing:b11",
+      "rel": "updates_state",
+      "doubt": false,
+      "why": "The later entry reports that deploy 2.4.1 reached production on the Friday it was scheduled for.",
+      "evidence": "Both entries name deploy 2.4.1 and Friday; the second records it in production at 18:00."
+     },
+     {
+      "pair": [
+       "service:billing:b14",
+       "service:billing:b15"
+      ],
+      "from": "service:billing:b15",
+      "rel": "contradicts",
+      "doubt": false,
+      "why": "One entry says the fraud check runs before authorization; the other says authorization happens first.",
+      "evidence": "The two entries give opposite orders for the fraud check and card authorization."
+     },
+     {
+      "pair": [
+       "service:billing:b12",
+       "service:billing:b13"
+      ],
+      "from": "service:billing:b13",
+      "rel": "supersedes",
+      "doubt": true,
+      "why": "Both entries mention checkout.",
+      "evidence": "The word checkout."
+     },
+     {
+      "pair": [
+       "service:billing:b01",
+       "service:billing:b03"
+      ],
+      "from": "service:billing:b03",
+      "rel": "chosen_because",
+      "doubt": true,
+      "why": "The replicas were chosen because the team moved offices.",
+      "evidence": "None."
+     },
+     {
+      "pair": [
+       "service:billing:b01",
+       "service:pagos:p01"
+      ],
+      "from": "service:billing:b01",
+      "rel": "same_event_as",
+      "doubt": false,
+      "why": "Both report INC-4711, the 40-minute card payment failure after the Valkey primary was lost.",
+      "evidence": "Same incident id, duration and cause in English and Spanish."
+     }
+    ],
+    "ask": [
+     {
+      "question": "Who signed off the postmortem of the card outage?",
+      "gold": [
+       "service:billing:b05",
+       "service:pagos:p05"
+      ],
+      "lang": "en",
+      "shape": "lexical"
+     },
+     {
+      "question": "¿Quién aprobó el informe posterior al incidente?",
+      "gold": [
+       "service:pagos:p05",
+       "service:billing:b05"
+      ],
+      "lang": "es",
+      "shape": "paraphrase"
+     },
+     {
+      "question": "Why were extra cache copies added?",
+      "gold": [
+       "service:billing:b03"
+      ],
+      "lang": "en",
+      "shape": "paraphrase"
+     },
+     {
+      "question": "Did shoppers get their money back after the outage, and how fast?",
+      "gold": [
+       "service:pagos:p11",
+       "service:billing:b06",
+       "service:pagos:p10"
+      ],
+      "lang": "en",
+      "shape": "cross-language"
+     },
+     {
+      "question": "How many times does checkout try again when a card is declined now?",
+      "gold": [
+       "service:billing:b13"
+      ],
+      "lang": "en",
+      "shape": "paraphrase"
+     },
+     {
+      "question": "What happens first, the fraud review or charging the card?",
+      "gold": [
+       "service:billing:b14",
+       "service:billing:b15"
+      ],
+      "lang": "en",
+      "shape": "paraphrase"
+     },
+     {
+      "question": "Which deployment went live on Friday evening?",
+      "gold": [
+       "service:billing:b11"
+      ],
+      "lang": "en",
+      "shape": "paraphrase"
+     },
+     {
+      "question": "¿Se puede devolver más de 10.000 euros en un día?",
+      "gold": [
+       "service:pagos:p12",
+       "service:pagos:p13"
+      ],
+      "lang": "es",
+      "shape": "lexical"
+     }
+    ]
+   }
+  }
+ ]
+}

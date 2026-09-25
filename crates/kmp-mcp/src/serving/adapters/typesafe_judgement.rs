@@ -30,14 +30,9 @@ impl TypeSafeJudgement {
         data_dir: &Path,
         key: Option<String>,
     ) -> Result<Option<Arc<dyn JudgementModel>>, String> {
-        let bytes = match std::fs::read(data_dir.join("typesafe.json")) {
-            Ok(bytes) if bytes.len() <= 8192 => bytes,
-            Ok(_) => return Err("TypeSafe configuration exceeds 8192 bytes".into()),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-            Err(_) => return Err("cannot read TypeSafe configuration".into()),
+        let Some(config) = read_config(data_dir)? else {
+            return Ok(None);
         };
-        let config: TypeSafeConfig =
-            serde_json::from_slice(&bytes).map_err(|_| "invalid TypeSafe configuration")?;
         let (endpoint, timeout) = config.validate()?;
         let key = TypeSafeApiKey::from_env(key)?;
         Ok(Some(Arc::new(Self::new(
@@ -46,6 +41,16 @@ impl TypeSafeJudgement {
             key,
             timeout,
         )?)))
+    }
+
+    /// The pinned model the store opted into, validated like a live load but
+    /// without a key: what a replayed cassette must have been recorded for.
+    pub(super) fn configured_model(data_dir: &Path) -> Result<Option<String>, String> {
+        let Some(config) = read_config(data_dir)? else {
+            return Ok(None);
+        };
+        config.validate()?;
+        Ok(Some(config.model))
     }
 
     pub(super) fn new(
@@ -130,6 +135,18 @@ impl TypeSafeJudgement {
             return serde_json::from_slice(&bytes).map_err(|_| "invalid TypeSafe response".into());
         }
     }
+}
+
+fn read_config(data_dir: &Path) -> Result<Option<TypeSafeConfig>, String> {
+    let bytes = match std::fs::read(data_dir.join("typesafe.json")) {
+        Ok(bytes) if bytes.len() <= 8192 => bytes,
+        Ok(_) => return Err("TypeSafe configuration exceeds 8192 bytes".into()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(_) => return Err("cannot read TypeSafe configuration".into()),
+    };
+    serde_json::from_slice(&bytes)
+        .map(Some)
+        .map_err(|_| "invalid TypeSafe configuration".into())
 }
 
 impl JudgementModel for TypeSafeJudgement {
