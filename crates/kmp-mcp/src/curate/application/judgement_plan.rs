@@ -274,13 +274,17 @@ pub(crate) fn on_the_way_request(
     start: &str,
     goal: Option<&str>,
     followed: &[String],
+    only: Option<&std::collections::BTreeSet<String>>,
 ) -> (JudgementRequest, Vec<String>) {
     let refs = material
         .facts
         .iter()
         .map(|fact| fact.reference.clone())
         .filter(|reference| {
-            reference != start && Some(reference.as_str()) != goal && !followed.contains(reference)
+            reference != start
+                && Some(reference.as_str()) != goal
+                && !followed.contains(reference)
+                && only.is_none_or(|only| only.contains(reference))
         })
         .collect::<Vec<_>>();
     let mut state = json!({"start": excerpt(&text_of(material, start), SENT_CHARS)});

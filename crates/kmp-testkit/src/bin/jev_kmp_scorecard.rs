@@ -827,7 +827,7 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
                 }
             }
             shown.push(format!(
-                "{} {} ({} hops, {} avoided)",
+                "{} {} ({} hops, {} avoided, {} Jev tokens)",
                 if arm == 0 {
                     "declared-only"
                 } else {
@@ -835,7 +835,8 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
                 },
                 if found { "found" } else { "not found" },
                 top.len(),
-                answer["avoided"].as_array().map_or(0, Vec::len)
+                answer["avoided"].as_array().map_or(0, Vec::len),
+                answer["jev"]["input_tokens"].as_u64().unwrap_or(0)
             ));
         }
         println!(
