@@ -881,6 +881,4362 @@
      }
     ]
    }
+  },
+  {
+   "id": "atlas-large",
+   "probes": "A 315-fact project store with deliberate lexical traps: answers phrased in other words than the question, a relation hidden among noise, a reversed declaration and a reversed pre-write item.",
+   "about": "project:atlas",
+   "abouts": [
+    "project:atlas"
+   ],
+   "memories": [
+    {
+     "about": "project:atlas",
+     "memory": {
+      "dimensions": [
+       {
+        "id": "atlas-2026",
+        "kind": "journal"
+       }
+      ],
+      "entries": [
+       {
+        "id": "project:atlas:g01",
+        "kind": "decision",
+        "text": "Marta signed off the migration of Postgres to eu-west-3.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 1,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g02",
+        "kind": "decision",
+        "text": "The on-call rotation now hands over at 09:00 CET instead of midnight.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 2,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g03",
+        "kind": "observation",
+        "text": "Build times dropped from 14 to 6 minutes after the cache layer was added to CI.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 3,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g04",
+        "kind": "decision",
+        "text": "Se decidió no renovar el contrato con el proveedor de SMS por su latencia.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 4,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g05",
+        "kind": "observation",
+        "text": "Customer churn in Q2 rose to 4.1% after the price change.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 5,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g06",
+        "kind": "decision",
+        "text": "The staging cluster is torn down every Friday at 20:00 to save cost.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 6,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g07",
+        "kind": "constraint",
+        "text": "Legal requires deleting chat transcripts after 90 days.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 7,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g08",
+        "kind": "decision",
+        "text": "The design review picked Inter as the product typeface.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 8,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g11",
+        "kind": "observation",
+        "text": "Postgres has been running in eu-west-3 since May 4.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 9,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g13",
+        "kind": "observation",
+        "text": "The CI cache layer was rolled out to every repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 10,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g17",
+        "kind": "observation",
+        "text": "Support conversations older than 90 days were purged on June 1.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 11,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g16",
+        "kind": "observation",
+        "text": "Every Friday night the pre-production environment is shut down to save money.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 12,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g20",
+        "kind": "observation",
+        "text": "The on-call handover happens at midnight.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 13,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g21",
+        "kind": "observation",
+        "text": "The mobile app release train ships every second Tuesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 14,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g22",
+        "kind": "decision",
+        "text": "Mobile releases ship every Tuesday from July.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 15,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n000",
+        "kind": "observation",
+        "text": "A new region label was added to the auth metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 16,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n001",
+        "kind": "observation",
+        "text": "A new region label was added to the catalog metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 17,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n002",
+        "kind": "observation",
+        "text": "A new region label was added to the checkout metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 18,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n003",
+        "kind": "observation",
+        "text": "A new region label was added to the exporter metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 19,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n004",
+        "kind": "observation",
+        "text": "A new region label was added to the gateway metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 20,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n005",
+        "kind": "observation",
+        "text": "A new region label was added to the indexer metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 21,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n006",
+        "kind": "observation",
+        "text": "A new region label was added to the ledger metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 22,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n007",
+        "kind": "observation",
+        "text": "A new region label was added to the notifier metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 23,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n008",
+        "kind": "observation",
+        "text": "A new region label was added to the scheduler metrics.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 24,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n009",
+        "kind": "observation",
+        "text": "Carmen approved the budget for the data offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 25,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n010",
+        "kind": "observation",
+        "text": "Carmen approved the budget for the mobile offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 26,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n011",
+        "kind": "observation",
+        "text": "Carmen approved the budget for the payments offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 27,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n012",
+        "kind": "observation",
+        "text": "Carmen asked whether the auth database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 28,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n013",
+        "kind": "observation",
+        "text": "Carmen asked whether the catalog database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 29,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n014",
+        "kind": "observation",
+        "text": "Carmen asked whether the exporter database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 30,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n015",
+        "kind": "observation",
+        "text": "Carmen changed the alert routing for ledger.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 31,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n016",
+        "kind": "observation",
+        "text": "Carmen changed the alert routing for profile.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 32,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n017",
+        "kind": "observation",
+        "text": "Carmen reviewed the checkout pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 33,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n018",
+        "kind": "observation",
+        "text": "Carmen reviewed the gateway pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 34,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n019",
+        "kind": "observation",
+        "text": "Cpu usage of checkout stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 35,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n020",
+        "kind": "observation",
+        "text": "Cpu usage of exporter stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 36,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n021",
+        "kind": "observation",
+        "text": "Cpu usage of profile stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 37,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n022",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the auth settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 38,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n023",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the catalog settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 39,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n024",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the checkout settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 40,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n025",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the exporter settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 41,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n026",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the gateway settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 42,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n027",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the indexer settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 43,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n028",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the ledger settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 44,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n029",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the notifier settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 45,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n030",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the profile settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 46,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n031",
+        "kind": "observation",
+        "text": "Customers asked for a dark mode in the scheduler settings.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 47,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n032",
+        "kind": "observation",
+        "text": "Diego approved the budget for the billing offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 48,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n033",
+        "kind": "observation",
+        "text": "Diego cancelled the Monday demo of notifier.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 49,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n034",
+        "kind": "observation",
+        "text": "Diego changed the alert routing for catalog.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 50,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n035",
+        "kind": "observation",
+        "text": "Diego changed the alert routing for exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 51,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n036",
+        "kind": "observation",
+        "text": "Diego changed the alert routing for profile.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 52,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n037",
+        "kind": "observation",
+        "text": "Elena asked whether the catalog database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 53,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n038",
+        "kind": "observation",
+        "text": "Elena asked whether the profile database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 54,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n039",
+        "kind": "observation",
+        "text": "Elena cancelled the Thursday demo of checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 55,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n040",
+        "kind": "observation",
+        "text": "Elena changed the alert routing for exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 56,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n041",
+        "kind": "observation",
+        "text": "Elena changed the alert routing for gateway.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 57,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n042",
+        "kind": "observation",
+        "text": "Elena changed the alert routing for indexer.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 58,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n043",
+        "kind": "observation",
+        "text": "Elena reviewed the catalog pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 59,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n044",
+        "kind": "observation",
+        "text": "Elena reviewed the exporter pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 60,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n045",
+        "kind": "observation",
+        "text": "Elena reviewed the profile pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 61,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n046",
+        "kind": "observation",
+        "text": "Error rate of exporter stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 62,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n047",
+        "kind": "observation",
+        "text": "Error rate of indexer stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 63,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n048",
+        "kind": "observation",
+        "text": "Error rate of ledger stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 64,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n049",
+        "kind": "observation",
+        "text": "Error rate of profile stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 65,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n050",
+        "kind": "observation",
+        "text": "Error rate of scheduler stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 66,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n051",
+        "kind": "observation",
+        "text": "Hugo approved the budget for the mobile offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 67,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n052",
+        "kind": "observation",
+        "text": "Hugo approved the budget for the platform offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 68,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n053",
+        "kind": "observation",
+        "text": "Hugo approved the budget for the security offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 69,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n054",
+        "kind": "observation",
+        "text": "Hugo asked whether the checkout database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 70,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n055",
+        "kind": "observation",
+        "text": "Hugo cancelled the Friday demo of indexer.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 71,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n056",
+        "kind": "observation",
+        "text": "Hugo changed the alert routing for ledger.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 72,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n057",
+        "kind": "observation",
+        "text": "Hugo reviewed the exporter pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 73,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n058",
+        "kind": "observation",
+        "text": "Hugo reviewed the scheduler pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 74,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n059",
+        "kind": "observation",
+        "text": "Iker asked whether the auth database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 75,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n060",
+        "kind": "observation",
+        "text": "Iker cancelled the Wednesday demo of ledger.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 76,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n061",
+        "kind": "observation",
+        "text": "Iker changed the alert routing for gateway.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 77,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n062",
+        "kind": "observation",
+        "text": "Irene approved the budget for the billing offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 78,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n063",
+        "kind": "observation",
+        "text": "Irene approved the budget for the mobile offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 79,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n064",
+        "kind": "observation",
+        "text": "Irene approved the budget for the payments offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 80,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n065",
+        "kind": "observation",
+        "text": "Irene asked whether the auth database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 81,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n066",
+        "kind": "observation",
+        "text": "Irene asked whether the profile database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 82,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n067",
+        "kind": "observation",
+        "text": "Irene cancelled the Wednesday demo of scheduler.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 83,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n068",
+        "kind": "observation",
+        "text": "Irene changed the alert routing for exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 84,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n069",
+        "kind": "observation",
+        "text": "Lucia approved the budget for the security offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 85,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n070",
+        "kind": "observation",
+        "text": "Lucia asked whether the auth database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 86,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n071",
+        "kind": "observation",
+        "text": "Lucia cancelled the Monday demo of indexer.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 87,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n072",
+        "kind": "observation",
+        "text": "Lucia cancelled the Thursday demo of scheduler.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 88,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n073",
+        "kind": "observation",
+        "text": "Lucia cancelled the Tuesday demo of profile.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 89,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n074",
+        "kind": "observation",
+        "text": "Lucia cancelled the Wednesday demo of catalog.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 90,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n075",
+        "kind": "observation",
+        "text": "Lucia changed the alert routing for catalog.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 91,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n076",
+        "kind": "observation",
+        "text": "Lucia reviewed the auth pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 92,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n077",
+        "kind": "observation",
+        "text": "Lucia reviewed the exporter pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 93,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n078",
+        "kind": "observation",
+        "text": "Lucia reviewed the gateway pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 94,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n079",
+        "kind": "observation",
+        "text": "Lucia reviewed the ledger pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 95,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n080",
+        "kind": "observation",
+        "text": "Luis approved the budget for the platform offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 96,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n081",
+        "kind": "observation",
+        "text": "Luis cancelled the Thursday demo of exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 97,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n082",
+        "kind": "observation",
+        "text": "Luis cancelled the Tuesday demo of exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 98,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n083",
+        "kind": "observation",
+        "text": "Luis cancelled the Wednesday demo of auth.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 99,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n084",
+        "kind": "observation",
+        "text": "Luis changed the alert routing for notifier.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 100,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n085",
+        "kind": "observation",
+        "text": "Luis reviewed the exporter pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 101,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n086",
+        "kind": "observation",
+        "text": "Luis reviewed the profile pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 102,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n087",
+        "kind": "observation",
+        "text": "Memory usage of checkout stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 103,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n088",
+        "kind": "observation",
+        "text": "Memory usage of gateway stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 104,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n089",
+        "kind": "observation",
+        "text": "Memory usage of ledger stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 105,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n090",
+        "kind": "observation",
+        "text": "Moving auth logs to cold storage was discussed but not scheduled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 106,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n091",
+        "kind": "observation",
+        "text": "Moving checkout logs to cold storage was discussed but not scheduled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 107,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n092",
+        "kind": "observation",
+        "text": "Moving gateway logs to cold storage was discussed but not scheduled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 108,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n093",
+        "kind": "observation",
+        "text": "Moving indexer logs to cold storage was discussed but not scheduled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 109,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n094",
+        "kind": "observation",
+        "text": "Moving ledger logs to cold storage was discussed but not scheduled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 110,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n095",
+        "kind": "observation",
+        "text": "Moving notifier logs to cold storage was discussed but not scheduled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 111,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n096",
+        "kind": "observation",
+        "text": "Moving profile logs to cold storage was discussed but not scheduled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 112,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n097",
+        "kind": "observation",
+        "text": "Moving scheduler logs to cold storage was discussed but not scheduled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 113,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n098",
+        "kind": "observation",
+        "text": "Nora asked whether the auth database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 114,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n099",
+        "kind": "observation",
+        "text": "Nora asked whether the profile database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 115,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n100",
+        "kind": "observation",
+        "text": "Nora cancelled the Monday demo of gateway.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 116,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n101",
+        "kind": "observation",
+        "text": "Nora cancelled the Thursday demo of checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 117,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n102",
+        "kind": "observation",
+        "text": "Nora cancelled the Thursday demo of gateway.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 118,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n103",
+        "kind": "observation",
+        "text": "Nora cancelled the Wednesday demo of checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 119,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n104",
+        "kind": "observation",
+        "text": "Nora changed the alert routing for scheduler.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 120,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n105",
+        "kind": "observation",
+        "text": "Nora reviewed the checkout pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 121,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n106",
+        "kind": "observation",
+        "text": "Nora reviewed the indexer pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 122,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n107",
+        "kind": "observation",
+        "text": "Nora reviewed the ledger pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 123,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n108",
+        "kind": "observation",
+        "text": "Omar approved the budget for the growth offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 124,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n109",
+        "kind": "observation",
+        "text": "Omar approved the budget for the mobile offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 125,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n110",
+        "kind": "observation",
+        "text": "Omar asked whether the auth database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 126,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n111",
+        "kind": "observation",
+        "text": "Omar asked whether the notifier database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 127,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n112",
+        "kind": "observation",
+        "text": "Omar cancelled the Thursday demo of notifier.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 128,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n113",
+        "kind": "observation",
+        "text": "Omar reviewed the checkout pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 129,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n114",
+        "kind": "observation",
+        "text": "Omar reviewed the gateway pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 130,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n115",
+        "kind": "observation",
+        "text": "P95 latency of catalog stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 131,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n116",
+        "kind": "observation",
+        "text": "P95 latency of checkout stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 132,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n117",
+        "kind": "observation",
+        "text": "P95 latency of exporter stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 133,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n118",
+        "kind": "observation",
+        "text": "P95 latency of gateway stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 134,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n119",
+        "kind": "observation",
+        "text": "P95 latency of profile stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 135,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n120",
+        "kind": "observation",
+        "text": "P95 latency of scheduler stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 136,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n121",
+        "kind": "observation",
+        "text": "Pablo approved the budget for the billing offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 137,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n122",
+        "kind": "observation",
+        "text": "Pablo approved the budget for the growth offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 138,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n123",
+        "kind": "observation",
+        "text": "Pablo approved the budget for the infra offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 139,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n124",
+        "kind": "observation",
+        "text": "Pablo approved the budget for the search offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 140,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n125",
+        "kind": "observation",
+        "text": "Pablo approved the budget for the security offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 141,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n126",
+        "kind": "observation",
+        "text": "Pablo asked whether the catalog database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 142,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n127",
+        "kind": "observation",
+        "text": "Pablo asked whether the exporter database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 143,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n128",
+        "kind": "observation",
+        "text": "Pablo asked whether the ledger database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 144,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n129",
+        "kind": "observation",
+        "text": "Pablo cancelled the Friday demo of notifier.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 145,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n130",
+        "kind": "observation",
+        "text": "Pablo cancelled the Thursday demo of profile.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 146,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n131",
+        "kind": "observation",
+        "text": "Pablo cancelled the Wednesday demo of exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 147,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n132",
+        "kind": "observation",
+        "text": "Pablo changed the alert routing for checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 148,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n133",
+        "kind": "observation",
+        "text": "Pablo changed the alert routing for ledger.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 149,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n134",
+        "kind": "observation",
+        "text": "Pablo changed the alert routing for notifier.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 150,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n135",
+        "kind": "observation",
+        "text": "Pablo reviewed the catalog pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 151,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n136",
+        "kind": "observation",
+        "text": "Pablo reviewed the checkout pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 152,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n137",
+        "kind": "observation",
+        "text": "Pablo reviewed the notifier pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 153,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n138",
+        "kind": "observation",
+        "text": "Queue depth of checkout stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 154,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n139",
+        "kind": "observation",
+        "text": "Queue depth of notifier stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 155,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n140",
+        "kind": "observation",
+        "text": "Request volume of auth stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 156,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n141",
+        "kind": "observation",
+        "text": "Request volume of gateway stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 157,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n142",
+        "kind": "observation",
+        "text": "Request volume of notifier stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 158,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n143",
+        "kind": "observation",
+        "text": "Request volume of profile stayed under its alert threshold.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 159,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n144",
+        "kind": "observation",
+        "text": "Sara approved the budget for the growth offsite.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 160,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n145",
+        "kind": "observation",
+        "text": "Sara asked whether the checkout database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 161,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n146",
+        "kind": "observation",
+        "text": "Sara asked whether the ledger database could be moved later this year.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 162,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n147",
+        "kind": "observation",
+        "text": "Sara cancelled the Tuesday demo of scheduler.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 163,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n148",
+        "kind": "observation",
+        "text": "Sara cancelled the Wednesday demo of auth.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 164,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n149",
+        "kind": "observation",
+        "text": "Sara changed the alert routing for gateway.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 165,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n150",
+        "kind": "observation",
+        "text": "Sara reviewed the auth pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 166,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n151",
+        "kind": "observation",
+        "text": "Sara reviewed the ledger pipeline configuration.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 167,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n152",
+        "kind": "observation",
+        "text": "The Acme Logs contract renewal was added to the Q3 agenda.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 168,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n153",
+        "kind": "observation",
+        "text": "The Globex CDN contract renewal was added to the Q3 agenda.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 169,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n154",
+        "kind": "observation",
+        "text": "The Initech Search contract renewal was added to the Q3 agenda.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 170,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n155",
+        "kind": "observation",
+        "text": "The Northwind Mail contract renewal was added to the Q3 agenda.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 171,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n156",
+        "kind": "observation",
+        "text": "The Umbrella Pay contract renewal was added to the Q3 agenda.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 172,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n157",
+        "kind": "observation",
+        "text": "The auth database request volume was normal on Friday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 173,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n158",
+        "kind": "observation",
+        "text": "The auth service in sa-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 174,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n159",
+        "kind": "observation",
+        "text": "The auth service in us-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 175,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n160",
+        "kind": "observation",
+        "text": "The billing team approved the new dashboard layout for catalog.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 176,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n161",
+        "kind": "observation",
+        "text": "The billing team renamed the notifier repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 177,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n162",
+        "kind": "observation",
+        "text": "The billing weekly sync moved to Monday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 178,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n163",
+        "kind": "observation",
+        "text": "The billing weekly sync moved to Thursday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 179,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n164",
+        "kind": "observation",
+        "text": "The billing weekly sync moved to Wednesday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 180,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n165",
+        "kind": "observation",
+        "text": "The catalog database queue depth was normal on Tuesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 181,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n166",
+        "kind": "observation",
+        "text": "The catalog service in ap-south-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 182,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n167",
+        "kind": "observation",
+        "text": "The catalog service in sa-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 183,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n168",
+        "kind": "observation",
+        "text": "The checkout database request volume was normal on Tuesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 184,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n169",
+        "kind": "observation",
+        "text": "The checkout service in sa-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 185,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n170",
+        "kind": "observation",
+        "text": "The data team approved the new dashboard layout for catalog.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 186,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n171",
+        "kind": "observation",
+        "text": "The data team approved the new dashboard layout for exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 187,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n172",
+        "kind": "observation",
+        "text": "The data team approved the new dashboard layout for ledger.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 188,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n173",
+        "kind": "observation",
+        "text": "The data weekly sync moved to Friday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 189,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n174",
+        "kind": "observation",
+        "text": "The data weekly sync moved to Monday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 190,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n175",
+        "kind": "observation",
+        "text": "The exporter database memory usage was normal on Thursday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 191,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n176",
+        "kind": "observation",
+        "text": "The exporter database p95 latency was normal on Tuesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 192,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n177",
+        "kind": "observation",
+        "text": "The exporter database p95 latency was normal on Wednesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 193,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n178",
+        "kind": "observation",
+        "text": "The exporter database queue depth was normal on Friday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 194,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n179",
+        "kind": "observation",
+        "text": "The exporter service in ap-south-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 195,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n180",
+        "kind": "observation",
+        "text": "The exporter service in eu-central-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 196,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n181",
+        "kind": "observation",
+        "text": "The exporter service in sa-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 197,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n182",
+        "kind": "observation",
+        "text": "The font size of the auth admin page was increased.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 198,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n183",
+        "kind": "observation",
+        "text": "The font size of the catalog admin page was increased.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 199,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n184",
+        "kind": "observation",
+        "text": "The font size of the exporter admin page was increased.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 200,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n185",
+        "kind": "observation",
+        "text": "The font size of the gateway admin page was increased.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 201,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n186",
+        "kind": "observation",
+        "text": "The font size of the indexer admin page was increased.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 202,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n187",
+        "kind": "observation",
+        "text": "The font size of the ledger admin page was increased.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 203,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n188",
+        "kind": "observation",
+        "text": "The font size of the notifier admin page was increased.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 204,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n189",
+        "kind": "observation",
+        "text": "The font size of the scheduler admin page was increased.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 205,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n190",
+        "kind": "observation",
+        "text": "The gateway database error rate was normal on Thursday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 206,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n191",
+        "kind": "observation",
+        "text": "The gateway database p95 latency was normal on Thursday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 207,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n192",
+        "kind": "observation",
+        "text": "The gateway service in eu-central-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 208,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n193",
+        "kind": "observation",
+        "text": "The gateway service in sa-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 209,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n194",
+        "kind": "observation",
+        "text": "The gateway service in us-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 210,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n195",
+        "kind": "observation",
+        "text": "The growth team approved the new dashboard layout for checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 211,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n196",
+        "kind": "observation",
+        "text": "The growth team approved the new dashboard layout for notifier.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 212,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n197",
+        "kind": "observation",
+        "text": "The growth team renamed the auth repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 213,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n198",
+        "kind": "observation",
+        "text": "The growth team renamed the ledger repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 214,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n199",
+        "kind": "observation",
+        "text": "The growth team renamed the profile repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 215,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n200",
+        "kind": "observation",
+        "text": "The growth team renamed the scheduler repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 216,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n201",
+        "kind": "observation",
+        "text": "The growth weekly sync moved to Tuesday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 217,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n202",
+        "kind": "observation",
+        "text": "The indexer database memory usage was normal on Friday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 218,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n203",
+        "kind": "observation",
+        "text": "The indexer database p95 latency was normal on Thursday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 219,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n204",
+        "kind": "observation",
+        "text": "The indexer database queue depth was normal on Thursday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 220,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n205",
+        "kind": "observation",
+        "text": "The indexer database queue depth was normal on Wednesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 221,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n206",
+        "kind": "observation",
+        "text": "The indexer database request volume was normal on Wednesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 222,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n207",
+        "kind": "observation",
+        "text": "The infra team approved the new dashboard layout for profile.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 223,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n208",
+        "kind": "observation",
+        "text": "The infra weekly sync moved to Monday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 224,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n209",
+        "kind": "observation",
+        "text": "The infra weekly sync moved to Tuesday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 225,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n210",
+        "kind": "observation",
+        "text": "The invoice from vendor Acme Logs for April was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 226,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n211",
+        "kind": "observation",
+        "text": "The invoice from vendor Acme Logs for June was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 227,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n212",
+        "kind": "observation",
+        "text": "The invoice from vendor Acme Logs for May was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 228,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n213",
+        "kind": "observation",
+        "text": "The invoice from vendor Globex CDN for April was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 229,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n214",
+        "kind": "observation",
+        "text": "The invoice from vendor Globex CDN for May was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 230,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n215",
+        "kind": "observation",
+        "text": "The invoice from vendor Initech Search for April was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 231,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n216",
+        "kind": "observation",
+        "text": "The invoice from vendor Initech Search for June was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 232,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n217",
+        "kind": "observation",
+        "text": "The invoice from vendor Initech Search for May was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 233,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n218",
+        "kind": "observation",
+        "text": "The invoice from vendor Northwind Mail for April was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 234,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n219",
+        "kind": "observation",
+        "text": "The invoice from vendor Northwind Mail for June was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 235,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n220",
+        "kind": "observation",
+        "text": "The invoice from vendor Northwind Mail for May was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 236,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n221",
+        "kind": "observation",
+        "text": "The invoice from vendor Umbrella Pay for April was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 237,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n222",
+        "kind": "observation",
+        "text": "The invoice from vendor Umbrella Pay for June was paid.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 238,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n223",
+        "kind": "observation",
+        "text": "The ledger database error rate was normal on Monday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 239,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n224",
+        "kind": "observation",
+        "text": "The ledger database error rate was normal on Tuesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 240,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n225",
+        "kind": "observation",
+        "text": "The ledger database p95 latency was normal on Monday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 241,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n226",
+        "kind": "observation",
+        "text": "The ledger database queue depth was normal on Tuesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 242,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n227",
+        "kind": "observation",
+        "text": "The ledger database request volume was normal on Tuesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 243,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n228",
+        "kind": "observation",
+        "text": "The ledger service in us-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 244,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n229",
+        "kind": "observation",
+        "text": "The mobile team renamed the auth repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 245,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n230",
+        "kind": "observation",
+        "text": "The mobile team renamed the exporter repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 246,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n231",
+        "kind": "observation",
+        "text": "The mobile team renamed the gateway repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 247,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n232",
+        "kind": "observation",
+        "text": "The mobile team renamed the indexer repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 248,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n233",
+        "kind": "observation",
+        "text": "The mobile team renamed the profile repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 249,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n234",
+        "kind": "observation",
+        "text": "The mobile weekly sync moved to Monday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 250,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n235",
+        "kind": "observation",
+        "text": "The mobile weekly sync moved to Wednesday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 251,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n236",
+        "kind": "observation",
+        "text": "The notifier database memory usage was normal on Monday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 252,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n237",
+        "kind": "observation",
+        "text": "The notifier service in sa-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 253,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n238",
+        "kind": "observation",
+        "text": "The payments team approved the new dashboard layout for exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 254,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n239",
+        "kind": "observation",
+        "text": "The payments team approved the new dashboard layout for notifier.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 255,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n240",
+        "kind": "observation",
+        "text": "The payments team renamed the auth repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 256,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n241",
+        "kind": "observation",
+        "text": "The payments team renamed the indexer repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 257,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n242",
+        "kind": "observation",
+        "text": "The payments team renamed the ledger repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 258,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n243",
+        "kind": "observation",
+        "text": "The payments team renamed the scheduler repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 259,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n244",
+        "kind": "observation",
+        "text": "The payments weekly sync moved to Friday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 260,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n245",
+        "kind": "observation",
+        "text": "The payments weekly sync moved to Monday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 261,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n246",
+        "kind": "observation",
+        "text": "The payments weekly sync moved to Thursday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 262,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n247",
+        "kind": "observation",
+        "text": "The platform team approved the new dashboard layout for checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 263,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n248",
+        "kind": "observation",
+        "text": "The platform team renamed the exporter repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 264,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n249",
+        "kind": "observation",
+        "text": "The platform team renamed the ledger repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 265,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n250",
+        "kind": "observation",
+        "text": "The platform team renamed the profile repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 266,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n251",
+        "kind": "observation",
+        "text": "The platform weekly sync moved to Thursday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 267,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n252",
+        "kind": "observation",
+        "text": "The profile database request volume was normal on Friday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 268,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n253",
+        "kind": "observation",
+        "text": "The profile database request volume was normal on Wednesday.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 269,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n254",
+        "kind": "observation",
+        "text": "The profile service in ap-south-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 270,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n255",
+        "kind": "observation",
+        "text": "The profile service in eu-central-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 271,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n256",
+        "kind": "observation",
+        "text": "The profile service in sa-east-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 272,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n257",
+        "kind": "observation",
+        "text": "The scheduler service in eu-central-1 was patched without downtime.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 273,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n258",
+        "kind": "observation",
+        "text": "The search team approved the new dashboard layout for checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 274,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n259",
+        "kind": "observation",
+        "text": "The search team approved the new dashboard layout for exporter.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 275,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n260",
+        "kind": "observation",
+        "text": "The search team renamed the catalog repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 276,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n261",
+        "kind": "observation",
+        "text": "The search team renamed the notifier repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 277,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n262",
+        "kind": "observation",
+        "text": "The search weekly sync moved to Monday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 278,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n263",
+        "kind": "observation",
+        "text": "The search weekly sync moved to Thursday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 279,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n264",
+        "kind": "observation",
+        "text": "The search weekly sync moved to Tuesday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 280,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n265",
+        "kind": "observation",
+        "text": "The security team approved the new dashboard layout for auth.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 281,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n266",
+        "kind": "observation",
+        "text": "The security team renamed the auth repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 282,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n267",
+        "kind": "observation",
+        "text": "The security team renamed the checkout repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 283,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n268",
+        "kind": "observation",
+        "text": "The security team renamed the exporter repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 284,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n269",
+        "kind": "observation",
+        "text": "The security team renamed the indexer repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 285,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n270",
+        "kind": "observation",
+        "text": "The security weekly sync moved to Friday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 286,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n271",
+        "kind": "observation",
+        "text": "The security weekly sync moved to Monday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 287,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n272",
+        "kind": "observation",
+        "text": "The security weekly sync moved to Thursday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 288,
+          "occurred_at": "2026-03-21T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n273",
+        "kind": "observation",
+        "text": "The security weekly sync moved to Wednesday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 289,
+          "occurred_at": "2026-03-22T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n274",
+        "kind": "observation",
+        "text": "The support team approved the new dashboard layout for checkout.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 290,
+          "occurred_at": "2026-03-23T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n275",
+        "kind": "observation",
+        "text": "The support team renamed the ledger repository.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 291,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n276",
+        "kind": "observation",
+        "text": "The support weekly sync moved to Friday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 292,
+          "occurred_at": "2026-03-25T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n277",
+        "kind": "observation",
+        "text": "The support weekly sync moved to Wednesday afternoons.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 293,
+          "occurred_at": "2026-03-26T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n278",
+        "kind": "observation",
+        "text": "The test suite of catalog gained 24 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 294,
+          "occurred_at": "2026-03-27T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n279",
+        "kind": "observation",
+        "text": "The test suite of catalog gained 25 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 295,
+          "occurred_at": "2026-03-28T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n280",
+        "kind": "observation",
+        "text": "The test suite of catalog gained 27 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 296,
+          "occurred_at": "2026-03-01T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n281",
+        "kind": "observation",
+        "text": "The test suite of catalog gained 33 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 297,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n282",
+        "kind": "observation",
+        "text": "The test suite of checkout gained 28 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 298,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n283",
+        "kind": "observation",
+        "text": "The test suite of exporter gained 23 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 299,
+          "occurred_at": "2026-03-04T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n284",
+        "kind": "observation",
+        "text": "The test suite of exporter gained 34 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 300,
+          "occurred_at": "2026-03-05T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n285",
+        "kind": "observation",
+        "text": "The test suite of gateway gained 25 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 301,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n286",
+        "kind": "observation",
+        "text": "The test suite of gateway gained 4 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 302,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n287",
+        "kind": "observation",
+        "text": "The test suite of indexer gained 12 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 303,
+          "occurred_at": "2026-03-08T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n288",
+        "kind": "observation",
+        "text": "The test suite of indexer gained 3 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 304,
+          "occurred_at": "2026-03-09T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n289",
+        "kind": "observation",
+        "text": "The test suite of ledger gained 24 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 305,
+          "occurred_at": "2026-03-10T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n290",
+        "kind": "observation",
+        "text": "The test suite of notifier gained 37 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 306,
+          "occurred_at": "2026-03-11T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n291",
+        "kind": "observation",
+        "text": "The test suite of notifier gained 39 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 307,
+          "occurred_at": "2026-03-12T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n292",
+        "kind": "observation",
+        "text": "The test suite of profile gained 12 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 308,
+          "occurred_at": "2026-03-13T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n293",
+        "kind": "observation",
+        "text": "The test suite of profile gained 24 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 309,
+          "occurred_at": "2026-03-14T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n294",
+        "kind": "observation",
+        "text": "The test suite of profile gained 34 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 310,
+          "occurred_at": "2026-03-15T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n295",
+        "kind": "observation",
+        "text": "The test suite of profile gained 38 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 311,
+          "occurred_at": "2026-03-16T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n296",
+        "kind": "observation",
+        "text": "The test suite of scheduler gained 16 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 312,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n297",
+        "kind": "observation",
+        "text": "The test suite of scheduler gained 23 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 313,
+          "occurred_at": "2026-03-18T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n298",
+        "kind": "observation",
+        "text": "The test suite of scheduler gained 30 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 314,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:n299",
+        "kind": "observation",
+        "text": "The test suite of scheduler gained 7 new cases.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 315,
+          "occurred_at": "2026-03-20T10:00:00Z"
+         }
+        ]
+       }
+      ],
+      "relations": [
+       {
+        "from": "project:atlas:g21",
+        "to": "project:atlas:g13",
+        "rel": "supports",
+        "class": "evidential",
+        "why": "A release cadence proves the CI cache was rolled out.",
+        "evidence": "Release calendar.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "project:atlas:g05",
+        "to": "project:atlas:g08",
+        "rel": "chosen_because",
+        "class": "motivational",
+        "why": "Churn rose, so the typeface was chosen.",
+        "evidence": "Design notes.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "project:atlas:g21",
+        "to": "project:atlas:g22",
+        "rel": "supersedes",
+        "class": "evidential",
+        "why": "The every-second-Tuesday train replaces the weekly July plan.",
+        "evidence": "Release policy.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "project:atlas:g02",
+        "to": "project:atlas:g20",
+        "rel": "supersedes",
+        "class": "evidential",
+        "why": "The 09:00 CET handover replaces the midnight one.",
+        "evidence": "On-call runbook.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       },
+       {
+        "from": "project:atlas:g17",
+        "to": "project:atlas:g07",
+        "rel": "satisfies_constraint",
+        "class": "constraint",
+        "why": "Purging conversations older than 90 days is what the legal rule requires.",
+        "evidence": "Purge job report, June 1.",
+        "confidence": "high",
+        "clocks": {
+         "observed_at": "2026-03-26T10:00:00Z"
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "expected": {
+    "missing": [
+     {
+      "pair": [
+       "project:atlas:g01",
+       "project:atlas:g11"
+      ],
+      "types": [
+       "updates_state",
+       "verified_by",
+       "follows",
+       "supports"
+      ],
+      "kind": "status-update"
+     },
+     {
+      "pair": [
+       "project:atlas:g03",
+       "project:atlas:g13"
+      ],
+      "types": [
+       "supports",
+       "triggers",
+       "derived_from",
+       "contributes_to",
+       "depends_on"
+      ],
+      "kind": "cause"
+     },
+     {
+      "pair": [
+       "project:atlas:g06",
+       "project:atlas:g16"
+      ],
+      "types": [
+       "restates",
+       "same_event_as",
+       "supports"
+      ],
+      "kind": "paraphrase"
+     }
+    ],
+    "distractors": [],
+    "declared_good": [
+     [
+      "project:atlas:g02",
+      "supersedes",
+      "project:atlas:g20"
+     ],
+     [
+      "project:atlas:g17",
+      "satisfies_constraint",
+      "project:atlas:g07"
+     ]
+    ],
+    "declared_bad": [
+     [
+      "project:atlas:g21",
+      "supports",
+      "project:atlas:g13"
+     ],
+     [
+      "project:atlas:g05",
+      "chosen_because",
+      "project:atlas:g08"
+     ],
+     [
+      "project:atlas:g21",
+      "supersedes",
+      "project:atlas:g22"
+     ]
+    ],
+    "precheck": [
+     {
+      "pair": [
+       "project:atlas:g01",
+       "project:atlas:g11"
+      ],
+      "from": "project:atlas:g11",
+      "rel": "updates_state",
+      "doubt": false,
+      "why": "The later entry reports Postgres already running in eu-west-3, the migration Marta signed off.",
+      "evidence": "Both name Postgres and eu-west-3; the second dates it from May 4."
+     },
+     {
+      "pair": [
+       "project:atlas:g01",
+       "project:atlas:g11"
+      ],
+      "from": "project:atlas:g01",
+      "rel": "updates_state",
+      "doubt": true,
+      "why": "The sign-off updates the state reported by the entry about Postgres running in eu-west-3.",
+      "evidence": "Both name Postgres and eu-west-3."
+     },
+     {
+      "pair": [
+       "project:atlas:g03",
+       "project:atlas:g13"
+      ],
+      "from": "project:atlas:g13",
+      "rel": "supports",
+      "doubt": true,
+      "why": "Both entries were written by engineers.",
+      "evidence": "Authorship."
+     }
+    ],
+    "ask": [
+     {
+      "question": "Who approved moving the database to the new region?",
+      "gold": [
+       "project:atlas:g01"
+      ],
+      "lang": "en",
+      "shape": "paraphrase-trap"
+     },
+     {
+      "question": "When does the pager change hands now?",
+      "gold": [
+       "project:atlas:g02"
+      ],
+      "lang": "en",
+      "shape": "paraphrase-trap"
+     },
+     {
+      "question": "How much faster did pipelines get?",
+      "gold": [
+       "project:atlas:g03"
+      ],
+      "lang": "en",
+      "shape": "paraphrase-trap"
+     },
+     {
+      "question": "Why did we drop the text-message vendor?",
+      "gold": [
+       "project:atlas:g04"
+      ],
+      "lang": "en",
+      "shape": "cross-language"
+     },
+     {
+      "question": "Did more people cancel after pricing went up?",
+      "gold": [
+       "project:atlas:g05"
+      ],
+      "lang": "en",
+      "shape": "paraphrase-trap"
+     },
+     {
+      "question": "Is the test environment switched off at weekends?",
+      "gold": [
+       "project:atlas:g06",
+       "project:atlas:g16"
+      ],
+      "lang": "en",
+      "shape": "paraphrase-trap"
+     },
+     {
+      "question": "How long can we keep support conversations?",
+      "gold": [
+       "project:atlas:g07",
+       "project:atlas:g17"
+      ],
+      "lang": "en",
+      "shape": "paraphrase"
+     },
+     {
+      "question": "Which font did we choose for the app?",
+      "gold": [
+       "project:atlas:g08"
+      ],
+      "lang": "en",
+      "shape": "paraphrase-trap"
+     }
+    ]
+   }
   }
  ]
 }

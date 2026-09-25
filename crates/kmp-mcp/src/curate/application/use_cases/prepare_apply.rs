@@ -4,7 +4,7 @@ use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{precheck_request, relation_options};
 use crate::curate::application::prepared_apply::PreparedApply;
 use crate::curate::application::prepared_relation::PreparedRelation;
-use crate::curate::application::use_cases::review_relations::doubt_reasons;
+use crate::curate::application::use_cases::review_relations::{direction_of, doubt_reasons};
 use crate::curate::domain::apply_doubt::ApplyDoubt;
 use crate::curate::domain::apply_item::ApplyItem;
 use crate::curate::domain::apply_rejection::ApplyRejection;
@@ -163,11 +163,10 @@ impl PrepareApply<'_> {
                                             },
                                             _ => return None,
                                         };
-                                        let direction = match response.answers.get(&format!("d{n}"))
-                                        {
-                                            Some(JudgementAnswer::Noul { yes }) => Some(*yes),
-                                            _ => None,
-                                        };
+                                        let direction = response
+                                            .answers
+                                            .get(&format!("d{n}"))
+                                            .and_then(direction_of);
                                         let reasons = doubt_reasons(
                                             support,
                                             &best,
@@ -233,6 +232,7 @@ mod tests {
             reference: reference.into(),
             about: about.into(),
             text: format!("text {reference}"),
+            occurred: None,
         }
     }
 

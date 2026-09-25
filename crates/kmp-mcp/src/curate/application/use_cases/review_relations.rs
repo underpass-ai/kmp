@@ -133,10 +133,7 @@ impl ReviewRelations<'_> {
                 let crosses = material.fact(&link.from).map(|fact| &fact.about)
                     != material.fact(&link.to).map(|fact| &fact.about);
                 let offered = relation_options(crosses).contains(&link.rel);
-                let direction = match audit.answers.get(&format!("d{n}")) {
-                    Some(JudgementAnswer::Noul { yes }) => Some(*yes),
-                    _ => None,
-                };
+                let direction = audit.answers.get(&format!("d{n}")).and_then(direction_of);
                 let reasons = doubt_reasons(support, &best, &link.rel, offered, direction);
                 if !reasons.is_empty() {
                     review.findings.push(CurateFinding::Suspect {
@@ -152,6 +149,18 @@ impl ReviewRelations<'_> {
         review.jev = Some(usage);
         review
     }
+}
+
+/// How strongly the judge reads the relation the declared way round:
+/// forward over forward plus backward. None when it reads neither way, which
+/// is a matter for support, not direction.
+pub(crate) fn direction_of(answer: &JudgementAnswer) -> Option<f64> {
+    let JudgementAnswer::Choice { probabilities, .. } = answer else {
+        return None;
+    };
+    let forward = probabilities.get("forward").copied().unwrap_or(0.0);
+    let backward = probabilities.get("backward").copied().unwrap_or(0.0);
+    (forward + backward >= 0.2).then(|| forward / (forward + backward))
 }
 
 /// Why a declaration, or an item about to be written, is doubted: its reason
@@ -241,6 +250,7 @@ mod tests {
             reference: reference.into(),
             about: about.into(),
             text: format!("text {reference}"),
+            occurred: None,
         }
     }
 
@@ -507,5 +517,28 @@ mod tests {
             !request.questions.contains_key("d1"),
             "same_event_as reads both ways"
         );
+    }
+
+    #[test]
+    fn direction_is_forward_over_both_ways_and_silent_when_neither() {
+        let choice = |forward: f64, backward: f64| JudgementAnswer::Choice {
+            choice: "forward".into(),
+            probabilities: [
+                ("forward".to_string(), forward),
+                ("backward".to_string(), backward),
+                ("none".to_string(), 1.0 - forward - backward),
+            ]
+            .into_iter()
+            .collect(),
+            confidence: 0.9,
+        };
+        assert_eq!(direction_of(&choice(0.8, 0.2)), Some(0.8));
+        assert_eq!(direction_of(&choice(0.1, 0.3)), Some(0.25));
+        assert_eq!(
+            direction_of(&choice(0.05, 0.05)),
+            None,
+            "neither is not a direction"
+        );
+        assert_eq!(direction_of(&JudgementAnswer::Noul { yes: 0.9 }), None);
     }
 }

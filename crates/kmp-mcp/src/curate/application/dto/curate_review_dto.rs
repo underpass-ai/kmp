@@ -154,6 +154,7 @@ mod tests {
                     reference: (*r).into(),
                     about: r[..1].into(),
                     text: "x".repeat(400),
+                    occurred: None,
                 })
                 .collect(),
             declared: vec![],

@@ -4,6 +4,7 @@ use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_fact::CurateFact;
 use crate::curate::domain::declared_link::DeclaredLink;
+use crate::curate::domain::fact_date::fact_date;
 use crate::curate::domain::pair_origin::PairOrigin;
 
 /// What curation reads from a relate reading: the current facts, what is
@@ -18,6 +19,13 @@ pub(crate) fn relate_material(response: &RelateResponse) -> CurateMaterial {
             reference: fact.r#ref.clone(),
             about: fact.about.clone(),
             text: fact.text.clone(),
+            occurred: fact
+                .coordinates
+                .iter()
+                .filter_map(|coordinate| coordinate.occurred_at.as_ref())
+                .map(|timestamp| timestamp.seconds)
+                .min()
+                .map(fact_date),
         })
         .collect::<Vec<_>>();
     let about_of = |reference: &str| {

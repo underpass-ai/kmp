@@ -20,19 +20,55 @@ pub(crate) fn excerpt(text: &str, chars: usize) -> String {
     text.chars().take(chars).collect()
 }
 
-/// Whether `from` is the side that holds `relation` towards `to`. Asked only
-/// of relations that have a direction.
-fn direction_question(base: &serde_json::Value, relation: &str) -> Option<JudgementQuestion> {
+/// Whether the relation as declared is the right one, or its reverse, asked
+/// as a choice between two concrete sentences. The author's why and evidence
+/// come with it: they say what the author meant, and the judge weighs them
+/// against the two texts and their dates.
+fn direction_question(
+    from: &str,
+    to: &str,
+    relation: &str,
+    why: &str,
+    evidence: &str,
+) -> Option<JudgementQuestion> {
     if SYMMETRIC.contains(&relation) {
         return None;
     }
-    let mut question = base.clone();
-    question["question"] = json!(
-        "Is it `from` that has the relation `relation` to `to`, and not `to` that has it to `from`?"
-    );
-    Some(JudgementQuestion::Noul {
-        instructions: question,
+    let verb = relation_verb(relation);
+    Some(JudgementQuestion::Choice {
+        instructions: json!({
+            "a": excerpt(from, SENT_CHARS),
+            "b": excerpt(to, SENT_CHARS),
+            "why": why,
+            "evidence": evidence,
+            "question": format!(
+                "Given `why` and `evidence`, which statement is right? forward: `a` {verb} `b`. backward: `b` {verb} `a`. neither: neither holds."
+            ),
+        }),
+        options: vec!["forward".into(), "backward".into(), NONE.into()],
     })
+}
+
+/// A relation as a verb phrase a reader can test in both directions.
+fn relation_verb(relation: &str) -> String {
+    match relation {
+        "supersedes" => "replaces".into(),
+        "updates_state" => "reports a later state of what is described in".into(),
+        "supports" => "gives evidence for".into(),
+        "chosen_because" => "was decided because of".into(),
+        "triggers" => "caused".into(),
+        "depends_on" => "depends on".into(),
+        "verified_by" => "is confirmed by".into(),
+        "corrects" => "corrects".into(),
+        "derived_from" => "is derived from".into(),
+        "satisfies_constraint" => "complies with".into(),
+        "violates_constraint" => "breaks".into(),
+        "follows" => "comes after".into(),
+        "answers" => "answers".into(),
+        "contributes_to" => "contributes to".into(),
+        "confirms_selection" => "confirms the choice made in".into(),
+        other => other.replace('_', " "),
+    }
 }
 
 /// The relation names `relations[]` may declare, plus `none`: structural
@@ -53,10 +89,14 @@ pub(crate) fn relation_options(crosses_abouts: bool) -> Vec<String> {
         .collect()
 }
 
-fn text_of<'a>(material: &'a CurateMaterial, reference: &str) -> &'a str {
+/// A fact as the judge reads it: its date first when known, then its text.
+fn text_of(material: &CurateMaterial, reference: &str) -> String {
     material
         .fact(reference)
-        .map(|fact| fact.text.as_str())
+        .map(|fact| match &fact.occurred {
+            Some(date) => format!("({date}) {}", fact.text),
+            None => fact.text.clone(),
+        })
         .unwrap_or_default()
 }
 
@@ -119,8 +159,8 @@ pub(crate) fn pair_request(material: &CurateMaterial, pairs: &[CandidatePair]) -
             format!("t{n}"),
             JudgementQuestion::Choice {
                 instructions: json!({
-                    "from": excerpt(text_of(material, &pair.from), SENT_CHARS),
-                    "to": excerpt(text_of(material, &pair.to), SENT_CHARS),
+                    "from": excerpt(&text_of(material, &pair.from), SENT_CHARS),
+                    "to": excerpt(&text_of(material, &pair.to), SENT_CHARS),
                     "question": "Which relation does `from` have to `to`? A later status or a newer version of the same thing is not a contradiction. Answer none when no relation holds.",
                 }),
                 options: relation_options(pair.crosses_abouts),
@@ -141,8 +181,8 @@ pub(crate) fn suspect_request(material: &CurateMaterial) -> JudgementRequest {
         let crosses = material.fact(&link.from).map(|f| &f.about)
             != material.fact(&link.to).map(|f| &f.about);
         let base = json!({
-            "from": excerpt(text_of(material, &link.from), SENT_CHARS),
-            "to": excerpt(text_of(material, &link.to), SENT_CHARS),
+            "from": excerpt(&text_of(material, &link.from), SENT_CHARS),
+            "to": excerpt(&text_of(material, &link.to), SENT_CHARS),
             "relation": link.rel,
             "why": link.why,
             "evidence": link.evidence,
@@ -156,7 +196,13 @@ pub(crate) fn suspect_request(material: &CurateMaterial) -> JudgementRequest {
                 instructions: support,
             },
         );
-        if let Some(direction) = direction_question(&base, &link.rel) {
+        if let Some(direction) = direction_question(
+            &text_of(material, &link.from),
+            &text_of(material, &link.to),
+            &link.rel,
+            &link.why,
+            &link.evidence,
+        ) {
             questions.insert(format!("d{n}"), direction);
         }
         let mut best = base;
@@ -189,8 +235,8 @@ pub(crate) fn precheck_request(
         let crosses = material.fact(&item.from).map(|f| &f.about)
             != material.fact(&item.to).map(|f| &f.about);
         let base = json!({
-            "from": excerpt(text_of(material, &item.from), SENT_CHARS),
-            "to": excerpt(text_of(material, &item.to), SENT_CHARS),
+            "from": excerpt(&text_of(material, &item.from), SENT_CHARS),
+            "to": excerpt(&text_of(material, &item.to), SENT_CHARS),
             "relation": item.rel,
             "why": item.why,
             "evidence": item.evidence,
@@ -204,7 +250,13 @@ pub(crate) fn precheck_request(
                 instructions: support,
             },
         );
-        if let Some(direction) = direction_question(&base, &item.rel) {
+        if let Some(direction) = direction_question(
+            &text_of(material, &item.from),
+            &text_of(material, &item.to),
+            &item.rel,
+            &item.why,
+            &item.evidence,
+        ) {
             questions.insert(format!("d{n}"), direction);
         }
         let mut best = base;
