@@ -3,6 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::view::application::dto::focus_dto::FocusDto;
+use crate::view::application::dto::paths_dto::PathsDto;
 use crate::view::application::dto::projection_dto::ProjectionDto;
 use crate::view::application::dto::provenance_dto::ProvenanceDto;
 use crate::view::application::dto::trace_selection_dto::TraceSelectionDto;
@@ -15,7 +16,7 @@ use crate::view::application::dto::trace_selection_dto::TraceSelectionDto;
 /// full snapshot must deterministically reconcile the browser, and an
 /// omitted field is indistinguishable from "leave your stale value alone"
 /// ([#463](https://github.com/underpass-ai/kmp/issues/463)).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ViewStateDto {
     /// Which loom this is.
     pub view_id: String,
@@ -36,6 +37,10 @@ pub struct ViewStateDto {
     /// The drawn audit path.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trace: Option<TraceSelectionDto>,
+    /// The whole paths a path search found; `null` when none are drawn, so
+    /// a cleared overlay reconciles like a cleared search.
+    #[serde(default)]
+    pub paths: Option<PathsDto>,
     /// The search filter; `null` when none is set.
     pub search: Option<String>,
     /// Who last moved the view.

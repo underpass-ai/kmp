@@ -16,6 +16,7 @@
     KMP_APP.timeControls.wire();
     KMP_APP.provenance.wire();
     KMP_APP.gestures.wire();
+    KMP_APP.paths.wire();
     KMP_APP.scene.applyTheme();
     try {
       await KMP_APP.scene.setup();

@@ -24,6 +24,7 @@ KMP_APP.scene = (() => {
       searchHits: view.searchHits,
       hiddenLanes: view.hiddenLanes,
       trace: view.trace,
+      paths: view.paths,
     };
   }
   function draw() {

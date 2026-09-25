@@ -3258,3 +3258,75 @@ async fn asked_as_is_echoed_and_a_rendering_that_dropped_the_ticket_is_warned_ab
         "a faithful rendering draws no warning: {faithful}"
     );
 }
+
+/// An intent that asks for paths runs the `kmp_curate` path search over the
+/// view's planes and keeps its answer in the view: the declared step is
+/// drawn, the review it could declare proposals through is named, an end the
+/// store does not hold leaves the drawn paths alone, and `null` puts them
+/// away. Without `typesafe.json` nothing is proposed, and the warning says
+/// so rather than pretending the chain is complete.
+#[tokio::test]
+async fn view_intents_draw_the_paths_curate_finds_and_clear_them() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+    call(
+        &server,
+        2,
+        "kmp_view_open",
+        json!({"view_id": "paths", "about": "question:e3"}),
+    )
+    .await;
+
+    let drawn = call(
+        &server,
+        3,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": "paths",
+            "idempotency_key": "paths-1",
+            "paths": {"from": "question:e3:claim:e3", "to": "question:e3:claim:e3-detail"}
+        }),
+    )
+    .await;
+    assert_eq!(drawn["applied"], true, "{drawn}");
+    let paths = &drawn["state"]["paths"];
+    assert_eq!(paths["from"], "question:e3:claim:e3", "{drawn}");
+    let hops = paths["paths"][0]["hops"].as_array().expect("a chain");
+    assert_eq!(hops.len(), 1, "{drawn}");
+    assert_eq!(hops[0]["declared"], true);
+    assert_eq!(hops[0]["rel"], "supports");
+    assert_eq!(hops[0]["to"]["ref"], "question:e3:claim:e3-detail");
+    assert!(hops[0].get("item_id").is_none(), "{drawn}");
+    assert!(paths["review_token"].is_string(), "{drawn}");
+    assert!(paths["warnings"].to_string().contains("Jev"), "{drawn}");
+
+    let absent = call(
+        &server,
+        4,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": "paths",
+            "idempotency_key": "paths-2",
+            "selection": "question:e3:claim:e3",
+            "paths": {"from": "question:e3:claim:nowhere"}
+        }),
+    )
+    .await;
+    assert!(
+        absent["unhonored"]
+            .to_string()
+            .contains("drawn paths are unchanged"),
+        "{absent}"
+    );
+    assert_eq!(absent["state"]["paths"], drawn["state"]["paths"]);
+
+    let cleared = call(
+        &server,
+        5,
+        "kmp_view_apply_intent",
+        json!({"view_id": "paths", "idempotency_key": "paths-3", "paths": null}),
+    )
+    .await;
+    assert!(cleared["state"]["paths"].is_null(), "{cleared}");
+}

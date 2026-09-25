@@ -43,6 +43,7 @@ function startup() {
       timeControls: { wire },
       provenance: { wire },
       gestures: { wire },
+      paths: { wire },
       data: { loadAbout: async () => {} },
       sync: {
         VIEW_ID: "default",

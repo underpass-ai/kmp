@@ -56,6 +56,7 @@ KMP_APP.state = (() => {
     dimmedKinds: new Set(),
     searchHits: new Set(),
     trace: null, // {refs:Set, edgeKeys:Set}
+    paths: null, // KMP_APP.pathModel.overlay of the view's drawn paths
     selectors: [], // [{key, op, values}] — the kernel filters by them
     overlays: [],
     lensMode: "elapsed",

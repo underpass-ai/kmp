@@ -31,6 +31,10 @@
   --tint: 16%;
   /* the navigator's window pane, read by the 2D canvas through the palette */
   --pane: rgb(174 148 255 / 20%);
+  /* drawn paths, matching the WebGL strokes in loom-three.js */
+  --path-declared: #68c4a0;
+  --path-proposed: #f0b35a;
+  --path-avoided: #e78e98;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -51,6 +55,9 @@
   --canvas: #edf2e8;
   --tint: 9%;
   --pane: rgb(109 67 196 / 16%);
+  --path-declared: #24785b;
+  --path-proposed: #9a5b00;
+  --path-avoided: #a44354;
   color-scheme: light;
 }
 :root {
@@ -1121,3 +1128,85 @@ select {
 .pulse-series svg { width: 100%; height: 40px; }
 .pulse-exemplars { display: flex; flex-wrap: wrap; gap: var(--space-1); }
 .pulse-exemplars button { font-size: var(--fs-micro); min-height: 24px; padding: 3px var(--space-2); }
+
+/* Whole paths: a found chain over the timeline. Declared steps are solid,
+   the judge's proposals dashed, avoided declarations dotted — the same
+   three strokes the scene draws. */
+.path-label {
+  position: absolute;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--path-color);
+  border-radius: var(--radius-1);
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  font: var(--fs-micro) / 1.5 var(--mono);
+  color: var(--text);
+  white-space: nowrap;
+  transform: translate(-50%, -130%);
+}
+.path-label.path-proposed { border-style: dashed; }
+.path-label.path-avoided { border-style: dotted; color: var(--muted); }
+.paths-box {
+  margin: var(--space-2) 0;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--path-declared);
+  border-radius: var(--radius-1);
+  background: var(--soft);
+}
+.paths-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.paths-head .pane-title { margin: 0; }
+.paths-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); font-size: var(--fs-micro); color: var(--muted); }
+.paths-warnings { margin: 0; padding-left: var(--space-3); font-size: var(--fs-compact); }
+.path-stroke { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--path-declared); vertical-align: middle; flex: none; }
+.path-stroke-proposed { border-top: 2px dashed var(--path-proposed); }
+.path-stroke-avoided { border-top: 2px dotted var(--path-avoided); }
+.path-chain-title { margin: var(--space-2) 0 var(--space-1); font-size: var(--fs-compact); color: var(--text-2); }
+.path-hops { margin: 0; padding-left: var(--space-3); display: grid; gap: var(--space-1); }
+.path-hop { font-size: var(--fs-compact); }
+.path-hop-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
+.path-hop-proposed .pill { border: 1px dashed var(--path-proposed); }
+.path-hop-avoided .pill { border: 1px dotted var(--path-avoided); }
+.path-hop-ends { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1); margin: 2px 0; }
+.path-end {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+.path-arrow { color: var(--muted); }
+.path-offframe { font-size: var(--fs-micro); }
+.path-declare { border-color: var(--path-proposed); }
+.declare-dialog {
+  width: min(560px, calc(100vw - 32px));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-2, 8px);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow-1);
+}
+.declare-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.declare-dialog form { display: grid; gap: var(--space-2); }
+.declare-dialog h2 { margin: 0; font-size: var(--fs-body, 1rem); }
+.declare-dialog label { display: grid; gap: 2px; font-size: var(--fs-compact); color: var(--text-2); }
+.declare-dialog textarea, .declare-dialog input, .declare-dialog select {
+  font: inherit;
+  color: var(--text);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-1);
+  padding: var(--space-1);
+}
+.declare-hop { margin: 0; padding: var(--space-1) var(--space-2); border-left: 2px dashed var(--path-proposed); font-size: var(--fs-compact); }
+.declare-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.declare-status { min-height: 1.2em; margin: 0; font-size: var(--fs-compact); color: var(--text-2); }
+.declare-call { max-height: 220px; overflow: auto; margin: 0; font-size: var(--fs-micro); }
+.declare-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
+.primary-btn { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+@media (max-width: 520px) {
+  .declare-row { grid-template-columns: 1fr; }
+}

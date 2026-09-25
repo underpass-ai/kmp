@@ -3,6 +3,7 @@
 use crate::view::application::dto::{
     FocusDto, LabelSelectorDto, ProjectionDto, TimeRangeDto, ViewIntentDto,
 };
+use crate::view::application::mappers::paths_mapper::drawn_paths_from_dto;
 use crate::view::domain::{
     AboutId, AboutLayers, Clock, DimensionName, Focus, FocusWindow, LabelOperator, LabelSelection,
     MemoryRef, OverlayName, ProjectionSettings, RelationClass, SearchQuery, SemanticZoom,
@@ -91,6 +92,11 @@ pub fn view_patch_from_intent(intent: &ViewIntentDto) -> Result<ViewPatch, ViewE
                 to: MemoryRef::new(trace.to),
             })
         }),
+        paths: intent
+            .paths
+            .as_ref()
+            .map(|paths| paths.as_ref().map(drawn_paths_from_dto).transpose())
+            .transpose()?,
         search: intent
             .search
             .clone()
@@ -218,9 +224,21 @@ mod tests {
                 from: "decision:new".into(),
                 to: "success:old".into(),
             })),
+            paths: Some(Some(crate::view::application::dto::PathsDto {
+                from: "decision:new".into(),
+                ..Default::default()
+            })),
             search: Some(None),
         })
         .expect("a valid intent maps");
+        assert_eq!(
+            patch
+                .paths
+                .as_ref()
+                .and_then(Option::as_ref)
+                .map(|paths| paths.from.as_str()),
+            Some("decision:new")
+        );
         assert!(patch.touches_anything());
         assert_eq!(patch.clock.map(Clock::as_str), Some("validity"));
         let focus = patch.focus.expect("focus");

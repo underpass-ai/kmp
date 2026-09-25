@@ -18,6 +18,7 @@ const MODULES = [
   "loom-viewport.js",
   "loom-data.js",
   "loom-selection.js",
+  "loom-path-model.js",
   "loom-sync.js",
 ];
 
@@ -1340,4 +1341,85 @@ test("an agent intent the loom cannot obey is said aloud and its revision consum
   assert.match(String(shown&&shown.args[0]),/could not be applied.*read budget/);
   assert.ok(calls.some(call=>call.name==="panels.renderProvenance"));
   assert.deepEqual([view.t0,view.t1],before);
+});
+
+test("agent paths are drawn, frame the loom's own facts once and never write", async () => {
+  const { app, core, calls } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: Date.parse("2026-09-01T00:00:00Z") };
+  model.byRef = new Map([
+    ["project:x:a", entryAt(core, "project:x:a", "2026-08-31T10:00:00Z")],
+    ["project:x:b", entryAt(core, "project:x:b", "2026-08-31T12:00:00Z")],
+  ]);
+  app.data.loadProjection = async () => calls.push({ name: "data.loadProjection" });
+  app.data.cancelScheduledProjection = () => {};
+  app.paths = { render: () => calls.push({ name: "paths.render" }) };
+  const requested = [];
+  nodeBatchStub(app);
+  const batch = app.api.call;
+  app.api.call = async (path, params, method) => {
+    requested.push(path);
+    return batch(path, params, method);
+  };
+  const end = (ref, about) => ({ ref, about, excerpt: ref });
+  const state = {
+    view_id: "default",
+    view_revision: 7,
+    about: "project:x",
+    clock: "occurred",
+    focus: { refs: [] },
+    projection: {},
+    paths: {
+      from: "project:x:a",
+      review_token: "f".repeat(64),
+      paths: [{ proposed: 1, confidence: 0.5, hops: [
+        { from: end("project:x:a", "project:x"), to: end("project:x:b", "project:x"), rel: "causes", declared: true, confidence: 1 },
+        { from: end("project:x:b", "project:x"), to: end("other:c", "other"), rel: "same_event_as", declared: false, confidence: 0.5, item_id: "m1" },
+      ] }],
+      avoided: [],
+    },
+  };
+  await app.sync.applyAgentState(state);
+  assert.equal(view.paths.hops.length, 2);
+  assert.equal(view.paths.hops[1].kind, "proposed");
+  assert.ok(calls.some((call) => call.name === "paths.render"));
+  assert.ok(view.t0 <= Date.parse("2026-08-31T10:00:00Z"), "the path's own facts are framed");
+  assert.ok(view.t1 >= Date.parse("2026-08-31T12:00:00Z"));
+  assert.ok(requested.every((path) => path === "/api/nodes"), `only reads: ${requested}`);
+  const reads = requested.length;
+  await app.sync.applyAgentState({ ...state, view_revision: 8, selection: null });
+  assert.equal(requested.length, reads, "unchanged paths do not re-frame the loom");
+  await app.sync.applyAgentState({ ...state, view_revision: 9, paths: null });
+  assert.equal(view.paths, null, "a cleared facet puts the paths away");
+});
+
+test("putting paths away is reported once as its own gesture", async () => {
+  const loomInstance = loom();
+  const { app, context } = loomInstance;
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: 10 };
+  view.t0 = 0;
+  view.t1 = 10;
+  context.setTimeout = (fn) => {
+    fn();
+    return 0;
+  };
+  context.clearTimeout = () => {};
+  const posted = [];
+  app.api = {
+    ...app.api,
+    call: async (path, params) => {
+      posted.push(params);
+      return { view_revision: 12, paths: null };
+    },
+  };
+  app.sync.clearPaths();
+  await new Promise((resolve) => setImmediate(resolve));
+  app.sync.reportView();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(posted[0].clear_paths, "1");
+  assert.equal(posted.length, 2, "the next report differs: it no longer clears");
+  assert.equal(posted[1].clear_paths, undefined);
 });

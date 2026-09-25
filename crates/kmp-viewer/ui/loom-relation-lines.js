@@ -3,6 +3,17 @@
 KMP_APP.relationLines = (() => {
   const { THREE } = KMP_THREE;
   const steps = 40;
+  /* The arc every relation is drawn along; `lift` raises a family of arcs
+     (a drawn path) above the ordinary ones so the two never coincide. */
+  function arc(a, b, lift = 0) {
+    const bend = Math.min(85, Math.max(24, Math.abs(b.x - a.x) * 0.12)) + lift;
+    return new THREE.CubicBezierCurve3(
+      new THREE.Vector3(a.x, a.y, a.z + 2),
+      new THREE.Vector3(a.x + (b.x - a.x) * 0.25, a.y + bend, a.z + 2),
+      new THREE.Vector3(a.x + (b.x - a.x) * 0.75, b.y + bend, b.z + 2),
+      new THREE.Vector3(b.x, b.y, b.z + 2),
+    );
+  }
   class RelationLines {
     constructor(group) {
       this.group = group;
@@ -15,13 +26,7 @@ KMP_APP.relationLines = (() => {
       const positions = [a.x, a.y, a.z, b.x, b.y, b.z];
       const previous = this.paths.get(key);
       if (previous && positions.every((value, i) => value === previous.positions[i])) return previous;
-      const bend = Math.min(85, Math.max(24, Math.abs(b.x - a.x) * 0.12));
-      const curve = new THREE.CubicBezierCurve3(
-        new THREE.Vector3(a.x, a.y, a.z + 2),
-        new THREE.Vector3(a.x + (b.x - a.x) * 0.25, a.y + bend, a.z + 2),
-        new THREE.Vector3(a.x + (b.x - a.x) * 0.75, b.y + bend, b.z + 2),
-        new THREE.Vector3(b.x, b.y, b.z + 2),
-      );
+      const curve = arc(a, b);
       const points = curve.getPoints(steps), vertices = new Float32Array(steps * 6);
       for (let i = 0; i < steps; i++) {
         points[i].toArray(vertices, i * 6);
@@ -96,5 +101,5 @@ KMP_APP.relationLines = (() => {
     }
     dispose() { this.clear(); this.arrowGeometry.dispose(); }
   }
-  return { RelationLines };
+  return { RelationLines, arc };
 })();

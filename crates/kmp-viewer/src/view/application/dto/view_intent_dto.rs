@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use crate::view::application::dto::focus_dto::FocusDto;
 use crate::view::application::dto::label_selector_dto::LabelSelectorDto;
+use crate::view::application::dto::paths_dto::PathsDto;
 use crate::view::application::dto::projection_dto::ProjectionDto;
 use crate::view::application::dto::time_range_dto::TimeRangeDto;
 use crate::view::application::dto::trace_selection_dto::TraceSelectionDto;
@@ -37,6 +38,8 @@ pub struct ViewIntentDto {
     pub selection: Option<Option<String>>,
     /// `Some(None)` clears the trace; `None` leaves it alone.
     pub trace: Option<Option<TraceSelectionDto>>,
+    /// `Some(None)` clears the drawn paths; `None` leaves them alone.
+    pub paths: Option<Option<PathsDto>>,
     /// `Some(None)` clears the search; `None` leaves it alone.
     pub search: Option<Option<String>>,
 }

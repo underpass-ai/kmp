@@ -55,6 +55,27 @@
   <aside id="detail" aria-label="Current memory record">
     <div id="detail-loading" class="loom-loading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"><span class="loading-threads" aria-hidden="true"><i></i><i></i><i></i></span><span id="detail-loading-label"></span></div>
     <label class="sr-only" for="memory-picker">Inspect a memory</label><select id="memory-picker" aria-label="Inspect a memory"></select>
+    <section id="paths-box" class="paths-box" aria-label="Paths the agent found" hidden>
+      <div class="paths-head"><h3 class="pane-title">Found paths</h3><button id="paths-clear" class="btn small-btn" type="button">Put away</button></div>
+      <p id="paths-summary" class="muted"></p>
+      <p class="paths-legend" aria-label="How path steps are drawn"><span class="path-stroke path-stroke-declared" aria-hidden="true"></span>declared <span class="path-stroke path-stroke-proposed" aria-hidden="true"></span>proposed by Jev <span class="path-stroke path-stroke-avoided" aria-hidden="true"></span>avoided</p>
+      <ul id="paths-warnings" class="paths-warnings"></ul>
+      <div id="paths-chains"></div>
+      <details id="paths-avoided-box" hidden><summary>Avoided declarations</summary><ol id="paths-avoided" class="path-hops"></ol></details>
+    </section>
+    <dialog id="declare-dialog" class="declare-dialog" aria-labelledby="declare-title">
+      <form id="declare-form" method="dialog">
+        <h2 id="declare-title">Declare this step</h2>
+        <p id="declare-hop" class="declare-hop mono"></p>
+        <p class="muted">ChronoLoom never writes memory. This composes the <code>kmp_curate</code> apply call with your words for your agent to run; the write then goes through the writer's review, and Jev reads your why and evidence once more.</p>
+        <label for="declare-why">Why the link holds<textarea id="declare-why" rows="3" required></textarea></label>
+        <label for="declare-evidence">Evidence in the sources<textarea id="declare-evidence" rows="2" required></textarea></label>
+        <div class="declare-row"><label for="declare-confidence">Confidence<select id="declare-confidence"><option value="">Leave to the agent</option><option value="high">high</option><option value="medium">medium</option><option value="low">low</option><option value="unknown">unknown</option></select></label><label for="declare-actor">Writer<input id="declare-actor" placeholder="the agent's own name" autocomplete="off"></label></div>
+        <p id="declare-error" class="declare-status" role="status" aria-live="polite"></p>
+        <pre id="declare-call" class="rendered mono declare-call" hidden></pre>
+        <div class="declare-actions"><button type="button" id="declare-cancel" class="btn">Close</button><button type="submit" id="declare-compose" class="btn primary-btn">Compose and copy the call</button></div>
+      </form>
+    </dialog>
     <div id="detail-empty" class="detail-empty">
       <p>Pick a memory in the scene, in the search results, or from the list above.</p>
       <ul>
@@ -126,11 +147,14 @@
 <script src="/assets/loom-camera.js" defer></script>
 <script src="/assets/loom-planes.js" defer></script>
 <script src="/assets/loom-relation-lines.js" defer></script>
+<script src="/assets/loom-path-model.js" defer></script>
+<script src="/assets/loom-path-lines.js" defer></script>
 <script src="/assets/loom-three.js" defer></script>
 <script src="/assets/loom-scene-model.js" defer></script>
 <script src="/assets/loom-layers.js" defer></script>
 <script src="/assets/loom-provenance.js" defer></script>
 <script src="/assets/loom-evidence.js" defer></script>
+<script src="/assets/loom-paths.js" defer></script>
 <script src="/assets/loom-observability.js" defer></script>
 <script src="/assets/loom-control.js" defer></script>
 <script src="/assets/loom-catalogue.js" defer></script>

@@ -30,13 +30,21 @@ evidence reads. The previous content dims while reads finish, then fades into
 the updated scene. Reduced-motion preferences disable the animation; the
 status remains visible and is announced to assistive technology.
 
-Four reading moves sit on top of the loom:
+Five reading moves sit on top of the loom:
 
 - **Travel** — a shared time window on the density strip; move or resize it
   to compare the same interval across abouts on the selected clock.
 - **Audit** — two clicks pick a claim and where it should lead; every hop of
   the kernel's trace renders with its why, evidence and confidence, the path
   highlighted in the scene.
+- **Paths** — an agent asks `kmp_view_apply_intent` for `paths` from one
+  fact (to another, optionally); the view runs `kmp_curate` `mode: paths`
+  over its planes and draws every chain: declared steps solid, steps
+  TypeSafe Jev proposes dashed with their type and confidence, avoided
+  declarations dotted. **Declare…** on a proposed step opens a form for your
+  own why and evidence and composes the exact `kmp_curate` apply call for
+  the agent to run. The loom never writes memory, so the write keeps the
+  writer's review and Jev's re-read. **Put away** clears the paths.
 - **Search** — plain words or `kind:` / `dim:` / `id:`; Enter frames the
   hits and steps everything else back.
 - **Lens and compare** — elapsed time remains proportional; event-density

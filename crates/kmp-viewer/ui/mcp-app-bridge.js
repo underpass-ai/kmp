@@ -248,6 +248,7 @@
         selection: params.selection || null,
         trace: params.trace_from && params.trace_to ? { from: params.trace_from, to: params.trace_to } : null,
         search: params.search || null,
+        ...(params.clear_paths ? { paths: null } : {}),
       };
       if (labels.length || hadLabels || params.layer_abouts !== undefined) {
         // The intent has no labels-only facet; carry the projection as it

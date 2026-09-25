@@ -14,7 +14,7 @@ pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_view_apply_intent",
         false,
-        "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase. Absence degrades rather than failing: a ref this store does not hold is dropped from the part that named it and listed in `unhonored`, and if none of the refs an intent names exist the view does not move at all and `applied` is false. Read `unhonored` — what is missing is always named there, never silently drawn.",
+        "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace, whole paths. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase. Absence degrades rather than failing: a ref this store does not hold is dropped from the part that named it and listed in `unhonored`, and if none of the refs an intent names exist the view does not move at all and `applied` is false. Read `unhonored` — what is missing is always named there, never silently drawn.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -90,6 +90,17 @@ pub(crate) fn definition() -> Value {
                     "properties": {
                         "from": string_schema("Where the claim starts."),
                         "to": string_schema("Where it should lead.")
+                    }
+                },
+                "paths": {
+                    "type": ["object", "null"],
+                    "additionalProperties": false,
+                    "required": ["from"],
+                    "description": "Whole chains to draw, or null to clear them. The view runs kmp_curate mode paths over its about and projected abouts and keeps the answer: declared steps are drawn as relations, steps TypeSafe Jev proposes as dashed ones with their type and confidence, avoided declarations marked. A person can declare a proposed step from the loom, which composes the kmp_curate apply call with their why and evidence for an agent to run; the loom never writes. Costs and sends what that search sends; an end this store does not hold leaves the drawn paths unchanged and is listed in `unhonored`.",
+                    "properties": {
+                        "from": string_schema("The fact every chain starts from, an entry ref of the drawn planes."),
+                        "to": string_schema("The fact a chain must reach. Omitted: the longest chains that follow from `from`."),
+                        "max_hops": {"type": "integer", "minimum": 1, "maximum": 12, "description": "Longest chain considered. Default 6."}
                     }
                 },
                 "search": {"type": ["string", "null"], "description": "Query to highlight, or null to clear."}

@@ -2,6 +2,7 @@
 
 use crate::view::domain::about_id::AboutId;
 use crate::view::domain::clock::Clock;
+use crate::view::domain::drawn_paths::DrawnPaths;
 use crate::view::domain::focus::Focus;
 use crate::view::domain::focus_window::FocusWindow;
 use crate::view::domain::label_selection::LabelSelection;
@@ -40,6 +41,8 @@ pub struct ViewPatch {
     pub selection: Option<Option<MemoryRef>>,
     /// `Some(None)` clears the trace; `None` leaves it alone.
     pub trace: Option<Option<TraceSelection>>,
+    /// `Some(None)` clears the drawn paths; `None` leaves them alone.
+    pub paths: Option<Option<DrawnPaths>>,
     /// `Some(None)` clears the search; `None` leaves it alone.
     pub search: Option<Option<SearchQuery>>,
 }
@@ -58,6 +61,7 @@ impl ViewPatch {
             || self.projection_labels.is_some()
             || self.selection.is_some()
             || self.trace.is_some()
+            || self.paths.is_some()
             || self.search.is_some()
     }
 }

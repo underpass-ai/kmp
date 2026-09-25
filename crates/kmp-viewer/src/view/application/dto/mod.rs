@@ -2,8 +2,13 @@
 //! serialize to is exactly what the browser and the MCP tools see, byte for
 //! byte, and a change to a derive attribute here is a wire change.
 
+mod avoided_hop_dto;
 mod focus_dto;
 mod label_selector_dto;
+mod path_chain_dto;
+mod path_end_dto;
+mod path_hop_dto;
+mod paths_dto;
 mod projection_dto;
 mod provenance_dto;
 mod time_range_dto;
@@ -11,8 +16,13 @@ mod trace_selection_dto;
 mod view_intent_dto;
 mod view_state_dto;
 
+pub use avoided_hop_dto::AvoidedHopDto;
 pub use focus_dto::FocusDto;
 pub use label_selector_dto::LabelSelectorDto;
+pub use path_chain_dto::PathChainDto;
+pub use path_end_dto::PathEndDto;
+pub use path_hop_dto::PathHopDto;
+pub use paths_dto::PathsDto;
 pub use projection_dto::ProjectionDto;
 pub use provenance_dto::ProvenanceDto;
 pub use time_range_dto::TimeRangeDto;

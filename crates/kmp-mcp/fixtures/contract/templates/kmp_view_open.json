@@ -16,6 +16,7 @@
           "focus": {
             "time_range": "null"
           },
+          "paths": "null",
           "projection": {},
           "search": "null",
           "view_id": "string",
@@ -47,6 +48,7 @@
       "focus": {
         "time_range": "null"
       },
+      "paths": "null",
       "projection": {},
       "search": "null",
       "view_id": "string",
