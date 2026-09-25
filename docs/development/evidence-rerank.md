@@ -13,10 +13,13 @@ Beside the selected store, place:
   {"endpoint": "https://api.typesafe.ai/v1/systemone", "model": "jev-1.13.0", "timeout_ms": 20000}
   ```
 
-- `rerank.json`, Ask re-ranking itself:
+- `rerank.json`, Ask re-ranking itself. `pool_size` is from 1 to 400 and
+  `excerpt_chars` from 200 to 2000 (default 2000). On a large store, a wide
+  pool of short excerpts reaches answers the lexical ranker never lists
+  (`jev-evaluation.md`):
 
   ```json
-  {"pool_size": 40}
+  {"pool_size": 400, "excerpt_chars": 300}
   ```
 
 and set `TYPESAFE_API_KEY` in the environment of the MCP process. Then
@@ -25,12 +28,12 @@ appears in logs, warnings or errors.
 
 ## What it changes
 
-- **The pool.** Jev reads at most `pool_size` passages (1 to 40). First come
+- **The pool.** Jev reads at most `pool_size` passages (1 to 400). First come
   those in the lexical ranker's own order, then admitted live entries the
   ranker left out, so a paraphrase that shares no word with the question can
   still be read. Nothing the selection does not admit is ever sent: scope,
   interval, lifecycle and content version apply first. Each passage is cut
-  to 2,000 characters.
+  to `excerpt_chars`.
 - **The question.** Jev answers one yes/no question per passage: does it
   answer the question? Only passages with a probability of at least 0.5
   join the ranking, ordered by that probability, with ties broken by ref and

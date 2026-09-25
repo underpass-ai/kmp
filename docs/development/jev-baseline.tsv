@@ -7,16 +7,21 @@
 # that says why, and a re-recorded cassette is one. `cases` is exact.
 # Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh
 metric	floor
-cases	1
+cases	2
 missing_found	1.0000
-missing_typed	0.7500
+missing_typed	0.7272
 distractors_rejected	1.0000
-suspect_recall	0.8000
+missing_found_by_jev	0.3636
+missing_found_without_jev	0.6363
+suspect_recall	0.7500
 suspect_precision	1.0000
 good_declarations_kept	1.0000
 precheck_available	1.0000
-precheck_right	1.0000
-ask_mrr_plain	0.3750
-ask_mrr_rerank	0.8750
-ask_top5_plain	0.5000
+precheck_right	0.8750
+precheck_right_no_direction	0.7500
+ask_mrr_plain	0.1875
+ask_mrr_rerank	0.9375
+ask_mrr_wide	0.9375
+ask_top5_plain	0.2500
 ask_top5_rerank	1.0000
+ask_top5_wide	1.0000

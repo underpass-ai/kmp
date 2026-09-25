@@ -7,7 +7,7 @@ use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::prepared_relation::PreparedRelation;
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_fact::CurateFact;
-use crate::curate::domain::curate_thresholds::NONE;
+use crate::curate::domain::curate_thresholds::{NONE, SYMMETRIC};
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
 
@@ -18,6 +18,51 @@ const PARTNER_ORPHANS: usize = 30;
 
 pub(crate) fn excerpt(text: &str, chars: usize) -> String {
     text.chars().take(chars).collect()
+}
+
+/// Which way an item about to be written runs, asked as a choice between two concrete
+/// sentences over the two dated texts alone. The author's why is left out on
+/// purpose: measured on a reversed declaration, a wrong why moved the judge
+/// from 0.01 to 0.86 towards the declared direction. Asked only before a
+/// write: auditing stored declarations with it flagged nothing more in three
+/// recorded samples (jev-evaluation.md), so the audit does not pay for it.
+fn direction_question(from: &str, to: &str, relation: &str) -> Option<JudgementQuestion> {
+    if SYMMETRIC.contains(&relation) {
+        return None;
+    }
+    let verb = relation_verb(relation);
+    Some(JudgementQuestion::Choice {
+        instructions: json!({
+            "a": excerpt(from, SENT_CHARS),
+            "b": excerpt(to, SENT_CHARS),
+            "question": format!(
+                "Which is true? forward: `a` {verb} `b`. backward: `b` {verb} `a`. neither: neither holds."
+            ),
+        }),
+        options: vec!["forward".into(), "backward".into(), NONE.into()],
+    })
+}
+
+/// A relation as a verb phrase a reader can test in both directions.
+fn relation_verb(relation: &str) -> String {
+    match relation {
+        "supersedes" => "replaces".into(),
+        "updates_state" => "reports a later state of what is described in".into(),
+        "supports" => "gives evidence for".into(),
+        "chosen_because" => "was decided because of".into(),
+        "triggers" => "caused".into(),
+        "depends_on" => "depends on".into(),
+        "verified_by" => "is confirmed by".into(),
+        "corrects" => "corrects".into(),
+        "derived_from" => "is derived from".into(),
+        "satisfies_constraint" => "complies with".into(),
+        "violates_constraint" => "breaks".into(),
+        "follows" => "comes after".into(),
+        "answers" => "answers".into(),
+        "contributes_to" => "contributes to".into(),
+        "confirms_selection" => "confirms the choice made in".into(),
+        other => other.replace('_', " "),
+    }
 }
 
 /// The relation names `relations[]` may declare, plus `none`: structural
@@ -38,10 +83,14 @@ pub(crate) fn relation_options(crosses_abouts: bool) -> Vec<String> {
         .collect()
 }
 
-fn text_of<'a>(material: &'a CurateMaterial, reference: &str) -> &'a str {
+/// A fact as the judge reads it: its date first when known, then its text.
+fn text_of(material: &CurateMaterial, reference: &str) -> String {
     material
         .fact(reference)
-        .map(|fact| fact.text.as_str())
+        .map(|fact| match &fact.occurred {
+            Some(date) => format!("({date}) {}", fact.text),
+            None => fact.text.clone(),
+        })
         .unwrap_or_default()
 }
 
@@ -104,8 +153,8 @@ pub(crate) fn pair_request(material: &CurateMaterial, pairs: &[CandidatePair]) -
             format!("t{n}"),
             JudgementQuestion::Choice {
                 instructions: json!({
-                    "from": excerpt(text_of(material, &pair.from), SENT_CHARS),
-                    "to": excerpt(text_of(material, &pair.to), SENT_CHARS),
+                    "from": excerpt(&text_of(material, &pair.from), SENT_CHARS),
+                    "to": excerpt(&text_of(material, &pair.to), SENT_CHARS),
                     "question": "Which relation does `from` have to `to`? A later status or a newer version of the same thing is not a contradiction. Answer none when no relation holds.",
                 }),
                 options: relation_options(pair.crosses_abouts),
@@ -126,8 +175,8 @@ pub(crate) fn suspect_request(material: &CurateMaterial) -> JudgementRequest {
         let crosses = material.fact(&link.from).map(|f| &f.about)
             != material.fact(&link.to).map(|f| &f.about);
         let base = json!({
-            "from": excerpt(text_of(material, &link.from), SENT_CHARS),
-            "to": excerpt(text_of(material, &link.to), SENT_CHARS),
+            "from": excerpt(&text_of(material, &link.from), SENT_CHARS),
+            "to": excerpt(&text_of(material, &link.to), SENT_CHARS),
             "relation": link.rel,
             "why": link.why,
             "evidence": link.evidence,
@@ -171,8 +220,8 @@ pub(crate) fn precheck_request(
         let crosses = material.fact(&item.from).map(|f| &f.about)
             != material.fact(&item.to).map(|f| &f.about);
         let base = json!({
-            "from": excerpt(text_of(material, &item.from), SENT_CHARS),
-            "to": excerpt(text_of(material, &item.to), SENT_CHARS),
+            "from": excerpt(&text_of(material, &item.from), SENT_CHARS),
+            "to": excerpt(&text_of(material, &item.to), SENT_CHARS),
             "relation": item.rel,
             "why": item.why,
             "evidence": item.evidence,
@@ -186,6 +235,13 @@ pub(crate) fn precheck_request(
                 instructions: support,
             },
         );
+        if let Some(direction) = direction_question(
+            &text_of(material, &item.from),
+            &text_of(material, &item.to),
+            &item.rel,
+        ) {
+            questions.insert(format!("d{n}"), direction);
+        }
         let mut best = base;
         best["question"] = json!(
             "Which relation does `from` have to `to`? A later status or a newer version of the same thing is not a contradiction. Answer none when no relation holds."

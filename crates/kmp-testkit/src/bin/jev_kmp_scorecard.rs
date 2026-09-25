@@ -21,7 +21,11 @@ use serde_json::{Value, json};
 
 const ACTOR: &str = "jev-scorecard";
 const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#;
-const RERANK: &str = r#"{"pool_size":40}"#;
+/// The narrow pool: the lexical ranker's forty best, read whole.
+const RERANK_NARROW: &str = r#"{"pool_size":40}"#;
+/// The wide pool: up to four hundred admitted passages, 300-character
+/// excerpts each.
+const RERANK_WIDE: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const ASK_TOP: usize = 5;
 
 #[derive(Debug, Deserialize)]
@@ -124,15 +128,30 @@ struct Scores {
     distractors_rejected: Tally,
     suspect_recall: Tally,
     suspect_precision: Tally,
+    suspect_recall_no_direction: Tally,
+    suspect_precision_no_direction: Tally,
+    missing_found_by_jev: Tally,
     good_kept: Tally,
     precheck_available: Tally,
     precheck_right: Tally,
+    precheck_right_no_direction: Tally,
     ask_mrr_plain: Vec<f64>,
     ask_mrr_rerank: Vec<f64>,
+    ask_mrr_wide: Vec<f64>,
     ask_top_plain: Tally,
     ask_top_rerank: Tally,
+    ask_top_wide: Tally,
+    ask_ms: [u128; 3],
     jev_requests: u64,
     jev_input_tokens: u64,
+    /// Bytes an agent reads to curate by hand: every page of kmp_relate over
+    /// the same selection, facts and proposals included.
+    relate_bytes: u64,
+    /// Bytes it reads with kmp_curate: every page of the review.
+    review_bytes: u64,
+    /// The same review on a store without Jev: kernel pairs, untyped.
+    review_bytes_without_jev: u64,
+    missing_found_without_jev: Tally,
 }
 
 #[tokio::main]
@@ -164,10 +183,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
         println!("  {name:<28} {value:.4}");
     }
     println!(
-        "  (cost, not gated)            {} Jev requests, {} input tokens",
+        "  (cost, not gated)            {} curate Jev requests, {} input tokens",
         scores.jev_requests, scores.jev_input_tokens
     );
+    println!(
+        "  (agent load, not gated)      curate by hand reads {} bytes through kmp_relate; kmp_curate without Jev {} bytes; with Jev {} bytes",
+        scores.relate_bytes, scores.review_bytes_without_jev, scores.review_bytes
+    );
+    let asks = scores.ask_mrr_plain.len().max(1) as u128;
+    println!(
+        "  (latency, not gated)         ask ms/question: plain {}, narrow {}, wide {}",
+        scores.ask_ms[0] / asks,
+        scores.ask_ms[1] / asks,
+        scores.ask_ms[2] / asks
+    );
 
+    if std::env::var("JEV_REPORT_ONLY").as_deref() == Ok("1") {
+        return Ok(());
+    }
     if record {
         write_baseline(&baseline_path, collection.cases.len(), &columns)?;
         println!("\nrecorded baseline at {}", baseline_path.display());
@@ -182,7 +215,13 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
     let reranked = seeded_server(
         case,
         "reranked",
-        &[("typesafe.json", TYPESAFE), ("rerank.json", RERANK)],
+        &[("typesafe.json", TYPESAFE), ("rerank.json", RERANK_NARROW)],
+    )
+    .await?;
+    let wide = seeded_server(
+        case,
+        "wide",
+        &[("typesafe.json", TYPESAFE), ("rerank.json", RERANK_WIDE)],
     )
     .await?;
     let expected = &case.expected;
@@ -206,8 +245,10 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
         scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
         scores.jev_input_tokens += usage["input_tokens"].as_u64().unwrap_or(0);
     }
+    scores.review_bytes += page.to_string().len() as u64;
     let mut found = Vec::new();
     let mut flagged = BTreeSet::new();
+    let mut flagged_no_direction = BTreeSet::new();
     let mut id = 11;
     loop {
         for item in page["missing"].as_array().into_iter().flatten() {
@@ -220,23 +261,83 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             });
         }
         for item in page["suspect"].as_array().into_iter().flatten() {
-            flagged.insert([
+            let declaration = [
                 text(&item["from"]["ref"]),
                 text(&item["rel"]),
                 text(&item["to"]["ref"]),
-            ]);
+            ];
+            if item["reasons"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .any(|reason| reason != "direction")
+            {
+                flagged_no_direction.insert(declaration.clone());
+            }
+            flagged.insert(declaration);
         }
         let Some(next) = page["next_actions"][0]["arguments"].as_object().cloned() else {
             break;
         };
         id += 1;
         page = call(&judged, id, "kmp_curate", Value::Object(next)).await?;
+        scores.review_bytes += page.to_string().len() as u64;
+    }
+    // kmp_curate without Jev: what the structure alone gives the agent.
+    let mut bare = call(
+        &plain,
+        40,
+        "kmp_curate",
+        json!({"mode": "review", "about": case.about, "dimensions": dimensions,
+               "max_pairs": 40, "page": {"entries": 20}}),
+    )
+    .await?;
+    scores.review_bytes_without_jev += bare.to_string().len() as u64;
+    let mut bare_pairs = Vec::new();
+    let mut bare_id = 41;
+    loop {
+        for item in bare["missing"].as_array().into_iter().flatten() {
+            bare_pairs.push([text(&item["from"]["ref"]), text(&item["to"]["ref"])]);
+        }
+        let Some(next) = bare["next_actions"][0]["arguments"].as_object().cloned() else {
+            break;
+        };
+        bare = call(&plain, bare_id, "kmp_curate", Value::Object(next)).await?;
+        scores.review_bytes_without_jev += bare.to_string().len() as u64;
+        bare_id += 1;
+    }
+    for gold in &expected.missing {
+        scores
+            .missing_found_without_jev
+            .add(bare_pairs.iter().any(|pair| {
+                (pair[0] == gold.pair[0] && pair[1] == gold.pair[1])
+                    || (pair[0] == gold.pair[1] && pair[1] == gold.pair[0])
+            }));
+    }
+    // The manual alternative: read the whole selection through kmp_relate.
+    let mut reading = call(
+        &plain,
+        50,
+        "kmp_relate",
+        json!({"about": case.about, "dimensions": {"scope": "abouts", "abouts": case.abouts},
+               "page": {"entries": 256}, "budget": {"max_bytes": 200000}}),
+    )
+    .await?;
+    scores.relate_bytes += reading.to_string().len() as u64;
+    let mut relate_id = 51;
+    while let Some(next) = reading["next_actions"][0]["arguments"].as_object().cloned() {
+        reading = call(&plain, relate_id, "kmp_relate", Value::Object(next)).await?;
+        scores.relate_bytes += reading.to_string().len() as u64;
+        relate_id += 1;
     }
 
     // Missing relations: found at all, then typed as a reader accepts.
     for gold in &expected.missing {
         let hit = found.iter().find(|item| same_pair(item, &gold.pair));
         scores.missing_found.add(hit.is_some());
+        scores
+            .missing_found_by_jev
+            .add(hit.is_some_and(|item| item.proposed_by == "jev"));
         let typed = hit
             .and_then(|item| item.suggested.as_ref())
             .is_some_and(|rel| gold.types.contains(rel));
@@ -283,6 +384,16 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
     }
     for declaration in &flagged {
         scores.suspect_precision.add(bad.contains(declaration));
+    }
+    for declaration in &expected.declared_bad {
+        scores
+            .suspect_recall_no_direction
+            .add(flagged_no_direction.contains(declaration));
+    }
+    for declaration in &flagged_no_direction {
+        scores
+            .suspect_precision_no_direction
+            .add(bad.contains(declaration));
     }
     for declaration in &expected.declared_good {
         let kept = !flagged.contains(declaration);
@@ -336,10 +447,22 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
             scores.jev_input_tokens += usage["input_tokens"].as_u64().unwrap_or(0);
         }
-        let doubted = applied["curate"]["doubted"]
+        let doubts = applied["curate"]["doubted"]
             .as_array()
-            .is_some_and(|items| !items.is_empty());
+            .cloned()
+            .unwrap_or_default();
+        let doubted = !doubts.is_empty();
+        let doubted_no_direction = doubts.iter().any(|doubt| {
+            doubt["reasons"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .any(|reason| reason != "direction")
+        });
         scores.precheck_right.add(doubted == check.doubt);
+        scores
+            .precheck_right_no_direction
+            .add(doubted_no_direction == check.doubt);
         println!(
             "  precheck {:<14} expected {:<6} got {}",
             check.rel,
@@ -348,31 +471,42 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
         );
     }
 
-    // Ask, the same question against the plain and the reranking store.
+    // Ask, the same question against the plain, narrow and wide stores.
     for (n, ask) in expected.ask.iter().enumerate() {
         let arguments = json!({"about": case.about, "question": ask.question,
             "dimensions": {"scope": "abouts", "abouts": case.abouts},
             "budget": {"depth": 3, "tokens": 2048, "max_entries": 10}});
-        let without = rank(
-            &call(&plain, 200 + n as u64, "kmp_ask", arguments.clone()).await?,
-            &ask.gold,
-        );
-        let answered = call(&reranked, 300 + n as u64, "kmp_ask", arguments).await?;
-        refuse_unrecorded(&answered)?;
-        let with = rank(&answered, &ask.gold);
+        let mut ranks = [None; 3];
+        for (arm, server) in [&plain, &reranked, &wide].into_iter().enumerate() {
+            let started = std::time::Instant::now();
+            let answered = call(
+                server,
+                200 + (arm as u64) * 100 + n as u64,
+                "kmp_ask",
+                arguments.clone(),
+            )
+            .await?;
+            scores.ask_ms[arm] += started.elapsed().as_millis();
+            refuse_unrecorded(&answered)?;
+            ranks[arm] = rank(&answered, &ask.gold);
+        }
+        let [without, with, wider] = ranks;
         scores.ask_mrr_plain.push(reciprocal(without));
         scores.ask_mrr_rerank.push(reciprocal(with));
+        scores.ask_mrr_wide.push(reciprocal(wider));
         scores
             .ask_top_plain
             .add(without.is_some_and(|r| r <= ASK_TOP));
         scores
             .ask_top_rerank
             .add(with.is_some_and(|r| r <= ASK_TOP));
+        scores.ask_top_wide.add(wider.is_some_and(|r| r <= ASK_TOP));
         println!(
-            "  ask      {:<14} plain {:<5} rerank {:<5} {}",
+            "  ask      {:<16} plain {:<5} narrow {:<5} wide {:<5} {}",
             ask.shape,
             show(without),
             show(with),
+            show(wider),
             ask.question
         );
     }
@@ -477,15 +611,26 @@ fn columns(scores: &Scores) -> Vec<(&'static str, f64)> {
         ("missing_found", scores.missing_found.rate()),
         ("missing_typed", scores.missing_typed.rate()),
         ("distractors_rejected", scores.distractors_rejected.rate()),
+        ("missing_found_by_jev", scores.missing_found_by_jev.rate()),
+        (
+            "missing_found_without_jev",
+            scores.missing_found_without_jev.rate(),
+        ),
         ("suspect_recall", scores.suspect_recall.rate()),
         ("suspect_precision", scores.suspect_precision.rate()),
         ("good_declarations_kept", scores.good_kept.rate()),
         ("precheck_available", scores.precheck_available.rate()),
         ("precheck_right", scores.precheck_right.rate()),
+        (
+            "precheck_right_no_direction",
+            scores.precheck_right_no_direction.rate(),
+        ),
         ("ask_mrr_plain", mean(&scores.ask_mrr_plain)),
         ("ask_mrr_rerank", mean(&scores.ask_mrr_rerank)),
+        ("ask_mrr_wide", mean(&scores.ask_mrr_wide)),
         ("ask_top5_plain", scores.ask_top_plain.rate()),
         ("ask_top5_rerank", scores.ask_top_rerank.rate()),
+        ("ask_top5_wide", scores.ask_top_wide.rate()),
     ]
 }
 

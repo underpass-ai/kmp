@@ -12,11 +12,16 @@ pub(crate) enum CurateFinding {
         suggested_rel: Option<String>,
         verdict: Option<JevVerdict>,
     },
-    /// A declared relation whose stated reason Jev doubts, or whose type Jev
-    /// would choose differently. Reported only.
+    /// A declared relation whose stated reason Jev doubts, whose type Jev
+    /// would choose differently, or that runs the wrong way. Reported only.
     Suspect {
         link: DeclaredLink,
         support: f64,
         best: JevVerdict,
+        /// Jev's probability that `from` is the side that holds the
+        /// relation; none for a relation that reads the same both ways.
+        direction: Option<f64>,
+        /// Which of support, type and direction flagged it.
+        reasons: Vec<&'static str>,
     },
 }

@@ -133,13 +133,15 @@ impl ReviewRelations<'_> {
                 let crosses = material.fact(&link.from).map(|fact| &fact.about)
                     != material.fact(&link.to).map(|fact| &fact.about);
                 let offered = relation_options(crosses).contains(&link.rel);
-                if support < DOUBT_BELOW
-                    || (offered && best.choice != link.rel && best.confidence >= RETYPE_AT)
-                {
+                let direction = audit.answers.get(&format!("d{n}")).and_then(direction_of);
+                let reasons = doubt_reasons(support, &best, &link.rel, offered, direction);
+                if !reasons.is_empty() {
                     review.findings.push(CurateFinding::Suspect {
                         link: link.clone(),
                         support,
                         best,
+                        direction,
+                        reasons,
                     });
                 }
             }
@@ -147,6 +149,40 @@ impl ReviewRelations<'_> {
         review.jev = Some(usage);
         review
     }
+}
+
+/// How strongly the judge reads the relation the declared way round:
+/// forward over forward plus backward. None when it reads neither way, which
+/// is a matter for support, not direction.
+pub(crate) fn direction_of(answer: &JudgementAnswer) -> Option<f64> {
+    let JudgementAnswer::Choice { probabilities, .. } = answer else {
+        return None;
+    };
+    let forward = probabilities.get("forward").copied().unwrap_or(0.0);
+    let backward = probabilities.get("backward").copied().unwrap_or(0.0);
+    (forward + backward >= 0.2).then(|| forward / (forward + backward))
+}
+
+/// Why a declaration, or an item about to be written, is doubted: its reason
+/// does not hold, Jev would type it otherwise, or it runs the wrong way.
+pub(crate) fn doubt_reasons(
+    support: f64,
+    best: &JevVerdict,
+    rel: &str,
+    offered: bool,
+    direction: Option<f64>,
+) -> Vec<&'static str> {
+    let mut reasons = Vec::new();
+    if support < DOUBT_BELOW {
+        reasons.push("support");
+    }
+    if offered && best.choice != rel && best.choice != NONE && best.confidence >= RETYPE_AT {
+        reasons.push("type");
+    }
+    if direction.is_some_and(|direction| direction < DOUBT_BELOW) {
+        reasons.push("direction");
+    }
+    reasons
 }
 
 fn verdict_of(answer: &JudgementAnswer) -> Option<JevVerdict> {
@@ -214,6 +250,7 @@ mod tests {
             reference: reference.into(),
             about: about.into(),
             text: format!("text {reference}"),
+            occurred: None,
         }
     }
 
@@ -401,5 +438,103 @@ mod tests {
             "one audit request, no pairing"
         );
         assert_eq!(review.jev.as_ref().map(|usage| usage.requests), Some(1));
+    }
+
+    #[test]
+    fn each_reason_is_reported_on_its_own() {
+        let verdict =
+            |choice: &str, confidence: f64| crate::curate::domain::jev_verdict::JevVerdict {
+                choice: choice.into(),
+                probabilities: Default::default(),
+                confidence,
+            };
+        assert!(
+            doubt_reasons(
+                0.9,
+                &verdict("supersedes", 0.9),
+                "supersedes",
+                true,
+                Some(0.9)
+            )
+            .is_empty()
+        );
+        assert_eq!(
+            doubt_reasons(
+                0.1,
+                &verdict("supersedes", 0.9),
+                "supersedes",
+                true,
+                Some(0.9)
+            ),
+            vec!["support"]
+        );
+        assert_eq!(
+            doubt_reasons(
+                0.9,
+                &verdict("supports", 0.8),
+                "supersedes",
+                true,
+                Some(0.9)
+            ),
+            vec!["type"]
+        );
+        assert_eq!(
+            doubt_reasons(
+                0.9,
+                &verdict("supersedes", 0.9),
+                "supersedes",
+                true,
+                Some(0.1)
+            ),
+            vec!["direction"]
+        );
+        assert!(
+            doubt_reasons(0.9, &verdict("none", 0.9), "supersedes", true, None).is_empty(),
+            "none is no retype"
+        );
+        assert!(
+            doubt_reasons(0.9, &verdict("supports", 0.9), "causes", false, None).is_empty(),
+            "unoffered type"
+        );
+    }
+
+    #[test]
+    fn the_audit_does_not_ask_direction() {
+        let mut lone = material();
+        lone.declared.push(DeclaredLink {
+            from: "a1".into(),
+            to: "b1".into(),
+            rel: "same_event_as".into(),
+            why: "w".into(),
+            evidence: "e".into(),
+        });
+        let request = crate::curate::application::judgement_plan::suspect_request(&lone);
+        assert!(
+            !request.questions.keys().any(|key| key.starts_with('d')),
+            "the audit does not ask direction: it added nothing measured"
+        );
+    }
+
+    #[test]
+    fn direction_is_forward_over_both_ways_and_silent_when_neither() {
+        let choice = |forward: f64, backward: f64| JudgementAnswer::Choice {
+            choice: "forward".into(),
+            probabilities: [
+                ("forward".to_string(), forward),
+                ("backward".to_string(), backward),
+                ("none".to_string(), 1.0 - forward - backward),
+            ]
+            .into_iter()
+            .collect(),
+            confidence: 0.9,
+        };
+        assert_eq!(direction_of(&choice(0.8, 0.2)), Some(0.8));
+        assert_eq!(direction_of(&choice(0.1, 0.3)), Some(0.25));
+        assert_eq!(
+            direction_of(&choice(0.05, 0.05)),
+            None,
+            "neither is not a direction"
+        );
+        assert_eq!(direction_of(&JudgementAnswer::Noul { yes: 0.9 }), None);
     }
 }

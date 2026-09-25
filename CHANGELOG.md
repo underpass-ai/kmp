@@ -11,6 +11,23 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp_curate` apply asks Jev which way each relation runs before writing it,
+  as a choice between two dated sentences without the author's why, and
+  holds back an item written the wrong way round. Every doubt and suspect now
+  says why it was raised (`reasons`: support, type, direction). Facts reach
+  Jev with their date. The audit of stored relations does not ask direction:
+  in three recorded samples it flagged nothing more.
+- Ask re-ranking can read a wide pool: `rerank.json` `pool_size` up to 400
+  with `excerpt_chars` from 200 to 2000. On a 307-fact store it reached an
+  answer the 40-passage pool never listed.
+- The Jev evaluation gains a 315-fact case with lexical traps, a curate arm
+  without Jev, the agent-load comparison with curating by hand through
+  `kmp_relate`, and multi-sample recording (`scripts/eval/jev-samples.sh`).
+  The retrieval scorecard gains `RETRIEVAL_RERANK` and
+  `RETRIEVAL_MAX_ENTRIES` arms. The decision table in
+  `docs/development/jev-evaluation.md` keeps Jev, removes direction from the
+  audit, and keeps re-ranking opt-in.
+
 - A judged evaluation of TypeSafe Jev with KMP. The corpus
   (`crates/kmp-testkit/judged/jev_cases.json`) is scored by
   `jev_kmp_scorecard` against floors in `docs/development/jev-baseline.tsv`,
