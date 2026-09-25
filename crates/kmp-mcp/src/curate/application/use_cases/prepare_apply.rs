@@ -4,11 +4,12 @@ use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{precheck_request, relation_options};
 use crate::curate::application::prepared_apply::PreparedApply;
 use crate::curate::application::prepared_relation::PreparedRelation;
+use crate::curate::application::use_cases::review_relations::doubt_reasons;
 use crate::curate::domain::apply_doubt::ApplyDoubt;
 use crate::curate::domain::apply_item::ApplyItem;
 use crate::curate::domain::apply_rejection::ApplyRejection;
 use crate::curate::domain::curate_finding::CurateFinding;
-use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE, RETYPE_AT};
+use crate::curate::domain::curate_thresholds::NONE;
 use crate::curate::domain::frozen_check::FrozenCheck;
 use crate::curate::domain::jev_verdict::JevVerdict;
 use crate::curate::domain::pair_origin::PairOrigin;
@@ -162,14 +163,24 @@ impl PrepareApply<'_> {
                                             },
                                             _ => return None,
                                         };
-                                        let doubted = support < DOUBT_BELOW
-                                            || (best.choice != relation.rel
-                                                && best.choice != NONE
-                                                && best.confidence >= RETYPE_AT);
-                                        doubted.then(|| ApplyDoubt {
+                                        let direction = match response.answers.get(&format!("d{n}"))
+                                        {
+                                            Some(JudgementAnswer::Noul { yes }) => Some(*yes),
+                                            _ => None,
+                                        };
+                                        let reasons = doubt_reasons(
+                                            support,
+                                            &best,
+                                            &relation.rel,
+                                            true,
+                                            direction,
+                                        );
+                                        (!reasons.is_empty()).then(|| ApplyDoubt {
                                             item_id: relation.item_id.clone(),
                                             support,
                                             best,
+                                            direction,
+                                            reasons,
                                         })
                                     })
                                     .collect()
@@ -269,6 +280,8 @@ mod tests {
                         probabilities: Default::default(),
                         confidence: 0.9,
                     },
+                    direction: None,
+                    reasons: vec!["support"],
                 },
             ],
             jev: None,

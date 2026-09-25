@@ -7,7 +7,7 @@ use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::prepared_relation::PreparedRelation;
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_fact::CurateFact;
-use crate::curate::domain::curate_thresholds::NONE;
+use crate::curate::domain::curate_thresholds::{NONE, SYMMETRIC};
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
 
@@ -18,6 +18,21 @@ const PARTNER_ORPHANS: usize = 30;
 
 pub(crate) fn excerpt(text: &str, chars: usize) -> String {
     text.chars().take(chars).collect()
+}
+
+/// Whether `from` is the side that holds `relation` towards `to`. Asked only
+/// of relations that have a direction.
+fn direction_question(base: &serde_json::Value, relation: &str) -> Option<JudgementQuestion> {
+    if SYMMETRIC.contains(&relation) {
+        return None;
+    }
+    let mut question = base.clone();
+    question["question"] = json!(
+        "Is it `from` that has the relation `relation` to `to`, and not `to` that has it to `from`?"
+    );
+    Some(JudgementQuestion::Noul {
+        instructions: question,
+    })
 }
 
 /// The relation names `relations[]` may declare, plus `none`: structural
@@ -141,6 +156,9 @@ pub(crate) fn suspect_request(material: &CurateMaterial) -> JudgementRequest {
                 instructions: support,
             },
         );
+        if let Some(direction) = direction_question(&base, &link.rel) {
+            questions.insert(format!("d{n}"), direction);
+        }
         let mut best = base;
         best["question"] =
             json!("Which relation does `from` have to `to`? Answer none when no relation holds.");
@@ -186,6 +204,9 @@ pub(crate) fn precheck_request(
                 instructions: support,
             },
         );
+        if let Some(direction) = direction_question(&base, &item.rel) {
+            questions.insert(format!("d{n}"), direction);
+        }
         let mut best = base;
         best["question"] = json!(
             "Which relation does `from` have to `to`? A later status or a newer version of the same thing is not a contradiction. Answer none when no relation holds."

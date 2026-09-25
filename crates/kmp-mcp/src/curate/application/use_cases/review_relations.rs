@@ -133,13 +133,18 @@ impl ReviewRelations<'_> {
                 let crosses = material.fact(&link.from).map(|fact| &fact.about)
                     != material.fact(&link.to).map(|fact| &fact.about);
                 let offered = relation_options(crosses).contains(&link.rel);
-                if support < DOUBT_BELOW
-                    || (offered && best.choice != link.rel && best.confidence >= RETYPE_AT)
-                {
+                let direction = match audit.answers.get(&format!("d{n}")) {
+                    Some(JudgementAnswer::Noul { yes }) => Some(*yes),
+                    _ => None,
+                };
+                let reasons = doubt_reasons(support, &best, &link.rel, offered, direction);
+                if !reasons.is_empty() {
                     review.findings.push(CurateFinding::Suspect {
                         link: link.clone(),
                         support,
                         best,
+                        direction,
+                        reasons,
                     });
                 }
             }
@@ -147,6 +152,28 @@ impl ReviewRelations<'_> {
         review.jev = Some(usage);
         review
     }
+}
+
+/// Why a declaration, or an item about to be written, is doubted: its reason
+/// does not hold, Jev would type it otherwise, or it runs the wrong way.
+pub(crate) fn doubt_reasons(
+    support: f64,
+    best: &JevVerdict,
+    rel: &str,
+    offered: bool,
+    direction: Option<f64>,
+) -> Vec<&'static str> {
+    let mut reasons = Vec::new();
+    if support < DOUBT_BELOW {
+        reasons.push("support");
+    }
+    if offered && best.choice != rel && best.choice != NONE && best.confidence >= RETYPE_AT {
+        reasons.push("type");
+    }
+    if direction.is_some_and(|direction| direction < DOUBT_BELOW) {
+        reasons.push("direction");
+    }
+    reasons
 }
 
 fn verdict_of(answer: &JudgementAnswer) -> Option<JevVerdict> {
@@ -401,5 +428,84 @@ mod tests {
             "one audit request, no pairing"
         );
         assert_eq!(review.jev.as_ref().map(|usage| usage.requests), Some(1));
+    }
+
+    #[test]
+    fn each_reason_is_reported_on_its_own() {
+        let verdict =
+            |choice: &str, confidence: f64| crate::curate::domain::jev_verdict::JevVerdict {
+                choice: choice.into(),
+                probabilities: Default::default(),
+                confidence,
+            };
+        assert!(
+            doubt_reasons(
+                0.9,
+                &verdict("supersedes", 0.9),
+                "supersedes",
+                true,
+                Some(0.9)
+            )
+            .is_empty()
+        );
+        assert_eq!(
+            doubt_reasons(
+                0.1,
+                &verdict("supersedes", 0.9),
+                "supersedes",
+                true,
+                Some(0.9)
+            ),
+            vec!["support"]
+        );
+        assert_eq!(
+            doubt_reasons(
+                0.9,
+                &verdict("supports", 0.8),
+                "supersedes",
+                true,
+                Some(0.9)
+            ),
+            vec!["type"]
+        );
+        assert_eq!(
+            doubt_reasons(
+                0.9,
+                &verdict("supersedes", 0.9),
+                "supersedes",
+                true,
+                Some(0.1)
+            ),
+            vec!["direction"]
+        );
+        assert!(
+            doubt_reasons(0.9, &verdict("none", 0.9), "supersedes", true, None).is_empty(),
+            "none is no retype"
+        );
+        assert!(
+            doubt_reasons(0.9, &verdict("supports", 0.9), "causes", false, None).is_empty(),
+            "unoffered type"
+        );
+    }
+
+    #[test]
+    fn direction_is_asked_only_of_relations_that_have_one() {
+        let mut lone = material();
+        lone.declared.push(DeclaredLink {
+            from: "a1".into(),
+            to: "b1".into(),
+            rel: "same_event_as".into(),
+            why: "w".into(),
+            evidence: "e".into(),
+        });
+        let request = crate::curate::application::judgement_plan::suspect_request(&lone);
+        assert!(
+            request.questions.contains_key("d0"),
+            "causes has a direction"
+        );
+        assert!(
+            !request.questions.contains_key("d1"),
+            "same_event_as reads both ways"
+        );
     }
 }

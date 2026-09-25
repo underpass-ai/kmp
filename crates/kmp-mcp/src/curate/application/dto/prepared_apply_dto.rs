@@ -20,6 +20,8 @@ pub(crate) fn prepared_to_value(prepared: &PreparedApply) -> Value {
         "doubted": prepared.doubted.iter().map(|doubt| json!({
             "item_id": doubt.item_id,
             "support": doubt.support,
+            "direction": doubt.direction,
+            "reasons": doubt.reasons,
             "suggested_rel": doubt.best.choice,
             "jev": verdict(&doubt.best),
         })).collect::<Vec<_>>(),
