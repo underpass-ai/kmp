@@ -879,6 +879,25 @@
       "lang": "es",
       "shape": "lexical"
      }
+    ],
+    "wake": [
+     {
+      "intent": "Finish the INC-4711 card outage follow-ups: refunds and the cache redundancy fix.",
+      "required": [
+       "service:billing:b01",
+       "service:billing:b03",
+       "service:billing:b06",
+       "service:pagos:p11"
+      ]
+     },
+     {
+      "intent": "Prepare the checkout release notes: what changed in card retries, fraud checks and the PayPal button.",
+      "required": [
+       "service:billing:b13",
+       "service:billing:b15",
+       "service:billing:b34"
+      ]
+     }
     ]
    }
   },
@@ -5234,6 +5253,36 @@
       ],
       "lang": "en",
       "shape": "paraphrase-trap"
+     }
+    ],
+    "wake": [
+     {
+      "intent": "Continue the Postgres migration to eu-west-3.",
+      "required": [
+       "project:atlas:g01",
+       "project:atlas:g11"
+      ]
+     },
+     {
+      "intent": "Rework the on-call handover schedule.",
+      "required": [
+       "project:atlas:g02",
+       "project:atlas:g20"
+      ]
+     },
+     {
+      "intent": "Check we comply with the retention rule for support chats.",
+      "required": [
+       "project:atlas:g07",
+       "project:atlas:g17"
+      ]
+     },
+     {
+      "intent": "Plan cost savings for the staging environment.",
+      "required": [
+       "project:atlas:g06",
+       "project:atlas:g16"
+      ]
      }
     ]
    }

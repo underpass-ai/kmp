@@ -12,6 +12,7 @@ mod candidate_temporal_state;
 mod dimensions;
 mod hybrid_evidence;
 mod ingest;
+mod judged_selection;
 mod lexical_bridge;
 mod lexical_bridge_table;
 mod lexical_collection;
@@ -66,6 +67,7 @@ mod wake_state_tests;
 pub use ask_retrieval_context::AskRetrievalContext;
 pub use bundle_views::abouts_in_bundle;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
+pub use judged_selection::JudgedSelection;
 pub use lexical_bridge::LexicalBridge;
 pub use lexical_index_cache::LexicalIndexCache;
 pub use queries::{
@@ -78,7 +80,7 @@ pub use relate::{curate_reading_from_result, relate_response_from_result};
 pub use rerank_candidate_ranking::RerankCandidateRanking;
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
-    trace_response_from_result, wake_response_from_result,
+    trace_response_from_result, wake_response_from_result, wake_response_with_focus, wake_sources,
 };
 pub use semantic_candidate_ranking::SemanticCandidateRanking;
 pub use semantic_source::SemanticSource;

@@ -10,6 +10,7 @@ use super::judgement_reranker::JudgementReranker;
 use super::judgement_source::load_judgement;
 use super::lexical_bridge_file::load_lexical_bridge;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
+use super::wake_focus_judge::WakeFocusJudge;
 use crate::contract::{TIME_TOOL, TimeMove};
 use crate::serving::environment::{
     TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV, TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
@@ -42,6 +43,8 @@ pub struct EmbeddedKernelMcpBackend {
     /// Ask re-ranking by the same model, opted into separately because it
     /// sends text on every Ask.
     rerank: Result<Option<Arc<JudgementReranker>>, String>,
+    /// Wake focused on its intent by the same model, its own opt-in.
+    wake_focus: Result<Option<Arc<WakeFocusJudge>>, String>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
 }
@@ -77,6 +80,7 @@ impl EmbeddedKernelMcpBackend {
             optional_env_string(TYPESAFE_CASSETTE_MODE_ENV),
         );
         let rerank = JudgementReranker::load(data_dir, &judgement);
+        let wake_focus = WakeFocusJudge::load(data_dir, &judgement);
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -86,6 +90,7 @@ impl EmbeddedKernelMcpBackend {
             semantic: LoopbackSemanticRetriever::load(data_dir),
             judgement,
             rerank,
+            wake_focus,
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
         })
@@ -137,7 +142,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     .await
                 }
                 "kmp_wake" => {
-                    EmbeddedWakeTool::new(&service, telemetry)
+                    EmbeddedWakeTool::new(&service, telemetry, &self.wake_focus)
                         .call(arguments)
                         .await
                 }

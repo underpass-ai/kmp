@@ -26,6 +26,8 @@ const RERANK_NARROW: &str = r#"{"pool_size":40}"#;
 /// The wide pool: up to four hundred admitted passages, 300-character
 /// excerpts each.
 const RERANK_WIDE: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
+/// Wake focus: every admitted evidence entry, 300-character excerpts.
+const WAKE_FOCUS: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const ASK_TOP: usize = 5;
 
 #[derive(Debug, Deserialize)]
@@ -57,6 +59,14 @@ struct Expected {
     declared_bad: Vec<[String; 3]>,
     precheck: Vec<Precheck>,
     ask: Vec<AskCase>,
+    #[serde(default)]
+    wake: Vec<WakeCase>,
+}
+
+#[derive(Debug, Deserialize)]
+struct WakeCase {
+    intent: String,
+    required: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -152,6 +162,13 @@ struct Scores {
     /// The same review on a store without Jev: kernel pairs, untyped.
     review_bytes_without_jev: u64,
     missing_found_without_jev: Tally,
+    /// Required memories in the first wake page, and over every page.
+    wake_first_plain: Tally,
+    wake_first_focused: Tally,
+    wake_all_plain: Tally,
+    wake_all_focused: Tally,
+    /// Bytes of the first page and of every page, per arm.
+    wake_bytes: [u64; 4],
 }
 
 #[tokio::main]
@@ -190,6 +207,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "  (agent load, not gated)      curate by hand reads {} bytes through kmp_relate; kmp_curate without Jev {} bytes; with Jev {} bytes",
         scores.relate_bytes, scores.review_bytes_without_jev, scores.review_bytes
     );
+    println!(
+        "  (agent load, not gated)      wake bytes: plain first page {} / all pages {}; focused first page {} / all pages {}",
+        scores.wake_bytes[0], scores.wake_bytes[1], scores.wake_bytes[2], scores.wake_bytes[3]
+    );
     let asks = scores.ask_mrr_plain.len().max(1) as u128;
     println!(
         "  (latency, not gated)         ask ms/question: plain {}, narrow {}, wide {}",
@@ -222,6 +243,12 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
         case,
         "wide",
         &[("typesafe.json", TYPESAFE), ("rerank.json", RERANK_WIDE)],
+    )
+    .await?;
+    let focused = seeded_server(
+        case,
+        "focused",
+        &[("typesafe.json", TYPESAFE), ("wake-focus.json", WAKE_FOCUS)],
     )
     .await?;
     let expected = &case.expected;
@@ -510,6 +537,77 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             ask.question
         );
     }
+    // Wake, the same intent against the plain and the focused store: which
+    // required memories reach the agent, in how many bytes.
+    for (n, wake) in expected.wake.iter().enumerate() {
+        let arguments = json!({"about": case.about, "intent": wake.intent,
+            "dimensions": {"scope": "abouts", "abouts": case.abouts},
+            "budget": {"max_bytes": 10000}});
+        let mut shown = Vec::new();
+        for (arm, server) in [&plain, &focused].into_iter().enumerate() {
+            let mut page = call(
+                server,
+                400 + (arm as u64) * 100 + n as u64 * 10,
+                "kmp_wake",
+                arguments.clone(),
+            )
+            .await?;
+            refuse_unrecorded(&page)?;
+            if std::env::var("JEV_DEBUG_WAKE").is_ok() {
+                for required in &wake.required {
+                    println!(
+                        "    {} {required}: {:?}",
+                        if arm == 0 { "plain" } else { "focused" },
+                        paths_to(&page, required, "")
+                    );
+                }
+            }
+            let first = delivered(&page);
+            let mut all = first.clone();
+            for next_id in (401 + (arm as u64) * 100 + n as u64 * 10..).take(8) {
+                let Some(action) = page["next_action"].as_object().cloned() else {
+                    break;
+                };
+                let (Some(tool), Some(next)) = (action["tool"].as_str(), action.get("arguments"))
+                else {
+                    break;
+                };
+                page = call(server, next_id, tool, next.clone()).await?;
+                all.push_str(&delivered(&page));
+            }
+            let in_first = wake
+                .required
+                .iter()
+                .filter(|r| first.contains(r.as_str()))
+                .count();
+            let in_all = wake
+                .required
+                .iter()
+                .filter(|r| all.contains(r.as_str()))
+                .count();
+            for required in &wake.required {
+                let (first_tally, all_tally) = if arm == 0 {
+                    (&mut scores.wake_first_plain, &mut scores.wake_all_plain)
+                } else {
+                    (&mut scores.wake_first_focused, &mut scores.wake_all_focused)
+                };
+                first_tally.add(first.contains(required.as_str()));
+                all_tally.add(all.contains(required.as_str()));
+            }
+            scores.wake_bytes[arm * 2] += first.len() as u64;
+            scores.wake_bytes[arm * 2 + 1] += all.len() as u64;
+            shown.push(format!(
+                "{} {}/{} first, {}/{} all, {}B first",
+                if arm == 0 { "plain" } else { "focused" },
+                in_first,
+                wake.required.len(),
+                in_all,
+                wake.required.len(),
+                first.len()
+            ));
+        }
+        println!("  wake     {} | {}", shown.join(" | "), wake.intent);
+    }
     Ok(())
 }
 
@@ -559,6 +657,37 @@ fn refuse_unrecorded(value: &Value) -> Result<(), Box<dyn Error>> {
         }
     }
     Ok(())
+}
+
+/// What a wake actually hands the reader: its packet and the evidence it
+/// carries, without the lists that only name what was withheld.
+fn delivered(page: &Value) -> String {
+    let mut page = page.clone();
+    if let Some(proof) = page["proof"].as_object_mut() {
+        proof.remove("missing");
+    }
+    for key in ["page", "next_action", "projection", "warnings"] {
+        if let Some(object) = page.as_object_mut() {
+            object.remove(key);
+        }
+    }
+    page.to_string()
+}
+
+fn paths_to(value: &Value, needle: &str, at: &str) -> Vec<String> {
+    match value {
+        Value::Object(map) => map
+            .iter()
+            .flat_map(|(key, child)| paths_to(child, needle, &format!("{at}/{key}")))
+            .collect(),
+        Value::Array(items) => items
+            .iter()
+            .enumerate()
+            .flat_map(|(index, child)| paths_to(child, needle, &format!("{at}/{index}")))
+            .collect(),
+        Value::String(text) if text.contains(needle) => vec![at.to_string()],
+        _ => Vec::new(),
+    }
 }
 
 fn same_pair(item: &Found, pair: &[String; 2]) -> bool {
@@ -631,6 +760,10 @@ fn columns(scores: &Scores) -> Vec<(&'static str, f64)> {
         ("ask_top5_plain", scores.ask_top_plain.rate()),
         ("ask_top5_rerank", scores.ask_top_rerank.rate()),
         ("ask_top5_wide", scores.ask_top_wide.rate()),
+        ("wake_first_page_plain", scores.wake_first_plain.rate()),
+        ("wake_first_page_focused", scores.wake_first_focused.rate()),
+        ("wake_all_pages_plain", scores.wake_all_plain.rate()),
+        ("wake_all_pages_focused", scores.wake_all_focused.rate()),
     ]
 }
 
