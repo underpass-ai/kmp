@@ -4,6 +4,7 @@ use crate::view::application::dto::{
     FocusDto, LabelSelectorDto, ProjectionDto, ProvenanceDto, TimeRangeDto, TraceSelectionDto,
     ViewStateDto,
 };
+use crate::view::application::mappers::paths_mapper::paths_dto;
 use crate::view::domain::{
     Focus, FocusWindow, LabelSelection, ProjectionSettings, Provenance, Timestamp, TraceSelection,
     ViewState,
@@ -27,6 +28,7 @@ pub fn view_state_dto(state: &ViewState) -> ViewStateDto {
             .as_ref()
             .map(|selection| selection.as_str().to_string()),
         trace: state.trace.as_ref().map(trace_dto),
+        paths: state.paths.as_ref().map(paths_dto),
         search: state
             .search
             .as_ref()
@@ -195,6 +197,7 @@ mod tests {
                 },
                 "selection": "decision:new",
                 "trace": { "from": "decision:new", "to": "success:old" },
+                "paths": null,
                 "search": "attempt-000005",
                 "last_change": {
                     "actor": "agent:test",

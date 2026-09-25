@@ -54,7 +54,13 @@ impl KernelMcpServer {
                         crate::serving::view_tools::honored_abouts(arguments, missing.as_slice());
                     match self.unhonored_projection(arguments, &abouts).await {
                         Ok(unhonored) => {
-                            crate::serving::view_tools::apply_intent(arguments, &missing, unhonored)
+                            let requested =
+                                crate::serving::view_tools::paths_to_search(arguments, &missing);
+                            let searched =
+                                self.search_view_paths(requested.as_ref(), &abouts).await;
+                            crate::serving::view_tools::apply_intent(
+                                arguments, &missing, unhonored, searched,
+                            )
                         }
                         Err(error) => Err(error),
                     }

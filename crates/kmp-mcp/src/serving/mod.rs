@@ -34,6 +34,8 @@ pub(crate) mod tool_result;
 pub(crate) mod unhonored_projection;
 pub(crate) mod unhonored_refs;
 mod view_dispatch;
+mod view_path_search;
+pub(crate) mod view_paths_request;
 pub(crate) mod view_tools;
 pub(crate) mod wake_focus_outcome;
 mod write_commit;

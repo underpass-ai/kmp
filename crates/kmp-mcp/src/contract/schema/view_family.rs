@@ -9,7 +9,7 @@ pub(crate) fn view_output_schema() -> Value {
         "state": {
             "type": "object",
             "additionalProperties": true,
-            "description": "The semantic view state: about, clock, focus, projection, selection, trace, search, and the provenance of the last change."
+            "description": "The semantic view state: about, clock, focus, projection, selection, trace, paths (the kmp_curate paths answer the loom draws, with review_token and item_ids; null when none), search, and the provenance of the last change."
         },
         "applied": described("boolean", "Whether this call is the one that moved the view. A replayed idempotency key answers false, and so does an intent none of whose named refs are in this store — `unhonored` then says so first and names every one of them."),
         "opened": described("boolean", "Whether a view was opened or rehydrated."),

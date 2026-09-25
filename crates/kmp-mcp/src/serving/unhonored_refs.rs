@@ -125,6 +125,23 @@ impl UnhonoredRefs {
             intent.trace = None;
         }
 
+        let absent_path_ends = match intent.paths.as_ref().and_then(Option::as_ref) {
+            Some(paths) => std::iter::once(paths.from.clone())
+                .chain(paths.to.clone())
+                .filter(|end| self.contains(end))
+                .collect::<Vec<_>>(),
+            None => Vec::new(),
+        };
+        if !absent_path_ends.is_empty() {
+            for end in absent_path_ends {
+                notes.push(format!(
+                    "`{end}` is not in this store; a path needs both its ends, so the drawn \
+                     paths are unchanged"
+                ));
+            }
+            intent.paths = None;
+        }
+
         if let Some(abouts) = intent
             .projection
             .as_mut()
@@ -179,6 +196,12 @@ fn named_refs(intent: &ViewIntentDto) -> Vec<String> {
     if let Some(trace) = intent.trace.as_ref().and_then(Option::as_ref) {
         remember(&mut named, &trace.from);
         remember(&mut named, &trace.to);
+    }
+    if let Some(paths) = intent.paths.as_ref().and_then(Option::as_ref) {
+        remember(&mut named, &paths.from);
+        if let Some(to) = paths.to.as_ref() {
+            remember(&mut named, to);
+        }
     }
     if let Some(abouts) = intent
         .projection

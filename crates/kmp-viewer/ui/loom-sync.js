@@ -181,6 +181,19 @@ KMP_APP.sync = (() => {
           }
         }
       }
+      // Whole paths are the kmp_curate answer the view keeps. New paths
+      // frame the facts the loom's own about holds, unless the intent
+      // already framed something itself.
+      const pathsSignature = JSON.stringify(state.paths || null);
+      const pathsChanged = pathsSignature !== sync.pathsSignature;
+      sync.pathsSignature = pathsSignature;
+      const paths = KMP_APP.pathModel;
+      view.paths = paths ? paths.overlay(state.paths) : null;
+      if (view.paths && pathsChanged && !explicitRange && !refs.length && !state.trace) {
+        const own = paths.framingRefs(view.paths, primaryAbout);
+        if (own.length) framed = (await frameRefs(own)) || framed;
+      }
+      KMP_APP.paths?.render();
       // A rung is a density to fall back on, not an override: an intent that
       // named its own window asked for that window.
       if (projection.semantic_zoom && !framed) {
@@ -328,6 +341,8 @@ KMP_APP.sync = (() => {
         params.set("trace_from", tracePick.from);
         params.set("trace_to", tracePick.to);
       }
+      const clearingPaths = sync.clearPaths === true;
+      if (clearingPaths) params.set("clear_paths", "1");
       const signature = params.toString();
       if (signature === sync.lastReport) {
         sync.humanPending = false;
@@ -339,6 +354,10 @@ KMP_APP.sync = (() => {
           Object.fromEntries(params),
           "POST",
         );
+        if (clearingPaths) {
+          sync.clearPaths = false;
+          sync.pathsSignature = JSON.stringify(state.paths || null);
+        }
         if (reportGeneration !== sync.reportGeneration) return;
         sync.lastReport = signature;
         if (state.view_revision >= sync.revision) {
@@ -352,6 +371,13 @@ KMP_APP.sync = (() => {
           sync.humanPending = false;
       }
     }, 400);
+  }
+
+  /* The person puts the drawn paths away. Only an agent's search draws
+     them; clearing is the one paths gesture a report carries. */
+  function clearPaths() {
+    sync.clearPaths = true;
+    reportView();
   }
 
   async function undoAgentMove() {
@@ -373,6 +399,7 @@ KMP_APP.sync = (() => {
     applyAgentState,
     frameRefs,
     reportView,
+    clearPaths,
     undoAgentMove,
   };
 })();

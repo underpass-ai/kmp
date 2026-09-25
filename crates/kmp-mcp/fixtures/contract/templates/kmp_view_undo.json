@@ -14,6 +14,7 @@
             "at": "string",
             "explanation": "string"
           },
+          "paths": "null",
           "projection": {},
           "search": "null",
           "view_id": "string",
@@ -40,6 +41,7 @@
         "at": "string",
         "explanation": "string"
       },
+      "paths": "null",
       "projection": {},
       "search": "null",
       "view_id": "string",

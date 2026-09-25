@@ -2,6 +2,7 @@
 
 use crate::view::domain::about_id::AboutId;
 use crate::view::domain::clock::Clock;
+use crate::view::domain::drawn_paths::DrawnPaths;
 use crate::view::domain::focus::Focus;
 use crate::view::domain::memory_ref::MemoryRef;
 use crate::view::domain::projection_settings::ProjectionSettings;
@@ -34,6 +35,8 @@ pub struct ViewState {
     pub selection: Option<MemoryRef>,
     /// The drawn audit path, when one is drawn.
     pub trace: Option<TraceSelection>,
+    /// The whole paths a path search found, when some are drawn.
+    pub paths: Option<DrawnPaths>,
     /// The search filter, when one is set.
     pub search: Option<SearchQuery>,
     /// Who last moved the view.
@@ -55,6 +58,7 @@ impl ViewState {
             projection: ProjectionSettings::default(),
             selection: None,
             trace: None,
+            paths: None,
             search: None,
             last_change: None,
             can_undo: false,
@@ -94,6 +98,9 @@ impl ViewState {
         }
         if let Some(trace) = patch.trace {
             self.trace = trace;
+        }
+        if let Some(paths) = patch.paths {
+            self.paths = paths;
         }
         if let Some(search) = patch.search {
             self.search = search;

@@ -9,6 +9,19 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- ChronoLoom draws whole paths. `kmp_view_apply_intent` takes
+  `paths: {from, to?, max_hops?}` (or `null` to clear): the view runs
+  `kmp_curate` `mode: paths` over its about and projected abouts and keeps the
+  answer in the shared state. Declared steps are drawn as relations, steps
+  TypeSafe Jev proposes as dashed arcs labelled with their type and
+  confidence, and avoided declarations as dotted ones; a panel lists every
+  chain. **Declare…** on a proposed step opens a form for the person's own
+  why and evidence and composes the exact `kmp_curate` apply call
+  (`review_token` + `item_id`) to hand to the agent. The viewer stays
+  read-only for memory: it composes the call and never runs it.
+
 ### Changed
 
 - `kmp_curate` `mode: paths` with a `to` asks Jev only about facts within

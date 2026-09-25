@@ -132,6 +132,9 @@ pub(crate) fn view_report(request: &HttpRequest) -> HttpResponse {
         focus: None,
         selection: Some(request.param("selection").map(str::to_string)),
         trace,
+        // A person may put away the paths an agent drew; only an agent's
+        // search can draw them, because the loom runs no judge of its own.
+        paths: (request.param("clear_paths") == Some("1")).then_some(None),
         search: Some(request.param("search").map(str::to_string)),
         projection: None,
         projection_labels: labels,
@@ -272,5 +275,44 @@ mod tests {
         )));
         assert_eq!(reported["view_id"], "routes-cold");
         assert_eq!(reported["about"], "about:cold");
+    }
+
+    /// A person's report never wipes the paths an agent drew; putting them
+    /// away is its own explicit gesture.
+    #[tokio::test]
+    async fn a_report_keeps_drawn_paths_until_the_person_clears_them() {
+        view_open(&request(
+            "/api/view/open",
+            &[("id", "routes-paths"), ("about", "about:paths")],
+        ));
+        ViewRegistry::shared()
+            .apply_intent(ApplyIntentCommand {
+                view_id: Some("routes-paths".to_string()),
+                intent: ViewIntentDto {
+                    paths: Some(Some(crate::view::application::dto::PathsDto {
+                        from: "fact:one".to_string(),
+                        summary: "0 paths".to_string(),
+                        ..Default::default()
+                    })),
+                    ..ViewIntentDto::default()
+                },
+                actor: "agent".to_string(),
+                ..ApplyIntentCommand::default()
+            })
+            .expect("the agent draws paths");
+        let reported = body(view_report(&request(
+            "/api/view/report",
+            &[("id", "routes-paths"), ("about", "about:paths")],
+        )));
+        assert_eq!(reported["paths"]["from"], "fact:one", "{reported}");
+        let cleared = body(view_report(&request(
+            "/api/view/report",
+            &[
+                ("id", "routes-paths"),
+                ("about", "about:paths"),
+                ("clear_paths", "1"),
+            ],
+        )));
+        assert!(cleared["paths"].is_null(), "{cleared}");
     }
 }

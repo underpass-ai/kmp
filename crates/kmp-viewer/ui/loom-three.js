@@ -20,6 +20,12 @@ KMP_APP.three = (() => {
     semantic_delta: "#925178",
     derived_value: "#72499c",
   };
+  /* Declared hops read as relations, a judge's proposals as a warmer dashed
+     suggestion, avoided declarations as a faint warning. */
+  const pathColors = {
+    dark: { declared: "#68c4a0", proposed: "#f0b35a", avoided: "#e78e98" },
+    light: { declared: "#24785b", proposed: "#9a5b00", avoided: "#a44354" },
+  };
   class MemoryScene {
     constructor(container, canvas, onSelect, onHover) {
       this.container = container;
@@ -65,6 +71,7 @@ KMP_APP.three = (() => {
       };
       this.worldPoint = new THREE.Vector3();
       this.relationLines = new KMP_APP.relationLines.RelationLines(this.group);
+      this.pathLines = new KMP_APP.pathLines.PathLines(this.group, document.getElementById("scene-labels"));
       this.planes = new KMP_APP.planes.Planes(this.group, document.getElementById("scene-labels"));
       this.ring = new THREE.Mesh(new THREE.RingGeometry(9, 10, 36), new THREE.MeshBasicMaterial({
         side: THREE.DoubleSide, transparent: true, opacity: 0.9,
@@ -154,6 +161,7 @@ KMP_APP.three = (() => {
     }
     clear() {
       this.relationLines.clear();
+      this.pathLines.clear();
       this.planes.clear();
       for (const mesh of this.nodeMeshes.values()) { this.group.remove(mesh); mesh.material.dispose(); }
       this.nodeMeshes.clear(); this.meshes = []; this.labels = [];
@@ -172,7 +180,7 @@ KMP_APP.three = (() => {
       this.controlFrame = null;
       this.controls.removeEventListener("change", this.onControlsChange);
       this.controls.dispose();
-      this.clear(); this.planes.dispose(); this.relationLines.dispose();
+      this.clear(); this.planes.dispose(); this.relationLines.dispose(); this.pathLines.dispose();
       for (const geometry of Object.values(this.geometry)) geometry.dispose();
       this.ring.geometry.dispose(); this.ring.material.dispose();
       this.group.clear(); this.renderer.dispose(); this.renderer = null;
@@ -228,6 +236,12 @@ KMP_APP.three = (() => {
           state.trace?.edgeKeys.has(`${edge.source} ${edge.rel} ${edge.target}`),
         color: edge.rel === "supersedes" ? (light ? "#8e457b" : "#d69dc9") : KMP_APP.theme.classColor(edge.class),
       }));
+      const colors = pathColors[light ? "light" : "dark"];
+      this.labels.push(...this.pathLines.update(layout.pathHops || [], nodeByRef, hop => ({
+        color: colors[hop.kind],
+        opacity: hop.kind === "avoided" ? 0.6 : 0.95,
+        text: KMP_APP.pathModel.hopLabel(hop),
+      })));
       this.fitFlatWidth();
       if (modeChanged || layersChanged) this.resetCamera();
       else this.draw();
@@ -375,6 +389,21 @@ KMP_APP.three = (() => {
           label.leader.setAttribute("y1", y);
           label.leader.setAttribute("x2", label.x);
           label.leader.setAttribute("y2", label.y);
+        }
+      }
+      const hops = [];
+      for (const label of projected.filter((l) => l.type === "path")) {
+        const outside = label.outside || label.x < 0 || label.x > w || label.y < 0 || label.y > h;
+        // A label that would cover another steps aside rather than vanish:
+        // a proposed hop without its type and confidence is not readable.
+        const clash = (y) => hops.some((o) => Math.abs(o.x - label.x) < 90 && Math.abs(o.y - y) < 16);
+        for (let step = 0; step < 4 && clash(label.y); step++) label.y += 17;
+        const overlap = clash(label.y);
+        label.element.hidden = outside || overlap;
+        if (!outside && !overlap) {
+          label.element.style.left = label.x + "px";
+          label.element.style.top = label.y + "px";
+          hops.push(label);
         }
       }
       const occupied = [];

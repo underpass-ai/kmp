@@ -69,6 +69,7 @@ KMP_APP.sceneModel = (() => {
           state.dimmedKinds?.has(entry.kind) ||
           (state.searchHits?.size && !state.searchHits.has(entry.ref)) ||
           (state.trace && !state.trace.refs.has(entry.ref)) ||
+          (!state.trace && state.paths && !state.paths.refs.has(entry.ref)) ||
           (!entry.aggregate &&
             state.hiddenLanes?.size &&
             entry.coords.every((coord) =>
@@ -123,6 +124,9 @@ KMP_APP.sceneModel = (() => {
       neighbors: new Set(
         (traced || selected).flatMap((edge) => [edge.source, edge.target]),
       ),
+      // Whole paths from a path search: every hop whose two ends are placed,
+      // declared or proposed, drawn apart from the ordinary relations.
+      pathHops: KMP_APP.pathModel ? KMP_APP.pathModel.sceneHops(state.paths, seen) : [],
       times: [...new Set(times)].sort((a, b) => a - b),
       timeX: (time) => -410 + 820 * timeRatio(time),
     };

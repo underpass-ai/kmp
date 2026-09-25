@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "{\"human_control\":true,\"state\":{\"about\":\"question:parity\",\"can_undo\":true,\"clock\":\"occurred\",\"focus\":{\"time_range\":null},\"last_change\":{\"actor\":\"human\",\"at\":\"<stamped at call time>\",\"explanation\":\"took control, keeping the current frame\"},\"projection\":{\"semantic_zoom\":\"atlas\"},\"search\":null,\"selection\":\"question:parity:claim:denver\",\"view_id\":\"default\",\"view_revision\":3},\"view_id\":\"default\",\"view_revision\":3}",
+      "text": "{\"human_control\":true,\"state\":{\"about\":\"question:parity\",\"can_undo\":true,\"clock\":\"occurred\",\"focus\":{\"time_range\":null},\"last_change\":{\"actor\":\"human\",\"at\":\"<stamped at call time>\",\"explanation\":\"took control, keeping the current frame\"},\"paths\":null,\"projection\":{\"semantic_zoom\":\"atlas\"},\"search\":null,\"selection\":\"question:parity:claim:denver\",\"view_id\":\"default\",\"view_revision\":3},\"view_id\":\"default\",\"view_revision\":3}",
       "type": "text"
     }
   ],
@@ -20,6 +20,7 @@
         "at": "<stamped at call time>",
         "explanation": "took control, keeping the current frame"
       },
+      "paths": null,
       "projection": {
         "semantic_zoom": "atlas"
       },

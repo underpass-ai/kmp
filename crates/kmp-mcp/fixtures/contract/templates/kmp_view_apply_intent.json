@@ -16,6 +16,7 @@
             "explanation": "string",
             "idempotency_key": "string"
           },
+          "paths": "null",
           "projection": {
             "semantic_zoom": "string"
           },
@@ -47,6 +48,7 @@
         "explanation": "string",
         "idempotency_key": "string"
       },
+      "paths": "null",
       "projection": {
         "semantic_zoom": "string"
       },

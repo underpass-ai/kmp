@@ -281,6 +281,7 @@ fn intent_from(arguments: &Value) -> Result<(ViewIntentDto, Vec<String>), ToolEr
             }
         });
     }
+    intent.paths = crate::serving::view_paths_request::requested_paths(arguments, &mut refs)?;
     if let Some(search) = arguments.get("search") {
         intent.search = Some(match search {
             Value::Null => None,
@@ -487,6 +488,17 @@ pub(crate) fn refs_named(arguments: &Value) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// The paths search an intent asks for, once the refs this store does not
+/// hold are dropped: `None` when it asks for none or an end is absent.
+pub(crate) fn paths_to_search(
+    arguments: &Value,
+    missing: &UnhonoredRefs,
+) -> Option<kmp_viewer::PathsDto> {
+    let (mut intent, _) = intent_from(arguments).ok()?;
+    missing.omit_from(&mut intent);
+    intent.paths.flatten()
+}
+
 /// Applies one intent atomically: focus, clock, filters, selection, trace —
 /// under optimistic concurrency and idempotency.
 ///
@@ -501,6 +513,7 @@ pub(crate) fn apply_intent(
     arguments: &Value,
     missing_refs: &UnhonoredRefs,
     unavailable: UnhonoredProjection,
+    searched: crate::serving::view_path_search::SearchedPaths,
 ) -> Result<Value, ToolError> {
     let view_id = view_id_of(arguments);
     // A replay is answered before the revision is checked: the intent under
@@ -518,6 +531,7 @@ pub(crate) fn apply_intent(
     // remains the same intent even if the mounted catalog changed.
     let intent_digest = logical_digest(&intent);
     let mut unhonored = missing_refs.omit_from(&mut intent);
+    searched.apply_to(&mut intent, &mut unhonored);
     omit_unhonored_projection(&mut intent, &unavailable);
     let label_notes = unavailable.label_notes();
     unhonored.extend(

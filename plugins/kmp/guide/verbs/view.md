@@ -81,3 +81,24 @@ Rapid human drags and sliders follow the latest position; release keeps the fina
 interval. Search waits for a short typing pause, while explicit view intents and
 Escape apply immediately. Selection, direction, labels and the chosen clock keep
 their meaning as existing scene objects are updated.
+
+## Whole paths on the loom
+
+To show a person how one fact led to another, pass `paths: {"from": ref,
+"to": ref}` (`to` and `max_hops` optional) in `kmp_view_apply_intent`. The
+view runs `kmp_curate` `mode:"paths"` over its about and projected abouts —
+the same search, the same cost and the same text sent to TypeSafe when Jev is
+configured — and keeps the answer in `state.paths`: the chains, their
+`review_token`, each proposed step's `item_id`, and the declarations the audit
+avoided. ChronoLoom draws declared steps as relations, proposed steps dashed
+with their type and confidence, avoided ones dotted. `paths: null` clears them;
+an end the store does not hold leaves them unchanged and is listed in
+`unhonored`. Project the abouts a cross-about chain passes through, or its
+steps stay listed in the panel as outside the frame.
+
+The person can press **Declare…** on a proposed step and write the why and
+evidence. The loom does not write: it composes the exact `kmp_curate`
+`mode:"apply"` call and asks the person to give it to you. Run it unchanged
+(add your `context_id`, or keep the `actor` they named), handle `needs_review`
+and doubts as for any apply, and draw the paths again to show the result. The
+`review_token` belongs to this serving process; after a restart, search again.

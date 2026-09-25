@@ -15,6 +15,7 @@
             "at": "string",
             "explanation": "string"
           },
+          "paths": "null",
           "projection": {
             "semantic_zoom": "string"
           },
@@ -44,6 +45,7 @@
         "at": "string",
         "explanation": "string"
       },
+      "paths": "null",
       "projection": {
         "semantic_zoom": "string"
       },
