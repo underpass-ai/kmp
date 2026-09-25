@@ -27,6 +27,12 @@ The catalogue lists all labels of the retained entries, including labels
 under other keys. `scope.request`
 identifies the intent supplied by the caller.
 
+When the store opts into a focused wake (`wake-focus.json` beside
+`typesafe.json`), stating an `intent` lets Jev keep only the evidence that
+matters for resuming it. A warning says how many entries were kept, and the
+rest is withheld behind the continuation. State the work you are resuming
+rather than a topic.
+
 For example, if C1 arrived at 08:00 and D1 at 09:00, an observed wake over
 [08:00, 09:00) proves C1. D1 may appear in the context state; it is outside
 that historical selection. Filtering component=warehouse also filters the

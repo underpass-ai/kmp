@@ -5,12 +5,18 @@ use super::super::curate_doubt_cache::CurateDoubtCache;
 use super::super::curate_review_cache::CurateReviewCache;
 use super::super::embedded_errors::{kernel_error, mapping_error};
 use super::read_telemetry::EmbeddedReadTelemetry;
+use crate::curate::application::curate_review::CurateReview;
 use crate::curate::application::dto::curate_review_dto::review_to_value;
+use crate::curate::application::dto::path_search_dto::paths_to_value;
 use crate::curate::application::dto::prepared_apply_dto::prepared_to_value;
 use crate::curate::application::mappers::relate_material_mapper::relate_material;
+use crate::curate::application::use_cases::find_paths::FindPaths;
 use crate::curate::application::use_cases::prepare_apply::PrepareApply;
 use crate::curate::application::use_cases::review_relations::ReviewRelations;
 use crate::curate::domain::apply_item::ApplyItem;
+use crate::curate::domain::candidate_pair::CandidatePair;
+use crate::curate::domain::curate_finding::CurateFinding;
+use crate::curate::domain::pair_origin::PairOrigin;
 use crate::serving::adapters::tool_request_mapping::RelateRequestMapper;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::{ToolError, tool_success_result};
@@ -61,6 +67,7 @@ impl<'a> EmbeddedCurateTool<'a> {
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
         match arguments.get("mode").and_then(Value::as_str) {
             Some("review") => {}
+            Some("paths") => return self.paths(arguments).await,
             // Internal: the apply dispatcher asks the store that froze the
             // review to resolve and pre-check what the agent accepted.
             Some("prepare_apply") => return self.prepare_apply(arguments).await,
@@ -101,41 +108,12 @@ impl<'a> EmbeddedCurateTool<'a> {
                 &review, &material, &about, token, offset, entries,
             )));
         }
+        let material = self.read_material(arguments, &about).await?;
         let max_pairs = arguments
             .get("max_pairs")
             .and_then(Value::as_u64)
             .unwrap_or(DEFAULT_MAX_PAIRS)
             .min(MAX_PAIRS) as usize;
-        let relate_arguments = Value::Object(
-            arguments
-                .as_object()
-                .map(|object| {
-                    object
-                        .iter()
-                        .filter(|(key, _)| {
-                            !matches!(
-                                key.as_str(),
-                                "mode" | "max_pairs" | "review_token" | "page" | "context_id"
-                            )
-                        })
-                        .map(|(key, value)| (key.clone(), value.clone()))
-                        .collect::<Map<_, _>>()
-                })
-                .unwrap_or_default(),
-        );
-        let request = RelateRequestMapper::from_arguments(&relate_arguments)
-            .map_err(ToolError::invalid_argument)?;
-        let query = relate_query_from_proto(request).map_err(|status| mapping_error(&status))?;
-        let result = self
-            .service
-            .relate(query.clone())
-            .await
-            .map_err(kernel_error("curate", &about))?;
-        self.telemetry
-            .observe("kmp_curate", &result.bundle, &result.rendered.quality);
-        let response = curate_reading_from_result(result, &query, self.bridge)
-            .map_err(|status| mapping_error(&status))?;
-        let material = relate_material(&response);
         let mut review = ReviewRelations {
             judgement: self.judgement,
         }
@@ -151,6 +129,116 @@ impl<'a> EmbeddedCurateTool<'a> {
             .insert(token.clone(), review.clone(), material.clone());
         Ok(tool_success_result(review_to_value(
             &review, &material, &about, &token, 0, entries,
+        )))
+    }
+
+    /// The selection read the way kmp_relate reads it, as curation sees it.
+    async fn read_material(
+        &self,
+        arguments: &Value,
+        about: &str,
+    ) -> Result<crate::curate::application::curate_material::CurateMaterial, ToolError> {
+        let relate_arguments = Value::Object(
+            arguments
+                .as_object()
+                .map(|object| {
+                    object
+                        .iter()
+                        .filter(|(key, _)| {
+                            !matches!(
+                                key.as_str(),
+                                "mode"
+                                    | "max_pairs"
+                                    | "review_token"
+                                    | "page"
+                                    | "context_id"
+                                    | "from"
+                                    | "to"
+                                    | "max_hops"
+                                    | "actor"
+                            )
+                        })
+                        .map(|(key, value)| (key.clone(), value.clone()))
+                        .collect::<Map<_, _>>()
+                })
+                .unwrap_or_default(),
+        );
+        let request = RelateRequestMapper::from_arguments(&relate_arguments)
+            .map_err(ToolError::invalid_argument)?;
+        let query = relate_query_from_proto(request).map_err(|status| mapping_error(&status))?;
+        let result = self
+            .service
+            .relate(query.clone())
+            .await
+            .map_err(kernel_error("curate", about))?;
+        self.telemetry
+            .observe("kmp_curate", &result.bundle, &result.rendered.quality);
+        let response = curate_reading_from_result(result, &query, self.bridge)
+            .map_err(|status| mapping_error(&status))?;
+        let material = relate_material(&response);
+        Ok(material)
+    }
+
+    async fn paths(&self, arguments: &Value) -> Result<Value, ToolError> {
+        let about = arguments
+            .get("about")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ToolError::invalid_argument("kmp_curate paths requires about"))?
+            .to_string();
+        let from = arguments
+            .get("from")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ToolError::invalid_argument("kmp_curate paths requires from"))?;
+        let to = arguments.get("to").and_then(Value::as_str);
+        let max_hops = arguments
+            .get("max_hops")
+            .and_then(Value::as_u64)
+            .unwrap_or(6)
+            .clamp(1, 12) as usize;
+        let material = self.read_material(arguments, &about).await?;
+        let search = FindPaths {
+            judgement: self.judgement,
+        }
+        .run(&material, from, to, max_hops)
+        .await;
+        // Proposed steps join a frozen review as missing relations, so the
+        // agent can declare the ones it confirms with `mode: apply`.
+        let mut findings = Vec::new();
+        for hop in search.paths.iter().flat_map(|path| &path.hops) {
+            let known = findings
+                .iter()
+                .any(|finding: &CurateFinding| match finding {
+                    CurateFinding::Missing { pair, .. } => {
+                        (pair.from == hop.from && pair.to == hop.to)
+                            || (pair.from == hop.to && pair.to == hop.from)
+                    }
+                    CurateFinding::Suspect { .. } => false,
+                });
+            if !hop.declared && !known {
+                findings.push(CurateFinding::Missing {
+                    pair: CandidatePair {
+                        from: hop.from.clone(),
+                        to: hop.to.clone(),
+                        origin: PairOrigin::Jev,
+                        crosses_abouts: material.fact(&hop.from).map(|f| &f.about)
+                            != material.fact(&hop.to).map(|f| &f.about),
+                    },
+                    suggested_rel: hop.rel.clone(),
+                    verdict: None,
+                });
+            }
+        }
+        let review = CurateReview {
+            findings,
+            jev: search.jev.clone(),
+            warnings: search.warnings.clone(),
+            selection: material.selection.clone(),
+        };
+        let token = review.token();
+        self.cache
+            .insert(token.clone(), review.clone(), material.clone());
+        Ok(tool_success_result(paths_to_value(
+            &search, &review, &material, &token,
         )))
     }
 

@@ -2304,7 +2304,7 @@
             "type": "object"
           },
           "intent": {
-            "description": "Optional continuation intent.",
+            "description": "Optional continuation intent. With wake-focus.json and TypeSafe opt-in, Jev keeps only the evidence that matters for it.",
             "minLength": 1,
             "type": "string"
           },
@@ -6467,7 +6467,7 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. Embedded store only.",
+      "description": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to`, asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -6678,6 +6678,11 @@
             },
             "type": "object"
           },
+          "from": {
+            "description": "paths: the fact a chain starts from, an entry ref of the selection.",
+            "minLength": 1,
+            "type": "string"
+          },
           "idempotency_key": {
             "description": "apply: logical write identity; a needs_review answer's next action carries the one to reuse.",
             "minLength": 1,
@@ -6700,6 +6705,12 @@
             },
             "type": "object"
           },
+          "max_hops": {
+            "description": "paths: longest chain considered. Default 6.",
+            "maximum": 12,
+            "minimum": 1,
+            "type": "integer"
+          },
           "max_pairs": {
             "description": "Most missing relations to return, strongest Jev confidence first. Default 12.",
             "maximum": 40,
@@ -6707,10 +6718,11 @@
             "type": "integer"
           },
           "mode": {
-            "description": "`review` reads, judges and freezes; it writes nothing. `apply` writes the accepted items of a frozen review through the writer's own review.",
+            "description": "`review` reads, judges and freezes; it writes nothing. `paths` finds whole chains from `from` (to `to`, or as far as they go) over declared relations and steps Jev proposes; it writes nothing. `apply` writes the accepted items of a frozen review — a proposed path step included — through the writer's own review.",
             "enum": [
               "review",
-              "apply"
+              "apply",
+              "paths"
             ],
             "type": "string"
           },
@@ -6742,6 +6754,11 @@
           "review_token": {
             "description": "A token a review returned. With it, the call pages that frozen review and reads or judges nothing again.",
             "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "to": {
+            "description": "paths: the fact the chain must reach. Omitted: the longest chains that follow from `from`.",
+            "minLength": 1,
             "type": "string"
           },
           "write_review_token": {
@@ -7155,6 +7172,10 @@
           "page": {
             "description": "review: `entries`, `total` items in the review and `next_cursor`, null on the last page.",
             "type": "object"
+          },
+          "paths": {
+            "description": "paths: up to three chains, fewest proposed steps first: `hops` of {`from`, `to` as {ref, about, excerpt} in walking order, `rel`, `declared`, `reversed` when walked against its stored direction, `confidence`, and `item_id` for a proposed step, applicable with `mode: apply`}, plus `proposed` and `confidence`.",
+            "type": "array"
           },
           "read_after_write_ready": {
             "description": "Whether a read now observes the accepted write.",

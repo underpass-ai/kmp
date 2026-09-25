@@ -11,6 +11,18 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- Focused `kmp_wake`. With `wake-focus.json` beside `typesafe.json` and a
+  stated `intent`, Jev judges which admitted evidence matters for resuming
+  that work. The packet keeps it and withholds the rest, reported as
+  withheld. On the judged corpus: required memories 15/15 against 14/15, and
+  27% fewer bytes on the first page (up to 45% on a 318-fact store).
+- `kmp_curate` `mode: paths` finds whole chains from `from` (to `to`, or as
+  far as they go) across one or several abouts. It joins declared relations
+  with the consequence and cause steps Jev proposes among the facts it
+  judges on the way. Proposed steps are frozen under `review_token`, so
+  `mode: apply` can declare them. Paths found: 3/5 against 0/5 over declared
+  relations alone, with 79–93% of proposed steps right.
+
 - `kmp_curate` apply asks Jev which way each relation runs before writing it,
   as a choice between two dated sentences without the author's why, and
   holds back an item written the wrong way round. Every doubt and suspect now

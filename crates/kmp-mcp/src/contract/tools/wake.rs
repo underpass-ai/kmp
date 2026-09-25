@@ -22,7 +22,7 @@ pub(crate) fn definition() -> Value {
             "properties": {
                 "about": string_schema("Memory anchor or root ref to wake from."),
                 "role": string_schema("Optional caller role."),
-                "intent": string_schema("Optional continuation intent."),
+                "intent": string_schema("Optional continuation intent. With wake-focus.json and TypeSafe opt-in, Jev keeps only the evidence that matters for it."),
                 "dimensions": dimensions_schema(),
                 "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
                 "budget": budget_schema(1_600, 2),

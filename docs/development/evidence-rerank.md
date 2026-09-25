@@ -83,3 +83,23 @@ different order.
 
 Design: `docs/development/jev-rerank-design.md`. The TypeSafe client is shared
 with `kmp_curate` (`docs/development/jev-curate-design.md`).
+
+## Focused wake
+
+The same opt-in can focus `kmp_wake`. Put `wake-focus.json` beside
+`typesafe.json`. It has the same shape as `rerank.json`:
+
+```json
+{"pool_size": 400, "excerpt_chars": 300}
+```
+
+When a wake states an `intent`, Jev reads up to `pool_size` admitted evidence
+entries. For each one it answers whether the entry matters for resuming that
+work. The packet keeps the entries judged 0.5 or above, best first. The rest
+is reported as withheld and stays reachable through the continuation. The
+focus is frozen per intent, pool and model, so later pages read the same
+selection. A wake without an intent is not focused.
+
+If the focus cannot run, the ordinary wake continues with a warning. On the
+judged corpus the focused first page kept every required memory (15/15
+against 14/15) and was 27% smaller (`jev-evaluation.md`).

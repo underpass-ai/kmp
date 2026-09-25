@@ -261,3 +261,98 @@ pub(crate) fn precheck_request(
         questions,
     }
 }
+
+/// Facts a path search may walk through, at most, once the judge has kept
+/// what lies on the way. A choice offers at most 255 options.
+pub(crate) const PATH_FACTS: usize = 120;
+const PATH_CHARS: usize = 300;
+
+/// For every fact but the ends (`w<n>`): does it lie on the way from the
+/// start to the goal, or, with no goal, in what followed from the start?
+pub(crate) fn on_the_way_request(
+    material: &CurateMaterial,
+    start: &str,
+    goal: Option<&str>,
+) -> (JudgementRequest, Vec<String>) {
+    let refs = material
+        .facts
+        .iter()
+        .map(|fact| fact.reference.clone())
+        .filter(|reference| reference != start && Some(reference.as_str()) != goal)
+        .collect::<Vec<_>>();
+    let mut state = json!({"start": excerpt(&text_of(material, start), SENT_CHARS)});
+    let question = match goal {
+        Some(goal) => {
+            state["goal"] = json!(excerpt(&text_of(material, goal), SENT_CHARS));
+            "Is `passage` a step in what connects `start` to `goal`?"
+        }
+        None => "Is `passage` part of what followed from `start`?",
+    };
+    let questions = refs
+        .iter()
+        .enumerate()
+        .map(|(n, reference)| {
+            (
+                format!("w{n}"),
+                JudgementQuestion::Noul {
+                    instructions: json!({
+                        "passage": excerpt(&text_of(material, reference), PATH_CHARS),
+                        "question": question,
+                    }),
+                },
+            )
+        })
+        .collect();
+    (JudgementRequest { state, questions }, refs)
+}
+
+/// For each fact, which other fact is its direct consequence (`n<k>`) and
+/// which its direct cause (`c<k>`): a chain needs both directions, and a
+/// fact can lead to more than one thing.
+/// The facts are the state, dated, keyed `f<k>`.
+pub(crate) fn next_step_request(
+    material: &CurateMaterial,
+    refs: &[String],
+) -> (JudgementRequest, BTreeMap<String, String>) {
+    let keys = refs
+        .iter()
+        .enumerate()
+        .map(|(n, reference)| (format!("f{n}"), reference.clone()))
+        .collect::<BTreeMap<_, _>>();
+    let state = json!({ "facts": keys
+        .iter()
+        .map(|(key, reference)| (key.clone(), json!(excerpt(&text_of(material, reference), PATH_CHARS))))
+        .collect::<serde_json::Map<_, _>>() });
+    let mut questions = BTreeMap::new();
+    for own in keys.keys() {
+        let options = keys
+            .keys()
+            .filter(|key| *key != own)
+            .cloned()
+            .chain(std::iter::once(NONE.to_string()))
+            .collect::<Vec<_>>();
+        questions.insert(
+            format!("n{}", &own[1..]),
+            JudgementQuestion::Choice {
+                instructions: json!(format!(
+                    "Which fact in `facts` is a direct consequence of `facts.{own}`: \
+                     caused by it, decided because of it, or the next state of the same \
+                     thing? Answer none when none is."
+                )),
+                options: options.clone(),
+            },
+        );
+        questions.insert(
+            format!("c{}", &own[1..]),
+            JudgementQuestion::Choice {
+                instructions: json!(format!(
+                    "Which fact in `facts` is a direct cause of `facts.{own}`: it led to \
+                     it, it is why it was decided, or it is the earlier state of the same \
+                     thing? Answer none when none is."
+                )),
+                options,
+            },
+        );
+    }
+    (JudgementRequest { state, questions }, keys)
+}
