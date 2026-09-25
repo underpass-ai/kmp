@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-09-25
+
 ### Added
 
 - `kmp_curate` `mode: labels` proposes, for the facts in `focus`, a value
@@ -2090,7 +2092,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/underpass-ai/kmp/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/underpass-ai/kmp/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/underpass-ai/kmp/compare/v0.20.1...v0.21.0
 [0.20.1]: https://github.com/underpass-ai/kmp/compare/v0.20.0...v0.20.1
