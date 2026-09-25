@@ -236,6 +236,13 @@ against the plain copy and against one opted into Jev (`rerank.json`,
   page does not shrink: it is filled to its 10 KB budget either way. The
   proof paths, which the focus does not touch, now dominate what is left.
   Jev kept 16–194 of 642 evidence entries.
+- **Proof paths focused too.** A focused Wake now keeps only the proof
+  relations that touch a memory its kept evidence stands for. Over the same
+  20 real intents, reading to completion dropped from 6.1 MB to 2.0 MB
+  (−67%, against −36% with evidence alone). The heaviest intent went from
+  981 KB and 113 pages to 56 KB and 7 pages. On the judged corpus every
+  required memory is still delivered, and the focused first page fell to
+  2.8–5.9 KB from 4.6–8.2 KB.
 - **Order.** The projection used to page Wake evidence by its JSON content,
   which dropped the judged order. For an intent about issue #187, the first
   six evidence entries are now #187 decisions. Before, the first #187 fact

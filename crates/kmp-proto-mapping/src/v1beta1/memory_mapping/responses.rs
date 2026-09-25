@@ -212,6 +212,9 @@ pub fn wake_response_with_focus(
     // first ten are what someone proved and has not withdrawn.
     let full_evidence = prioritize_wake_evidence(full_evidence, &lifecycle, &signals);
     let mut focus_warning = None;
+    // The memories the kept evidence stands for: a focused proof keeps only
+    // the relations that touch one of them.
+    let mut focused_refs: Option<BTreeSet<String>> = None;
     let (full_evidence, max_entries) = match focus {
         Some(selection) => {
             let total = full_evidence.len();
@@ -220,6 +223,11 @@ pub fn wake_response_with_focus(
                 .partition(|item| selection.position(item).is_some());
             kept.sort_by_key(|item| selection.position(item));
             let keep = kept.len();
+            focused_refs = Some(
+                kept.iter()
+                    .flat_map(|item| item.supports.iter().cloned())
+                    .collect(),
+            );
             focus_warning = Some(format!(
                 "{}{} on its intent: kept {keep} of {total} evidence entries it judged relevant; the others are withheld, not lost",
                 super::judged_selection::JudgedSelection::WARNING_PREFIX,
@@ -259,7 +267,16 @@ pub fn wake_response_with_focus(
             guardrails,
         }),
         proof: {
-            let mut wake_proof = proof(relationships, evidence, withheld, MemoryConfidence::Medium);
+            let path = match &focused_refs {
+                Some(refs) => relationships
+                    .into_iter()
+                    .filter(|relation| {
+                        refs.contains(&relation.source_ref) || refs.contains(&relation.target_ref)
+                    })
+                    .collect(),
+                None => relationships,
+            };
+            let mut wake_proof = proof(path, evidence, withheld, MemoryConfidence::Medium);
             wake_proof.conflicts =
                 conflicts_from_relations(&wake_proof.path, lifecycle.superseded_refs());
             // The field has been in the contract since the proof shape

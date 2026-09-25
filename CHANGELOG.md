@@ -31,6 +31,11 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- A focused `kmp_wake` also narrows its proof paths to the relations that
+  touch a memory its kept evidence stands for. On a real store, reading 20
+  focused wakes to completion took 2.0 MB against 6.1 MB unfocused (−67%;
+  evidence alone gave −36%), with every required memory still delivered on
+  the judged corpus.
 - `kmp_curate` `mode: paths` with a `to` asks Jev only about facts within
   two steps of either end over kernel pairs and declared relations, falling
   back to the whole selection when the graph links nothing near. On the
