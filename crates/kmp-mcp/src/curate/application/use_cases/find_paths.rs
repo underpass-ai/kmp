@@ -3,11 +3,12 @@ use std::collections::{BTreeMap, BTreeSet, BinaryHeap};
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{
-    PATH_FACTS, next_step_request, on_the_way_request, pair_request,
+    PATH_FACTS, next_step_request, on_the_way_request, pair_request, suspect_request,
 };
 use crate::curate::application::path_search::PathSearch;
+use crate::curate::domain::avoided_hop::AvoidedHop;
 use crate::curate::domain::candidate_pair::CandidatePair;
-use crate::curate::domain::curate_thresholds::{NONE, PARTNER_AT};
+use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE, PARTNER_AT};
 use crate::curate::domain::found_path::FoundPath;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::curate::domain::path_hop::PathHop;
@@ -22,6 +23,9 @@ const STEP_AT: f64 = 0.3;
 const STEPS_PER_FACT: usize = 2;
 /// Bound on the partial walks a goal-less search expands.
 const MAX_WALKS: usize = 20_000;
+/// Rounds of audit and search: each audits the declared hops the paths now
+/// walk and searches again without the ones whose reason does not hold.
+const AUDIT_ROUNDS: usize = 3;
 
 /// Whole paths across the selection: the relations writers declared, and,
 /// with the judge, the steps it proposes between facts that lie on the way.
@@ -42,6 +46,7 @@ impl FindPaths<'_> {
             paths: Vec::new(),
             considered: material.facts.len(),
             kept: 0,
+            avoided: Vec::new(),
             jev: None,
             warnings: Vec::new(),
         };
@@ -65,39 +70,128 @@ impl FindPaths<'_> {
                 reversed: false,
             })
             .collect::<Vec<_>>();
-        if let Some(model) = self.judgement {
-            let mut usage = JevUsage {
-                model: model.model().to_string(),
-                requests: 0,
-                input_tokens: 0,
-            };
-            if let Err(error) = propose(
-                model,
-                material,
-                from,
-                to,
-                &mut edges,
-                &mut search,
-                &mut usage,
-            )
-            .await
-            {
-                search
-                    .warnings
-                    .push(format!("Jev unavailable; declared relations only: {error}"));
-            }
-            search.jev = Some(usage);
-        } else {
+        let mut banned = BTreeSet::new();
+        let Some(model) = self.judgement else {
             search.warnings.push(
                 "Jev is not configured for this store; paths follow declared relations only".into(),
             );
-        }
-        search.paths = match to {
-            Some(to) => shortest_paths(&edges, from, to, max_hops),
-            None => longest_chains(&edges, from, max_hops),
+            search.paths = walk(&edges, from, to, max_hops, &banned);
+            return search;
         };
+        let mut usage = JevUsage {
+            model: model.model().to_string(),
+            requests: 0,
+            input_tokens: 0,
+        };
+        if let Err(error) = propose(
+            model,
+            material,
+            from,
+            to,
+            &mut edges,
+            &mut search,
+            &mut usage,
+        )
+        .await
+        {
+            search
+                .warnings
+                .push(format!("Jev unavailable; declared relations only: {error}"));
+        }
+        // Declared hops come first in `edges`, in the order of
+        // `material.declared`.
+        let mut audited = BTreeSet::new();
+        search.paths = walk(&edges, from, to, max_hops, &banned);
+        for _ in 0..AUDIT_ROUNDS {
+            let fresh = walked_declared(&edges, &search.paths)
+                .into_iter()
+                .filter(|index| audited.insert(*index))
+                .collect::<Vec<_>>();
+            if fresh.is_empty() {
+                break;
+            }
+            let doubted = match audit(model, material, &fresh, &mut usage).await {
+                Ok(doubted) => doubted,
+                Err(error) => {
+                    search.warnings.push(format!(
+                        "Jev unavailable; declared relations were walked unaudited: {error}"
+                    ));
+                    break;
+                }
+            };
+            if doubted.is_empty() {
+                break;
+            }
+            for (index, support) in doubted {
+                banned.insert(index);
+                search.avoided.push(AvoidedHop {
+                    hop: edges[index].clone(),
+                    support,
+                });
+            }
+            search.paths = walk(&edges, from, to, max_hops, &banned);
+        }
+        search.jev = Some(usage);
         search
     }
+}
+
+fn walk(
+    edges: &[PathHop],
+    from: &str,
+    to: Option<&str>,
+    max_hops: usize,
+    banned: &BTreeSet<usize>,
+) -> Vec<FoundPath> {
+    match to {
+        Some(to) => shortest_paths(edges, from, to, max_hops, banned),
+        None => longest_chains(edges, from, max_hops, banned),
+    }
+}
+
+/// Indices of the declared edges the paths walk, either way round.
+fn walked_declared(edges: &[PathHop], paths: &[FoundPath]) -> BTreeSet<usize> {
+    paths
+        .iter()
+        .flat_map(|path| &path.hops)
+        .filter(|hop| hop.declared)
+        .filter_map(|hop| {
+            edges.iter().position(|edge| {
+                edge.declared
+                    && edge.rel == hop.rel
+                    && ((edge.from == hop.from && edge.to == hop.to)
+                        || (edge.from == hop.to && edge.to == hop.from))
+            })
+        })
+        .collect()
+}
+
+/// Ask whether the why and evidence of each walked declaration hold; the
+/// ones below the doubt line come back with their support.
+async fn audit(
+    model: &dyn JudgementModel,
+    material: &CurateMaterial,
+    indices: &[usize],
+    usage: &mut JevUsage,
+) -> Result<Vec<(usize, f64)>, String> {
+    let walked = CurateMaterial {
+        declared: indices
+            .iter()
+            .filter_map(|index| material.declared.get(*index).cloned())
+            .collect(),
+        ..material.clone()
+    };
+    let response = model.evaluate(&suspect_request(&walked)).await?;
+    usage.requests += response.requests;
+    usage.input_tokens += response.input_tokens;
+    Ok(indices
+        .iter()
+        .enumerate()
+        .filter_map(|(n, index)| match response.answers.get(&format!("s{n}")) {
+            Some(JudgementAnswer::Noul { yes }) if *yes < DOUBT_BELOW => Some((*index, *yes)),
+            _ => None,
+        })
+        .collect())
 }
 
 async fn propose(
@@ -287,8 +381,14 @@ fn shortest(
     None
 }
 
-fn shortest_paths(edges: &[PathHop], from: &str, to: &str, max_hops: usize) -> Vec<FoundPath> {
-    let Some(first) = shortest(edges, from, to, max_hops, &BTreeSet::new()) else {
+fn shortest_paths(
+    edges: &[PathHop],
+    from: &str,
+    to: &str,
+    max_hops: usize,
+    avoided: &BTreeSet<usize>,
+) -> Vec<FoundPath> {
+    let Some(first) = shortest(edges, from, to, max_hops, avoided) else {
         return Vec::new();
     };
     let mut paths = vec![first.clone()];
@@ -303,6 +403,7 @@ fn shortest_paths(edges: &[PathHop], from: &str, to: &str, max_hops: usize) -> V
                     || (edge.from == hop.to && edge.to == hop.from)
             })
             .map(|(index, _)| index)
+            .chain(avoided.iter().copied())
             .collect::<BTreeSet<_>>();
         if let Some(path) = shortest(edges, from, to, max_hops, &banned)
             && !paths.contains(&path)
@@ -317,7 +418,12 @@ fn shortest_paths(edges: &[PathHop], from: &str, to: &str, max_hops: usize) -> V
 }
 
 /// With no goal: the longest simple walks from the start, strongest first.
-fn longest_chains(edges: &[PathHop], from: &str, max_hops: usize) -> Vec<FoundPath> {
+fn longest_chains(
+    edges: &[PathHop],
+    from: &str,
+    max_hops: usize,
+    avoided: &BTreeSet<usize>,
+) -> Vec<FoundPath> {
     let adjacency = neighbours(edges);
     let mut finished = Vec::new();
     let mut stack = vec![(vec![from.to_string()], Vec::<PathHop>::new())];
@@ -331,7 +437,7 @@ fn longest_chains(edges: &[PathHop], from: &str, max_hops: usize) -> Vec<FoundPa
         let mut extended = false;
         if hops.len() < max_hops {
             for (index, next, reversed) in adjacency.get(at.as_str()).into_iter().flatten() {
-                if visited.iter().any(|seen| seen == next) {
+                if avoided.contains(index) || visited.iter().any(|seen| seen == next) {
                     continue;
                 }
                 let mut visited = visited.clone();
@@ -380,7 +486,7 @@ mod tests {
             hop("a", "c", true),
             hop("c", "d", true),
         ];
-        let paths = shortest_paths(&edges, "a", "d", 6);
+        let paths = shortest_paths(&edges, "a", "d", 6, &BTreeSet::new());
         assert_eq!(paths[0].proposed(), 0, "a-c-d is declared all the way");
         assert_eq!(paths.len(), 1, "no proposed hop to take away");
         let edges = vec![
@@ -388,7 +494,7 @@ mod tests {
             hop("b", "d", false),
             hop("d", "c", true),
         ];
-        let paths = shortest_paths(&edges, "a", "c", 6);
+        let paths = shortest_paths(&edges, "a", "c", 6, &BTreeSet::new());
         assert_eq!(paths[0].hops.len(), 3);
         assert_eq!(paths[0].proposed(), 1);
     }
@@ -396,11 +502,77 @@ mod tests {
     #[test]
     fn a_hop_walked_against_its_direction_says_so() {
         let edges = vec![hop("b", "a", true)];
-        let paths = shortest_paths(&edges, "a", "b", 6);
+        let paths = shortest_paths(&edges, "a", "b", 6, &BTreeSet::new());
         assert!(paths[0].hops[0].reversed);
         assert_eq!(
             (paths[0].hops[0].from.as_str(), paths[0].hops[0].to.as_str()),
             ("a", "b")
+        );
+    }
+
+    fn material() -> CurateMaterial {
+        use crate::curate::domain::{curate_fact::CurateFact, declared_link::DeclaredLink};
+        let fact = |reference: &str| CurateFact {
+            reference: reference.into(),
+            about: "a".into(),
+            text: format!("text {reference}"),
+            occurred: None,
+        };
+        let link = |from: &str, to: &str| DeclaredLink {
+            from: from.into(),
+            to: to.into(),
+            rel: "supports".into(),
+            why: "w".into(),
+            evidence: "e".into(),
+        };
+        CurateMaterial {
+            facts: vec![fact("a"), fact("b"), fact("c")],
+            declared: vec![link("a", "b"), link("b", "c")],
+            pairs: Vec::new(),
+            selection: "fp".into(),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_walked_declaration_whose_reason_does_not_hold_is_avoided() {
+        use super::super::scripted_judgement::Scripted;
+        use std::sync::Mutex;
+        let doubting = Scripted {
+            noul: 0.1,
+            choice: "none",
+            confidence: 0.9,
+            calls: Mutex::new(0),
+        };
+        let search = FindPaths {
+            judgement: Some(&doubting),
+        }
+        .run(&material(), "a", Some("c"), 6)
+        .await;
+        assert!(search.paths.is_empty(), "both declarations were doubted");
+        assert_eq!(search.avoided.len(), 2);
+        assert!(search.avoided.iter().all(|avoided| avoided.support < 0.3));
+
+        let trusting = Scripted {
+            noul: 0.9,
+            choice: "none",
+            confidence: 0.9,
+            calls: Mutex::new(0),
+        };
+        let search = FindPaths {
+            judgement: Some(&trusting),
+        }
+        .run(&material(), "a", Some("c"), 6)
+        .await;
+        assert_eq!(search.paths[0].hops.len(), 2);
+        assert!(search.avoided.is_empty());
+
+        let plain = FindPaths { judgement: None }
+            .run(&material(), "a", None, 6)
+            .await;
+        assert_eq!(
+            plain.paths[0].hops.len(),
+            2,
+            "without Jev nothing is audited"
         );
     }
 
@@ -411,8 +583,8 @@ mod tests {
             hop("b", "c", false),
             hop("a", "x", true),
         ];
-        let chains = longest_chains(&edges, "a", 6);
+        let chains = longest_chains(&edges, "a", 6, &BTreeSet::new());
         assert_eq!(chains[0].hops.len(), 2);
-        assert!(shortest_paths(&edges, "a", "zzz", 6).is_empty());
+        assert!(shortest_paths(&edges, "a", "zzz", 6, &BTreeSet::new()).is_empty());
     }
 }

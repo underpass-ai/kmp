@@ -59,10 +59,11 @@ pub(crate) fn paths_to_value(
         .collect::<Vec<_>>();
     json!({
         "summary": format!(
-            "{} paths; {} of {} facts judged on the way; {}",
+            "{} paths; {} of {} facts judged on the way; {} declared relations avoided; {}",
             search.paths.len(),
             search.kept,
             search.considered,
+            search.avoided.len(),
             search.jev.as_ref().map_or_else(
                 || "declared relations only".to_string(),
                 |usage| format!("Jev {} used {} requests", usage.model, usage.requests)
@@ -70,6 +71,12 @@ pub(crate) fn paths_to_value(
         ),
         "review_token": token,
         "paths": paths,
+        "avoided": search.avoided.iter().map(|avoided| json!({
+            "from": side(&avoided.hop.from),
+            "to": side(&avoided.hop.to),
+            "rel": avoided.hop.rel,
+            "support": avoided.support,
+        })).collect::<Vec<_>>(),
         "jev": search.jev.as_ref().map(|usage| json!({
             "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens,
         })),

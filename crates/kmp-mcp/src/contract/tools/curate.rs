@@ -66,6 +66,7 @@ fn curate_output_schema() -> Value {
         "jev": described("object", "review: model, requests and input tokens spent; null when Jev was not used."),
         "page": described("object", "review: `entries`, `total` items in the review and `next_cursor`, null on the last page."),
         "paths": described("array", "paths: up to three chains, fewest proposed steps first: `hops` of {`from`, `to` as {ref, about, excerpt} in walking order, `rel`, `declared`, `reversed` when walked against its stored direction, `confidence`, and `item_id` for a proposed step, applicable with `mode: apply`}, plus `proposed` and `confidence`."),
+        "avoided": described("array", "paths: declared relations the walk left out because Jev found their why and evidence do not hold (`from`, `to`, `rel`, `support`). Audit them with `mode: review`."),
         "curate": described("object", "apply: `doubted` items Jev asks you to reread (`item_id`, `support`, `direction` — how strongly Jev reads it the way you wrote it —, `reasons` among `support`, `type` and `direction`, `suggested_rel`, `jev`) — withheld until you correct them or send `confirm_doubted` —, `rejected` items this call cannot write with the reason, the `jev` usage of the pre-write check, and `warnings`."),
         "next_actions": described("array", "review: the call for the next page. apply after needs_review: the kmp_curate call that resumes this exact apply. Execute unchanged."),
     })

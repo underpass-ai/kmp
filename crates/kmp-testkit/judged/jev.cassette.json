@@ -12356,6 +12356,53 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "4ee65e67bcc6ca967f589f74e1847fe1f7635dd829fb99b0c921a9f3185c2eb6": {
+      "answers": {
+        "b0": {
+          "choice": "none",
+          "confidence": 0.95,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.04,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.0,
+            "matches_requirement": 0.0,
+            "none": 0.96,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.0,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "s0": {
+          "type": "noul",
+          "yes": 0.06
+        }
+      },
+      "input_tokens": 787,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "559bef210cf0e941bedc9d4db31d4522eedb35b388c79f608ce98713605199c5": {
       "answers": {
         "b0": {
@@ -24314,6 +24361,53 @@
         }
       },
       "input_tokens": 1797,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "b34fe2be3ef172218494e73f595f20ae6d0f842b58028c462c6f98d78d0be995": {
+      "answers": {
+        "b0": {
+          "choice": "supports",
+          "confidence": 0.92,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.0,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.06999999999999999,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.93,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "s0": {
+          "type": "noul",
+          "yes": 0.93
+        }
+      },
+      "input_tokens": 837,
       "model": "jev-1.13.0",
       "requests": 1
     },

@@ -183,6 +183,10 @@ struct Scores {
     path_found_plain: Tally,
     path_found_jev: Tally,
     proposed_hops_right: Tally,
+    /// Returned paths that walk no planted bad declaration, per arm.
+    paths_clean: [Tally; 2],
+    /// Declarations the path audit avoided that are planted bad ones.
+    avoided_bad: Tally,
     /// Bytes of the paths answers, without and with Jev.
     path_bytes: [u64; 2],
 }
@@ -588,6 +592,25 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
                     .iter()
                     .any(|edge| (edge[0] == a && edge[1] == b) || (edge[0] == b && edge[1] == a))
             };
+            let bad = |hop: &Value| {
+                expected.declared_bad.iter().any(|[from, rel, to]| {
+                    text(&hop["rel"]) == *rel
+                        && ((text(&hop["from"]["ref"]) == *from && text(&hop["to"]["ref"]) == *to)
+                            || (text(&hop["from"]["ref"]) == *to
+                                && text(&hop["to"]["ref"]) == *from))
+                })
+            };
+            for path in answer["paths"].as_array().into_iter().flatten() {
+                let hops = path["hops"].as_array().cloned().unwrap_or_default();
+                scores.paths_clean[arm].add(
+                    !hops
+                        .iter()
+                        .any(|hop| hop["declared"].as_bool() == Some(true) && bad(hop)),
+                );
+            }
+            for avoided in answer["avoided"].as_array().into_iter().flatten() {
+                scores.avoided_bad.add(bad(avoided));
+            }
             let top = answer["paths"][0]["hops"]
                 .as_array()
                 .cloned()
@@ -639,14 +662,15 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
                 }
             }
             shown.push(format!(
-                "{} {} ({} hops)",
+                "{} {} ({} hops, {} avoided)",
                 if arm == 0 {
                     "declared-only"
                 } else {
                     "with Jev"
                 },
                 if found { "found" } else { "not found" },
-                top.len()
+                top.len(),
+                answer["avoided"].as_array().map_or(0, Vec::len)
             ));
         }
         println!(
@@ -882,6 +906,9 @@ fn columns(scores: &Scores) -> Vec<(&'static str, f64)> {
         ("path_found_declared_only", scores.path_found_plain.rate()),
         ("path_found_with_jev", scores.path_found_jev.rate()),
         ("proposed_hops_right", scores.proposed_hops_right.rate()),
+        ("paths_clean_declared_only", scores.paths_clean[0].rate()),
+        ("paths_clean_with_jev", scores.paths_clean[1].rate()),
+        ("avoided_are_bad", scores.avoided_bad.rate()),
         ("wake_first_page_plain", scores.wake_first_plain.rate()),
         ("wake_first_page_focused", scores.wake_first_focused.rate()),
         ("wake_all_pages_plain", scores.wake_all_plain.rate()),
