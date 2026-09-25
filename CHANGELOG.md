@@ -9,6 +9,15 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `kmp-mcp update` refused any newer release that added a tool: the
+  engine proof held the new engine to the surface the running build knew,
+  so 0.20.1 could not update to 0.21.0 (`unexpected=["kmp_curate"]`). A
+  release newer than the running build is now held to its version and to
+  answering only KMP tools; older and same releases stay exact. From 0.20.1,
+  update with the 0.21.0 binary itself (`kmp-mcp-v0.21.0-<target> update`).
+
 ## [0.21.0] - 2026-09-25
 
 TypeSafe Jev joins KMP as a cheap second reader. It is opt-in per store and

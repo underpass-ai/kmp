@@ -269,12 +269,19 @@ impl EngineStore for FilesystemEngineStore {
         }
         // An older engine is held to the surface it shipped with, not to
         // this build's: the proof stays exact and stops refusing every
-        // honest engine the day a tool is added.
+        // honest engine the day a tool is added. A newer one is held to what
+        // this build can know of it (`surface_is_accepted`).
         let expected = crate::lifecycle::domain::tool_surface_history::expected_tool_surface(
             target,
             crate::tool_names(),
         );
-        if initialized_version.as_deref() != Some(target.engine_version()) || tools != expected {
+        if initialized_version.as_deref() != Some(target.engine_version())
+            || !crate::lifecycle::domain::tool_surface_history::surface_is_accepted(
+                target,
+                &tools,
+                crate::tool_names(),
+            )
+        {
             return Err(LifecycleError::SurfaceMismatch(format!(
                 "{} failed the exact lifecycle proof: version={initialized_version:?}, missing={:?}, unexpected={:?}",
                 executable.as_path().display(),
