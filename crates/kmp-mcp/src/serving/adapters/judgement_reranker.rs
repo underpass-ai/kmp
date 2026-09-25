@@ -14,8 +14,8 @@ use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::rerank_outcome::RerankOutcome;
 
-/// Text of one passage sent for judgement, in characters.
-const SENT_CHARS: usize = 2_000;
+/// At most this many passages enter the ranking, best first.
+const RANKED: usize = 100;
 /// Frozen selections kept for continuation pages.
 const KEPT: usize = 64;
 /// Passages Jev judges less likely than this to answer are left out of the
@@ -30,6 +30,7 @@ const ANSWERS_AT: f64 = 0.5;
 pub(super) struct JudgementReranker {
     model: Arc<dyn JudgementModel>,
     pool_size: usize,
+    excerpt_chars: usize,
     selections: Mutex<BTreeMap<String, RerankOutcome>>,
 }
 
@@ -48,18 +49,27 @@ impl JudgementReranker {
         };
         let config: RerankConfig =
             serde_json::from_slice(&bytes).map_err(|_| "invalid rerank configuration")?;
-        let pool_size = config.validate()?;
+        let (pool_size, excerpt_chars) = config.validate()?;
         match judgement {
-            Ok(Some(model)) => Ok(Some(Arc::new(Self::new(Arc::clone(model), pool_size)))),
+            Ok(Some(model)) => Ok(Some(Arc::new(Self::new(
+                Arc::clone(model),
+                pool_size,
+                excerpt_chars,
+            )))),
             Ok(None) => Err("rerank.json needs typesafe.json beside the store".into()),
             Err(error) => Err(error.clone()),
         }
     }
 
-    pub(super) fn new(model: Arc<dyn JudgementModel>, pool_size: usize) -> Self {
+    pub(super) fn new(
+        model: Arc<dyn JudgementModel>,
+        pool_size: usize,
+        excerpt_chars: usize,
+    ) -> Self {
         Self {
             model,
             pool_size,
+            excerpt_chars,
             selections: Mutex::new(BTreeMap::new()),
         }
     }
@@ -117,7 +127,7 @@ impl JudgementReranker {
                     format!("p{n}"),
                     JudgementQuestion::Noul {
                         instructions: json!({
-                            "passage": source.text.chars().take(SENT_CHARS).collect::<String>(),
+                            "passage": source.text.chars().take(self.excerpt_chars).collect::<String>(),
                             "question": "Does `passage` answer the question in the state?",
                         }),
                     },
@@ -155,6 +165,7 @@ impl JudgementReranker {
             question,
             scored
                 .into_iter()
+                .take(RANKED)
                 .map(|(_, source)| (source.entry_ref.clone(), source.text_sha256.clone()))
                 .collect(),
         )

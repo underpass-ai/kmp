@@ -85,7 +85,7 @@ fn judge(fail: bool) -> Arc<KeywordJudge> {
 #[tokio::test]
 async fn passages_are_ordered_by_the_judgement_and_frozen_for_pages() {
     let model = judge(false);
-    let reranker = JudgementReranker::new(model.clone(), 40);
+    let reranker = JudgementReranker::new(model.clone(), 40, 2_000);
     let pool = vec![
         source("entry:a", "The car was fixed by Ana."),
         source("entry:b", "A technician repaired the automobile."),
@@ -116,7 +116,7 @@ async fn passages_are_ordered_by_the_judgement_and_frozen_for_pages() {
 
 #[tokio::test]
 async fn a_failure_is_frozen_as_a_warning_and_an_unknown_page_is_refused() {
-    let reranker = JudgementReranker::new(judge(true), 40);
+    let reranker = JudgementReranker::new(judge(true), 40, 2_000);
     let pool = vec![source("entry:a", "text")];
     let outcome = reranker.rank("q", &pool, false).await.expect("outcome");
     assert!(outcome.ranking.is_none());
