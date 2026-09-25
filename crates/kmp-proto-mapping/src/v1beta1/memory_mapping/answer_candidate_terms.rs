@@ -44,10 +44,10 @@ impl AnswerCandidateTerms {
         let content_counts = informative_term_counts(&content_text, morphology);
         let mut direct_text = format!("{} {}", content_text, item.source);
         direct_text.push(' ');
-        direct_text.push_str(&item.id);
+        direct_text.push_str(&ref_words(&item.id));
         for supported_ref in &item.supports {
             direct_text.push(' ');
-            direct_text.push_str(supported_ref);
+            direct_text.push_str(&ref_words(supported_ref));
         }
         for (key, value) in &item.metadata {
             // The summary is content, above, or nothing at all; the keys the
@@ -67,7 +67,7 @@ impl AnswerCandidateTerms {
         let mut claim = item
             .supports
             .iter()
-            .flat_map(|supported_ref| informative_terms(supported_ref, morphology))
+            .flat_map(|supported_ref| informative_terms(&ref_words(supported_ref), morphology))
             .collect::<BTreeSet<_>>();
         for selected_ref in answer_context_refs(item) {
             if let Some(detail_terms) = context.details_by_ref.get(&selected_ref) {
@@ -116,4 +116,54 @@ fn search_summary(item: &MemoryEvidence) -> Option<&str> {
     SearchSummary::lint(&item.text, summary)
         .ok()
         .map(|_| summary.as_str())
+}
+
+/// The words a ref says about its memory: its slug. The rest of a ref is
+/// address — `detail:evidence:`, the about, `entry:<kind>:`, a content hash,
+/// `:current` — shared by whole families of entries, so letting it match a
+/// question gave every `success_path` evidence row "evidence" and "current"
+/// for free and pushed entries whose own words answered out of the core.
+fn ref_words(reference: &str) -> String {
+    let mut rest = reference.strip_prefix("detail:").unwrap_or(reference);
+    rest = rest.strip_prefix("evidence:").unwrap_or(rest);
+    rest = rest.strip_suffix(":current").unwrap_or(rest);
+    if let Some((head, tail)) = rest.rsplit_once(":relation:")
+        && tail.chars().all(|c| c.is_ascii_digit())
+    {
+        rest = head;
+    }
+    let slug = rest.rsplit(':').next().unwrap_or(rest);
+    let slug = match slug.rsplit_once('-') {
+        Some((head, hash)) if hash.len() == 16 && hash.chars().all(|c| c.is_ascii_hexdigit()) => {
+            head
+        }
+        _ => slug,
+    };
+    slug.replace('-', " ")
+}
+
+#[cfg(test)]
+mod ref_words_tests {
+    use super::ref_words;
+
+    #[test]
+    fn only_the_slug_of_a_ref_is_searchable() {
+        assert_eq!(
+            ref_words(
+                "detail:evidence:project:made:entry:success_path:pr-172-integrated-the-fixture-b9e0944852682702:current"
+            ),
+            "pr 172 integrated the fixture"
+        );
+        assert_eq!(
+            ref_words("project:made:entry:decision:issue-187-now-reserves-400885eab02bd540"),
+            "issue 187 now reserves"
+        );
+        assert_eq!(
+            ref_words(
+                "detail:evidence:project:made:entry:constraint:x-y-e21bfb0579d99d16:relation:1"
+            ),
+            "x y"
+        );
+        assert_eq!(ref_words("service:billing:b11"), "b11");
+    }
 }

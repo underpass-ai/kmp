@@ -49,6 +49,15 @@ Detailed notes from the early release cycle remain available in the
   searches, and proposed steps right from 83% to 94%. Goal-less searches
   are unchanged: the filter lost a chain there.
 
+### Fixed
+
+- `kmp_ask` no longer matches a question against the address of a ref,
+  only against its slug: `detail:evidence:`, the about, `entry:<kind>:`,
+  the content hash and `:current` are shared by whole families of entries.
+  They gave every `success_path` evidence row "evidence" and "current" for
+  free, which on a real store put five unrelated entries in the cited core
+  of a question about one issue. Retrieval, Jev and relate baselines hold.
+
 ## [0.22.0] - 2026-09-25
 
 ### Added
