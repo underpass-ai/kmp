@@ -14,13 +14,23 @@ impl TypeSafeApiKey {
     /// file is how such a host finds the key without it being copied into
     /// every host's configuration.
     pub(super) fn load(value: Option<String>) -> Result<Self, String> {
+        Self::load_from(value, default_key_file())
+    }
+
+    /// `load` with the key file named: the default one in production, a
+    /// temporary one in a test, so a key on the developer's machine never
+    /// changes what a test sees.
+    pub(super) fn load_from(
+        value: Option<String>,
+        key_file: Option<std::path::PathBuf>,
+    ) -> Result<Self, String> {
         if value
             .as_deref()
             .is_some_and(|value| !value.trim().is_empty())
         {
             return Self::from_env(value);
         }
-        match default_key_file() {
+        match key_file {
             Some(path) if path.exists() => Self::from_file(&path),
             _ => Err(
                 "TYPESAFE_API_KEY is not set and no ~/.config/typesafe.env holds it".to_string(),

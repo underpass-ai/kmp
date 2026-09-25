@@ -30,11 +30,21 @@ impl TypeSafeJudgement {
         data_dir: &Path,
         key: Option<String>,
     ) -> Result<Option<Arc<dyn JudgementModel>>, String> {
+        Self::load_with(data_dir, key, TypeSafeApiKey::load)
+    }
+
+    /// `load` with the key resolution given, so tests do not depend on a key
+    /// file the machine happens to hold.
+    pub(super) fn load_with(
+        data_dir: &Path,
+        key: Option<String>,
+        resolve: impl FnOnce(Option<String>) -> Result<TypeSafeApiKey, String>,
+    ) -> Result<Option<Arc<dyn JudgementModel>>, String> {
         let Some(config) = read_config(data_dir)? else {
             return Ok(None);
         };
         let (endpoint, timeout) = config.validate()?;
-        let key = TypeSafeApiKey::load(key)?;
+        let key = resolve(key)?;
         Ok(Some(Arc::new(Self::new(
             endpoint,
             config.model,

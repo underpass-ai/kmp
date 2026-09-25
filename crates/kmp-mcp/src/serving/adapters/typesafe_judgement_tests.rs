@@ -174,9 +174,12 @@ fn loading_is_off_without_a_file_and_refused_without_a_key() {
         r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#,
     )
     .expect("config");
-    let error = TypeSafeJudgement::load(dir.path(), None)
-        .err()
-        .expect("no key");
+    let absent = dir.path().join("absent-typesafe.env");
+    let error = TypeSafeJudgement::load_with(dir.path(), None, |key| {
+        TypeSafeApiKey::load_from(key, Some(absent))
+    })
+    .err()
+    .expect("no key");
     assert!(error.contains("TYPESAFE_API_KEY"));
     let loaded = TypeSafeJudgement::load(dir.path(), Some(KEY.into()))
         .expect("loads")
