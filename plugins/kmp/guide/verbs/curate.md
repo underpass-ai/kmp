@@ -41,7 +41,8 @@ write a word. So Jev suggests a type and doubts a reason, and you write every
    - Written evidence carries `curated_by: kmp_curate` and the Jev model.
 
 6. To trace how one fact led to another, call `mode:"paths"` with `from` and,
-   optionally, `to` and `max_hops`, over one or several abouts. Each hop says
+   optionally, `to` and `max_hops`, over one or several abouts. Without `to`,
+   Jev also follows consequences of consequences. Each hop says
    whether it is `declared` or proposed by Jev, and whether it was walked
    against its stored direction (`reversed`). A proposed hop has an `item_id`
    you can declare with `mode:"apply"` and your own why and evidence. Paths

@@ -4018,6 +4018,1265 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "25805ab3e10e3815f48b5346a4fb3b376fc8a27411a041f7dfb98adb1e7df33f": {
+      "answers": {
+        "w0": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w1": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w10": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w100": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w101": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w102": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w103": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w104": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w105": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w106": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w107": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w108": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w109": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w11": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w110": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w111": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w112": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w113": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w114": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w115": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w116": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w117": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w118": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "w119": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w12": {
+          "type": "noul",
+          "yes": 0.85
+        },
+        "w120": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w121": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w122": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w123": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w124": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w125": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w126": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w127": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w128": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w129": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w13": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w130": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w131": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w132": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w133": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w134": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "w135": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w136": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w137": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w138": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w139": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w14": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w140": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w141": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w142": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w143": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w144": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w145": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "w146": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w147": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w148": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w149": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "w15": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w150": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w151": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w152": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w153": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w154": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w155": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w156": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w157": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w158": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w159": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w16": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w160": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w161": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w162": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w163": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w164": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "w165": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w166": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w167": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "w168": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w169": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w17": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w170": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w171": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w172": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w173": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w174": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w175": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w176": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w177": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w178": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w179": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w18": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w180": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w181": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w182": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w183": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w184": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w185": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w186": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w187": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w188": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w189": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w19": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w190": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w191": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w192": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w193": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w194": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w195": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w196": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w197": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w198": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w199": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w2": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w20": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w200": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w201": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w202": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w203": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w204": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w205": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w206": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w207": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w208": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w209": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w21": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w210": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w211": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w212": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w213": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w214": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w215": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w216": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w217": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w218": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w219": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w22": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w220": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w221": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w222": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w223": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "w224": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w225": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w226": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "w227": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w228": {
+          "type": "noul",
+          "yes": 0.22
+        },
+        "w229": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w23": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w230": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w231": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w232": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w233": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w234": {
+          "type": "noul",
+          "yes": 0.24
+        },
+        "w235": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w236": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w237": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w238": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w239": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w24": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w240": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w241": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w242": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w243": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w244": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w245": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w246": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w247": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w248": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w249": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w25": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w250": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w251": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w252": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w253": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w254": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w255": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w256": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w257": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w258": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w259": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w26": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w260": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w261": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w262": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w263": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w264": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w265": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w266": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w267": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w268": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w269": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w27": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w270": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w271": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w272": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w273": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w274": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w275": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w276": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w277": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w278": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w279": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w28": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w280": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w281": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w282": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w283": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w284": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w285": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w286": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w287": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w288": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w289": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w29": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w290": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w291": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w292": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w293": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w294": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w295": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "w296": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w297": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w298": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w299": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w3": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w30": {
+          "type": "noul",
+          "yes": 0.27
+        },
+        "w300": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w301": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w302": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w303": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w304": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w305": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w306": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w307": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w308": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w309": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w31": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w310": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w311": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w312": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w32": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w33": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w34": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w35": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w36": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w37": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w38": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w39": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w4": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w40": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w41": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w42": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w43": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w44": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w45": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w46": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w47": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w48": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w49": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w5": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w50": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w51": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w52": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w53": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w54": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w55": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w56": {
+          "type": "noul",
+          "yes": 0.27
+        },
+        "w57": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w58": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w59": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w6": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w60": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w61": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w62": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w63": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w64": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w65": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w66": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w67": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w68": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w69": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w7": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w70": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w71": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w72": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w73": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w74": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w75": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w76": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w77": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w78": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w79": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w8": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w80": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w81": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w82": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w83": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w84": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w85": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w86": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "w87": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w88": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w89": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w9": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w90": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w91": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w92": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w93": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w94": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w95": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w96": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w97": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w98": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w99": {
+          "type": "noul",
+          "yes": 0.09
+        }
+      },
+      "input_tokens": 20903,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "2778c45e8244475fb9ca09a68f7a48c1f1da77f38e4b93c2c2d294db18e370e3": {
       "answers": {
         "t0": {
@@ -24411,6 +25670,193 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "bb6a5517509c824c28380b274c7c8c2b652b681b5e5445db35e36ff8d151eee8": {
+      "answers": {
+        "t0": {
+          "choice": "follows",
+          "confidence": 0.34,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.05,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.09,
+            "corrects": 0.0,
+            "depends_on": 0.06,
+            "derived_from": 0.03,
+            "excluded_from": 0.0,
+            "follows": 0.37,
+            "matches_requirement": 0.0,
+            "none": 0.02,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.04,
+            "total_of": 0.0,
+            "triggers": 0.28,
+            "updates_state": 0.04,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "triggers",
+          "confidence": 0.36,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.19,
+            "corrects": 0.0,
+            "depends_on": 0.04,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.23,
+            "matches_requirement": 0.0,
+            "none": 0.03,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.04,
+            "total_of": 0.0,
+            "triggers": 0.39,
+            "updates_state": 0.01,
+            "uses_background": 0.05,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "triggers",
+          "confidence": 0.7,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.03,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.06,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.08,
+            "matches_requirement": 0.0,
+            "none": 0.01,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.04,
+            "total_of": 0.0,
+            "triggers": 0.71,
+            "updates_state": 0.01,
+            "uses_background": 0.03,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t3": {
+          "choice": "contributes_to",
+          "confidence": 0.38,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.41,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.27,
+            "matches_requirement": 0.0,
+            "none": 0.02,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.24,
+            "updates_state": 0.01,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t4": {
+          "choice": "none",
+          "confidence": 0.94,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.04,
+            "matches_requirement": 0.0,
+            "none": 0.95,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1982,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "beca80d42813b06f111ebfef6211766a460aeee8a1395ea618c2962dc91286d3": {
       "answers": {
         "t0": {
@@ -28037,6 +29483,133 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "e04a7d15ddc18d82fb89652cf3e6bf8ca9dbaadd87c3408cd9e240cdd451a7d2": {
+      "answers": {
+        "c0": {
+          "choice": "none",
+          "confidence": 1.0,
+          "probabilities": {
+            "f1": 0.0,
+            "f2": 0.0,
+            "f3": 0.0,
+            "f4": 0.0,
+            "none": 1.0
+          },
+          "type": "choice"
+        },
+        "c1": {
+          "choice": "f0",
+          "confidence": 0.97,
+          "probabilities": {
+            "f0": 0.97,
+            "f2": 0.0,
+            "f3": 0.0,
+            "f4": 0.0,
+            "none": 0.03
+          },
+          "type": "choice"
+        },
+        "c2": {
+          "choice": "f0",
+          "confidence": 0.69,
+          "probabilities": {
+            "f0": 0.76,
+            "f1": 0.22,
+            "f3": 0.0,
+            "f4": 0.0,
+            "none": 0.02
+          },
+          "type": "choice"
+        },
+        "c3": {
+          "choice": "f2",
+          "confidence": 0.99,
+          "probabilities": {
+            "f0": 0.01,
+            "f1": 0.0,
+            "f2": 0.99,
+            "f4": 0.0,
+            "none": 0.0
+          },
+          "type": "choice"
+        },
+        "c4": {
+          "choice": "f3",
+          "confidence": 0.71,
+          "probabilities": {
+            "f0": 0.01,
+            "f1": 0.0,
+            "f2": 0.03,
+            "f3": 0.76,
+            "none": 0.2
+          },
+          "type": "choice"
+        },
+        "n0": {
+          "choice": "f1",
+          "confidence": 0.83,
+          "probabilities": {
+            "f1": 0.87,
+            "f2": 0.12,
+            "f3": 0.0,
+            "f4": 0.0,
+            "none": 0.01
+          },
+          "type": "choice"
+        },
+        "n1": {
+          "choice": "f2",
+          "confidence": 0.84,
+          "probabilities": {
+            "f0": 0.0,
+            "f2": 0.87,
+            "f3": 0.02,
+            "f4": 0.0,
+            "none": 0.11
+          },
+          "type": "choice"
+        },
+        "n2": {
+          "choice": "f3",
+          "confidence": 0.99,
+          "probabilities": {
+            "f0": 0.0,
+            "f1": 0.0,
+            "f3": 0.99,
+            "f4": 0.0,
+            "none": 0.01
+          },
+          "type": "choice"
+        },
+        "n3": {
+          "choice": "f4",
+          "confidence": 0.64,
+          "probabilities": {
+            "f0": 0.0,
+            "f1": 0.0,
+            "f2": 0.0,
+            "f4": 0.72,
+            "none": 0.28
+          },
+          "type": "choice"
+        },
+        "n4": {
+          "choice": "none",
+          "confidence": 1.0,
+          "probabilities": {
+            "f0": 0.0,
+            "f1": 0.0,
+            "f2": 0.0,
+            "f3": 0.0,
+            "none": 1.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1306,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "e139232122e4567b0e3d2ac44560620a5fdf0b98a4e1f295a9bd313508935cb3": {
       "answers": {
         "p0": {
@@ -29853,6 +31426,1261 @@
         }
       },
       "input_tokens": 2282,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "f434e86977a4cac709aeb3973be5746083a0c219caba91bf3b72f24a6602b27f": {
+      "answers": {
+        "w0": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w1": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w10": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w100": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w101": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w102": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w103": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w104": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w105": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w106": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w107": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w108": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w109": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w11": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w110": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w111": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w112": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w113": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "w114": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w115": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w116": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w117": {
+          "type": "noul",
+          "yes": 0.33
+        },
+        "w118": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w119": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w12": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w120": {
+          "type": "noul",
+          "yes": 0.54
+        },
+        "w121": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w122": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w123": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w124": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w125": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w126": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w127": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w128": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w129": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w13": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w130": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w131": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w132": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w133": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w134": {
+          "type": "noul",
+          "yes": 0.36
+        },
+        "w135": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w136": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w137": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w138": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w139": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w14": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w140": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w141": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w142": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w143": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w144": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "w145": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w146": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w147": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w148": {
+          "type": "noul",
+          "yes": 0.37
+        },
+        "w149": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w15": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w150": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w151": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w152": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w153": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w154": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w155": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w156": {
+          "type": "noul",
+          "yes": 0.24
+        },
+        "w157": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w158": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w159": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w16": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w160": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w161": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w162": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w163": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w164": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w165": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w166": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w167": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "w168": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w169": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w17": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w170": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w171": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w172": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w173": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w174": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w175": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w176": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w177": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w178": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w179": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w18": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w180": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w181": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w182": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w183": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w184": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w185": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w186": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w187": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w188": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w189": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w19": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w190": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w191": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w192": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w193": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w194": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w195": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w196": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w197": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w198": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w199": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w2": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w20": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w200": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w201": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w202": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w203": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w204": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w205": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w206": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w207": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "w208": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w209": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w21": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w210": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w211": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w212": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w213": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w214": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w215": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w216": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w217": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w218": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w219": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w22": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w220": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w221": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w222": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w223": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w224": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w225": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w226": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w227": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w228": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w229": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w23": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w230": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w231": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w232": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w233": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w234": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w235": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w236": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w237": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w238": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w239": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w24": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w240": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w241": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w242": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w243": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w244": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w245": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w246": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w247": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w248": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w249": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w25": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w250": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w251": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w252": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w253": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w254": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w255": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w256": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w257": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w258": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w259": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w26": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w260": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w261": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w262": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w263": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w264": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w265": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w266": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w267": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w268": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w269": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w27": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w270": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w271": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w272": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w273": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w274": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w275": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w276": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w277": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w278": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w279": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w28": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w280": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w281": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w282": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w283": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w284": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w285": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w286": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w287": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w288": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w289": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w29": {
+          "type": "noul",
+          "yes": 0.29
+        },
+        "w290": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w291": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "w292": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w293": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w294": {
+          "type": "noul",
+          "yes": 0.22
+        },
+        "w295": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w296": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w297": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w298": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w299": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w3": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w30": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w300": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w301": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w302": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w303": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w304": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w305": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w306": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w307": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w308": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w309": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w31": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w310": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w311": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w32": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w33": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w34": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w35": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w36": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w37": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w38": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w39": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w4": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w40": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w41": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "w42": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w43": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w44": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w45": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w46": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w47": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w48": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w49": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w5": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w50": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w51": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "w52": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w53": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w54": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w55": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w56": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w57": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w58": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w59": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w6": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w60": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w61": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w62": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w63": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w64": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w65": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w66": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w67": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w68": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w69": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w7": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w70": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w71": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w72": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w73": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w74": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "w75": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w76": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w77": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w78": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w79": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w8": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w80": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w81": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w82": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w83": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w84": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w85": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "w86": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w87": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w88": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "w89": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w9": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w90": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w91": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w92": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w93": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "w94": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "w95": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w96": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w97": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w98": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w99": {
+          "type": "noul",
+          "yes": 0.07
+        }
+      },
+      "input_tokens": 20863,
       "model": "jev-1.13.0",
       "requests": 1
     }

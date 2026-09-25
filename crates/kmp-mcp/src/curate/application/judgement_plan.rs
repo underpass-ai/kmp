@@ -273,12 +273,15 @@ pub(crate) fn on_the_way_request(
     material: &CurateMaterial,
     start: &str,
     goal: Option<&str>,
+    followed: &[String],
 ) -> (JudgementRequest, Vec<String>) {
     let refs = material
         .facts
         .iter()
         .map(|fact| fact.reference.clone())
-        .filter(|reference| reference != start && Some(reference.as_str()) != goal)
+        .filter(|reference| {
+            reference != start && Some(reference.as_str()) != goal && !followed.contains(reference)
+        })
         .collect::<Vec<_>>();
     let mut state = json!({"start": excerpt(&text_of(material, start), SENT_CHARS)});
     let question = match goal {
@@ -286,7 +289,16 @@ pub(crate) fn on_the_way_request(
             state["goal"] = json!(excerpt(&text_of(material, goal), SENT_CHARS));
             "Is `passage` a step in what connects `start` to `goal`?"
         }
-        None => "Is `passage` part of what followed from `start`?",
+        None if followed.is_empty() => "Is `passage` part of what followed from `start`?",
+        None => {
+            state["followed"] = json!(
+                followed
+                    .iter()
+                    .map(|reference| excerpt(&text_of(material, reference), PATH_CHARS))
+                    .collect::<Vec<_>>()
+            );
+            "Did `passage` happen because of, or in response to, something in `followed`?"
+        }
     };
     let questions = refs
         .iter()
