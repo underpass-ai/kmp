@@ -11,6 +11,11 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp_curate` `mode: paths` audits the declared relations a result walks.
+  Those whose why and evidence Jev does not find to hold are left out, and
+  the search runs again. The answer lists them under `avoided`. On the
+  judged corpus, no returned path walks a planted bad declaration any more.
+  The audit costs 2 requests over the corpus.
 - Focused `kmp_wake`. With `wake-focus.json` beside `typesafe.json` and a
   stated `intent`, Jev judges which admitted evidence matters for resuming
   that work. The packet keeps it and withholds the rest, reported as

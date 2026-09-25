@@ -1,6 +1,7 @@
 pub(crate) mod apply_doubt;
 pub(crate) mod apply_item;
 pub(crate) mod apply_rejection;
+pub(crate) mod avoided_hop;
 pub(crate) mod candidate_pair;
 pub(crate) mod curate_fact;
 pub(crate) mod curate_finding;

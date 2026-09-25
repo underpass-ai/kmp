@@ -6810,6 +6810,10 @@
             },
             "type": "object"
           },
+          "avoided": {
+            "description": "paths: declared relations the walk left out because Jev found their why and evidence do not hold (`from`, `to`, `rel`, `support`). Audit them with `mode: review`.",
+            "type": "array"
+          },
           "clock_defaults": {
             "additionalProperties": false,
             "properties": {

@@ -96,7 +96,7 @@ saving below grows with it.
 | Ask re-ranking, wide pool (400 excerpts of 300 characters) | Real store: reaches an answer the narrow pool never listed (MRR 0.625 → 0.688). Elsewhere equal to narrow, within noise. | +14% bytes on the real store. | About +5 s per ask on the real store. | **Keep as the configuration for large stores.** It is the only arm that helped where the lexical ranker fails. Latency is the price. |
 
 | Focused `kmp_wake` (`wake-focus.json`, intent-driven) | Required memories delivered: 15/15 against 14/15 plain. Plain lost the one in the other about. The same in 3 samples. | First-page bytes over 6 intents fall from 49.9 KB to 36.4 KB (−27%); on the 318-fact store −30 to −45% per wake. | Part of the 30 passage calls of the run. About 7k tokens per wake: $0.0003. | **Keep as opt-in.** Less for the agent to read, and nothing required lost. Caveat: in this corpus the required memories are the ones wake already favours (decisions with relations), so plain wake competes on its best ground. |
-| Whole paths (`kmp_curate mode: paths`) | Paths found: 3/5 against 0/5 over declared relations alone. Proposed steps right: 79–93% (3 samples). The misses: a valid direct step shorter than the reader's gold (left as a miss, not re-judged), and a chain that walked a planted bad declaration. | An answer is about 2.2 KB per search, against reading the selection through `kmp_relate` (133 KB) to trace it by hand. | About 14k tokens per search: $0.0006. | **Keep.** Paths the graph does not hold yet appear, and every proposed step can be declared through `apply`. Next: skip declarations the audit flags when walking. |
+| Whole paths (`kmp_curate mode: paths`) | Paths found: 3/5 against 0/5 over declared relations alone. Proposed steps right: 79–93% (3 samples). The misses: a valid direct step shorter than the reader's gold (left as a miss, not re-judged), and a chain that walked a planted bad declaration. With the walk audited (below), no returned path walks a planted bad declaration; the one avoided is bad (1/1). | An answer is about 2.2 KB per search, against reading the selection through `kmp_relate` (133 KB) to trace it by hand. | About 14k tokens per search: $0.0006. The audit adds 2 requests and 1.6k tokens over the corpus. | **Keep.** Paths the graph does not hold yet appear, and every proposed step can be declared through `apply`. The walk is audited. |
 
 **Overall: incorporate Jev.** `kmp_curate` is where it pays most clearly: less
 reading for the agent, more relations found, and a cost in fractions of a
@@ -120,6 +120,17 @@ because it adds latency and bytes to every Ask.
   relations, and searched: fewest hops, then fewest proposed steps, with up
   to three alternatives. With no `to`, the search returns the longest chains
   from `from`.
+
+  The declared relations a result walks are then audited. Jev asks whether
+  each one's why and evidence hold, the same support question as the review.
+  Any below 0.3 is left out and the search runs again, up to three rounds.
+  Only walked declarations are asked, so the audit costs one small request
+  per round. The answer lists them under `avoided`. On the corpus, the
+  goal-less chain from g30 stopped walking the planted `g05 chosen_because
+  g08`. `proposed_hops_right` went from 9/11 to 17/21 because the returned
+  alternatives are now proposed chains instead of that declaration. The new
+  steps are 8/10 right, so the floor was lowered for that reason and not for
+  a worse judge.
 
   Asking for the cause as well as the consequence, and keeping a second
   choice, took paths found from 1/5 to 3/5 with no loss in step precision.
