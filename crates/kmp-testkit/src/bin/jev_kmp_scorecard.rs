@@ -144,6 +144,14 @@ struct Scores {
     ask_ms: [u128; 3],
     jev_requests: u64,
     jev_input_tokens: u64,
+    /// Bytes an agent reads to curate by hand: every page of kmp_relate over
+    /// the same selection, facts and proposals included.
+    relate_bytes: u64,
+    /// Bytes it reads with kmp_curate: every page of the review.
+    review_bytes: u64,
+    /// The same review on a store without Jev: kernel pairs, untyped.
+    review_bytes_without_jev: u64,
+    missing_found_without_jev: Tally,
 }
 
 #[tokio::main]
@@ -178,6 +186,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "  (cost, not gated)            {} curate Jev requests, {} input tokens",
         scores.jev_requests, scores.jev_input_tokens
     );
+    println!(
+        "  (agent load, not gated)      curate by hand reads {} bytes through kmp_relate; kmp_curate without Jev {} bytes; with Jev {} bytes",
+        scores.relate_bytes, scores.review_bytes_without_jev, scores.review_bytes
+    );
     let asks = scores.ask_mrr_plain.len().max(1) as u128;
     println!(
         "  (latency, not gated)         ask ms/question: plain {}, narrow {}, wide {}",
@@ -186,6 +198,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         scores.ask_ms[2] / asks
     );
 
+    if std::env::var("JEV_REPORT_ONLY").as_deref() == Ok("1") {
+        return Ok(());
+    }
     if record {
         write_baseline(&baseline_path, collection.cases.len(), &columns)?;
         println!("\nrecorded baseline at {}", baseline_path.display());
@@ -230,6 +245,7 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
         scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
         scores.jev_input_tokens += usage["input_tokens"].as_u64().unwrap_or(0);
     }
+    scores.review_bytes += page.to_string().len() as u64;
     let mut found = Vec::new();
     let mut flagged = BTreeSet::new();
     let mut flagged_no_direction = BTreeSet::new();
@@ -265,6 +281,54 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
         };
         id += 1;
         page = call(&judged, id, "kmp_curate", Value::Object(next)).await?;
+        scores.review_bytes += page.to_string().len() as u64;
+    }
+    // kmp_curate without Jev: what the structure alone gives the agent.
+    let mut bare = call(
+        &plain,
+        40,
+        "kmp_curate",
+        json!({"mode": "review", "about": case.about, "dimensions": dimensions,
+               "max_pairs": 40, "page": {"entries": 20}}),
+    )
+    .await?;
+    scores.review_bytes_without_jev += bare.to_string().len() as u64;
+    let mut bare_pairs = Vec::new();
+    let mut bare_id = 41;
+    loop {
+        for item in bare["missing"].as_array().into_iter().flatten() {
+            bare_pairs.push([text(&item["from"]["ref"]), text(&item["to"]["ref"])]);
+        }
+        let Some(next) = bare["next_actions"][0]["arguments"].as_object().cloned() else {
+            break;
+        };
+        bare = call(&plain, bare_id, "kmp_curate", Value::Object(next)).await?;
+        scores.review_bytes_without_jev += bare.to_string().len() as u64;
+        bare_id += 1;
+    }
+    for gold in &expected.missing {
+        scores
+            .missing_found_without_jev
+            .add(bare_pairs.iter().any(|pair| {
+                (pair[0] == gold.pair[0] && pair[1] == gold.pair[1])
+                    || (pair[0] == gold.pair[1] && pair[1] == gold.pair[0])
+            }));
+    }
+    // The manual alternative: read the whole selection through kmp_relate.
+    let mut reading = call(
+        &plain,
+        50,
+        "kmp_relate",
+        json!({"about": case.about, "dimensions": {"scope": "abouts", "abouts": case.abouts},
+               "page": {"entries": 256}, "budget": {"max_bytes": 200000}}),
+    )
+    .await?;
+    scores.relate_bytes += reading.to_string().len() as u64;
+    let mut relate_id = 51;
+    while let Some(next) = reading["next_actions"][0]["arguments"].as_object().cloned() {
+        reading = call(&plain, relate_id, "kmp_relate", Value::Object(next)).await?;
+        scores.relate_bytes += reading.to_string().len() as u64;
+        relate_id += 1;
     }
 
     // Missing relations: found at all, then typed as a reader accepts.
@@ -548,16 +612,12 @@ fn columns(scores: &Scores) -> Vec<(&'static str, f64)> {
         ("missing_typed", scores.missing_typed.rate()),
         ("distractors_rejected", scores.distractors_rejected.rate()),
         ("missing_found_by_jev", scores.missing_found_by_jev.rate()),
+        (
+            "missing_found_without_jev",
+            scores.missing_found_without_jev.rate(),
+        ),
         ("suspect_recall", scores.suspect_recall.rate()),
         ("suspect_precision", scores.suspect_precision.rate()),
-        (
-            "suspect_recall_no_direction",
-            scores.suspect_recall_no_direction.rate(),
-        ),
-        (
-            "suspect_precision_no_direction",
-            scores.suspect_precision_no_direction.rate(),
-        ),
         ("good_declarations_kept", scores.good_kept.rate()),
         ("precheck_available", scores.precheck_available.rate()),
         ("precheck_right", scores.precheck_right.rate()),

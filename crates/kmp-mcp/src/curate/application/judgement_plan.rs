@@ -20,10 +20,12 @@ pub(crate) fn excerpt(text: &str, chars: usize) -> String {
     text.chars().take(chars).collect()
 }
 
-/// Which way a relation runs, asked as a choice between two concrete
+/// Which way an item about to be written runs, asked as a choice between two concrete
 /// sentences over the two dated texts alone. The author's why is left out on
 /// purpose: measured on a reversed declaration, a wrong why moved the judge
-/// from 0.01 to 0.86 towards the declared direction (jev-evaluation.md).
+/// from 0.01 to 0.86 towards the declared direction. Asked only before a
+/// write: auditing stored declarations with it flagged nothing more in three
+/// recorded samples (jev-evaluation.md), so the audit does not pay for it.
 fn direction_question(from: &str, to: &str, relation: &str) -> Option<JudgementQuestion> {
     if SYMMETRIC.contains(&relation) {
         return None;
@@ -188,13 +190,6 @@ pub(crate) fn suspect_request(material: &CurateMaterial) -> JudgementRequest {
                 instructions: support,
             },
         );
-        if let Some(direction) = direction_question(
-            &text_of(material, &link.from),
-            &text_of(material, &link.to),
-            &link.rel,
-        ) {
-            questions.insert(format!("d{n}"), direction);
-        }
         let mut best = base;
         best["question"] =
             json!("Which relation does `from` have to `to`? Answer none when no relation holds.");

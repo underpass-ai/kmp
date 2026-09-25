@@ -80,6 +80,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .unwrap_or_else(|| "docs/development/retrieval-baseline.tsv".to_string()),
     );
     let record = std::env::var("RETRIEVAL_BASELINE").as_deref() == Ok("write");
+    // Evaluation arms, off by default: Ask re-ranking by TypeSafe Jev
+    // (`narrow` or `wide`, answered from `KMP_TYPESAFE_CASSETTE`) and a
+    // tighter entry cap. An arm reports and never gates the recorded floors.
+    let arm = std::env::var("RETRIEVAL_RERANK").ok();
+    let max_entries = std::env::var("RETRIEVAL_MAX_ENTRIES")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(10);
+    let gated = arm.is_none() && max_entries == 10;
+    let mut bytes_to_judged = Vec::new();
 
     let collection: JudgedCollection = serde_json::from_str(&fs::read_to_string(&cases_path)?)?;
     let mut outcomes = Vec::new();
@@ -88,7 +98,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "case", "R@1", "R@5", "nDCG", "cite"
     );
     for case in &collection.cases {
-        let outcome = run_case(case).await?;
+        let (outcome, to_judged) = run_case(case, arm.as_deref(), max_entries).await?;
+        bytes_to_judged.push(to_judged as f64);
         println!(
             "{:<24} {:>7.2} {:>7.2} {:>7.2} {:>6}  {}",
             case.id,
@@ -132,6 +143,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "mean_elapsed_millis", scorecard.mean_elapsed_millis
     );
 
+    println!(
+        "  {:<24} {:.0}",
+        "mean_bytes_to_judged",
+        bytes_to_judged.iter().sum::<f64>() / bytes_to_judged.len().max(1) as f64
+    );
+    if !gated {
+        println!(
+            "\narm rerank={} max_entries={max_entries}: reported, not gated",
+            arm.as_deref().unwrap_or("off")
+        );
+        return Ok(());
+    }
     if record {
         write_baseline(&baseline_path, &scorecard)?;
         println!("\nrecorded baseline at {}", baseline_path.display());
@@ -140,12 +163,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
     enforce_baseline(&baseline_path, &scorecard)
 }
 
-async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>> {
+async fn run_case(
+    case: &JudgedCase,
+    arm: Option<&str>,
+    max_entries: u64,
+) -> Result<(RetrievalOutcome, u64), Box<dyn Error>> {
     // A fresh store per case, so one case cannot weight another's terms: the
     // BM25 collection is whatever the store holds.
     let data_dir = std::env::temp_dir().join(format!("kmp-retrieval-{}", case.id));
     let _ = fs::remove_dir_all(&data_dir);
     fs::create_dir_all(&data_dir)?;
+    if let Some(arm) = arm {
+        fs::write(
+            data_dir.join("typesafe.json"),
+            r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#,
+        )?;
+        fs::write(
+            data_dir.join("rerank.json"),
+            match arm {
+                "wide" => r#"{"pool_size":400,"excerpt_chars":300}"#,
+                _ => r#"{"pool_size":40}"#,
+            },
+        )?;
+    }
     let server = KernelMcpServer::embedded(&data_dir)?;
 
     let receipt = call(
@@ -186,7 +226,7 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
         "question": case.question,
         "answer_policy": case.answer_policy,
         "depth": 3,
-        "budget": {"tokens": 2048, "detail": "balanced", "max_entries": 10}
+        "budget": {"tokens": 2048, "detail": "balanced", "max_entries": max_entries}
     });
     if let Some(as_of) = &case.as_of {
         arguments["as_of"] = as_of.clone();
@@ -204,6 +244,29 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
     let answer = call(&server, 2, "kmp_ask", arguments).await?;
     let elapsed_millis = started.elapsed().as_millis() as u64;
     let _ = fs::remove_dir_all(&data_dir);
+    if answer["warnings"]
+        .to_string()
+        .contains("rerank unavailable")
+        || answer["warnings"].to_string().contains("rerank disabled")
+    {
+        return Err(format!("case `{}`: {}", case.id, answer["warnings"]).into());
+    }
+    // What a reader must take in before the first judged memory: the proof
+    // items up to and including it, or all of them when none is judged.
+    let to_judged = {
+        let items = answer["proof"]["evidence"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
+        let stop = items
+            .iter()
+            .position(|item| memory_ref(item).is_some_and(|r| case.judged.contains(&r)))
+            .map_or(items.len(), |index| index + 1);
+        items[..stop]
+            .iter()
+            .map(|item| item.to_string().len() as u64)
+            .sum::<u64>()
+    };
 
     if let Some(expected) = &case.nearest_outside {
         // The right answer is UNKNOWN, and the proof must say what lies
@@ -216,16 +279,19 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
             .map(str::to_string)
             .into_iter()
             .collect::<Vec<_>>();
-        return Ok(RetrievalOutcome {
-            judged: BTreeSet::from([expected.clone()]),
-            retrieved: named.clone(),
-            cited: named.into_iter().collect(),
-            unknown: false,
-            used_bytes: answer["projection"]["budget"]["used_bytes"]
-                .as_u64()
-                .unwrap_or_default(),
-            elapsed_millis,
-        });
+        return Ok((
+            RetrievalOutcome {
+                judged: BTreeSet::from([expected.clone()]),
+                retrieved: named.clone(),
+                cited: named.into_iter().collect(),
+                unknown: false,
+                used_bytes: answer["projection"]["budget"]["used_bytes"]
+                    .as_u64()
+                    .unwrap_or_default(),
+                elapsed_millis,
+            },
+            to_judged,
+        ));
     }
 
     let retrieved = answer["proof"]["evidence"]
@@ -242,16 +308,19 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
         })
         .unwrap_or_default();
 
-    Ok(RetrievalOutcome {
-        judged: case.judged.iter().cloned().collect(),
-        retrieved,
-        cited,
-        unknown: answer["answer"].as_str() == Some("UNKNOWN"),
-        used_bytes: answer["projection"]["budget"]["used_bytes"]
-            .as_u64()
-            .unwrap_or_default(),
-        elapsed_millis,
-    })
+    Ok((
+        RetrievalOutcome {
+            judged: case.judged.iter().cloned().collect(),
+            retrieved,
+            cited,
+            unknown: answer["answer"].as_str() == Some("UNKNOWN"),
+            used_bytes: answer["projection"]["budget"]["used_bytes"]
+                .as_u64()
+                .unwrap_or_default(),
+            elapsed_millis,
+        },
+        to_judged,
+    ))
 }
 
 /// The memory a returned citation stands for.

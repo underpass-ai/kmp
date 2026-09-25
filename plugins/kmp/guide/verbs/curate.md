@@ -28,7 +28,10 @@ write a word. So Jev suggests a type and doubts a reason, and you write every
    call `mode:"apply"` with `review_token`, `actor` and `accepted`: each item is
    `{item_id, why, evidence}` and may add `rel`, `confidence` or `reverse`.
    Before anything is written, Jev reads your why and evidence once more:
-   - An item it doubts comes back in `curate.doubted`, unwritten. Correct it,
+   - An item it doubts comes back in `curate.doubted`, unwritten, with its
+     `reasons`: `support` (your why does not hold), `type` (another type
+     fits better) or `direction` (it reads the other way round; try
+     `reverse`). Correct it,
      or send it again with `confirm_doubted:true`. Jev can ask for another look;
      it cannot refuse a write.
    - The rest goes through `kmp_write_memory`'s own plan and neighbourhood

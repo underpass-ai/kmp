@@ -61,7 +61,65 @@ payments platform across `service:billing` (English) and `service:pagos`
 - **Asks (8):** lexical questions, paraphrases and cross-language questions,
   each with the memories that answer it.
 
-## Result (2026-09-25, `jev-1.13.0`)
+## Decision: incorporate or drop, piece by piece
+
+Each piece is judged on three things:
+
+- **Quality:** does it get more right?
+- **Agent load:** how many tokens the calling LLM reads and writes to reach
+  the same outcome. This is what makes KMP cheaper for the people who use
+  it.
+- **Jev cost:** Jev's tokens, dollars and latency.
+
+The rule is the one agreed on 2026-09-25: whatever does not improve is
+considered for removal. All figures come from `jev-1.13.0`:
+
+- the judged corpus: two cases, 33 and 315 facts, recorded three times;
+- the 35 independent retrieval cases that already existed;
+- a copy of a real 307-fact store, for Ask only. Numbers only: its content
+  is private and is not committed.
+
+Economics use Jev at $0.042 per million input tokens and, for the calling
+LLM, $3 per million input tokens (a Sonnet-class price), at about 4 bytes
+per token. At $15 per million the LLM side is five times larger, and every
+saving below grows with it.
+
+| Piece | Quality | Agent load | Jev cost | Verdict |
+|---|---|---|---|---|
+| `kmp_curate` review: Jev pairing and typing | Finds 11/11 missing relations against 7/11 with kernel pairs alone; 8/11 typed as a reader accepts; 4/4 distractors rejected. The same in 3 samples. | Curating the corpus by hand through `kmp_relate` means reading 132 KB (~33k tokens). `kmp_curate` without Jev: 25.6 KB. With Jev: 12.6 KB (~3.2k tokens). | 67k tokens for the whole corpus: $0.003. | **Keep.** About 10× less reading than by hand, half of curate without Jev, and more found. On the corpus: ~$0.099 of LLM reading by hand against ~$0.010 + $0.003. |
+| Audit of stored relations (`suspect`) | 3/4 planted bad flagged, no false alarm, sound declarations left alone. The same in 3 samples. | The agent reads a handful of flagged items instead of every declaration. | Part of the review request. | **Keep.** Its miss is the reversed `supersedes`, below. |
+| Direction question in the audit | Adds nothing: 0.75 with or without it, in all 3 samples. With the author's why, Jev follows the why (a reversed pair went from 0.01 to 0.86 "forward"). Without the why, the batch still read reversed replacements as forward. | None. | Extra questions per audit. | **Removed** from the audit. |
+| Direction question in the pre-write check | Catches the reversed `updates_state` a writer was about to commit: 7/8 right against 6/8 without it, in all 3 samples. | Avoids writing, and later repairing, a relation the wrong way round. | Included in the pre-write request (about 2k tokens). | **Keep**, without the why, with dated texts. |
+| Pre-write check | 7/8 right: absurd whys held back, sound ones written. | Prevents a bad write that would cost a review and a supersede later. | About 2k tokens per apply: < $0.0001. | **Keep.** |
+| Dates in front of fact texts | Needed for the pre-write direction. Typing moved both ways when they were added. | None. | None. | **Keep.** Replacements and updates cannot be judged without time. |
+| Ask re-ranking, narrow pool (40 whole passages) | Independent cases: top-1 0.843 → 0.900, top-5 0.943 → 1.000, MRR 0.907 → 0.964. Trap corpus: MRR 0.19 → 0.92–0.94 (3 samples). Real store: no change (0.625). | Responses grow about 9% (the rescue is appended). It saves a follow-up ask each time it rescues a miss: 2 of 35 independent cases, most trap cases. Roughly neutral on tokens where the lexical ranker is already right; a clear saving where it is not. | About 400 tokens per ask on small stores and 6k on a 315-fact store: $0.00002–$0.00025. About +0.5 s on small stores and +4.5 s on the real store. | **Keep as opt-in.** |
+| Ask re-ranking, wide pool (400 excerpts of 300 characters) | Real store: reaches an answer the narrow pool never listed (MRR 0.625 → 0.688). Elsewhere equal to narrow, within noise. | +14% bytes on the real store. | About +5 s per ask on the real store. | **Keep as the configuration for large stores.** It is the only arm that helped where the lexical ranker fails. Latency is the price. |
+
+**Overall: incorporate Jev.** `kmp_curate` is where it pays most clearly: less
+reading for the agent, more relations found, and a cost in fractions of a
+cent. Ask re-ranking earns its place where the lexical ranker misses
+(paraphrases, cross-language questions, large stores). It stays opt-in
+because it adds latency and bytes to every Ask.
+
+### Next use case (to be measured later)
+
+Make `kmp_wake` cheaper, and find whole paths by handing Jev an entire about,
+or several, to scan for chains of relations. Jev is cheap and fast enough to
+read a whole about in a few requests. This is not built or measured yet.
+
+### Tools behind these numbers
+
+- `bash scripts/ci/jev-baseline.sh`: the judged corpus, replayed from its
+  cassette, with the columns above and the agent-load comparison.
+- `bash scripts/eval/jev-samples.sh N`: records N independent samples and
+  prints the mean and range of every metric. Jev is not deterministic, so
+  repeated identical requests move choice probabilities by a few hundredths.
+- `RETRIEVAL_RERANK=narrow|wide RETRIEVAL_MAX_ENTRIES=n` on
+  `retrieval_kmp_scorecard`: the independent retrieval cases with
+  re-ranking. The arm reports without gating, and it is answered from
+  `crates/kmp-testkit/judged/retrieval.jev.cassette.json`.
+
+## First result (2026-09-25, `jev-1.13.0`, payments case only)
 
 | Metric | Value |
 |---|---|

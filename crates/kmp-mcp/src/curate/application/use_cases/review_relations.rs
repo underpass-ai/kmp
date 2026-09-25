@@ -499,7 +499,7 @@ mod tests {
     }
 
     #[test]
-    fn direction_is_asked_only_of_relations_that_have_one() {
+    fn the_audit_does_not_ask_direction() {
         let mut lone = material();
         lone.declared.push(DeclaredLink {
             from: "a1".into(),
@@ -510,12 +510,8 @@ mod tests {
         });
         let request = crate::curate::application::judgement_plan::suspect_request(&lone);
         assert!(
-            request.questions.contains_key("d0"),
-            "causes has a direction"
-        );
-        assert!(
-            !request.questions.contains_key("d1"),
-            "same_event_as reads both ways"
+            !request.questions.keys().any(|key| key.starts_with('d')),
+            "the audit does not ask direction: it added nothing measured"
         );
     }
 
