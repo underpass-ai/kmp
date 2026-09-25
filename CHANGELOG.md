@@ -9,6 +9,15 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- `kmp_curate` `mode: paths` with a `to` asks Jev only about facts within
+  two steps of either end over kernel pairs and declared relations, falling
+  back to the whole selection when the graph links nothing near. On the
+  judged corpus: every path still found, 43% fewer Jev tokens for goal
+  searches, and proposed steps right from 83% to 94%. Goal-less searches
+  are unchanged: the filter lost a chain there.
+
 ## [0.22.0] - 2026-09-25
 
 ### Added

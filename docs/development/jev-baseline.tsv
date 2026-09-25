@@ -27,7 +27,7 @@ ask_top5_rerank	1.0000
 ask_top5_wide	1.0000
 path_found_declared_only	0.0000
 path_found_with_jev	0.8000
-proposed_hops_right	0.8333
+proposed_hops_right	0.9500
 write_found_without_jev	0.6363
 write_found_with_jev	1.0000
 write_typed_with_jev	0.6363

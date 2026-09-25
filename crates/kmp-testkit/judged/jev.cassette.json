@@ -14193,6 +14193,37 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "3971d7e8ccc4975e9141b6230c0954c0f5a6b590d39fde36267ccee2207d154b": {
+      "answers": {
+        "w0": {
+          "type": "noul",
+          "yes": 0.52
+        },
+        "w1": {
+          "type": "noul",
+          "yes": 0.75
+        },
+        "w2": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w3": {
+          "type": "noul",
+          "yes": 0.81
+        },
+        "w4": {
+          "type": "noul",
+          "yes": 0.6
+        },
+        "w5": {
+          "type": "noul",
+          "yes": 0.08
+        }
+      },
+      "input_tokens": 765,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "3c4c8a6e6443c97dfe277175255a2bd2c618ce7a3a4da974c4a2a6c55725abe6": {
       "answers": {
         "p0": {
@@ -31451,6 +31482,145 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "bd3c007afbcc037067ca47b2069b39c891497a12bbc80774729388fd6a0c49ca": {
+      "answers": {
+        "t0": {
+          "choice": "same_event_as",
+          "confidence": 0.65,
+          "probabilities": {
+            "none": 0.01,
+            "same_entity_as": 0.23,
+            "same_event_as": 0.76
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "same_event_as",
+          "confidence": 0.36,
+          "probabilities": {
+            "none": 0.19,
+            "same_entity_as": 0.23,
+            "same_event_as": 0.58
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "none",
+          "confidence": 0.24,
+          "probabilities": {
+            "none": 0.49,
+            "same_entity_as": 0.14,
+            "same_event_as": 0.37
+          },
+          "type": "choice"
+        },
+        "t3": {
+          "choice": "none",
+          "confidence": 0.42,
+          "probabilities": {
+            "none": 0.62,
+            "same_entity_as": 0.14,
+            "same_event_as": 0.24
+          },
+          "type": "choice"
+        },
+        "t4": {
+          "choice": "none",
+          "confidence": 0.2,
+          "probabilities": {
+            "none": 0.47,
+            "same_entity_as": 0.47,
+            "same_event_as": 0.06
+          },
+          "type": "choice"
+        },
+        "t5": {
+          "choice": "same_entity_as",
+          "confidence": 0.27,
+          "probabilities": {
+            "none": 0.05,
+            "same_entity_as": 0.52,
+            "same_event_as": 0.43
+          },
+          "type": "choice"
+        },
+        "t6": {
+          "choice": "triggers",
+          "confidence": 0.42,
+          "probabilities": {
+            "answers": 0.05,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.12,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.02,
+            "excluded_from": 0.0,
+            "follows": 0.23,
+            "matches_requirement": 0.0,
+            "none": 0.03,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.01,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.02,
+            "total_of": 0.0,
+            "triggers": 0.45,
+            "updates_state": 0.04,
+            "uses_background": 0.02,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t7": {
+          "choice": "triggers",
+          "confidence": 0.47,
+          "probabilities": {
+            "answers": 0.13,
+            "authorizes": 0.02,
+            "checked_against": 0.0,
+            "chosen_because": 0.16,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.02,
+            "corrects": 0.01,
+            "depends_on": 0.0,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.06,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.04,
+            "total_of": 0.0,
+            "triggers": 0.5,
+            "updates_state": 0.02,
+            "uses_background": 0.02,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1931,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "beca80d42813b06f111ebfef6211766a460aeee8a1395ea618c2962dc91286d3": {
       "answers": {
         "t0": {
@@ -36396,6 +36566,29 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "d63c3b96092e695be901ee0eb8bd253713be443423bea004b8718a774cee3d85": {
+      "answers": {
+        "w0": {
+          "type": "noul",
+          "yes": 0.72
+        },
+        "w1": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "w2": {
+          "type": "noul",
+          "yes": 0.72
+        },
+        "w3": {
+          "type": "noul",
+          "yes": 0.08
+        }
+      },
+      "input_tokens": 628,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "d6724df287abb2216223aff9900a277ac2890a4a735e17df156eb27e96cc8b52": {
       "answers": {
         "t0": {
@@ -37325,6 +37518,25 @@
         }
       },
       "input_tokens": 1314,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "e8d230dcc0530774bba68b5661c88527c193a8526e525f56571adb07719eb2d8": {
+      "answers": {
+        "w0": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w1": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "w2": {
+          "type": "noul",
+          "yes": 0.04
+        }
+      },
+      "input_tokens": 506,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -40367,6 +40579,169 @@
         }
       },
       "input_tokens": 2222,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "fc90d62acf2cff62766ff65418c5f460fa4701853025d6e241feb0f325f031d8": {
+      "answers": {
+        "c0": {
+          "choice": "f2",
+          "confidence": 0.48,
+          "probabilities": {
+            "f1": 0.0,
+            "f2": 0.57,
+            "f3": 0.0,
+            "f4": 0.0,
+            "f5": 0.21,
+            "none": 0.22
+          },
+          "type": "choice"
+        },
+        "c1": {
+          "choice": "f3",
+          "confidence": 0.32,
+          "probabilities": {
+            "f0": 0.31,
+            "f2": 0.07,
+            "f3": 0.44,
+            "f4": 0.1,
+            "f5": 0.01,
+            "none": 0.07
+          },
+          "type": "choice"
+        },
+        "c2": {
+          "choice": "f0",
+          "confidence": 0.86,
+          "probabilities": {
+            "f0": 0.89,
+            "f1": 0.0,
+            "f3": 0.0,
+            "f4": 0.0,
+            "f5": 0.05,
+            "none": 0.06
+          },
+          "type": "choice"
+        },
+        "c3": {
+          "choice": "f0",
+          "confidence": 0.69,
+          "probabilities": {
+            "f0": 0.74,
+            "f1": 0.01,
+            "f2": 0.12,
+            "f4": 0.08,
+            "f5": 0.01,
+            "none": 0.04
+          },
+          "type": "choice"
+        },
+        "c4": {
+          "choice": "f3",
+          "confidence": 0.57,
+          "probabilities": {
+            "f0": 0.15,
+            "f1": 0.01,
+            "f2": 0.11,
+            "f3": 0.65,
+            "f5": 0.01,
+            "none": 0.07
+          },
+          "type": "choice"
+        },
+        "c5": {
+          "choice": "f0",
+          "confidence": 0.86,
+          "probabilities": {
+            "f0": 0.89,
+            "f1": 0.0,
+            "f2": 0.09,
+            "f3": 0.0,
+            "f4": 0.0,
+            "none": 0.02
+          },
+          "type": "choice"
+        },
+        "n0": {
+          "choice": "f5",
+          "confidence": 0.14,
+          "probabilities": {
+            "f1": 0.25,
+            "f2": 0.23,
+            "f3": 0.2,
+            "f4": 0.01,
+            "f5": 0.29,
+            "none": 0.02
+          },
+          "type": "choice"
+        },
+        "n1": {
+          "choice": "none",
+          "confidence": 0.83,
+          "probabilities": {
+            "f0": 0.0,
+            "f2": 0.0,
+            "f3": 0.07,
+            "f4": 0.06,
+            "f5": 0.01,
+            "none": 0.86
+          },
+          "type": "choice"
+        },
+        "n2": {
+          "choice": "f3",
+          "confidence": 0.22,
+          "probabilities": {
+            "f0": 0.12,
+            "f1": 0.17,
+            "f3": 0.35,
+            "f4": 0.03,
+            "f5": 0.31,
+            "none": 0.02
+          },
+          "type": "choice"
+        },
+        "n3": {
+          "choice": "f4",
+          "confidence": 0.62,
+          "probabilities": {
+            "f0": 0.0,
+            "f1": 0.27,
+            "f2": 0.0,
+            "f4": 0.68,
+            "f5": 0.0,
+            "none": 0.05
+          },
+          "type": "choice"
+        },
+        "n4": {
+          "choice": "f3",
+          "confidence": 0.64,
+          "probabilities": {
+            "f0": 0.0,
+            "f1": 0.24,
+            "f2": 0.0,
+            "f3": 0.71,
+            "f5": 0.0,
+            "none": 0.05
+          },
+          "type": "choice"
+        },
+        "n5": {
+          "choice": "none",
+          "confidence": 0.95,
+          "probabilities": {
+            "f0": 0.02,
+            "f1": 0.01,
+            "f2": 0.0,
+            "f3": 0.01,
+            "f4": 0.0,
+            "none": 0.96
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1652,
       "model": "jev-1.13.0",
       "requests": 1
     }

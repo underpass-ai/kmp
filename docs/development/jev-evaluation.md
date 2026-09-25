@@ -132,6 +132,15 @@ because it adds latency and bytes to every Ask.
   step Jev types as no relation is dropped: the third round let in an
   unrelated fact, and only an untyped step joined it.
 
+  With a goal, the facts asked about are only those within two steps of
+  either end, or of what is already kept, over kernel pairs and declared
+  relations; when the graph links nothing there, the whole selection is
+  asked. On the corpus this kept every path found and cut the Jev tokens of
+  the goal searches by 43% (57k to 33k; one search went from 20.9k to 1.7k).
+  Proposed steps right rose from 83% to 94% (3 samples). Without a goal the
+  same filter lost the g30 chain, whose next step the graph does not link
+  yet, so goal-less searches still ask about everything.
+
   The declared relations a result walks are then audited. Jev asks whether
   each one's why and evidence hold, the same support question as the review.
   Any below 0.3 is left out and the search runs again, up to three rounds.
