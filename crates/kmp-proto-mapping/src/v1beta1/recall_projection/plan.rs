@@ -173,7 +173,21 @@ impl ProjectionPlan {
             .map(|limit| limit.saturating_sub(required_count))
             .unwrap_or(usize::MAX);
         let mut extras_retained = 0usize;
-        let preserve_evidence_rank = value.get("because").is_some();
+        // Ask ranks its evidence against the question, and a focused Wake by
+        // what the judge read as mattering for its intent: those orders are
+        // the answer, so they survive the projection. An unfocused Wake keeps
+        // the projection's order; its own prioritization measured no better
+        // (jev-evaluation.md).
+        let focused_wake =
+            value
+                .get("warnings")
+                .and_then(Value::as_array)
+                .is_some_and(|warnings| {
+                    warnings.iter().filter_map(Value::as_str).any(|warning| {
+                        warning.starts_with(crate::v1beta1::JudgedSelection::WARNING_PREFIX)
+                    })
+                });
+        let preserve_evidence_rank = value.get("because").is_some() || focused_wake;
         for (rank, evidence) in evidence_items.into_iter().enumerate() {
             let evidence_id = evidence
                 .get("id")
@@ -185,7 +199,7 @@ impl ProjectionPlan {
                 let mut item =
                     ProjectionItem::new(Section::ProofEvidence, evidence, Detail::Balanced, 20);
                 if preserve_evidence_rank {
-                    // Ask already ranked these candidates. JSON identity is
+                    // The mapping already ranked these candidates. JSON identity is
                     // only a tie-breaker, not a second retrieval policy. Keep
                     // the serialized value in the key so the cursor remains
                     // bound to both this order and the exact evidence content.

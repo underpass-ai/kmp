@@ -23,6 +23,10 @@ Detailed notes from the early release cycle remain available in the
 
 ### Fixed
 
+- A focused `kmp_wake` pages its evidence in the order Jev judged it, most
+  relevant first. The projection used to re-sort Wake evidence by its JSON
+  content, which dropped that order. On a real store, the evidence for an
+  intent about one issue now opens with that issue's decisions.
 - `kmp-mcp update` refused any newer release that added a tool: the
   engine proof held the new engine to the surface the running build knew,
   so 0.20.1 could not update to 0.21.0 (`unexpected=["kmp_curate"]`). A

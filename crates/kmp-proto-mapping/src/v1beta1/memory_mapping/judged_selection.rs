@@ -15,6 +15,11 @@ pub struct JudgedSelection {
 }
 
 impl JudgedSelection {
+    /// How a focused wake's warning begins. The projection reads it to keep
+    /// the judged order: a wake ranked by a judge is answered in that order,
+    /// an unfocused one keeps the projection's own.
+    pub const WARNING_PREFIX: &'static str = "wake focused by ";
+
     pub fn new(model: String, fingerprints: Vec<(String, String)>) -> ProtoMappingResult<Self> {
         let mut identities = BTreeSet::new();
         let valid = !model.trim().is_empty()

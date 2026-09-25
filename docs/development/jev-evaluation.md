@@ -209,3 +209,31 @@ What the misses say:
 
 Grow the corpus with new cases, especially large stores and relations whose
 direction matters, before tuning anything on these numbers.
+
+## On a real store
+
+Measured on a copy of a working store (12 abouts, 410 events). The calls are
+the ones Codex agents actually made there from 15 September 2026, replayed
+against the plain copy and against one opted into Jev (`rerank.json`,
+`wake-focus.json`, pool 400 × 300 chars). Only numbers are recorded here.
+
+- **How agents use Wake.** Of 2,342 Wake calls, 2,007 were continuations:
+  agents page until the packet is complete, as `READ_INCOMPLETE` asks. The
+  load that matters is what it takes to finish, not the first page.
+- **Focused Wake on 20 real intents.** Reading to completion took 6.1 MB
+  plain and 3.9 MB focused (−36%). On the heaviest intents it went from
+  981 KB to 371–461 KB (−53 to −62%), and from 113 pages to 44–54. The first
+  page does not shrink: it is filled to its 10 KB budget either way. The
+  proof paths, which the focus does not touch, now dominate what is left.
+  Jev kept 16–194 of 642 evidence entries.
+- **Order.** The projection used to page Wake evidence by its JSON content,
+  which dropped the judged order. For an intent about issue #187, the first
+  six evidence entries are now #187 decisions. Before, the first #187 fact
+  came eleventh, after constraints sorted by name. The unfocused Wake keeps
+  the projection's order: honoring its own prioritization scored 13/15
+  against 14/15 on the corpus.
+- **Ask.** 41 distinct real questions. The re-ranker had little to order:
+  in 10 of 30 replayed asks nothing was admitted, and 8 were rejected as
+  malformed in both copies. 47% of real asks were followed directly by
+  another ask, so re-asking, not ranking, is where Ask loses the most.
+
