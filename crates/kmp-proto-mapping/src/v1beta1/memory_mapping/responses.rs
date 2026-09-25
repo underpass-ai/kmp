@@ -221,7 +221,8 @@ pub fn wake_response_with_focus(
             kept.sort_by_key(|item| selection.position(item));
             let keep = kept.len();
             focus_warning = Some(format!(
-                "wake focused by {} on its intent: kept {keep} of {total} evidence entries it judged relevant; the others are withheld, not lost",
+                "{}{} on its intent: kept {keep} of {total} evidence entries it judged relevant; the others are withheld, not lost",
+                super::judged_selection::JudgedSelection::WARNING_PREFIX,
                 selection.model()
             ));
             let cap = max_entries.map_or(keep, |cap| cap.min(keep));
