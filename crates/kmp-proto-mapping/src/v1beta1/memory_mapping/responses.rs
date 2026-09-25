@@ -104,6 +104,49 @@ pub fn wake_response_from_result(
     result: GetContextResult,
     temporal: &TemporalSelection,
 ) -> ProtoMappingResult<WakeResponse> {
+    wake_response_with_focus(intent, max_entries, result, temporal, None)
+}
+
+/// The live, admitted evidence of a wake: what a judge may read to focus it.
+/// One source per entry and exact text, nothing the selection excludes.
+pub fn wake_sources(
+    result: &GetContextResult,
+    temporal: &TemporalSelection,
+) -> ProtoMappingResult<Vec<super::semantic_source::SemanticSource>> {
+    let admission = TemporalAdmission::read(&result.bundle, temporal)?;
+    let mut seen = BTreeSet::new();
+    let mut sources = Vec::new();
+    for item in memory_evidence_from_bundle(&result.bundle)
+        .into_iter()
+        .filter(|item| admission.admits(item))
+    {
+        let hash = format!(
+            "{:x}",
+            <sha2::Sha256 as sha2::Digest>::digest(item.text.as_bytes())
+        );
+        for entry_ref in &item.supports {
+            if seen.insert((entry_ref.clone(), hash.clone())) {
+                sources.push(super::semantic_source::SemanticSource {
+                    entry_ref: entry_ref.clone(),
+                    text: item.text.clone(),
+                    text_sha256: hash.clone(),
+                });
+            }
+        }
+    }
+    Ok(sources)
+}
+
+/// A wake focused on its intent: when a judge selected what matters for
+/// resuming, the packet carries that evidence first and withholds the rest,
+/// reported as withheld sources so a reader can still ask for them.
+pub fn wake_response_with_focus(
+    intent: &str,
+    max_entries: Option<usize>,
+    result: GetContextResult,
+    temporal: &TemporalSelection,
+    focus: Option<&super::judged_selection::JudgedSelection>,
+) -> ProtoMappingResult<WakeResponse> {
     // A packet bounded in time stands on the selection: its evidence, its
     // spine, its cursor and its proof are the selection's. The rendered
     // prose is the about's, because it is rendered before this reads it.
@@ -168,6 +211,24 @@ pub fn wake_response_from_result(
     // whatever the traversal emitted first is a worse answer than one whose
     // first ten are what someone proved and has not withdrawn.
     let full_evidence = prioritize_wake_evidence(full_evidence, &lifecycle, &signals);
+    let mut focus_warning = None;
+    let (full_evidence, max_entries) = match focus {
+        Some(selection) => {
+            let total = full_evidence.len();
+            let (mut kept, rest): (Vec<_>, Vec<_>) = full_evidence
+                .into_iter()
+                .partition(|item| selection.position(item).is_some());
+            kept.sort_by_key(|item| selection.position(item));
+            let keep = kept.len();
+            focus_warning = Some(format!(
+                "wake focused by {} on its intent: kept {keep} of {total} evidence entries it judged relevant; the others are withheld, not lost",
+                selection.model()
+            ));
+            let cap = max_entries.map_or(keep, |cap| cap.min(keep));
+            (kept.into_iter().chain(rest).collect::<Vec<_>>(), Some(cap))
+        }
+        None => (full_evidence, max_entries),
+    };
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
     let selection_projection = selection_cap_projection(withheld.len());
     let claim_evidence = WakeClaimEvidence::new(&bounded, &evidence);
@@ -215,7 +276,7 @@ pub fn wake_response_from_result(
             wake_proof.abouts_selected = abouts;
             Some(wake_proof)
         },
-        warnings: Vec::new(),
+        warnings: focus_warning.into_iter().collect(),
     })
 }
 

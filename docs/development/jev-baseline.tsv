@@ -25,3 +25,10 @@ ask_mrr_wide	0.9375
 ask_top5_plain	0.2500
 ask_top5_rerank	1.0000
 ask_top5_wide	1.0000
+path_found_declared_only	0.0000
+path_found_with_jev	0.6000
+proposed_hops_right	0.8181
+wake_first_page_plain	0.9333
+wake_first_page_focused	1.0000
+wake_all_pages_plain	0.9333
+wake_all_pages_focused	1.0000

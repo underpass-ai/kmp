@@ -3,14 +3,11 @@ use std::path::Path;
 use std::sync::Arc;
 
 use kmp_proto_mapping::v1beta1::{RerankCandidateRanking, SemanticSource};
-use serde_json::json;
 use sha2::{Digest, Sha256};
 use tokio::sync::Mutex;
 
+use super::passage_judgement::judge_passages;
 use super::rerank_config::RerankConfig;
-use crate::serving::judgement_answer::JudgementAnswer;
-use crate::serving::judgement_question::JudgementQuestion;
-use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::rerank_outcome::RerankOutcome;
 
@@ -119,57 +116,18 @@ impl JudgementReranker {
         question: &str,
         pool: &[SemanticSource],
     ) -> Result<RerankCandidateRanking, String> {
-        let questions = pool
-            .iter()
-            .enumerate()
-            .map(|(n, source)| {
-                (
-                    format!("p{n}"),
-                    JudgementQuestion::Noul {
-                        instructions: json!({
-                            "passage": source.text.chars().take(self.excerpt_chars).collect::<String>(),
-                            "question": "Does `passage` answer the question in the state?",
-                        }),
-                    },
-                )
-            })
-            .collect();
-        let response = self
-            .model
-            .evaluate(&JudgementRequest {
-                state: json!(question),
-                questions,
-            })
-            .await?;
-        let mut scored = pool
-            .iter()
-            .enumerate()
-            .map(|(n, source)| {
-                let yes = match response.answers.get(&format!("p{n}")) {
-                    Some(JudgementAnswer::Noul { yes }) => *yes,
-                    _ => 0.0,
-                };
-                (yes, source)
-            })
-            .filter(|(yes, _)| *yes >= ANSWERS_AT)
-            .collect::<Vec<_>>();
-        scored.sort_by(|left, right| {
-            right
-                .0
-                .total_cmp(&left.0)
-                .then_with(|| left.1.entry_ref.cmp(&right.1.entry_ref))
-                .then_with(|| left.1.text_sha256.cmp(&right.1.text_sha256))
-        });
-        RerankCandidateRanking::new(
-            self.model.model().to_string(),
+        let kept = judge_passages(
+            self.model.as_ref(),
             question,
-            scored
-                .into_iter()
-                .take(RANKED)
-                .map(|(_, source)| (source.entry_ref.clone(), source.text_sha256.clone()))
-                .collect(),
+            "Does `passage` answer the question in the state?",
+            pool,
+            self.excerpt_chars,
+            ANSWERS_AT,
+            RANKED,
         )
-        .map_err(|_| "invalid rerank identities".to_string())
+        .await?;
+        RerankCandidateRanking::new(self.model.model().to_string(), question, kept)
+            .map_err(|_| "invalid rerank identities".to_string())
     }
 }
 

@@ -95,17 +95,34 @@ saving below grows with it.
 | Ask re-ranking, narrow pool (40 whole passages) | Independent cases: top-1 0.843 → 0.900, top-5 0.943 → 1.000, MRR 0.907 → 0.964. Trap corpus: MRR 0.19 → 0.92–0.94 (3 samples). Real store: no change (0.625). | Responses grow about 9% (the rescue is appended). It saves a follow-up ask each time it rescues a miss: 2 of 35 independent cases, most trap cases. Roughly neutral on tokens where the lexical ranker is already right; a clear saving where it is not. | About 400 tokens per ask on small stores and 6k on a 315-fact store: $0.00002–$0.00025. About +0.5 s on small stores and +4.5 s on the real store. | **Keep as opt-in.** |
 | Ask re-ranking, wide pool (400 excerpts of 300 characters) | Real store: reaches an answer the narrow pool never listed (MRR 0.625 → 0.688). Elsewhere equal to narrow, within noise. | +14% bytes on the real store. | About +5 s per ask on the real store. | **Keep as the configuration for large stores.** It is the only arm that helped where the lexical ranker fails. Latency is the price. |
 
+| Focused `kmp_wake` (`wake-focus.json`, intent-driven) | Required memories delivered: 15/15 against 14/15 plain. Plain lost the one in the other about. The same in 3 samples. | First-page bytes over 6 intents fall from 49.9 KB to 36.4 KB (−27%); on the 318-fact store −30 to −45% per wake. | Part of the 30 passage calls of the run. About 7k tokens per wake: $0.0003. | **Keep as opt-in.** Less for the agent to read, and nothing required lost. Caveat: in this corpus the required memories are the ones wake already favours (decisions with relations), so plain wake competes on its best ground. |
+| Whole paths (`kmp_curate mode: paths`) | Paths found: 3/5 against 0/5 over declared relations alone. Proposed steps right: 79–93% (3 samples). The misses: a valid direct step shorter than the reader's gold (left as a miss, not re-judged), and a chain that walked a planted bad declaration. | An answer is about 2.2 KB per search, against reading the selection through `kmp_relate` (133 KB) to trace it by hand. | About 14k tokens per search: $0.0006. | **Keep.** Paths the graph does not hold yet appear, and every proposed step can be declared through `apply`. Next: skip declarations the audit flags when walking. |
+
 **Overall: incorporate Jev.** `kmp_curate` is where it pays most clearly: less
 reading for the agent, more relations found, and a cost in fractions of a
 cent. Ask re-ranking earns its place where the lexical ranker misses
 (paraphrases, cross-language questions, large stores). It stays opt-in
 because it adds latency and bytes to every Ask.
 
-### Next use case (to be measured later)
+### How wake focus and paths work
 
-Make `kmp_wake` cheaper, and find whole paths by handing Jev an entire about,
-or several, to scan for chains of relations. Jev is cheap and fast enough to
-read a whole about in a few requests. This is not built or measured yet.
+- **Wake focus.** When the caller states an `intent` and the store has
+  `wake-focus.json` (`{"pool_size": 400, "excerpt_chars": 300}`) beside
+  `typesafe.json`, Jev reads every admitted evidence entry. For each it
+  answers whether the entry matters for resuming that work. The packet keeps
+  the entries at 0.5 or above, best first, and reports the rest as withheld.
+  The focus is frozen per intent, pool and model for continuation pages.
+  With no intent, the wake is the ordinary one.
+- **Paths.** Jev reads the whole selection, one about or several, and keeps
+  what lies on the way from `from` to `to` (up to 120 facts). Among those it
+  picks each fact's direct consequence and direct cause, up to two of each at
+  probability 0.3 or above. The steps are typed, joined to the declared
+  relations, and searched: fewest hops, then fewest proposed steps, with up
+  to three alternatives. With no `to`, the search returns the longest chains
+  from `from`.
+
+  Asking for the cause as well as the consequence, and keeping a second
+  choice, took paths found from 1/5 to 3/5 with no loss in step precision.
 
 ### Tools behind these numbers
 

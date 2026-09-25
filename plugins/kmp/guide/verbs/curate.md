@@ -40,6 +40,13 @@ write a word. So Jev suggests a type and doubts a reason, and you write every
      in `curate.rejected` with the reason.
    - Written evidence carries `curated_by: kmp_curate` and the Jev model.
 
+6. To trace how one fact led to another, call `mode:"paths"` with `from` and,
+   optionally, `to` and `max_hops`, over one or several abouts. Each hop says
+   whether it is `declared` or proposed by Jev, and whether it was walked
+   against its stored direction (`reversed`). A proposed hop has an `item_id`
+   you can declare with `mode:"apply"` and your own why and evidence. Paths
+   trust declared relations, so audit an about before relying on its chains.
+
 Jev is opt-in for each store: put `typesafe.json` beside it
 (`{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}`)
 and set `TYPESAFE_API_KEY`. The text of the selected facts, cut to 2000

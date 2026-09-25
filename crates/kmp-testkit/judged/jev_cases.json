@@ -879,12 +879,97 @@
       "lang": "es",
       "shape": "lexical"
      }
+    ],
+    "wake": [
+     {
+      "intent": "Finish the INC-4711 card outage follow-ups: refunds and the cache redundancy fix.",
+      "required": [
+       "service:billing:b01",
+       "service:billing:b03",
+       "service:billing:b06",
+       "service:pagos:p11"
+      ]
+     },
+     {
+      "intent": "Prepare the checkout release notes: what changed in card retries, fraud checks and the PayPal button.",
+      "required": [
+       "service:billing:b13",
+       "service:billing:b15",
+       "service:billing:b34"
+      ]
+     }
+    ],
+    "paths": [
+     {
+      "from": "service:billing:b02",
+      "to": "service:billing:b03",
+      "required": [
+       "service:billing:b01"
+      ],
+      "edges": [
+       [
+        "service:billing:b02",
+        "service:billing:b01"
+       ],
+       [
+        "service:billing:b01",
+        "service:billing:b03"
+       ],
+       [
+        "service:billing:b02",
+        "service:billing:b16"
+       ],
+       [
+        "service:billing:b16",
+        "service:billing:b03"
+       ]
+      ]
+     },
+     {
+      "from": "service:billing:b01",
+      "to": "service:pagos:p11",
+      "required": [],
+      "edges": [
+       [
+        "service:billing:b01",
+        "service:billing:b06"
+       ],
+       [
+        "service:billing:b06",
+        "service:pagos:p10"
+       ],
+       [
+        "service:pagos:p10",
+        "service:pagos:p11"
+       ],
+       [
+        "service:billing:b01",
+        "service:pagos:p01"
+       ],
+       [
+        "service:pagos:p01",
+        "service:pagos:p10"
+       ],
+       [
+        "service:pagos:p01",
+        "service:pagos:p11"
+       ],
+       [
+        "service:billing:b06",
+        "service:pagos:p11"
+       ],
+       [
+        "service:billing:b01",
+        "service:pagos:p11"
+       ]
+      ]
+     }
     ]
    }
   },
   {
    "id": "atlas-large",
-   "probes": "A 315-fact project store with deliberate lexical traps: answers phrased in other words than the question, a relation hidden among noise, a reversed declaration and a reversed pre-write item.",
+   "probes": "A 318-fact project store with deliberate lexical traps: answers phrased in other words than the question, a relation hidden among noise, a reversed declaration and a reversed pre-write item.",
    "about": "project:atlas",
    "abouts": [
     "project:atlas"
@@ -4994,6 +5079,45 @@
           "occurred_at": "2026-03-20T10:00:00Z"
          }
         ]
+       },
+       {
+        "id": "project:atlas:g30",
+        "kind": "decision",
+        "text": "The pricing committee approved a 12% price increase for all plans.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 316,
+          "occurred_at": "2026-03-02T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g31",
+        "kind": "observation",
+        "text": "The new price list went live on April 1.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 317,
+          "occurred_at": "2026-03-06T10:00:00Z"
+         }
+        ]
+       },
+       {
+        "id": "project:atlas:g32",
+        "kind": "decision",
+        "text": "The growth team proposed a loyalty discount to win back customers who cancelled.",
+        "coordinates": [
+         {
+          "dimension": "journal",
+          "scope_id": "atlas-2026",
+          "sequence": 318,
+          "occurred_at": "2026-03-24T10:00:00Z"
+         }
+        ]
        }
       ],
       "relations": [
@@ -5234,6 +5358,103 @@
       ],
       "lang": "en",
       "shape": "paraphrase-trap"
+     }
+    ],
+    "wake": [
+     {
+      "intent": "Continue the Postgres migration to eu-west-3.",
+      "required": [
+       "project:atlas:g01",
+       "project:atlas:g11"
+      ]
+     },
+     {
+      "intent": "Rework the on-call handover schedule.",
+      "required": [
+       "project:atlas:g02",
+       "project:atlas:g20"
+      ]
+     },
+     {
+      "intent": "Check we comply with the retention rule for support chats.",
+      "required": [
+       "project:atlas:g07",
+       "project:atlas:g17"
+      ]
+     },
+     {
+      "intent": "Plan cost savings for the staging environment.",
+      "required": [
+       "project:atlas:g06",
+       "project:atlas:g16"
+      ]
+     }
+    ],
+    "paths": [
+     {
+      "from": "project:atlas:g30",
+      "to": "project:atlas:g32",
+      "required": [
+       "project:atlas:g05"
+      ],
+      "edges": [
+       [
+        "project:atlas:g30",
+        "project:atlas:g31"
+       ],
+       [
+        "project:atlas:g31",
+        "project:atlas:g05"
+       ],
+       [
+        "project:atlas:g30",
+        "project:atlas:g05"
+       ],
+       [
+        "project:atlas:g05",
+        "project:atlas:g32"
+       ]
+      ]
+     },
+     {
+      "from": "project:atlas:g03",
+      "to": "project:atlas:g13",
+      "required": [],
+      "edges": [
+       [
+        "project:atlas:g03",
+        "project:atlas:g13"
+       ]
+      ]
+     },
+     {
+      "from": "project:atlas:g30",
+      "required": [
+       "project:atlas:g05",
+       "project:atlas:g32"
+      ],
+      "edges": [
+       [
+        "project:atlas:g30",
+        "project:atlas:g31"
+       ],
+       [
+        "project:atlas:g31",
+        "project:atlas:g05"
+       ],
+       [
+        "project:atlas:g30",
+        "project:atlas:g05"
+       ],
+       [
+        "project:atlas:g05",
+        "project:atlas:g32"
+       ],
+       [
+        "project:atlas:g31",
+        "project:atlas:g32"
+       ]
+      ]
      }
     ]
    }

@@ -26,6 +26,8 @@ const RERANK_NARROW: &str = r#"{"pool_size":40}"#;
 /// The wide pool: up to four hundred admitted passages, 300-character
 /// excerpts each.
 const RERANK_WIDE: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
+/// Wake focus: every admitted evidence entry, 300-character excerpts.
+const WAKE_FOCUS: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const ASK_TOP: usize = 5;
 
 #[derive(Debug, Deserialize)]
@@ -57,6 +59,25 @@ struct Expected {
     declared_bad: Vec<[String; 3]>,
     precheck: Vec<Precheck>,
     ask: Vec<AskCase>,
+    #[serde(default)]
+    wake: Vec<WakeCase>,
+    #[serde(default)]
+    paths: Vec<PathCase>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PathCase {
+    from: String,
+    #[serde(default)]
+    to: Option<String>,
+    required: Vec<String>,
+    edges: Vec<[String; 2]>,
+}
+
+#[derive(Debug, Deserialize)]
+struct WakeCase {
+    intent: String,
+    required: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -152,6 +173,18 @@ struct Scores {
     /// The same review on a store without Jev: kernel pairs, untyped.
     review_bytes_without_jev: u64,
     missing_found_without_jev: Tally,
+    /// Required memories in the first wake page, and over every page.
+    wake_first_plain: Tally,
+    wake_first_focused: Tally,
+    wake_all_plain: Tally,
+    wake_all_focused: Tally,
+    /// Bytes of the first page and of every page, per arm.
+    wake_bytes: [u64; 4],
+    path_found_plain: Tally,
+    path_found_jev: Tally,
+    proposed_hops_right: Tally,
+    /// Bytes of the paths answers, without and with Jev.
+    path_bytes: [u64; 2],
 }
 
 #[tokio::main]
@@ -190,6 +223,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "  (agent load, not gated)      curate by hand reads {} bytes through kmp_relate; kmp_curate without Jev {} bytes; with Jev {} bytes",
         scores.relate_bytes, scores.review_bytes_without_jev, scores.review_bytes
     );
+    println!(
+        "  (agent load, not gated)      wake bytes: plain first page {} / all pages {}; focused first page {} / all pages {}",
+        scores.wake_bytes[0], scores.wake_bytes[1], scores.wake_bytes[2], scores.wake_bytes[3]
+    );
+    println!(
+        "  (agent load, not gated)      paths answers: declared-only {} bytes, with Jev {} bytes",
+        scores.path_bytes[0], scores.path_bytes[1]
+    );
     let asks = scores.ask_mrr_plain.len().max(1) as u128;
     println!(
         "  (latency, not gated)         ask ms/question: plain {}, narrow {}, wide {}",
@@ -222,6 +263,12 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
         case,
         "wide",
         &[("typesafe.json", TYPESAFE), ("rerank.json", RERANK_WIDE)],
+    )
+    .await?;
+    let focused = seeded_server(
+        case,
+        "focused",
+        &[("typesafe.json", TYPESAFE), ("wake-focus.json", WAKE_FOCUS)],
     )
     .await?;
     let expected = &case.expected;
@@ -510,6 +557,176 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             ask.question
         );
     }
+    // Paths: declared relations alone, then with the steps Jev proposes.
+    for (n, case_path) in expected.paths.iter().enumerate() {
+        let mut arguments = json!({"mode": "paths", "about": case.about,
+            "dimensions": {"scope": "abouts", "abouts": case.abouts},
+            "from": case_path.from, "max_hops": 6});
+        if let Some(to) = &case_path.to {
+            arguments["to"] = json!(to);
+        }
+        let mut shown = Vec::new();
+        for (arm, server) in [&plain, &judged].into_iter().enumerate() {
+            let answer = call(
+                server,
+                600 + (arm as u64) * 100 + n as u64,
+                "kmp_curate",
+                arguments.clone(),
+            )
+            .await?;
+            if arm == 1 {
+                refuse_unrecorded(&answer)?;
+                if let Some(usage) = answer["jev"].as_object() {
+                    scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
+                    scores.jev_input_tokens += usage["input_tokens"].as_u64().unwrap_or(0);
+                }
+            }
+            scores.path_bytes[arm] += answer.to_string().len() as u64;
+            let acceptable = |a: &str, b: &str| {
+                case_path
+                    .edges
+                    .iter()
+                    .any(|edge| (edge[0] == a && edge[1] == b) || (edge[0] == b && edge[1] == a))
+            };
+            let top = answer["paths"][0]["hops"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default();
+            let nodes = top
+                .iter()
+                .flat_map(|hop| [text(&hop["from"]["ref"]), text(&hop["to"]["ref"])])
+                .collect::<BTreeSet<_>>();
+            let reaches = case_path
+                .to
+                .as_ref()
+                .is_none_or(|to| top.last().is_some_and(|hop| text(&hop["to"]["ref"]) == *to));
+            let hops_ok = top.iter().all(|hop| {
+                hop["declared"].as_bool() == Some(true)
+                    || acceptable(&text(&hop["from"]["ref"]), &text(&hop["to"]["ref"]))
+            });
+            let found = !top.is_empty()
+                && reaches
+                && hops_ok
+                && case_path.required.iter().all(|r| nodes.contains(r));
+            if arm == 0 {
+                scores.path_found_plain.add(found);
+            } else {
+                scores.path_found_jev.add(found);
+                for path in answer["paths"].as_array().into_iter().flatten() {
+                    for hop in path["hops"].as_array().into_iter().flatten() {
+                        if hop["declared"].as_bool() != Some(true) {
+                            scores.proposed_hops_right.add(acceptable(
+                                &text(&hop["from"]["ref"]),
+                                &text(&hop["to"]["ref"]),
+                            ));
+                        }
+                    }
+                }
+            }
+            if arm == 1 && !found && std::env::var("JEV_DEBUG_PATHS").is_ok() {
+                for hop in &top {
+                    println!(
+                        "      {} -[{}{}]-> {}",
+                        text(&hop["from"]["ref"]),
+                        text(&hop["rel"]),
+                        if hop["declared"].as_bool() == Some(true) {
+                            ", declared"
+                        } else {
+                            ""
+                        },
+                        text(&hop["to"]["ref"])
+                    );
+                }
+            }
+            shown.push(format!(
+                "{} {} ({} hops)",
+                if arm == 0 {
+                    "declared-only"
+                } else {
+                    "with Jev"
+                },
+                if found { "found" } else { "not found" },
+                top.len()
+            ));
+        }
+        println!(
+            "  paths    {} -> {} | {}",
+            case_path.from,
+            case_path.to.as_deref().unwrap_or("(as far as it goes)"),
+            shown.join(" | ")
+        );
+    }
+    // Wake, the same intent against the plain and the focused store: which
+    // required memories reach the agent, in how many bytes.
+    for (n, wake) in expected.wake.iter().enumerate() {
+        let arguments = json!({"about": case.about, "intent": wake.intent,
+            "dimensions": {"scope": "abouts", "abouts": case.abouts},
+            "budget": {"max_bytes": 10000}});
+        let mut shown = Vec::new();
+        for (arm, server) in [&plain, &focused].into_iter().enumerate() {
+            let mut page = call(
+                server,
+                400 + (arm as u64) * 100 + n as u64 * 10,
+                "kmp_wake",
+                arguments.clone(),
+            )
+            .await?;
+            refuse_unrecorded(&page)?;
+            if std::env::var("JEV_DEBUG_WAKE").is_ok() {
+                for required in &wake.required {
+                    println!(
+                        "    {} {required}: {:?}",
+                        if arm == 0 { "plain" } else { "focused" },
+                        paths_to(&page, required, "")
+                    );
+                }
+            }
+            let first = delivered(&page);
+            let mut all = first.clone();
+            for next_id in (401 + (arm as u64) * 100 + n as u64 * 10..).take(8) {
+                let Some(action) = page["next_action"].as_object().cloned() else {
+                    break;
+                };
+                let (Some(tool), Some(next)) = (action["tool"].as_str(), action.get("arguments"))
+                else {
+                    break;
+                };
+                page = call(server, next_id, tool, next.clone()).await?;
+                all.push_str(&delivered(&page));
+            }
+            let in_first = wake
+                .required
+                .iter()
+                .filter(|r| first.contains(r.as_str()))
+                .count();
+            let in_all = wake
+                .required
+                .iter()
+                .filter(|r| all.contains(r.as_str()))
+                .count();
+            for required in &wake.required {
+                let (first_tally, all_tally) = if arm == 0 {
+                    (&mut scores.wake_first_plain, &mut scores.wake_all_plain)
+                } else {
+                    (&mut scores.wake_first_focused, &mut scores.wake_all_focused)
+                };
+                first_tally.add(first.contains(required.as_str()));
+                all_tally.add(all.contains(required.as_str()));
+            }
+            scores.wake_bytes[arm * 2] += first.len() as u64;
+            scores.wake_bytes[arm * 2 + 1] += all.len() as u64;
+            shown.push(format!(
+                "{} {}/{} first, {}/{} all, {}B first",
+                if arm == 0 { "plain" } else { "focused" },
+                in_first,
+                wake.required.len(),
+                in_all,
+                wake.required.len(),
+                first.len()
+            ));
+        }
+        println!("  wake     {} | {}", shown.join(" | "), wake.intent);
+    }
     Ok(())
 }
 
@@ -559,6 +776,37 @@ fn refuse_unrecorded(value: &Value) -> Result<(), Box<dyn Error>> {
         }
     }
     Ok(())
+}
+
+/// What a wake actually hands the reader: its packet and the evidence it
+/// carries, without the lists that only name what was withheld.
+fn delivered(page: &Value) -> String {
+    let mut page = page.clone();
+    if let Some(proof) = page["proof"].as_object_mut() {
+        proof.remove("missing");
+    }
+    for key in ["page", "next_action", "projection", "warnings"] {
+        if let Some(object) = page.as_object_mut() {
+            object.remove(key);
+        }
+    }
+    page.to_string()
+}
+
+fn paths_to(value: &Value, needle: &str, at: &str) -> Vec<String> {
+    match value {
+        Value::Object(map) => map
+            .iter()
+            .flat_map(|(key, child)| paths_to(child, needle, &format!("{at}/{key}")))
+            .collect(),
+        Value::Array(items) => items
+            .iter()
+            .enumerate()
+            .flat_map(|(index, child)| paths_to(child, needle, &format!("{at}/{index}")))
+            .collect(),
+        Value::String(text) if text.contains(needle) => vec![at.to_string()],
+        _ => Vec::new(),
+    }
 }
 
 fn same_pair(item: &Found, pair: &[String; 2]) -> bool {
@@ -631,6 +879,13 @@ fn columns(scores: &Scores) -> Vec<(&'static str, f64)> {
         ("ask_top5_plain", scores.ask_top_plain.rate()),
         ("ask_top5_rerank", scores.ask_top_rerank.rate()),
         ("ask_top5_wide", scores.ask_top_wide.rate()),
+        ("path_found_declared_only", scores.path_found_plain.rate()),
+        ("path_found_with_jev", scores.path_found_jev.rate()),
+        ("proposed_hops_right", scores.proposed_hops_right.rate()),
+        ("wake_first_page_plain", scores.wake_first_plain.rate()),
+        ("wake_first_page_focused", scores.wake_first_focused.rate()),
+        ("wake_all_pages_plain", scores.wake_all_plain.rate()),
+        ("wake_all_pages_focused", scores.wake_all_focused.rate()),
     ]
 }
 
