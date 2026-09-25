@@ -9,6 +9,18 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- Relations proposed after a write. With `write-relations.json` beside
+  `typesafe.json`, a committed `kmp_write_memory` of memories returns
+  `proposed_relations`: facts of the same about that Jev reads as directly
+  related to each new memory, at most three each, typed, as a frozen
+  `kmp_curate` review. Nothing is written: the agent declares the ones it
+  confirms through `kmp_curate` apply. `kmp_curate` `mode: review` accepts
+  `focus` to review the relations of any facts. Judged corpus: expected
+  partner proposed 11/11 against 7/11 from the kernel alone, 0/4 distractors
+  against 3/4, about 1.2 KB added to a write and $0.001 of Jev.
+
 ### Fixed
 
 - `kmp-mcp update` refused any newer release that added a tool: the

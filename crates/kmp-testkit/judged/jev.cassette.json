@@ -1,5 +1,203 @@
 {
   "entries": {
+    "032ed58ec2361bfd89bc6a7e2e7833d67d1853a75de91c83b72f40dbbd3ade9d": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.81
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.82
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.89
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.27
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.56
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.31
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.26
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.1
+        }
+      },
+      "input_tokens": 2222,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "032ffc2b886a56edd814a597f38f02f8380478af4980359eb3cee597e47c8d70": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.29
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.03
+        }
+      },
+      "input_tokens": 2222,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "03d231b30de25f78ae5c0c0313005c96de8c51de2cf5df33b003386e0d07be87": {
       "answers": {
         "b0": {
@@ -75,6 +273,105 @@
         }
       },
       "input_tokens": 701,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "06ae7e5346d6e1d6895d55081ab1dd21686841de9100f460372f0c31b9d7d532": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.29
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.31
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.44
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.04
+        }
+      },
+      "input_tokens": 2222,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -1480,6 +1777,136 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "1131ed22a6a905434477f69e96c39912ad909a0e367b8bf41458ca2a312dbcd1": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.86
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.52
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.06
+        }
+      },
+      "input_tokens": 825,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "1b1a797191cf6b62eda1abffd95d9d9f24675745cf2b7a14d2d6bc13858836f4": {
+      "answers": {
+        "t0": {
+          "choice": "same_event_as",
+          "confidence": 0.75,
+          "probabilities": {
+            "none": 0.04,
+            "same_entity_as": 0.12,
+            "same_event_as": 0.84
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "none",
+          "confidence": 0.73,
+          "probabilities": {
+            "none": 0.82,
+            "same_entity_as": 0.18,
+            "same_event_as": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "follows",
+          "confidence": 0.3,
+          "probabilities": {
+            "answers": 0.11,
+            "authorizes": 0.02,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.02,
+            "corrects": 0.0,
+            "depends_on": 0.03,
+            "derived_from": 0.13,
+            "excluded_from": 0.0,
+            "follows": 0.34,
+            "matches_requirement": 0.0,
+            "none": 0.02,
+            "qualifies_as": 0.01,
+            "restates": 0.0,
+            "same_entity_as": 0.01,
+            "same_event_as": 0.13,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.05,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.06,
+            "uses_background": 0.04,
+            "verified_by": 0.02,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t3": {
+          "choice": "follows",
+          "confidence": 0.34,
+          "probabilities": {
+            "answers": 0.08,
+            "authorizes": 0.0,
+            "checked_against": 0.01,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.01,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.38,
+            "matches_requirement": 0.0,
+            "none": 0.08,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.11,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.07,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.12,
+            "uses_background": 0.03,
+            "verified_by": 0.08,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1255,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "1d9e485db43d6b835fdaa240e33928926bde77f5588801d91369015c3362e1cf": {
       "answers": {
         "w0": {
@@ -2744,6 +3171,121 @@
         }
       },
       "input_tokens": 18455,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "1e698cd2433fca571f8abed3ef945b5264b92e6a4b8b07f8d43f4ac1dd4dd9da": {
+      "answers": {
+        "t0": {
+          "choice": "contributes_to",
+          "confidence": 0.29,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.01,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.32,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.07,
+            "excluded_from": 0.0,
+            "follows": 0.02,
+            "matches_requirement": 0.0,
+            "none": 0.01,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.02,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.31,
+            "total_of": 0.0,
+            "triggers": 0.23,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "triggers",
+          "confidence": 0.62,
+          "probabilities": {
+            "answers": 0.05,
+            "authorizes": 0.02,
+            "checked_against": 0.0,
+            "chosen_because": 0.16,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.02,
+            "corrects": 0.01,
+            "depends_on": 0.0,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.03,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.03,
+            "total_of": 0.0,
+            "triggers": 0.64,
+            "updates_state": 0.01,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "same_event_as",
+          "confidence": 0.47,
+          "probabilities": {
+            "answers": 0.04,
+            "authorizes": 0.01,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.02,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.03,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.02,
+            "excluded_from": 0.0,
+            "follows": 0.01,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.02,
+            "restates": 0.04,
+            "same_entity_as": 0.060000000000000005,
+            "same_event_as": 0.49,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.18000000000000002,
+            "total_of": 0.0,
+            "triggers": 0.02,
+            "updates_state": 0.01,
+            "uses_background": 0.02,
+            "verified_by": 0.01,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1337,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -10131,6 +10673,105 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "281a7a019da84985d5a05f3a65c59ab98def6a99c6e5acfb4f8f41bef8141fb7": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.47
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.9
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.03
+        }
+      },
+      "input_tokens": 2222,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "28bd22025f6997bcee830d430d63a9c099e07dede5d1a351869ff4007d15ce63": {
       "answers": {
         "p0": {
@@ -10295,6 +10936,121 @@
         }
       },
       "input_tokens": 2098,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "2e1ac064256a35d2cc5a62fedcbede36575ace07d3b220f49534ad6a31373922": {
+      "answers": {
+        "t0": {
+          "choice": "follows",
+          "confidence": 0.79,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.01,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.81,
+            "matches_requirement": 0.0,
+            "none": 0.02,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.01,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.04,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.07,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "triggers",
+          "confidence": 0.4,
+          "probabilities": {
+            "answers": 0.03,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.01,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.11,
+            "corrects": 0.0,
+            "depends_on": 0.02,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.22,
+            "matches_requirement": 0.0,
+            "none": 0.12,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.01,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.02,
+            "total_of": 0.0,
+            "triggers": 0.43,
+            "updates_state": 0.01,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "contradicts",
+          "confidence": 0.5,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.53,
+            "contributes_to": 0.0,
+            "corrects": 0.01,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.11,
+            "matches_requirement": 0.01,
+            "none": 0.15000000000000002,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.01,
+            "same_event_as": 0.02,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.08,
+            "supports": 0.0,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.06,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.01
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1286,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -12170,6 +12926,1273 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "393f743b239d23b086562ca39a6128c539770847cec97ce022eca72408695fab": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_100": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_101": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_102": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_103": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_104": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_105": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_106": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_107": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_108": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_109": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_110": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_111": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_112": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_113": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_114": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_115": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_116": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_117": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_118": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_119": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_120": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_121": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_122": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_123": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_124": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_125": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_126": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_127": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_128": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_129": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_130": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_131": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_132": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_133": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_134": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_135": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_136": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_137": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_138": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "r0_139": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_140": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_141": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_142": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_143": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_144": {
+          "type": "noul",
+          "yes": 0.43
+        },
+        "r0_145": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_146": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_147": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_148": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_149": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_150": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_151": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_152": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_153": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_154": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_155": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_156": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_157": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_158": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_159": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_160": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_161": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_162": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_163": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_164": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_165": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_166": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_167": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_168": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_169": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_170": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_171": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_172": {
+          "type": "noul",
+          "yes": 0.6
+        },
+        "r0_173": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_174": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_175": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_176": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_177": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "r0_178": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "r0_179": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_180": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_181": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_182": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_183": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_184": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_185": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_186": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_187": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_188": {
+          "type": "noul",
+          "yes": 0.44
+        },
+        "r0_189": {
+          "type": "noul",
+          "yes": 0.22
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_190": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_191": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_192": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_193": {
+          "type": "noul",
+          "yes": 0.32
+        },
+        "r0_194": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_195": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_196": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_197": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_198": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_199": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_200": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_201": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_202": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_203": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_204": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_205": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_206": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_207": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_208": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_209": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_210": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_211": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_212": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_213": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_214": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_215": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_216": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_217": {
+          "type": "noul",
+          "yes": 0.31
+        },
+        "r0_218": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_219": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_220": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_221": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_222": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_223": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "r0_224": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_225": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_226": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_227": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_228": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_229": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_23": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_230": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_231": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_232": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_233": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_234": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_235": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_236": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_237": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_238": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_239": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_24": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_240": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_241": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_242": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_243": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_244": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_245": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_246": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_247": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_248": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_249": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_25": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_250": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_251": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_252": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_253": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_254": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_255": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_256": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_257": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_258": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_259": {
+          "type": "noul",
+          "yes": 0.49
+        },
+        "r0_26": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "r0_260": {
+          "type": "noul",
+          "yes": 0.24
+        },
+        "r0_261": {
+          "type": "noul",
+          "yes": 0.3
+        },
+        "r0_262": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_263": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_264": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_265": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_266": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_267": {
+          "type": "noul",
+          "yes": 0.42
+        },
+        "r0_268": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_269": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_27": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_270": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_271": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_272": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_273": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_274": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_275": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_276": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_277": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_278": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_279": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_28": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_280": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_281": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_282": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_283": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_284": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_285": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_286": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_287": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "r0_288": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_289": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_29": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_290": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_291": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_292": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_293": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_294": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_295": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_296": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_297": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_298": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_299": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_30": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_300": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_301": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_302": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_303": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_304": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_305": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_306": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_307": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_308": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_309": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_31": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_310": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_311": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_312": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_313": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_314": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_32": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_33": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_34": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_35": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_36": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_37": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_38": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_39": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_40": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_41": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_42": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_43": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_44": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_45": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_46": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_47": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_48": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_49": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.75
+        },
+        "r0_50": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_51": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_52": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_53": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_54": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_55": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_56": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_57": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_58": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_59": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_60": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_61": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_62": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_63": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_64": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_65": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_66": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_67": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_68": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_69": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_70": {
+          "type": "noul",
+          "yes": 0.37
+        },
+        "r0_71": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_72": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_73": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "r0_74": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_75": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_76": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_77": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_78": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_79": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_80": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_81": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_82": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_83": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_84": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_85": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_86": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_87": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_88": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_89": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_90": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_91": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_92": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_93": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_94": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_95": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_96": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_97": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_98": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_99": {
+          "type": "noul",
+          "yes": 0.07
+        }
+      },
+      "input_tokens": 25077,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "3c4c8a6e6443c97dfe277175255a2bd2c618ce7a3a4da974c4a2a6c55725abe6": {
       "answers": {
         "p0": {
@@ -13615,6 +15638,37 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "4d722bca6cb5d1c459cd9d8ef6d5c0495581dac8ff7f1dab51469aab56e54e93": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.79
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.75
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.18
+        }
+      },
+      "input_tokens": 825,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "4ee65e67bcc6ca967f589f74e1847fe1f7635dd829fb99b0c921a9f3185c2eb6": {
       "answers": {
         "b0": {
@@ -13659,6 +15713,85 @@
         }
       },
       "input_tokens": 787,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "4f8add99d89184444a4d349acb99329534a82a1e66223385f1f213b075489ede": {
+      "answers": {
+        "t0": {
+          "choice": "none",
+          "confidence": 0.86,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.04,
+            "matches_requirement": 0.0,
+            "none": 0.88,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.06,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.01,
+            "supersedes": 0.0,
+            "supports": 0.0,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "contradicts",
+          "confidence": 0.55,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.56,
+            "contributes_to": 0.0,
+            "corrects": 0.04,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.01,
+            "matches_requirement": 0.01,
+            "none": 0.01,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.02,
+            "supersedes": 0.33,
+            "supports": 0.0,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.01,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 971,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -14990,6 +17123,105 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "592d657c7d8ad35ce63579102da0073fe066854555505f1594e9ad7b97c2e086": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.91
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.87
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.43
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.03
+        }
+      },
+      "input_tokens": 2222,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "5b07946cb8aa71016e66909e0444f2bc07e85126579372dab1dfd3b8b9f812e7": {
       "answers": {
         "p0": {
@@ -16258,6 +18490,236 @@
         }
       },
       "input_tokens": 14170,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "5c1a3be6f59171ae099644174f024afafe6d57ac93679ac4f8182ff30978a8e0": {
+      "answers": {
+        "t0": {
+          "choice": "follows",
+          "confidence": 0.32,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.01,
+            "chosen_because": 0.01,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.03,
+            "contributes_to": 0.01,
+            "corrects": 0.02,
+            "depends_on": 0.07,
+            "derived_from": 0.02,
+            "excluded_from": 0.0,
+            "follows": 0.35000000000000003,
+            "matches_requirement": 0.01,
+            "none": 0.04,
+            "qualifies_as": 0.01,
+            "restates": 0.0,
+            "same_entity_as": 0.01,
+            "same_event_as": 0.01,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.05,
+            "supersedes": 0.07,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.01,
+            "updates_state": 0.18,
+            "uses_background": 0.07,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "chosen_because",
+          "confidence": 0.23,
+          "probabilities": {
+            "answers": 0.03,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.27,
+            "component_of": 0.0,
+            "confirms_selection": 0.02,
+            "contradicts": 0.0,
+            "contributes_to": 0.1,
+            "corrects": 0.01,
+            "depends_on": 0.06,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.07,
+            "matches_requirement": 0.0,
+            "none": 0.02,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.17,
+            "total_of": 0.0,
+            "triggers": 0.16,
+            "updates_state": 0.02,
+            "uses_background": 0.04,
+            "verified_by": 0.02,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "supports",
+          "confidence": 0.33,
+          "probabilities": {
+            "answers": 0.02,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.01,
+            "component_of": 0.01,
+            "confirms_selection": 0.01,
+            "contradicts": 0.02,
+            "contributes_to": 0.08,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.04,
+            "matches_requirement": 0.05,
+            "none": 0.19,
+            "qualifies_as": 0.02,
+            "restates": 0.04,
+            "same_entity_as": 0.02,
+            "same_event_as": 0.04,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.04,
+            "supersedes": 0.01,
+            "supports": 0.36,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.01,
+            "uses_background": 0.02,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1280,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "5d5ecc3f19aea45bdf8d2f29e9349478da2982a8334eeb012d86e73a6ea0018e": {
+      "answers": {
+        "t0": {
+          "choice": "none",
+          "confidence": 0.76,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.01,
+            "matches_requirement": 0.0,
+            "none": 0.78,
+            "qualifies_as": 0.01,
+            "restates": 0.01,
+            "same_entity_as": 0.06,
+            "same_event_as": 0.08,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.01,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "none",
+          "confidence": 0.37,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.06,
+            "contributes_to": 0.01,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.3,
+            "matches_requirement": 0.01,
+            "none": 0.4,
+            "qualifies_as": 0.01,
+            "restates": 0.0,
+            "same_entity_as": 0.03,
+            "same_event_as": 0.02,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.01,
+            "supports": 0.02,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.07,
+            "uses_background": 0.02,
+            "verified_by": 0.0,
+            "violates_constraint": 0.01
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "none",
+          "confidence": 0.76,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.01,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.14,
+            "matches_requirement": 0.0,
+            "none": 0.77,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.01,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.01,
+            "updates_state": 0.01,
+            "uses_background": 0.02,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1311,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -17938,6 +20400,109 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "71ea0efca936a5bb93f4522a8cce0bfb0d99f7faac25393badebe1b6c5bd3bb9": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.41
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.66
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.36
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.61
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.34
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_23": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.73
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.72
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.86
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.42
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.53
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.37
+        }
+      },
+      "input_tokens": 2298,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "7223ae364488beea8f2f2e0f0fe80e53b3a1bf6d69805109231e2600c131f234": {
       "answers": {
         "p0": {
@@ -18102,6 +20667,141 @@
         }
       },
       "input_tokens": 2091,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "75028ea792f633987fc058553897e6cb3eda9855c38ebf8bcf85d5357275743f": {
+      "answers": {
+        "t0": {
+          "choice": "same_event_as",
+          "confidence": 0.79,
+          "probabilities": {
+            "none": 0.01,
+            "same_entity_as": 0.14,
+            "same_event_as": 0.85
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "none",
+          "confidence": 0.62,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.01,
+            "contributes_to": 0.01,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.13,
+            "matches_requirement": 0.0,
+            "none": 0.64,
+            "qualifies_as": 0.01,
+            "restates": 0.0,
+            "same_entity_as": 0.14,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.02,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "same_entity_as",
+          "confidence": 0.47,
+          "probabilities": {
+            "none": 0.28,
+            "same_entity_as": 0.64,
+            "same_event_as": 0.08
+          },
+          "type": "choice"
+        },
+        "t3": {
+          "choice": "follows",
+          "confidence": 0.33,
+          "probabilities": {
+            "answers": 0.02,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.02,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.05,
+            "corrects": 0.0,
+            "depends_on": 0.02,
+            "derived_from": 0.06,
+            "excluded_from": 0.0,
+            "follows": 0.36,
+            "matches_requirement": 0.0,
+            "none": 0.02,
+            "qualifies_as": 0.01,
+            "restates": 0.0,
+            "same_entity_as": 0.05,
+            "same_event_as": 0.16,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.02,
+            "total_of": 0.0,
+            "triggers": 0.05,
+            "updates_state": 0.07,
+            "uses_background": 0.08,
+            "verified_by": 0.01,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t4": {
+          "choice": "follows",
+          "confidence": 0.37,
+          "probabilities": {
+            "answers": 0.07,
+            "authorizes": 0.0,
+            "checked_against": 0.01,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.02,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.41,
+            "matches_requirement": 0.0,
+            "none": 0.01,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.02,
+            "same_event_as": 0.09,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.01,
+            "updates_state": 0.27,
+            "uses_background": 0.01,
+            "verified_by": 0.04,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1690,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -18384,6 +21084,121 @@
         }
       },
       "input_tokens": 2086,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "8419907ce93602c13fb9f2a01c8b5ba746e80d5e0064894bd05c1a0159854671": {
+      "answers": {
+        "t0": {
+          "choice": "contradicts",
+          "confidence": 0.32,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.35000000000000003,
+            "contributes_to": 0.09,
+            "corrects": 0.01,
+            "depends_on": 0.01,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.06,
+            "matches_requirement": 0.0,
+            "none": 0.11,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.01,
+            "same_event_as": 0.01,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.11,
+            "total_of": 0.0,
+            "triggers": 0.03,
+            "updates_state": 0.07,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.09
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.02,
+            "matches_requirement": 0.0,
+            "none": 0.98,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.0,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.02,
+            "matches_requirement": 0.0,
+            "none": 0.98,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.0,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1297,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -21837,6 +24652,1273 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "8b09745f64b22e59e7cc4d0dcb2ce290af3b20a6efedf8e12d5da422719a74fb": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.73
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_100": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_101": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_102": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_103": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_104": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_105": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_106": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_107": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_108": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_109": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_110": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_111": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_112": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_113": {
+          "type": "noul",
+          "yes": 0.23
+        },
+        "r0_114": {
+          "type": "noul",
+          "yes": 0.31
+        },
+        "r0_115": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_116": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_117": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_118": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_119": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_120": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_121": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_122": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_123": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_124": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_125": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "r0_126": {
+          "type": "noul",
+          "yes": 0.23
+        },
+        "r0_127": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_128": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_129": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_130": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_131": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_132": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_133": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_134": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_135": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_136": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_137": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_138": {
+          "type": "noul",
+          "yes": 0.23
+        },
+        "r0_139": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_140": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_141": {
+          "type": "noul",
+          "yes": 0.32
+        },
+        "r0_142": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_143": {
+          "type": "noul",
+          "yes": 0.32
+        },
+        "r0_144": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_145": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_146": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_147": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_148": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_149": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "r0_150": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_151": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_152": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_153": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_154": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_155": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_156": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_157": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_158": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_159": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.22
+        },
+        "r0_160": {
+          "type": "noul",
+          "yes": 0.31
+        },
+        "r0_161": {
+          "type": "noul",
+          "yes": 0.28
+        },
+        "r0_162": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_163": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_164": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_165": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_166": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_167": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_168": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_169": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "r0_170": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_171": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_172": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_173": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_174": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_175": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_176": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_177": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_178": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_179": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "r0_180": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_181": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_182": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_183": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_184": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_185": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_186": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_187": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_188": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_189": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "r0_190": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_191": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_192": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_193": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_194": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_195": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_196": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_197": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_198": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_199": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "r0_200": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_201": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_202": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_203": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_204": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_205": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_206": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_207": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_208": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_209": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "r0_210": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_211": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_212": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_213": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_214": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_215": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_216": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_217": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_218": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_219": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "r0_220": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_221": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_222": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_223": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_224": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_225": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_226": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_227": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_228": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_229": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_23": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "r0_230": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_231": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_232": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_233": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_234": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_235": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_236": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_237": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_238": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_239": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_24": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "r0_240": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_241": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_242": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_243": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_244": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_245": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_246": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_247": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_248": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_249": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_25": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_250": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_251": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_252": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_253": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_254": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_255": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_256": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_257": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_258": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_259": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_26": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_260": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_261": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_262": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_263": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_264": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_265": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_266": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_267": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_268": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_269": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_27": {
+          "type": "noul",
+          "yes": 0.22
+        },
+        "r0_270": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_271": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_272": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_273": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_274": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_275": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_276": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_277": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_278": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_279": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_28": {
+          "type": "noul",
+          "yes": 0.31
+        },
+        "r0_280": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_281": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_282": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_283": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_284": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_285": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_286": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_287": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_288": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_289": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_29": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_290": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_291": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_292": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_293": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_294": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_295": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_296": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_297": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_298": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_299": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_30": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_300": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_301": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_302": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_303": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_304": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_305": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_306": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_307": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_308": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_309": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_31": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_310": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_311": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_312": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_313": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_314": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_32": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_33": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_34": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_35": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_36": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_37": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_38": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_39": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_40": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_41": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_42": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_43": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_44": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_45": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_46": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_47": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_48": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_49": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_50": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_51": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_52": {
+          "type": "noul",
+          "yes": 0.28
+        },
+        "r0_53": {
+          "type": "noul",
+          "yes": 0.32
+        },
+        "r0_54": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_55": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_56": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_57": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_58": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_59": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_60": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_61": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_62": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_63": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_64": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_65": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_66": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_67": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_68": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_69": {
+          "type": "noul",
+          "yes": 0.24
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_70": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_71": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_72": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_73": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_74": {
+          "type": "noul",
+          "yes": 0.29
+        },
+        "r0_75": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_76": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_77": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_78": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_79": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_80": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_81": {
+          "type": "noul",
+          "yes": 0.36
+        },
+        "r0_82": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_83": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_84": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_85": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_86": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_87": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_88": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_89": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_90": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_91": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_92": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_93": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_94": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_95": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_96": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_97": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_98": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_99": {
+          "type": "noul",
+          "yes": 0.07
+        }
+      },
+      "input_tokens": 25077,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "8b33426c5f16487d7dda37af7c2717ecc96da96c6fc0d4503660a647babc4a5e": {
       "answers": {
         "b0": {
@@ -23727,6 +27809,37 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "9c262847c959c7adff86eb990a3c9f56591c5a0c01096bd9160b111915b0811a": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.3
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.03
+        }
+      },
+      "input_tokens": 825,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "9cd6b5b97374b7485bb16133c2f565b02d81d513587ab354b96b89fb01704600": {
       "answers": {
         "p0": {
@@ -25361,6 +29474,1487 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "a9764f56ec59343eef7d7c1b0cf598c2e5c0a9c79ad45e7f60dea7646ec2a76f": {
+      "answers": {
+        "t0": {
+          "choice": "none",
+          "confidence": 0.59,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.01,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.14,
+            "matches_requirement": 0.0,
+            "none": 0.62,
+            "qualifies_as": 0.01,
+            "restates": 0.0,
+            "same_entity_as": 0.16,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.02,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "none",
+          "confidence": 0.78,
+          "probabilities": {
+            "none": 0.86,
+            "same_entity_as": 0.14,
+            "same_event_as": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "none",
+          "confidence": 0.72,
+          "probabilities": {
+            "none": 0.8200000000000001,
+            "same_entity_as": 0.18,
+            "same_event_as": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 947,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "aa2e9d84791365fbb9413ef8ca0dfa482e7a16c3dde8739a682bd708c3d3e9b1": {
+      "answers": {
+        "t0": {
+          "choice": "same_event_as",
+          "confidence": 0.55,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.01,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.0,
+            "restates": 0.22,
+            "same_entity_as": 0.12,
+            "same_event_as": 0.5700000000000001,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.01,
+            "supersedes": 0.01,
+            "supports": 0.03,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.01,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "none",
+          "confidence": 0.67,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.02,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.02,
+            "contributes_to": 0.08,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.03,
+            "matches_requirement": 0.0,
+            "none": 0.6900000000000001,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.06,
+            "total_of": 0.0,
+            "triggers": 0.03,
+            "updates_state": 0.01,
+            "uses_background": 0.03,
+            "verified_by": 0.0,
+            "violates_constraint": 0.01
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "none",
+          "confidence": 0.68,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.02,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.02,
+            "contributes_to": 0.06999999999999999,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.04,
+            "matches_requirement": 0.0,
+            "none": 0.7,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.06999999999999999,
+            "total_of": 0.0,
+            "triggers": 0.03,
+            "updates_state": 0.01,
+            "uses_background": 0.02,
+            "verified_by": 0.0,
+            "violates_constraint": 0.01
+          },
+          "type": "choice"
+        },
+        "t3": {
+          "choice": "none",
+          "confidence": 0.36,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.01,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.0,
+            "contradicts": 0.36,
+            "contributes_to": 0.03,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.01,
+            "excluded_from": 0.02,
+            "follows": 0.03,
+            "matches_requirement": 0.01,
+            "none": 0.4,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.04,
+            "total_of": 0.0,
+            "triggers": 0.01,
+            "updates_state": 0.0,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.04
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1629,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "ae0f490bf3d7dfddf137d00a86779951d919c9b55050652bc04ba822e55bd89e": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_100": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_101": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_102": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_103": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_104": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_105": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_106": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_107": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_108": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_109": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_110": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_111": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_112": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_113": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_114": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_115": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_116": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_117": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_118": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_119": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_120": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "r0_121": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_122": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_123": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_124": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_125": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_126": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_127": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_128": {
+          "type": "noul",
+          "yes": 0.27
+        },
+        "r0_129": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_130": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_131": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_132": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_133": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_134": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_135": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_136": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_137": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_138": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_139": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_140": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_141": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_142": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_143": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_144": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_145": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_146": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_147": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_148": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_149": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_150": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_151": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_152": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_153": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "r0_154": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_155": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_156": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_157": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_158": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_159": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_160": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_161": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_162": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_163": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_164": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_165": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_166": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_167": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_168": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_169": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_170": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_171": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_172": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_173": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_174": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_175": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_176": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_177": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_178": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_179": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_180": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_181": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_182": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_183": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_184": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "r0_185": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_186": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_187": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_188": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_189": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_190": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_191": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_192": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_193": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_194": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_195": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_196": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_197": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_198": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_199": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.75
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_200": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_201": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_202": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_203": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_204": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_205": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_206": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_207": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_208": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_209": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_210": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_211": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_212": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_213": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_214": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_215": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_216": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_217": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_218": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_219": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_220": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_221": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_222": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_223": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_224": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_225": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_226": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_227": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_228": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_229": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_23": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_230": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_231": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_232": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_233": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_234": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_235": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_236": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_237": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_238": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_239": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_24": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_240": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_241": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_242": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_243": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_244": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_245": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_246": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_247": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_248": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_249": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_25": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_250": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_251": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_252": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_253": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_254": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_255": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_256": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_257": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_258": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_259": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_26": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_260": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_261": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_262": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_263": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_264": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_265": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_266": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_267": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_268": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_269": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_27": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_270": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_271": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_272": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_273": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_274": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_275": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_276": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_277": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_278": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_279": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_28": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_280": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_281": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_282": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_283": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_284": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_285": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_286": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_287": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_288": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_289": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_29": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_290": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_291": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_292": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_293": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_294": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_295": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_296": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_297": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_298": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_299": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_30": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_300": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_301": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_302": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_303": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_304": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_305": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_306": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_307": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_308": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_309": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_31": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_310": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_311": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_312": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_313": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_314": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_32": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_33": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_34": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "r0_35": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_36": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_37": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_38": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_39": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_40": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_41": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_42": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_43": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_44": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_45": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_46": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_47": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_48": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_49": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_50": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_51": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_52": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_53": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_54": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_55": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_56": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_57": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_58": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_59": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_60": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_61": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_62": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_63": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_64": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_65": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_66": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_67": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_68": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_69": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_70": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_71": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_72": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_73": {
+          "type": "noul",
+          "yes": 0.12
+        },
+        "r0_74": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_75": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_76": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_77": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_78": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_79": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_80": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_81": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_82": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_83": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_84": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_85": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_86": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_87": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_88": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_89": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_90": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_91": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_92": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_93": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_94": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_95": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_96": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_97": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_98": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_99": {
+          "type": "noul",
+          "yes": 0.07
+        }
+      },
+      "input_tokens": 25077,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "ae97f582fd5877e43cf25c79286d732645cd1b8f6a5bee828f2eaa1c5d23fe01": {
       "answers": {
         "p0": {
@@ -26005,6 +31599,105 @@
         }
       },
       "input_tokens": 1644,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "c1356a2b4524e074452c1552392ff3827c29fb51c29534e97bf484e1dc1b2e4a": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.03
+        }
+      },
+      "input_tokens": 2222,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -27407,6 +33100,1277 @@
         }
       },
       "input_tokens": 2282,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "c68d97ba5f9f524f07c70ec83a506f960057605596d8e0fada4c0a1eaf874eca": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_100": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_101": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_102": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_103": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_104": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_105": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_106": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_107": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_108": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_109": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_110": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_111": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_112": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_113": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_114": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_115": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_116": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_117": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_118": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_119": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_120": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_121": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_122": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_123": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_124": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_125": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_126": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_127": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_128": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_129": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.87
+        },
+        "r0_130": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_131": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_132": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_133": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_134": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_135": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_136": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_137": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_138": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_139": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.42
+        },
+        "r0_140": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_141": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_142": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_143": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_144": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_145": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_146": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_147": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_148": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_149": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.54
+        },
+        "r0_150": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_151": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_152": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_153": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_154": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_155": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_156": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_157": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_158": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_159": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_160": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_161": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_162": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_163": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_164": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_165": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_166": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_167": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_168": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_169": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_170": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_171": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_172": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "r0_173": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_174": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_175": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_176": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_177": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_178": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_179": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_180": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_181": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_182": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_183": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_184": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_185": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_186": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_187": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_188": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_189": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_190": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_191": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_192": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_193": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_194": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_195": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_196": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_197": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_198": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_199": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_200": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_201": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_202": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_203": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_204": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_205": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_206": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_207": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_208": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_209": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_210": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_211": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_212": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_213": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_214": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_215": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_216": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_217": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_218": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_219": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_220": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_221": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_222": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_223": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_224": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_225": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_226": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_227": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_228": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_229": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_23": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_230": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_231": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_232": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_233": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_234": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_235": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_236": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_237": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_238": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_239": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_24": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_240": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_241": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_242": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_243": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_244": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_245": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_246": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_247": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_248": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_249": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_25": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_250": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_251": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_252": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_253": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_254": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_255": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_256": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_257": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_258": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_259": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_26": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_260": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_261": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_262": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_263": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_264": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_265": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_266": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_267": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_268": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_269": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_27": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_270": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_271": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_272": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_273": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_274": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_275": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_276": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_277": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_278": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_279": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_28": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_280": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_281": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_282": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_283": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_284": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_285": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_286": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_287": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_288": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_289": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_29": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_290": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_291": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_292": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_293": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_294": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_295": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_296": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_297": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_298": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_299": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_30": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_300": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_301": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_302": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_303": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_304": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_305": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_306": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_307": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_308": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_309": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_31": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_310": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_311": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_312": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_313": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_314": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_315": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_32": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_33": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_34": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_35": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_36": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_37": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_38": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_39": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.87
+        },
+        "r0_40": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_41": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_42": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_43": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_44": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_45": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_46": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_47": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_48": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_49": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_50": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_51": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_52": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_53": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_54": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_55": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_56": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_57": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_58": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_59": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_60": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_61": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_62": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_63": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_64": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_65": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_66": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_67": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_68": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_69": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_70": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_71": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_72": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_73": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_74": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_75": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_76": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_77": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_78": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_79": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_80": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_81": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_82": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_83": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_84": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_85": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_86": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_87": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_88": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_89": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.02
+        },
+        "r0_90": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_91": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_92": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_93": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_94": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_95": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_96": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_97": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_98": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_99": {
+          "type": "noul",
+          "yes": 0.04
+        }
+      },
+      "input_tokens": 25152,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -28913,6 +35877,148 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "c9b252c1318554246ab90bdee1a005af85f85bbdc2f60bbd8d79a5affd77ccad": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.23
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.13
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.24
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.22
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.89
+        }
+      },
+      "input_tokens": 2222,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "d094c63127ccd22857afbc64107db9c3aae348cc7c9098f34546f2204538e95a": {
+      "answers": {
+        "t0": {
+          "choice": "contradicts",
+          "confidence": 0.87,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.89,
+            "contributes_to": 0.0,
+            "corrects": 0.02,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.0,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.09,
+            "supports": 0.0,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 611,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "d2134c83654a6dfaef6fefd05ff87ae739be1221ac194ebe26e0a3e6c4fada59": {
       "answers": {
         "p0": {
@@ -29290,6 +36396,121 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "d6724df287abb2216223aff9900a277ac2890a4a735e17df156eb27e96cc8b52": {
+      "answers": {
+        "t0": {
+          "choice": "answers",
+          "confidence": 0.5,
+          "probabilities": {
+            "answers": 0.53,
+            "authorizes": 0.02,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.07,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.05,
+            "excluded_from": 0.0,
+            "follows": 0.02,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.0,
+            "restates": 0.01,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.07,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.11,
+            "total_of": 0.0,
+            "triggers": 0.03,
+            "updates_state": 0.0,
+            "uses_background": 0.01,
+            "verified_by": 0.06,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "answers",
+          "confidence": 0.28,
+          "probabilities": {
+            "answers": 0.32,
+            "authorizes": 0.04,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.01,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.02,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.06,
+            "excluded_from": 0.0,
+            "follows": 0.01,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.02,
+            "restates": 0.03,
+            "same_entity_as": 0.01,
+            "same_event_as": 0.2,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.2,
+            "total_of": 0.0,
+            "triggers": 0.01,
+            "updates_state": 0.01,
+            "uses_background": 0.01,
+            "verified_by": 0.03,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "triggers",
+          "confidence": 0.5,
+          "probabilities": {
+            "answers": 0.04,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.03,
+            "corrects": 0.0,
+            "depends_on": 0.04,
+            "derived_from": 0.03,
+            "excluded_from": 0.0,
+            "follows": 0.27,
+            "matches_requirement": 0.0,
+            "none": 0.01,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.53,
+            "updates_state": 0.03,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1313,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "d6849837cb2e4e5146db630e952a82770db60bee5193f1ba2f7c144d0675b6e4": {
       "answers": {
         "f1": {
@@ -29480,6 +36701,273 @@
         }
       },
       "input_tokens": 2236,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "d68928e21b4d370f41a58d6077a3f8337316467d8d55970ae620901173e1d1d9": {
+      "answers": {
+        "t0": {
+          "choice": "none",
+          "confidence": 0.87,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.06,
+            "matches_requirement": 0.0,
+            "none": 0.88,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.06,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.0,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.0,
+            "uses_background": 0.0,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "none",
+          "confidence": 0.67,
+          "probabilities": {
+            "none": 0.78,
+            "same_entity_as": 0.22,
+            "same_event_as": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 748,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "da115d90e72caca4711a3179941fe7c2496176307b0476abbde4506a73d42cd6": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.9
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.92
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.27
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.49
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.2
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.42
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.84
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.14
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.3
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.28
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.21
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.22
+        }
+      },
+      "input_tokens": 2222,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "dd137d539bd44c60e1818df79011cccd190fb822f08812970ebd7434a7a56cdc": {
+      "answers": {
+        "t0": {
+          "choice": "updates_state",
+          "confidence": 0.32,
+          "probabilities": {
+            "answers": 0.14,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.05,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.1,
+            "matches_requirement": 0.0,
+            "none": 0.01,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.19,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.01,
+            "supports": 0.04,
+            "total_of": 0.0,
+            "triggers": 0.01,
+            "updates_state": 0.36,
+            "uses_background": 0.0,
+            "verified_by": 0.06,
+            "violates_constraint": 0.01
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "none",
+          "confidence": 0.43,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.08,
+            "contributes_to": 0.0,
+            "corrects": 0.0,
+            "depends_on": 0.0,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.29000000000000004,
+            "matches_requirement": 0.01,
+            "none": 0.46,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.05,
+            "same_event_as": 0.01,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.01,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.06,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "none",
+          "confidence": 0.87,
+          "probabilities": {
+            "answers": 0.0,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.01,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.060000000000000005,
+            "matches_requirement": 0.0,
+            "none": 0.89,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.0,
+            "updates_state": 0.01,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1318,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -29738,6 +37226,105 @@
         }
       },
       "input_tokens": 1800,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "e2a0b14ef08a09cb3895b04fdcb260ef206dfeda8e19610da51a18e6b934f717": {
+      "answers": {
+        "t0": {
+          "choice": "triggers",
+          "confidence": 0.45,
+          "probabilities": {
+            "answers": 0.16,
+            "authorizes": 0.01,
+            "checked_against": 0.0,
+            "chosen_because": 0.15000000000000002,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.02,
+            "corrects": 0.01,
+            "depends_on": 0.0,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.06999999999999999,
+            "matches_requirement": 0.0,
+            "none": 0.0,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.05,
+            "total_of": 0.0,
+            "triggers": 0.48,
+            "updates_state": 0.02,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "same_entity_as",
+          "confidence": 0.3,
+          "probabilities": {
+            "none": 0.38,
+            "same_entity_as": 0.54,
+            "same_event_as": 0.08
+          },
+          "type": "choice"
+        },
+        "t2": {
+          "choice": "none",
+          "confidence": 0.75,
+          "probabilities": {
+            "none": 0.84,
+            "same_entity_as": 0.16,
+            "same_event_as": 0.0
+          },
+          "type": "choice"
+        },
+        "t3": {
+          "choice": "chosen_because",
+          "confidence": 0.45,
+          "probabilities": {
+            "answers": 0.05,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.48,
+            "component_of": 0.0,
+            "confirms_selection": 0.02,
+            "contradicts": 0.0,
+            "contributes_to": 0.04,
+            "corrects": 0.09,
+            "depends_on": 0.01,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.07,
+            "matches_requirement": 0.01,
+            "none": 0.01,
+            "qualifies_as": 0.01,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.01,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.11,
+            "updates_state": 0.02,
+            "uses_background": 0.05,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1314,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -32681,6 +40268,105 @@
         }
       },
       "input_tokens": 20863,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "f8318b52ac4b955c459f2ac2ef6c7ed9cc5d434f4613217812dfaa4855ae9c82": {
+      "answers": {
+        "r0_0": {
+          "type": "noul",
+          "yes": 0.17
+        },
+        "r0_1": {
+          "type": "noul",
+          "yes": 0.26
+        },
+        "r0_10": {
+          "type": "noul",
+          "yes": 0.24
+        },
+        "r0_11": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_12": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_13": {
+          "type": "noul",
+          "yes": 0.03
+        },
+        "r0_14": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "r0_15": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_16": {
+          "type": "noul",
+          "yes": 0.19
+        },
+        "r0_17": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "r0_18": {
+          "type": "noul",
+          "yes": 0.24
+        },
+        "r0_19": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_2": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_20": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_21": {
+          "type": "noul",
+          "yes": 0.04
+        },
+        "r0_22": {
+          "type": "noul",
+          "yes": 0.06
+        },
+        "r0_3": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "r0_4": {
+          "type": "noul",
+          "yes": 0.38
+        },
+        "r0_5": {
+          "type": "noul",
+          "yes": 0.25
+        },
+        "r0_6": {
+          "type": "noul",
+          "yes": 0.35
+        },
+        "r0_7": {
+          "type": "noul",
+          "yes": 0.9
+        },
+        "r0_8": {
+          "type": "noul",
+          "yes": 0.16
+        },
+        "r0_9": {
+          "type": "noul",
+          "yes": 0.25
+        }
+      },
+      "input_tokens": 2222,
       "model": "jev-1.13.0",
       "requests": 1
     }

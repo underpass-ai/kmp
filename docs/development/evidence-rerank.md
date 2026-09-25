@@ -103,3 +103,26 @@ selection. A wake without an intent is not focused.
 If the focus cannot run, the ordinary wake continues with a warning. On the
 judged corpus the focused first page kept every required memory (15/15
 against 14/15) and was 27% smaller (`jev-evaluation.md`).
+
+## Relations proposed after a write
+
+Put `write-relations.json` (`{}`) beside `typesafe.json` and a committed
+`kmp_write_memory` of memories carries `proposed_relations`. For each new
+memory (at most 8 per write), Jev reads every current fact of its about. It
+answers whether each has a direct relation to the new memory: causes,
+explains, supports, contradicts, updates, answers or repeats. Up to three
+facts at 0.5 or above are kept, relations already declared are skipped, and
+each pair is typed. Kernel pairs that touch the new memory are typed with
+them. A pair Jev types as no relation is dropped.
+
+Nothing is written. The proposals are a frozen `kmp_curate` review, so the
+agent declares the ones it confirms through `kmp_curate` apply, in its own
+why and evidence. `kmp_curate` `mode: review` with `focus` gives the same
+review for any facts, not only just-written ones.
+
+Without the opt-in, or when Jev fails, the write is unchanged. Only a
+warning says why. On the judged corpus, the partner a reader expected was
+proposed for 11/11 new facts, against 7/11 from kernel pairs alone. None of
+the 4 distractors was proposed, where the kernel proposed 3. Each fact gets
+about 1.5 proposals in 1.1 KB. A write costs about 3.6k Jev tokens on a small
+about and 26k on a 318-fact one, about $0.001 (`jev-evaluation.md`).

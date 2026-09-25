@@ -114,6 +114,14 @@ For example, after a packet with local ids `source` and `decision`, the action's
 source evidence and relation proof. `receipt.writer.relation_quality` retains the
 compiler's per-link checks. `command` gives the accepted revision and content hash.
 
+On a store with `write-relations.json` beside `typesafe.json`, a committed
+write of memories can carry `proposed_relations`: facts already stored that
+Jev reads as directly related to what you just wrote, at most three for each
+memory, each with the relation type Jev would choose. Nothing is written.
+Declare the ones you confirm with `kmp_curate` `mode:"apply"`, the returned
+`review_token` and each `item_id`, in your own why and evidence. Ignore the
+rest. The type is Jev's reading, not proof: check it against both texts.
+
 This is the original accepted snapshot. A later relabel or search rendering does
 not rewrite it; inspect the memory's own ref for its current state. Receipts survive
 restart and bundle export/import and are not graph memories, label matches or

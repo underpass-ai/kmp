@@ -310,6 +310,7 @@ pub(crate) fn write_memory_output_schema() -> Value {
         "relation_quality_metrics": described("object", "Preview counts and prior-context coverage; stored in the receipt after commit."),
         "ingest_preview": described("object", "Canonical kmp_ingest arguments. Present only on dry-run."),
         "diagnostics": described("array", "Planner diagnostics that qualify the write."),
+        "proposed_relations": described("object", "Committed memories on a store with write-relations.json: relations Jev reads as missing from them, as `review_token`, `items` ({`item_id`, `from`, `to`, `rel`, `confidence`, `to_excerpt`}) and `jev`. Nothing is written: declare the ones you confirm with kmp_curate apply, in your own why and evidence."),
         "next_suggested_reads": described("array", "Optional preview reading suggestions. Accepted writes need no routine verification; receipt.action retrieves audit detail on demand."),
         "viewer": output_object(json!({
             "url": described("string", "Loopback, read-only viewer URL carrying this session's capability."),

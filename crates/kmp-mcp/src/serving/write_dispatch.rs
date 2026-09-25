@@ -69,7 +69,8 @@ impl KernelMcpServer {
         };
 
         match self.commit_write_plan(arguments, &plan, None).await {
-            Ok(value) => {
+            Ok(mut value) => {
+                self.propose_write_relations(&plan, &mut value).await;
                 let result = tool_success_result(value);
                 record_tool_success(
                     self.backend_name(),

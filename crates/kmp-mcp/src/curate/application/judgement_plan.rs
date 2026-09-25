@@ -84,7 +84,7 @@ pub(crate) fn relation_options(crosses_abouts: bool) -> Vec<String> {
 }
 
 /// A fact as the judge reads it: its date first when known, then its text.
-fn text_of(material: &CurateMaterial, reference: &str) -> String {
+pub(crate) fn text_of(material: &CurateMaterial, reference: &str) -> String {
     material
         .fact(reference)
         .map(|fact| match &fact.occurred {
