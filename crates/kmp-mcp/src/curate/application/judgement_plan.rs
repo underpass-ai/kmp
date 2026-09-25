@@ -20,17 +20,11 @@ pub(crate) fn excerpt(text: &str, chars: usize) -> String {
     text.chars().take(chars).collect()
 }
 
-/// Whether the relation as declared is the right one, or its reverse, asked
-/// as a choice between two concrete sentences. The author's why and evidence
-/// come with it: they say what the author meant, and the judge weighs them
-/// against the two texts and their dates.
-fn direction_question(
-    from: &str,
-    to: &str,
-    relation: &str,
-    why: &str,
-    evidence: &str,
-) -> Option<JudgementQuestion> {
+/// Which way a relation runs, asked as a choice between two concrete
+/// sentences over the two dated texts alone. The author's why is left out on
+/// purpose: measured on a reversed declaration, a wrong why moved the judge
+/// from 0.01 to 0.86 towards the declared direction (jev-evaluation.md).
+fn direction_question(from: &str, to: &str, relation: &str) -> Option<JudgementQuestion> {
     if SYMMETRIC.contains(&relation) {
         return None;
     }
@@ -39,10 +33,8 @@ fn direction_question(
         instructions: json!({
             "a": excerpt(from, SENT_CHARS),
             "b": excerpt(to, SENT_CHARS),
-            "why": why,
-            "evidence": evidence,
             "question": format!(
-                "Given `why` and `evidence`, which statement is right? forward: `a` {verb} `b`. backward: `b` {verb} `a`. neither: neither holds."
+                "Which is true? forward: `a` {verb} `b`. backward: `b` {verb} `a`. neither: neither holds."
             ),
         }),
         options: vec!["forward".into(), "backward".into(), NONE.into()],
@@ -200,8 +192,6 @@ pub(crate) fn suspect_request(material: &CurateMaterial) -> JudgementRequest {
             &text_of(material, &link.from),
             &text_of(material, &link.to),
             &link.rel,
-            &link.why,
-            &link.evidence,
         ) {
             questions.insert(format!("d{n}"), direction);
         }
@@ -254,8 +244,6 @@ pub(crate) fn precheck_request(
             &text_of(material, &item.from),
             &text_of(material, &item.to),
             &item.rel,
-            &item.why,
-            &item.evidence,
         ) {
             questions.insert(format!("d{n}"), direction);
         }
