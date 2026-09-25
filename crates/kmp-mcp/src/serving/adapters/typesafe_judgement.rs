@@ -34,7 +34,7 @@ impl TypeSafeJudgement {
             return Ok(None);
         };
         let (endpoint, timeout) = config.validate()?;
-        let key = TypeSafeApiKey::from_env(key)?;
+        let key = TypeSafeApiKey::load(key)?;
         Ok(Some(Arc::new(Self::new(
             endpoint,
             config.model,

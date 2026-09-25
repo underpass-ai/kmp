@@ -11,6 +11,12 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- The TypeSafe key can live in an owner-only `~/.config/typesafe.env`
+  (`TYPESAFE_API_KEY=…`, or under `$XDG_CONFIG_HOME`), read when the
+  environment does not set it. A host launched from a desktop session never
+  reads a shell profile, so this is how it finds the key without the key
+  being copied into each host's configuration. A file others can read is
+  refused.
 - Relations proposed after a write. With `write-relations.json` beside
   `typesafe.json`, a committed `kmp_write_memory` of memories returns
   `proposed_relations`: facts of the same about that Jev reads as directly

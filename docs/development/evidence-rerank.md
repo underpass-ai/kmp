@@ -22,7 +22,9 @@ Beside the selected store, place:
   {"pool_size": 400, "excerpt_chars": 300}
   ```
 
-and set `TYPESAFE_API_KEY` in the environment of the MCP process. Then
+and set `TYPESAFE_API_KEY` in the environment of the MCP process, or put
+`TYPESAFE_API_KEY=<key>` in `~/.config/typesafe.env` with mode 600. The
+environment wins when both are set. Then
 restart that process. The key is never written to a file by KMP and never
 appears in logs, warnings or errors.
 
