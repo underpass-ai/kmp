@@ -6,4 +6,7 @@ pub(crate) struct CurateFact {
     pub about: String,
     pub text: String,
     pub occurred: Option<String>,
+    /// Its label memberships, `(key, value)`: the dimensions its coordinates
+    /// stand in.
+    pub labels: Vec<(String, String)>,
 }

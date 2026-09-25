@@ -233,6 +233,7 @@ mod tests {
             about: about.into(),
             text: format!("text {reference}"),
             occurred: None,
+            labels: Vec::new(),
         }
     }
 
@@ -242,6 +243,7 @@ mod tests {
             declared: vec![],
             pairs: vec![],
             selection: "fp".into(),
+            past: Vec::new(),
         }
     }
 

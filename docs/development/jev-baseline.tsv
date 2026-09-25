@@ -36,6 +36,8 @@ write_memory_partner_proposed	1.0000
 summaries_unfaithful_flagged_without_jev	0.0000
 summaries_unfaithful_flagged_with_jev	1.0000
 summaries_faithful_kept	1.0000
+labels_right	1.0000
+labels_none_kept	0.0000
 paths_clean_declared_only	1.0000
 paths_clean_with_jev	1.0000
 avoided_are_bad	1.0000

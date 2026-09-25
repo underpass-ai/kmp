@@ -13,3 +13,4 @@ pub(crate) mod frozen_check;
 pub(crate) mod jev_verdict;
 pub(crate) mod pair_origin;
 pub(crate) mod path_hop;
+pub(crate) mod proposed_label;

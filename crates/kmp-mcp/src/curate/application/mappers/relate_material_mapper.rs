@@ -11,23 +11,34 @@ use crate::curate::domain::pair_origin::PairOrigin;
 /// declared between them, and the kernel's proposed pairs that nothing
 /// declares yet. Superseded and expired facts are history, not candidates.
 pub(crate) fn relate_material(response: &RelateResponse) -> CurateMaterial {
-    let facts = response
+    let to_fact = |fact: &kmp_proto::v1beta1::RelatedFact| CurateFact {
+        reference: fact.r#ref.clone(),
+        about: fact.about.clone(),
+        text: fact.text.clone(),
+        occurred: fact
+            .coordinates
+            .iter()
+            .filter_map(|coordinate| coordinate.occurred_at.as_ref())
+            .map(|timestamp| timestamp.seconds)
+            .min()
+            .map(fact_date),
+        labels: fact
+            .coordinates
+            .iter()
+            .map(|coordinate| {
+                (
+                    coordinate.dimension.clone(),
+                    label_value(&coordinate.scope_id),
+                )
+            })
+            .collect(),
+    };
+    let (current, past): (Vec<_>, Vec<_>) = response
         .facts
         .iter()
-        .filter(|fact| fact.state == FactState::Current as i32)
-        .map(|fact| CurateFact {
-            reference: fact.r#ref.clone(),
-            about: fact.about.clone(),
-            text: fact.text.clone(),
-            occurred: fact
-                .coordinates
-                .iter()
-                .filter_map(|coordinate| coordinate.occurred_at.as_ref())
-                .map(|timestamp| timestamp.seconds)
-                .min()
-                .map(fact_date),
-        })
-        .collect::<Vec<_>>();
+        .partition(|fact| fact.state == FactState::Current as i32);
+    let facts = current.into_iter().map(to_fact).collect::<Vec<_>>();
+    let past = past.into_iter().map(to_fact).collect::<Vec<_>>();
     let about_of = |reference: &str| {
         facts
             .iter()
@@ -72,6 +83,7 @@ pub(crate) fn relate_material(response: &RelateResponse) -> CurateMaterial {
         declared,
         pairs,
         selection: response.selection_fingerprint.clone(),
+        past,
     }
 }
 
@@ -138,5 +150,54 @@ mod tests {
             material.orphans().is_empty(),
             "a1 and a2 are declared, b1 is paired"
         );
+    }
+}
+
+/// The value of a label scope id, `label:v1:<about>:<key>:<value>` with the
+/// about and value percent-encoded; any other scope id is its own value.
+fn label_value(scope_id: &str) -> String {
+    let Some(rest) = scope_id.strip_prefix("label:v1:") else {
+        return scope_id.to_string();
+    };
+    let Some(encoded) = rest.splitn(3, ':').nth(2) else {
+        return scope_id.to_string();
+    };
+    let bytes = encoded.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        let hex = bytes
+            .get(index + 1..index + 3)
+            .and_then(|pair| std::str::from_utf8(pair).ok())
+            .and_then(|pair| u8::from_str_radix(pair, 16).ok());
+        match (bytes[index], hex) {
+            (b'%', Some(byte)) => {
+                decoded.push(byte);
+                index += 3;
+            }
+            (byte, _) => {
+                decoded.push(byte);
+                index += 1;
+            }
+        }
+    }
+    String::from_utf8(decoded).unwrap_or_else(|_| encoded.to_string())
+}
+
+#[cfg(test)]
+mod label_value_tests {
+    use super::label_value;
+
+    #[test]
+    fn a_label_scope_id_yields_its_decoded_value() {
+        assert_eq!(
+            label_value("label:v1:project%3Aatlas:component:pricing"),
+            "pricing"
+        );
+        assert_eq!(
+            label_value("label:v1:question%3Aa:conversation:conversation%3Aalpha"),
+            "conversation:alpha"
+        );
+        assert_eq!(label_value("atlas-2026"), "atlas-2026");
     }
 }

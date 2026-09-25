@@ -498,6 +498,7 @@ mod tests {
             about: "a".into(),
             text: format!("text {reference}"),
             occurred: None,
+            labels: Vec::new(),
         };
         let link = |from: &str, to: &str| DeclaredLink {
             from: from.into(),
@@ -511,6 +512,7 @@ mod tests {
             declared: vec![link("a", "b"), link("b", "c")],
             pairs: Vec::new(),
             selection: "fp".into(),
+            past: Vec::new(),
         }
     }
 

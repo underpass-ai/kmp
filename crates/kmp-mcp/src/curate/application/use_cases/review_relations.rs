@@ -251,6 +251,7 @@ mod tests {
             about: about.into(),
             text: format!("text {reference}"),
             occurred: None,
+            labels: Vec::new(),
         }
     }
 
@@ -279,6 +280,7 @@ mod tests {
                 crosses_abouts: true,
             }],
             selection: "fp".into(),
+            past: Vec::new(),
         }
     }
 

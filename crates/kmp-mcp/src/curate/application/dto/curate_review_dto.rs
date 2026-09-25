@@ -155,11 +155,13 @@ mod tests {
                     about: r[..1].into(),
                     text: "x".repeat(400),
                     occurred: None,
+                    labels: Vec::new(),
                 })
                 .collect(),
             declared: vec![],
             pairs: vec![],
             selection: "fp".into(),
+            past: Vec::new(),
         }
     }
 

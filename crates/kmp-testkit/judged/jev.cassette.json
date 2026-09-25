@@ -1812,6 +1812,118 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "1039047dad7da1e67a91cfa2d0febe89bdf0d6ff23346c071ccb0bf48881cb51": {
+      "answers": {
+        "l0_0": {
+          "choice": "operations",
+          "confidence": 0.54,
+          "probabilities": {
+            "ci": 0.0,
+            "compliance": 0.0,
+            "database": 0.0,
+            "design": 0.0,
+            "mobile": 0.0,
+            "none": 0.39,
+            "operations": 0.6,
+            "pricing": 0.01
+          },
+          "type": "choice"
+        },
+        "l1_0": {
+          "choice": "pricing",
+          "confidence": 0.84,
+          "probabilities": {
+            "ci": 0.0,
+            "compliance": 0.0,
+            "database": 0.0,
+            "design": 0.0,
+            "mobile": 0.0,
+            "none": 0.14,
+            "operations": 0.0,
+            "pricing": 0.86
+          },
+          "type": "choice"
+        },
+        "l2_0": {
+          "choice": "database",
+          "confidence": 0.95,
+          "probabilities": {
+            "ci": 0.0,
+            "compliance": 0.0,
+            "database": 0.96,
+            "design": 0.0,
+            "mobile": 0.0,
+            "none": 0.04,
+            "operations": 0.0,
+            "pricing": 0.0
+          },
+          "type": "choice"
+        },
+        "l3_0": {
+          "choice": "ci",
+          "confidence": 0.99,
+          "probabilities": {
+            "ci": 0.99,
+            "compliance": 0.0,
+            "database": 0.0,
+            "design": 0.0,
+            "mobile": 0.0,
+            "none": 0.01,
+            "operations": 0.0,
+            "pricing": 0.0
+          },
+          "type": "choice"
+        },
+        "l4_0": {
+          "choice": "operations",
+          "confidence": 1.0,
+          "probabilities": {
+            "ci": 0.0,
+            "compliance": 0.0,
+            "database": 0.0,
+            "design": 0.0,
+            "mobile": 0.0,
+            "none": 0.0,
+            "operations": 1.0,
+            "pricing": 0.0
+          },
+          "type": "choice"
+        },
+        "l5_0": {
+          "choice": "compliance",
+          "confidence": 0.98,
+          "probabilities": {
+            "ci": 0.0,
+            "compliance": 0.99,
+            "database": 0.0,
+            "design": 0.0,
+            "mobile": 0.0,
+            "none": 0.01,
+            "operations": 0.0,
+            "pricing": 0.0
+          },
+          "type": "choice"
+        },
+        "l6_0": {
+          "choice": "pricing",
+          "confidence": 0.97,
+          "probabilities": {
+            "ci": 0.0,
+            "compliance": 0.0,
+            "database": 0.0,
+            "design": 0.0,
+            "mobile": 0.0,
+            "none": 0.02,
+            "operations": 0.0,
+            "pricing": 0.98
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 1359,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "1131ed22a6a905434477f69e96c39912ad909a0e367b8bf41458ca2a312dbcd1": {
       "answers": {
         "r0_0": {
