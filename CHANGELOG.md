@@ -11,6 +11,12 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp_curate` `mode: paths` without `to` reaches consequences of
+  consequences. Up to two more rounds ask Jev what happened because of, or in
+  response to, the facts already kept, and a proposed step Jev types as no
+  relation is dropped. On the judged corpus, paths found rise from 3/5 to 4/5
+  and proposed steps right from 81% to 83%, stable over 3 samples. A
+  goal-less search costs up to 2 more requests.
 - `kmp_curate` `mode: paths` audits the declared relations a result walks.
   Those whose why and evidence Jev does not find to hold are left out, and
   the search runs again. The answer lists them under `avoided`. On the

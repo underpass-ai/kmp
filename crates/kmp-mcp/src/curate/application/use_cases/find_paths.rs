@@ -3,12 +3,13 @@ use std::collections::{BTreeMap, BTreeSet, BinaryHeap};
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{
-    PATH_FACTS, next_step_request, on_the_way_request, pair_request, suspect_request,
+    next_step_request, pair_request, suspect_request,
 };
+use crate::curate::application::on_the_way::facts_on_the_way;
 use crate::curate::application::path_search::PathSearch;
 use crate::curate::domain::avoided_hop::AvoidedHop;
 use crate::curate::domain::candidate_pair::CandidatePair;
-use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE, PARTNER_AT};
+use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE};
 use crate::curate::domain::found_path::FoundPath;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::curate::domain::path_hop::PathHop;
@@ -203,33 +204,11 @@ async fn propose(
     search: &mut PathSearch,
     usage: &mut JevUsage,
 ) -> Result<(), String> {
-    let (request, refs) = on_the_way_request(material, from, to);
-    let response = model.evaluate(&request).await?;
-    usage.requests += response.requests;
-    usage.input_tokens += response.input_tokens;
-    let mut kept = refs
-        .iter()
-        .enumerate()
-        .filter_map(
-            |(n, reference)| match response.answers.get(&format!("w{n}")) {
-                Some(JudgementAnswer::Noul { yes }) if *yes >= PARTNER_AT => {
-                    Some((*yes, reference.clone()))
-                }
-                _ => None,
-            },
-        )
-        .collect::<Vec<_>>();
-    kept.sort_by(|left, right| {
-        right
-            .0
-            .total_cmp(&left.0)
-            .then_with(|| left.1.cmp(&right.1))
-    });
-    kept.truncate(PATH_FACTS - 2);
+    let kept = facts_on_the_way(model, material, from, to, usage).await?;
     search.kept = kept.len();
     let walk = std::iter::once(from.to_string())
         .chain(to.map(str::to_string))
-        .chain(kept.into_iter().map(|(_, reference)| reference))
+        .chain(kept)
         .collect::<Vec<_>>();
     if walk.len() < 2 {
         return Ok(());
@@ -305,6 +284,8 @@ async fn propose(
                 hop.rel = Some(choice.clone());
             }
         }
+        // A step the judge types as no relation is not a step.
+        proposed.retain(|hop| hop.rel.is_some());
     }
     edges.extend(proposed);
     Ok(())
