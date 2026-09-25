@@ -9,80 +9,87 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+TypeSafe Jev joins KMP as a cheap second reader. It is opt-in per store and
+measured case by case. Only what improved quality or cut what the agent reads
+was kept.
+
 ### Added
 
-- `kmp_curate` `mode: paths` without `to` reaches consequences of
-  consequences. Up to two more rounds ask Jev what happened because of, or in
-  response to, the facts already kept, and a proposed step Jev types as no
-  relation is dropped. On the judged corpus, paths found rise from 3/5 to 4/5
-  and proposed steps right from 81% to 83%, stable over 3 samples. A
-  goal-less search costs up to 2 more requests.
-- `kmp_curate` `mode: paths` audits the declared relations a result walks.
-  Those whose why and evidence Jev does not find to hold are left out, and
-  the search runs again. The answer lists them under `avoided`. On the
-  judged corpus, no returned path walks a planted bad declaration any more.
-  The audit costs 2 requests over the corpus.
-- Focused `kmp_wake`. With `wake-focus.json` beside `typesafe.json` and a
-  stated `intent`, Jev judges which admitted evidence matters for resuming
-  that work. The packet keeps it and withholds the rest, reported as
-  withheld. On the judged corpus: required memories 15/15 against 14/15, and
-  27% fewer bytes on the first page (up to 45% on a 318-fact store).
+- `kmp_curate` reviews and applies the relations of one or several abouts.
+  - `mode: review` reads the selection the way `kmp_relate` does and writes
+    nothing. It returns `missing` pairs of current facts that nothing
+    declares, and `suspect` declared relations whose why and evidence Jev
+    doubts.
+  - Missing pairs come from checkable kernel signals, now inside one about
+    as well as across abouts, and from partners Jev picks for facts nothing
+    else paired. Each pair carries the relation type Jev would choose.
+  - `mode: apply` declares accepted items through the writer's own review.
+    First Jev checks the item's support and type. It also asks which way the
+    relation runs, as a choice between two dated sentences without the
+    author's why, and holds back an item written the wrong way round.
+  - Every doubt and suspect says why it was raised (`reasons`: support, type,
+    direction).
+  - Jev only chooses among offered options, so the agent still writes every
+    relation.
+  - On the judged corpus it finds 11/11 missing relations against 7/11
+    without Jev. The agent reads 12.6 KB instead of the 133 KB of doing the
+    same by hand through `kmp_relate`.
 - `kmp_curate` `mode: paths` finds whole chains from `from` (to `to`, or as
-  far as they go) across one or several abouts. It joins declared relations
-  with the consequence and cause steps Jev proposes among the facts it
-  judges on the way. Proposed steps are frozen under `review_token`, so
-  `mode: apply` can declare them. Paths found: 3/5 against 0/5 over declared
-  relations alone, with 79–93% of proposed steps right.
+  far as they go) across one or several abouts.
+  - It joins declared relations with the consequence and cause steps Jev
+    proposes among the facts it judges on the way.
+  - Without `to`, it follows consequences of consequences.
+  - The declared relations a result walks are audited, and those whose why
+    does not hold are left out and listed under `avoided`.
+  - Proposed steps are frozen under `review_token`, so `mode: apply` can
+    declare them.
+  - Judged corpus: paths found 4/5 against 0/5 over declared relations
+    alone, with 81–87% of proposed steps right. No returned path walks a
+    planted bad declaration. An answer is about 2 KB, against 133 KB to trace
+    it by hand.
+- Optional Ask re-ranking, enabled by `rerank.json` on top of
+  `typesafe.json`.
+  - Jev judges whether each admitted passage answers the question. Its order
+    joins the RRF fusion as a channel.
+  - The cited core, `because` and confidence stay lexical. Entries reached
+    only this way carry `reached_by: rerank`.
+  - `pool_size` goes up to 400 with `excerpt_chars` from 200 to 2000. On a
+    large store, only that wide pool reached answers the lexical ranker never
+    listed.
+  - Judged corpus: Ask MRR 0.19 → 0.94.
+- Focused `kmp_wake`, enabled by `wake-focus.json` on top of `typesafe.json`.
+  - With a stated `intent`, Jev judges which admitted evidence matters for
+    resuming that work. The packet keeps it and withholds the rest.
+  - Judged corpus: required memories 15/15 against 14/15, and 27% fewer bytes
+    on the first page (up to 45% on a 318-fact store).
+- The Jev opt-in: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in
+  the environment. The text of the facts judged is sent to TypeSafe. Without
+  the opt-in, or when Jev fails, every tool keeps its ordinary behaviour and
+  says so in a warning. Judgements are frozen for continuation pages.
+- A judged evaluation of Jev with KMP.
+  - The corpus is `crates/kmp-testkit/judged/jev_cases.json`: a bilingual
+    payments journal and a 318-fact store with lexical traps.
+  - `jev_kmp_scorecard` scores it against floors in
+    `docs/development/jev-baseline.tsv`.
+  - `scripts/ci/jev-baseline.sh` replays it from a recorded cassette, with no
+    key and no network.
+  - `KMP_TYPESAFE_CASSETTE` and `KMP_TYPESAFE_CASSETTE_MODE=record|replay`
+    record and replay a store's judgements.
+  - `scripts/eval/jev-samples.sh` records several samples, because Jev is
+    not deterministic.
+  - The retrieval scorecard gains the `RETRIEVAL_RERANK` and
+    `RETRIEVAL_MAX_ENTRIES` arms.
+  - `docs/development/jev-evaluation.md` holds the decision table for each use
+    case. It records what was kept and what was removed: direction is not
+    asked in the audit, and the author's why is not sent to Jev when asking
+    direction.
 
-- `kmp_curate` apply asks Jev which way each relation runs before writing it,
-  as a choice between two dated sentences without the author's why, and
-  holds back an item written the wrong way round. Every doubt and suspect now
-  says why it was raised (`reasons`: support, type, direction). Facts reach
-  Jev with their date. The audit of stored relations does not ask direction:
-  in three recorded samples it flagged nothing more.
-- Ask re-ranking can read a wide pool: `rerank.json` `pool_size` up to 400
-  with `excerpt_chars` from 200 to 2000. On a 307-fact store it reached an
-  answer the 40-passage pool never listed.
-- The Jev evaluation gains a 315-fact case with lexical traps, a curate arm
-  without Jev, the agent-load comparison with curating by hand through
-  `kmp_relate`, and multi-sample recording (`scripts/eval/jev-samples.sh`).
-  The retrieval scorecard gains `RETRIEVAL_RERANK` and
-  `RETRIEVAL_MAX_ENTRIES` arms. The decision table in
-  `docs/development/jev-evaluation.md` keeps Jev, removes direction from the
-  audit, and keeps re-ranking opt-in.
+### Fixed
 
-- A judged evaluation of TypeSafe Jev with KMP. The corpus
-  (`crates/kmp-testkit/judged/jev_cases.json`) is scored by
-  `jev_kmp_scorecard` against floors in `docs/development/jev-baseline.tsv`,
-  replayed from a recorded cassette with no key and no network. It is run
-  with `scripts/ci/jev-baseline.sh`. `KMP_TYPESAFE_CASSETTE` and
-  `KMP_TYPESAFE_CASSETTE_MODE=record|replay` record and replay the store's
-  judgements for evaluation. First result: Ask MRR 0.375 → 0.875 with
-  re-ranking on a small store; 4/5 planted bad declarations flagged, with
-  reversed direction the miss.
-
-### Added
-
-- `kmp_curate` reviews the relations of one or several abouts. `mode: review`
-  reads the selection the way `kmp_relate` does and writes nothing. It returns
-  `missing` pairs of current facts that nothing declares: the kernel pairs them
-  from checkable signals, now inside one about as well as across abouts, and
-  TypeSafe Jev picks partners for facts nothing else paired. Each pair carries
-  the relation type Jev would choose. It also returns `suspect` declared
-  relations whose why Jev doubts. Jev only chooses among offered options and
-  judges text, so the agent still writes every relation. Jev is opt-in per
-  store through `typesafe.json` and `TYPESAFE_API_KEY`, and the selection's
-  fact text is sent to TypeSafe. Without it, the review returns kernel pairs
-  untyped. The review is frozen under `review_token` for paging. Embedded store
-  only.
-- Optional Ask re-ranking with TypeSafe Jev, enabled per store by `rerank.json`
-  on top of `typesafe.json`. Jev judges whether each admitted passage answers
-  the question: the lexical ranker's order first, then admitted entries it
-  left out, so paraphrases can be read. The order joins the RRF fusion as a
-  channel. The cited core, `because` and confidence stay lexical, and entries
-  reached only this way carry `reached_by: rerank`. The order is frozen for
-  continuation pages, and any failure leaves ordinary retrieval with a
-  warning.
+- Store leases are process-owned POSIX record locks. Before, a lease held
+  as an `flock` was inherited by any child spawned while it was held. That
+  could make the removal guard report a store as active in another KMP host,
+  and made a lifecycle test flaky.
 
 ## [0.20.1] - 2026-09-24
 
