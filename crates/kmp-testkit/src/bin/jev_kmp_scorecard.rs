@@ -27,6 +27,7 @@ const RERANK_NARROW: &str = r#"{"pool_size":40}"#;
 /// excerpts each.
 const RERANK_WIDE: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 /// Wake focus: every admitted evidence entry, 300-character excerpts.
+const WRITE_RELATIONS: &str = "{}";
 const WAKE_FOCUS: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const ASK_TOP: usize = 5;
 
@@ -63,6 +64,16 @@ struct Expected {
     wake: Vec<WakeCase>,
     #[serde(default)]
     paths: Vec<PathCase>,
+    #[serde(default)]
+    writes: Vec<WriteCase>,
+}
+
+/// A memory written through kmp_write_memory and the facts a reader
+/// expects Jev to propose relating it to.
+#[derive(Debug, Deserialize)]
+struct WriteCase {
+    memory: Value,
+    partners: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -187,6 +198,19 @@ struct Scores {
     paths_clean: [Tally; 2],
     /// Declarations the path audit avoided that are planted bad ones.
     avoided_bad: Tally,
+    /// Relations proposed for a fact just written: the gold partner found
+    /// without and with Jev, typed as a reader accepts, distractors left out.
+    write_found: [Tally; 2],
+    write_typed: Tally,
+    write_distractors_rejected: Tally,
+    /// Proposals and bytes over every focused review, per arm.
+    write_proposals: [u64; 2],
+    write_bytes: [u64; 2],
+    write_reviews: u64,
+    /// Written through kmp_write_memory: a partner proposed, and the bytes
+    /// the proposals add to the write's answer.
+    write_e2e: Tally,
+    write_e2e_bytes: u64,
     /// Bytes of the paths answers, without and with Jev.
     path_bytes: [u64; 2],
 }
@@ -234,6 +258,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!(
         "  (agent load, not gated)      paths answers: declared-only {} bytes, with Jev {} bytes",
         scores.path_bytes[0], scores.path_bytes[1]
+    );
+    let reviews = scores.write_reviews.max(1);
+    println!(
+        "  (agent load, not gated)      write proposals per fact: kernel {:.1} in {} bytes, with Jev {:.1} in {} bytes",
+        scores.write_proposals[0] as f64 / reviews as f64,
+        scores.write_bytes[0] / reviews,
+        scores.write_proposals[1] as f64 / reviews as f64,
+        scores.write_bytes[1] / reviews
+    );
+    println!(
+        "  (agent load, not gated)      kmp_write_memory proposals add {} bytes over {} writes",
+        scores.write_e2e_bytes, scores.write_e2e.total as u64
     );
     let asks = scores.ask_mrr_plain.len().max(1) as u128;
     println!(
@@ -365,6 +401,135 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
                     || (pair[0] == gold.pair[1] && pair[1] == gold.pair[0])
             }));
     }
+    // Relations for a fact just written: the later fact of each gold pair
+    // and each distractor is the focus; its partner should be proposed, the
+    // distractor's should not.
+    let focus_cases = expected
+        .missing
+        .iter()
+        .map(|gold| (gold.pair.clone(), Some(&gold.types)))
+        .chain(
+            expected
+                .distractors
+                .iter()
+                .map(|distractor| (distractor.pair.clone(), None)),
+        )
+        .collect::<Vec<_>>();
+    for (n, (pair, types)) in focus_cases.iter().enumerate() {
+        let mut shown = Vec::new();
+        for (arm, server) in [&plain, &judged].into_iter().enumerate() {
+            let answer = call(
+                server,
+                700 + (arm as u64) * 100 + n as u64,
+                "kmp_curate",
+                json!({"mode": "review", "about": case.about, "dimensions": dimensions,
+                       "focus": [pair[1]], "page": {"entries": 20}}),
+            )
+            .await?;
+            if arm == 1 {
+                refuse_unrecorded(&answer)?;
+                if let Some(usage) = answer["jev"].as_object() {
+                    scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
+                    scores.jev_input_tokens += usage["input_tokens"].as_u64().unwrap_or(0);
+                }
+            }
+            let items = answer["missing"].as_array().cloned().unwrap_or_default();
+            scores.write_bytes[arm] += answer.to_string().len() as u64;
+            scores.write_proposals[arm] += items.len() as u64;
+            if arm == 1 {
+                scores.write_reviews += 1;
+            }
+            let hit = items.iter().find(|item| {
+                let (from, to) = (text(&item["from"]["ref"]), text(&item["to"]["ref"]));
+                (from == pair[0] && to == pair[1]) || (from == pair[1] && to == pair[0])
+            });
+            match types {
+                Some(types) => {
+                    scores.write_found[arm].add(hit.is_some());
+                    if arm == 1
+                        && let Some(item) = hit
+                    {
+                        scores
+                            .write_typed
+                            .add(types.contains(&text(&item["suggested_rel"])));
+                    }
+                }
+                None if arm == 1 => scores.write_distractors_rejected.add(hit.is_none()),
+                None => {}
+            }
+            shown.push(format!(
+                "{} {} of {}",
+                if arm == 0 { "kernel" } else { "with Jev" },
+                if hit.is_some() { "hit" } else { "miss" },
+                items.len()
+            ));
+        }
+        println!(
+            "  write    {} {} <- {} | {}",
+            if types.is_some() {
+                "gold      "
+            } else {
+                "distractor"
+            },
+            pair[1],
+            pair[0],
+            shown.join(" | ")
+        );
+    }
+
+    // The same through kmp_write_memory, on a store that opted in.
+    if !expected.writes.is_empty() {
+        let writer = seeded_server(
+            case,
+            "writer",
+            &[
+                ("typesafe.json", TYPESAFE),
+                ("write-relations.json", WRITE_RELATIONS),
+            ],
+        )
+        .await?;
+        let dimension = &case.memories[0].memory["dimensions"][0];
+        for (n, write) in expected.writes.iter().enumerate() {
+            let answer = call(
+                &writer,
+                900 + n as u64,
+                "kmp_write_memory",
+                json!({"about": case.about, "actor": "jev-scorecard",
+                       "labels": {text(&dimension["kind"]): [dimension["id"]]},
+                       "memories": [write.memory]}),
+            )
+            .await?;
+            refuse_unrecorded(&answer)?;
+            let proposed = &answer["proposed_relations"];
+            if let Some(usage) = proposed["jev"].as_object() {
+                scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
+                scores.jev_input_tokens += usage["input_tokens"].as_u64().unwrap_or(0);
+            }
+            let items = proposed["items"].as_array().cloned().unwrap_or_default();
+            let hit = items
+                .iter()
+                .any(|item| write.partners.contains(&text(&item["to"])));
+            scores.write_e2e.add(hit);
+            scores.write_e2e_bytes += if proposed.is_null() {
+                0
+            } else {
+                proposed.to_string().len() as u64
+            };
+            println!(
+                "  write    kmp_write_memory {} | Jev {} tokens | {} of {} proposals: {}",
+                text(&answer["generated_refs"][0]),
+                proposed["jev"]["input_tokens"],
+                if hit { "partner" } else { "no partner" },
+                items.len(),
+                items
+                    .iter()
+                    .map(|item| format!("{} {}", text(&item["rel"]), text(&item["to"])))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+    }
+
     // The manual alternative: read the whole selection through kmp_relate.
     let mut reading = call(
         &plain,
@@ -906,6 +1071,14 @@ fn columns(scores: &Scores) -> Vec<(&'static str, f64)> {
         ("path_found_declared_only", scores.path_found_plain.rate()),
         ("path_found_with_jev", scores.path_found_jev.rate()),
         ("proposed_hops_right", scores.proposed_hops_right.rate()),
+        ("write_found_without_jev", scores.write_found[0].rate()),
+        ("write_found_with_jev", scores.write_found[1].rate()),
+        ("write_typed_with_jev", scores.write_typed.rate()),
+        (
+            "write_distractors_rejected",
+            scores.write_distractors_rejected.rate(),
+        ),
+        ("write_memory_partner_proposed", scores.write_e2e.rate()),
         ("paths_clean_declared_only", scores.paths_clean[0].rate()),
         ("paths_clean_with_jev", scores.paths_clean[1].rate()),
         ("avoided_are_bad", scores.avoided_bad.rate()),

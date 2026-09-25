@@ -4075,6 +4075,15 @@
             },
             "type": "object"
           },
+          "focus": {
+            "description": "review: only the relations these facts are missing, typically the ones just written. Jev reads their whole about for direct partners.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
           "from": {
             "description": "paths: the fact a chain starts from, an entry ref of the selection.",
             "minLength": 1,

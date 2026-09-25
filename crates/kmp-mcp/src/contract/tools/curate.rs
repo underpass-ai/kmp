@@ -34,6 +34,7 @@ pub(crate) fn curate_schema() -> Value {
             "max_pairs": {"type": "integer", "minimum": 1, "maximum": 40, "description": "Most missing relations to return, strongest Jev confidence first. Default 12."},
             "review_token": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "A token a review returned. With it, the call pages that frozen review and reads or judges nothing again."},
             "page": page_schema("Maximum number of items from missing then suspect to return in this page; default 8, at most 20."),
+            "focus": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string"}, "description": "review: only the relations these facts are missing, typically the ones just written. Jev reads their whole about for direct partners."},
             "from": string_schema("paths: the fact a chain starts from, an entry ref of the selection."),
             "to": string_schema("paths: the fact the chain must reach. Omitted: the longest chains that follow from `from`."),
             "max_hops": {"type": "integer", "minimum": 1, "maximum": 12, "description": "paths: longest chain considered. Default 6."},
