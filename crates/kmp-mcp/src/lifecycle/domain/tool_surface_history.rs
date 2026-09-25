@@ -73,6 +73,26 @@ pub fn expected_tool_surface(
         .collect()
 }
 
+/// Whether an engine of `target` that answered `answered` passes the proof.
+///
+/// Up to this build the proof is exact: `answered` must be the surface
+/// `target` shipped with. A release newer than this build can have added or
+/// removed tools this build has never heard of, so holding it to this
+/// build's surface would refuse every update that adds a tool (0.20.1 could
+/// not update to 0.21.0, which added `kmp_curate`). A newer engine is held
+/// to what this build can know: it answers, and every tool it answers is a
+/// KMP tool. The version check beside this one still pins the release.
+pub fn surface_is_accepted(
+    target: &ReleaseVersion,
+    answered: &BTreeSet<String>,
+    current: impl IntoIterator<Item = String>,
+) -> bool {
+    if target.is_newer_than(&ReleaseVersion::current()) {
+        return !answered.is_empty() && answered.iter().all(|tool| tool.starts_with("kmp_"));
+    }
+    *answered == expected_tool_surface(target, current)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -169,5 +189,41 @@ mod tests {
             current.clone(),
         );
         assert_eq!(newer, current.into_iter().collect());
+    }
+
+    #[test]
+    fn a_release_newer_than_this_build_may_answer_tools_this_build_never_heard_of() {
+        let current = surface(&["kmp_ask", "kmp_wake"]);
+        let newer = ReleaseVersion::parse("999.0.0").expect("v");
+        let answered = ["kmp_ask", "kmp_wake", "kmp_future"]
+            .map(str::to_string)
+            .into_iter()
+            .collect::<BTreeSet<_>>();
+        assert!(surface_is_accepted(&newer, &answered, current.clone()));
+        let dropped = ["kmp_future"].map(str::to_string).into_iter().collect();
+        assert!(
+            surface_is_accepted(&newer, &dropped, current.clone()),
+            "a newer release may also have removed tools"
+        );
+        let foreign = ["kmp_ask", "shell"]
+            .map(str::to_string)
+            .into_iter()
+            .collect();
+        assert!(!surface_is_accepted(&newer, &foreign, current.clone()));
+        assert!(!surface_is_accepted(
+            &newer,
+            &BTreeSet::new(),
+            current.clone()
+        ));
+        let this_build = ReleaseVersion::current();
+        assert!(
+            !surface_is_accepted(&this_build, &answered, current.clone()),
+            "this build stays exact"
+        );
+        assert!(surface_is_accepted(
+            &this_build,
+            &current.clone().into_iter().collect(),
+            current
+        ));
     }
 }
