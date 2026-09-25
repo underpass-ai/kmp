@@ -21,6 +21,9 @@ pub struct AuditedSummary {
     /// so the writer does not have to fetch it again. Absent for a memory
     /// with nothing to do: its text is not what the answer is about.
     pub text: Option<String>,
+    /// The stored text, always: what a reader of meaning compares the
+    /// summary against. Never printed by the audit itself.
+    pub source_text: String,
     /// The summary as stored, when there is one.
     pub summary: Option<String>,
     /// Who wrote that summary, when the store knows.
@@ -59,6 +62,7 @@ mod tests {
 
     fn audited(state: SummaryState, weaknesses: Vec<SummaryWeakness>) -> AuditedSummary {
         AuditedSummary {
+            source_text: String::new(),
             about: "project:a".to_string(),
             reference: "project:a:e1".to_string(),
             kind: "decision".to_string(),

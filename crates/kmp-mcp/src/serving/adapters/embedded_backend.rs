@@ -234,7 +234,11 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 // the projections: a summary's earlier revisions are what
                 // say whether the text moved after it was written.
                 "kmp_summaries_audit" => {
-                    EmbeddedSummariesAuditTool::new(self.kernel.store())
+                    let judgement = match &self.judgement {
+                        Ok(Some(model)) => Some(model.as_ref()),
+                        _ => None,
+                    };
+                    EmbeddedSummariesAuditTool::new(self.kernel.store(), judgement)
                         .call(arguments)
                         .await
                 }

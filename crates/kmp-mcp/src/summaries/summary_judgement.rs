@@ -45,6 +45,7 @@ pub(crate) fn judge(history: &EntryHistory, lexicon: &AboutLexicon) -> AuditedSu
         kind: latest.kind.clone(),
         state,
         text: needs_a_writer.then(|| latest.text.clone()),
+        source_text: latest.text.clone(),
         summary: latest.summary.clone(),
         summary_by: latest.summary_by.clone(),
         faults,

@@ -3,6 +3,7 @@ use serde_json::Value;
 
 use crate::guide;
 use crate::projection::summaries_audit_page;
+use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::{ToolError, tool_success_result};
 use crate::summaries::{AuditScope, SummaryAudit};
 
@@ -16,11 +17,17 @@ use crate::summaries::{AuditScope, SummaryAudit};
 /// this store's debt.
 pub(crate) struct EmbeddedSummariesAuditTool<'a> {
     store: &'a EmbeddedKernelStore,
+    /// TypeSafe Jev when the store opted in: it reads each standing summary
+    /// against its memory, which the audit itself never does.
+    judgement: Option<&'a dyn JudgementModel>,
 }
 
 impl<'a> EmbeddedSummariesAuditTool<'a> {
-    pub(crate) fn new(store: &'a EmbeddedKernelStore) -> Self {
-        Self { store }
+    pub(crate) fn new(
+        store: &'a EmbeddedKernelStore,
+        judgement: Option<&'a dyn JudgementModel>,
+    ) -> Self {
+        Self { store, judgement }
     }
 
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
@@ -31,9 +38,12 @@ impl<'a> EmbeddedSummariesAuditTool<'a> {
             .await
             .map_err(|error| ToolError::backend(error.to_string()))?;
         let audit = SummaryAudit::read(&bundle, &scope).map_err(ToolError::backend)?;
-        Ok(tool_success_result(summaries_audit_page(
-            &audit, &scope, arguments,
-        )?))
+        let mut page = summaries_audit_page(&audit, &scope, arguments)?;
+        if let Some(model) = self.judgement {
+            super::super::summary_meaning_judge::judge_summary_meaning(model, &audit, &mut page)
+                .await;
+        }
+        Ok(tool_success_result(page))
     }
 
     /// Which abouts the caller asked for, in the surface's own words.

@@ -66,6 +66,17 @@ struct Expected {
     paths: Vec<PathCase>,
     #[serde(default)]
     writes: Vec<WriteCase>,
+    #[serde(default)]
+    summaries: Option<SummaryCase>,
+}
+
+/// Standing English summaries a reader marked faithful or not to their
+/// memory; every one of them clears the lint.
+#[derive(Debug, Deserialize)]
+struct SummaryCase {
+    about: String,
+    faithful: Vec<String>,
+    unfaithful: Vec<String>,
 }
 
 /// A memory written through kmp_write_memory and the facts a reader
@@ -211,6 +222,9 @@ struct Scores {
     /// the proposals add to the write's answer.
     write_e2e: Tally,
     write_e2e_bytes: u64,
+    /// Summary audit: unfaithful ones flagged, per arm; faithful ones left.
+    summaries_flagged: [Tally; 2],
+    summaries_faithful_kept: Tally,
     /// Bytes of the paths answers, without and with Jev.
     path_bytes: [u64; 2],
 }
@@ -526,6 +540,59 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
                     .map(|item| format!("{} {}", text(&item["rel"]), text(&item["to"])))
                     .collect::<Vec<_>>()
                     .join(", ")
+            );
+        }
+    }
+
+    // Summaries: which standing summaries each arm flags as unfaithful.
+    if let Some(summaries) = &expected.summaries {
+        for (arm, server) in [&plain, &judged].into_iter().enumerate() {
+            let answer = call(
+                server,
+                950 + arm as u64,
+                "kmp_summaries_audit",
+                json!({"about": summaries.about, "states": ["stands"], "page": {"entries": 50}}),
+            )
+            .await?;
+            if arm == 1 {
+                refuse_unrecorded(&answer)?;
+                if let Some(usage) = answer["jev"].as_object() {
+                    scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
+                    scores.jev_input_tokens += usage["input_tokens"].as_u64().unwrap_or(0);
+                }
+            }
+            let flagged = answer["entries"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter(|entry| {
+                    entry["weaknesses"]
+                        .as_array()
+                        .into_iter()
+                        .flatten()
+                        .any(|weakness| weakness["signal"] == "unfaithful")
+                })
+                .map(|entry| text(&entry["ref"]))
+                .collect::<BTreeSet<_>>();
+            let stands = answer["entries"].as_array().map_or(0, Vec::len);
+            for reference in &summaries.unfaithful {
+                scores.summaries_flagged[arm].add(flagged.contains(reference));
+            }
+            if arm == 1 {
+                for reference in &summaries.faithful {
+                    scores
+                        .summaries_faithful_kept
+                        .add(!flagged.contains(reference));
+                }
+            }
+            println!(
+                "  summary  {} | {stands} standing, flagged: {}",
+                if arm == 0 {
+                    "audit alone"
+                } else {
+                    "with Jev   "
+                },
+                flagged.iter().cloned().collect::<Vec<_>>().join(", ")
             );
         }
     }
@@ -1080,6 +1147,18 @@ fn columns(scores: &Scores) -> Vec<(&'static str, f64)> {
             scores.write_distractors_rejected.rate(),
         ),
         ("write_memory_partner_proposed", scores.write_e2e.rate()),
+        (
+            "summaries_unfaithful_flagged_without_jev",
+            scores.summaries_flagged[0].rate(),
+        ),
+        (
+            "summaries_unfaithful_flagged_with_jev",
+            scores.summaries_flagged[1].rate(),
+        ),
+        (
+            "summaries_faithful_kept",
+            scores.summaries_faithful_kept.rate(),
+        ),
         ("paths_clean_declared_only", scores.paths_clean[0].rate()),
         ("paths_clean_with_jev", scores.paths_clean[1].rate()),
         ("avoided_are_bad", scores.avoided_bad.rate()),
