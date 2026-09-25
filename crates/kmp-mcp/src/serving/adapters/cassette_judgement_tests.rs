@@ -87,6 +87,31 @@ async fn a_recorded_judgement_replays_without_the_model_and_an_unrecorded_one_fa
     assert!(!text.to_lowercase().contains("bearer"));
 }
 
+#[tokio::test]
+async fn two_recorders_on_one_file_keep_each_other_s_answers() {
+    let dir = tempfile::tempdir().expect("dir");
+    let path = dir.path().join("jev.cassette.json");
+    let first = CassetteJudgement::record(
+        &path,
+        Arc::new(Counting {
+            calls: Mutex::new(0),
+        }),
+    )
+    .expect("first");
+    let second = CassetteJudgement::record(
+        &path,
+        Arc::new(Counting {
+            calls: Mutex::new(0),
+        }),
+    )
+    .expect("second");
+    first.evaluate(&request("a")).await.expect("a");
+    second.evaluate(&request("b")).await.expect("b");
+    let replay = CassetteJudgement::replay(&path, "jev-1.13.0".into()).expect("replay");
+    replay.evaluate(&request("a")).await.expect("first kept");
+    replay.evaluate(&request("b")).await.expect("second kept");
+}
+
 #[test]
 fn a_cassette_answers_only_for_the_model_it_was_recorded_for() {
     let dir = tempfile::tempdir().expect("dir");

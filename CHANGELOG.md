@@ -11,6 +11,18 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- A judged evaluation of TypeSafe Jev with KMP. The corpus
+  (`crates/kmp-testkit/judged/jev_cases.json`) is scored by
+  `jev_kmp_scorecard` against floors in `docs/development/jev-baseline.tsv`,
+  replayed from a recorded cassette with no key and no network. It is run
+  with `scripts/ci/jev-baseline.sh`. `KMP_TYPESAFE_CASSETTE` and
+  `KMP_TYPESAFE_CASSETTE_MODE=record|replay` record and replay the store's
+  judgements for evaluation. First result: Ask MRR 0.375 → 0.875 with
+  re-ranking on a small store; 4/5 planted bad declarations flagged, with
+  reversed direction the miss.
+
+### Added
+
 - `kmp_curate` reviews the relations of one or several abouts. `mode: review`
   reads the selection the way `kmp_relate` does and writes nothing. It returns
   `missing` pairs of current facts that nothing declares: the kernel pairs them

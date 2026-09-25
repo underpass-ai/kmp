@@ -8,6 +8,7 @@ should start with [Embedded KMP](../embedded/README.md).
 - [ChronoLoom asset delivery](chronoloom-asset-performance.md) — versioned precompressed browser assets, MCP App assembly and real HTTP controls.
 - [Testing](testing.md) — the maintained local and CI verification paths.
 - [Evidence-group acceptance controls](evidence-group-evaluation.md) — #538 source-backed multi-passage controls and their evaluation boundary.
+- [TypeSafe Jev with KMP](jev-evaluation.md) — judged corpus, recorded cassette and floors for curate, the pre-write check and Ask re-ranking.
 - [Visual projection performance](visual-projection-performance.md) — snapshot-bound ChronoLoom reuse, correctness and reproducible measurements.
 - [Releasing](releasing.md) — version, artifact and tag flow.
 - [Agent token optimization](agent-token-optimization.md) — #544 integration track: token meter, Wake evidence identity and paired measurement.

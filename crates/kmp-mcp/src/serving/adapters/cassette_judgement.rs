@@ -128,6 +128,13 @@ impl JudgementModel for CassetteJudgement {
                 .entries
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
+            // Another recorder (another store in the same evaluation) may
+            // have written since this one loaded; keep what it recorded.
+            if let Some(on_disk) = read_entries(&self.path, &self.model)? {
+                for (recorded_key, recorded) in on_disk {
+                    entries.entry(recorded_key).or_insert(recorded);
+                }
+            }
             entries.insert(key, response.clone());
             self.persist(&entries)?;
             Ok(response)
