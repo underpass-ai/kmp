@@ -121,12 +121,14 @@ mod tests {
             about: "a".into(),
             text: format!("text {reference}"),
             occurred: None,
+            labels: Vec::new(),
         };
         CurateMaterial {
             facts: vec![fact("a"), fact("b"), fact("c")],
             declared: Vec::new(),
             pairs: Vec::new(),
             selection: "fp".into(),
+            past: Vec::new(),
         }
     }
 

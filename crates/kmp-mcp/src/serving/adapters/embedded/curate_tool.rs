@@ -9,9 +9,11 @@ use crate::curate::application::curate_review::CurateReview;
 use crate::curate::application::dto::curate_review_dto::review_to_value;
 use crate::curate::application::dto::path_search_dto::paths_to_value;
 use crate::curate::application::dto::prepared_apply_dto::prepared_to_value;
+use crate::curate::application::judgement_plan::excerpt;
 use crate::curate::application::mappers::relate_material_mapper::relate_material;
 use crate::curate::application::use_cases::find_paths::FindPaths;
 use crate::curate::application::use_cases::prepare_apply::PrepareApply;
+use crate::curate::application::use_cases::propose_labels::ProposeLabels;
 use crate::curate::application::use_cases::review_focus::ReviewFocus;
 use crate::curate::application::use_cases::review_relations::ReviewRelations;
 use crate::curate::domain::apply_item::ApplyItem;
@@ -69,12 +71,13 @@ impl<'a> EmbeddedCurateTool<'a> {
         match arguments.get("mode").and_then(Value::as_str) {
             Some("review") => {}
             Some("paths") => return self.paths(arguments).await,
+            Some("labels") => return self.labels(arguments).await,
             // Internal: the apply dispatcher asks the store that froze the
             // review to resolve and pre-check what the agent accepted.
             Some("prepare_apply") => return self.prepare_apply(arguments).await,
             _ => {
                 return Err(ToolError::invalid_argument(
-                    "kmp_curate mode must be review or apply",
+                    "kmp_curate mode must be review, apply, paths or labels",
                 ));
             }
         }
@@ -197,6 +200,66 @@ impl<'a> EmbeddedCurateTool<'a> {
             .map_err(|status| mapping_error(&status))?;
         let material = relate_material(&response);
         Ok(material)
+    }
+
+    /// Labels the judge would add to the facts in `focus`, from the values
+    /// their about already uses. Writes nothing; `kmp_relabel` applies them.
+    async fn labels(&self, arguments: &Value) -> Result<Value, ToolError> {
+        let about = arguments
+            .get("about")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ToolError::invalid_argument("kmp_curate labels requires about"))?
+            .to_string();
+        let focus = arguments
+            .get("focus")
+            .and_then(Value::as_array)
+            .map(|refs| {
+                refs.iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .collect::<Vec<_>>()
+            })
+            .filter(|refs| !refs.is_empty())
+            .ok_or_else(|| {
+                ToolError::invalid_argument("kmp_curate labels requires focus: the facts to label")
+            })?;
+        let Some(model) = self.judgement else {
+            return Ok(tool_success_result(serde_json::json!({
+                "summary": "no labels proposed: Jev is not configured for this store",
+                "proposed_labels": [],
+                "next_actions": [],
+                "warnings": [self.judgement_warning.map_or_else(
+                    || "Jev is not configured for this store; labels are proposed only by Jev".to_string(),
+                    |warning| format!("Jev disabled: {warning}"),
+                )],
+            })));
+        };
+        let material = self.read_material(arguments, &about).await?;
+        let (proposed, usage, warnings) = match (ProposeLabels { judgement: model })
+            .run(&material, &focus)
+            .await
+        {
+            Ok((proposed, usage)) => (proposed, Some(usage), Vec::new()),
+            Err(error) => (Vec::new(), None, vec![format!("Jev unavailable: {error}")]),
+        };
+        Ok(tool_success_result(serde_json::json!({
+            "summary": format!("{} labels proposed for {} facts", proposed.len(), focus.len()),
+            "proposed_labels": proposed.iter().map(|label| serde_json::json!({
+                "ref": label.reference,
+                "key": label.key,
+                "value": label.value,
+                "confidence": label.confidence,
+                "excerpt": material
+                    .fact(&label.reference)
+                    .map(|fact| excerpt(&fact.text, 160))
+                    .unwrap_or_default(),
+            })).collect::<Vec<_>>(),
+            "jev": usage.map(|usage| serde_json::json!({
+                "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens,
+            })),
+            "next_actions": [],
+            "warnings": warnings,
+        })))
     }
 
     async fn paths(&self, arguments: &Value) -> Result<Value, ToolError> {

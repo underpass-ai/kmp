@@ -50,6 +50,13 @@ write a word. So Jev suggests a type and doubts a reason, and you write every
    The ones it doubts are listed under `avoided`. Review those with
    `mode:"review"`.
 
+7. To label facts that lack a value under a key their about already uses,
+   call `mode:"labels"` with `focus` (up to 8 refs). Jev chooses among the
+   values the about uses, shown by example, or none; they come back as
+   `proposed_labels`. Nothing is written:
+   apply the ones you confirm with `kmp_relabel`. A fact that fits no value
+   can still be given one, so read each proposal against the fact.
+
 Jev is opt-in for each store: put `typesafe.json` beside it
 (`{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}`)
 and set `TYPESAFE_API_KEY`. The text of the selected facts, cut to 2000

@@ -11,6 +11,12 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp_curate` `mode: labels` proposes, for the facts in `focus`, a value
+  under each key their about uses and they lack. The value is chosen by
+  Jev among the about's values, shown by example, including values only
+  history carries. Nothing is written; `kmp_relabel` applies the ones the
+  agent confirms. Judged corpus, 3 samples: 6/6 right; the one fact that
+  fits no value was still given one.
 - `kmp_summaries_audit` checks meaning on a store opted into TypeSafe Jev.
   Jev reads each standing English summary on the page against its memory,
   and one it does not read as faithful gains the `unfaithful` weakness. The

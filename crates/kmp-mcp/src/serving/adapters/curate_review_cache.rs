@@ -55,6 +55,7 @@ mod tests {
                 declared: vec![],
                 pairs: vec![],
                 selection: selection.into(),
+                past: Vec::new(),
             },
         )
     }

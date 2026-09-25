@@ -68,6 +68,17 @@ struct Expected {
     writes: Vec<WriteCase>,
     #[serde(default)]
     summaries: Option<SummaryCase>,
+    #[serde(default)]
+    labels: Option<LabelCase>,
+}
+
+/// Facts without a value under `key`, and the value a reader would give
+/// each (null: none of the about's values fits).
+#[derive(Debug, Deserialize)]
+struct LabelCase {
+    about: String,
+    key: String,
+    gold: std::collections::BTreeMap<String, Option<String>>,
 }
 
 /// Standing English summaries a reader marked faithful or not to their
@@ -222,6 +233,10 @@ struct Scores {
     /// the proposals add to the write's answer.
     write_e2e: Tally,
     write_e2e_bytes: u64,
+    /// Labels: the right value proposed, and nothing proposed where none fits.
+    labels_right: Tally,
+    labels_none_kept: Tally,
+    labels_tokens: u64,
     /// Summary audit: unfaithful ones flagged, per arm; faithful ones left.
     summaries_flagged: [Tally; 2],
     summaries_faithful_kept: Tally,
@@ -284,6 +299,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!(
         "  (agent load, not gated)      kmp_write_memory proposals add {} bytes over {} writes",
         scores.write_e2e_bytes, scores.write_e2e.total as u64
+    );
+    println!(
+        "  (cost, not gated)            labels: {} Jev tokens",
+        scores.labels_tokens
     );
     let asks = scores.ask_mrr_plain.len().max(1) as u128;
     println!(
@@ -593,6 +612,46 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
                     "with Jev   "
                 },
                 flagged.iter().cloned().collect::<Vec<_>>().join(", ")
+            );
+        }
+    }
+
+    // Labels: what the judge would put under `key` for facts that lack it.
+    if let Some(labels) = &expected.labels {
+        let refs = labels.gold.keys().cloned().collect::<Vec<_>>();
+        let mut proposed = std::collections::BTreeMap::<String, String>::new();
+        for (n, chunk) in refs.chunks(8).enumerate() {
+            let answer = call(
+                &judged,
+                970 + n as u64,
+                "kmp_curate",
+                json!({"mode": "labels", "about": labels.about, "focus": chunk}),
+            )
+            .await?;
+            refuse_unrecorded(&answer)?;
+            if let Some(usage) = answer["jev"].as_object() {
+                scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
+                let tokens = usage["input_tokens"].as_u64().unwrap_or(0);
+                scores.jev_input_tokens += tokens;
+                scores.labels_tokens += tokens;
+            }
+            for label in answer["proposed_labels"].as_array().into_iter().flatten() {
+                if text(&label["key"]) == labels.key {
+                    proposed.insert(text(&label["ref"]), text(&label["value"]));
+                }
+            }
+        }
+        for (reference, gold) in &labels.gold {
+            let got = proposed.get(reference);
+            match gold {
+                Some(value) => scores.labels_right.add(got == Some(value)),
+                None => scores.labels_none_kept.add(got.is_none()),
+            }
+            println!(
+                "  label    {reference} {}={} (reader: {})",
+                labels.key,
+                got.map_or("-", String::as_str),
+                gold.as_deref().unwrap_or("none")
             );
         }
     }
@@ -1159,6 +1218,8 @@ fn columns(scores: &Scores) -> Vec<(&'static str, f64)> {
             "summaries_faithful_kept",
             scores.summaries_faithful_kept.rate(),
         ),
+        ("labels_right", scores.labels_right.rate()),
+        ("labels_none_kept", scores.labels_none_kept.rate()),
         ("paths_clean_declared_only", scores.paths_clean[0].rate()),
         ("paths_clean_with_jev", scores.paths_clean[1].rate()),
         ("avoided_are_bad", scores.avoided_bad.rate()),

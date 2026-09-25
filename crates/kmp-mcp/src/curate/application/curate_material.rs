@@ -12,6 +12,9 @@ pub(crate) struct CurateMaterial {
     pub declared: Vec<DeclaredLink>,
     pub pairs: Vec<CandidatePair>,
     pub selection: String,
+    /// Facts that are no longer current: never candidates, but the label
+    /// values they carry are still the about's catalogue.
+    pub past: Vec<CurateFact>,
 }
 
 impl CurateMaterial {

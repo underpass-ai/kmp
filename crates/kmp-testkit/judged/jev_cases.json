@@ -1031,6 +1031,34 @@
        {
         "id": "atlas-2026",
         "kind": "journal"
+       },
+       {
+        "id": "ci",
+        "kind": "component"
+       },
+       {
+        "id": "compliance",
+        "kind": "component"
+       },
+       {
+        "id": "database",
+        "kind": "component"
+       },
+       {
+        "id": "design",
+        "kind": "component"
+       },
+       {
+        "id": "mobile",
+        "kind": "component"
+       },
+       {
+        "id": "operations",
+        "kind": "component"
+       },
+       {
+        "id": "pricing",
+        "kind": "component"
        }
       ],
       "entries": [
@@ -1042,6 +1070,12 @@
          {
           "dimension": "journal",
           "scope_id": "atlas-2026",
+          "sequence": 1,
+          "occurred_at": "2026-03-03T10:00:00Z"
+         },
+         {
+          "dimension": "component",
+          "scope_id": "database",
           "sequence": 1,
           "occurred_at": "2026-03-03T10:00:00Z"
          }
@@ -1057,6 +1091,12 @@
           "scope_id": "atlas-2026",
           "sequence": 2,
           "occurred_at": "2026-03-05T10:00:00Z"
+         },
+         {
+          "dimension": "component",
+          "scope_id": "operations",
+          "sequence": 2,
+          "occurred_at": "2026-03-05T10:00:00Z"
          }
         ]
        },
@@ -1068,6 +1108,12 @@
          {
           "dimension": "journal",
           "scope_id": "atlas-2026",
+          "sequence": 3,
+          "occurred_at": "2026-03-07T10:00:00Z"
+         },
+         {
+          "dimension": "component",
+          "scope_id": "ci",
           "sequence": 3,
           "occurred_at": "2026-03-07T10:00:00Z"
          }
@@ -1109,6 +1155,12 @@
           "scope_id": "atlas-2026",
           "sequence": 6,
           "occurred_at": "2026-03-13T10:00:00Z"
+         },
+         {
+          "dimension": "component",
+          "scope_id": "operations",
+          "sequence": 6,
+          "occurred_at": "2026-03-13T10:00:00Z"
          }
         ]
        },
@@ -1122,6 +1174,12 @@
           "scope_id": "atlas-2026",
           "sequence": 7,
           "occurred_at": "2026-03-15T10:00:00Z"
+         },
+         {
+          "dimension": "component",
+          "scope_id": "compliance",
+          "sequence": 7,
+          "occurred_at": "2026-03-15T10:00:00Z"
          }
         ]
        },
@@ -1133,6 +1191,12 @@
          {
           "dimension": "journal",
           "scope_id": "atlas-2026",
+          "sequence": 8,
+          "occurred_at": "2026-03-17T10:00:00Z"
+         },
+         {
+          "dimension": "component",
+          "scope_id": "design",
           "sequence": 8,
           "occurred_at": "2026-03-17T10:00:00Z"
          }
@@ -1211,6 +1275,12 @@
          {
           "dimension": "journal",
           "scope_id": "atlas-2026",
+          "sequence": 14,
+          "occurred_at": "2026-03-19T10:00:00Z"
+         },
+         {
+          "dimension": "component",
+          "scope_id": "mobile",
           "sequence": 14,
           "occurred_at": "2026-03-19T10:00:00Z"
          }
@@ -5139,6 +5209,12 @@
           "scope_id": "atlas-2026",
           "sequence": 316,
           "occurred_at": "2026-03-02T10:00:00Z"
+         },
+         {
+          "dimension": "component",
+          "scope_id": "pricing",
+          "sequence": 316,
+          "occurred_at": "2026-03-02T10:00:00Z"
          }
         ]
        },
@@ -5519,7 +5595,20 @@
        "project:atlas:g05"
       ]
      }
-    ]
+    ],
+    "labels": {
+     "about": "project:atlas",
+     "key": "component",
+     "gold": {
+      "project:atlas:g11": "database",
+      "project:atlas:g13": "ci",
+      "project:atlas:g16": "operations",
+      "project:atlas:g17": "compliance",
+      "project:atlas:g31": "pricing",
+      "project:atlas:g05": "pricing",
+      "project:atlas:g04": null
+     }
+    }
    }
   }
  ]

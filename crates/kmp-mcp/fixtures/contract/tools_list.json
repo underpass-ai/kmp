@@ -4076,7 +4076,7 @@
             "type": "object"
           },
           "focus": {
-            "description": "review: only the relations these facts are missing, typically the ones just written. Jev reads their whole about for direct partners.",
+            "description": "labels: the facts to label (required). review: only the relations these facts are missing, typically the ones just written. Jev reads their whole about for direct partners.",
             "items": {
               "type": "string"
             },
@@ -4124,11 +4124,12 @@
             "type": "integer"
           },
           "mode": {
-            "description": "`review` reads, judges and freezes; it writes nothing. `paths` finds whole chains from `from` (to `to`, or as far as they go) over declared relations and steps Jev proposes; it writes nothing. `apply` writes the accepted items of a frozen review — a proposed path step included — through the writer's own review.",
+            "description": "`review` reads, judges and freezes; it writes nothing. `paths` finds whole chains from `from` (to `to`, or as far as they go) over declared relations and steps Jev proposes; it writes nothing. `labels` proposes, for the facts in `focus`, label values their about already uses under keys they lack; it writes nothing, and `kmp_relabel` applies the ones you confirm. `apply` writes the accepted items of a frozen review — a proposed path step included — through the writer's own review.",
             "enum": [
               "review",
               "apply",
-              "paths"
+              "paths",
+              "labels"
             ],
             "type": "string"
           },

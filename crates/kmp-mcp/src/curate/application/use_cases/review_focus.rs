@@ -186,6 +186,7 @@ mod tests {
             about: "a".into(),
             text: format!("text {reference}"),
             occurred: None,
+            labels: Vec::new(),
         };
         CurateMaterial {
             facts: ["new", "b", "c", "d", "e"].into_iter().map(fact).collect(),
@@ -206,6 +207,7 @@ mod tests {
                 crosses_abouts: false,
             }],
             selection: "fp".into(),
+            past: Vec::new(),
         }
     }
 
