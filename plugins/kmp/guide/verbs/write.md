@@ -290,7 +290,10 @@ with a `state` — `missing`, `refused`, `stands`, `not_required` — the stored
 where a rendering exists, the lint's own `faults` when it refuses one, and
 deterministic `weaknesses` when one stands and still retrieves little: `thin`,
 `repeated` across the about, `undiscriminating`, `stale` after a later rewrite.
-Weaknesses are warnings and never refusals. `totals` describes the whole
+On a store opted into TypeSafe Jev, a standing summary Jev does not read as
+saying what its memory says also carries `unfaithful`: the form is fine and
+the meaning is not, so render it again from the text. `jev` reports what the
+check cost. Weaknesses are warnings and never refusals. `totals` describes the whole
 selection and never the page; continue with `page.cursor` and the same bound
 arguments. `budget.max_bytes` covers the complete structured response,
 including its cursor and next action. If the stable core or next whole memory

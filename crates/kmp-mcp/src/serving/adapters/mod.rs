@@ -20,6 +20,7 @@ mod rerank_config;
 pub(crate) mod retrying_embedded_backend;
 mod semantic_rank_response;
 mod semantic_retriever_config;
+mod summary_meaning_judge;
 pub(crate) mod tool_request_mapping;
 mod typesafe_api_key;
 mod typesafe_batches;

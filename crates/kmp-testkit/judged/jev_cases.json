@@ -468,7 +468,10 @@
           "sequence": 1,
           "occurred_at": "2026-03-02T10:00:00Z"
          }
-        ]
+        ],
+        "metadata": {
+         "summary_en": "INC-4711: card payments failed for 40 minutes after the Valkey cluster lost its primary."
+        }
        },
        {
         "id": "service:pagos:p05",
@@ -481,7 +484,10 @@
           "sequence": 2,
           "occurred_at": "2026-03-04T10:00:00Z"
          }
-        ]
+        ],
+        "metadata": {
+         "summary_en": "Ana Ruiz signed off the postmortem of the payments incident."
+        }
        },
        {
         "id": "service:pagos:p10",
@@ -494,7 +500,10 @@
           "sequence": 3,
           "occurred_at": "2026-03-05T10:00:00Z"
          }
-        ]
+        ],
+        "metadata": {
+         "summary_en": "Refunds are processed within 48 hours."
+        }
        },
        {
         "id": "service:pagos:p11",
@@ -507,7 +516,10 @@
           "sequence": 4,
           "occurred_at": "2026-03-08T10:00:00Z"
          }
-        ]
+        ],
+        "metadata": {
+         "summary_en": "Finance confirmed that only some of the incident refunds were paid within 36 hours."
+        }
        },
        {
         "id": "service:pagos:p12",
@@ -520,7 +532,10 @@
           "sequence": 5,
           "occurred_at": "2026-03-09T10:00:00Z"
          }
-        ]
+        ],
+        "metadata": {
+         "summary_en": "The weekly refund limit is 10.000 euros."
+        }
        },
        {
         "id": "service:pagos:p13",
@@ -533,7 +548,10 @@
           "sequence": 6,
           "occurred_at": "2026-03-10T10:00:00Z"
          }
-        ]
+        ],
+        "metadata": {
+         "summary_en": "There is a daily limit for refunds."
+        }
        },
        {
         "id": "service:pagos:p20",
@@ -546,7 +564,10 @@
           "sequence": 7,
           "occurred_at": "2026-03-09T10:00:00Z"
          }
-        ]
+        ],
+        "metadata": {
+         "summary_en": "The Valkey cluster of the test environment was restarted for scheduled maintenance."
+        }
        }
       ],
       "relations": [
@@ -978,7 +999,21 @@
        "service:billing:b10"
       ]
      }
-    ]
+    ],
+    "summaries": {
+     "about": "service:pagos",
+     "faithful": [
+      "service:pagos:p01",
+      "service:pagos:p05",
+      "service:pagos:p10",
+      "service:pagos:p20"
+     ],
+     "unfaithful": [
+      "service:pagos:p11",
+      "service:pagos:p12",
+      "service:pagos:p13"
+     ]
+    }
    }
   },
   {

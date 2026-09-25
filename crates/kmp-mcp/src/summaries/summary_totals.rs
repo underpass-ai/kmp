@@ -50,6 +50,7 @@ mod tests {
 
     fn audited(state: SummaryState, weaknesses: Vec<SummaryWeakness>) -> AuditedSummary {
         AuditedSummary {
+            source_text: String::new(),
             about: "project:a".to_string(),
             reference: "project:a:e1".to_string(),
             kind: "decision".to_string(),

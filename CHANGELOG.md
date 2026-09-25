@@ -11,6 +11,13 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp_summaries_audit` checks meaning on a store opted into TypeSafe Jev.
+  Jev reads each standing English summary on the page against its memory,
+  and one it does not read as faithful gains the `unfaithful` weakness. The
+  audit alone judges form and passes a fluent summary with the wrong
+  quantity, period or polarity. Judged corpus, 3 samples: 3/3 unfaithful
+  summaries flagged against 0/3 without Jev, 4/4 faithful ones left alone,
+  about 130 Jev tokens per summary.
 - ChronoLoom draws whole paths. `kmp_view_apply_intent` takes
   `paths: {from, to?, max_hops?}` (or `null` to clear): the view runs
   `kmp_curate` `mode: paths` over its about and projected abouts and keeps the
