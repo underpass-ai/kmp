@@ -59,10 +59,19 @@ fn an_answered_first_page_offers_no_continuation_and_counts_what_it_withheld() {
 fn the_withheld_count_is_what_an_unsettled_reading_would_have_paged() {
     let answered = projected(with_status("answered"), arguments("balanced"));
     let partial = projected(with_status("partial"), arguments("balanced"));
-    let returned = |value: &Value| projection(value)["page"]["returned"].as_u64().unwrap();
-    let total = projection(&partial)["page"]["total"].as_u64().unwrap();
+    let returned = |value: &Value| {
+        projection(value)["page"]["returned"]
+            .as_u64()
+            .expect("fixture value")
+    };
+    let total = projection(&partial)["page"]["total"]
+        .as_u64()
+        .expect("fixture value");
     assert_eq!(
-        returned(&answered) + projection(&answered)["more_on_request"].as_u64().unwrap(),
+        returned(&answered)
+            + projection(&answered)["more_on_request"]
+                .as_u64()
+                .expect("fixture value"),
         total
     );
 }
@@ -109,10 +118,13 @@ fn the_answered_core_is_the_core_of_the_same_reading_unanswered() {
     let core = |value: &Value| {
         let mut value = value.clone();
         for key in ["projection", "warnings", "answer_status"] {
-            value.as_object_mut().unwrap().remove(key);
+            value.as_object_mut().expect("fixture value").remove(key);
         }
         for section in ["evidence", "path", "missing"] {
-            value["proof"].as_object_mut().unwrap().remove(section);
+            value["proof"]
+                .as_object_mut()
+                .expect("fixture value")
+                .remove(section);
         }
         value
     };
@@ -133,7 +145,12 @@ fn an_explicit_cursor_on_an_answered_reading_is_served_as_a_page() {
     args["page"] = json!({"cursor": cursor});
     let page = projected(with_status("answered"), args);
     assert!(projection(&page).get("more_on_request").is_none());
-    assert!(projection(&page)["page"]["returned"].as_u64().unwrap() > 0);
+    assert!(
+        projection(&page)["page"]["returned"]
+            .as_u64()
+            .expect("fixture value")
+            > 0
+    );
 }
 
 #[test]
@@ -193,5 +210,10 @@ fn a_shortened_answered_page_restarts_at_the_allowance_of_its_core() {
     let page = projected(with_status("answered"), restart);
     assert_eq!(projection(&page)["core_text_shortened"], false);
     assert_eq!(projection(&page)["next_action"], Value::Null);
-    assert!(projection(&page)["more_on_request"].as_u64().unwrap() > 0);
+    assert!(
+        projection(&page)["more_on_request"]
+            .as_u64()
+            .expect("fixture value")
+            > 0
+    );
 }
