@@ -17,7 +17,8 @@ pub use graph_mapping::{
     proto_graph_node_v1beta1, proto_node_detail_view_v1beta1,
 };
 pub use memory_mapping::{
-    AskGate, AskRetrievalContext, JudgedSelection, LexicalBridge, LexicalIndexCache, LexicalMargin,
+    AskGate, AskRetrievalContext, DoubtBand, DoubtEntry, DoubtJudgement, DoubtPassage,
+    DoubtVerdicts, JudgedSelection, LexicalBridge, LexicalIndexCache, LexicalMargin,
     PartnerShortlist, RerankCandidateRanking, SearchProbe, SearchProbeTerms,
     SemanticCandidateRanking, SemanticSource, ShortlistedPartners, abouts_in_bundle,
     ask_query_from_proto, ask_response_from_result, curate_reading_from_result,

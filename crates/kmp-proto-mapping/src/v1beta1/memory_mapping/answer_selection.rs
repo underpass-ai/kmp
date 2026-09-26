@@ -66,6 +66,10 @@ const RETRIEVAL_PROVENANCE_KEYS: &[&str] = &[
     ANCHOR_FROM_KEY,
     LIFECYCLE_STATE_KEY,
     LIFECYCLE_HEADS_KEY,
+    super::doubt_verdicts::JUDGED_OUT_KEY,
+    super::doubt_verdicts::JUDGED_BY_KEY,
+    super::doubt_verdicts::JUDGED_PERMILLE_KEY,
+    super::doubt_verdicts::JUDGED_TEMPLATE_KEY,
     "semantic_model_revision",
     "retrieval_channel",
 ];

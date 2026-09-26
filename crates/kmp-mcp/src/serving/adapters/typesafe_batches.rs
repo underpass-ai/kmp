@@ -55,6 +55,11 @@ impl TypeSafeBatches {
             {
                 return Err(format!("choice `{key}` needs between 2 and 255 options"));
             }
+            if let JudgementQuestion::Score { levels, .. } = question
+                && !(2..=16).contains(&levels.len())
+            {
+                return Err(format!("score `{key}` needs between 2 and 16 levels"));
+            }
             let single = BTreeMap::from([(key.clone(), question.clone())]);
             costs.push(estimated_tokens(&typesafe_request_body(
                 "",

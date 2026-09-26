@@ -7,6 +7,7 @@ use super::verdict_key::sorted_options;
 const FORMAT: u8 = 1;
 const NOUL: u8 = 0;
 const CHOICE: u8 = 1;
+const SCORE: u8 = 2;
 const Q16: f64 = 65_535.0;
 
 /// One judged answer as the book keeps it: probabilities quantized to Q16
@@ -28,6 +29,12 @@ enum QuantizedAnswer {
     },
     Choice {
         choice: u16,
+        probabilities: Vec<u16>,
+        confidence: u16,
+    },
+    /// The expected grade as a share of the scale's top grade.
+    Score {
+        score: u16,
         probabilities: Vec<u16>,
         confidence: u16,
     },
@@ -78,6 +85,23 @@ impl Verdict {
                     confidence: quantize(*confidence),
                 }
             }
+            (
+                JudgementQuestion::Score { levels, .. },
+                JudgementAnswer::Score {
+                    score,
+                    probabilities,
+                    confidence,
+                },
+            ) => {
+                if probabilities.len() != levels.len() || levels.len() < 2 {
+                    return None;
+                }
+                QuantizedAnswer::Score {
+                    score: quantize(score / (levels.len() - 1) as f64),
+                    probabilities: probabilities.iter().map(|p| quantize(*p)).collect(),
+                    confidence: quantize(*confidence),
+                }
+            }
             _ => return None,
         };
         Some(Self {
@@ -117,6 +141,24 @@ impl Verdict {
                     confidence: dequantize(*confidence),
                 })
             }
+            (
+                JudgementQuestion::Score { levels, .. },
+                QuantizedAnswer::Score {
+                    score,
+                    probabilities,
+                    confidence,
+                },
+            ) => {
+                if levels.len() != probabilities.len() {
+                    return None;
+                }
+                let top = (levels.len() - 1) as f64;
+                Some(JudgementAnswer::Score {
+                    score: (dequantize(*score) * top * 10_000.0).round() / 10_000.0,
+                    probabilities: probabilities.iter().map(|q| dequantize(*q)).collect(),
+                    confidence: dequantize(*confidence),
+                })
+            }
             _ => None,
         }
     }
@@ -138,6 +180,19 @@ impl Verdict {
                 bytes.push(CHOICE);
                 bytes.extend_from_slice(&(probabilities.len() as u16).to_le_bytes());
                 bytes.extend_from_slice(&choice.to_le_bytes());
+                for q in probabilities {
+                    bytes.extend_from_slice(&q.to_le_bytes());
+                }
+                bytes.extend_from_slice(&confidence.to_le_bytes());
+            }
+            QuantizedAnswer::Score {
+                score,
+                probabilities,
+                confidence,
+            } => {
+                bytes.push(SCORE);
+                bytes.extend_from_slice(&(probabilities.len() as u16).to_le_bytes());
+                bytes.extend_from_slice(&score.to_le_bytes());
                 for q in probabilities {
                     bytes.extend_from_slice(&q.to_le_bytes());
                 }
@@ -168,6 +223,18 @@ impl Verdict {
                 }
                 QuantizedAnswer::Choice {
                     choice,
+                    probabilities,
+                    confidence: reader.u16()?,
+                }
+            }
+            SCORE => {
+                let count = usize::from(reader.u16()?);
+                let score = reader.u16()?;
+                let probabilities = (0..count)
+                    .map(|_| reader.u16())
+                    .collect::<Option<Vec<_>>>()?;
+                QuantizedAnswer::Score {
+                    score,
                     probabilities,
                     confidence: reader.u16()?,
                 }
@@ -277,6 +344,34 @@ mod tests {
             confidence: 1.0,
         };
         assert_eq!(Verdict::of(&choice(), &outside, 0, 0), None);
+    }
+
+    #[test]
+    fn a_score_keeps_its_grade_and_every_level_in_order() {
+        let score = JudgementQuestion::Score {
+            instructions: json!("q"),
+            levels: vec![
+                "answers".into(),
+                "partly".into(),
+                "related".into(),
+                "unrelated".into(),
+            ],
+        };
+        let answer = JudgementAnswer::Score {
+            score: 2.03,
+            probabilities: vec![0.0, 0.02, 0.92, 0.06],
+            confidence: 0.92,
+        };
+        let verdict = Verdict::of(&score, &answer, 415, 3).expect("fits");
+        let decoded = Verdict::decode(&verdict.encode()).expect("decodes");
+        assert_eq!(decoded, verdict);
+        assert_eq!(decoded.answer(&score), Some(answer));
+        assert_eq!(decoded.answer(&noul()), None);
+        let fewer = JudgementQuestion::Score {
+            instructions: json!("q"),
+            levels: vec!["a".into(), "b".into()],
+        };
+        assert_eq!(decoded.answer(&fewer), None, "another scale");
     }
 
     #[test]

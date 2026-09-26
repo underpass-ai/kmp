@@ -23,6 +23,11 @@ pub struct AskRetrievalContext {
     /// How decisively the lexical ranking a judge's pool was built from
     /// leads, once that pool was built.
     pub(super) margin: Option<super::lexical_margin::LexicalMargin>,
+    /// The anchored reading a doubt band took before asking its judge,
+    /// which the answer reuses when no verdict came back.
+    pub(super) decided: Option<super::decided_selection::DecidedSelection>,
+    /// A doubt band judge's verdicts, applied to the core by the answer.
+    pub(super) doubt: Option<super::doubt_verdicts::DoubtVerdicts>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -35,6 +40,8 @@ impl From<GetContextResult> for AskRetrievalContext {
             ranked: None,
             gate: None,
             margin: None,
+            decided: None,
+            doubt: None,
         }
     }
 }
@@ -139,7 +146,7 @@ impl AskRetrievalContext {
         for evidence in &mut candidates {
             admission.bound_supports(evidence);
         }
-        let (ranking, lead) = ranker.rank_with_margin(question, policy, candidates.clone());
+        let (ranking, scores) = ranker.rank_scored(question, policy, candidates.clone());
         let ranked = RankedSelection::new(question, policy, temporal, bridge, ranking);
         let pool = ranker.rerank_pool(ranked.ranked(), &candidates, limit);
         let core = ranked
@@ -150,7 +157,7 @@ impl AskRetrievalContext {
             .cloned()
             .collect::<Vec<_>>();
         self.margin = Some(super::lexical_margin::LexicalMargin {
-            tenths: lead,
+            tenths: scores.lead(),
             high_confidence: ranker.confidence(question, &core)
                 == kmp_proto::v1beta1::MemoryConfidence::High,
         });
@@ -166,6 +173,46 @@ impl AskRetrievalContext {
 
     pub fn with_rerank_candidates(mut self, ranking: RerankCandidateRanking) -> Self {
         self.rerank = Some(ranking);
+        self
+    }
+
+    /// Whether this ask falls in the doubt band (DESIGN L4 4f), and the
+    /// passages a judge would be asked about. `None` without the anchored
+    /// gate, under `best_effort`, when a required anchor is absent, and when
+    /// the deterministic reading settled clearly: answered with a first
+    /// citation leading the second by at least `margin_below` tenths of a
+    /// BM25 point, or UNKNOWN with nothing a `best_effort` reading would cite.
+    ///
+    /// The reading taken here is kept: an answer given without verdicts
+    /// stands on it instead of reading the question a second time.
+    pub fn doubt_band(
+        &mut self,
+        question: &str,
+        policy: kmp_application::MemoryAnswerPolicy,
+        temporal: &TemporalSelection,
+        bridge: &super::lexical_bridge::LexicalBridge,
+        margin_below: i64,
+    ) -> super::scalars::ProtoMappingResult<Option<super::doubt_band::DoubtBand>> {
+        let (band, decided, ranked) = super::doubt_band_reading::read_doubt_band(
+            self,
+            question,
+            policy,
+            temporal,
+            bridge,
+            margin_below,
+        )?;
+        if decided.is_some() {
+            self.decided = decided;
+        }
+        if ranked.is_some() {
+            self.ranked = ranked;
+        }
+        Ok(band)
+    }
+
+    /// The answer applies a doubt band judge's verdicts to its core.
+    pub fn with_doubt_verdicts(mut self, verdicts: super::doubt_verdicts::DoubtVerdicts) -> Self {
+        self.doubt = Some(verdicts);
         self
     }
 }

@@ -46,7 +46,7 @@ impl JudgementModel for KeywordJudge {
                             0.1
                         }
                     }
-                    JudgementQuestion::Choice { .. } => 0.0,
+                    JudgementQuestion::Choice { .. } | JudgementQuestion::Score { .. } => 0.0,
                 };
                 (key.clone(), JudgementAnswer::Noul { yes })
             })

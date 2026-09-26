@@ -170,7 +170,7 @@ fn verdict_of(answer: &JudgementAnswer) -> Option<JevVerdict> {
             probabilities: probabilities.clone(),
             confidence: *confidence,
         }),
-        JudgementAnswer::Noul { .. } => None,
+        JudgementAnswer::Noul { .. } | JudgementAnswer::Score { .. } => None,
     }
 }
 

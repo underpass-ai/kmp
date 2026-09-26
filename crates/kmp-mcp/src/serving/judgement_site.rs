@@ -25,12 +25,14 @@ pub(crate) enum JudgementSite {
     Labels,
     /// `kmp_summaries_audit` meaning check.
     Summaries,
+    /// `kmp_ask` in the doubt band (`ask-judge.json`).
+    DoubtBand,
 }
 
 impl JudgementSite {
     /// Every site, for what must cover them all (the verdict book retiring
     /// superseded templates).
-    pub(crate) const ALL: [Self; 9] = [
+    pub(crate) const ALL: [Self; 10] = [
         Self::Rerank,
         Self::WakeFocus,
         Self::CurateReview,
@@ -40,6 +42,7 @@ impl JudgementSite {
         Self::Paths,
         Self::Labels,
         Self::Summaries,
+        Self::DoubtBand,
     ];
 
     pub(crate) fn as_str(self) -> &'static str {
@@ -53,6 +56,7 @@ impl JudgementSite {
             Self::Paths => "paths",
             Self::Labels => "labels",
             Self::Summaries => "summaries",
+            Self::DoubtBand => "doubt_band",
         }
     }
 
@@ -67,12 +71,12 @@ impl JudgementSite {
     }
 
     /// How long a first page may wait for Jev before it degrades, warned,
-    /// to the deterministic path (DESIGN L4 4b): 1.5 s for ask re-ranking,
-    /// 3 s for the first page of a focused wake, none for curate, whose
-    /// agent asked for the judgement itself.
+    /// to the deterministic path (DESIGN L4 4b): 1.5 s for ask re-ranking
+    /// and the ask doubt band, 3 s for the first page of a focused wake,
+    /// none for curate, whose agent asked for the judgement itself.
     pub(crate) fn deadline(self) -> Option<Duration> {
         match self {
-            Self::Rerank => Some(Duration::from_millis(1_500)),
+            Self::Rerank | Self::DoubtBand => Some(Duration::from_millis(1_500)),
             Self::WakeFocus => Some(Duration::from_millis(3_000)),
             _ => None,
         }
@@ -134,6 +138,11 @@ mod tests {
             JudgementSite::WakeFocus.deadline(),
             Some(std::time::Duration::from_millis(3_000))
         );
+        assert_eq!(
+            JudgementSite::DoubtBand.deadline(),
+            Some(std::time::Duration::from_millis(1_500))
+        );
+        assert_eq!(JudgementSite::DoubtBand.as_str(), "doubt_band");
         assert_eq!(JudgementSite::CurateReview.deadline(), None);
         assert_eq!(JudgementSite::Paths.deadline(), None);
         assert_eq!(JudgementSite::Paths.template().id, "paths");

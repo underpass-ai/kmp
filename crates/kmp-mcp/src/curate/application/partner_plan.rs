@@ -203,7 +203,9 @@ mod tests {
     fn options(request: &JudgementRequest, key: &str) -> Vec<String> {
         match &request.questions[key] {
             JudgementQuestion::Choice { options, .. } => options.clone(),
-            JudgementQuestion::Noul { .. } => panic!("a choice"),
+            JudgementQuestion::Noul { .. } | JudgementQuestion::Score { .. } => {
+                panic!("a choice")
+            }
         }
     }
 

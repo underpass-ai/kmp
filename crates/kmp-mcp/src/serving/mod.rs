@@ -5,6 +5,7 @@
 pub(crate) mod adapters;
 pub(crate) mod backend_choice;
 mod curate_dispatch;
+pub(crate) mod doubt_outcome;
 pub(crate) mod environment;
 mod existing_entry_read;
 pub(crate) mod frozen_recall;

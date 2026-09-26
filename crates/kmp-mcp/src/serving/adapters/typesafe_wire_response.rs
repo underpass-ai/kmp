@@ -91,6 +91,44 @@ fn typed_answer(raw: &Value, question: &JudgementQuestion) -> Result<JudgementAn
                 confidence: probability(raw.get("confidence"))?,
             })
         }
+        JudgementQuestion::Score { levels, .. } => {
+            if raw.get("type").and_then(Value::as_str) != Some("score") {
+                return Err("TypeSafe answered a score with another type".into());
+            }
+            // The legend names each level by its index; it must be the
+            // scale that was asked, in its order.
+            let legend = raw
+                .get("legend")
+                .and_then(Value::as_object)
+                .filter(|legend| {
+                    legend.len() == levels.len()
+                        && levels.iter().enumerate().all(|(index, level)| {
+                            legend.get(&index.to_string()).and_then(Value::as_str)
+                                == Some(level.as_str())
+                        })
+                })
+                .ok_or("TypeSafe scored on another scale than the one asked")?;
+            let listed = raw
+                .get("probabilities")
+                .and_then(Value::as_object)
+                .filter(|listed| listed.len() == legend.len())
+                .ok_or("TypeSafe probabilities do not cover the levels asked")?;
+            let probabilities = (0..levels.len())
+                .map(|index| probability(listed.get(&index.to_string())))
+                .collect::<Result<Vec<_>, _>>()?;
+            let score = raw
+                .get("score")
+                .and_then(Value::as_f64)
+                .filter(|score| {
+                    score.is_finite() && (0.0..=(levels.len() - 1) as f64).contains(score)
+                })
+                .ok_or("TypeSafe returned a score outside its scale")?;
+            Ok(JudgementAnswer::Score {
+                score,
+                probabilities,
+                confidence: probability(raw.get("confidence"))?,
+            })
+        }
     }
 }
 
@@ -149,6 +187,62 @@ mod tests {
                 confidence: 0.7
             }
         );
+    }
+
+    fn scored() -> BTreeMap<String, JudgementQuestion> {
+        BTreeMap::from([(
+            "s".to_string(),
+            JudgementQuestion::Score {
+                instructions: json!("q"),
+                levels: vec!["answers".into(), "partly".into(), "unrelated".into()],
+            },
+        )])
+    }
+
+    fn valid_score() -> Value {
+        json!({
+            "model": "jev-1.13.0",
+            "answers": {"s": {"type": "score", "score": 0.4, "confidence": 0.8,
+                "legend": {"0": "answers", "1": "partly", "2": "unrelated"},
+                "probabilities": {"0": 0.7, "1": 0.2, "2": 0.1}}},
+            "usage": {"input_tokens": 354}
+        })
+    }
+
+    #[test]
+    fn a_score_keeps_its_levels_in_the_order_asked() {
+        let response = wire(valid_score())
+            .into_response("jev-1.13.0", &scored())
+            .expect("valid");
+        assert_eq!(
+            response.answers["s"],
+            JudgementAnswer::Score {
+                score: 0.4,
+                probabilities: vec![0.7, 0.2, 0.1],
+                confidence: 0.8
+            }
+        );
+        let mut cases = Vec::new();
+        let mut other_scale = valid_score();
+        other_scale["answers"]["s"]["legend"]["1"] = json!("unrelated");
+        cases.push(other_scale);
+        let mut short = valid_score();
+        short["answers"]["s"]["probabilities"] = json!({"0": 1.0});
+        cases.push(short);
+        let mut outside = valid_score();
+        outside["answers"]["s"]["score"] = json!(2.5);
+        cases.push(outside);
+        let mut noul = valid_score();
+        noul["answers"]["s"] = json!({"type": "noul", "noul": 0.5});
+        cases.push(noul);
+        for case in cases {
+            assert!(
+                wire(case.clone())
+                    .into_response("jev-1.13.0", &scored())
+                    .is_err(),
+                "accepted {case}"
+            );
+        }
     }
 
     #[test]

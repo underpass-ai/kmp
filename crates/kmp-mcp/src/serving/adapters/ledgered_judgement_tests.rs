@@ -66,6 +66,14 @@ impl JudgementModel for Jittery {
                                 .collect(),
                             confidence: 0.66666,
                         },
+                        JudgementQuestion::Score { levels, .. } => JudgementAnswer::Score {
+                            score: 1.0,
+                            probabilities: levels
+                                .iter()
+                                .map(|_| 1.0 / levels.len() as f64)
+                                .collect(),
+                            confidence: 0.5,
+                        },
                     };
                     (name.clone(), answer)
                 })

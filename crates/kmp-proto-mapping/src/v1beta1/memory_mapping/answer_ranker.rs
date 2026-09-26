@@ -20,6 +20,9 @@ use super::ask_gate::AskGate;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
+use super::content_scores::ContentScores;
+use super::doubt_verdicts::DoubtVerdicts;
+use super::gate_doubt::GateDoubt;
 use super::gate_verdict::GateVerdict;
 use super::identifier_binding::IdentifierBinding;
 use super::lexical_bridge::LexicalBridge;
@@ -208,31 +211,30 @@ impl<'a> AnswerEvidenceRanker<'a> {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> Vec<MemoryEvidence> {
-        self.rank_with_margin(question, policy, evidence).0
+        self.rank_scored(question, policy, evidence).0
     }
 
-    /// [`Self::rank`], and by how much its first eligible candidate's content
-    /// score leads the second's, in tenths of a point (DESIGN L4 4c). A lone
-    /// eligible candidate leads by its whole score; none, or a question with
-    /// no informative word, leads by nothing (`None`).
-    pub(super) fn rank_with_margin(
+    /// [`Self::rank`], with the content score each candidate the question
+    /// reached in its own words was ranked with, in rank order: what the
+    /// margin of a lead is read from ([`ContentScores::margin`]).
+    pub(super) fn rank_scored(
         &self,
         question: &str,
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
-    ) -> (Vec<MemoryEvidence>, Option<i64>) {
+    ) -> (Vec<MemoryEvidence>, ContentScores) {
         let morphology = &self.context.morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
             evidence.sort_by_key(stable_evidence_key);
-            return (evidence, None);
+            return (evidence, ContentScores::default());
         }
         let strict_focus = self.strict_focus(question, policy);
         let prepared = self.prepare(evidence);
         let collection = self.collection(&prepared);
         let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
-        self.rank_prepared_scored(
+        self.rank_prepared(
             question,
             &question_terms,
             strict_focus,
@@ -297,29 +299,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         anchored: Option<(&BTreeSet<String>, &BTreeSet<String>)>,
         prepared: Vec<ReadCandidate>,
         lexicon: &Lexicon,
-    ) -> Vec<MemoryEvidence> {
-        self.rank_prepared_scored(
-            question,
-            question_terms,
-            strict_focus,
-            anchored,
-            prepared,
-            lexicon,
-        )
-        .0
-    }
-
-    /// [`Self::rank_prepared`] with the content-score margin of its first
-    /// two eligible candidates, in the order the relevance key put them.
-    fn rank_prepared_scored(
-        &self,
-        question: &str,
-        question_terms: &BTreeSet<String>,
-        strict_focus: Option<(BTreeSet<String>, usize)>,
-        anchored: Option<(&BTreeSet<String>, &BTreeSet<String>)>,
-        prepared: Vec<ReadCandidate>,
-        lexicon: &Lexicon,
-    ) -> (Vec<MemoryEvidence>, Option<i64>) {
+    ) -> (Vec<MemoryEvidence>, ContentScores) {
         let morphology = &self.context.morphology;
         let diversity_focus_terms = strict_focus
             .as_ref()
@@ -356,12 +336,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cmp(&left.relevance)
                 .then_with(|| left.stable_key.cmp(&right.stable_key))
         });
-        let margin = candidates.first().map(|first| {
-            first.relevance.content_score
-                - candidates
-                    .get(1)
-                    .map_or(0, |second| second.relevance.content_score)
-        });
+        let scores = ContentScores::read(candidates.iter().map(|candidate| {
+            (
+                candidate.item.id.as_str(),
+                candidate.relevance.content_score,
+            )
+        }));
         let ranked = diversify_candidates(question_terms, &diversity_focus_terms, candidates);
         let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
@@ -388,7 +368,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         answer.extend(self.reached_candidates(&answer, rejected));
         answer.extend(associated);
         answer.extend(bridged);
-        (answer, margin)
+        (answer, scores)
     }
 
     /// Reads a question that names an identifier through the anchored gate.
@@ -398,7 +378,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// anchor is absent, the proof is what `rank` would have returned and the
     /// verdict UNKNOWN. Otherwise the candidates are ranked by the same key
     /// without the focus filter, facets breaking ties by entry kind, and the
-    /// cited core leads the proof.
+    /// cited core leads the proof. A doubt band's verdicts, when given, act
+    /// on the gate's core (`GateDoubt`).
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn read_anchored(
         &self,
         question: &str,
@@ -407,11 +389,15 @@ impl<'a> AnswerEvidenceRanker<'a> {
         contract: &QuestionContract,
         gate: AskGate,
         evidence: Vec<MemoryEvidence>,
+        doubt: Option<&DoubtVerdicts>,
     ) -> AnchoredReading {
         let morphology = &self.context.morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
-            return AnchoredReading::unanchored(self.rank(question, policy, evidence));
+            return AnchoredReading::unanchored(
+                self.rank(question, policy, evidence),
+                ContentScores::default(),
+            );
         }
         let prepared = self.prepare(evidence);
         let collection = self.collection(&prepared);
@@ -426,7 +412,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             unanchored_or_absent => {
                 let lexicon =
                     Lexicon::build(question, morphology, &prepared, self.bridge, collection);
-                let evidence = self.rank_prepared(
+                let (evidence, scores) = self.rank_prepared(
                     question,
                     &question_terms,
                     self.strict_focus(question, policy),
@@ -439,7 +425,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                         evidence,
                         GateVerdict::unknown(UnknownReason::AnchorAbsentInSelection, missing),
                     ),
-                    _ => AnchoredReading::unanchored(evidence),
+                    _ => AnchoredReading::unanchored(evidence, scores),
                 };
             }
         };
@@ -465,7 +451,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let successor_core = gate.admits_successor_to_core()
             && contract.time() != QuestionTime::History
             && !self.context.lifecycle.reads_an_instant();
-        let ranked = self.rank_prepared(
+        let (ranked, scores) = self.rank_prepared(
             question,
             &question_terms,
             unfiltered,
@@ -511,19 +497,41 @@ impl<'a> AnswerEvidenceRanker<'a> {
             }
             rescue.stand_in_along_lifecycle(id, &principal.term, from, via);
         }
-        let verdict = AnchoredGate::new(contract, gate.allows_partial()).decide(
-            &principal,
-            &others,
-            direct.iter().map(|(item, terms)| (*item, terms)),
-            &rescue,
-            |concept, terms| {
-                if concept.literal {
-                    terms.content.contains(&concept.key)
-                } else {
-                    lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms) > 0
-                }
-            },
-        );
+        let anchored_gate = AnchoredGate::new(contract, gate.allows_partial());
+        // The gate over the memories it may cite: every direct candidate, or
+        // only those a remote judge left standing.
+        let decide = |within: Option<&BTreeSet<String>>| {
+            anchored_gate.decide(
+                &principal,
+                &others,
+                direct
+                    .iter()
+                    .filter(|(item, _)| within.is_none_or(|ids| ids.contains(&item.id)))
+                    .map(|(item, terms)| (*item, terms)),
+                &rescue,
+                |concept, terms| {
+                    if concept.literal {
+                        terms.content.contains(&concept.key)
+                    } else {
+                        lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms)
+                            > 0
+                    }
+                },
+            )
+        };
+        // What the gate may cite at all: the direct candidates that name the
+        // principal anchor, in rank order. Nothing else is ever promoted.
+        let promotable = direct
+            .iter()
+            .filter(|(item, terms)| rescue.names(item, terms, &principal.term))
+            .map(|(item, _)| *item)
+            .collect::<Vec<_>>();
+        let judged = GateDoubt::judge(decide(None), doubt, &promotable, |kept| decide(Some(kept)));
+        let promotable = promotable
+            .iter()
+            .map(|item| item.id.clone())
+            .collect::<Vec<_>>();
+        let verdict = judged.verdict.clone();
         // What the gate did not answer whole is proved by the memories about
         // its anchors. The ranking above had no focus filter, so the rest of
         // it is every candidate that shares a word with the question: on the
@@ -568,8 +576,11 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 }
                 _ => item,
             })
+            .map(|item| judged.mark(item))
             .collect::<Vec<_>>();
         AnchoredReading::decided(ranked, verdict)
+            .with_scores(scores)
+            .with_promotable(promotable)
     }
 
     /// Whether the memory a candidate states or supports names any of these
@@ -581,6 +592,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
         terms
             .iter()
             .any(|term| read.direct_counts.count(term) > 0 || read.claim.contains(term))
+    }
+
+    /// Whether a memory stands as current where this ranker reads: neither
+    /// replaced nor expired.
+    pub(super) fn is_live(&self, item: &MemoryEvidence) -> bool {
+        self.context.temporal_state(item) == CandidateTemporalState::CurrentOrUnspecified
     }
 
     /// The morphology this ranker compares words in.

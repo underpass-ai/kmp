@@ -1,3 +1,4 @@
+use super::super::doubt_band_judge::DoubtBandJudge;
 use super::super::embedded_errors::{kernel_error, mapping_error};
 use super::super::judgement_reranker::JudgementReranker;
 use super::frozen_recall_reads::FrozenRecallReads;
@@ -28,6 +29,7 @@ pub(crate) struct EmbeddedAskTool<'a> {
     lexical_cache: &'a Arc<kmp_proto_mapping::v1beta1::LexicalIndexCache>,
     frozen: FrozenRecallReads<'a>,
     gate: Option<AskGate>,
+    doubt_band: Option<&'a Result<Option<Arc<DoubtBandJudge>>, String>>,
 }
 
 impl<'a> EmbeddedAskTool<'a> {
@@ -49,7 +51,17 @@ impl<'a> EmbeddedAskTool<'a> {
             lexical_cache,
             frozen,
             gate: None,
+            doubt_band: None,
         }
+    }
+
+    /// Ask the store's doubt band judge (`ask-judge.json`), if it opted in.
+    pub(crate) fn with_doubt_band(
+        mut self,
+        doubt_band: &'a Result<Option<Arc<DoubtBandJudge>>, String>,
+    ) -> Self {
+        self.doubt_band = Some(doubt_band);
+        self
     }
 
     /// Decide with the anchored gate the store opted into, if any.
@@ -171,6 +183,31 @@ impl<'a> EmbeddedAskTool<'a> {
             }
             Err(error) => warnings.push(format!("evidence rerank disabled: {error}")),
             Ok(None) => {}
+        }
+        // The doubt band asks a judge only on a first page, and only when
+        // the deterministic reading settled in doubt; its verdicts act on
+        // the core, never on anything the selection did not admit.
+        match self.doubt_band {
+            Some(Ok(Some(judge))) if !continuation => {
+                let band = retrieval
+                    .doubt_band(
+                        &question,
+                        policy,
+                        &temporal,
+                        self.bridge,
+                        judge.margin_tenths(),
+                    )
+                    .map_err(|status| mapping_error(&status))?;
+                if let Some(band) = band {
+                    let outcome = judge.judge(&question, &band).await;
+                    if let Some(verdicts) = outcome.verdicts {
+                        retrieval = retrieval.with_doubt_verdicts(verdicts);
+                    }
+                    warnings.extend(outcome.warning);
+                }
+            }
+            Some(Err(error)) => warnings.push(format!("doubt band disabled: {error}")),
+            _ => {}
         }
         let mut response = ask_response_from_result(
             &question,

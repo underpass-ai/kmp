@@ -33,6 +33,13 @@ impl JudgementModel for Scripted {
             .map(|(key, question)| {
                 let answer = match question {
                     JudgementQuestion::Noul { .. } => JudgementAnswer::Noul { yes: self.noul },
+                    JudgementQuestion::Score { levels, .. } => JudgementAnswer::Score {
+                        score: 0.0,
+                        probabilities: (0..levels.len())
+                            .map(|level| if level == 0 { 1.0 } else { 0.0 })
+                            .collect(),
+                        confidence: self.confidence,
+                    },
                     JudgementQuestion::Choice { options, .. } => {
                         let choice = if options.iter().any(|o| o == self.choice) {
                             self.choice

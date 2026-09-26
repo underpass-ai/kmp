@@ -2,6 +2,7 @@ use super::ask_gate_config::{ASK_GATE_FILE, AskGateConfig};
 use super::curate_config::{CURATE_FILE, CurateConfig};
 use super::curate_doubt_cache::CurateDoubtCache;
 use super::curate_review_cache::CurateReviewCache;
+use super::doubt_band_judge::DoubtBandJudge;
 use super::embedded::{
     EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool, EmbeddedIngestTool,
     EmbeddedInspectTool, EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool,
@@ -66,6 +67,8 @@ pub struct EmbeddedKernelMcpBackend {
     rerank: Result<Option<Arc<JudgementReranker>>, String>,
     /// Wake focused on its intent by the same model, its own opt-in.
     wake_focus: Result<Option<Arc<WakeFocusJudge>>, String>,
+    /// The ask doubt band judged by the same model (`ask-judge.json`).
+    doubt_band: Result<Option<Arc<DoubtBandJudge>>, String>,
     /// Relations proposed after each write, opted into by
     /// `write-relations.json` beside `typesafe.json`.
     write_relations: bool,
@@ -131,6 +134,10 @@ impl EmbeddedKernelMcpBackend {
             data_dir,
             &ObservedJudgement::for_site(&judgement, book, JudgementSite::WakeFocus),
         );
+        let doubt_band = DoubtBandJudge::load(
+            data_dir,
+            &ObservedJudgement::for_site(&judgement, book, JudgementSite::DoubtBand),
+        );
         let write_relations = WriteRelationsConfig::load(data_dir);
         let lifecycle = write_relations
             .as_ref()
@@ -153,6 +160,14 @@ impl EmbeddedKernelMcpBackend {
             .beside_store(
                 CURATE_FILE,
                 curate.as_ref().map(|_| ()).map_err(Clone::clone),
+            )
+            .beside_store(
+                "ask-judge.json",
+                match &doubt_band {
+                    Ok(Some(_)) => Ok(()),
+                    Ok(None) => Err("not loaded".into()),
+                    Err(error) => Err(error.clone()),
+                },
             )
             .at(
                 "lexical-bridge.kmpb",
@@ -178,6 +193,7 @@ impl EmbeddedKernelMcpBackend {
             ledger: ledger.ok().flatten(),
             rerank,
             wake_focus,
+            doubt_band,
             write_relations,
             lifecycle,
             partner_cap: optional_env_string(EVAL_PARTNER_FACTS_ENV)
@@ -303,6 +319,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         FrozenRecallReads::new(&self.frozen_recalls, &service),
                     )
                     .with_gate(self.ask_gate)
+                    .with_doubt_band(&self.doubt_band)
                     .call(arguments)
                     .await
                 }

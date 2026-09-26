@@ -1,4 +1,6 @@
 mod ask_gate_config;
+mod ask_judge_config;
+mod ask_judge_question;
 mod cassette_judgement;
 #[cfg(test)]
 mod cassette_judgement_tests;
@@ -6,6 +8,9 @@ mod cassette_mode;
 mod curate_config;
 pub(crate) mod curate_doubt_cache;
 pub(crate) mod curate_review_cache;
+mod doubt_band_judge;
+#[cfg(test)]
+mod doubt_band_judge_tests;
 mod embedded;
 pub(crate) mod embedded_backend;
 pub(crate) mod embedded_errors;

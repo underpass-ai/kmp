@@ -13,4 +13,11 @@ pub(crate) enum JudgementAnswer {
         probabilities: BTreeMap<String, f64>,
         confidence: f64,
     },
+    /// `score` is the expected grade, in [0, levels - 1]; `probabilities`
+    /// are by level, in the order the question listed them.
+    Score {
+        score: f64,
+        probabilities: Vec<f64>,
+        confidence: f64,
+    },
 }

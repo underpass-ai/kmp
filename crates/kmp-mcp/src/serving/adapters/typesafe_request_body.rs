@@ -29,6 +29,14 @@ pub(super) fn typesafe_request_body(
                         .map(|option| (option.clone(), Value::Null))
                         .collect::<Map<_, _>>(),
                 }),
+                JudgementQuestion::Score {
+                    instructions,
+                    levels,
+                } => json!({
+                    "type": "score",
+                    "instructions": instructions,
+                    "criteria": levels,
+                }),
             };
             (key.clone(), typed)
         })
@@ -56,6 +64,13 @@ mod tests {
                     options: vec!["a".into(), "none".into()],
                 },
             ),
+            (
+                "c2".to_string(),
+                JudgementQuestion::Score {
+                    instructions: json!("How well?"),
+                    levels: vec!["answers".into(), "unrelated".into()],
+                },
+            ),
         ]);
         let body = typesafe_request_body("jev-1.13.0", &json!("state"), &questions);
         assert_eq!(
@@ -66,7 +81,9 @@ mod tests {
                 "questions": {
                     "c0": {"type": "noul", "instructions": "Does it rain?"},
                     "c1": {"type": "choice", "instructions": {"question": "Which?"},
-                           "criteria": {"a": null, "none": null}}
+                           "criteria": {"a": null, "none": null}},
+                    "c2": {"type": "score", "instructions": "How well?",
+                           "criteria": ["answers", "unrelated"]}
                 }
             })
         );
