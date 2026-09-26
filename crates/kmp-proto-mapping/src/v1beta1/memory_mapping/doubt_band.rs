@@ -10,5 +10,8 @@ pub(super) const MAX_DOUBT_PASSAGES: usize = 8;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DoubtBand {
     pub entry: DoubtEntry,
+    /// How far the first citation of an answer leads the second, in tenths;
+    /// `None` when the reading did not answer.
+    pub margin: Option<i64>,
     pub passages: Vec<DoubtPassage>,
 }

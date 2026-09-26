@@ -249,6 +249,7 @@ fn report(
         target: TARGET,
         event = "kmp_doubt_band",
         entry = band.entry.as_str(),
+        margin = band.margin.unwrap_or(i64::MIN),
         status,
         passages = band.passages.len(),
         judged = passages.as_str(),

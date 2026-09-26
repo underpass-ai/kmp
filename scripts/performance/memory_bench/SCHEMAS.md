@@ -678,7 +678,7 @@ the repository root.
 | `jev` | `off`, `replay`, `record` | |
 | `[binary]` | exactly one of `path`, `git_ref` | `git_ref` is built in a worktree with `cargo build --release --locked -p kmp-mcp` and provenance |
 | `[store_files]` | name → path, `{path = ...}` or `{json = {...}}` | files copied into the store data directory; names are bare `*.json`/`*.kmpb`; inline JSON is written canonically |
-| `[env]` | allowlist | `KMP_LEXICAL_BRIDGE`, `KMP_MCP_ENGINE`, `KMP_TYPESAFE_CASSETTE`, `KMP_TYPESAFE_CASSETTE_MODE` (`replay`/`record`), `RUST_LOG` |
+| `[env]` | allowlist | `KMP_LEXICAL_BRIDGE`, `KMP_MCP_ENGINE`, `KMP_TYPESAFE_CASSETTE`, `KMP_TYPESAFE_CASSETTE_MODE` (`replay`/`record`), `RUST_LOG`, `KMP_JUDGEMENT_DEADLINES` (`off` keeps slow verdicts while recording) |
 
 Rules:
 

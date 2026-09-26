@@ -118,12 +118,12 @@ fn anchored_band(
     promotable: &[String],
     margin_below: i64,
 ) -> Option<DoubtBand> {
+    let margin = (verdict.status == AnswerStatus::Answered)
+        .then(|| scores.margin(verdict.core.iter().map(String::as_str)));
     let entry = match (verdict.status, verdict.reason) {
         (AnswerStatus::Unknown, UnknownReason::AttributeNotFound) => DoubtEntry::AttributeNotFound,
         (AnswerStatus::Partial, _) => DoubtEntry::Partial,
-        (AnswerStatus::Answered, _)
-            if scores.margin(verdict.core.iter().map(String::as_str)) < margin_below =>
-        {
+        (AnswerStatus::Answered, _) if margin.is_some_and(|margin| margin < margin_below) => {
             DoubtEntry::NarrowMargin
         }
         _ => return None,
@@ -141,7 +141,11 @@ fn anchored_band(
         .take(MAX_DOUBT_PASSAGES)
         .map(|item| passage(item, cited.contains(item.id.as_str())))
         .collect::<Vec<_>>();
-    (!passages.is_empty()).then_some(DoubtBand { entry, passages })
+    (!passages.is_empty()).then_some(DoubtBand {
+        entry,
+        margin,
+        passages,
+    })
 }
 
 fn unanchored_band(
@@ -165,7 +169,8 @@ fn unanchored_band(
         .collect::<Vec<_>>();
     let confidence = setup.ranker.confidence(asked, &core);
     if !core.is_empty() && confidence != MemoryConfidence::Low {
-        if scores.margin(core.iter().map(|item| item.id.as_str())) >= margin_below {
+        let margin = scores.margin(core.iter().map(|item| item.id.as_str()));
+        if margin >= margin_below {
             return None;
         }
         let passages = core
@@ -181,6 +186,7 @@ fn unanchored_band(
             .collect::<Vec<_>>();
         return Some(DoubtBand {
             entry: DoubtEntry::NarrowMargin,
+            margin: Some(margin),
             passages,
         });
     }
@@ -197,6 +203,7 @@ fn unanchored_band(
         .collect::<Vec<_>>();
     (!passages.is_empty()).then_some(DoubtBand {
         entry: DoubtEntry::UnanchoredUnknown,
+        margin: None,
         passages,
     })
 }

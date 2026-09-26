@@ -26,8 +26,9 @@ CLAIMS = ('parity', 'quality', 'cost')
 STORES = ('shared', 'own')
 JEV_MODES = ('off', 'replay', 'record')
 DIRECTIONS = ('up', 'down')
+# KMP_JUDGEMENT_DEADLINES=off keeps a slow real verdict when recording (P5).
 ENV_ALLOWLIST = ('KMP_LEXICAL_BRIDGE', 'KMP_MCP_ENGINE', 'KMP_TYPESAFE_CASSETTE',
-                 'KMP_TYPESAFE_CASSETTE_MODE', 'RUST_LOG')
+                 'KMP_TYPESAFE_CASSETTE_MODE', 'RUST_LOG', 'KMP_JUDGEMENT_DEADLINES')
 PATH_ENV = ('KMP_LEXICAL_BRIDGE', 'KMP_TYPESAFE_CASSETTE')
 CASSETTE_MODES = ('replay', 'record')
 # kmp-embedded engine.rs `parse_engine` (v0.23.0): trimmed, case-insensitive, and only

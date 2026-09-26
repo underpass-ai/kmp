@@ -113,6 +113,7 @@ fn passage(id: &str, text: &str, in_core: bool) -> DoubtPassage {
 fn band(count: usize) -> DoubtBand {
     DoubtBand {
         entry: DoubtEntry::NarrowMargin,
+        margin: Some(3),
         passages: (0..count)
             .map(|n| {
                 passage(

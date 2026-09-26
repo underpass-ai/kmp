@@ -94,6 +94,7 @@ class VariantTest(unittest.TestCase):
             self.refuse(BASE + f'\n[env]\n{name} = "x"\n', 'not in the allowlist')
         self.refuse(BASE + '\n[env]\nRUST_LOG = ""\n', 'non-empty')
         self.assertIn('KMP_MCP_ENGINE', ENV_ALLOWLIST)
+        self.assertIn('KMP_JUDGEMENT_DEADLINES', ENV_ALLOWLIST)
         self.parse(BASE + '\n[env]\nKMP_MCP_ENGINE = "sqlite"\n')
         self.parse(BASE + '\n[env]\nKMP_MCP_ENGINE = " SQLite "\n')  # the binary trims and folds case
         for engine in ('postgres', 'redb', 'sqlite3'):
