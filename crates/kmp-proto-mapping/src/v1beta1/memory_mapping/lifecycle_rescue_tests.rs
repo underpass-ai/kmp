@@ -370,9 +370,17 @@ fn under_the_gate_a_walk_starts_only_from_a_memory_that_names_an_anchor() {
     // pool-003 clears the floor on `pool`, `from` and `team`, and is still not
     // about pool-008.
     let entries = &[
-        ("mem:p3-old", "decision", "From March, the pager for pool-003 goes to team Aster."),
+        (
+            "mem:p3-old",
+            "decision",
+            "From March, the pager for pool-003 goes to team Aster.",
+        ),
         ("mem:p3-new", "decision", "Rotation handed to Birch."),
-        ("mem:p8", "decision", "From May, the pager for pool-008 goes to team Elm."),
+        (
+            "mem:p8",
+            "decision",
+            "From May, the pager for pool-008 goes to team Elm.",
+        ),
     ];
     let response = ask_in(
         Some(AskGate::anchored(true)),

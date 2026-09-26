@@ -65,6 +65,31 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- Declared lifecycle in `kmp_ask` (P7). `LifecycleChain` walks `supersedes`,
+  `corrects` and `updates_state` both ways from a memory, at most 32 hops
+  and 256 memories a side, cutting cycles and reporting forks in
+  `(occurred, id)` order; the embedded store answers each hop from its
+  `relations_*_by_kind` index (`LifecycleChainReader`), one typed range per
+  relation, so a chain of depth D costs O(D·log N). When a question matches
+  a replaced memory, the standing head of its chain now comes back in
+  `proof.evidence` marked `reached_by: lifecycle` (`reached_from`,
+  `reached_via`), outside the answer core and at most three; a replaced
+  memory never comes back as current. A question about history (a word of
+  the lifecycle family, `historial`, `antes`, `timeline`…, or `as_of` /
+  `interval`) gets the chain instead, at most eight members, each with
+  `lifecycle_state` `current` or `replaced`. Under the anchored gate a walk
+  starts only from a memory that names an anchor, and the head of one that
+  did stays in a PARTIAL or UNKNOWN proof. The rescued memory's relations
+  stay out of `proof.path`, so nothing every page repeats grows. A bundle
+  with no lifecycle relation answers byte for byte as before. Measured
+  against P1–P6: B-real, hard negatives and guards unchanged in quality (6
+  of 124 journeys gain one lifecycle item, the core and every status
+  unchanged; +19 tokens per journey), synth-v1 10^3 byte for byte, the
+  judged retrieval and Jev corpora unchanged, ask latency unchanged (B-real
+  first page p50 177 ms both). `{"successor_core": true}` in `ask-gate.json`
+  is a measured variant, off by default: under the gate, a question about
+  now may cite that head for the anchor its predecessor named
+  (`anchor_via: supersedes`).
 - Verdict book for TypeSafe Jev (P5): every judged question is kept, by a
   key of hashes (model, template, type, instructions, options, the texts of
   the state), as Q16 probabilities in `judgements.sqlite3` beside the store.

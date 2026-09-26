@@ -148,6 +148,13 @@ Three more commands sit beside the modes:
 - `$B fetch --dataset NAME [--verify-only]` downloads a public dataset pinned in
   `corpora/datasets.lock.json` and checks its SHA-256 (`application/public_cli.py`;
   `public_cli build|run|plan-full` stay available as a module).
+  `public_cli run --corpus factconsolidation --declared` loads the writer-declared
+  variant (`factconsolidation-<size>-declared`): the same facts plus the
+  `supersedes` a writer following the dataset's own rule ("later facts override
+  earlier ones") would declare, each fact over the previous one of its (subject,
+  relation). The rule reads the fact list, never the answers. It measures what ask
+  does once supersession is declared; the undeclared corpus, where the kernel must
+  find the current fact alone, stays the headline.
 - `$B mixed --reference PATH [--candidate PATH] [--old PATH]` runs the mixed-version
   and multiprocess scenarios (BENCH_SPEC 10) on a cached 10^3 store and writes
   `tmp/memory-bench/bt18/<time>/report.json` (`kmp.bench.mixed_versions.v1`).
@@ -202,6 +209,7 @@ environment (allowlisted) and Jev mode.
 | `variants/examples/parity-template.toml` | declared parity of a `git_ref` (default `HEAD`): every call byte-identical after the volatile fields |
 | `variants/examples/ask-gate.toml` | a quality claim configured by `ask-gate.json` beside the store (the P4 gate; the default since 26 Sept 2026, so on a current binary it only writes the default out) |
 | `variants/examples/ask-gate-off.toml` | the same binary with `ask-gate.json` `{"mode":"off"}`: how to measure without the gate now that it is the default |
+| `variants/examples/lifecycle-successor-core.toml` | the P7 lifecycle variant, `ask-gate.json` `{"successor_core":true}`: a standing successor may be cited for the anchor its replaced predecessor named (off by default) |
 | `variants/examples/wake-focus.toml` | a Jev arm in replay: `typesafe.json` + `wake-focus.json` and a cassette |
 
 **Store files must be acknowledged.** Each file in `[store_files]` is written
