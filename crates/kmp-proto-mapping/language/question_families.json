@@ -1,5 +1,5 @@
 {
-  "note": "What kind of connection a question is asking about. A family names the relation types and semantic classes that answer it, and the words that ask for it. Written folded and without diacritics, because that is the form a question reaches the reader in. Adding a word here is a data change, not a code change.",
+  "note": "What kind of connection a question is asking about. A family names the relation types and semantic classes that answer it, and the words that ask for it. Written folded and without diacritics, because that is the form a question reaches the reader in. Adding a word here is a data change, not a code change. A family whose id starts with `facet:` names a facet a question enumerates over an anchor (decisions, limits, pending work) and the `entry_kinds` that state it; the anchored ask gate reads facets to shape the question and to break ties by entry kind, never to route relations, and a facet word is never required of the evidence.",
   "families": [
     {
       "id": "why",
@@ -186,6 +186,242 @@
         "total"
       ],
       "token_prefixes": []
+    },
+    {
+      "id": "facet:decisions",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "choice",
+        "choices",
+        "chosen",
+        "decide",
+        "decided",
+        "decidimos",
+        "decidio",
+        "decision",
+        "decisiones",
+        "decisions",
+        "eleccion"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "decision"
+      ]
+    },
+    {
+      "id": "facet:constraints",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "constraint",
+        "constraints",
+        "regla",
+        "reglas",
+        "restriccion",
+        "restricciones",
+        "restriction",
+        "restrictions",
+        "rule",
+        "rules"
+      ],
+      "token_prefixes": [
+        "restricc"
+      ],
+      "entry_kinds": [
+        "constraint"
+      ]
+    },
+    {
+      "id": "facet:status",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "estado",
+        "status"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "observation"
+      ]
+    },
+    {
+      "id": "facet:evidence",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "evidence",
+        "evidencia",
+        "evidencias",
+        "proof",
+        "prueba",
+        "pruebas",
+        "test",
+        "tested",
+        "tests",
+        "verification",
+        "verifications"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "success_path"
+      ]
+    },
+    {
+      "id": "facet:results",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "outcome",
+        "outcomes",
+        "result",
+        "resultado",
+        "resultados",
+        "results"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "success_path",
+        "observation"
+      ]
+    },
+    {
+      "id": "facet:gaps",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "carencia",
+        "carencias",
+        "gap",
+        "gaps",
+        "hueco",
+        "huecos",
+        "missing"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "observation",
+        "error_path"
+      ]
+    },
+    {
+      "id": "facet:pending",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "backlog",
+        "outstanding",
+        "pendiente",
+        "pendientes",
+        "pending"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "observation"
+      ]
+    },
+    {
+      "id": "facet:limits",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "bound",
+        "bounds",
+        "cap",
+        "caps",
+        "limit",
+        "limite",
+        "limites",
+        "limits"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "constraint"
+      ]
+    },
+    {
+      "id": "facet:contracts",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "contract",
+        "contracts",
+        "contrato",
+        "contratos"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "decision",
+        "constraint"
+      ]
+    },
+    {
+      "id": "facet:invariants",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "garantia",
+        "garantias",
+        "guarantee",
+        "guarantees",
+        "invariant",
+        "invariante",
+        "invariantes",
+        "invariants"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "constraint"
+      ]
+    },
+    {
+      "id": "facet:risks",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "riesgo",
+        "riesgos",
+        "risk",
+        "risks"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "error_path",
+        "observation"
+      ]
+    },
+    {
+      "id": "facet:dependencies",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "dependencia",
+        "dependencias",
+        "dependencies",
+        "dependency"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "decision",
+        "constraint"
+      ]
+    },
+    {
+      "id": "facet:acceptance",
+      "semantic_classes": [],
+      "relation_types": [],
+      "tokens": [
+        "acceptance",
+        "aceptacion",
+        "criteria",
+        "criterio",
+        "criterion",
+        "criterios"
+      ],
+      "token_prefixes": [],
+      "entry_kinds": [
+        "success_path"
+      ]
     }
   ]
 }

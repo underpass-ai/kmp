@@ -1,0 +1,19 @@
+# The base arm of every comparison: the release binary this checkout builds,
+# as shipped, with no store file and no Jev (so with the anchored ask gate,
+# the default since 26 Sept 2026; `examples/ask-gate-off.toml` turns it off).
+#
+#   cargo build --release -p kmp-mcp
+#
+# `aa --variant` on this file is the A/A control (BENCH_SPEC section 10): the
+# same binary and store twice, where every quality and token delta must be 0.
+name = "baseline"
+description = "Release binary of this checkout (target/release/kmp-mcp), as shipped."
+claim = "parity"
+targets = ["parity_rate"]
+guards = []
+n = 60
+store = "shared"
+jev = "off"
+
+[binary]
+path = "target/release/kmp-mcp"

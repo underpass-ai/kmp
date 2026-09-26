@@ -102,6 +102,32 @@ unsupported store, stop its writers and preserve the directory. Use an explicitl
 archived compatible exporter to create a portable bundle, then import it into
 an empty current store. The recovery runbook defines that external contract.
 
+## How Ask decides
+
+`kmp_ask` reads with the anchored ask gate unless the store opts out. Under
+`evidence_or_unknown` and `show_conflicts`, a question that names an
+identifier (`C6.4`, `#188`, `v0.7.0`, `corte 10`) is answered only from
+memories that name it and state what was asked beside it. Every response says
+how it settled in `answer_status` (`answered`, `partial` or `unknown`) and,
+when UNKNOWN, why in `unknown_reason`. `partial` is an enumerative question
+answered in part: `proof.missing` names the rest in the question's own words,
+and confidence is at most medium.
+
+The gate is the default since 26 September 2026. The previous rule, where
+UNKNOWN meant only that the best evidence shared too few of the question's
+words, is one file away. Put this `ask-gate.json` in the data directory and
+restart the host:
+
+```json
+{"mode":"off"}
+```
+
+That store then answers byte for byte as v0.23.0 did, without
+`answer_status` or `unknown_reason`. `{"mode":"anchored","partial":false}`
+keeps the gate and answers UNKNOWN wherever it would have answered PARTIAL.
+The engine reports the file in its `kmp_store_config` log line; one it cannot
+read or does not recognise is reported and the default applies.
+
 ## Durability and recovery
 
 - writes are committed durably before success is returned;
@@ -136,7 +162,14 @@ telemetry; KMP does not upload memory to Underpass.
 The prompt-quality journal covers reads that render a model prompt. Temporal
 reads (`goto`, `near`, `forward`, `rewind`) and ChronoLoom projections read the
 structured bundle directly; they do not render and tokenize a discarded prompt
-to produce journal metrics. Their MCP response quality remains computed from
+to produce journal metrics. Over MCP, `kmp_ask`, `kmp_relate` and `kmp_curate`
+project the bundle and never return the prompt, and `kmp_wake` reads only the
+rendered sections it projects, so none of them measures a prompt for the
+journal. The journal is a passive observer (`QualityMetricsObserver::is_active`
+is false): it records the renders that are measured anyway, such as
+`kmp_trace` and the `kmp-embedded` API's recall, which returns the rendered
+content. A composition that installs an active observer makes those reads
+measure again. Their MCP response quality remains computed from
 the selected entries and proof. An absent prompt-quality observation is not a
 zero-quality read.
 

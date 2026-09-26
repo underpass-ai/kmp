@@ -3,6 +3,7 @@ use kmp_domain::TemporalSelection;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
+use super::ranked_selection::RankedSelection;
 use super::rerank_candidate_ranking::RerankCandidateRanking;
 use super::semantic_candidate_ranking::SemanticCandidateRanking;
 
@@ -14,6 +15,11 @@ pub struct AskRetrievalContext {
     pub(super) semantic: Option<SemanticCandidateRanking>,
     pub(super) rerank: Option<RerankCandidateRanking>,
     pub(super) lexical_cache: Option<std::sync::Arc<super::lexical_index_cache::LexicalIndexCache>>,
+    /// The lexical ranking a remote judge's pool was built from, which the
+    /// answer reuses when it is asked with the same inputs.
+    pub(super) ranked: Option<RankedSelection>,
+    /// The anchored decision gate, unless the store opted out of it.
+    pub(super) gate: Option<super::ask_gate::AskGate>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -23,6 +29,8 @@ impl From<GetContextResult> for AskRetrievalContext {
             semantic: None,
             rerank: None,
             lexical_cache: None,
+            ranked: None,
+            gate: None,
         }
     }
 }
@@ -77,6 +85,20 @@ impl AskRetrievalContext {
         Ok(sources.into_values().collect())
     }
 
+    /// Decide with the store's anchored gate (on unless it opted out).
+    pub fn with_gate(mut self, gate: super::ask_gate::AskGate) -> Self {
+        self.gate = Some(gate);
+        self
+    }
+
+    /// Decide with the default gate (`AskGate::STORE_DEFAULT`): the
+    /// transport that reads no store configuration answers as a store that
+    /// said nothing about it.
+    pub fn with_default_gate(mut self) -> Self {
+        self.gate = super::ask_gate::AskGate::STORE_DEFAULT;
+        self
+    }
+
     pub fn with_semantic_candidates(mut self, ranking: SemanticCandidateRanking) -> Self {
         self.semantic = Some(ranking);
         self
@@ -86,8 +108,11 @@ impl AskRetrievalContext {
     /// then admitted live entries it did not keep, so a paraphrase with no
     /// word in common can still be read. At most `limit`, unique by entry
     /// and exact text, and nothing the selection does not admit.
+    ///
+    /// The ranking read here is kept: the answer to the same question stands
+    /// on it rather than ranking the pool a second time.
     pub fn rerank_pool(
-        &self,
+        &mut self,
         question: &str,
         policy: kmp_application::MemoryAnswerPolicy,
         temporal: &TemporalSelection,
@@ -95,11 +120,14 @@ impl AskRetrievalContext {
         limit: usize,
     ) -> super::scalars::ProtoMappingResult<Vec<super::semantic_source::SemanticSource>> {
         use super::temporal_admission::TemporalAdmission;
+        let lexical_identity =
+            super::lexical_index_identity::LexicalIndexIdentity::read(&self.result, temporal);
         let admission = TemporalAdmission::read(&self.result.bundle, temporal)?;
         let bounded = admission.bound(&self.result.bundle);
         let lifecycle = super::responses::lifecycle_for(&bounded, &admission);
         let ranker =
-            super::answer_ranker::AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle);
+            super::answer_ranker::AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
+                .with_lexical_cache(self.lexical_cache.as_deref(), lexical_identity);
         let mut candidates = super::bundle_views::answer_evidence_from_bundle(&self.result.bundle)
             .into_iter()
             .filter(|item| admission.admits(item))
@@ -107,7 +135,16 @@ impl AskRetrievalContext {
         for evidence in &mut candidates {
             admission.bound_supports(evidence);
         }
-        Ok(ranker.rerank_pool(question, policy, candidates, limit))
+        let ranked = RankedSelection::new(
+            question,
+            policy,
+            temporal,
+            bridge,
+            ranker.rank(question, policy, candidates.clone()),
+        );
+        let pool = ranker.rerank_pool(ranked.ranked(), &candidates, limit);
+        self.ranked = Some(ranked);
+        Ok(pool)
     }
 
     pub fn with_rerank_candidates(mut self, ranking: RerankCandidateRanking) -> Self {

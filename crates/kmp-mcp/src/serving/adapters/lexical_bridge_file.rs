@@ -106,6 +106,15 @@ fn load_bridge_at(path: &Path, origin: BridgeOrigin) -> LexicalBridge {
     }
 }
 
+/// The table file this store would read, or `None` when an operator turned
+/// the bridge off. The file may not exist.
+pub(crate) fn lexical_bridge_path(data_dir: &Path) -> Option<PathBuf> {
+    match lexical_bridge_source(data_dir) {
+        BridgeSource::Disabled => None,
+        BridgeSource::File(path, _) => Some(path),
+    }
+}
+
 /// One line for `info` and `doctor`: which table this store would read, or
 /// that there is none and what that means for `ask`.
 pub(crate) fn describe_lexical_bridge(data_dir: &Path) -> String {

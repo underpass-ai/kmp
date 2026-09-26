@@ -473,6 +473,41 @@ message AskResponse {
   // `AskRequest.asked_as`, echoed byte for byte so a response says what the
   // user asked as well as what the kernel searched. Empty when none was given.
   string asked_as = 8;
+  // How the anchored ask gate settled the question: answered, partial (an
+  // enumerative question whose cited memories state some of what it asked,
+  // `proof.missing` naming the rest in the reader's words, confidence at most
+  // Medium) or unknown. The gate is on by default; UNSPECIFIED when a store
+  // opted out of it (`ask-gate.json` `{"mode":"off"}` beside it). `answer`
+  // stays the compatible reading.
+  AnswerStatus answer_status = 9;
+  // Why an unknown answer is unknown, when the gate settled it; UNSPECIFIED
+  // otherwise.
+  UnknownReason unknown_reason = 10;
+}
+
+enum AnswerStatus {
+  ANSWER_STATUS_UNSPECIFIED = 0;
+  ANSWER_STATUS_ANSWERED = 1;
+  ANSWER_STATUS_PARTIAL = 2;
+  ANSWER_STATUS_UNKNOWN = 3;
+}
+
+enum UnknownReason {
+  UNKNOWN_REASON_UNSPECIFIED = 0;
+  // Nothing in the selection was retrieved for the question.
+  UNKNOWN_REASON_NO_CANDIDATES = 1;
+  // What was retrieved does not bear on the question.
+  UNKNOWN_REASON_NO_BEARING = 2;
+  // Nothing inside the interval bears on it; `proof.nearest_outside` names
+  // the closest match outside.
+  UNKNOWN_REASON_OUT_OF_WINDOW = 3;
+  // An identifier the question requires appears in no memory of the abouts
+  // and the span this read selected; `proof.missing` names it. Not a claim
+  // that it is not stored: it may be written another way, or live elsewhere.
+  UNKNOWN_REASON_ANCHOR_ABSENT_IN_SELECTION = 4;
+  // Memories name the identifier, and none of them states what the question
+  // asks of it; `proof.missing` names what was not found.
+  UNKNOWN_REASON_ATTRIBUTE_NOT_FOUND = 5;
 }
 
 message AnswerReason {

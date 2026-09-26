@@ -65,6 +65,21 @@ impl BundleQualityMetrics {
         })
     }
 
+    /// The metrics of a render nobody measured: every value zero.
+    ///
+    /// A read whose caller never consumes the prompt skips the tokenization
+    /// these metrics need. The zeros are a placeholder, not an observation;
+    /// such a read must not be reported to a quality observer.
+    pub fn unmeasured() -> Self {
+        Self {
+            raw_equivalent_tokens: 0,
+            compression_ratio: 0.0,
+            causal_density: 0.0,
+            noise_ratio: 0.0,
+            detail_coverage: 0.0,
+        }
+    }
+
     /// Compute quality metrics from a bundle and its rendering output.
     ///
     /// `rendered_tokens` is the token count of the structured rendering —
@@ -194,6 +209,16 @@ mod tests {
     };
 
     use super::{BundleQualityMetrics, raw_dump_records::raw_dump_records};
+
+    #[test]
+    fn unmeasured_metrics_are_all_zero_and_valid() {
+        let unmeasured = BundleQualityMetrics::unmeasured();
+        assert_eq!(
+            unmeasured,
+            BundleQualityMetrics::new(0, 0.0, 0.0, 0.0, 0.0).expect("zeros are valid")
+        );
+        assert_eq!(unmeasured.raw_equivalent_tokens(), 0);
+    }
 
     // ── Stub estimator for deterministic tests ──────────────────────────
 

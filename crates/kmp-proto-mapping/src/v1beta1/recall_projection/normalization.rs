@@ -3,7 +3,9 @@
 
 use std::collections::BTreeSet;
 
-use kmp_proto::v1beta1::{AnswerReason, MemoryEvidence, MemoryRelation, MemorySemanticClass};
+use kmp_proto::v1beta1::{AnswerReason, MemoryEvidence, MemoryRelation};
+
+use super::super::proof_evidence_index::ProofEvidenceIndex;
 use serde_json::{Value, json};
 
 pub(super) fn cited_evidence_refs(value: &Value) -> BTreeSet<String> {
@@ -67,50 +69,10 @@ pub(super) fn rebuild_answer(value: &mut Value) {
 
 pub(super) fn normalized_proof_relation(
     relation: &MemoryRelation,
-    evidence: &[MemoryEvidence],
+    index: &ProofEvidenceIndex<'_>,
 ) -> MemoryRelation {
     let mut relation = relation.clone();
-    let mut refs = relation
-        .evidence_refs
-        .iter()
-        .cloned()
-        .collect::<BTreeSet<_>>();
-    let mut repeated_why = false;
-    let mut repeated_evidence = false;
-    for item in evidence {
-        let evidence_node_ref = item.id.strip_prefix("detail:").unwrap_or(&item.id);
-        let why_matches = !relation.why.is_empty() && relation.why == item.text;
-        let evidence_matches = !relation.evidence.is_empty() && relation.evidence == item.text;
-        let endpoint =
-            relation.source_ref == evidence_node_ref || relation.target_ref == evidence_node_ref;
-        let supports_endpoint = item.supports.iter().any(|supported_ref| {
-            relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
-        });
-        // A source that merely supports an endpoint backs that memory, not
-        // this hop; it joins the hop only when it holds the hop's own text.
-        let incident = endpoint || (supports_endpoint && (why_matches || evidence_matches));
-        // Equal text proves nothing about provenance: a body only joins a
-        // hop through a source the graph ties to one of its endpoints.
-        if incident {
-            refs.insert(item.id.clone());
-            repeated_why |= why_matches;
-            repeated_evidence |= evidence_matches;
-        }
-    }
-    if repeated_why {
-        relation.why.clear();
-    }
-    if repeated_evidence {
-        relation.evidence.clear();
-    }
-    relation.evidence_refs = refs.into_iter().collect();
-    if relation.semantic_class != MemorySemanticClass::Structural as i32
-        && relation.why.is_empty()
-        && relation.evidence.is_empty()
-        && !relation.evidence_refs.is_empty()
-    {
-        relation.why = "Supported by canonical evidence refs.".to_string();
-    }
+    index.normalize(&mut relation);
     relation
 }
 

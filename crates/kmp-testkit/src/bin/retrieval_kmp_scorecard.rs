@@ -14,7 +14,10 @@ use std::time::Instant;
 
 use kmp_mcp::KernelMcpServer;
 use kmp_testkit::WriteReceipt;
-use kmp_testkit::retrieval_scorecard::{RetrievalOutcome, RetrievalScorecard};
+use kmp_testkit::retrieval_scorecard::{
+    AskVerdict, BaselineBound, BaselineRow, GuardedDecision, GuardedScorecard, RetrievalOutcome,
+    RetrievalScorecard, baseline_failures, baseline_rows, render_baseline,
+};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -60,6 +63,33 @@ struct JudgedCase {
     /// that crosses an about.
     #[serde(default)]
     writes: Vec<Value>,
+    /// The case type, for the cases added beyond the original 35. The
+    /// original cases carry none, which is how their floors stay comparable.
+    #[serde(default)]
+    kind: Option<String>,
+    /// Refs the answer must not cite: the excluded anchor of a negated
+    /// question, or the neighbour an absent anchor would be confused with.
+    #[serde(default)]
+    forbidden: Vec<String>,
+    /// For a negative case, the words a PARTIAL must name in `missing` to
+    /// count as abstaining rather than as an answer.
+    #[serde(default)]
+    absent: Vec<String>,
+}
+
+impl JudgedCase {
+    /// Whether a right outcome includes declining to answer or to cite.
+    fn is_guarded(&self) -> bool {
+        self.judged.is_empty() || !self.forbidden.is_empty()
+    }
+}
+
+/// What one `kmp_ask` call produced, as the scorecard reads it.
+struct Asked {
+    outcome: RetrievalOutcome,
+    to_judged: u64,
+    verdict: AskVerdict,
+    confidence: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -88,20 +118,48 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .ok()
         .and_then(|value| value.parse::<u64>().ok())
         .unwrap_or(10);
-    let gated = arm.is_none() && max_entries == 10;
+    // The anchored ask gate is on by default, and the recorded floors are
+    // read with it. `ask-gate.json` beside each case's store makes an arm:
+    // `off` (the rule of v0.23.0, how to measure without the gate),
+    // `anchored-strict` without PARTIAL, or `anchored` (the default, written
+    // out). An arm like the others.
+    let ask_gate = std::env::var("RETRIEVAL_ASK_GATE").ok();
+    let gated = arm.is_none() && ask_gate.is_none() && max_entries == 10;
     let mut bytes_to_judged = Vec::new();
 
     let collection: JudgedCollection = serde_json::from_str(&fs::read_to_string(&cases_path)?)?;
-    let mut outcomes = Vec::new();
+    // The original 35 are scored on their own, so their recorded floors stay
+    // comparable; the rest adds positives and guarded cases around them.
+    let mut original = Vec::new();
+    let mut positives = Vec::new();
+    let mut guarded = Vec::new();
     println!(
-        "{:<24} {:>7} {:>7} {:>7} {:>6}  note",
-        "case", "R@1", "R@5", "nDCG", "cite"
+        "{:<24} {:>7} {:>7} {:>7} {:>6} {:>8} {:>7}  note",
+        "case", "R@1", "R@5", "nDCG", "cite", "verdict", "conf"
     );
     for case in &collection.cases {
-        let (outcome, to_judged) = run_case(case, arm.as_deref(), max_entries).await?;
-        bytes_to_judged.push(to_judged as f64);
+        // The cassette an arm replays holds the original cases' requests
+        // only; a case beyond them would be a miss, not a measurement.
+        if arm.is_some() && case.kind.is_some() {
+            continue;
+        }
+        let asked = run_case(case, arm.as_deref(), ask_gate.as_deref(), max_entries).await?;
+        let outcome = asked.outcome;
+        let decision = case.is_guarded().then(|| GuardedDecision {
+            kind: case.kind.clone().unwrap_or_else(|| "original".to_string()),
+            negative: case.judged.is_empty(),
+            verdict: asked.verdict,
+            cited_forbidden: case
+                .forbidden
+                .iter()
+                .any(|item| outcome.cited.contains(item)),
+            high_confidence: asked.confidence == "high",
+        });
+        let false_answer = decision
+            .as_ref()
+            .is_some_and(GuardedDecision::is_false_answer);
         println!(
-            "{:<24} {:>7.2} {:>7.2} {:>7.2} {:>6}  {}",
+            "{:<24} {:>7.2} {:>7.2} {:>7.2} {:>6} {:>8} {:>7}  {}",
             case.id,
             outcome.recall_at(1),
             outcome.recall_at(5),
@@ -111,63 +169,97 @@ async fn main() -> Result<(), Box<dyn Error>> {
             } else {
                 "no"
             },
+            asked.verdict.label(),
+            asked.confidence,
             if outcome.is_false_unknown() {
                 "FALSE UNKNOWN"
+            } else if false_answer {
+                "FALSE ANSWER"
             } else {
                 ""
             }
         );
         // A case that found nothing is worth its sentence: the collection
         // exists to say which behaviour broke, not only that a number moved.
-        if outcome.recall_at(10) < 1.0 {
+        if (!case.judged.is_empty() && outcome.recall_at(10) < 1.0)
+            || (case.kind.is_some() && outcome.is_false_unknown())
+            || false_answer
+        {
             println!("{:<24} {:>31}  {}", "", "", case.probes);
         }
-        outcomes.push(outcome);
+        if case.kind.is_none() {
+            bytes_to_judged.push(asked.to_judged as f64);
+            original.push(outcome.clone());
+        }
+        if !case.judged.is_empty() {
+            positives.push(outcome);
+        }
+        guarded.extend(decision);
     }
 
-    let scorecard = RetrievalScorecard::score(&outcomes);
-    println!("\n{} cases", scorecard.cases);
+    let scorecard = RetrievalScorecard::score(&original);
+    println!(
+        "\n{} cases (the original judged collection)",
+        scorecard.cases
+    );
     for (name, value) in scorecard.quality_columns() {
-        println!("  {name:<24} {value:.4}");
+        println!("  {name:<32} {value:.4}");
     }
     println!(
-        "  {:<24} {:.4}",
+        "  {:<32} {:.4}",
         "false_unknown_rate", scorecard.false_unknown_rate
     );
     println!(
-        "  {:<24} {:.0}",
+        "  {:<32} {:.0}",
         "mean_used_bytes", scorecard.mean_used_bytes
     );
     println!(
-        "  {:<24} {:.0}",
+        "  {:<32} {:.0}",
         "mean_elapsed_millis", scorecard.mean_elapsed_millis
     );
 
     println!(
-        "  {:<24} {:.0}",
+        "  {:<32} {:.0}",
         "mean_bytes_to_judged",
         bytes_to_judged.iter().sum::<f64>() / bytes_to_judged.len().max(1) as f64
     );
+    let every = RetrievalScorecard::score(&positives);
+    let decisions = GuardedScorecard::score(&guarded);
+    let rows = baseline_rows(&scorecard, &every, &decisions);
+    println!(
+        "\nthe whole collection: {} with a judged answer, {} guarded (false_* rates are ceilings)",
+        every.cases, decisions.cases
+    );
+    for row in rows.iter().filter(|row| row.extended) {
+        let digits = if row.bound == BaselineBound::Exact {
+            0
+        } else {
+            4
+        };
+        println!("  {:<32} {:.digits$}", row.name, row.value);
+    }
     if !gated {
         println!(
-            "\narm rerank={} max_entries={max_entries}: reported, not gated",
-            arm.as_deref().unwrap_or("off")
+            "\narm rerank={} ask_gate={} max_entries={max_entries}: reported, not gated",
+            arm.as_deref().unwrap_or("off"),
+            ask_gate.as_deref().unwrap_or("off")
         );
         return Ok(());
     }
     if record {
-        write_baseline(&baseline_path, &scorecard)?;
+        fs::write(&baseline_path, render_baseline(&rows))?;
         println!("\nrecorded baseline at {}", baseline_path.display());
         return Ok(());
     }
-    enforce_baseline(&baseline_path, &scorecard)
+    enforce_baseline(&baseline_path, &rows)
 }
 
 async fn run_case(
     case: &JudgedCase,
     arm: Option<&str>,
+    ask_gate: Option<&str>,
     max_entries: u64,
-) -> Result<(RetrievalOutcome, u64), Box<dyn Error>> {
+) -> Result<Asked, Box<dyn Error>> {
     // A fresh store per case, so one case cannot weight another's terms: the
     // BM25 collection is whatever the store holds.
     let data_dir = std::env::temp_dir().join(format!("kmp-retrieval-{}", case.id));
@@ -185,6 +277,27 @@ async fn run_case(
                 _ => r#"{"pool_size":40}"#,
             },
         )?;
+    }
+    if let Some(gate) = ask_gate {
+        fs::write(
+            data_dir.join("ask-gate.json"),
+            match gate {
+                "off" => r#"{"mode":"off"}"#,
+                "anchored-strict" => r#"{"mode":"anchored","partial":false}"#,
+                _ => r#"{"mode":"anchored","partial":true}"#,
+            },
+        )?;
+    }
+    // `RETRIEVAL_BOOKS=<dir>` keeps each case's verdict book between runs:
+    // a second run over the same seeds answers every rerank from the book.
+    let books = std::env::var("RETRIEVAL_BOOKS").ok().map(PathBuf::from);
+    if let Some(books) = &books {
+        for suffix in ["", "-wal"] {
+            let kept = books.join(format!("{}.sqlite3{suffix}", case.id));
+            if kept.is_file() {
+                fs::copy(&kept, data_dir.join(format!("judgements.sqlite3{suffix}")))?;
+            }
+        }
     }
     let server = KernelMcpServer::embedded(&data_dir)?;
 
@@ -243,6 +356,23 @@ async fn run_case(
     let started = Instant::now();
     let answer = call(&server, 2, "kmp_ask", arguments).await?;
     let elapsed_millis = started.elapsed().as_millis() as u64;
+    if let Some(books) = &books {
+        fs::create_dir_all(books)?;
+        for suffix in ["", "-wal"] {
+            let book = data_dir.join(format!("judgements.sqlite3{suffix}"));
+            if book.is_file() {
+                fs::copy(&book, books.join(format!("{}.sqlite3{suffix}", case.id)))?;
+            }
+        }
+    }
+    if let Ok(path) = std::env::var("RETRIEVAL_ANSWERS") {
+        use std::io::Write;
+        let mut log = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)?;
+        writeln!(log, "{} {}", case.id, answer)?;
+    }
     let _ = fs::remove_dir_all(&data_dir);
     if answer["warnings"]
         .to_string()
@@ -268,6 +398,12 @@ async fn run_case(
             .sum::<u64>()
     };
 
+    let verdict = AskVerdict::read(&answer, &case.absent);
+    let confidence = answer["proof"]["confidence"]
+        .as_str()
+        .unwrap_or("none")
+        .to_string();
+
     if let Some(expected) = &case.nearest_outside {
         // The right answer is UNKNOWN, and the proof must say what lies
         // nearest outside the span: that ref is the one citation this case
@@ -279,8 +415,8 @@ async fn run_case(
             .map(str::to_string)
             .into_iter()
             .collect::<Vec<_>>();
-        return Ok((
-            RetrievalOutcome {
+        return Ok(Asked {
+            outcome: RetrievalOutcome {
                 judged: BTreeSet::from([expected.clone()]),
                 retrieved: named.clone(),
                 cited: named.into_iter().collect(),
@@ -291,7 +427,9 @@ async fn run_case(
                 elapsed_millis,
             },
             to_judged,
-        ));
+            verdict,
+            confidence,
+        });
     }
 
     let retrieved = answer["proof"]["evidence"]
@@ -308,8 +446,8 @@ async fn run_case(
         })
         .unwrap_or_default();
 
-    Ok((
-        RetrievalOutcome {
+    Ok(Asked {
+        outcome: RetrievalOutcome {
             judged: case.judged.iter().cloned().collect(),
             retrieved,
             cited,
@@ -320,7 +458,9 @@ async fn run_case(
             elapsed_millis,
         },
         to_judged,
-    ))
+        verdict,
+        confidence,
+    })
 }
 
 /// The memory a returned citation stands for.
@@ -398,64 +538,8 @@ async fn call(
     Ok(value["result"]["structuredContent"].clone())
 }
 
-fn write_baseline(path: &Path, scorecard: &RetrievalScorecard) -> Result<(), Box<dyn Error>> {
-    let mut out = String::from(
-        "# Recorded retrieval quality. A number may rise freely; lowering one is a\n\
-         # reviewed change that says why. Cost is reported by the scorecard and\n\
-         # deliberately not recorded here — a floor that rose because responses grew\n\
-         # would be a gate rewarding waste.\n\
-         #\n\
-         # Refresh deliberately, never to make a red build green:\n\
-         #   RETRIEVAL_BASELINE=write cargo run -p kmp-testkit --bin retrieval_kmp_scorecard\n\
-         metric\tfloor\n",
-    );
-    out.push_str(&format!("cases\t{}\n", scorecard.cases));
-    for (name, value) in scorecard.quality_columns() {
-        // Truncated, never rounded. A floor recorded above the number it was
-        // taken from is not a floor, and would fail the build that wrote it.
-        out.push_str(&format!(
-            "{name}\t{:.4}\n",
-            (value * 10_000.0).floor() / 10_000.0
-        ));
-    }
-    fs::write(path, out)?;
-    Ok(())
-}
-
-fn enforce_baseline(path: &Path, scorecard: &RetrievalScorecard) -> Result<(), Box<dyn Error>> {
-    let recorded = fs::read_to_string(path)?;
-    let mut failures = Vec::new();
-    for line in recorded.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') || line.starts_with("metric\t") {
-            continue;
-        }
-        let (metric, floor) = line
-            .split_once('\t')
-            .ok_or_else(|| format!("malformed baseline row: {line}"))?;
-        if metric == "cases" {
-            let expected: usize = floor.parse()?;
-            if scorecard.cases != expected {
-                failures.push(format!(
-                    "the collection changed size: {expected} judged cases recorded, {} run",
-                    scorecard.cases
-                ));
-            }
-            continue;
-        }
-        let floor: f64 = floor.parse()?;
-        let measured = scorecard
-            .quality_columns()
-            .into_iter()
-            .find(|(name, _)| *name == metric)
-            .map(|(_, value)| value)
-            .ok_or_else(|| format!("baseline names an unknown metric: {metric}"))?;
-        // A hair of tolerance, so a float that lands one ulp low does not fail
-        // a build for a change that moved nothing.
-        if measured + 1e-9 < floor {
-            failures.push(format!("{metric} fell to {measured:.4}, below {floor:.4}"));
-        }
-    }
+fn enforce_baseline(path: &Path, rows: &[BaselineRow]) -> Result<(), Box<dyn Error>> {
+    let failures = baseline_failures(&fs::read_to_string(path)?, rows)?;
     if failures.is_empty() {
         println!("\nretrieval baseline holds");
         return Ok(());

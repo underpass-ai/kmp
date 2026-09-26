@@ -9,8 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::{GetContextResult, RelateMemoryQuery};
 use kmp_domain::{
-    DeclaredEdge, FactState, KmpBundle, MemoryRelationType, RelatedFact, TemporalAxis,
-    TemporalCoordinate, relate,
+    DeclaredEdge, FactState, MemoryRelationType, RelatedFact, TemporalAxis, TemporalCoordinate,
+    relate,
 };
 use kmp_proto::v1beta1::{
     CoordinateRelation as ProtoCoordinateRelation, CoordinateRelationKind as ProtoKind,
@@ -20,9 +20,10 @@ use kmp_proto::v1beta1::{
 };
 
 use super::answer_recall_context::search_morphology;
+use super::bundle_node_index::BundleNodeIndex;
 use super::bundle_views::{
-    about_by_entry, abouts_in_bundle, bundle_node_properties, memory_relations_from_bundle,
-    persisted_memory_metadata, proto_coordinate_from_domain,
+    about_by_entry, abouts_in_bundle, memory_relations_from_bundle, persisted_memory_metadata,
+    proto_coordinate_from_domain,
 };
 use super::lexical_bridge::LexicalBridge;
 use super::memory_lifecycle::MemoryLifecycle;
@@ -117,6 +118,7 @@ fn relate_response_with(
     let mut domain_facts = Vec::new();
     let mut facts = Vec::new();
     let mut words = Vec::new();
+    let nodes = BundleNodeIndex::new(bundle);
     for entry_ref in &inside {
         let coordinates = coordinates_by_ref.remove(entry_ref).unwrap_or_default();
         let about = owners.get(entry_ref).cloned().unwrap_or_default();
@@ -127,8 +129,8 @@ fn relate_response_with(
         } else {
             FactState::Current
         };
-        let properties = bundle_node_properties(bundle, entry_ref);
-        let text = entry_text(bundle, entry_ref);
+        let properties = nodes.properties(entry_ref);
+        let text = entry_text(&nodes, entry_ref);
         words.push(FactWords {
             ref_id: entry_ref.clone(),
             about: about.clone(),
@@ -428,10 +430,9 @@ fn slice_section<T: Clone>(section: &[T], start: usize, offset: usize, end: usiz
     section[from..to].to_vec()
 }
 
-fn entry_text(bundle: &KmpBundle, entry_ref: &str) -> String {
-    std::iter::once(bundle.root_node())
-        .chain(bundle.neighbor_nodes())
-        .find(|node| node.node_id() == entry_ref)
+fn entry_text(nodes: &BundleNodeIndex<'_>, entry_ref: &str) -> String {
+    nodes
+        .node(entry_ref)
         .map(|node| node.summary().to_string())
         .unwrap_or_default()
 }

@@ -18,6 +18,7 @@ where
         depth: u32,
         dimensions: &DimensionSelection,
         options: &ContextRenderOptions,
+        demand: crate::queries::RenderDemand,
     ) -> Result<GetContextResult, ApplicationError> {
         let roots = self.memory_context_roots(about, dimensions).await?;
         let requested_scopes = requested_dimension_scopes(about, dimensions, &roots);
@@ -60,7 +61,7 @@ where
             .materialize_selected_details(selected, &ids)
             .await?;
         timing.detail_load = details_start.elapsed();
-        let rendered = render_graph_bundle_with_options(&bundle, options);
+        let rendered = crate::queries::render_graph_bundle_on_demand(&bundle, options, demand);
         Ok(GetContextResult {
             bundle,
             read_revision: self.query_application.graph_read_revision().await?,

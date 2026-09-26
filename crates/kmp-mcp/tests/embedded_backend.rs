@@ -2248,8 +2248,9 @@ async fn embedded_backend_serves_kmp_tools_and_memory_survives_sessions() {
     let wake_observations = telemetry
         .query_since(0, Some("kmp_wake"), 10)
         .expect("wake quality observations are queryable");
-    assert_eq!(wake_observations.len(), 1);
-    assert_eq!(wake_observations[0].root_node_id(), "question:e3");
+    // The journal is passive: a wake projects its bundle and measures no
+    // prompt it does not return.
+    assert!(wake_observations.is_empty(), "{}", wake_observations.len());
     drop(telemetry);
 
     // A brand-new session on the same data dir recovers the memory.
@@ -2917,7 +2918,7 @@ async fn trace_returns_only_the_directed_path_and_warns_when_the_target_is_unrea
 }
 
 #[tokio::test]
-async fn embedded_backend_journals_quality_telemetry_for_reads() {
+async fn embedded_backend_journals_quality_telemetry_only_for_rendered_reads() {
     use kmp_mcp::{EmbeddedKernelMcpBackend, KernelMcpToolBackend};
 
     let data_dir = tempfile::tempdir().expect("temp data dir");
@@ -2979,15 +2980,23 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
     let gotos = telemetry
         .query_since(0, Some("kmp_time"), 10)
         .expect("goto observations query");
-    assert_eq!(wakes.len(), 1, "wake must journal one observation");
-    assert_eq!(asks.len(), 1, "ask must journal one observation");
+    // The journal is a passive observer: wake and ask project the bundle and
+    // never return the prompt, so they do not tokenize one to measure it.
+    assert!(
+        wakes.is_empty(),
+        "a wake must not measure a prompt it never returns"
+    );
+    assert!(
+        asks.is_empty(),
+        "an ask must not measure a prompt it never returns"
+    );
     assert_eq!(traces.len(), 1, "trace must journal one observation");
     assert!(
         gotos.is_empty(),
         "unrendered temporal reads must not fabricate prompt-token observations"
     );
-    assert_eq!(wakes[0].root_node_id(), "question:e3");
-    assert!(wakes[0].raw_equivalent_tokens() > 0);
+    assert_eq!(traces[0].root_node_id(), "question:e3:claim:e3");
+    assert!(traces[0].raw_equivalent_tokens() > 0);
 }
 
 /// A writer's English summary is linted where it is written and searched

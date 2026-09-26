@@ -17,7 +17,6 @@ const JOINERS: &[char] = &['-', '_', '/', '.', ':'];
 const EMPHASIS_RUN: usize = 3;
 
 /// Identifier fidelity after folding dates and English possessives.
-/// Keep this out of retrieval tokenization: stored words and search stay intact.
 pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
     let normalized = |text: &str| {
         super::date_tokens::canonical_dates(

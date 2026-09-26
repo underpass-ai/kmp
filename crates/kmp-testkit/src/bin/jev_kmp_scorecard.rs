@@ -9,6 +9,13 @@
 //! instead of being guessed. Re-recording with a real key
 //! (`KMP_TYPESAFE_CASSETTE_MODE=record`) is how a new model or prompt is
 //! measured.
+//!
+//! With `JEV_SCORECARD_KEEP_BOOK=1` each arm's store keeps the verdict book
+//! (`judgements.sqlite3`) of the previous run while everything else is
+//! seeded afresh: a second run then answers from the book alone, which
+//! `scripts/eval/jev-book-second-pass.sh` checks against an empty cassette.
+//! Every run prints the sha256 of every tool answer it read, without the
+//! Jev cost accounting, so two runs can be compared byte for byte.
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fs;
@@ -18,6 +25,12 @@ use kmp_mcp::KernelMcpServer;
 use kmp_testkit::WriteReceipt;
 use serde::Deserialize;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+
+/// Every tool answer this run read, in order, without Jev cost accounting.
+static ANSWERS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+/// The verdict book beside a store, and its write-ahead log.
+const BOOK_FILES: [&str; 2] = ["judgements.sqlite3", "judgements.sqlite3-wal"];
 
 const ACTOR: &str = "jev-scorecard";
 const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#;
@@ -30,6 +43,9 @@ const RERANK_WIDE: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const WRITE_RELATIONS: &str = "{}";
 const WAKE_FOCUS: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const ASK_TOP: usize = 5;
+/// A wake packet on this corpus ends well before this; a chain that does
+/// not is an error, not a silently shortened "all pages".
+const WAKE_MAX_PAGES: usize = 32;
 
 #[derive(Debug, Deserialize)]
 struct JudgedCollection {
@@ -311,6 +327,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
         scores.ask_ms[1] / asks,
         scores.ask_ms[2] / asks
     );
+
+    let answers = ANSWERS.lock().map_err(|_| "answer log poisoned")?.clone();
+    let mut digest = Sha256::new();
+    for answer in &answers {
+        digest.update(answer.as_bytes());
+        digest.update(b"\n");
+    }
+    println!(
+        "  (replay, not gated)          {} tool answers, sha256 {:x}",
+        answers.len(),
+        digest.finalize()
+    );
+    if let Ok(path) = std::env::var("JEV_SCORECARD_ANSWERS") {
+        fs::write(path, answers.join("\n") + "\n")?;
+    }
 
     if std::env::var("JEV_REPORT_ONLY").as_deref() == Ok("1") {
         return Ok(());
@@ -999,16 +1030,20 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             }
             let first = delivered(&page);
             let mut all = first.clone();
-            for next_id in (401 + (arm as u64) * 100 + n as u64 * 10..).take(8) {
-                let Some(action) = page["next_action"].as_object().cloned() else {
-                    break;
-                };
-                let (Some(tool), Some(next)) = (action["tool"].as_str(), action.get("arguments"))
-                else {
-                    break;
-                };
-                page = call(server, next_id, tool, next.clone()).await?;
+            let mut pages = 1;
+            while let Some((tool, next)) = continuation(&page) {
+                if pages == WAKE_MAX_PAGES {
+                    return Err(format!(
+                        "wake `{}` still continues after {WAKE_MAX_PAGES} pages",
+                        wake.intent
+                    )
+                    .into());
+                }
+                let next_id = 400 + (arm as u64) * 100 + n as u64 * 10 + pages as u64;
+                page = call(server, next_id, &tool, next).await?;
+                refuse_unrecorded(&page)?;
                 all.push_str(&delivered(&page));
+                pages += 1;
             }
             let in_first = wake
                 .required
@@ -1032,12 +1067,13 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             scores.wake_bytes[arm * 2] += first.len() as u64;
             scores.wake_bytes[arm * 2 + 1] += all.len() as u64;
             shown.push(format!(
-                "{} {}/{} first, {}/{} all, {}B first",
+                "{} {}/{} first, {}/{} all over {} pages, {}B first",
                 if arm == 0 { "plain" } else { "focused" },
                 in_first,
                 wake.required.len(),
                 in_all,
                 wake.required.len(),
+                pages,
                 first.len()
             ));
         }
@@ -1052,8 +1088,17 @@ async fn seeded_server(
     files: &[(&str, &str)],
 ) -> Result<KernelMcpServer, Box<dyn Error>> {
     let data_dir = std::env::temp_dir().join(format!("kmp-jev-{}-{arm}", case.id));
+    let keep_book = std::env::var("JEV_SCORECARD_KEEP_BOOK").as_deref() == Ok("1");
+    let kept = BOOK_FILES
+        .iter()
+        .filter(|_| keep_book)
+        .filter_map(|name| Some((*name, fs::read(data_dir.join(name)).ok()?)))
+        .collect::<Vec<_>>();
     let _ = fs::remove_dir_all(&data_dir);
     fs::create_dir_all(&data_dir)?;
+    for (name, bytes) in kept {
+        fs::write(data_dir.join(name), bytes)?;
+    }
     for (name, body) in files {
         fs::write(data_dir.join(name), body)?;
     }
@@ -1092,6 +1137,17 @@ fn refuse_unrecorded(value: &Value) -> Result<(), Box<dyn Error>> {
         }
     }
     Ok(())
+}
+
+/// The call that continues a paged recall packet, as the server proposes it:
+/// `projection.next_action`, one `{tool, arguments}` call, null on the last
+/// page. A wake or ask page has no top-level `next_action`; reading one
+/// there never followed a continuation, so "all pages" was the first page.
+fn continuation(page: &Value) -> Option<(String, Value)> {
+    let action = page.pointer("/projection/next_action")?;
+    let tool = action["tool"].as_str()?;
+    let arguments = action.get("arguments").filter(|value| value.is_object())?;
+    Some((tool.to_string(), arguments.clone()))
 }
 
 /// What a wake actually hands the reader: its packet and the evidence it
@@ -1249,7 +1305,56 @@ async fn call(
     if value["result"]["isError"].as_bool() == Some(true) {
         return Err(format!("tool `{name}` failed: {}", value["result"]).into());
     }
-    Ok(value["result"]["structuredContent"].clone())
+    let content = value["result"]["structuredContent"].clone();
+    ANSWERS
+        .lock()
+        .map_err(|_| "answer log poisoned")?
+        .push(format!("{name} {}", without_cost(&content)));
+    Ok(content)
+}
+
+/// An answer without what Jev cost to produce it: the `jev` usage objects
+/// and the "used N requests" of a summary change when the verdict book
+/// answers instead of the provider; nothing else may. The store is seeded
+/// afresh on every run, so what names that store instance — ingest wall
+/// times, and the review tokens, cursors and continuations derived from
+/// its snapshot — is left out too.
+fn without_cost(value: &Value) -> Value {
+    match value {
+        Value::Object(map) => Value::Object(
+            map.iter()
+                .filter(|(key, _)| {
+                    !matches!(
+                        key.as_str(),
+                        "jev"
+                            | "clocks"
+                            | "ingested_at"
+                            | "review_token"
+                            | "write_review_token"
+                            | "token"
+                            | "continuation"
+                            | "next_cursor"
+                    )
+                })
+                .map(|(key, child)| (key.clone(), without_cost(child)))
+                .collect(),
+        ),
+        Value::Array(items) => Value::Array(items.iter().map(without_cost).collect()),
+        Value::String(text) => Value::String(without_request_count(text)),
+        other => other.clone(),
+    }
+}
+
+fn without_request_count(text: &str) -> String {
+    let Some(at) = text.find(" used ") else {
+        return text.to_string();
+    };
+    let rest = &text[at + " used ".len()..];
+    let digits = rest.chars().take_while(char::is_ascii_digit).count();
+    if digits == 0 || !rest[digits..].starts_with(" request") {
+        return text.to_string();
+    }
+    format!("{} used N{}", &text[..at], &rest[digits..])
 }
 
 fn write_baseline(
@@ -1265,6 +1370,13 @@ fn write_baseline(
          # declarations, precheck_* the apply pre-write check, ask_* the rank of the answer in proof\n\
          # without and with re-ranking. A number may rise freely; lowering one is a reviewed change\n\
          # that says why, and a re-recorded cassette is one. `cases` is exact.\n\
+         # wake_all_pages_* follow projection.next_action to the last page; before that fix the scorecard\n\
+         # read a top-level next_action no wake carries, so \"all pages\" was only the first page and\n\
+         # wake_all_pages_plain sat at the first-page 0.9333. Following the chain raised it to 1.0000.\n\
+         # ask_*_plain are read with the anchored ask gate since it became the default (2026-09-26):\n\
+         # a plain ask whose question names an identifier ranks the memories that name it, and\n\
+         # ask_mrr_plain rose 0.1875 -> 0.2500, ask_top5_plain 0.2500 -> 0.3125. The re-ranked arms\n\
+         # do not move.\n\
          # Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh\n\
          metric\tfloor\n",
     );
@@ -1316,5 +1428,113 @@ fn enforce_baseline(
         Ok(())
     } else {
         Err(format!("Jev quality regressed:\n  {}", regressions.join("\n  ")).into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn continuation_is_the_call_the_projection_proposes() {
+        let call = json!({"tool": "kmp_wake", "arguments": {"continuation": "read_01"}});
+        let page = json!({"projection": {"next_action": call}});
+        assert_eq!(
+            continuation(&page),
+            Some(("kmp_wake".to_string(), json!({"continuation": "read_01"})))
+        );
+    }
+
+    #[test]
+    fn a_top_level_next_action_is_not_a_continuation() {
+        let call = json!({"tool": "kmp_wake", "arguments": {"about": "a"}});
+        assert_eq!(continuation(&json!({"next_action": call})), None);
+        assert_eq!(
+            continuation(&json!({"next_action": call, "projection": {"next_action": null}})),
+            None
+        );
+        assert_eq!(
+            continuation(&json!({"projection": {"next_action": {"tool": "kmp_wake"}}})),
+            None
+        );
+        assert_eq!(
+            continuation(&json!({"projection": {"next_action": {"arguments": {}}}})),
+            None
+        );
+    }
+
+    /// The contract the scorecard reads: a wake that does not fit its byte
+    /// allowance proposes its next page in `projection.next_action`
+    /// (`response_value.rs`, `projection_value`), never at the top level,
+    /// and following it delivers memories the first page left out.
+    #[tokio::test]
+    async fn a_paged_wake_continues_through_projection_next_action() {
+        let dir = tempfile::tempdir().expect("temporary store");
+        let server = KernelMcpServer::embedded(dir.path()).expect("embedded server");
+        let about = "project:paged";
+        let entries = (1..=24)
+            .map(|n| {
+                json!({"id": format!("{about}:e{n:02}"), "kind": "decision",
+                    "text": format!("Decision {n}: the paging team keeps the ledger number {n} \
+                                     in the eu-west-3 archive for the quarterly audit trail."),
+                    "coordinates": [{"dimension": "journal", "scope_id": "paged",
+                        "sequence": n, "occurred_at": format!("2026-03-{n:02}T10:00:00Z")}]})
+            })
+            .collect::<Vec<_>>();
+        let receipt = call(
+            &server,
+            1,
+            "kmp_ingest",
+            json!({"about": about, "idempotency_key": "paged-wake",
+                "memory": {"dimensions": [{"id": "paged", "kind": "journal"}],
+                    "entries": entries, "relations": []}}),
+        )
+        .await
+        .expect("ingest");
+        WriteReceipt::read("kmp_ingest", &receipt)
+            .require_accepted()
+            .expect("accepted");
+
+        let mut page = call(
+            &server,
+            2,
+            "kmp_wake",
+            json!({"about": about, "budget": {"max_bytes": 2048}}),
+        )
+        .await
+        .expect("first wake page");
+        assert!(page.get("next_action").is_none(), "{page}");
+        assert_eq!(
+            page["projection"]["page"]["has_more"],
+            json!(true),
+            "{page}"
+        );
+        let (tool, _) = continuation(&page).expect("projection.next_action on a paged wake");
+        assert_eq!(tool, "kmp_wake");
+
+        let first = delivered(&page);
+        let mut all = first.clone();
+        let mut pages = 1;
+        while let Some((tool, next)) = continuation(&page) {
+            assert!(pages < WAKE_MAX_PAGES, "the wake never ended");
+            page = call(&server, 2 + pages as u64, &tool, next)
+                .await
+                .expect("continued wake page");
+            assert!(page.get("next_action").is_none(), "{page}");
+            all.push_str(&delivered(&page));
+            pages += 1;
+        }
+        assert!(pages > 1);
+        assert_eq!(
+            page["projection"]["page"]["has_more"],
+            json!(false),
+            "{page}"
+        );
+        let found = |text: &str| {
+            (1..=24)
+                .filter(|n| text.contains(&format!("{about}:e{n:02}\"")))
+                .count()
+        };
+        assert!(found(&all) > found(&first), "pages added no memory");
     }
 }

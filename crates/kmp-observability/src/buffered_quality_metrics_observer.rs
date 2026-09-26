@@ -32,6 +32,12 @@ impl BufferedQualityMetricsObserver {
 }
 
 impl QualityMetricsObserver for BufferedQualityMetricsObserver {
+    /// A local journal records the renders reads measure anyway; it never
+    /// asks a read to tokenize a prompt its caller discards.
+    fn is_active(&self) -> bool {
+        false
+    }
+
     fn observe(&self, metrics: &BundleQualityMetrics, context: &QualityObservationContext) {
         let observation = QualityTelemetryObservation::capture(metrics, context);
         if self.sender.try_send(observation).is_err() {
@@ -77,6 +83,12 @@ mod tests {
         assert_eq!(observation.raw_equivalent_tokens(), 120);
         assert!(observation.observed_at_millis() > 0);
         assert_eq!(observer.dropped_observations(), 0);
+    }
+
+    #[test]
+    fn a_journal_buffer_is_a_passive_observer() {
+        let (observer, _receiver) = BufferedQualityMetricsObserver::with_capacity(1);
+        assert!(!observer.is_active());
     }
 
     #[test]

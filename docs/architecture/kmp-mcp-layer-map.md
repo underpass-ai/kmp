@@ -165,8 +165,10 @@ crates.
 before ingest parsing, coordinates the existing `CommitNativeBundle` and
 `PendingBundleExport`, and preserves pending markers on ambiguous failures.
 Dry-run skips this guard; Condense and Relabel retain their existing write
-paths. `EmbeddedReadTelemetry` forwards the existing typed bundle identity and
-quality metrics to `QualityMetricsObserver` without another render.
+paths. `EmbeddedReadTelemetry` states each read's `RenderDemand` (what its
+response projects, or a measured render when the `QualityMetricsObserver` is
+active) and forwards the typed bundle identity and quality metrics of a
+measured render only, without another render.
 
 `serving/adapters/tool_request_mapping/` owns the transport-neutral
 JSON-to-protobuf request mappers used by embedded, gRPC and fixture. Each

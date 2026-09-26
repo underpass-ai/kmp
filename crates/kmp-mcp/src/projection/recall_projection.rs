@@ -123,6 +123,8 @@ mod tests {
             warnings: Vec::new(),
             projection: None,
             asked_as: String::new(),
+            answer_status: 0,
+            unknown_reason: 0,
         };
 
         let value = ask_from_response(response);
@@ -212,6 +214,8 @@ mod tests {
             warnings: Vec::new(),
             projection: None,
             asked_as: String::new(),
+            answer_status: 0,
+            unknown_reason: 0,
         };
         let legacy = json!({
             "summary": response.summary,

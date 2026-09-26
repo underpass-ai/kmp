@@ -1,3 +1,5 @@
+#[cfg(test)]
+pub(crate) mod captured_log;
 pub(crate) mod recorders;
 mod shape_reading;
 pub(crate) mod tool_argument_shape;

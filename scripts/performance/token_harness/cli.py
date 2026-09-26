@@ -75,12 +75,15 @@ def run_measure(args):
 
 
 def run_capture(args):
-    from .native.capture import capture
+    from .native.capture import CaptureOptions, capture
     from .scenarios import BY_CASE, SCENARIOS
     scenarios = [BY_CASE[case] for case in args.case] if args.case else list(SCENARIOS)
     provenance = json.loads(args.build_provenance.read_text()) if args.build_provenance else None
+    options = CaptureOptions(max_calls=args.max_calls, timeout_seconds=args.timeout,
+                             probe_resources=not args.no_resources, env=dict(args.env or ()),
+                             template=args.store_template)
     manifest = capture(args.binary, args.variant, args.wake_contract, args.out, args.work_dir,
-                       scenarios, provenance)
+                       scenarios, provenance, options)
     statuses = [row['driver_status'] for row in manifest['journeys']]
     print(json.dumps({'journeys': len(statuses), 'completed': statuses.count('completed')}))
     return 0
@@ -118,8 +121,17 @@ def run_render(args):
     return 0
 
 
+def _env_pair(text):
+    name, sep, value = text.partition('=')
+    if not sep or not name:
+        raise argparse.ArgumentTypeError('expected NAME=VALUE')
+    return name, value
+
+
 def _add_offline(commands):
     import tempfile
+    from .native.driver import MAX_CALLS
+    from .native.transport import TIMEOUT_SECONDS
     command = commands.add_parser('capture', help='run the synthetic scenarios against one binary')
     command.set_defaults(action=run_capture)
     command.add_argument('--binary', type=Path, required=True)
@@ -131,6 +143,16 @@ def _add_offline(commands):
                          default=Path(tempfile.gettempdir()) / 'kmp-token-harness-stores')
     command.add_argument('--build-provenance', type=Path)
     command.add_argument('--case', action='append', help='repeatable; default: every scenario')
+    command.add_argument('--max-calls', type=int, default=MAX_CALLS,
+                         help='driver call cap per journey, 1..256; reaching it censors the journey')
+    command.add_argument('--timeout', type=float, default=float(TIMEOUT_SECONDS),
+                         help='seconds to wait for each response before TRANSPORT_FAILED')
+    command.add_argument('--no-resources', action='store_true',
+                         help='do not probe /proc for per-call RSS, CPU and I/O')
+    command.add_argument('--env', type=_env_pair, action='append', metavar='NAME=VALUE',
+                         help='repeatable; only the variant allowlist (KMP_LEXICAL_BRIDGE, ...)')
+    command.add_argument('--store-template', type=Path,
+                         help='an already built store directory copied into every disposable store')
     command = commands.add_parser('oracle', help='judge a verified native capture')
     command.set_defaults(action=run_oracle)
     command.add_argument('--run', type=Path, required=True)

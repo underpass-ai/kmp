@@ -1,4 +1,5 @@
 use super::answer_candidate_terms::AnswerCandidateTerms;
+use super::association_index::AssociationIndex;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::lexical_bridge::LexicalBridge;
@@ -59,7 +60,12 @@ impl Lexicon {
             }
         }
         let floor = collection.direct.eligibility_floor(&asked_for);
-        let associated = collection.associations.expand(&question_counts);
+        let associated = AssociationIndex::for_question(
+            &question_counts,
+            &collection.direct,
+            prepared.iter().map(|(_, terms)| &terms.direct_counts),
+        )
+        .expand(&question_counts);
         let mut asked = associated.clone();
         for pair in &bridged {
             let weight = asked.entry(pair.candidate_key.clone()).or_insert(0.0);
@@ -144,6 +150,16 @@ impl Lexicon {
         terms: &AnswerCandidateTerms,
     ) -> usize {
         BridgedKey::focus_matches(&self.bridged, focus_terms, terms)
+    }
+
+    /// How many of the focus concepts this candidate states in its own
+    /// words, or through the table onto them: its content alone.
+    pub(super) fn content_focus_matches(
+        &self,
+        focus_terms: &BTreeSet<String>,
+        terms: &AnswerCandidateTerms,
+    ) -> usize {
+        BridgedKey::content_matches(&self.bridged, focus_terms, terms)
     }
 
     pub(super) fn content_score(&self, terms: &AnswerCandidateTerms) -> i64 {

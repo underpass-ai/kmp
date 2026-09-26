@@ -18,18 +18,13 @@ impl ProposeLabels<'_> {
         material: &CurateMaterial,
         focus: &[String],
     ) -> Result<(Vec<ProposedLabel>, JevUsage), String> {
-        let mut usage = JevUsage {
-            model: self.judgement.model().to_string(),
-            requests: 0,
-            input_tokens: 0,
-        };
+        let mut usage = JevUsage::new(self.judgement.model());
         let (request, keys) = label_request(material, focus);
         if keys.is_empty() {
             return Ok((Vec::new(), usage));
         }
         let response = self.judgement.evaluate(&request).await?;
-        usage.requests += response.requests;
-        usage.input_tokens += response.input_tokens;
+        usage.add(&response);
         let mut proposed = keys
             .iter()
             .filter_map(

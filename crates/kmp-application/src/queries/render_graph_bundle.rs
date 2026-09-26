@@ -9,6 +9,7 @@ use crate::queries::bundle_section_renderer::ordered_sections;
 use crate::queries::bundle_truncator::{TruncationMetadata, limit_sections_by_tier_budget};
 use crate::queries::cl100k_estimator::Cl100kEstimator;
 use crate::queries::mode_heuristic::resolve_mode;
+use crate::queries::render_demand::RenderDemand;
 use crate::queries::tier_section_classifier::classify_into_tiers;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,6 +43,9 @@ pub struct RenderedContext {
     pub resolved_mode: KmpMode,
     /// Quality and efficiency metrics for this render.
     pub quality: BundleQualityMetrics,
+    /// What the caller asked of this render. Token counts and quality are
+    /// observations only when it is [`RenderDemand::Measured`].
+    pub demand: RenderDemand,
 }
 
 pub fn render_graph_bundle(bundle: &KmpBundle) -> RenderedContext {
@@ -59,17 +63,29 @@ pub fn render_graph_bundle_with_options(
     render_graph_bundle_with_estimator(bundle, options, Cl100kEstimator::shared())
 }
 
+/// Render only what the caller will consume; see [`RenderDemand`].
+pub fn render_graph_bundle_on_demand(
+    bundle: &KmpBundle,
+    options: &ContextRenderOptions,
+    demand: RenderDemand,
+) -> RenderedContext {
+    render_graph_bundle_for_demand(bundle, options, Cl100kEstimator::shared(), demand)
+}
+
 pub fn render_graph_bundle_with_estimator(
     bundle: &KmpBundle,
     options: &ContextRenderOptions,
     estimator: &dyn TokenEstimator,
 ) -> RenderedContext {
-    let detail_by_node_id = bundle
-        .node_details()
-        .iter()
-        .map(|detail| (detail.node_id(), detail))
-        .collect::<BTreeMap<_, _>>();
+    render_graph_bundle_for_demand(bundle, options, estimator, RenderDemand::Measured)
+}
 
+pub(crate) fn render_graph_bundle_for_demand(
+    bundle: &KmpBundle,
+    options: &ContextRenderOptions,
+    estimator: &dyn TokenEstimator,
+    demand: RenderDemand,
+) -> RenderedContext {
     // ── Resolve mode first (needed by both flat and tiered paths) ──
     let resolved_mode = resolve_mode(
         options.rehydration_mode,
@@ -78,24 +94,44 @@ pub fn render_graph_bundle_with_estimator(
         options.focus_node_id.as_deref(),
         options.endpoint_hint,
     );
+    if !demand.renders_text() {
+        return RenderedContext::unrendered(resolved_mode);
+    }
+    let measured = demand.is_measured();
+
+    let detail_by_node_id = bundle
+        .node_details()
+        .iter()
+        .map(|detail| (detail.node_id(), detail))
+        .collect::<BTreeMap<_, _>>();
 
     // ── Flat rendering (tier-aware truncation) ─────────────────────
     let all_sections = ordered_sections(bundle, &detail_by_node_id, options);
 
-    let (section_pairs, truncation) =
+    let (kept_sections, truncation) =
         limit_sections_by_tier_budget(all_sections, options.token_budget, resolved_mode, estimator);
 
-    let content = section_pairs
+    let content = kept_sections
         .iter()
-        .map(|(s, _)| s.as_str())
+        .map(|(s, _, _)| s.as_str())
         .collect::<Vec<_>>()
         .join("\n\n");
-    let token_count = estimator.estimate_tokens(&content);
+    let token_count = if measured {
+        estimator.estimate_tokens(&content)
+    } else {
+        0
+    };
 
-    let sections = section_pairs
+    let sections = kept_sections
         .into_iter()
-        .map(|(s, source_id)| {
-            let tc = estimator.estimate_tokens(&s);
+        .map(|(s, source_id, counted)| {
+            // The budget already counted what it kept; count the rest only
+            // when the render is measured.
+            let tc = match counted {
+                Some(tokens) => tokens,
+                None if measured => estimator.estimate_tokens(&s),
+                None => 0,
+            };
             RenderedSection {
                 content: s,
                 token_count: tc,
@@ -111,10 +147,14 @@ pub fn render_graph_bundle_with_estimator(
         .map(|total| TierBudget::from_total_with_mode(total, resolved_mode))
         .unwrap_or_else(TierBudget::unlimited);
 
-    let tiers = build_rendered_tiers(tiered_sections, &tier_budget, estimator);
+    let tiers = build_rendered_tiers(tiered_sections, &tier_budget, estimator, measured);
 
     // ── Quality metrics (domain value object) ────────────────────────
-    let quality = BundleQualityMetrics::compute(bundle, token_count, estimator);
+    let quality = if measured {
+        BundleQualityMetrics::compute(bundle, token_count, estimator)
+    } else {
+        BundleQualityMetrics::unmeasured()
+    };
 
     let content_hash = render_content_hash(&content);
 
@@ -127,6 +167,24 @@ pub fn render_graph_bundle_with_estimator(
         tiers,
         resolved_mode,
         quality,
+        demand,
+    }
+}
+
+impl RenderedContext {
+    /// A render nobody reads: no text, no tokens, no metrics.
+    fn unrendered(resolved_mode: KmpMode) -> Self {
+        Self {
+            content: String::new(),
+            content_hash: render_content_hash(""),
+            token_count: 0,
+            sections: Vec::new(),
+            truncation: None,
+            tiers: Vec::new(),
+            resolved_mode,
+            quality: BundleQualityMetrics::unmeasured(),
+            demand: RenderDemand::Skip,
+        }
     }
 }
 
@@ -134,6 +192,7 @@ fn build_rendered_tiers(
     tiered_sections: Vec<crate::queries::tier_section_classifier::TieredSection>,
     budget: &TierBudget,
     estimator: &dyn TokenEstimator,
+    measured: bool,
 ) -> Vec<RenderedTier> {
     let mut tiers = Vec::new();
 
@@ -143,6 +202,9 @@ fn build_rendered_tiers(
             ResolutionTier::L1CausalSpine => budget.l1,
             ResolutionTier::L2EvidencePack => budget.l2,
         };
+        // An unlimited tier keeps every section: its counts decide nothing
+        // and are taken only for a measured render.
+        let counts = measured || tier_budget < u32::MAX;
 
         let mut tier_sections = Vec::new();
         let mut tier_tokens = 0u32;
@@ -151,7 +213,11 @@ fn build_rendered_tiers(
             if ts.tier != tier {
                 continue;
             }
-            let section_tokens = estimator.estimate_tokens(&ts.content);
+            let section_tokens = if counts {
+                estimator.estimate_tokens(&ts.content)
+            } else {
+                0
+            };
             if tier_budget < u32::MAX
                 && !tier_sections.is_empty()
                 && tier_tokens + section_tokens > tier_budget
@@ -172,7 +238,11 @@ fn build_rendered_tiers(
                 .map(|s| s.content.as_str())
                 .collect::<Vec<_>>()
                 .join("\n\n");
-            let actual_tokens = estimator.estimate_tokens(&tier_content);
+            let actual_tokens = if measured {
+                estimator.estimate_tokens(&tier_content)
+            } else {
+                0
+            };
 
             tiers.push(RenderedTier {
                 tier,

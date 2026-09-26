@@ -1,0 +1,33 @@
+# Example of a quality claim configured by a store file: the P4 ask gate
+# (UNKNOWN or PARTIAL when the anchor is present but the asked attribute is not).
+# The gate reads `ask-gate.json` beside the store. It is the default since
+# 26 Sept 2026, so on a current binary this file only writes the default out;
+# `ask-gate-off.toml` measures without it. The bench writes the file and
+# requires the binary to acknowledge it in its `kmp_store_config` log line; a
+# binary that does not read the file (v0.23.0 and this checkout before P4 lands)
+# leaves the variant `not_applied`, and the verdict is `captura_fallida`, never a
+# comparison of two identical binaries. Point [binary] at the P4 build to use it.
+#
+# Pre-registered before the first run (BENCH_SPEC section 2): the gate must cut
+# false answers on the hard negatives by 10 points without costing useful
+# answers, false UNKNOWNs or core precision (margin 0).
+name = "ask-gate"
+description = "P4 ask gate on the hard negatives; the gate rules are frozen with a hash before the first run."
+claim = "quality"
+targets = [{ metric = "false_answer_rate", direction = "down", effect = 0.10 }]
+guards = [
+  "useful_rate",
+  "false_unknown_rate",
+  "core_precision",
+  "stale_serve_rate",
+  "future_leak_rate",
+]
+n = 100
+store = "shared"
+jev = "off"
+
+[binary]
+path = "target/release/kmp-mcp"
+
+[store_files]
+"ask-gate.json" = { json = { mode = "anchored", partial = true } }

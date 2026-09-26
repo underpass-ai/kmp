@@ -12,7 +12,9 @@ use super::normalization::{normalized_answer_reason, normalized_ask_answer};
 use super::proof_value::{empty_proof_value, proof_value, temporal_cursor_value};
 use super::request_arguments::dimension_selection_value;
 use super::reused_core::{CORE_REUSED, retain_expansion};
-use super::scalars::{detail_label, insert_non_empty, insert_timestamp};
+use super::scalars::{
+    answer_status_label, detail_label, insert_non_empty, insert_timestamp, unknown_reason_label,
+};
 
 pub fn wake_value(response: &WakeResponse) -> Value {
     let wake = response.wake.as_ref();
@@ -64,6 +66,13 @@ pub fn ask_value(response: &AskResponse) -> Value {
     });
     if !response.asked_as.is_empty() {
         value["asked_as"] = Value::String(response.asked_as.clone());
+    }
+    // Present only when the store's anchored gate settled the answer.
+    if let Some(status) = answer_status_label(response.answer_status) {
+        value["answer_status"] = Value::String(status.to_string());
+    }
+    if let Some(reason) = unknown_reason_label(response.unknown_reason) {
+        value["unknown_reason"] = Value::String(reason.to_string());
     }
     attach_typed_projection(&mut value, response.projection.as_ref());
     value

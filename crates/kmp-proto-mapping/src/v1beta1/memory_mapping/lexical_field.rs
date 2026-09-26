@@ -68,11 +68,23 @@ impl LexicalField {
         }
     }
 
+    /// How many candidates the field was measured over.
+    pub(super) fn documents(&self) -> usize {
+        self.documents
+    }
+
+    /// How many of this question's candidates carry a term. A whole
+    /// identifier is a term of its own, so this is also how many candidates
+    /// name an anchor such as `c6.24` exactly.
+    pub(super) fn document_frequency(&self, term: &str) -> usize {
+        self.document_frequency.get(term).copied().unwrap_or(0)
+    }
+
     /// How much one concept tells us, by the smoothed probabilistic IDF that
     /// keeps every weight positive.
     pub(super) fn inverse_document_frequency(&self, term: &str) -> f64 {
         let documents = self.documents as f64;
-        let frequency = self.document_frequency.get(term).copied().unwrap_or(0) as f64;
+        let frequency = self.document_frequency(term) as f64;
         (1.0 + (documents - frequency + 0.5) / (frequency + 0.5)).ln()
     }
 

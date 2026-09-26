@@ -36,16 +36,11 @@ impl ReviewRelations<'_> {
             review.findings = untyped(&material.pairs, max_pairs);
             return review;
         };
-        let mut usage = JevUsage {
-            model: model.model().to_string(),
-            requests: 0,
-            input_tokens: 0,
-        };
+        let mut usage = JevUsage::new(model.model());
         let mut ask = async |request: JudgementRequest| -> Option<JudgementResponse> {
             match model.evaluate(&request).await {
                 Ok(response) => {
-                    usage.requests += response.requests;
-                    usage.input_tokens += response.input_tokens;
+                    usage.add(&response);
                     Some(response)
                 }
                 Err(error) => {
@@ -94,7 +89,7 @@ impl ReviewRelations<'_> {
         }
 
         let typed = if pairs.is_empty() {
-            Some(JudgementResponse::empty(&usage.model))
+            Some(JudgementResponse::empty(model.model()))
         } else {
             ask(pair_request(&material, &pairs)).await
         };

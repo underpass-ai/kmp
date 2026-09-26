@@ -5,6 +5,7 @@ use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{answer_context_refs, is_retrieval_provenance};
+use super::question_contract_vocabulary::QuestionContractVocabulary;
 use super::search_terms::{informative_term_counts, informative_terms};
 use super::term_counts::TermCounts;
 
@@ -36,12 +37,18 @@ impl AnswerCandidateTerms {
         let summary = summary_text
             .map(|summary| informative_terms(summary, morphology))
             .unwrap_or_default();
-        let content_text = match summary_text {
+        let mut content_text = match summary_text {
             Some(summary) => format!("{} {}", item.text, summary),
             None => item.text.clone(),
         };
-        let content = informative_terms(&content_text, morphology);
+        // Under the anchored gate `corte 10` and `ADR 18` also read as the
+        // terms `c10` and `adr18` a question's anchor names.
+        if context.identifier_aliases {
+            push_aliases(&mut content_text);
+        }
+        // A set of terms is the keys of its counts: read the text once.
         let content_counts = informative_term_counts(&content_text, morphology);
+        let content = content_counts.terms().cloned().collect::<BTreeSet<_>>();
         let mut direct_text = format!("{} {}", content_text, item.source);
         direct_text.push(' ');
         direct_text.push_str(&ref_words(&item.id));
@@ -61,8 +68,16 @@ impl AnswerCandidateTerms {
             direct_text.push(' ');
             direct_text.push_str(value);
         }
+        if context.identifier_aliases {
+            // The content's aliases are in it already; what the source, the
+            // refs and the metadata spell is read here.
+            let beyond_content = direct_text[content_text.len()..].to_string();
+            let mut extra = beyond_content.clone();
+            push_aliases(&mut extra);
+            direct_text.push_str(&extra[beyond_content.len()..]);
+        }
         let direct_counts = informative_term_counts(&direct_text, morphology);
-        let direct = informative_terms(&direct_text, morphology);
+        let direct = direct_counts.terms().cloned().collect::<BTreeSet<_>>();
 
         let mut claim = item
             .supports
@@ -102,6 +117,17 @@ impl AnswerCandidateTerms {
             relation,
             searchable,
         }
+    }
+}
+
+/// Appends the alias terms a text spells, once each.
+fn push_aliases(text: &mut String) {
+    let terms = QuestionContractVocabulary::shipped()
+        .identifier_aliases()
+        .text_terms(text);
+    for term in terms {
+        text.push(' ');
+        text.push_str(&term);
     }
 }
 
@@ -165,5 +191,44 @@ mod ref_words_tests {
             "x y"
         );
         assert_eq!(ref_words("service:billing:b11"), "b11");
+    }
+}
+
+#[cfg(test)]
+mod term_set_tests {
+    use super::*;
+
+    /// The sets are the keys of the counts read from the same text, so
+    /// reading the text once must give what reading it twice gave.
+    #[test]
+    fn term_sets_are_the_keys_of_their_counts() {
+        let context = AnswerRecallContext::default();
+        let mut item = MemoryEvidence {
+            id: "project:plant:entry:decision:valve-froze-b9e0944852682702".to_string(),
+            text: "The reserve valve froze; the valves were replaced at 03:00 (#469).".to_string(),
+            source: "operator log".to_string(),
+            supports: vec!["project:plant:entry:fact:night-shift".to_string()],
+            ..Default::default()
+        };
+        item.metadata
+            .insert("shift".to_string(), "night crews Freezing".to_string());
+        item.metadata.insert(
+            SearchSummary::METADATA_KEY.to_string(),
+            "The reserve valve froze during the night (#469).".to_string(),
+        );
+        let terms = AnswerCandidateTerms::from_evidence(&item, &context);
+        let content_text = match search_summary(&item) {
+            Some(summary) => format!("{} {}", item.text, summary),
+            None => item.text.clone(),
+        };
+        assert_eq!(
+            terms.content,
+            informative_terms(&content_text, &context.morphology)
+        );
+        assert!(terms.direct_counts.terms().count() >= terms.content.len());
+        for term in &terms.content {
+            assert!(terms.direct_counts.count(term) > 0, "{term}");
+        }
+        assert!(terms.searchable.is_superset(&terms.content));
     }
 }

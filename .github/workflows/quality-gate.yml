@@ -405,6 +405,74 @@ jobs:
       - name: Enforce embedded binary gates
         run: bash scripts/ci/embedded-binary-gates.sh
 
+  # Blocking and cheap: the memory bench and token harness unit suites. Stdlib
+  # Python only — no toolchain, no binary, no network, no provider key. Tests
+  # that need a built search probe or tiktoken skip themselves with a reason, so
+  # what runs here is the scoring, statistics, verdict and parity logic the
+  # informative memory-bench-quick job and the local release gate rely on.
+  bench-python-tests:
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Memory bench unit tests
+        run: python3 -m unittest discover -s scripts/performance/memory_bench/tests -t .
+
+      - name: Token harness unit tests
+        run: python3 -m unittest discover -s scripts/performance/token_harness/tests -t .
+
+  # Informative, never blocking (BENCH_SPEC section 12): the memory bench's public
+  # quick run, an A/A of this checkout's release binary on the judged corpora in
+  # cassette replay and synth-v1 at 10^3. No network, no provider key, nothing
+  # private: B-real is a local release gate. The job is continue-on-error and the
+  # gate does not need it; its report.md is published as an artifact, next to the
+  # proposed floors in docs/development/bench-floors.tsv.
+  memory-bench-quick:
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.embedded_binary == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-rust
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          cache-on-failure: true
+          shared-key: memory-bench
+
+      - name: Build the release binary
+        run: cargo build --release --locked -p kmp-mcp
+
+      - name: Memory bench, public quick run (informative)
+        run: bash scripts/ci/memory-bench-quick.sh dist/memory-bench
+
+      - name: Publish the bench report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: memory-bench-report
+          path: |
+            dist/memory-bench/report.md
+            dist/memory-bench/summary.json
+          if-no-files-found: warn
+
   embedded-sqlite-gates:
     needs: [tree-proof, impact]
     if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.embedded_sqlite == 'true'
@@ -708,6 +776,7 @@ jobs:
       - integration-agentic-event-context
       - integration-mcp-real-kernel
       - embedded-binary-gates
+      - bench-python-tests
       - container-image
       - helm-chart
       - coverage

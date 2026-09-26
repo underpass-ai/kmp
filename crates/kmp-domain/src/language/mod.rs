@@ -6,6 +6,7 @@
 //! stems on top of this; the write path lints on top of it. Both need the
 //! same reading, which is why it lives below either of them.
 
+mod compound_identifiers;
 mod date_tokens;
 mod entities;
 mod identifiers;
@@ -30,6 +31,7 @@ mod possessive_fidelity_tests;
 #[cfg(test)]
 mod unit_adjective_fidelity_tests;
 
+pub use compound_identifiers::{compound_identifiers, identifier_terms};
 pub use entities::proper_names;
 pub(crate) use identifiers::dropped_identifiers;
 pub use identifiers::{identifiers, surface_tokens};

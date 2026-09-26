@@ -1,0 +1,39 @@
+# synth-v1 paraphrase table. Two roles: a subject names a thing, a predicate says something
+# about it. The stored side is what an entry says; the asked side is how a reader asks.
+# The stored words of every row and the asked words of every row share no search key
+# (kmp_search_probe, English, Spanish and no stemming): tests/test_generator.py checks the
+# whole table, and the world invariants check every question the generator writes.
+# Columns: id, role, stored, asked. {V} is the answer, {S} the asked subject.
+id	role	stored	asked
+s01	subject	the nightly backup job	the overnight duplication routine
+s02	subject	the customer onboarding wizard	the signup assistant for new clients
+s03	subject	the invoice generator	the billing paperwork producer
+s04	subject	the password reset flow	the credential recovery path
+s05	subject	the mobile push service	the phone notification sender
+s06	subject	the search autocomplete	the query suggestion box
+s07	subject	the image thumbnail worker	the picture preview maker
+s08	subject	the fraud scoring model	the scam detection classifier
+s09	subject	the email digest	the mail summary letter
+s10	subject	the warehouse sync	the stock inventory mirror
+s11	subject	the audit trail exporter	the compliance history dumper
+s12	subject	the chat moderation bot	the conversation filtering robot
+s13	subject	the pricing calculator	the tariff computation widget
+s14	subject	the translation pipeline	the localisation conveyor
+s15	subject	the payroll batch	the salary run
+s16	subject	the map tile renderer	the cartography square painter
+p01	predicate	now writes its snapshots to {V}	Where does {S} put copies these days?
+p02	predicate	was handed over to {V} last spring	Which crew looks after {S} at present?
+p03	predicate	is paused until {V}	When will {S} resume?
+p04	predicate	is hosted on hardware rented from {V}	Which vendor leases the machines behind {S}?
+p05	predicate	sends its alerts to {V}	Who gets paged when {S} misbehaves?
+p06	predicate	was rewritten by {V}	Which contractor rebuilt {S} from scratch?
+p07	predicate	reads its settings from {V}	Where does {S} load configuration?
+p08	predicate	retries failed calls through {V}	What mechanism repeats unsuccessful requests for {S}?
+p09	predicate	is priced per seat by {V}	Which supplier bills {S} for each user?
+p10	predicate	stores uploaded files in {V}	Where do attachments sent to {S} end up?
+p11	predicate	logs every change to {V}	What records each edit made by {S}?
+p12	predicate	measures uptime with {V}	Which probe watches availability of {S}?
+p13	predicate	was frozen by {V}	Who halted progress on {S}?
+p14	predicate	keeps session keys inside {V}	Where are login secrets of {S} held?
+p15	predicate	hands incidents to {V}	Which squad handles outages of {S}?
+p16	predicate	was approved by {V}	Who signed off on {S}?

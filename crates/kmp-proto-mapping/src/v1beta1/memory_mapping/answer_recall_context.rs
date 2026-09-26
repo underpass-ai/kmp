@@ -35,6 +35,11 @@ pub(super) struct AnswerRecallContext {
     /// of the singular in an English summary. A store with no summary keeps
     /// exact matching rather than being stemmed by rules its text never was.
     pub(super) morphology: Morphology,
+    /// The declared `entry_kind` of each entry node that has one.
+    pub(super) entry_kinds: BTreeMap<String, String>,
+    /// Whether a memory's text also reads as the alias terms it spells
+    /// (`corte 10` as `c10`): only under the anchored ask gate.
+    pub(super) identifier_aliases: bool,
 }
 
 impl AnswerRecallContext {
@@ -130,13 +135,32 @@ impl AnswerRecallContext {
             relationships.truncate(MAX_RELATION_FEATURES_PER_CANDIDATE);
         }
 
+        let entry_kinds = std::iter::once(bundle.root_node())
+            .chain(bundle.neighbor_nodes())
+            .filter_map(|node| {
+                node.properties()
+                    .get("entry_kind")
+                    .map(|kind| (node.node_id().to_string(), kind.clone()))
+            })
+            .collect();
+
         Self {
             details_by_ref,
             relationships_by_ref,
             lifecycle,
             reach_graph: ReachGraph::from_bundle(bundle),
             morphology,
+            entry_kinds,
+            identifier_aliases: false,
         }
+    }
+
+    /// The declared kind of the entry a candidate states or supports.
+    pub(super) fn entry_kind(&self, item: &MemoryEvidence) -> Option<&str> {
+        answer_context_refs(item)
+            .iter()
+            .find_map(|item_ref| self.entry_kinds.get(item_ref))
+            .map(String::as_str)
     }
 
     /// The `proof.expired` list for the lifecycle this context stands on.
@@ -202,14 +226,21 @@ impl AnswerRecallContext {
 
 /// The one stemmer every comparison in this bundle uses, on both sides.
 ///
+/// Built from `search_language`, which the benchmark's `SearchProbe` shares.
+pub(super) fn search_morphology(bundle: &KmpBundle) -> Morphology {
+    Morphology::for_language(search_language(bundle).as_deref())
+}
+
+/// The language the bundle's searches stem in (`Morphology::search_language`).
+///
 /// The store's own language, read from its entries, details and relations
 /// as one text. When that cannot be read — a store of two languages reads as
 /// none — the kernel's search language, but only if the store carries an
 /// English summary for a question to land on; otherwise none, which leaves
 /// every word exactly as written rather than stemmed by rules the store's
 /// text never was.
-pub(super) fn search_morphology(bundle: &KmpBundle) -> Morphology {
-    let store_language = Morphology::read_language(
+pub(super) fn search_language(bundle: &KmpBundle) -> Option<String> {
+    Morphology::search_language(
         std::iter::once(bundle.root_node())
             .chain(bundle.neighbor_nodes())
             .map(|node| node.summary())
@@ -222,11 +253,8 @@ pub(super) fn search_morphology(bundle: &KmpBundle) -> Morphology {
                     explanation.evidence().unwrap_or_default(),
                 ]
             })),
-    );
-    let search_language = store_language.as_deref().or_else(|| {
-        bundle_carries_search_summary(bundle).then_some(kmp_domain::language::KERNEL_LANGUAGE)
-    });
-    Morphology::for_language(search_language)
+        || bundle_carries_search_summary(bundle),
+    )
 }
 
 /// Whether any memory in the bundle carries an English search summary that

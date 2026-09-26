@@ -13,6 +13,7 @@ use super::candidate_temporal_state::CandidateTemporalState;
 use super::lexicon::Lexicon;
 use super::morphology::Morphology;
 use super::question_intent::QuestionIntent;
+use super::ranking_focus::RankingFocus;
 use super::relevance_key::RelevanceKey;
 use super::search_terms::{
     informative_tokens, matching_term_count, matching_terms, query_requests_lifecycle, search_key,
@@ -31,19 +32,19 @@ pub(super) struct AnswerCandidate {
 
 impl AnswerCandidate {
     /// Returns the candidate when the question reaches it directly, and hands
-    /// the item back untouched when it does not, so a later pass can still
-    /// rescue it through the graph.
+    /// the item back untouched, with the terms it was read with, when it does
+    /// not, so a later pass can still rescue it without reading it again.
     pub(super) fn eligible(
         item: MemoryEvidence,
         terms: AnswerCandidateTerms,
         question_terms: &BTreeSet<String>,
-        strict_focus: Option<&(BTreeSet<String>, usize)>,
+        focus: RankingFocus<'_>,
         lexicon: &Lexicon,
         intent: &QuestionIntent,
         context: &AnswerRecallContext,
-    ) -> Result<Self, Box<MemoryEvidence>> {
+    ) -> Result<Self, Box<(MemoryEvidence, AnswerCandidateTerms)>> {
         if !lexicon.clears_floor(&terms) {
-            return Err(Box::new(item));
+            return Err(Box::new((item, terms)));
         }
         // Both lifecycles end a claim's standing as current advice, and a
         // question that asks about history is asking for exactly them.
@@ -52,17 +53,18 @@ impl AnswerCandidate {
             CandidateTemporalState::Superseded | CandidateTemporalState::Expired
         ) && !query_requests_lifecycle(question_terms, &context.morphology)
         {
-            return Err(Box::new(item));
+            return Err(Box::new((item, terms)));
         }
 
         // A memory in another language is about the same thing; the focus
         // it must answer counts a bridged concept as answered.
+        let strict_focus = focus.strict;
         let answers_requested_focus =
             strict_focus.is_none_or(|(focus_terms, required_focus_matches)| {
                 lexicon.focus_matches(focus_terms, &terms) >= *required_focus_matches
             });
         if !answers_requested_focus {
-            return Err(Box::new(item));
+            return Err(Box::new((item, terms)));
         }
         // A citation that crossed a language says which words carried it.
         let bridged = lexicon.bridged_pairs(&terms);
@@ -83,6 +85,11 @@ impl AnswerCandidate {
             content_score: lexicon.content_score(&terms),
             direct_score: lexicon.direct_score(&terms),
             claim_matches: matching_term_count(question_terms, &terms.claim),
+            facet_kind_matches: focus
+                .facet_kinds
+                .zip(context.entry_kind(&item))
+                .is_some_and(|(kinds, kind)| kinds.contains(kind))
+                .into(),
             intent_relation_matches: intent_relation_matches(intent, &relations),
             relation_why_matches: matching_term_count(question_terms, &terms.relation_why),
             relation_matches: matching_term_count(question_terms, &terms.relation),

@@ -16,6 +16,7 @@ kmp-domain.workspace = true
 kmp-interpretation.workspace = true
 kmp-mcp.workspace = true
 kmp-proto.workspace = true
+kmp-proto-mapping.workspace = true
 reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
 serde.workspace = true
 serde_json.workspace = true

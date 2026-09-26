@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use kmp_domain::language::LanguageVocabulary;
+use kmp_domain::language::{KERNEL_LANGUAGE, LanguageVocabulary};
 use rust_stemmers::{Algorithm, Stemmer};
 
 use super::search_terms::fold_search_term;
@@ -85,6 +85,24 @@ impl Morphology {
         LanguageVocabulary::shipped()
             .read(tokens.iter().map(String::as_str))
             .map(str::to_string)
+    }
+
+    /// The language every search comparison of an about stems in: the one its
+    /// own texts read as, or — when they read as none, as a store of two
+    /// languages does — the kernel's search language, but only if the about
+    /// carries an English search summary for a question to land on; otherwise
+    /// none, which keeps exact matching.
+    ///
+    /// The ranker (`search_morphology`) and the benchmark's `SearchProbe` both
+    /// decide through this one function, so the probe cannot drift from the
+    /// ranker. `carries_search_summary` is asked only when the texts read as no
+    /// language, because finding a linted summary costs a pass over the store.
+    pub(super) fn search_language<'a>(
+        texts: impl IntoIterator<Item = &'a str>,
+        carries_search_summary: impl FnOnce() -> bool,
+    ) -> Option<String> {
+        Self::read_language(texts)
+            .or_else(|| carries_search_summary().then(|| KERNEL_LANGUAGE.to_string()))
     }
 
     /// The stemmer for a named language, or none for an unnamed one or one
@@ -221,6 +239,27 @@ mod tests {
 
         let unread = Morphology::for_language(None);
         assert_eq!(unread.stem("valvulas"), "valvulas");
+    }
+
+    #[test]
+    fn search_language_falls_back_only_with_a_search_summary() {
+        let mixed = [
+            "The deployment of the gateway was frozen and the audit was in the way.",
+            "El despliegue de la pasarela se congelo por la auditoria de la semana.",
+        ];
+        assert_eq!(Morphology::search_language(mixed, || false), None);
+        assert_eq!(
+            Morphology::search_language(mixed, || true).as_deref(),
+            Some(KERNEL_LANGUAGE)
+        );
+        let spanish = ["El despliegue de la pasarela se congelo durante la auditoria."];
+        let asked = std::cell::Cell::new(false);
+        let language = Morphology::search_language(spanish, || {
+            asked.set(true);
+            true
+        });
+        assert_eq!(language.as_deref(), Some("spanish"));
+        assert!(!asked.get(), "a readable store never looks for a summary");
     }
 
     #[test]

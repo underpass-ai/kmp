@@ -24,7 +24,8 @@ use crate::memory::{
 use crate::queries::{
     ContextRenderOptions, EndpointHint, GetContextPathQuery, GetContextPathResult, GetContextQuery,
     GetContextResult, GetNodeDetailQuery, GetNodeRelationshipsQuery,
-    MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH, QueryApplicationService, render_graph_bundle_with_options,
+    MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH, QueryApplicationService, RenderDemand,
+    render_graph_bundle_on_demand,
 };
 
 const MEMORY_EXISTING_REFS_LOOKUP_DEPTH: u32 = 1;
@@ -338,14 +339,42 @@ where
         }))
     }
 
+    /// The revision a read opened now would stand on: the identity
+    /// `GetContextResult::read_revision` carries. Equal revisions mean no
+    /// commit, from this process or any other, lies between the two reads.
+    /// `None` when the store cannot certify one (no snapshots, or a commit
+    /// raced the pin), and then nothing may be reused.
+    pub async fn read_revision(
+        &self,
+    ) -> Result<Option<kmp_domain::GraphReadRevision>, ApplicationError> {
+        match self.read_snapshot().await? {
+            Some(snapshot) => snapshot.query_application.graph_read_revision().await,
+            None => Ok(None),
+        }
+    }
+
     pub async fn wake(&self, query: WakeMemoryQuery) -> Result<GetContextResult, ApplicationError> {
+        self.wake_on_demand(query, RenderDemand::Measured).await
+    }
+
+    /// Wake, rendering only what the caller will consume of the prompt.
+    pub async fn wake_on_demand(
+        &self,
+        query: WakeMemoryQuery,
+        demand: RenderDemand,
+    ) -> Result<GetContextResult, ApplicationError> {
         let snapshot = self.read_snapshot().await?;
-        snapshot.as_ref().unwrap_or(self).wake_snapshot(query).await
+        snapshot
+            .as_ref()
+            .unwrap_or(self)
+            .wake_snapshot(query, demand)
+            .await
     }
 
     async fn wake_snapshot(
         &self,
         query: WakeMemoryQuery,
+        demand: RenderDemand,
     ) -> Result<GetContextResult, ApplicationError> {
         let render_options = memory_render_options(
             query.token_budget,
@@ -360,18 +389,35 @@ where
             query.depth,
             &dimensions,
             &render_options,
+            demand,
         )
         .await
     }
 
     pub async fn ask(&self, query: AskMemoryQuery) -> Result<GetContextResult, ApplicationError> {
+        self.ask_on_demand(query, RenderDemand::Measured).await
+    }
+
+    /// Ask, rendering only what the caller will consume of the prompt. The
+    /// answer is ranked from the bundle; the prompt is read by nobody but
+    /// an API that returns it and a quality observer.
+    pub async fn ask_on_demand(
+        &self,
+        query: AskMemoryQuery,
+        demand: RenderDemand,
+    ) -> Result<GetContextResult, ApplicationError> {
         let snapshot = self.read_snapshot().await?;
-        snapshot.as_ref().unwrap_or(self).ask_snapshot(query).await
+        snapshot
+            .as_ref()
+            .unwrap_or(self)
+            .ask_snapshot(query, demand)
+            .await
     }
 
     async fn ask_snapshot(
         &self,
         query: AskMemoryQuery,
+        demand: RenderDemand,
     ) -> Result<GetContextResult, ApplicationError> {
         let render_options = memory_render_options(
             query.token_budget,
@@ -386,6 +432,7 @@ where
             query.depth,
             &dimensions,
             &render_options,
+            demand,
         )
         .await
     }
@@ -569,17 +616,27 @@ where
         &self,
         query: RelateMemoryQuery,
     ) -> Result<GetContextResult, ApplicationError> {
+        self.relate_on_demand(query, RenderDemand::Measured).await
+    }
+
+    /// Relate, rendering only what the caller will consume of the prompt.
+    pub async fn relate_on_demand(
+        &self,
+        query: RelateMemoryQuery,
+        demand: RenderDemand,
+    ) -> Result<GetContextResult, ApplicationError> {
         let snapshot = self.read_snapshot().await?;
         snapshot
             .as_ref()
             .unwrap_or(self)
-            .relate_snapshot(query)
+            .relate_snapshot(query, demand)
             .await
     }
 
     async fn relate_snapshot(
         &self,
         query: RelateMemoryQuery,
+        demand: RenderDemand,
     ) -> Result<GetContextResult, ApplicationError> {
         let render_options = memory_render_options(
             query.token_budget,
@@ -597,7 +654,7 @@ where
                 &render_options,
             )
             .await?;
-        apply_dimension_selection(result, &dimensions, &render_options)
+        apply_dimension_selection(result, &dimensions, &render_options, demand)
     }
 
     /// Library-level seed discovery. The MCP transport does not expose this
@@ -847,17 +904,20 @@ where
     ) -> Result<Option<KmpBundle>, ApplicationError> {
         match self
             .query_application
-            .get_context(GetContextQuery {
-                root_node_id: about.to_string(),
-                role: "memory".to_string(),
-                // Existing-ref validation only needs direct structural memory edges:
-                // anchor -> dimensions, anchor -> entries, and anchor -> evidence.
-                // Full semantic traversal here grows with every writer relation and
-                // makes repeated ingest progressively slower.
-                depth: MEMORY_EXISTING_REFS_LOOKUP_DEPTH,
-                requested_scopes: Vec::new(),
-                render_options: ContextRenderOptions::default(),
-            })
+            .get_context_on_demand(
+                GetContextQuery {
+                    root_node_id: about.to_string(),
+                    role: "memory".to_string(),
+                    // Existing-ref validation only needs direct structural memory edges:
+                    // anchor -> dimensions, anchor -> entries, and anchor -> evidence.
+                    // Full semantic traversal here grows with every writer relation and
+                    // makes repeated ingest progressively slower.
+                    depth: MEMORY_EXISTING_REFS_LOOKUP_DEPTH,
+                    requested_scopes: Vec::new(),
+                    render_options: ContextRenderOptions::default(),
+                },
+                RenderDemand::Skip,
+            )
             .await
         {
             Ok(result) => Ok(Some(result.bundle)),
@@ -884,13 +944,16 @@ where
 
         let visible = match self
             .query_application
-            .get_context(GetContextQuery {
-                root_node_id: about.to_string(),
-                role: "memory-boundary".to_string(),
-                depth: MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH,
-                requested_scopes: Vec::new(),
-                render_options: ContextRenderOptions::default(),
-            })
+            .get_context_on_demand(
+                GetContextQuery {
+                    root_node_id: about.to_string(),
+                    role: "memory-boundary".to_string(),
+                    depth: MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH,
+                    requested_scopes: Vec::new(),
+                    render_options: ContextRenderOptions::default(),
+                },
+                RenderDemand::Skip,
+            )
             .await
         {
             Ok(result) => bundle_node_ids(&result.bundle),
@@ -919,20 +982,25 @@ where
         let requested_scopes = requested_dimension_scopes(about, dimensions, &roots);
         let mut results = Vec::new();
         for root in &roots {
+            // Rendered once, by the caller, after the selection filters the
+            // merged bundle: a render of any bundle before that is discarded.
             results.push(
                 self.query_application
-                    .get_context(GetContextQuery {
-                        root_node_id: root.clone(),
-                        role: role.to_string(),
-                        depth,
-                        requested_scopes: requested_scopes.clone(),
-                        render_options: render_options.clone(),
-                    })
+                    .get_context_on_demand(
+                        GetContextQuery {
+                            root_node_id: root.clone(),
+                            role: role.to_string(),
+                            depth,
+                            requested_scopes: requested_scopes.clone(),
+                            render_options: render_options.clone(),
+                        },
+                        RenderDemand::Skip,
+                    )
                     .await?,
             );
         }
 
-        merge_context_results(results, render_options)
+        merge_context_results(results)
     }
 
     async fn memory_context_roots(
@@ -1137,9 +1205,10 @@ fn apply_dimension_selection(
     mut result: GetContextResult,
     dimensions: &DimensionSelection,
     render_options: &ContextRenderOptions,
+    demand: RenderDemand,
 ) -> Result<GetContextResult, ApplicationError> {
     result.bundle = filter_bundle_by_memory_dimensions(&result.bundle, dimensions)?;
-    result.rendered = render_graph_bundle_with_options(&result.bundle, render_options);
+    result.rendered = render_graph_bundle_on_demand(&result.bundle, render_options, demand);
     Ok(result)
 }
 
@@ -1322,9 +1391,10 @@ fn existing_refs_from_bundle(bundle: &KmpBundle) -> ExistingMemoryRefs {
     }
 }
 
+/// Merge the bundles of several roots. The rendered context is left as the
+/// first read's: the caller renders the merged bundle once it is final.
 fn merge_context_results(
     mut results: Vec<GetContextResult>,
-    render_options: &ContextRenderOptions,
 ) -> Result<GetContextResult, ApplicationError> {
     let mut result = results.remove(0);
     if results.is_empty() {
@@ -1335,7 +1405,6 @@ fn merge_context_results(
         .chain(results.into_iter().map(|other| other.bundle))
         .collect();
     result.bundle = super::merge_memory_bundles::merge(bundles)?;
-    result.rendered = render_graph_bundle_with_options(&result.bundle, render_options);
     Ok(result)
 }
 

@@ -32,6 +32,11 @@ pub(super) const RESTATED_VIA_KEY: &str = "restated_via";
 pub(super) const MATCHED_VIA_KEY: &str = "matched_via";
 pub(super) const MATCHED_VIA_SUMMARY: &str = "summary";
 pub(super) const SUMMARY_TERMS_KEY: &str = "summary_terms";
+/// A cited memory that does not name the question's anchor itself and was
+/// admitted because a writer declared it the same entity as one that does:
+/// the relation, and the ref that names the anchor.
+pub(super) const ANCHOR_VIA_KEY: &str = "anchor_via";
+pub(super) const ANCHOR_FROM_KEY: &str = "anchor_from";
 /// Metadata the ranker writes about how a candidate was retrieved. It is
 /// read by people and never by the ranker: letting `valvula≈valve 0.51`
 /// back into a candidate's searchable text would make a bridged word look
@@ -46,6 +51,8 @@ const RETRIEVAL_PROVENANCE_KEYS: &[&str] = &[
     RESTATED_VIA_KEY,
     MATCHED_VIA_KEY,
     SUMMARY_TERMS_KEY,
+    ANCHOR_VIA_KEY,
+    ANCHOR_FROM_KEY,
     "semantic_model_revision",
     "retrieval_channel",
 ];
@@ -218,6 +225,17 @@ pub(super) fn mark_restated(item: MemoryEvidence, hop: &RelationReach) -> Memory
         .insert(RESTATED_FROM_KEY.to_string(), hop.from_ref.clone());
     item.metadata
         .insert(RESTATED_VIA_KEY.to_string(), hop.via_relation.clone());
+    item
+}
+
+/// Records, on a memory the anchored gate may cite for an anchor it does not
+/// name, that it stands in for `from`, which names it, by a declared
+/// `same_entity_as`.
+pub(super) fn mark_anchor_rescued(mut item: MemoryEvidence, from: &str) -> MemoryEvidence {
+    item.metadata
+        .insert(ANCHOR_VIA_KEY.to_string(), "same_entity_as".to_string());
+    item.metadata
+        .insert(ANCHOR_FROM_KEY.to_string(), from.to_string());
     item
 }
 

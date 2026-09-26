@@ -1,7 +1,7 @@
 //! Reading projected JSON back onto the typed response, keeping only what
 //! the page actually carried and never inventing evidence it dropped.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap, VecDeque};
 
 use kmp_proto::v1beta1::{
     AskResponse, MemoryEvidence, MemoryLabel, RecallProjection, RecallProjectionBudget,
@@ -10,12 +10,15 @@ use kmp_proto::v1beta1::{
 use prost_types::Timestamp;
 use serde_json::Value;
 
+use super::super::proof_evidence_index::ProofEvidenceIndex;
 use super::actions;
+use super::canonical_json_key::canonical_json_key;
 use super::normalization::{normalized_answer_reason, normalized_proof_relation};
 use super::proof_value::{expired_value, memory_evidence_value, memory_relation_value};
 use super::response_value::raw_answer_reason_value;
 use super::scalars::{
-    confidence_from_label, detail_from_label, string_at, strings_at, u32_at, u64_at,
+    answer_status_from_label, confidence_from_label, detail_from_label, string_at, strings_at,
+    u32_at, u64_at, unknown_reason_from_label,
 };
 
 pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> WakeResponse {
@@ -68,6 +71,8 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
 pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskResponse {
     response.summary = string_at(value, "/summary");
     response.asked_as = string_at(value, "/asked_as");
+    response.answer_status = answer_status_from_label(&string_at(value, "/answer_status"));
+    response.unknown_reason = unknown_reason_from_label(&string_at(value, "/unknown_reason"));
     response.answer = value
         .get("answer")
         .and_then(Value::as_str)
@@ -124,10 +129,11 @@ pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskRe
 }
 
 fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
+    let index = ProofEvidenceIndex::new(&proof.evidence);
     let normalized_relations = proof
         .path
         .iter()
-        .map(|relation| normalized_proof_relation(relation, &proof.evidence))
+        .map(|relation| normalized_proof_relation(relation, &index))
         .collect::<Vec<_>>();
     let path = value
         .get("path")
@@ -177,13 +183,18 @@ fn select_projected_evidence(
     originals: &[MemoryEvidence],
     projected: &[Value],
 ) -> Vec<MemoryEvidence> {
+    // The first original carrying each id, as the linear `find` chose it.
+    let mut by_id = HashMap::with_capacity(originals.len());
+    for item in originals {
+        by_id.entry(item.id.as_str()).or_insert(item);
+    }
     let mut used = BTreeSet::new();
     projected
         .iter()
         .filter_map(|wanted| {
             let id = wanted.get("id")?.as_str()?;
             let text = wanted.get("text")?.as_str()?;
-            let original = originals.iter().find(|item| item.id == id)?;
+            let original = *by_id.get(id)?;
             let mut selected = original.clone();
             selected.text = text.to_string();
             if memory_evidence_value(&selected) != *wanted || !used.insert(id.to_string()) {
@@ -199,16 +210,20 @@ fn select_projected<T: Clone>(
     projected: &[Value],
     render: impl Fn(&T) -> Value,
 ) -> Vec<T> {
-    let mut used = vec![false; originals.len()];
+    // Each original is rendered once. Equal renders share a canonical key and
+    // queue in original order, so popping the front picks the first unused
+    // original equal to the wanted item, exactly as a linear scan would.
+    let mut unused: HashMap<String, VecDeque<usize>> = HashMap::with_capacity(originals.len());
+    for (index, item) in originals.iter().enumerate() {
+        unused
+            .entry(canonical_json_key(&render(item)))
+            .or_default()
+            .push_back(index);
+    }
     projected
         .iter()
         .filter_map(|wanted| {
-            let index = originals
-                .iter()
-                .enumerate()
-                .find(|(index, item)| !used[*index] && render(item) == *wanted)
-                .map(|(index, _)| index)?;
-            used[index] = true;
+            let index = unused.get_mut(&canonical_json_key(wanted))?.pop_front()?;
             Some(originals[index].clone())
         })
         .collect()
@@ -218,20 +233,20 @@ fn select_projected_superseded(
     originals: &[SupersededMemory],
     projected: &[Value],
 ) -> Vec<SupersededMemory> {
-    let mut used = vec![false; originals.len()];
+    let mut unused: HashMap<(&str, &str), VecDeque<usize>> =
+        HashMap::with_capacity(originals.len());
+    for (index, item) in originals.iter().enumerate() {
+        unused
+            .entry((item.r#ref.as_str(), item.superseded_by.as_str()))
+            .or_default()
+            .push_back(index);
+    }
     projected
         .iter()
         .filter_map(|wanted| {
             let r#ref = wanted.get("ref").and_then(Value::as_str)?;
             let superseded_by = wanted.get("superseded_by").and_then(Value::as_str)?;
-            let index = originals
-                .iter()
-                .enumerate()
-                .find(|(index, item)| {
-                    !used[*index] && item.r#ref == r#ref && item.superseded_by == superseded_by
-                })
-                .map(|(index, _)| index)?;
-            used[index] = true;
+            let index = unused.get_mut(&(r#ref, superseded_by))?.pop_front()?;
             let mut selected = originals[index].clone();
             selected.why = wanted
                 .get("why")

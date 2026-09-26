@@ -6,10 +6,12 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from ..application.measure import measure_journey
 from ..application.verify import verify
 from ..capture.manifest import verify_run
 from ..domain.errors import CaptureIntegrityError
-from .fakes import rpc, sample_events, write_capture
+from ..domain.representation import RepresentationId
+from .fakes import FakeCounter, rpc, sample_events, write_capture
 
 
 def rewrite_manifest(folder, change):
@@ -117,6 +119,60 @@ class PairingTest(unittest.TestCase):
                   for item in traces[0].observed if item.exposure.kind.value == 'request'}
         self.assertEqual(stages, {1: 'startup_catalogue', 2: 'startup_catalogue', 3: 'guide',
                                   4: 'guide', 5: 'memory', 6: 'memory'})
+
+
+def with_call_markers(events):
+    """Insert the native transport's timing/resources markers after every exchange."""
+    out = []
+    for event in events:
+        out.append(event)
+        if 'request' in event and 'response' in event:
+            rpc_id = event['request']['id']
+            out.append({'timing': {'session': 'j', 'rpc_id': rpc_id, 'method': event['request']['method'],
+                                   'wall_ns': 1000 * rpc_id, 'censored': False,
+                                   'response_path': f'lesson.jsonl#{len(out) - 1}'}})
+            out.append({'resources': {'session': 'j', 'rpc_id': rpc_id, 'rss_peak_kb': 1,
+                                      'cpu_ns': 2, 'io': None, 'absent': {'io': 'test'}}})
+    return out
+
+
+class CallMarkerTest(unittest.TestCase):
+    def measure(self, events):
+        with tempfile.TemporaryDirectory() as folder:
+            run_dir = write_capture(Path(folder) / 'run', {'lesson': events})
+            _, traces, report = verify(run_dir, 1 << 20)
+        return traces[0], report, measure_journey(traces[0], [FakeCounter()], list(RepresentationId), 1 << 20)
+
+    def test_markers_never_change_measured_totals(self):
+        _, _, plain = self.measure(sample_events())
+        trace, report, marked = self.measure(with_call_markers(sample_events()))
+        self.assertTrue(report['ok'])
+        self.assertEqual(plain['totals'], marked['totals'])
+        self.assertEqual(len(plain['measurements']), len(marked['measurements']))
+        self.assertEqual(trace.harness_events['timing'], 6)
+        self.assertEqual(trace.harness_events['resources'], 6)
+        self.assertNotIn('other', trace.harness_events)
+
+    def test_markers_are_paired_with_their_exchange(self):
+        trace, _, _ = self.measure(with_call_markers(sample_events()))
+        self.assertEqual([call['rpc_id'] for call in trace.calls], [1, 2, 3, 4, 5, 6])
+        responses = {item.exposure.event_index: item.payload for item in trace.observed
+                     if item.exposure.kind.value == 'response'}
+        for call in trace.calls:
+            self.assertEqual(responses[call['event_index']]['id'], call['rpc_id'])
+            self.assertEqual(call['resources']['cpu_ns'], 2)
+
+    def test_timed_out_call_has_no_exchange(self):
+        events = sample_events() + [{'timing': {'rpc_id': 9, 'response_path': None, 'censored': True,
+                                                'censor_reason': 'timeout', 'wall_ns': 5}},
+                                    {'resources': {'rpc_id': 9, 'absent': {}}}]
+        trace, report, _ = self.measure(events)
+        self.assertTrue(report['ok'])
+        self.assertEqual(trace.calls[-1]['event_index'], None)
+
+    def test_orphan_resources_marker_is_an_integrity_failure(self):
+        with self.assertRaises(CaptureIntegrityError):
+            self.measure(sample_events() + [{'resources': {'rpc_id': 1}}])
 
 
 if __name__ == '__main__':

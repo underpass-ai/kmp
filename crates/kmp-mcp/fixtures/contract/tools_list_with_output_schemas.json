@@ -2785,7 +2785,7 @@
             "type": "string"
           },
           "answer_policy": {
-            "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy unless an endpoint was superseded at the selected time; the historical edge remains auditable. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
+            "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy unless an endpoint was superseded at the selected time; the historical edge remains auditable. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question or, for a question naming an identifier, no retained memory names it beside what was asked; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
             "enum": [
               "evidence_or_unknown",
               "show_conflicts",
@@ -3037,6 +3037,15 @@
               "null"
             ]
           },
+          "answer_status": {
+            "description": "Present unless the store opted out of the anchored ask gate (ask-gate.json mode off). partial: an enumerative question whose citations state part of it; proof.missing names the rest, confidence at most medium.",
+            "enum": [
+              "answered",
+              "partial",
+              "unknown"
+            ],
+            "type": "string"
+          },
           "asked_as": {
             "description": "The user's own words, echoed byte for byte when the request carried them. Absent otherwise.",
             "type": "string"
@@ -3228,6 +3237,17 @@
           },
           "summary": {
             "description": "States whether nothing was retrieved, retrieved evidence did not bear on the question, or evidence was retained.",
+            "type": "string"
+          },
+          "unknown_reason": {
+            "description": "Why the gate answered unknown; present with answer_status unknown. anchor_absent_in_selection means no memory read here names the identifier, not that none is stored; proof.missing names it.",
+            "enum": [
+              "no_candidates",
+              "no_bearing",
+              "out_of_window",
+              "anchor_absent_in_selection",
+              "attribute_not_found"
+            ],
             "type": "string"
           },
           "warnings": {

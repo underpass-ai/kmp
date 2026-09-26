@@ -5,14 +5,21 @@ execute `projection.next_action` verbatim (a restart with a larger budget or a
 cursor page) until the server returns none. A write that asks for review
 follows `next_actions[0]` verbatim. Both variants run this same driver; the
 candidate exposes no new capability this driver would have to use.
+
+The call cap defaults to `MAX_CALLS` and may be raised up to `MAX_CALLS_LIMIT`.
+A journey stopped by the cap is `call_cap_reached` and censored (`max_calls`);
+one whose call timed out is `transport_error` and censored (`timeout`). A
+censored journey is an observation with a lower bound, not a completed one.
 """
 from dataclasses import dataclass, field
 import copy
 
 from ..domain.errors import HarnessError
+from .transport import TransportTimeout
 
 DRIVER_VERSION = 'kmp.native_driver.v1'
 MAX_CALLS = 24
+MAX_CALLS_LIMIT = 256
 
 
 @dataclass
@@ -21,9 +28,23 @@ class JourneyOutcome:
     calls: int = 0
     error: str | None = None
     results: list = field(default_factory=list)  # structuredContent per call, for read-back only
+    max_calls: int = MAX_CALLS
+    censored: bool = False
+    censor_reason: str | None = None  # max_calls | timeout
 
     def as_dict(self):
-        return {'status': self.status, 'calls': self.calls, 'error': self.error}
+        return {'status': self.status, 'calls': self.calls, 'error': self.error,
+                'max_calls': self.max_calls, 'censored': self.censored,
+                'censor_reason': self.censor_reason}
+
+    def censor(self, reason):
+        self.censored, self.censor_reason = True, reason
+
+
+def check_max_calls(value):
+    if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= MAX_CALLS_LIMIT:
+        raise HarnessError(f'max_calls must be an integer in 1..{MAX_CALLS_LIMIT}, got {value!r}')
+    return value
 
 
 def first_arguments(spec, budget):
@@ -45,13 +66,15 @@ def _next_write(structured):
     return (action['tool'], action['arguments']) if action else None
 
 
-def run_journey(session, spec, budget):
+def run_journey(session, spec, budget, max_calls=MAX_CALLS):
     follow = _next_write if spec.tool == 'kmp_write_memory' else _next_read
-    outcome, step = JourneyOutcome(), (spec.tool, first_arguments(spec, budget))
+    outcome = JourneyOutcome(max_calls=check_max_calls(max_calls))
+    step = (spec.tool, first_arguments(spec, budget))
     try:
         while step is not None:
-            if outcome.calls == MAX_CALLS:
+            if outcome.calls == max_calls:
                 outcome.status = 'call_cap_reached'
+                outcome.censor('max_calls')
                 return outcome
             response = session.call(*step)
             outcome.calls += 1
@@ -66,6 +89,9 @@ def run_journey(session, spec, budget):
                 outcome.error = str(structured.get('error') or result.get('content'))[:500]
                 return outcome
             step = follow(structured)
+    except TransportTimeout as error:
+        outcome.status, outcome.error = 'transport_error', str(error)
+        outcome.censor('timeout')
     except HarnessError as error:
         outcome.status, outcome.error = 'transport_error', str(error)
     return outcome

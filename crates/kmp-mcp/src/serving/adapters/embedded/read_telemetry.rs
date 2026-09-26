@@ -1,6 +1,5 @@
-use kmp_domain::{
-    BundleQualityMetrics, KmpBundle, QualityMetricsObserver, QualityObservationContext,
-};
+use kmp_application::{RenderDemand, RenderedContext};
+use kmp_domain::{KmpBundle, QualityMetricsObserver, QualityObservationContext};
 
 /// Forwards existing read quality and bundle identity to the session observer.
 #[derive(Clone, Copy)]
@@ -34,9 +33,24 @@ impl<'a> EmbeddedReadTelemetry<'a> {
         }
     }
 
-    pub(crate) fn observe(&self, rpc: &str, bundle: &KmpBundle, quality: &BundleQualityMetrics) {
+    /// What a read must render: what its response projects, or the complete
+    /// measured render when an active observer wants the quality of it.
+    pub(crate) fn render_demand(&self, projected: RenderDemand) -> RenderDemand {
+        if self.observer.is_active() {
+            RenderDemand::Measured
+        } else {
+            projected
+        }
+    }
+
+    /// Hands a measured render to the observer. An unmeasured one carries no
+    /// quality to observe, and an absent observation is not a zero.
+    pub(crate) fn observe(&self, rpc: &str, bundle: &KmpBundle, rendered: &RenderedContext) {
+        if !rendered.demand.is_measured() {
+            return;
+        }
         self.observer.observe(
-            quality,
+            &rendered.quality,
             &QualityObservationContext {
                 rpc: rpc.to_string(),
                 root_node_id: bundle.root_node_id().as_str().to_string(),

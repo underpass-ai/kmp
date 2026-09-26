@@ -1,0 +1,166 @@
+{
+ "schema": "kmp.bench.datasets_lock.v1",
+ "note": "Public benchmark files the bench may download (BENCH_SPEC 4.6 and 14). Every file is pinned by URL (a fixed revision where the host has one), SHA-256 and size; `fetch` refuses any other bytes. Only this lock enters the repository: the data stays under tmp/memory-bench/datasets (git-ignored) or, for `storage: private`, under $MEMORY_BENCH_PRIVATE_ROOT/datasets outside the repository.",
+ "datasets": {
+  "memoryagentbench-cr": {
+   "title": "MemoryAgentBench, Conflict_Resolution split (FactConsolidation-SH/MH 6k-262k)",
+   "corpora": ["factconsolidation-sh", "factconsolidation-mh"],
+   "licence": {
+    "spdx": "MIT",
+    "verified_at": "2026-09-26",
+    "verified_from": [
+     "https://huggingface.co/api/datasets/ai-hyz/MemoryAgentBench (cardData.license = mit)",
+     "https://api.github.com/repos/HUST-AI-HYZ/MemoryAgentBench (license = MIT)"
+    ]
+   },
+   "redistributable": true,
+   "storage": "public",
+   "repo_policy": "code, the lock, question ids and aggregates only; no dataset text in the repository",
+   "attribution": "Hu, Wang and McAuley, Evaluating Memory in LLM Agents via Incremental Multi-Turn Interactions (arXiv:2507.05257)",
+   "files": [
+    {
+     "name": "Conflict_Resolution-00000-of-00001.parquet",
+     "url": "https://huggingface.co/datasets/ai-hyz/MemoryAgentBench/resolve/7ea066982b140a19337e17e60d45d4076e042faf/data/Conflict_Resolution-00000-of-00001.parquet",
+     "sha256": "24d5c3f09ce0ce15625cb9f8a98f44f0d864ca6c94d7b4ad04eb697ca3a5ff45",
+     "bytes": 1491588
+    }
+   ]
+  },
+  "longmemeval-s": {
+   "title": "LongMemEval-S, cleaned release (replaces the original longmemeval_s)",
+   "corpora": ["longmemeval-s"],
+   "licence": {
+    "spdx": "MIT",
+    "verified_at": "2026-09-26",
+    "verified_from": [
+     "https://huggingface.co/api/datasets/xiaowu0162/longmemeval-cleaned (tags license:mit)",
+     "https://huggingface.co/api/datasets/xiaowu0162/longmemeval (cardData.license = mit)"
+    ]
+   },
+   "redistributable": true,
+   "storage": "public",
+   "repo_policy": "code, the lock, question ids and aggregates only; no dataset text in the repository",
+   "attribution": "Wu et al., LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory (ICLR 2025)",
+   "files": [
+    {
+     "name": "longmemeval_s_cleaned.json",
+     "url": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/98d7416c24c778c2fee6e6f3006e7a073259d48f/longmemeval_s_cleaned.json",
+     "sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+     "bytes": 277383467
+    }
+   ]
+  },
+  "musique": {
+   "title": "MuSiQue v1.0 (MuSiQue-Ans dev is read)",
+   "corpora": ["musique"],
+   "licence": {
+    "spdx": "CC-BY-4.0",
+    "verified_at": "2026-09-26",
+    "verified_from": [
+     "https://api.github.com/repos/StonyBrookNLP/musique (license = CC-BY-4.0)",
+     "https://github.com/StonyBrookNLP/musique/blob/main/README.md (\"distributed under a CC BY 4.0 License\")"
+    ]
+   },
+   "redistributable": true,
+   "storage": "public",
+   "repo_policy": "ids and gold refs may be committed with attribution (BENCH_SPEC 14); passages stay out of the repository",
+   "attribution": "Trivedi et al., MuSiQue: Multihop Questions via Single-hop Question Composition (TACL 2022)",
+   "files": [
+    {
+     "name": "musique_v1.0.zip",
+     "url": "https://drive.usercontent.google.com/download?id=1tGdADlNjWFaHLeZZGShh2IRcpO6Lv24h&export=download&confirm=t",
+     "sha256": "98f839bf2fd5319f5c688aed77901a6d5c30b3b9f9f691ab9a8ecafb045ee0cd",
+     "bytes": 272049578,
+     "origin": "the Google Drive file linked from the authors' README and download_data.sh"
+    }
+   ]
+  },
+  "2wiki": {
+   "title": "2WikiMultihopQA, data_ids_april7 (fixed sentence segmentation; dev is read)",
+   "corpora": ["2wiki"],
+   "licence": {
+    "spdx": "Apache-2.0",
+    "verified_at": "2026-09-26",
+    "verified_from": ["https://api.github.com/repos/Alab-NII/2wikimultihop (license = Apache-2.0)"]
+   },
+   "redistributable": true,
+   "storage": "public",
+   "repo_policy": "code, the lock, question ids and aggregates only; no dataset text in the repository",
+   "attribution": "Ho et al., Constructing A Multi-hop QA Dataset for Comprehensive Evaluation of Reasoning Steps (COLING 2020)",
+   "files": [
+    {
+     "name": "data_ids_april7.zip",
+     "url": "https://www.dropbox.com/s/ms2m13252h6xubs/data_ids_april7.zip?dl=1",
+     "sha256": "95df2bf56fdabe034e27aebc580e02264232203cf52552f9efe8a919e5529eef",
+     "bytes": 258968175,
+     "origin": "the Dropbox link in the authors' README"
+    }
+   ]
+  },
+  "hipporag-question-ids": {
+   "title": "HippoRAG 2 reproduce/dataset question lists: only the 1,000 question ids per dataset are read",
+   "corpora": ["musique", "2wiki"],
+   "licence": {
+    "spdx": "MIT",
+    "verified_at": "2026-09-26",
+    "verified_from": ["https://api.github.com/repos/OSU-NLP-Group/HippoRAG (license = MIT)"]
+   },
+   "redistributable": true,
+   "storage": "public",
+   "repo_policy": "only the selection (ids) is used; question text, passages and gold are rebuilt from musique and 2wiki",
+   "attribution": "Gutierrez et al., From RAG to Memory: Non-Parametric Continual Learning for Large Language Models (HippoRAG 2)",
+   "files": [
+    {
+     "name": "musique.json",
+     "url": "https://raw.githubusercontent.com/OSU-NLP-Group/HippoRAG/1438aba3fc44ff10573e5a5e1e7cc3c7f9794aff/reproduce/dataset/musique.json",
+     "sha256": "98ed4e21d3076532f6388d42320fb809599c63a0d8dffca8ece5e41922be6b46",
+     "bytes": 12543629
+    },
+    {
+     "name": "2wikimultihopqa.json",
+     "url": "https://raw.githubusercontent.com/OSU-NLP-Group/HippoRAG/1438aba3fc44ff10573e5a5e1e7cc3c7f9794aff/reproduce/dataset/2wikimultihopqa.json",
+     "sha256": "895cba294064df0c3302c76847b1fc08d99b5619f7663dfaa3b65cd780f1cac4",
+     "bytes": 6505789
+    }
+   ]
+  },
+  "locomo": {
+   "title": "LoCoMo (locomo10.json)",
+   "corpora": ["locomo"],
+   "licence": {
+    "spdx": "CC-BY-NC-4.0",
+    "verified_at": "2026-09-26",
+    "verified_from": ["https://github.com/snap-research/locomo/blob/3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376/LICENSE.txt (Attribution-NonCommercial 4.0 International; the GitHub API reports NOASSERTION)"]
+   },
+   "redistributable": false,
+   "storage": "private",
+   "repo_policy": "local evaluation only (Tirso's decision): nothing of it, questions and ids included, enters the repository or tmp/",
+   "attribution": "Maharana et al., Evaluating Very Long-Term Conversational Memory of LLM Agents (ACL 2024)",
+   "files": [
+    {
+     "name": "locomo10.json",
+     "url": "https://raw.githubusercontent.com/snap-research/locomo/3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376/data/locomo10.json",
+     "sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+     "bytes": 2805274
+    }
+   ]
+  },
+  "hotpotqa": {
+   "title": "HotpotQA (not fetched by BT17; listed so its terms are on record)",
+   "corpora": [],
+   "licence": {
+    "spdx": "CC-BY-SA-4.0",
+    "verified_at": "2026-09-26",
+    "verified_from": ["https://hotpotqa.github.io/ (CC BY-SA 4.0)"]
+   },
+   "redistributable": false,
+   "storage": "private",
+   "repo_policy": "evaluation only; share-alike material never enters the repository",
+   "attribution": "Yang et al., HotpotQA (EMNLP 2018)",
+   "files": []
+  }
+ },
+ "refused_sources": {
+  "osunlp/HippoRAG_v2": "Hugging Face copy of the HippoRAG 2 data: no licence declared, never a source (BENCH_SPEC 4.6 and 14)"
+ }
+}

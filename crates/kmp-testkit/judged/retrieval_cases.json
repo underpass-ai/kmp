@@ -2843,6 +2843,2933 @@
           ]
         }
       ]
+    },
+    {
+      "id": "anchored-enumerative-c64",
+      "kind": "enumerative_anchored",
+      "probes": "Real usage shape: a facet enumeration over an identifier with a dot. Every facet is stored beside the anchor.",
+      "about": "project:atlas",
+      "question": "Which decisions, contracts, limits and pending work exist for C6.4?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:atlas:c64-adapter",
+        "project:atlas:c64-contract",
+        "project:atlas:c64-pending"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchored-enumerative-c613",
+      "kind": "enumerative_anchored",
+      "probes": "Enumeration over a two-digit dotted identifier whose neighbour C6.1x shares the prefix.",
+      "about": "project:atlas",
+      "question": "What scope and limits are recorded for C6.13?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:atlas:c613-scope",
+        "project:atlas:c613-limit"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchored-singular-i188",
+      "kind": "singular_anchored",
+      "probes": "Singular question over an issue number whose answer is stored beside it.",
+      "about": "project:atlas",
+      "question": "Where was issue #188 deployed?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:atlas:i188-deploy"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchored-twin-1662-positive",
+      "kind": "anchored_twin_positive",
+      "probes": "Anchored twin of answer_ranker.rs:1662 with the attribute stored for the subject: the strict policy must answer.",
+      "about": "project:ci",
+      "question": "Which database engine was used when CI workflow #42 concluded and the remote branch remained present?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:ci:ci-engine"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:ci:ci-context",
+            "kind": "observation",
+            "text": "CI workflow #42 concluded and the remote branch remained present.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:ci:ci-engine",
+            "kind": "decision",
+            "text": "CI workflow #42 ran its migrations against the PostgreSQL database engine.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:ci:ci-filler",
+            "kind": "observation",
+            "text": "CI workflow #51 published the nightly documentation site.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchored-twin-1752-positive",
+      "kind": "anchored_twin_positive",
+      "probes": "Anchored twin of answer_ranker.rs:1752 with the decision stored for the subject: the strict policy must answer.",
+      "about": "project:kernel",
+      "question": "Was kernel prefix #7 a deliberate decision?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:kernel:prefix"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:kernel:prefix",
+            "kind": "decision",
+            "text": "Kernel prefix #7 was a deliberate decision recorded by the storage team.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:kernel:filler",
+            "kind": "observation",
+            "text": "The kernel prefer mode #9 delivered a decision from another workflow.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "negated-anchor-c613-without-c7",
+      "kind": "negated_anchor",
+      "probes": "Positive with an exclusion: the C7 limit shares every attribute word and must not be cited.",
+      "about": "project:atlas",
+      "question": "What limits apply to C6.13, excluding any C7 work?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:atlas:c613-limit"
+      ],
+      "forbidden": [
+        "project:atlas:c7-limit",
+        "project:atlas:c7-migration"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "negated-anchor-c64-without-c65",
+      "kind": "negated_anchor",
+      "probes": "Positive with an exclusion over neighbouring dotted identifiers: nothing about C6.5 may be cited.",
+      "about": "project:atlas",
+      "question": "Which pending work exists for C6.4, excluding the C6.5 scheduler?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:atlas:c64-pending"
+      ],
+      "forbidden": [
+        "project:atlas:c65-scheduler"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchored-twin-1662-negative",
+      "kind": "singular_anchored_twin",
+      "probes": "Anchored twin of answer_ranker.rs:1662: only the context is stored for CI workflow #42, never a database engine.",
+      "about": "project:ci",
+      "question": "Which database engine was used when CI workflow #42 concluded and the remote branch remained present?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "absent": [
+        "database",
+        "engine"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:ci:ci-context",
+            "kind": "observation",
+            "text": "CI workflow #42 concluded and the remote branch remained present.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:ci:ci-filler",
+            "kind": "observation",
+            "text": "CI workflow #51 published the nightly documentation site.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchored-twin-1752-negative",
+      "kind": "singular_anchored_twin",
+      "probes": "Anchored twin of answer_ranker.rs:1752: #7 is stored with prefer/delivered, never with prefix/deliberate.",
+      "about": "project:kernel",
+      "question": "Was kernel prefix #7 a deliberate decision?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "absent": [
+        "prefix",
+        "deliberate"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:kernel:prefer",
+            "kind": "observation",
+            "text": "The kernel prefer mode #7 delivered a decision from another workflow.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:kernel:filler",
+            "kind": "observation",
+            "text": "The kernel prefer mode #9 delivered a decision from another workflow.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "near-miss-kubernetes-i188",
+      "kind": "near_miss_attribute",
+      "probes": "Kubernetes occurs in the about and #188 occurs in the about, never in one entry.",
+      "about": "project:atlas",
+      "question": "Which Kubernetes cluster was issue #188 deployed to?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "absent": [
+        "kubernetes"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "near-miss-object-storage-i188",
+      "kind": "near_miss_attribute",
+      "probes": "Object storage occurs only beside C7; the question asks it of issue #188.",
+      "about": "project:atlas",
+      "question": "Which object storage does issue #188 use?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "absent": [
+        "object",
+        "storage"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchor-neighbor-c65-receipt",
+      "kind": "anchor_neighbor_existing",
+      "probes": "The receipt deadline is stored for C6.4 only; C6.5 exists and has none.",
+      "about": "project:atlas",
+      "question": "Within how many seconds does the C6.5 remote scheduler return a receipt?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "forbidden": [
+        "project:atlas:c64-contract"
+      ],
+      "absent": [
+        "receipt"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchor-neighbor-c65-retry",
+      "kind": "anchor_neighbor_existing",
+      "probes": "The retry policy is stored for C6.4 only; C6.5 exists and has none.",
+      "about": "project:atlas",
+      "question": "What retry policy is pending for C6.5?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "forbidden": [
+        "project:atlas:c64-pending"
+      ],
+      "absent": [
+        "retry"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchor-absent-c624-short",
+      "kind": "anchor_absent",
+      "probes": "Observed in use at v0.23.0: C6.24 does not exist and C6.4 was cited at high confidence.",
+      "about": "project:atlas",
+      "question": "C6.24 local execution adapter",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "forbidden": [
+        "project:atlas:c64-adapter"
+      ],
+      "absent": [
+        "c6.24",
+        "24"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchor-absent-i288-short",
+      "kind": "anchor_absent",
+      "probes": "Observed in use at v0.23.0: issue #288 does not exist and #188 was cited at high confidence.",
+      "about": "project:atlas",
+      "question": "issue #288 pause resume preflight",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "forbidden": [
+        "project:atlas:i188-preflight"
+      ],
+      "absent": [
+        "#288",
+        "288"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchor-absent-c624-enumerative",
+      "kind": "anchor_absent",
+      "probes": "Long enumerative form of the absent C6.24 anchor over a store where C6.4 answers every facet.",
+      "about": "project:atlas",
+      "question": "Which decisions, contracts, limits and pending work exist for C6.24?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "absent": [
+        "c6.24",
+        "24"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "anchor-absent-i288-enumerative",
+      "kind": "anchor_absent",
+      "probes": "Long enumerative form of the absent #288 anchor over a store where #188 answers every facet.",
+      "about": "project:atlas",
+      "question": "What decisions, deployments and preflight checks were recorded for issue #288?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "absent": [
+        "#288",
+        "288"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "cross-about-anchor-c92",
+      "kind": "cross_about_anchor",
+      "probes": "C9.2 is stored only in another about; the question stays in this one.",
+      "about": "project:atlas",
+      "question": "What does the C9.2 billing export include?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [],
+      "absent": [
+        "c9.2",
+        "c9",
+        "2"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:atlas:c64-adapter",
+            "kind": "decision",
+            "text": "C6.4 local execution adapter runs ceremony steps inside the operator sandbox.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-contract",
+            "kind": "decision",
+            "text": "C6.4 contract: the local execution adapter returns a receipt within thirty seconds.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c64-pending",
+            "kind": "observation",
+            "text": "C6.4 pending work: the retry policy of the local execution adapter is not implemented yet.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c65-scheduler",
+            "kind": "decision",
+            "text": "C6.5 remote scheduler dispatches queued ceremonies to the worker pool.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-preflight",
+            "kind": "observation",
+            "text": "Issue #188 pause resume preflight checks the journal before a ceremony resumes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:i188-deploy",
+            "kind": "observation",
+            "text": "Issue #188 was deployed to the staging environment on Tuesday.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:kube",
+            "kind": "observation",
+            "text": "The Kubernetes cluster for the billing service was upgraded to version 1.30.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-migration",
+            "kind": "decision",
+            "text": "C7 migration moves the artifact store to object storage.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-scope",
+            "kind": "decision",
+            "text": "C6.13 scope covers the pause and resume verbs of the ceremony runner.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c613-limit",
+            "kind": "decision",
+            "text": "C6.13 limit: a paused ceremony expires after seven days.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-10T09:00:00Z",
+                "valid_from": "2026-08-10T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:c7-limit",
+            "kind": "decision",
+            "text": "C7 limit: the artifact store rejects uploads above two gigabytes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-11T09:00:00Z",
+                "valid_from": "2026-08-11T09:00:00Z",
+                "sequence": 11
+              }
+            ]
+          },
+          {
+            "id": "project:atlas:menu",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-12T09:00:00Z",
+                "valid_from": "2026-08-12T09:00:00Z",
+                "sequence": 12
+              }
+            ]
+          }
+        ]
+      },
+      "memories": [
+        {
+          "about": "project:billing",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "work:main",
+                "kind": "work"
+              }
+            ],
+            "entries": [
+              {
+                "id": "project:billing:c92-export",
+                "kind": "decision",
+                "text": "C9.2 billing export includes invoices and credit notes.",
+                "coordinates": [
+                  {
+                    "dimension": "work",
+                    "scope_id": "work:main",
+                    "occurred_at": "2026-08-01T09:00:00Z",
+                    "valid_from": "2026-08-01T09:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

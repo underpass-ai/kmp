@@ -26,3 +26,10 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# memory_bench private corpora (B-real, real-store copies, labels) live outside
+# the repository under $MEMORY_BENCH_PRIVATE_ROOT. These patterns are a safety
+# net against a copy landing here, not a place to keep them.
+kmp-bench-private/
+*.private.jsonl
+*.private.json

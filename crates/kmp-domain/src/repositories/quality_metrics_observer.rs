@@ -25,4 +25,16 @@ pub struct QualityObservationContext {
 pub trait QualityMetricsObserver: Send + Sync {
     /// Record a quality metrics observation.
     fn observe(&self, metrics: &BundleQualityMetrics, context: &QualityObservationContext);
+
+    /// Whether this observer asks reads to measure quality they would not
+    /// otherwise measure.
+    ///
+    /// Measuring a render tokenizes the whole bundle. A read whose response
+    /// never carries the prompt measures it only for an active observer. A
+    /// passive observer (a local journal, a no-op) still records every
+    /// measured render it is handed, but never causes one. Observers are
+    /// active unless they say otherwise.
+    fn is_active(&self) -> bool {
+        true
+    }
 }

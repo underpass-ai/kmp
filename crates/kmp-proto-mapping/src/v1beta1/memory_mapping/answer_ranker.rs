@@ -2,28 +2,41 @@ use std::collections::BTreeSet;
 
 use kmp_application::MemoryAnswerPolicy;
 use kmp_domain::KmpBundle;
-use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence};
+use kmp_proto::v1beta1::{AnswerStatus, MemoryConfidence, MemoryEvidence, UnknownReason};
 
+use super::anchor_rescue::AnchorRescue;
+use super::anchor_selection::AnchorSelection;
+use super::anchored_gate::AnchoredGate;
+use super::anchored_reading::AnchoredReading;
 use super::answer_candidate::AnswerCandidate;
 use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{
-    REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_bridged, mark_reached,
-    mark_reached_by, mark_restated, prioritize_distinct_claims, stable_evidence_key,
+    REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_anchor_rescued,
+    mark_bridged, mark_reached, mark_reached_by, mark_restated, prioritize_distinct_claims,
+    stable_evidence_key, was_reached_indirectly,
 };
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
+use super::gate_verdict::GateVerdict;
+use super::identifier_binding::IdentifierBinding;
 use super::lexical_bridge::LexicalBridge;
 use super::lexicon::Lexicon;
 use super::memory_lifecycle::MemoryLifecycle;
+use super::morphology::Morphology;
+use super::question_contract::QuestionContract;
 use super::question_intent::QuestionIntent;
+use super::ranking_focus::RankingFocus;
 use super::search_terms::{
-    concept_count, informative_term_counts, informative_terms, informative_tokens,
-    matching_term_count, search_key, strict_answer_focus_terms,
+    concept_count, informative_term_counts, informative_terms, informative_tokens, matching_terms,
+    search_key, strict_answer_focus_terms,
 };
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
+
+/// A candidate with the terms the ranker read it with.
+type ReadCandidate = (MemoryEvidence, AnswerCandidateTerms);
 
 /// How far retrieval may walk from something the question actually matched.
 /// Two hops covers `symptom → decision → constraint`, the shape a root-cause
@@ -107,17 +120,16 @@ impl<'a> AnswerEvidenceRanker<'a> {
         ranking.resolve(&live)
     }
 
-    /// What a remote judge may read: this ranker's order, then the live
-    /// admitted entries it did not keep, unique by entry and exact text.
+    /// What a remote judge may read: this ranker's order (`ranked`, what
+    /// [`Self::rank`] returned for `candidates`), then the live admitted
+    /// entries it did not keep, unique by entry and exact text.
     pub(super) fn rerank_pool(
         &self,
-        question: &str,
-        policy: MemoryAnswerPolicy,
-        candidates: Vec<MemoryEvidence>,
+        ranked: &[MemoryEvidence],
+        candidates: &[MemoryEvidence],
         limit: usize,
     ) -> Vec<super::semantic_source::SemanticSource> {
         use sha2::{Digest, Sha256};
-        let ranked = self.rank(question, policy, candidates.clone());
         let mut seen = BTreeSet::new();
         let mut pool = Vec::new();
         for item in ranked.iter().chain(candidates.iter()) {
@@ -173,6 +185,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
         self
     }
 
+    /// Reads every candidate with the alias terms it spells (`corte 10` as
+    /// `c10`), as the anchored gate compares them with a question's anchors.
+    pub(super) fn with_identifier_aliases(mut self) -> Self {
+        self.context.identifier_aliases = true;
+        self.lexical_identity = self.lexical_identity.map(|identity| identity.aliased());
+        self
+    }
+
     /// The `proof.expired` list for the lifecycle this ranker stands on.
     pub(super) fn expired_memories(&self) -> Vec<kmp_proto::v1beta1::ExpiredMemory> {
         self.context.expired_memories()
@@ -191,55 +211,100 @@ impl<'a> AnswerEvidenceRanker<'a> {
             evidence.sort_by_key(stable_evidence_key);
             return evidence;
         }
+        let strict_focus = self.strict_focus(question, policy);
+        let prepared = self.prepare(evidence);
+        let collection = self.collection(&prepared);
+        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+        self.rank_prepared(
+            question,
+            &question_terms,
+            strict_focus,
+            None,
+            prepared,
+            &lexicon,
+        )
+    }
 
-        let strict_focus = match policy {
+    /// The focus a strict policy requires, and how many of its concepts.
+    fn strict_focus(
+        &self,
+        question: &str,
+        policy: MemoryAnswerPolicy,
+    ) -> Option<(BTreeSet<String>, usize)> {
+        match policy {
             MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts => {
-                let terms = strict_answer_focus_terms(question, morphology);
+                let terms = strict_answer_focus_terms(question, &self.context.morphology);
                 let required_matches = (concept_count(&terms) * 2).div_ceil(3);
                 Some((terms, required_matches))
             }
             MemoryAnswerPolicy::BestEffort => None,
-        };
+        }
+    }
+
+    /// Every candidate's terms, read once, up front: BM25 needs a collection
+    /// before it can weigh anything.
+    fn prepare(&self, evidence: Vec<MemoryEvidence>) -> Vec<ReadCandidate> {
+        evidence
+            .into_iter()
+            .map(|item| {
+                let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+                (item, terms)
+            })
+            .collect()
+    }
+
+    /// The collection is this question's own candidates: inside an about
+    /// where every entry says `deploy`, that word earns nothing, and only a
+    /// measurement taken here can know it.
+    fn collection(
+        &self,
+        prepared: &[ReadCandidate],
+    ) -> std::sync::Arc<super::lexical_collection::LexicalCollection> {
+        match self.lexical_cache {
+            Some(cache) => cache.collection(self.lexical_identity.as_ref(), prepared),
+            None => std::sync::Arc::new(super::lexical_collection::LexicalCollection::build(
+                prepared, false,
+            )),
+        }
+    }
+
+    /// Ranks candidates already read against their collection. `facet_kinds`
+    /// breaks ties by entry kind, for the anchored gate only.
+    fn rank_prepared(
+        &self,
+        question: &str,
+        question_terms: &BTreeSet<String>,
+        strict_focus: Option<(BTreeSet<String>, usize)>,
+        facet_kinds: Option<&BTreeSet<String>>,
+        prepared: Vec<ReadCandidate>,
+        lexicon: &Lexicon,
+    ) -> Vec<MemoryEvidence> {
+        let morphology = &self.context.morphology;
         let diversity_focus_terms = strict_focus
             .as_ref()
             .map(|(terms, _)| terms.clone())
             .unwrap_or_default();
         let intent = QuestionIntent::read(question);
 
-        // BM25 needs a collection before it can weigh anything, so every
-        // candidate's terms are read once, up front. The collection is this
-        // question's own candidates: inside an about where every entry says
-        // `deploy`, that word earns nothing, and only a measurement taken
-        // here can know it.
-        let prepared = evidence
-            .into_iter()
-            .map(|item| {
-                let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
-                (item, terms)
-            })
-            .collect::<Vec<_>>();
-        let collection = match self.lexical_cache {
-            Some(cache) => cache.collection(self.lexical_identity.as_ref(), &prepared),
-            None => std::sync::Arc::new(super::lexical_collection::LexicalCollection::build(
-                &prepared, false,
-            )),
-        };
-        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
-
         let mut candidates = Vec::new();
+        // A rejected candidate keeps the terms it was read with: every
+        // rescue below reads the same item, so it reads the same terms.
         let mut rejected = Vec::new();
         for (item, terms) in prepared {
             match AnswerCandidate::eligible(
                 item,
                 terms,
-                &question_terms,
-                strict_focus.as_ref(),
-                &lexicon,
+                question_terms,
+                RankingFocus {
+                    strict: strict_focus.as_ref(),
+                    facet_kinds,
+                },
+                lexicon,
                 &intent,
                 &self.context,
             ) {
                 Ok(candidate) => candidates.push(candidate),
-                Err(item) => rejected.push(*item),
+                Err(rejection) => rejected.push(*rejection),
             }
         }
 
@@ -249,7 +314,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cmp(&left.relevance)
                 .then_with(|| left.stable_key.cmp(&right.stable_key))
         });
-        let ranked = diversify_candidates(&question_terms, &diversity_focus_terms, candidates);
+        let ranked = diversify_candidates(question_terms, &diversity_focus_terms, candidates);
         let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
             .map(|candidate| candidate.into_item(question, morphology))
@@ -257,12 +322,164 @@ impl<'a> AnswerEvidenceRanker<'a> {
 
         let (restated, rejected) = self.restated_candidates(&answer, rejected);
         answer.extend(restated);
-        let (associated, rejected) = self.associated_candidates(rejected, &lexicon);
-        let (bridged, rejected) = self.bridged_candidates(rejected, &lexicon);
+        let (associated, rejected) = self.associated_candidates(rejected, lexicon);
+        let (bridged, rejected) = self.bridged_candidates(rejected, lexicon);
+        let rejected = rejected.into_iter().map(|(item, _)| item).collect();
         answer.extend(self.reached_candidates(&answer, rejected));
         answer.extend(associated);
         answer.extend(bridged);
         answer
+    }
+
+    /// Reads a question that names an identifier through the anchored gate.
+    ///
+    /// The candidates are read once. When no required anchor survives the
+    /// hub test, this is [`Self::rank`] and no verdict. When a required
+    /// anchor is absent, the proof is what `rank` would have returned and the
+    /// verdict UNKNOWN. Otherwise the candidates are ranked by the same key
+    /// without the focus filter, facets breaking ties by entry kind, and the
+    /// cited core leads the proof.
+    pub(super) fn read_anchored(
+        &self,
+        question: &str,
+        anchored_question: &str,
+        policy: MemoryAnswerPolicy,
+        contract: &QuestionContract,
+        allow_partial: bool,
+        evidence: Vec<MemoryEvidence>,
+    ) -> AnchoredReading {
+        let morphology = &self.context.morphology;
+        let question_terms = informative_terms(question, morphology);
+        if question_terms.is_empty() {
+            return AnchoredReading::unanchored(self.rank(question, policy, evidence));
+        }
+        let prepared = self.prepare(evidence);
+        let collection = self.collection(&prepared);
+        // The gate reads anchors where it cites them: in what memories say.
+        let selection = AnchorSelection::read(
+            contract,
+            |term| collection.content.document_frequency(term),
+            collection.content.documents(),
+        );
+        let (principal, others) = match selection {
+            AnchorSelection::Anchored { principal, others } => (principal, others),
+            unanchored_or_absent => {
+                let lexicon =
+                    Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+                let evidence = self.rank_prepared(
+                    question,
+                    &question_terms,
+                    self.strict_focus(question, policy),
+                    None,
+                    prepared,
+                    &lexicon,
+                );
+                return match unanchored_or_absent {
+                    AnchorSelection::Absent(missing) => AnchoredReading::decided(
+                        evidence,
+                        GateVerdict::unknown(UnknownReason::AnchorAbsentInSelection, missing),
+                    ),
+                    _ => AnchoredReading::unanchored(evidence),
+                };
+            }
+        };
+        // An anchor decides: the question is read without the facets it
+        // enumerates, which break ties by entry kind and nothing more.
+        let question = anchored_question;
+        let question_terms = informative_terms(question, morphology);
+        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+        let unfiltered = self
+            .strict_focus(question, policy)
+            .map(|(terms, _)| (terms, 0));
+        let ranked = self.rank_prepared(
+            question,
+            &question_terms,
+            unfiltered,
+            Some(contract.facet_entry_kinds()),
+            prepared,
+            &lexicon,
+        );
+        let direct = ranked
+            .iter()
+            .filter(|item| !was_reached_indirectly(item))
+            .map(|item| {
+                (
+                    item,
+                    AnswerCandidateTerms::from_evidence(item, &self.context),
+                )
+            })
+            .collect::<Vec<_>>();
+        let anchors = std::iter::once(&principal)
+            .chain(&others)
+            .map(|anchor| anchor.term.clone())
+            .collect::<BTreeSet<_>>();
+        let rescue = AnchorRescue::read(&anchors, &direct, &self.context.reach_graph);
+        let verdict = AnchoredGate::new(contract, allow_partial).decide(
+            &principal,
+            &others,
+            direct.iter().map(|(item, terms)| (*item, terms)),
+            &rescue,
+            |concept, terms| {
+                if concept.literal {
+                    terms.content.contains(&concept.key)
+                } else {
+                    lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms) > 0
+                }
+            },
+        );
+        // What the gate did not answer whole is proved by the memories about
+        // its anchors. The ranking above had no focus filter, so the rest of
+        // it is every candidate that shares a word with the question: on the
+        // private bench one PARTIAL carried 287 of them to cite three, and
+        // one UNKNOWN 146. A memory that names no anchor, in its content or
+        // by a declared `same_entity_as`, is not about what was asked; an
+        // answered reading keeps its whole proof, as the ungated rule does.
+        let about_anchors = (verdict.status != AnswerStatus::Answered).then(|| {
+            direct
+                .iter()
+                .filter(|(item, terms)| {
+                    anchors
+                        .iter()
+                        .any(|anchor| rescue.names(item, terms, anchor))
+                })
+                .map(|(item, _)| item.id.clone())
+                .collect::<BTreeSet<_>>()
+        });
+        // A citation the gate admitted through a declared `same_entity_as`
+        // says so, and says which memory named the anchor.
+        let cited = verdict.cited();
+        let ranked = ranked
+            .into_iter()
+            .filter(|item| {
+                about_anchors.as_ref().is_none_or(|about| {
+                    about.contains(&item.id) || cited.contains(item.id.as_str())
+                })
+            })
+            .map(|item| match rescue.standing_in_for(&item.id) {
+                Some(from) if cited.contains(item.id.as_str()) => {
+                    let from = from.to_string();
+                    mark_anchor_rescued(item, &from)
+                }
+                _ => item,
+            })
+            .collect::<Vec<_>>();
+        AnchoredReading::decided(ranked, verdict)
+    }
+
+    /// Whether the memory a candidate states or supports names any of these
+    /// terms: in the candidate's text, refs or metadata, or in the details of
+    /// the entry it belongs to (an entry whose evidence names `#599` is about
+    /// `#599` however its own sentence reads).
+    pub(super) fn memory_names_any(&self, item: &MemoryEvidence, terms: &BTreeSet<String>) -> bool {
+        let read = AnswerCandidateTerms::from_evidence(item, &self.context);
+        terms
+            .iter()
+            .any(|term| read.direct_counts.count(term) > 0 || read.claim.contains(term))
+    }
+
+    /// The morphology this ranker compares words in.
+    pub(super) fn morphology(&self) -> &Morphology {
+        &self.context.morphology
     }
 
     /// Admits what a writer declared to be the same thing as an answer.
@@ -279,8 +496,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
     fn restated_candidates(
         &self,
         eligible: &[MemoryEvidence],
-        rejected: Vec<MemoryEvidence>,
-    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+        rejected: Vec<ReadCandidate>,
+    ) -> (Vec<MemoryEvidence>, Vec<ReadCandidate>) {
         if rejected.is_empty() || !self.context.reach_graph.has_equivalences() {
             return (Vec::new(), rejected);
         }
@@ -297,7 +514,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
 
         let mut restated = Vec::new();
         let mut still_rejected = Vec::new();
-        for item in rejected {
+        for (item, terms) in rejected {
             let current =
                 self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
             let hop = answer_context_refs(&item)
@@ -307,7 +524,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cloned();
             match hop {
                 Some(hop) if current => restated.push((hop, item)),
-                _ => still_rejected.push(item),
+                _ => still_rejected.push((item, terms)),
             }
         }
         // The memory's own text is the citation; its evidence follows it.
@@ -342,13 +559,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// pairs that reached it and stays out of the answer core.
     fn bridged_candidates(
         &self,
-        rejected: Vec<MemoryEvidence>,
+        rejected: Vec<ReadCandidate>,
         lexicon: &Lexicon,
-    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+    ) -> (Vec<MemoryEvidence>, Vec<ReadCandidate>) {
         let mut bridged = Vec::new();
         let mut still_rejected = Vec::new();
-        for item in rejected {
-            let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+        for (item, terms) in rejected {
             let current =
                 self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
             let pairs = lexicon.bridged_pairs(&terms);
@@ -359,7 +575,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     item,
                 ));
             } else {
-                still_rejected.push(item);
+                still_rejected.push((item, terms));
             }
         }
         bridged.sort_by(|(left_score, _, left), (right_score, _, right)| {
@@ -385,19 +601,18 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// so an association can carry retrieval and still cannot answer.
     fn associated_candidates(
         &self,
-        rejected: Vec<MemoryEvidence>,
+        rejected: Vec<ReadCandidate>,
         lexicon: &Lexicon,
-    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+    ) -> (Vec<MemoryEvidence>, Vec<ReadCandidate>) {
         let mut associated = Vec::new();
         let mut still_rejected = Vec::new();
-        for item in rejected {
-            let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+        for (item, terms) in rejected {
             let current =
                 self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
             if current && lexicon.is_associated(&terms) {
                 associated.push((lexicon.direct_score(&terms), item));
             } else {
-                still_rejected.push(item);
+                still_rejected.push((item, terms));
             }
         }
         associated.sort_by(|(left_score, left), (right_score, right)| {
@@ -499,12 +714,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if question_terms.is_empty() {
             return MemoryConfidence::Low;
         }
+        let binding = IdentifierBinding::read(question, &self.context.morphology);
         let best_matches = evidence
             .iter()
             .map(|item| {
-                matching_term_count(
-                    &question_terms,
-                    &AnswerCandidateTerms::from_evidence(item, &self.context).searchable,
+                let searchable =
+                    AnswerCandidateTerms::from_evidence(item, &self.context).searchable;
+                concept_count(
+                    &binding.credited(matching_terms(&question_terms, &searchable), &searchable),
                 )
             })
             .max()
@@ -612,6 +829,7 @@ mod tests {
     use super::super::morphology::Morphology;
     use super::super::relation_direction::RelationDirection;
     use super::super::relation_feature::RelationFeature;
+    use super::super::search_terms::matching_term_count;
     use super::super::search_terms::{fold_search_term, terms_match};
 
     fn ev(source: &str) -> MemoryEvidence {

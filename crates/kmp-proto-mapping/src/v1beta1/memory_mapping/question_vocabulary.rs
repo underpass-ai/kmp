@@ -27,6 +27,30 @@ struct QuestionFamily {
     tokens: BTreeSet<String>,
     /// For the verb families a list of exact forms cannot enumerate.
     token_prefixes: Vec<String>,
+    /// For a facet: the entry kinds that state it. Empty for a relation
+    /// family.
+    #[serde(default)]
+    entry_kinds: Vec<String>,
+}
+
+/// The id prefix of a facet a question enumerates over an anchor, as opposed
+/// to a kind of connection it asks for.
+const FACET_PREFIX: &str = "facet:";
+
+impl QuestionFamily {
+    fn is_facet(&self) -> bool {
+        self.id.starts_with(FACET_PREFIX)
+    }
+
+    fn reached_by(&self, token: &str) -> bool {
+        self.tokens.contains(token)
+    }
+
+    fn reached_by_prefix(&self, token: &str) -> bool {
+        self.token_prefixes
+            .iter()
+            .any(|prefix| token.starts_with(prefix.as_str()))
+    }
 }
 
 const SOURCE: &str = include_str!("../../../language/question_families.json");
@@ -44,20 +68,24 @@ impl QuestionVocabulary {
         })
     }
 
-    /// The family a single word asks for, if any.
+    /// The family a single word asks for, if any. Facets are not kinds of
+    /// connection and are never returned here.
     pub(super) fn family_of(&self, token: &str) -> Option<&str> {
-        self.families
-            .iter()
-            .find(|family| family.tokens.contains(token))
-            .or_else(|| {
-                self.families.iter().find(|family| {
-                    family
-                        .token_prefixes
-                        .iter()
-                        .any(|prefix| token.starts_with(prefix.as_str()))
-                })
-            })
+        let relations = || self.families.iter().filter(|family| !family.is_facet());
+        relations()
+            .find(|family| family.reached_by(token))
+            .or_else(|| relations().find(|family| family.reached_by_prefix(token)))
             .map(|family| family.id.as_str())
+    }
+
+    /// The facet a single word enumerates, if any, with the entry kinds that
+    /// state it.
+    pub(super) fn facet_of(&self, token: &str) -> Option<(&str, &[String])> {
+        let facets = || self.families.iter().filter(|family| family.is_facet());
+        facets()
+            .find(|family| family.reached_by(token))
+            .or_else(|| facets().find(|family| family.reached_by_prefix(token)))
+            .map(|family| (family.id.as_str(), family.entry_kinds.as_slice()))
     }
 
     /// Whether a stored relation answers what one of these families asked for.
@@ -121,6 +149,39 @@ mod tests {
         assert_eq!(vocabulary.family_of("why"), Some("why"));
         assert_eq!(vocabulary.family_of("reemplazamos"), Some("lifecycle"));
         assert_eq!(vocabulary.family_of("tuesday"), None);
+    }
+
+    #[test]
+    fn facets_are_read_apart_from_the_kinds_of_connection() {
+        let vocabulary = QuestionVocabulary::shipped();
+
+        // `constraint` asks for a constraint edge and also enumerates the
+        // constraints facet: each reading keeps its own list.
+        assert_eq!(vocabulary.family_of("constraint"), Some("constraint"));
+        assert_eq!(
+            vocabulary.facet_of("constraint").map(|(id, _)| id),
+            Some("facet:constraints")
+        );
+        assert_eq!(vocabulary.family_of("pending"), None);
+        let (id, kinds) = vocabulary.facet_of("decisions").expect("a facet");
+        assert_eq!(id, "facet:decisions");
+        assert_eq!(kinds, ["decision".to_string()]);
+        assert_eq!(
+            vocabulary.facet_of("restricciones").map(|(id, _)| id),
+            Some("facet:constraints")
+        );
+        assert!(vocabulary.facet_of("why").is_none());
+        for family in vocabulary
+            .families
+            .iter()
+            .filter(|family| family.is_facet())
+        {
+            assert!(
+                !family.entry_kinds.is_empty(),
+                "{} names no entry kind",
+                family.id
+            );
+        }
     }
 
     #[test]

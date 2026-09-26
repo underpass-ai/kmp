@@ -1,16 +1,37 @@
+mod anchor_rescue;
+mod anchor_selection;
+mod anchor_strength;
+#[cfg(test)]
+mod anchored_alias_tests;
+#[cfg(test)]
+mod anchored_content_tests;
+mod anchored_gate;
+#[cfg(test)]
+mod anchored_gate_tests;
+#[cfg(test)]
+mod anchored_partial_proof_tests;
+mod anchored_reading;
 mod answer_candidate;
 mod answer_candidate_terms;
 mod answer_ranker;
 mod answer_recall_context;
 mod answer_selection;
+mod ask_gate;
 mod ask_retrieval_context;
 mod association_index;
+#[cfg(test)]
+mod association_index_parity_tests;
 mod bridged_key;
 mod bridged_term;
+mod bundle_node_index;
 mod bundle_views;
 mod candidate_temporal_state;
 mod dimensions;
+mod gate_verdict;
 mod hybrid_evidence;
+mod identifier_alias;
+mod identifier_aliases;
+mod identifier_binding;
 mod ingest;
 mod judged_selection;
 mod lexical_bridge;
@@ -25,8 +46,15 @@ mod memory_lifecycle;
 mod morphology;
 mod pair_scope;
 mod queries;
+mod question_anchor;
+mod question_contract;
+mod question_contract_vocabulary;
+mod question_form;
 mod question_intent;
+mod question_time;
 mod question_vocabulary;
+mod ranked_selection;
+mod ranking_focus;
 mod reach_graph;
 mod read_selection_fingerprint;
 mod relabel;
@@ -42,11 +70,14 @@ mod rerank_candidate_ranking;
 mod rerank_recall_tests;
 mod responses;
 mod scalars;
+mod search_probe;
+mod search_probe_terms;
 mod search_terms;
 mod semantic_candidate_ranking;
 #[cfg(test)]
 mod semantic_recall_tests;
 mod semantic_source;
+mod subject_concept;
 mod temporal_admission;
 mod temporal_dependencies;
 #[cfg(test)]
@@ -64,6 +95,7 @@ mod wake_evidence_identity_tests;
 #[cfg(test)]
 mod wake_state_tests;
 
+pub use ask_gate::AskGate;
 pub use ask_retrieval_context::AskRetrievalContext;
 pub use bundle_views::abouts_in_bundle;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
@@ -82,6 +114,8 @@ pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
     trace_response_from_result, wake_response_from_result, wake_response_with_focus, wake_sources,
 };
+pub use search_probe::SearchProbe;
+pub use search_probe_terms::SearchProbeTerms;
 pub use semantic_candidate_ranking::SemanticCandidateRanking;
 pub use semantic_source::SemanticSource;
 pub use visual_projection::{

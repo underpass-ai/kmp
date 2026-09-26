@@ -1,3 +1,4 @@
+use kmp_application::RenderDemand;
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 
@@ -191,11 +192,14 @@ impl<'a> EmbeddedCurateTool<'a> {
         let query = relate_query_from_proto(request).map_err(|status| mapping_error(&status))?;
         let result = self
             .service
-            .relate(query.clone())
+            .relate_on_demand(
+                query.clone(),
+                self.telemetry.render_demand(RenderDemand::Skip),
+            )
             .await
             .map_err(kernel_error("curate", about))?;
         self.telemetry
-            .observe("kmp_curate", &result.bundle, &result.rendered.quality);
+            .observe("kmp_curate", &result.bundle, &result.rendered);
         let response = curate_reading_from_result(result, &query, self.bridge)
             .map_err(|status| mapping_error(&status))?;
         let material = relate_material(&response);
@@ -255,7 +259,7 @@ impl<'a> EmbeddedCurateTool<'a> {
                     .unwrap_or_default(),
             })).collect::<Vec<_>>(),
             "jev": usage.map(|usage| serde_json::json!({
-                "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens,
+                "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens, "elapsed_ms": usage.elapsed_ms(),
             })),
             "next_actions": [],
             "warnings": warnings,

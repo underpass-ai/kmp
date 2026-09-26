@@ -220,7 +220,20 @@ impl ProjectionPlan {
                 priority,
             ));
         }
-        for missing in take_array(&mut value, &["proof", "missing"]) {
+        // What the anchored gate did not find is its answer's other half: a
+        // PARTIAL or gated UNKNOWN keeps `missing` in the core. An answered
+        // reading's `missing` is only what `max_entries` withheld, detail
+        // like any other, as it is without the gate.
+        let missing_is_core = value
+            .get("answer_status")
+            .and_then(Value::as_str)
+            .is_some_and(|status| status != "answered");
+        let missing = if missing_is_core {
+            Vec::new()
+        } else {
+            take_array(&mut value, &["proof", "missing"])
+        };
+        for missing in missing {
             items.push(ProjectionItem::new(
                 Section::ProofMissing,
                 missing,

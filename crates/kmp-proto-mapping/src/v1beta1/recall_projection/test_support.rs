@@ -171,6 +171,8 @@ pub(super) fn typed_ask_fixture(path_count: usize) -> AskResponse {
         warnings: Vec::new(),
         projection: None,
         asked_as: String::new(),
+        answer_status: 0,
+        unknown_reason: 0,
     }
 }
 

@@ -1,0 +1,1 @@
+{"absent":{},"calls":2,"censor_reason":null,"censored":false,"error":null,"journey":"synth7-mono-enum-0001~s0~r0","max_calls":256,"question_id":"synth7-mono-enum-0001","repeat":0,"run_id":"d69566426316216abb930f49452b8c6d3fdb12cd4a70d82fcc8b3753d6c978e0","sample":0,"schema":"kmp.bench.journey.v1","startup_ns":81200311,"status":"completed","tool":"kmp_ask","variant":"baseline"}

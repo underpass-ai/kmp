@@ -11,15 +11,16 @@ use kmp_domain::{
     TemporalCoordinate, TemporalDirection, TemporalSelection, compare_temporal_instants,
 };
 use kmp_proto::v1beta1::{
-    AnswerReason, AskResponse, ExpiredMemory, InspectResponse, InspectedLinks, InspectedObject,
-    MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef,
-    RecallProjection, TemporalCursor, TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse,
-    TemporalState, TraceResponse, WakePacket, WakeResponse,
+    AnswerReason, AnswerStatus, AskResponse, ExpiredMemory, InspectResponse, InspectedLinks,
+    InspectedObject, MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass,
+    PageInfo, RawMemoryRef, RecallProjection, TemporalCursor, TemporalEntry as ProtoTemporalEntry,
+    TemporalMoveResponse, TemporalState, TraceResponse, UnknownReason, WakePacket, WakeResponse,
 };
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
 use super::answer_selection::was_reached_indirectly;
 use super::lexical_bridge::LexicalBridge;
+use super::question_contract::QuestionContract;
 use super::scalars::ProtoMappingResult;
 use super::temporal_admission::TemporalAdmission;
 use super::wake_claim_evidence::WakeClaimEvidence;
@@ -33,11 +34,11 @@ use super::wake_current_state::{SUPPORT_BOOKKEEPING, rendered_current_state};
 pub const UNANSWERED: &str = "UNKNOWN";
 use super::bundle_views::{
     about_by_entry, abouts_in_bundle, answer_evidence_from_bundle, answer_relations_from_bundle,
-    bundle_memory_metadata, conflicts_from_relations, memory_evidence_from_bundle,
+    conflicts_from_relations, memory_evidence_from_bundle,
     memory_relation_from_bundle_relationship, memory_relations_from_bundle,
-    persisted_memory_metadata, persisted_memory_source, proof, proto_coordinate_from_domain,
-    proto_relation_explanation, rendered_summary, superseded_from_relations,
-    temporal_evidence_from_bundle, temporal_relations_from_bundle,
+    partial_answer_relations_from_bundle, persisted_memory_metadata, persisted_memory_source,
+    proof, proto_coordinate_from_domain, proto_relation_explanation, rendered_summary,
+    superseded_from_relations, temporal_evidence_from_bundle, temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::memory_catalog::labels_from_bundle;
@@ -393,6 +394,15 @@ fn cap_wake_evidence(
     }
 }
 
+/// The names in first-said order, each once.
+fn said_once(names: Vec<String>) -> Vec<String> {
+    let mut said = BTreeSet::new();
+    names
+        .into_iter()
+        .filter(|name| said.insert(name.clone()))
+        .collect()
+}
+
 /// Carry the selection-stage count into the existing projection envelope.
 /// The transport fills the remaining fields when it projects the response.
 fn selection_cap_projection(omitted: usize) -> Option<RecallProjection> {
@@ -434,6 +444,19 @@ pub fn ask_response_from_result(
     let superseded_refs = lifecycle.superseded_refs().clone();
     let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
         .with_lexical_cache(retrieval.lexical_cache.as_deref(), lexical_identity);
+    // The anchored gate reads a question that names an identifier, when the
+    // store did not opt out of it and the policy promises evidence or UNKNOWN; it
+    // reads every memory with the alias terms it spells.
+    let strict = matches!(
+        policy,
+        MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
+    );
+    let gated = retrieval.gate.is_some() && strict;
+    let ranker = if gated {
+        ranker.with_identifier_aliases()
+    } else {
+        ranker
+    };
     // What the selection admits is decided before the ranker weighs a word,
     // so the collection its statistics read is the selection's own: a word
     // common in the about and rare in the span earns what it earns there.
@@ -468,10 +491,36 @@ pub fn ask_response_from_result(
     if !reranked.is_empty() {
         supplemental.push(reranked);
     }
-    let relevant_evidence = super::hybrid_evidence::fuse_evidence(
-        ranker.rank(question, policy, candidate_evidence),
-        supplemental,
-    );
+    let contract = gated.then(|| QuestionContract::read(question, ranker.morphology()));
+    // What the ranker reads: the question, or under the gate the question
+    // without what it excluded and with its anchors' alias terms.
+    let asked = contract
+        .as_ref()
+        .and_then(QuestionContract::asked)
+        .unwrap_or(question);
+    let (ranked, verdict) = match (&contract, retrieval.gate) {
+        (Some(contract), Some(gate)) if contract.requires_anchors() => {
+            let reading = ranker.read_anchored(
+                asked,
+                contract.anchored_asked().unwrap_or(question),
+                policy,
+                contract,
+                gate.allows_partial(),
+                candidate_evidence,
+            );
+            (reading.evidence, reading.verdict)
+        }
+        // The pool a remote judge read was ranked from these very candidates;
+        // the answer stands on that ranking instead of taking it again.
+        _ => (
+            retrieval
+                .ranked
+                .and_then(|ranked| ranked.into_ranking_for(asked, policy, temporal, bridge))
+                .unwrap_or_else(|| ranker.rank(asked, policy, candidate_evidence)),
+            None,
+        ),
+    };
+    let relevant_evidence = super::hybrid_evidence::fuse_evidence(ranked, supplemental);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
     let selection_projection = selection_cap_projection(withheld.len());
     // A candidate the graph reached is proof, not an answer. It travels in
@@ -479,18 +528,49 @@ pub fn ask_response_from_result(
     // still built only from evidence the question matched in its own words —
     // the ranker's standing rule, now enforced where the answer is written
     // rather than by refusing to retrieve the hop at all.
+    //
+    // Under the anchored gate the core is what it cited. Without a required
+    // anchor, a memory whose only anchor is one the question excluded
+    // (`excluding C7`) stays out of it, whether its sentence or its entry's
+    // details name it; one that also names an anchor the question asked
+    // about stays in.
+    let negated = contract
+        .as_ref()
+        .map(QuestionContract::negated_terms)
+        .unwrap_or_default();
+    let asked_anchors = contract
+        .as_ref()
+        .map(QuestionContract::unnegated_terms)
+        .unwrap_or_default();
     let answer_core = evidence
         .iter()
-        .filter(|item| !was_reached_indirectly(item))
+        .filter(|item| match &verdict {
+            Some(verdict) => verdict.cited().contains(item.id.as_str()),
+            None => {
+                !was_reached_indirectly(item)
+                    && (negated.is_empty()
+                        || !ranker.memory_names_any(item, &negated)
+                        || ranker.memory_names_any(item, &asked_anchors))
+            }
+        })
         .cloned()
         .collect::<Vec<_>>();
     // `because` and the deterministic answer retain at most five citations.
     // Confidence must describe those surviving citations, not a stronger item
     // that `max_entries` or a later transport budget omitted.
     let retained_evidence = &answer_core[..answer_core.len().min(ANSWER_CORE_LIMIT)];
-    let confidence = ranker.confidence(question, retained_evidence);
-    let matched_terms = ranker.matched_query_terms(question, retained_evidence);
-    let matched_relations = ranker.matched_relations(question, retained_evidence);
+    let confidence = ranker.confidence(asked, retained_evidence);
+    let status = verdict
+        .as_ref()
+        .map_or(AnswerStatus::Unspecified, |verdict| verdict.status);
+    // A partial answer is never as sure as a whole one.
+    let confidence = if status == AnswerStatus::Partial && confidence == MemoryConfidence::High {
+        MemoryConfidence::Medium
+    } else {
+        confidence
+    };
+    let matched_terms = ranker.matched_query_terms(asked, retained_evidence);
+    let matched_relations = ranker.matched_relations(asked, retained_evidence);
     let because = answer_core
         .iter()
         .take(ANSWER_CORE_LIMIT)
@@ -523,11 +603,20 @@ pub fn ask_response_from_result(
     // shares a term with the question. Under a policy that promises evidence
     // or UNKNOWN, that is UNKNOWN. `best_effort` exists for callers who want
     // the neighbourhood anyway, and keeps what it always returned.
-    let bears_on_the_question = !because.is_empty()
-        && !(matches!(
-            policy,
-            MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
-        ) && confidence == MemoryConfidence::Low);
+    //
+    // The anchored gate decides for itself: its citations name the anchor
+    // and stand beside every concept the question asked of it, whatever the
+    // share of the question's other words they carry.
+    let bears_on_the_question = match &verdict {
+        Some(verdict) => verdict.status != AnswerStatus::Unknown && !because.is_empty(),
+        None => {
+            !because.is_empty()
+                && !(matches!(
+                    policy,
+                    MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
+                ) && confidence == MemoryConfidence::Low)
+        }
+    };
 
     let answer = if bears_on_the_question {
         deterministic_answer_from_reasons(&because)
@@ -553,23 +642,51 @@ pub fn ask_response_from_result(
     // how an unsupported answer looked supported in the first place; what was
     // retrieved is still visible in `proof.evidence`.
     let because = if unknown { Vec::new() } else { because };
+    // What the gate did not find, in the reader's words: the absent anchor,
+    // or the concepts no cited memory states beside it.
+    let not_found = verdict
+        .as_ref()
+        .map(|verdict| verdict.missing.clone())
+        .unwrap_or_default();
+    // A PARTIAL says what the question asked that it did not find, and only
+    // that: the sources `max_entries` withheld are not what was missing, and
+    // named beside the reader's words they read as if they were.
+    let missing = if (unknown && !not_found.is_empty()) || status == AnswerStatus::Partial {
+        not_found.clone()
+    } else if unknown {
+        vec![if evidence_retained == 0 {
+            format!("any stored memory for: {question}")
+        } else {
+            format!("stored memory that bears on: {question}")
+        }]
+    } else {
+        not_found.iter().cloned().chain(withheld).collect()
+    };
+    // Under the gate each name is said once. The withheld sources of an
+    // ANSWERED reading are one per withheld entry, and a writer's source
+    // stands behind many entries. Without the gate the list stays as it
+    // always was.
+    let missing = if verdict.is_some() {
+        said_once(missing)
+    } else {
+        missing
+    };
+    let path = if unknown {
+        Vec::new()
+    } else if status == AnswerStatus::Partial {
+        partial_answer_relations_from_bundle(&bounded, &answer_core, &evidence)
+    } else {
+        answer_relations_from_bundle(&bounded, &evidence)
+    };
     let mut answer_proof = proof(
-        if unknown {
-            Vec::new()
-        } else {
-            answer_relations_from_bundle(&bounded, &evidence)
-        },
+        path,
         evidence,
-        if unknown {
-            vec![if evidence_retained == 0 {
-                format!("any stored memory for: {question}")
-            } else {
-                format!("stored memory that bears on: {question}")
-            }]
+        missing,
+        if unknown && verdict.is_some() {
+            MemoryConfidence::Unknown
         } else {
-            withheld
+            confidence
         },
-        confidence,
     );
     answer_proof.matched_terms = matched_terms;
     // A replacement can lie outside the retained answer path. Use lifecycle
@@ -596,7 +713,7 @@ pub fn ask_response_from_result(
     // instead of concluding the memory was never written.
     if unknown && admission.bounds_a_span() && !outside_evidence.is_empty() {
         let outside_core = ranker
-            .rank(question, policy, outside_evidence)
+            .rank(asked, policy, outside_evidence)
             .into_iter()
             .filter(|item| !was_reached_indirectly(item))
             .take(ANSWER_CORE_LIMIT)
@@ -605,7 +722,7 @@ pub fn ask_response_from_result(
             && !(matches!(
                 policy,
                 MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
-            ) && ranker.confidence(question, &outside_core) == MemoryConfidence::Low);
+            ) && ranker.confidence(asked, &outside_core) == MemoryConfidence::Low);
         if outside_bears {
             answer_proof.nearest_outside = admission.nearest_outside(&outside_core);
         }
@@ -624,6 +741,37 @@ pub fn ask_response_from_result(
             )
         })
         .unwrap_or_default();
+
+    // How the question settled and, unknown, why: only under the gate, so a
+    // store that opted out of it answers byte for byte as v0.23.0 did.
+    let (answer_status, unknown_reason) = match retrieval.gate {
+        None => (AnswerStatus::Unspecified, UnknownReason::Unspecified),
+        Some(_) if !unknown => (
+            if status == AnswerStatus::Partial {
+                AnswerStatus::Partial
+            } else {
+                AnswerStatus::Answered
+            },
+            UnknownReason::Unspecified,
+        ),
+        Some(_) => (
+            AnswerStatus::Unknown,
+            if answer_proof.nearest_outside.is_some() {
+                UnknownReason::OutOfWindow
+            } else if let Some(verdict) = &verdict {
+                verdict.reason
+            } else if evidence_retained == 0 {
+                UnknownReason::NoCandidates
+            } else {
+                UnknownReason::NoBearing
+            },
+        ),
+    };
+    let not_found_note = if not_found.is_empty() {
+        String::new()
+    } else {
+        format!("; not found: {}", not_found.join(", "))
+    };
 
     let mut warnings = question_rendering_warnings(question, asked_as);
     if let Some(ranking) = &retrieval.rerank {
@@ -648,15 +796,15 @@ pub fn ask_response_from_result(
             // question this memory cannot settle.
             if retrieved == 0 && semantic_count > 0 {
                 format!(
-                    "Resolved {semantic_count} semantic candidates; none establishes an answer for: {question}{nearest_outside_note}"
+                    "Resolved {semantic_count} semantic candidates; none establishes an answer for: {question}{nearest_outside_note}{not_found_note}"
                 )
             } else if evidence_retained == 0 {
                 format!(
-                    "Nothing in this memory was retrieved for: {question}{nearest_outside_note}"
+                    "Nothing in this memory was retrieved for: {question}{nearest_outside_note}{not_found_note}"
                 )
             } else {
                 format!(
-                    "Retrieved {evidence_retained} memory {}, none of which bears on: {question}{nearest_outside_note}",
+                    "Retrieved {evidence_retained} memory {}, none of which bears on: {question}{nearest_outside_note}{not_found_note}",
                     if evidence_retained == 1 {
                         "item"
                     } else {
@@ -666,9 +814,14 @@ pub fn ask_response_from_result(
             }
         } else {
             format!(
-                "Retrieved {} memory {} for: {question}",
+                "Retrieved {} memory {} for{}: {question}{not_found_note}",
                 because.len(),
-                if because.len() == 1 { "item" } else { "items" }
+                if because.len() == 1 { "item" } else { "items" },
+                if answer_status == AnswerStatus::Partial {
+                    " part of"
+                } else {
+                    ""
+                }
             )
         },
         answer,
@@ -676,6 +829,8 @@ pub fn ask_response_from_result(
         proof: Some(answer_proof),
         warnings,
         asked_as: asked_as.unwrap_or_default().to_string(),
+        answer_status: answer_status as i32,
+        unknown_reason: unknown_reason as i32,
     })
 }
 
@@ -831,6 +986,7 @@ pub fn temporal_response_from_result(
         traversal.axis(),
         expiry_boundary,
     );
+    let source_nodes = super::bundle_node_index::BundleNodeIndex::new(&result.source_bundle);
     let entries = traversal
         .entries()
         .iter()
@@ -843,7 +999,7 @@ pub fn temporal_response_from_result(
                 .iter()
                 .map(proto_coordinate_from_domain)
                 .collect(),
-            metadata: bundle_memory_metadata(&result.source_bundle, entry.ref_id()),
+            metadata: source_nodes.memory_metadata(entry.ref_id()),
         })
         .collect::<Vec<_>>();
     let selected_refs = entries

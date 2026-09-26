@@ -178,8 +178,11 @@ fn unsupported_revisions_and_oversized_collections_are_read_without_retention() 
         &cache.collection(None, &terms),
         &cache.collection(None, &terms)
     ));
-    // One large key checks byte admission without allocating quadratic pairs.
-    terms[0].1.direct_counts.insert("x".repeat(3 * 1024 * 1024));
+    // One large key checks byte admission before anything is retained.
+    terms[0]
+        .1
+        .direct_counts
+        .insert("x".repeat(16 * 1024 * 1024));
     assert!(!Arc::ptr_eq(
         &cache.collection(Some(&key), &terms),
         &cache.collection(Some(&key), &terms)
@@ -308,7 +311,12 @@ fn raw_bm25_scores_and_association_weights_match_fresh_statistics_exactly() {
             ] {
                 let question: TermCounts = [word.to_string()].into_iter().collect();
                 let weights = fresh_associations.expand(&question);
-                assert_eq!(cached.associations.expand(&question), weights);
+                let restricted = AssociationIndex::for_question(
+                    &question,
+                    &cached.direct,
+                    terms.iter().map(|(_, t)| &t.direct_counts),
+                );
+                assert_eq!(restricted.expand(&question), weights);
                 assert_eq!(
                     cached.direct.eligibility_floor(&question).to_bits(),
                     fresh_direct.eligibility_floor(&question).to_bits()

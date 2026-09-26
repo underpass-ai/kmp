@@ -10,6 +10,10 @@ pub(crate) struct JudgementResponse {
     pub answers: BTreeMap<String, JudgementAnswer>,
     pub input_tokens: u64,
     pub requests: usize,
+    /// Wall time the caller waited for these answers, stamped by the
+    /// telemetry wrapper. Never recorded in a cassette.
+    #[serde(default, skip_serializing)]
+    pub elapsed_us: u64,
 }
 
 impl JudgementResponse {
@@ -20,6 +24,7 @@ impl JudgementResponse {
             answers: BTreeMap::new(),
             input_tokens: 0,
             requests: 0,
+            elapsed_us: 0,
         }
     }
 }

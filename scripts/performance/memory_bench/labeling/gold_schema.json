@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kmp.bench.breal.label.v1",
+  "title": "One labeler's gold for one B-real question",
+  "description": "BENCH_SPEC section 4.1. `gold` is exactly the kmp.bench.question.v1 gold object (SCHEMAS.md 2.3), restricted to what a B-real labeler decides: shape, answerable, the facets asked in the reader's words with answers/related/answerable_facet, and wrong_subject. The other gold fields stay empty. Checked by labeling/schema.py, then by domain/gold.py invariants and against the frozen store (every ref is an entry of the question's about).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "question_id", "labeler", "labeled_at", "pool_digest", "rules_sha256", "gold", "notes", "searches"],
+  "properties": {
+    "schema": {"const": "kmp.bench.breal.label.v1"},
+    "question_id": {"type": "string", "pattern": "^breal-[0-9a-f]{12}$"},
+    "labeler": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$"},
+    "labeled_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "pool_digest": {"$ref": "#/$defs/hex64"},
+    "rules_sha256": {"$ref": "#/$defs/hex64"},
+    "notes": {"type": ["string", "null"]},
+    "searches": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "gold": {"$ref": "#/$defs/gold"}
+  },
+  "$defs": {
+    "hex64": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ref": {"type": "string", "pattern": "^(?!entry:|detail:)\\S+$"},
+    "refs": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/ref"}},
+    "facet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "words", "answers", "related", "answerable_facet"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+        "words": {"type": "string", "minLength": 1},
+        "answers": {"$ref": "#/$defs/refs"},
+        "related": {"$ref": "#/$defs/refs"},
+        "answerable_facet": {"type": "boolean"}
+      }
+    },
+    "gold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["answerable", "shape", "facets", "wrong_subject", "chain", "path", "current_ref",
+                   "stale_refs", "nearest_outside", "unknown_reason", "absent_terms", "excluded_refs",
+                   "wake_required"],
+      "properties": {
+        "answerable": {"enum": ["KNOWN", "UNKNOWN"]},
+        "shape": {"enum": ["singular", "enumerative"]},
+        "facets": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/facet"}},
+        "wrong_subject": {"$ref": "#/$defs/refs"},
+        "chain": {"type": "null"},
+        "path": {"type": "null"},
+        "current_ref": {"type": "null"},
+        "stale_refs": {"const": []},
+        "nearest_outside": {"type": "null"},
+        "unknown_reason": {"enum": [null, "anchor_not_found", "attribute_not_found", "anchor_in_other_about",
+                                    "not_in_selection", "no_evidence"]},
+        "absent_terms": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "excluded_refs": {"const": []},
+        "wake_required": {"const": []}
+      }
+    }
+  }
+}

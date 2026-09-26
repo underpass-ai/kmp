@@ -1,0 +1,475 @@
+{
+  "schema": "kmp.bench.metric_parity.v1",
+  "about": "Shared fixture: the same ranking outcomes scored by crates/kmp-testkit/src/retrieval_scorecard.rs and scripts/performance/memory_bench/domain/metrics.py must give these numbers. Floats compare within `tolerance`.",
+  "tolerance": 1e-12,
+  "cases": [
+    {
+      "name": "first_rank_hit",
+      "judged": [
+        "a"
+      ],
+      "retrieved": [
+        "a",
+        "x"
+      ],
+      "cited": [
+        "a"
+      ],
+      "unknown": false,
+      "used_bytes": 4096,
+      "elapsed_millis": 12,
+      "expected": {
+        "recall_at_1": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0,
+        "answer_cites_judged": true,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": true
+      }
+    },
+    {
+      "name": "third_rank_hit",
+      "judged": [
+        "a"
+      ],
+      "retrieved": [
+        "x",
+        "y",
+        "a"
+      ],
+      "cited": [],
+      "unknown": false,
+      "used_bytes": 2048,
+      "elapsed_millis": 30,
+      "expected": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.3333333333333333,
+        "ndcg_at_10": 0.5,
+        "answer_cites_judged": false,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": true
+      }
+    },
+    {
+      "name": "absent_from_results",
+      "judged": [
+        "a"
+      ],
+      "retrieved": [
+        "x",
+        "y"
+      ],
+      "cited": [],
+      "unknown": false,
+      "used_bytes": 1000,
+      "elapsed_millis": 5,
+      "expected": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "reciprocal_rank": 0.0,
+        "ndcg_at_10": 0.0,
+        "answer_cites_judged": false,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": false
+      }
+    },
+    {
+      "name": "half_of_two_judged",
+      "judged": [
+        "a",
+        "b"
+      ],
+      "retrieved": [
+        "a",
+        "x"
+      ],
+      "cited": [
+        "b"
+      ],
+      "unknown": false,
+      "used_bytes": 300,
+      "elapsed_millis": 7,
+      "expected": {
+        "recall_at_1": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 0.6131471927654584,
+        "answer_cites_judged": true,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": false
+      }
+    },
+    {
+      "name": "duplicate_hit_earns_twice_in_ndcg",
+      "judged": [
+        "a"
+      ],
+      "retrieved": [
+        "a",
+        "a",
+        "x"
+      ],
+      "cited": [
+        "a"
+      ],
+      "unknown": false,
+      "used_bytes": 0,
+      "elapsed_millis": 0,
+      "expected": {
+        "recall_at_1": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.6309297535714575,
+        "answer_cites_judged": true,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": true
+      }
+    },
+    {
+      "name": "duplicate_counts_once_in_recall",
+      "judged": [
+        "a",
+        "b"
+      ],
+      "retrieved": [
+        "a",
+        "a"
+      ],
+      "cited": [],
+      "unknown": false,
+      "used_bytes": 0,
+      "elapsed_millis": 0,
+      "expected": {
+        "recall_at_1": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0,
+        "answer_cites_judged": false,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": false
+      }
+    },
+    {
+      "name": "honest_unknown_without_judged",
+      "judged": [],
+      "retrieved": [],
+      "cited": [],
+      "unknown": true,
+      "used_bytes": 120,
+      "elapsed_millis": 3,
+      "expected": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "reciprocal_rank": 0.0,
+        "ndcg_at_10": 0.0,
+        "answer_cites_judged": false,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": false
+      }
+    },
+    {
+      "name": "false_unknown_with_judged",
+      "judged": [
+        "a"
+      ],
+      "retrieved": [],
+      "cited": [],
+      "unknown": true,
+      "used_bytes": 150,
+      "elapsed_millis": 4,
+      "expected": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "reciprocal_rank": 0.0,
+        "ndcg_at_10": 0.0,
+        "answer_cites_judged": false,
+        "is_false_unknown": true,
+        "has_complete_support_at_5": false
+      }
+    },
+    {
+      "name": "cited_but_not_judged",
+      "judged": [
+        "a"
+      ],
+      "retrieved": [
+        "a"
+      ],
+      "cited": [
+        "z"
+      ],
+      "unknown": false,
+      "used_bytes": 10,
+      "elapsed_millis": 1,
+      "expected": {
+        "recall_at_1": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0,
+        "answer_cites_judged": false,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": true
+      }
+    },
+    {
+      "name": "hits_beyond_cutoffs",
+      "judged": [
+        "k",
+        "l",
+        "m"
+      ],
+      "retrieved": [
+        "x0",
+        "x1",
+        "x2",
+        "x3",
+        "x4",
+        "x5",
+        "x6",
+        "x7",
+        "x8",
+        "k",
+        "l",
+        "m"
+      ],
+      "cited": [
+        "m"
+      ],
+      "unknown": false,
+      "used_bytes": 9999,
+      "elapsed_millis": 250,
+      "expected": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.3333333333333333,
+        "reciprocal_rank": 0.1,
+        "ndcg_at_10": 0.13565197343244778,
+        "answer_cites_judged": true,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": false
+      }
+    },
+    {
+      "name": "three_judged_all_in_top_five",
+      "judged": [
+        "c",
+        "a",
+        "b"
+      ],
+      "retrieved": [
+        "a",
+        "q",
+        "b",
+        "c",
+        "r"
+      ],
+      "cited": [
+        "a",
+        "c"
+      ],
+      "unknown": false,
+      "used_bytes": 512,
+      "elapsed_millis": 2,
+      "expected": {
+        "recall_at_1": 0.3333333333333333,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 0.9060254355346823,
+        "answer_cites_judged": true,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": true
+      }
+    },
+    {
+      "name": "colon_refs_as_the_scorecard_sees_them",
+      "judged": [
+        "project:x:e2",
+        "project:x:e1"
+      ],
+      "retrieved": [
+        "project:x:e2",
+        "project:x:e9",
+        "project:x:e1"
+      ],
+      "cited": [
+        "project:x:e1"
+      ],
+      "unknown": false,
+      "used_bytes": 4011,
+      "elapsed_millis": 46,
+      "expected": {
+        "recall_at_1": 0.5,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 0.9197207891481876,
+        "answer_cites_judged": true,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": true
+      }
+    },
+    {
+      "name": "judged_beyond_every_cutoff",
+      "judged": [
+        "j00",
+        "j01",
+        "j02",
+        "j03",
+        "j04",
+        "j05",
+        "j06",
+        "j07",
+        "j08",
+        "j09",
+        "j10",
+        "j11"
+      ],
+      "retrieved": [
+        "j00",
+        "j01",
+        "j02",
+        "j03",
+        "j04",
+        "j05",
+        "j06",
+        "j07",
+        "j08",
+        "j09",
+        "j10",
+        "j11"
+      ],
+      "cited": [
+        "j00"
+      ],
+      "unknown": false,
+      "used_bytes": 64,
+      "elapsed_millis": 1,
+      "expected": {
+        "recall_at_1": 0.08333333333333333,
+        "recall_at_5": 0.4166666666666667,
+        "recall_at_10": 0.8333333333333334,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0,
+        "answer_cites_judged": true,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": false
+      }
+    },
+    {
+      "name": "judged_beyond_five_found_late",
+      "judged": [
+        "j00",
+        "j01",
+        "j02",
+        "j03",
+        "j04",
+        "j05",
+        "j06"
+      ],
+      "retrieved": [
+        "x",
+        "j00",
+        "j01",
+        "y",
+        "j02",
+        "j03",
+        "j04",
+        "z",
+        "j05",
+        "j06"
+      ],
+      "cited": [],
+      "unknown": false,
+      "used_bytes": 32,
+      "elapsed_millis": 1,
+      "expected": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.42857142857142855,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.7689439748684337,
+        "answer_cites_judged": false,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": false
+      }
+    },
+    {
+      "name": "duplicate_judged_counts_once",
+      "judged": [
+        "a",
+        "a",
+        "b"
+      ],
+      "retrieved": [
+        "a",
+        "b"
+      ],
+      "cited": [
+        "a"
+      ],
+      "unknown": false,
+      "used_bytes": 16,
+      "elapsed_millis": 1,
+      "expected": {
+        "recall_at_1": 0.5,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0,
+        "answer_cites_judged": true,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": true
+      }
+    },
+    {
+      "name": "duplicate_judged_half_found",
+      "judged": [
+        "b",
+        "a",
+        "b"
+      ],
+      "retrieved": [
+        "x",
+        "b"
+      ],
+      "cited": [],
+      "unknown": false,
+      "used_bytes": 8,
+      "elapsed_millis": 1,
+      "expected": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.38685280723454163,
+        "answer_cites_judged": false,
+        "is_false_unknown": false,
+        "has_complete_support_at_5": false
+      }
+    }
+  ],
+  "scorecard": {
+    "cases": 16,
+    "recall_at_1": 0.33854166666666663,
+    "recall_at_5": 0.5840773809523809,
+    "recall_at_10": 0.6666666666666666,
+    "mean_reciprocal_rank": 0.6520833333333333,
+    "ndcg_at_10": 0.6788294954097005,
+    "answer_core_precision": 0.5,
+    "false_unknown_rate": 0.0625,
+    "mean_used_bytes": 1397.875,
+    "mean_elapsed_millis": 22.75
+  }
+}

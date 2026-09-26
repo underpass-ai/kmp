@@ -1,0 +1,19 @@
+{
+ "_comment": "synth-v1 level digests for seed 7 (SCHEMAS.md 1.2), identical under Python 3.11.15 and 3.12.3. 1.1.0 moved the cross-about writes to kmp_write_memory `relations` (BT14), which changed only multi. 1.2.0 changed only the negated_anchor gold (questions), so every digest moved and entries, relations and writes kept their bytes. Regenerate only with a generator_version bump; tests/test_generator.py checks 10^3 and 10^4 on every run and 10^5 with MEMORY_BENCH_SLOW=1.",
+ "block_size": 1000,
+ "digests": {
+  "mono": {
+   "1000": "441a318fbb6ca8458936f0981bc5d9c196ee12b55f7ff34f56586258aaca1149",
+   "10000": "4f64ff21d67aa34e08276216ef49806fecbd20c3f63bde596d1c132d9307fb33",
+   "100000": "dce1946586a0ed32d80ed84bf5ba62b8f5b43bbe9fa4b6509488efe2bb65c1a3"
+  },
+  "multi": {
+   "1000": "bb66267841532a31c1d5e098877f8ab63bdec638c86823620ba3ec804873b26e",
+   "10000": "34f3b0e621f227b3bf2884ace430fdd7f7f70f239082daf2dfa6060e022f4b58",
+   "100000": "2b4803e36bd57c40ee3bbc68b3c90067b6c8773bcb3b0743cdc7c9beb6737ed6"
+  }
+ },
+ "generator": "synth-v1",
+ "generator_version": "1.2.0",
+ "seed": 7
+}

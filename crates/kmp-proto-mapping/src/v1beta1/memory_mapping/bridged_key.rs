@@ -124,6 +124,30 @@ impl BridgedKey {
         }
         covered.len()
     }
+
+    /// The same count over what the candidate says and nothing else: its
+    /// text and its search summary, never its source, refs, entry kind or
+    /// other metadata. What the anchored gate asks of a memory must stand in
+    /// the memory's own words; the address `entry:success_path:` answers
+    /// nobody's `success`.
+    pub(super) fn content_matches(
+        bridged: &[Self],
+        focus_terms: &BTreeSet<String>,
+        terms: &AnswerCandidateTerms,
+    ) -> usize {
+        let mut covered = matching_terms(focus_terms, &terms.content)
+            .iter()
+            .map(|term| concept_key(term).to_string())
+            .collect::<BTreeSet<_>>();
+        for pair in bridged {
+            if focus_terms.contains(&pair.question_key)
+                && terms.content_counts.count(&pair.candidate_key) > 0
+            {
+                covered.insert(concept_key(&pair.question_key).to_string());
+            }
+        }
+        covered.len()
+    }
 }
 
 #[cfg(test)]

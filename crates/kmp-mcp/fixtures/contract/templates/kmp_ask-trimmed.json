@@ -8,6 +8,7 @@
   "isError": "boolean",
   "structuredContent": {
     "answer": "string",
+    "answer_status": "string",
     "because": [
       {
         "claim": "string",

@@ -1477,10 +1477,20 @@ async fn memory_service_wake_and_ask_read_live_context() {
     );
     assert!(ask.because.is_empty());
     assert!(ask.projection.is_some());
-    assert!(
-        ask.warnings
-            .iter()
-            .any(|warning| warning.contains("detail excludes expansion items"))
+    // The anchored gate is the default here as in kmp-mcp: it says how the
+    // question settled and why, and keeps what it did not find in the core
+    // instead of deferring it to a full page.
+    assert_eq!(
+        ask.answer_status,
+        kmp_proto::v1beta1::AnswerStatus::Unknown as i32
+    );
+    assert_eq!(
+        ask.unknown_reason,
+        kmp_proto::v1beta1::UnknownReason::NoCandidates as i32
+    );
+    assert_eq!(
+        ask.proof.expect("proof").missing,
+        vec!["any stored memory for: What is current?".to_string()]
     );
 }
 

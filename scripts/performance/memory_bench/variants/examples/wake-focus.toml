@@ -1,0 +1,32 @@
+# Example of a Jev arm: wake focus (TypeSafe Jev picks what a wake with an
+# intent delivers first). `jev = "replay"` answers every judgement from a
+# recorded fixture with the network blocked; a judgement the fixture lacks makes
+# the run `no_comparable`, never a guess (BENCH_SPEC section 9).
+#
+# Record the fixtures once, three samples, with the provider key exported
+# (TYPESAFE_API_KEY is handed to the child as a secret and never recorded), after
+# changing `jev` to "record":
+#
+#   $TT jev --candidate scripts/performance/memory_bench/variants/examples/wake-focus.toml --record
+#
+# then set it back to "replay" for quick-a. Until then the replay falls back to
+# the cassette below, which only holds the judged corpus' requests.
+name = "wake-focus"
+description = "Wake focus through Jev in cassette replay: first-page obligations up, pages and tokens down."
+claim = "quality"
+targets = [{ metric = "wake_obligation_coverage", direction = "up", effect = 0.10 }]
+guards = ["false_answer_rate", "core_precision", "jev_usd"]
+n = 60
+store = "shared"
+jev = "replay"
+
+[binary]
+path = "target/release/kmp-mcp"
+
+[store_files]
+"typesafe.json" = { json = { endpoint = "https://api.typesafe.ai/v1/systemone", model = "jev-1.13.0", timeout_ms = 20000 } }
+"wake-focus.json" = { json = { pool_size = 400, excerpt_chars = 300 } }
+
+[env]
+KMP_TYPESAFE_CASSETTE = "crates/kmp-testkit/judged/jev.cassette.json"
+RUST_LOG = "kmp_mcp::judgement=debug"

@@ -1,0 +1,167 @@
+# Pre-registered rules for the hard negatives (BENCH_SPEC 4.2) and the
+# identifier guards (4.3) derived from a copy of the real store.
+#
+# This file is hashed (SHA-256 of its bytes). The hash is recorded beside it in
+# negatives.sha256, stamped into every generated question (source.rules_sha256)
+# and appended to the private registry before any candidate runs on the
+# questions. Changing a rule means: edit, run
+#   python3 -m scripts.performance.memory_bench.corpora.hard_negatives register
+# and review both files together. Tests fail while the two disagree.
+
+schema = "kmp.bench.negatives.v1"
+rules_version = "negatives.v1"
+seed = 7
+answer_policy = "evidence_or_unknown"
+per_form = 24          # candidates rendered per type and form
+min_per_form = 20      # verified questions each type and form must reach
+audit_fraction = 0.2   # share of every type and form sampled for the manual audit
+
+[store]
+# Abouts questions are asked in. An about outside this list can still own the
+# anchor of a cross_about_anchor question.
+abouts = ["project:made", "project:kmp", "project:shmup-naves", "guide:kmp-agent", "fixture:lab"]
+min_entries = 20
+
+[anchors]
+families = ["hash", "dotted", "version"]
+max_strict_df = 15     # anchors mentioned in more entries are topics, not anchors
+max_per_anchor = 2     # questions per (about, anchor) inside one type and form
+
+[attributes]
+min_length = 6         # letters; shorter words are mostly function words
+max_length = 16        # longer ones are folded code identifiers, not words a user types
+min_df = 2
+max_df_fraction = 0.12
+neighbor_hops = 1      # an attribute must also be absent this many relations away from the anchor
+max_per_attribute = 2
+long_count = 3         # attributes a long (enumerative) question asks
+long_min_count = 2
+# An attribute should read as a thing a question asks about: a proper or
+# technical name (written capitalized mid-sentence in at least proper_ratio of
+# its occurrences) or a word with a noun suffix; verb endings are refused first.
+proper_ratio = 0.6
+noun_suffixes = [
+  "tion", "sion", "ment", "ness", "ity", "ance", "ence", "ship", "ure", "ism", "ogy", "ery",
+  "er", "or", "ción", "sión", "miento", "dad", "tud", "aje", "anza", "encia", "ancia", "ismo", "ura",
+]
+verb_suffixes = [
+  "ed", "ing", "aba", "aban", "ado", "ados", "ada", "adas", "ido", "idos", "ida", "idas",
+  "ó", "ió", "aron", "ieron", "ando", "iendo", "ían", "aría", "ará",
+]
+stoplist = [
+  "about", "above", "after", "again", "against", "always", "another", "anything", "around",
+  "because", "before", "being", "between", "cannot", "current", "currently", "during",
+  "either", "enough", "every", "everything", "exactly", "having", "instead", "itself",
+  "nothing", "others", "rather", "should", "something", "still", "their", "there", "these",
+  "things", "those", "through", "under", "until", "using", "whether", "which", "while",
+  "within", "without", "would", "already", "remains", "remain", "includes", "include",
+  "including", "stored", "recorded", "record", "records", "decision", "decisions",
+  "evidence", "entry", "entries", "memory", "open", "status", "work", "state",
+  "ahora", "antes", "aunque", "cada", "cualquier", "debe", "deben", "desde", "después",
+  "donde", "durante", "entre", "estado", "estos", "hasta", "mientras", "mismo", "misma",
+  "nuevo", "nueva", "otros", "otras", "porque", "primero", "puede", "pueden", "queda",
+  "quedan", "quedó", "sobre", "sigue", "siguen", "sólo", "también", "tiene", "tienen",
+  "todavía", "través", "todos", "todas", "decisiones", "decisión", "evidencia",
+  "registrado", "registrados", "registrada", "pendiente", "trabajo", "entrada", "entradas",
+  "further", "other", "another", "however", "never", "together", "whatever", "whenever", "neither",
+  "former", "latter", "earlier", "later", "higher", "lower", "larger", "smaller", "faster", "slower",
+  "better", "longer", "shorter", "wider", "number", "remainder", "prior", "major", "minor",
+  "mayor", "menor", "anterior", "posterior", "superior", "inferior", "mejor", "peor", "exterior", "interior",
+]
+
+[anchor_absent]
+require_keys_unmentioned = true   # no entry holds every search key of the perturbed anchor
+
+[anchor_neighbor_existing]
+max_gap = 2            # C6.4 and C6.6 are neighbours; C6.4 and C6.9 are not
+strict_only_neighbor = true   # every entry with the attribute mentions the neighbour
+
+[negated_anchor]
+max_answers = 8
+min_answers = 1
+
+[singular_anchored_twin]
+# Attribute groups: the first word is asked; no word of the group may occur
+# around the anchor. Groups whose words all miss the about are tagged attr_df:zero.
+en = [
+  ["owner", "owners", "owned", "responsible"],
+  ["deadline", "deadlines", "due"],
+  ["budget", "budgets", "spend"],
+  ["license", "licence", "licensing"],
+  ["latency", "latencies"],
+  ["namespace", "namespaces"],
+  ["region", "regions"],
+  ["port", "ports"],
+  ["password", "credentials"],
+  ["kubernetes", "k8s", "helm"],
+  ["invoice", "invoices", "billing"],
+  ["vendor", "vendors", "supplier"],
+  ["timezone", "timezones"],
+  ["headcount", "hiring"],
+  ["dashboard", "dashboards", "grafana"],
+]
+es = [
+  ["responsable", "responsables", "propietario"],
+  ["plazo", "plazos", "vencimiento"],
+  ["presupuesto", "presupuestos", "gasto"],
+  ["licencia", "licencias"],
+  ["latencia", "latencias"],
+  ["región", "regiones"],
+  ["puerto", "puertos"],
+  ["contraseña", "contraseñas", "credenciales"],
+  ["kubernetes", "k8s", "helm"],
+  ["factura", "facturas", "facturación"],
+  ["proveedor", "proveedores"],
+  ["huso", "husos"],
+  ["plantilla", "contratación"],
+  ["panel", "paneles", "grafana"],
+  ["salario", "salarios", "nómina"],
+]
+
+# Templates. {anchor}, {attr}, {attrs} (a joined list), {excluded}.
+# Short forms have 2-5 words; long forms are enumerative (singular for the twin).
+[templates.en]
+short = ["{attr} of {anchor}?", "{anchor} {attr}", "{attr} for {anchor}"]
+long = [
+  "What decisions, evidence and pending work are stored for {anchor} about {attrs}?",
+  "What do we know about {anchor}: {attrs}, and what remains open?",
+  "Which constraints and results were recorded for {anchor} regarding {attrs}?",
+]
+twin_long = [
+  "What {attr} was recorded for {anchor}, according to the stored decisions?",
+  "According to the stored memory, which {attr} applies to {anchor}?",
+]
+negated_short = ["{attr} excluding {excluded}", "{attr} except {excluded}", "{attr} without {excluded}"]
+negated_long = [
+  "What is stored about {attrs}, excluding anything about {excluded}?",
+  "What was recorded regarding {attrs}, except {excluded}?",
+]
+and = "and"
+
+[templates.es]
+short = ["¿{attr} de {anchor}?", "{anchor} {attr}", "{attr} en {anchor}"]
+long = [
+  "¿Qué decisiones, evidencia y trabajo pendiente hay registrados para {anchor} sobre {attrs}?",
+  "¿Qué sabemos de {anchor}: {attrs}, y qué sigue abierto?",
+  "¿Qué restricciones y resultados quedaron registrados para {anchor} respecto a {attrs}?",
+]
+twin_long = [
+  "¿Qué {attr} quedó registrado para {anchor}, según las decisiones almacenadas?",
+  "Según la memoria guardada, ¿qué {attr} corresponde a {anchor}?",
+]
+negated_short = ["{attr} excepto {excluded}", "{attr} sin {excluded}", "{attr} salvo {excluded}"]
+negated_long = [
+  "¿Qué hay registrado sobre {attrs}, excluyendo lo relativo a {excluded}?",
+  "¿Qué quedó registrado sobre {attrs}, excepto {excluded}?",
+]
+and = "y"
+
+[identifier_guards]
+per_family = 6         # positives and, separately, negatives per family (all abouts)
+# Families of BENCH_SPEC 4.3. `pinned` instances are included first when the store has them.
+families = ["compound_plus", "range", "version", "hash", "corte_c", "issue_hash", "lower_hyphen"]
+pinned = ["C6.8+C6.9", "v0.18.6", "#188", "C6.1-C6.4", "corte 5", "issue 185", "c6-4"]
+
+[identifier_guards.templates]
+en = ["What is stored about {anchor}?", "{anchor} status", "What was decided for {anchor}?"]
+es = ["¿Qué hay registrado sobre {anchor}?", "{anchor} estado", "¿Qué se decidió para {anchor}?"]
