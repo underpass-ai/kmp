@@ -15,7 +15,7 @@ use super::actions;
 use super::budget::{DEFAULT_MAX_BYTES, ProjectionBudget};
 use super::cursor::make_cursor;
 use super::plan::{ProjectionItem, ProjectionPlan, Section};
-use super::proof_on_request::{MORE_ON_REQUEST, MORE_ON_REQUEST_KEY};
+use super::proof_on_request::{MORE_ON_REQUEST, MORE_ON_REQUEST_KEY, withholds};
 use super::reused_core::reuses_core;
 
 pub const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v3";
@@ -124,6 +124,11 @@ pub(super) fn attach_metadata<E, S>(
     let next_action = (planning || has_more || core_text_shortened).then(|| {
         let max_bytes = if planning {
             usize::MAX
+        } else if core_text_shortened && withholds(plan.settled, budget.detail, 0) {
+            // An answered page restarts only to carry its whole core: what
+            // follows it is on request, so the allowance that fits the core
+            // and one item is sufficient, and more would only be filled.
+            plan.progress_bytes.max(budget.byte_limit)
         } else if stalled || core_text_shortened {
             plan.progress_bytes
                 .saturating_add(DEFAULT_MAX_BYTES)

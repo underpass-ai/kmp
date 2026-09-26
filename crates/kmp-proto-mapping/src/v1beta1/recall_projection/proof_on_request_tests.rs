@@ -170,3 +170,28 @@ fn the_warning_fits_the_planning_envelope() {
     // it, or every projection's core would be sized against a new envelope.
     assert!(MORE_ON_REQUEST.len() < RESTART_WARNING.len());
 }
+
+#[test]
+fn a_shortened_answered_page_restarts_at_the_allowance_of_its_core() {
+    // 1 KiB cannot carry the fixture's core: the page restarts. Answered,
+    // the restart fits the core and stops; the rest is on request.
+    let small = |status: &str| {
+        let arguments =
+            json!({"about": "project:kmp", "question": "q", "budget": {"max_bytes": 1_024}});
+        projected(with_status(status), arguments)
+    };
+    let answered = small("answered");
+    let partial = small("partial");
+    assert_eq!(projection(&answered)["core_text_shortened"], true);
+    let restart_bytes = |value: &Value| {
+        projection(value)["next_action"]["arguments"]["budget"]["max_bytes"]
+            .as_u64()
+            .expect("a restart with its allowance")
+    };
+    assert!(restart_bytes(&answered) < restart_bytes(&partial));
+    let restart = projection(&answered)["next_action"]["arguments"].clone();
+    let page = projected(with_status("answered"), restart);
+    assert_eq!(projection(&page)["core_text_shortened"], false);
+    assert_eq!(projection(&page)["next_action"], Value::Null);
+    assert!(projection(&page)["more_on_request"].as_u64().unwrap() > 0);
+}
