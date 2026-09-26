@@ -31,6 +31,33 @@ Detailed notes from the early release cycle remain available in the
   still counts them). An answered reading's `proof.missing` (the withheld
   sources) is no longer kept in the core of every page under the gate; it
   waits for a `full` page, as it does without the gate.
+- A search term is now also a whole compound identifier (P3): `C6.24` reads
+  as `c6.24` beside its parts `c6` and `24`, `c6-24` as a slug writes it is
+  the same term, `C6.8+C6.9` and `C6.4/C6.5` name each identifier, a range
+  `C6.1-C6.4` keeps its two ends, and `#188` and `v0.7.0` keep their numbers.
+  The parts stay, so a writer who typed `c6` still reaches every `C6.x`. A
+  part of a question's identifier counts toward the ⌈2/3⌉ rule only in an
+  entry that names that identifier, whole or with every part and no twin
+  beside it: `C6.24 local execution adapter` no longer answers with the
+  `C6.4` adapter at high confidence (guarded high-confidence false answers
+  on the judged collection, 0.2308 to 0.0770 before the gate). Document
+  frequencies, and so IDF and co-occurrence, move across the whole store.
+- `kmp_ask`, `kmp_wake`, `kmp_relate` and `kmp_curate` do the same work
+  once (P1+P2): the prompt is rendered only when a read returns it, the
+  candidates are ranked once per ask, proof normalization is linear, and a
+  continuation page (`read_…`, cursor `kmp1:…`) is cut from the read the
+  first page froze in the process instead of reading the store again. Every
+  response is byte for byte what it was. The prompt-quality journal no
+  longer records the MCP reads that return no prompt (`ask`, `wake`,
+  `relate`, `curate`); `kmp_trace` and the `kmp-embedded` recall still do.
+- `kmp_ask` computes co-occurrence (PMI) only for the question's own terms
+  (P6), from the documents that hold them, instead of every pair of the
+  about, and skips a term no partner could lift over the bar
+  (ln(N/df) below it). The neighbours are the same bits as the whole-store
+  build, which stays as the test oracle. On the frozen real store (918
+  entries) the first page of an ask goes from 368 ms to 194 ms at the median
+  with the gate (160 ms without it; v0.23.0 took 660 ms); on synth-v1 10^3
+  mono the ask p95 goes from 953 ms to 328 ms.
 
 ### Added
 

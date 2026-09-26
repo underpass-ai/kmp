@@ -21,6 +21,13 @@ same instrument:
 - **isolated fraction**: entries with no entry-entry relation.
 - **relations per entry**: entry-entry relations over entries.
 
+The reference must be measured with the probe of the tree under test: a tokenizer change
+moves both sides. P3 (compound identifiers as whole terms) took the store's identifier
+density from 3.719 to 5.2 and seed 7's (multi, first 1000 entries) from 3.399 to 4.939;
+the relative gap stayed below 0.2 on both probes (0.086 before, 0.050 after), so the
+generator did not move, the instrument did. Re-measure with `measure_store` whenever
+`search_tokens` changes.
+
 The brief's figures were measured with other counts (3.6 identifier tokens per entry from
 3 313 whitespace tokens with a digit; 52 % in anchor chains); the reference below keeps the
 probe-measured values and says so.
@@ -35,7 +42,8 @@ import sqlite3
 import sys
 
 REFERENCE = {
-    'source': 'live store copy frozen 2026-09-25 (918 entries, 10 abouts with entries); '
+    'source': 'live store copy frozen 2026-09-25 (918 entries, 10 abouts with entries), text statistics '
+              're-measured on the 2026-09-26 freeze (same 918 entries) with the P3 probe; '
               'aggregates only, measured with kmp_search_probe, about_texts=[]',
     'entries': 918,
     'relations_entry_entry': 308,
@@ -46,14 +54,17 @@ REFERENCE = {
         259, 260, 266, 268, 272, 273, 277, 280, 285, 290, 295, 300, 306, 310, 316, 327, 332,
         341, 346, 357, 366, 374, 379, 390, 406, 421, 427, 440, 453, 461, 482, 493, 507, 532,
         541, 569, 613, 672, 762, 841, 957, 1049, 2028, 3563, 6017, 10975, 21558, 39823),
-    # (df, share of the vocabulary with document frequency <= df); vocabulary 7 792 terms.
-    'df_ecdf': ((1, 0.4324), (2, 0.5893), (3, 0.6763), (4, 0.7297), (5, 0.7669),
-                (6, 0.7977), (8, 0.84), (10, 0.8705), (12, 0.8894), (16, 0.9166),
-                (20, 0.9381), (25, 0.9532), (32, 0.9683), (40, 0.9768), (50, 0.9849),
-                (64, 0.9922), (80, 0.9959), (100, 0.9974), (128, 0.9994), (160, 0.9997),
+    # (df, share of the vocabulary with document frequency <= df); vocabulary 9 118 terms.
+    # Re-measured on 2026-09-26 with the P3 probe, which adds each compound identifier
+    # (`c6.24`, `0.7.0`) as a whole term beside its parts: the same frozen store read
+    # 7 792 terms and 3.719 identifier terms per entry with the probe before P3.
+    'df_ecdf': ((1, 0.4923), (2, 0.6393), (3, 0.7173), (4, 0.764), (5, 0.798),
+                (6, 0.825), (8, 0.8625), (10, 0.8889), (12, 0.9052), (16, 0.9287),
+                (20, 0.9471), (25, 0.96), (32, 0.9729), (40, 0.9801), (50, 0.9871),
+                (64, 0.9933), (80, 0.9965), (100, 0.9978), (128, 0.9995), (160, 0.9998),
                 (200, 1.0)),
-    'vocabulary': 7792,
-    'identifier_density': 3.719,
+    'vocabulary': 9118,
+    'identifier_density': 5.2,
     'anchor_chain_fraction': 0.568,
     'isolated_fraction': 0.600,
     'relations_per_entry': 0.3355,
