@@ -34,6 +34,22 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- Verdict book for TypeSafe Jev (P5): every judged question is kept, by a
+  key of hashes (model, template, type, instructions, options, the texts of
+  the state), as Q16 probabilities in `judgements.sqlite3` beside the store.
+  A repeated ask re-rank, focused wake, curate review or path search sends
+  no request and reads the same answer, in this process or the next: Jev is
+  frozen per key, the first verdict wins for every process on the store.
+  Created only with a working `typesafe.json`; local to the machine, never
+  in `kmp:save`, deletable; `judgement-book.json` sizes it (`max_bytes`,
+  default 64 MiB, least recently used out first) or turns it off
+  (`{"mode":"off"}`). Telemetry reports `source: book_hit`.
+- Jev calls in flight are shared: identical concurrent judgements ask once,
+  batches go out four at a time, and the first page of an ask re-rank (1.5 s)
+  or a focused wake (3 s) degrades, warned, to the ordinary read past its
+  deadline while the judgement finishes into the book
+  (`KMP_JUDGEMENT_DEADLINES=off` lifts the deadlines). Curate usage reports
+  `elapsed_ms`.
 - Anchored ask gate, chosen per store with `ask-gate.json` beside it
   (`{"mode":"anchored","partial":true}`; the default since this release, see
   Changed). Under `evidence_or_unknown` and `show_conflicts`, a question that names an identifier (`C6.4`, `#188`,

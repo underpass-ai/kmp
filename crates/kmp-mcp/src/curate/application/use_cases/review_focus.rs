@@ -71,17 +71,12 @@ impl ReviewFocus<'_> {
                 .collect();
             return review;
         };
-        let mut usage = JevUsage {
-            model: model.model().to_string(),
-            requests: 0,
-            input_tokens: 0,
-        };
+        let mut usage = JevUsage::new(model.model());
         let (request, keys) = related_request(&material, focus);
         if !keys.is_empty() {
             match model.evaluate(&request).await {
                 Ok(response) => {
-                    usage.requests += response.requests;
-                    usage.input_tokens += response.input_tokens;
+                    usage.add(&response);
                     for focused in focus {
                         let mut related = keys
                             .iter()
@@ -126,8 +121,7 @@ impl ReviewFocus<'_> {
         if !pairs.is_empty() {
             match model.evaluate(&pair_request(&material, &pairs)).await {
                 Ok(typed) => {
-                    usage.requests += typed.requests;
-                    usage.input_tokens += typed.input_tokens;
+                    usage.add(&typed);
                     let mut missing = pairs
                         .into_iter()
                         .enumerate()

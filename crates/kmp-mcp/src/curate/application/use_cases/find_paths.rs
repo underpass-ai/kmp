@@ -79,11 +79,7 @@ impl FindPaths<'_> {
             search.paths = walk(&edges, from, to, max_hops, &banned);
             return search;
         };
-        let mut usage = JevUsage {
-            model: model.model().to_string(),
-            requests: 0,
-            input_tokens: 0,
-        };
+        let mut usage = JevUsage::new(model.model());
         if let Err(error) = propose(
             model,
             material,
@@ -183,8 +179,7 @@ async fn audit(
         ..material.clone()
     };
     let response = model.evaluate(&suspect_request(&walked)).await?;
-    usage.requests += response.requests;
-    usage.input_tokens += response.input_tokens;
+    usage.add(&response);
     Ok(indices
         .iter()
         .enumerate()
@@ -215,8 +210,7 @@ async fn propose(
     }
     let (request, keys) = next_step_request(material, &walk);
     let response = model.evaluate(&request).await?;
-    usage.requests += response.requests;
-    usage.input_tokens += response.input_tokens;
+    usage.add(&response);
     let joined = |left: &str, right: &str| {
         edges.iter().any(|hop| {
             (hop.from == left && hop.to == right) || (hop.from == right && hop.to == left)
@@ -274,8 +268,7 @@ async fn propose(
             })
             .collect::<Vec<_>>();
         let typed = model.evaluate(&pair_request(material, &pairs)).await?;
-        usage.requests += typed.requests;
-        usage.input_tokens += typed.input_tokens;
+        usage.add(&typed);
         for (n, hop) in proposed.iter_mut().enumerate() {
             if let Some(JudgementAnswer::Choice { choice, .. }) =
                 typed.answers.get(&format!("t{n}"))

@@ -19,6 +19,22 @@ pub const TYPESAFE_API_KEY_ENV: &str = "TYPESAFE_API_KEY";
 pub const TYPESAFE_CASSETTE_ENV: &str = "KMP_TYPESAFE_CASSETTE";
 pub const TYPESAFE_CASSETTE_MODE_ENV: &str = "KMP_TYPESAFE_CASSETTE_MODE";
 
+/// `off` lifts the deadlines a first ask or wake page waits for Jev
+/// (recording a cassette against the real provider, where a slow answer
+/// must be kept, not degraded). Any other value, or none, keeps them.
+pub const JUDGEMENT_DEADLINES_ENV: &str = "KMP_JUDGEMENT_DEADLINES";
+
+/// How long `site` waits for Jev on a first page, unless the operator
+/// lifted the deadlines.
+pub(crate) fn judgement_deadline(
+    site: crate::serving::judgement_site::JudgementSite,
+) -> Option<std::time::Duration> {
+    if optional_env_string(JUDGEMENT_DEADLINES_ENV).as_deref() == Some("off") {
+        return None;
+    }
+    site.deadline()
+}
+
 pub(crate) fn optional_env_path(name: &str) -> Option<PathBuf> {
     optional_env_string(name).map(PathBuf::from)
 }

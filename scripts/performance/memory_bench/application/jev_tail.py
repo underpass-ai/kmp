@@ -54,7 +54,7 @@ SCHEMA = 'kmp.bench.jev_tail.v1'
 API_KEY_ENV = 'TYPESAFE_API_KEY'
 PROVIDER_URL = f'https://{PROVIDER_HOST}/v1/systemone'
 MODEL = 'jev-1.13.0'
-# Mirrors crates/kmp-mcp/src/serving/adapters/typesafe_judgement.rs (checked by test_jev_tail).
+# Mirrors crates/kmp-mcp/src/serving/adapters/typesafe_{judgement,transport}.rs (checked by test_jev_tail).
 MAX_RETRIES = 2
 MAX_RETRY_WAIT_SECS = 5
 DEFAULT_RETRY_WAIT_SECS = 1

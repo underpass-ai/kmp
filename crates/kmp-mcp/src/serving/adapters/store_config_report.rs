@@ -2,7 +2,8 @@
 //!
 //! Every optional file the embedded backend consults beside a store —
 //! `typesafe.json`, `rerank.json`, `wake-focus.json`, `write-relations.json`,
-//! `semantic-retrieval.json`, the lexical bridge and the judgement cassette —
+//! `judgement-book.json`, `semantic-retrieval.json`, the lexical bridge and the
+//! judgement cassette —
 //! is reported on target `kmp_mcp::store_config` with its sha256: at debug
 //! when it took effect, at warn when it is present but ignored, with the
 //! reason. Applied files are read and hashed only when debug is on for the

@@ -20,6 +20,11 @@ Two backends, chosen by the binary:
   fails instead of reaching the network. P5 must therefore keep the book as a
   decorator in front of the cassette, and keep the cassette key on the body.
 
+Where the network is blocked (tests, BT18) a `BOOK` record can name a
+`provider_stand_in`: a cassette in replay mode that answers in the provider's
+place, behind the book exactly where the provider would be
+(`runtime/jev_stand_in` builds one). A cassette `record` never needs it.
+
 A sample may use several processes (a restart after a failure): the book is
 harvested from each store before it is deleted and seeded into the next one,
 so a sample keeps one book; the cassette file lives outside the store.
@@ -187,6 +192,9 @@ class JevSample:
             env.update({CASSETTE_ENV: str(self.work / CASSETTE_FILE), CASSETTE_MODE_ENV: self.mode})
         elif self.mode == 'replay':
             env.update({CASSETTE_ENV: str(self.work / BLOCK_FILE), CASSETTE_MODE_ENV: 'replay'})
+        elif self.fixture.provider_stand_in is not None:
+            env.update({CASSETTE_ENV: str(self.fixture.provider_stand_in),
+                        CASSETTE_MODE_ENV: 'replay'})
         return env
 
     def check_secrets(self, secrets):
@@ -254,12 +262,15 @@ class JevFixture:
     backend: str
     model: str = DEFAULT_MODEL
     fallback_cassette: Path | None = None  # the variant's KMP_TYPESAFE_CASSETTE, cassette replay only
+    provider_stand_in: Path | None = None  # book record only: answers in the provider's place
 
     def __post_init__(self):
         if self.mode not in MODES:
             raise JevFixtureError(f'jev mode {self.mode!r}: a fixture records or replays')
         if self.backend not in BACKENDS:
             raise JevFixtureError(f'backend {self.backend!r} is not one of {", ".join(BACKENDS)}')
+        if self.provider_stand_in is not None and (self.backend, self.mode) != (BOOK, 'record'):
+            raise JevFixtureError('a provider stand-in only answers a book record')
 
     def sample_dir(self, index):
         if not isinstance(index, int) or index < 0:

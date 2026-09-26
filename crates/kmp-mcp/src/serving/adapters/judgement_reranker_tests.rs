@@ -61,6 +61,7 @@ impl JudgementModel for KeywordJudge {
                 answers,
                 input_tokens: 1,
                 requests: 1,
+                elapsed_us: 0,
             })
         })
     }
@@ -156,4 +157,107 @@ fn loading_needs_rerank_json_and_a_working_typesafe_opt_in() {
         .expect("loads")
         .expect("on");
     assert_eq!(loaded.pool_size(), 8);
+}
+
+/// Answers yes to everything after `delay`; counts the calls that finished.
+struct Slow {
+    delay: std::time::Duration,
+    finished: Arc<Mutex<usize>>,
+}
+
+impl JudgementModel for Slow {
+    fn model(&self) -> &str {
+        "jev-test"
+    }
+
+    fn evaluate<'a>(
+        &'a self,
+        request: &'a JudgementRequest,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<JudgementResponse, String>> + Send + 'a>,
+    > {
+        Box::pin(async move {
+            tokio::time::sleep(self.delay).await;
+            *self.finished.lock().expect("finished") += 1;
+            Ok(JudgementResponse {
+                model: "jev-test".into(),
+                answers: request
+                    .questions
+                    .keys()
+                    .map(|key| (key.clone(), JudgementAnswer::Noul { yes: 0.9 }))
+                    .collect(),
+                input_tokens: 1,
+                requests: 1,
+                elapsed_us: 0,
+            })
+        })
+    }
+}
+
+#[tokio::test]
+async fn past_its_deadline_a_first_page_degrades_warned_and_the_judgement_still_finishes() {
+    let finished = Arc::new(Mutex::new(0));
+    let reranker = JudgementReranker::new(
+        Arc::new(Slow {
+            delay: std::time::Duration::from_millis(300),
+            finished: Arc::clone(&finished),
+        }),
+        40,
+        2_000,
+    )
+    .with_deadline(Some(std::time::Duration::from_millis(30)));
+    let pool = vec![source("entry:a", "text")];
+    let started = std::time::Instant::now();
+    let outcome = reranker.rank("q", &pool, false).await.expect("outcome");
+    assert!(started.elapsed() < std::time::Duration::from_millis(250));
+    assert!(outcome.ranking.is_none());
+    let warning = outcome.warning.expect("warning");
+    assert!(warning.contains("rerank unavailable"), "{warning}");
+    assert!(warning.contains("within 30 ms"), "{warning}");
+    let page = reranker.rank("q", &pool, true).await.expect("frozen");
+    assert!(
+        page.ranking.is_none(),
+        "a continuation reads the first page's order"
+    );
+    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+    assert_eq!(
+        *finished.lock().expect("finished"),
+        1,
+        "detached into the book"
+    );
+}
+
+#[tokio::test]
+async fn different_asks_judge_in_parallel_and_the_same_ask_judges_once() {
+    let finished = Arc::new(Mutex::new(0));
+    let reranker = Arc::new(
+        JudgementReranker::new(
+            Arc::new(Slow {
+                delay: std::time::Duration::from_millis(200),
+                finished: Arc::clone(&finished),
+            }),
+            40,
+            2_000,
+        )
+        .with_deadline(None),
+    );
+    let pool = vec![source("entry:a", "text")];
+    let started = std::time::Instant::now();
+    let tasks = ["q1", "q2", "q3", "q1", "q1"]
+        .into_iter()
+        .map(|question| {
+            let reranker = Arc::clone(&reranker);
+            let pool = pool.clone();
+            tokio::spawn(async move { reranker.rank(question, &pool, false).await })
+        })
+        .collect::<Vec<_>>();
+    for task in tasks {
+        assert!(task.await.expect("task").expect("ranked").ranking.is_some());
+    }
+    assert!(
+        started.elapsed() < std::time::Duration::from_millis(550),
+        "three selections under one lock would take 600 ms: {:?}",
+        started.elapsed()
+    );
+    assert_eq!(*finished.lock().expect("finished"), 3);
 }

@@ -161,6 +161,10 @@ because it adds latency and bytes to every Ask.
 
 - `bash scripts/ci/jev-baseline.sh`: the judged corpus, replayed from its
   cassette, with the columns above and the agent-load comparison.
+- `bash scripts/eval/jev-book-second-pass.sh`: the verdict book (P5). Runs the
+  judged corpus and the retrieval rerank arms twice over the same books, the
+  second time behind an empty cassette, and fails unless the second pass
+  sends no request and reads the same answers.
 - `bash scripts/eval/jev-samples.sh N`: records N independent samples and
   prints the mean and range of every metric. Jev is not deterministic, so
   repeated identical requests move choice probabilities by a few hundredths.

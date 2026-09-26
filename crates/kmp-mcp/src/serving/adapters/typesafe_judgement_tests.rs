@@ -212,3 +212,123 @@ fn debug_output_never_contains_the_key() {
     let rendered = format!("{:?}", adapter(url, Duration::from_secs(5)));
     assert!(!rendered.contains(KEY));
 }
+
+/// A provider that answers every question of each request with 0.5 after
+/// `delay`, serving connections concurrently; returns the most requests it
+/// held at once and how many it served.
+async fn concurrent_provider(
+    delay: Duration,
+) -> (
+    reqwest::Url,
+    std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    std::sync::Arc<std::sync::atomic::AtomicUsize>,
+) {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
+    let url = reqwest::Url::parse(&format!(
+        "http://{}/v1/systemone",
+        listener.local_addr().expect("address")
+    ))
+    .expect("url");
+    let (now, peak, served) = (
+        Arc::new(AtomicUsize::new(0)),
+        Arc::new(AtomicUsize::new(0)),
+        Arc::new(AtomicUsize::new(0)),
+    );
+    let (peak_out, served_out) = (Arc::clone(&peak), Arc::clone(&served));
+    tokio::spawn(async move {
+        loop {
+            let Ok((mut stream, _)) = listener.accept().await else {
+                return;
+            };
+            let (now, peak, served) = (Arc::clone(&now), Arc::clone(&peak), Arc::clone(&served));
+            tokio::spawn(async move {
+                let mut data = Vec::new();
+                let mut byte = [0u8; 1];
+                while !data.ends_with(b"\r\n\r\n") {
+                    stream.read_exact(&mut byte).await.expect("headers");
+                    data.push(byte[0]);
+                }
+                let length = String::from_utf8_lossy(&data)
+                    .lines()
+                    .find_map(|line| {
+                        line.to_ascii_lowercase()
+                            .strip_prefix("content-length:")
+                            .map(|n| n.trim().parse::<usize>().expect("length"))
+                    })
+                    .expect("length");
+                let mut body = vec![0u8; length];
+                stream.read_exact(&mut body).await.expect("body");
+                let at_once = now.fetch_add(1, Ordering::SeqCst) + 1;
+                peak.fetch_max(at_once, Ordering::SeqCst);
+                tokio::time::sleep(delay).await;
+                now.fetch_sub(1, Ordering::SeqCst);
+                served.fetch_add(1, Ordering::SeqCst);
+                let request: serde_json::Value = serde_json::from_slice(&body).expect("json");
+                let answers = request["questions"]
+                    .as_object()
+                    .expect("questions")
+                    .keys()
+                    .map(|key| (key.clone(), json!({"type": "noul", "noul": 0.5})))
+                    .collect::<serde_json::Map<_, _>>();
+                let reply = json!({"model": "jev-1.13.0", "answers": answers,
+                                   "usage": {"input_tokens": 10}})
+                .to_string();
+                let _ = stream
+                    .write_all(
+                        format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{reply}",
+                            reply.len()
+                        )
+                        .as_bytes(),
+                    )
+                    .await;
+            });
+        }
+    });
+    (url, peak_out, served_out)
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn batches_go_out_in_parallel_within_the_concurrency_limit() {
+    use std::sync::atomic::Ordering;
+    let (url, peak, served) = concurrent_provider(Duration::from_millis(150)).await;
+    // Twenty ~40 KB questions: five batches under the 60k-token budget.
+    let questions = (0..20)
+        .map(|n| {
+            (
+                format!("q{n:02}"),
+                JudgementQuestion::Noul {
+                    instructions: json!(format!("{n} {}", "word ".repeat(8_000))),
+                },
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let started = std::time::Instant::now();
+    let response = adapter(url, Duration::from_secs(10))
+        .evaluate(&JudgementRequest {
+            state: json!("s"),
+            questions,
+        })
+        .await
+        .expect("answered");
+    assert_eq!(response.answers.len(), 20);
+    assert_eq!(response.requests, 5);
+    assert_eq!(response.input_tokens, 50);
+    assert_eq!(served.load(Ordering::SeqCst), 5);
+    let peak = peak.load(Ordering::SeqCst);
+    assert!(
+        (2..=super::typesafe_judgement::CONCURRENT_REQUESTS).contains(&peak),
+        "{peak} requests at once"
+    );
+    assert!(
+        started.elapsed() < Duration::from_millis(700),
+        "five sequential batches take 750 ms: {:?}",
+        started.elapsed()
+    );
+}

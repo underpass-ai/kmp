@@ -288,6 +288,17 @@ async fn run_case(
             },
         )?;
     }
+    // `RETRIEVAL_BOOKS=<dir>` keeps each case's verdict book between runs:
+    // a second run over the same seeds answers every rerank from the book.
+    let books = std::env::var("RETRIEVAL_BOOKS").ok().map(PathBuf::from);
+    if let Some(books) = &books {
+        for suffix in ["", "-wal"] {
+            let kept = books.join(format!("{}.sqlite3{suffix}", case.id));
+            if kept.is_file() {
+                fs::copy(&kept, data_dir.join(format!("judgements.sqlite3{suffix}")))?;
+            }
+        }
+    }
     let server = KernelMcpServer::embedded(&data_dir)?;
 
     let receipt = call(
@@ -345,6 +356,23 @@ async fn run_case(
     let started = Instant::now();
     let answer = call(&server, 2, "kmp_ask", arguments).await?;
     let elapsed_millis = started.elapsed().as_millis() as u64;
+    if let Some(books) = &books {
+        fs::create_dir_all(books)?;
+        for suffix in ["", "-wal"] {
+            let book = data_dir.join(format!("judgements.sqlite3{suffix}"));
+            if book.is_file() {
+                fs::copy(&book, books.join(format!("{}.sqlite3{suffix}", case.id)))?;
+            }
+        }
+    }
+    if let Ok(path) = std::env::var("RETRIEVAL_ANSWERS") {
+        use std::io::Write;
+        let mut log = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)?;
+        writeln!(log, "{} {}", case.id, answer)?;
+    }
     let _ = fs::remove_dir_all(&data_dir);
     if answer["warnings"]
         .to_string()
