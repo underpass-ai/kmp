@@ -173,6 +173,89 @@ because it adds latency and bytes to every Ask.
   re-ranking. The arm reports without gating, and it is answered from
   `crates/kmp-testkit/judged/retrieval.jev.cassette.json`.
 
+## The cascade (P9, 2026-09-27, three recorded samples)
+
+Hypotheses and thresholds were registered before the second and third
+samples were recorded. Sample 1 is the committed cassette, filled with what
+the new requests needed; samples 2 and 3 were recorded afresh. Every figure
+below is a replay without network.
+
+**Margin gate on Ask re-ranking (DESIGN L4 4c).** An Ask whose first eligible
+candidate leads the second by at least `margin_tenths` tenths of a content
+BM25 point, with `High` confidence, sends no request. The threshold is the
+lowest of {0, 10, 20, 30, 50, 80, 120, 200} at which every re-ranked metric
+equals the ungated arm in all three samples. Every threshold did, so it is
+0:
+
+| Corpus (arm) | Metric, gated = ungated | Asks judged, off → τ=0 | Jev tokens, off → τ=0 |
+|---|---|---|---|
+| 35 retrieval cases (narrow, wide) | MRR 0.9643, R@1 0.900, R@5 1.000 | 35 → 9 | 13,556 → 3,785 (−72%) |
+| 16 trap asks (narrow) | MRR 0.9375, top-5 1.000 | 16 → 14 | 30,962 → 27,366 (−12%) |
+| 16 trap asks (wide) | MRR 0.9375, top-5 1.000 | 16 → 14 | 125,554 → 121,958 (−3%) |
+
+Each skipped Ask also saves the judge's latency (+0.5 s on small stores,
++4.5 s on the real store, measured earlier). The trap asks are the case the
+gate cannot help: the lexical ranker misses them, so their confidence is
+rarely high. The gate does not apply to wake focus, which keeps a set rather
+than a first answer. On the real store re-ranking stays off.
+
+**Shortlisted partners after a write (4e).** Jev reads each new fact against
+the facts that share a hard anchor with it and its 40 best BM25 matches,
+instead of the whole about; an about of at most 40 other facts is still read
+whole and in the same order, so the payments case sends the same requests
+as before.
+
+| | Before | After (samples 1 / 2 / 3) |
+|---|---|---|
+| Partner found, with Jev | 11/11 | 11/11 in each |
+| Distractors proposed | 0/4 | 0/4 in each |
+| `kmp_write_memory` partner proposed | 2/2 | 2/2 in each |
+| Partner questions per fact, 318-fact about | 25,077 tokens | 3,444–3,609 |
+| Focused review per fact, 318 facts (partners and typing) | about 27k | 4,814 / 4,701 / 4,701 |
+| A write on the 318-fact about | 26,432 | 4,794 in each |
+| A write on the 33-fact about | 3,584 | 3,584 |
+| Curation Jev tokens over the corpus | 311,027 | 225,059 |
+
+The partner round meets the 3–4k estimate; the whole write stays near 4.8k
+because typing the pairs adds about 1.4k. Every other floor of the corpus
+holds in the three samples.
+
+**Lifecycle proposal in the receipt (4e).** A new fact that names the same
+principal anchor as a current fact of its about and has the same entry kind
+is proposed as `supersedes`. Measured without Jev:
+
+- On every fact of the judged corpora, taken as just written: 68 pairs, none
+  of them a replacement or a state update a reader marked (0/68); one is a
+  listed distractor (INC-4711 as a campaign code name). On a large about the
+  rule pairs routine notes that share `p95`, `Q3` or `sa-east-1`.
+- On FactConsolidation, written fact by fact with every proposal accepted:
+  6k, 2 pairs (2 right) of the 161 the declared corpus holds; 32k, 16 pairs
+  (11 right, 69%) of 837. Its facts carry almost no identifiers (6 of 455
+  and 76 of 2,310 have a digit). The accepted pairs touch 1 of the 74
+  `current_after_supersession` questions at 6k and none of the 63 at 32k,
+  so R@1 on them would stay at 0.284 (at most 0.297) and 0.381, far from
+  the 1.0 of the declared corpus.
+- With Jev reading each pair first (duplicate, update_state, supersede,
+  contradict, novel; about 470 tokens a pair): of the 4 pairs in the
+  focused reviews it withdrew 3, including the listed distractor, and kept
+  one wrong one (a deploy and an office move that share `2.4.1`, read as a
+  state update), the same in the three samples. It withdrew the false
+  `supersedes` the rule put in a real write's receipt.
+
+Both modes stay off by default (`write-relations.json` `lifecycle`:
+`rule` or `jev`). They met neither registered bar: the rule's precision is
+0 on the judged corpora and its recall about 1% on FactConsolidation, and
+the Jev reading kept a pair that shares an anchor without a relation.
+
+A fourth recording measured Jev's real latency: a judged ask adds about
+320 ms (narrow) and 400 ms (wide) on the trap asks and about 300 ms on the
+retrieval cases, which the gate saves on every ask it settles; a focused
+review of a fact on the 318-fact about takes about 535 ms of Jev (at most
+572 ms), on the 33-fact one about 590 ms.
+
+Recording the three samples cost 916,442 Jev input tokens ($0.038), and the
+latency recording 448,759 more ($0.019).
+
 ## First result (2026-09-25, `jev-1.13.0`, payments case only)
 
 | Metric | Value |

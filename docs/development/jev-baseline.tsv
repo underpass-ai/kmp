@@ -12,6 +12,10 @@
 # a plain ask whose question names an identifier ranks the memories that name it, and
 # ask_mrr_plain rose 0.1875 -> 0.2500, ask_top5_plain 0.2500 -> 0.3125. The re-ranked arms
 # do not move.
+# P9 (2026-09-27): write-relations and focused reviews read shortlisted partners, so the
+# 318-fact case's focused requests are new; they were recorded into this cassette with the
+# real Jev, nothing else re-recorded. Every floor holds unchanged; the margin gate (tau = 0)
+# settles 2 of the 16 re-ranked asks without moving ask_*_rerank or ask_*_wide.
 # Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh
 metric	floor
 cases	2

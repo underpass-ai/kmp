@@ -87,6 +87,9 @@ impl JudgedCase {
 /// What one `kmp_ask` call produced, as the scorecard reads it.
 struct Asked {
     outcome: RetrievalOutcome,
+    /// Whether a re-ranking arm's judge ordered this ask's proof; false when
+    /// the margin gate settled it on the lexical order.
+    reranked: bool,
     to_judged: u64,
     verdict: AskVerdict,
     confidence: String,
@@ -126,6 +129,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let ask_gate = std::env::var("RETRIEVAL_ASK_GATE").ok();
     let gated = arm.is_none() && ask_gate.is_none() && max_entries == 10;
     let mut bytes_to_judged = Vec::new();
+    let mut reranked = 0usize;
+    let mut arm_asks = 0usize;
 
     let collection: JudgedCollection = serde_json::from_str(&fs::read_to_string(&cases_path)?)?;
     // The original 35 are scored on their own, so their recorded floors stay
@@ -144,6 +149,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             continue;
         }
         let asked = run_case(case, arm.as_deref(), ask_gate.as_deref(), max_entries).await?;
+        arm_asks += 1;
+        reranked += usize::from(asked.reranked);
         let outcome = asked.outcome;
         let decision = case.is_guarded().then(|| GuardedDecision {
             kind: case.kind.clone().unwrap_or_else(|| "original".to_string()),
@@ -238,6 +245,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         };
         println!("  {:<32} {:.digits$}", row.name, row.value);
     }
+    if arm.is_some() {
+        println!(
+            "  (cost, not gated) re-ranked {reranked} of {arm_asks} asks; the margin gate settled the rest"
+        );
+    }
     if !gated {
         println!(
             "\narm rerank={} ask_gate={} max_entries={max_entries}: reported, not gated",
@@ -272,10 +284,10 @@ async fn run_case(
         )?;
         fs::write(
             data_dir.join("rerank.json"),
-            match arm {
+            kmp_testkit::rerank_with_eval_margin(match arm {
                 "wide" => r#"{"pool_size":400,"excerpt_chars":300}"#,
                 _ => r#"{"pool_size":40}"#,
-            },
+            }),
         )?;
     }
     if let Some(gate) = ask_gate {
@@ -381,6 +393,9 @@ async fn run_case(
     {
         return Err(format!("case `{}`: {}", case.id, answer["warnings"]).into());
     }
+    let reranked = answer["warnings"]
+        .to_string()
+        .contains("evidence rerank by");
     // What a reader must take in before the first judged memory: the proof
     // items up to and including it, or all of them when none is judged.
     let to_judged = {
@@ -416,6 +431,7 @@ async fn run_case(
             .into_iter()
             .collect::<Vec<_>>();
         return Ok(Asked {
+            reranked,
             outcome: RetrievalOutcome {
                 judged: BTreeSet::from([expected.clone()]),
                 retrieved: named.clone(),
@@ -447,6 +463,7 @@ async fn run_case(
         .unwrap_or_default();
 
     Ok(Asked {
+        reranked,
         outcome: RetrievalOutcome {
             judged: case.judged.iter().cloned().collect(),
             retrieved,

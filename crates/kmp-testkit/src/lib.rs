@@ -14,6 +14,7 @@ pub mod memoryarena;
 pub mod memoryarena_scorecard;
 pub mod memoryarena_smart_writer;
 pub mod raw_dump;
+mod rerank_margin_arm;
 pub mod retrieval_scorecard;
 pub mod seed_publisher;
 pub mod seed_to_bundle;
@@ -101,6 +102,7 @@ pub use memoryarena_smart_writer::{
     MemoryArenaSmartWriterResult, MemoryArenaSmartWriterSummary, detect_provider_from_model,
     parse_provider, summarize_smart_writer,
 };
+pub use rerank_margin_arm::rerank_with_eval_margin;
 pub use seed_to_bundle::{seed_raw_equivalent_tokens, seed_to_bundle};
 pub use text_normalization::{
     DetectedTextKind, DetectedTextSpan, NormalizedText, TextNormalizationPipeline,

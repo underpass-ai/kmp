@@ -13,7 +13,7 @@ use crate::serving::judgement_request::JudgementRequest;
 
 const SENT_CHARS: usize = 2_000;
 const PARTNER_CHARS: usize = 400;
-const PARTNER_FACTS: usize = 60;
+pub(crate) const PARTNER_FACTS: usize = 60;
 const PARTNER_ORPHANS: usize = 30;
 
 pub(crate) fn excerpt(text: &str, chars: usize) -> String {

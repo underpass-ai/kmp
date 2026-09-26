@@ -272,3 +272,38 @@ fn the_answer_reuses_the_pools_ranking_byte_for_byte() {
     let fresh = ask_with(AskRetrievalContext::from(context(false)), QUESTION, &bridge);
     assert_eq!(other, fresh);
 }
+
+#[test]
+fn the_pool_reads_how_decisively_the_lexical_ranking_leads() {
+    let mut retrieval = AskRetrievalContext::from(context(false));
+    assert_eq!(retrieval.lexical_margin(), None, "nothing read yet");
+    retrieval
+        .rerank_pool(
+            QUESTION,
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            &TemporalSelection::Frontier,
+            &LexicalBridge::none(),
+            40,
+        )
+        .expect("pool");
+    let margin = retrieval.lexical_margin().expect("read with the pool");
+    // Only the lexical memory is eligible: it leads by its whole score, and
+    // it states the question's words.
+    assert!(margin.tenths.is_some_and(|lead| lead > 0), "{margin:?}");
+    assert!(margin.high_confidence, "{margin:?}");
+    assert!(margin.is_decisive(0));
+
+    let mut unmatched = AskRetrievalContext::from(context(false));
+    unmatched
+        .rerank_pool(
+            "Which vendor supplies the invoices?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            &TemporalSelection::Frontier,
+            &LexicalBridge::none(),
+            40,
+        )
+        .expect("pool");
+    let margin = unmatched.lexical_margin().expect("read");
+    assert_eq!(margin.tenths, None, "no candidate is eligible");
+    assert!(!margin.is_decisive(0));
+}

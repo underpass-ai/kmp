@@ -20,6 +20,7 @@ use crate::curate::application::use_cases::review_relations::ReviewRelations;
 use crate::curate::domain::apply_item::ApplyItem;
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
+use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::serving::adapters::tool_request_mapping::RelateRequestMapper;
 use crate::serving::ports::judgement_model::JudgementModel;
@@ -45,6 +46,7 @@ pub(crate) struct EmbeddedCurateTool<'a> {
     judgement_warning: Option<&'a str>,
     cache: &'a CurateReviewCache,
     doubts: &'a CurateDoubtCache,
+    lifecycle: LifecycleMode,
 }
 
 impl<'a> EmbeddedCurateTool<'a> {
@@ -65,7 +67,14 @@ impl<'a> EmbeddedCurateTool<'a> {
             judgement_warning,
             cache,
             doubts,
+            lifecycle: LifecycleMode::Off,
         }
+    }
+
+    /// Whether and how a focused review proposes write-time lifecycle pairs.
+    pub(crate) fn with_lifecycle(mut self, lifecycle: LifecycleMode) -> Self {
+        self.lifecycle = lifecycle;
+        self
     }
 
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
@@ -138,6 +147,7 @@ impl<'a> EmbeddedCurateTool<'a> {
         } else {
             ReviewFocus {
                 judgement: self.judgement,
+                lifecycle: self.lifecycle,
             }
             .run(material.clone(), &focus, max_pairs)
             .await

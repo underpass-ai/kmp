@@ -2,7 +2,7 @@ use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::curate_review::CurateReview;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{
-    pair_request, partner_request, relation_options, suspect_request,
+    PARTNER_FACTS, pair_request, partner_request, relation_options, suspect_request,
 };
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
@@ -53,12 +53,22 @@ impl ReviewRelations<'_> {
         };
 
         let mut pairs = material.pairs.clone();
+        // Past this size the whole about no longer fits one choice; the
+        // review says so instead of going quiet, and names the way that
+        // scales: a focused review shortlists each fact's partners.
+        let mut too_large = Vec::new();
         for about in abouts_with_orphans(&material) {
             let facts = material
                 .facts
                 .iter()
                 .filter(|f| f.about == about)
                 .collect::<Vec<_>>();
+            if facts.len() > PARTNER_FACTS {
+                too_large.push(format!(
+                    "`{about}` has {} current facts: Jev looks for orphans' partners only in abouts of at most {PARTNER_FACTS}; review with `focus` on the facts to pair, which reads each one's shortlisted partners",
+                    facts.len()
+                ));
+            }
             let orphans = material
                 .orphans()
                 .into_iter()
@@ -95,6 +105,7 @@ impl ReviewRelations<'_> {
         };
         let Some(typed) = typed else {
             review.findings = untyped(&material.pairs, max_pairs);
+            review.warnings.extend(too_large);
             return review;
         };
         let mut missing = Vec::new();
@@ -141,6 +152,7 @@ impl ReviewRelations<'_> {
                 }
             }
         }
+        review.warnings.extend(too_large);
         review.jev = Some(usage);
         review
     }
@@ -244,6 +256,7 @@ mod tests {
         CurateFact {
             reference: reference.into(),
             about: about.into(),
+            kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
             labels: Vec::new(),

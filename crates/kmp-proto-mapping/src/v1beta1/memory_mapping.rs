@@ -41,6 +41,7 @@ mod lexical_collection;
 mod lexical_field;
 mod lexical_index_cache;
 mod lexical_index_identity;
+mod lexical_margin;
 mod lexicon;
 mod lifecycle_anchors;
 mod lifecycle_ask;
@@ -51,6 +52,7 @@ mod memory_catalog;
 mod memory_lifecycle;
 mod morphology;
 mod pair_scope;
+mod partner_shortlist;
 mod queries;
 mod question_anchor;
 mod question_contract;
@@ -83,6 +85,7 @@ mod semantic_candidate_ranking;
 #[cfg(test)]
 mod semantic_recall_tests;
 mod semantic_source;
+mod shortlisted_partners;
 mod subject_concept;
 mod temporal_admission;
 mod temporal_dependencies;
@@ -111,6 +114,8 @@ pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use judged_selection::JudgedSelection;
 pub use lexical_bridge::LexicalBridge;
 pub use lexical_index_cache::LexicalIndexCache;
+pub use lexical_margin::LexicalMargin;
+pub use partner_shortlist::PartnerShortlist;
 pub use queries::{
     ask_query_from_proto, inspect_query_from_proto, relate_query_from_proto,
     temporal_query_from_move_proto, temporal_query_from_near_proto, trace_query_from_proto,
@@ -127,6 +132,7 @@ pub use search_probe::SearchProbe;
 pub use search_probe_terms::SearchProbeTerms;
 pub use semantic_candidate_ranking::SemanticCandidateRanking;
 pub use semantic_source::SemanticSource;
+pub use shortlisted_partners::ShortlistedPartners;
 pub use visual_projection::{
     visual_projection_query_from_proto, visual_projection_response_from_result,
 };

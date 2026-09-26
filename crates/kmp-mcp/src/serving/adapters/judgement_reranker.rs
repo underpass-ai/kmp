@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use std::time::Duration;
 
-use kmp_proto_mapping::v1beta1::{RerankCandidateRanking, SemanticSource};
+use kmp_proto_mapping::v1beta1::{LexicalMargin, RerankCandidateRanking, SemanticSource};
 use sha2::{Digest, Sha256};
 
 use super::passage_judgement::judge_passages;
@@ -35,6 +35,8 @@ pub(super) struct JudgementReranker {
     model: Arc<dyn JudgementModel>,
     pool_size: usize,
     excerpt_chars: usize,
+    /// The margin gate's threshold in tenths, or `None` when it is off.
+    margin_tenths: Option<i64>,
     deadline: Option<Duration>,
     selections: SharedOutcomes<RerankOutcome>,
 }
@@ -56,11 +58,10 @@ impl JudgementReranker {
             serde_json::from_slice(&bytes).map_err(|_| "invalid rerank configuration")?;
         let (pool_size, excerpt_chars) = config.validate()?;
         match judgement {
-            Ok(Some(model)) => Ok(Some(Arc::new(Self::new(
-                Arc::clone(model),
-                pool_size,
-                excerpt_chars,
-            )))),
+            Ok(Some(model)) => Ok(Some(Arc::new(
+                Self::new(Arc::clone(model), pool_size, excerpt_chars)
+                    .with_margin(config.margin_tenths),
+            ))),
             Ok(None) => Err("rerank.json needs typesafe.json beside the store".into()),
             Err(error) => Err(error.clone()),
         }
@@ -75,6 +76,7 @@ impl JudgementReranker {
             model,
             pool_size,
             excerpt_chars,
+            margin_tenths: None,
             deadline: judgement_deadline(JudgementSite::Rerank),
             selections: SharedOutcomes::new(KEPT),
         }
@@ -87,8 +89,22 @@ impl JudgementReranker {
         self
     }
 
+    /// The same reranker behind the margin gate at `tenths`, or without it.
+    pub(super) fn with_margin(mut self, tenths: Option<i64>) -> Self {
+        self.margin_tenths = tenths;
+        self
+    }
+
     pub(super) fn pool_size(&self) -> usize {
         self.pool_size
+    }
+
+    /// Whether the lexical ranking settles this Ask on its own: its lead is
+    /// at least the threshold and its confidence high (DESIGN L4 4c).
+    pub(super) fn is_settled(&self, margin: Option<LexicalMargin>) -> bool {
+        self.margin_tenths
+            .zip(margin)
+            .is_some_and(|(tau, margin)| margin.is_decisive(tau))
     }
 
     pub(super) async fn rank(

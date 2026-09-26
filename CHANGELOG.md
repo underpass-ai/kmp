@@ -11,6 +11,15 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- Relations proposed after a write, and every focused `kmp_curate` review,
+  read a shortlist instead of the whole about: the facts that share a hard
+  anchor with the new one and its 40 best BM25 matches. A write on a
+  318-fact about costs 4.8k Jev tokens instead of 26.4k, with the same
+  partners found (11/11) and no distractor proposed, in three samples; an
+  about of at most 40 other facts is read as before.
+- A `kmp_curate` review without `focus` over an about of more than 60 facts
+  says that Jev looked for no orphan's partner there, instead of going
+  quiet.
 - **Breaking: the anchored ask gate is the default.** Every store reads
   `kmp_ask` with it (`AskGate::STORE_DEFAULT`), in `kmp-mcp` and in the gRPC
   `KernelMemoryService.Ask`, so an ask is no longer byte for byte what
@@ -127,6 +136,18 @@ Detailed notes from the early release cycle remain available in the
   `projection.more_on_request` (on FactConsolidation-6k declared, 58 of the
   217 rescued items reach the default first page; none of them comes from a
   cited memory).
+- Margin gate on Ask re-ranking (DESIGN L4 4c): an Ask whose first lexical
+  candidate leads the second by at least `margin_tenths` tenths of a content
+  BM25 point (`rerank.json`, default 0, `null` turns it off), with `High`
+  confidence, sends no judgement. On three recorded samples every re-ranked
+  metric held, the 35 retrieval cases judged 9 asks instead of 35 (13.6k →
+  3.8k Jev tokens) and the 16 trap asks 14 (`jev-evaluation.md`).
+- `write-relations.json` `lifecycle` (`rule` or `jev`, off by default): a
+  focused review also proposes, as `supersedes`, the current facts of the
+  same entry kind that name the new fact's principal anchor; under `jev`
+  Jev reads each pair first and withdraws the novel ones. Measured and left
+  off: 0 of 68 proposed pairs were replacements on the judged corpora, and
+  on FactConsolidation the rule finds about 1% of the declared ones.
 - Verdict book for TypeSafe Jev (P5): every judged question is kept, by a
   key of hashes (model, template, type, instructions, options, the texts of
   the state), as Q16 probabilities in `judgements.sqlite3` beside the store.

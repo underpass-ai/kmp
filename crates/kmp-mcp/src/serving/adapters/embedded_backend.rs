@@ -17,7 +17,9 @@ use super::store_config_report::StoreConfigReport;
 use super::verdict_book_config::VERDICT_BOOK_CONFIG_FILE;
 use super::verdict_ledger::VerdictLedger;
 use super::wake_focus_judge::WakeFocusJudge;
+use super::write_relations_config::WriteRelationsConfig;
 use crate::contract::{TIME_TOOL, TimeMove};
+use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::serving::environment::{
     TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV, TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
 };
@@ -32,9 +34,6 @@ use kmp_proto_mapping::v1beta1::{AskGate, LexicalBridge, LexicalIndexCache};
 use serde_json::{Value, json};
 use std::path::Path;
 use std::sync::Arc;
-
-/// Opt-in beside the store for relations proposed after each write.
-const WRITE_RELATIONS_FILE: &str = "write-relations.json";
 
 /// In-process kernel backend: the same JSON argument builders and response
 /// shapes as live mode, with the application service called directly instead
@@ -66,6 +65,9 @@ pub struct EmbeddedKernelMcpBackend {
     /// Relations proposed after each write, opted into by
     /// `write-relations.json` beside `typesafe.json`.
     write_relations: bool,
+    /// Whether and how focused reviews propose write-time lifecycle pairs
+    /// (`write-relations.json` `lifecycle`).
+    lifecycle: LifecycleMode,
     /// The anchored ask gate: [`AskGate::STORE_DEFAULT`] (on) unless
     /// `ask-gate.json` beside the store says otherwise; a file that cannot
     /// apply is reported and the default stands.
@@ -118,7 +120,12 @@ impl EmbeddedKernelMcpBackend {
             data_dir,
             &ObservedJudgement::for_site(&judgement, book, JudgementSite::WakeFocus),
         );
-        let write_relations = data_dir.join(WRITE_RELATIONS_FILE).is_file();
+        let write_relations = WriteRelationsConfig::load(data_dir);
+        let lifecycle = write_relations
+            .as_ref()
+            .map(WriteRelationsConfig::lifecycle)
+            .unwrap_or_default();
+        let write_relations = write_relations.is_some();
         let lexical_bridge = load_lexical_bridge(data_dir);
         let semantic = LoopbackSemanticRetriever::load(data_dir);
         let ask_gate = AskGateConfig::load(data_dir);
@@ -154,6 +161,7 @@ impl EmbeddedKernelMcpBackend {
             rerank,
             wake_focus,
             write_relations,
+            lifecycle,
             ask_gate: ask_gate.unwrap_or(AskGate::STORE_DEFAULT),
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
@@ -220,7 +228,7 @@ fn acknowledge_store_config<A, B, C>(
         .beside_store("rerank.json", verdict(rerank))
         .beside_store("wake-focus.json", verdict(wake_focus))
         .beside_store(
-            WRITE_RELATIONS_FILE,
+            WriteRelationsConfig::FILE,
             judged
                 .map_err(|error| format!("write relations need a working typesafe.json: {error}")),
         )
@@ -320,6 +328,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         &self.curate_reviews,
                         &self.curate_doubts,
                     )
+                    .with_lifecycle(self.lifecycle)
                     .call(arguments)
                     .await
                 }

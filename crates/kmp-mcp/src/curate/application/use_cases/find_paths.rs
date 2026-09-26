@@ -489,6 +489,7 @@ mod tests {
         let fact = |reference: &str| CurateFact {
             reference: reference.into(),
             about: "a".into(),
+            kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
             labels: Vec::new(),

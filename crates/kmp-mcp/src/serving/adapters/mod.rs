@@ -47,3 +47,4 @@ mod typesafe_wire_response;
 mod verdict_book_config;
 mod verdict_ledger;
 mod wake_focus_judge;
+mod write_relations_config;

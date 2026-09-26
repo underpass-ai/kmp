@@ -208,18 +208,31 @@ impl<'a> AnswerEvidenceRanker<'a> {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> Vec<MemoryEvidence> {
+        self.rank_with_margin(question, policy, evidence).0
+    }
+
+    /// [`Self::rank`], and by how much its first eligible candidate's content
+    /// score leads the second's, in tenths of a point (DESIGN L4 4c). A lone
+    /// eligible candidate leads by its whole score; none, or a question with
+    /// no informative word, leads by nothing (`None`).
+    pub(super) fn rank_with_margin(
+        &self,
+        question: &str,
+        policy: MemoryAnswerPolicy,
+        evidence: Vec<MemoryEvidence>,
+    ) -> (Vec<MemoryEvidence>, Option<i64>) {
         let morphology = &self.context.morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
             evidence.sort_by_key(stable_evidence_key);
-            return evidence;
+            return (evidence, None);
         }
         let strict_focus = self.strict_focus(question, policy);
         let prepared = self.prepare(evidence);
         let collection = self.collection(&prepared);
         let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
-        self.rank_prepared(
+        self.rank_prepared_scored(
             question,
             &question_terms,
             strict_focus,
@@ -285,6 +298,28 @@ impl<'a> AnswerEvidenceRanker<'a> {
         prepared: Vec<ReadCandidate>,
         lexicon: &Lexicon,
     ) -> Vec<MemoryEvidence> {
+        self.rank_prepared_scored(
+            question,
+            question_terms,
+            strict_focus,
+            anchored,
+            prepared,
+            lexicon,
+        )
+        .0
+    }
+
+    /// [`Self::rank_prepared`] with the content-score margin of its first
+    /// two eligible candidates, in the order the relevance key put them.
+    fn rank_prepared_scored(
+        &self,
+        question: &str,
+        question_terms: &BTreeSet<String>,
+        strict_focus: Option<(BTreeSet<String>, usize)>,
+        anchored: Option<(&BTreeSet<String>, &BTreeSet<String>)>,
+        prepared: Vec<ReadCandidate>,
+        lexicon: &Lexicon,
+    ) -> (Vec<MemoryEvidence>, Option<i64>) {
         let morphology = &self.context.morphology;
         let diversity_focus_terms = strict_focus
             .as_ref()
@@ -321,6 +356,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cmp(&left.relevance)
                 .then_with(|| left.stable_key.cmp(&right.stable_key))
         });
+        let margin = candidates.first().map(|first| {
+            first.relevance.content_score
+                - candidates
+                    .get(1)
+                    .map_or(0, |second| second.relevance.content_score)
+        });
         let ranked = diversify_candidates(question_terms, &diversity_focus_terms, candidates);
         let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
@@ -347,7 +388,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         answer.extend(self.reached_candidates(&answer, rejected));
         answer.extend(associated);
         answer.extend(bridged);
-        answer
+        (answer, margin)
     }
 
     /// Reads a question that names an identifier through the anchored gate.

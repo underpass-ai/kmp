@@ -56,10 +56,14 @@ pub(crate) fn review_to_value(
                 "signals": match &pair.origin {
                     PairOrigin::Kernel { signals, .. } => json!(signals),
                     PairOrigin::Jev => json!([]),
+                    PairOrigin::Lifecycle { .. } => json!(["principal_anchor", "entry_kind"]),
                 },
                 "pairing_why": match &pair.origin {
                     PairOrigin::Kernel { why, .. } => json!(why),
                     PairOrigin::Jev => Value::Null,
+                    PairOrigin::Lifecycle { anchor, kind } => json!(format!(
+                        "both name `{anchor}` and are {kind} entries; that alone is not a replacement: declare supersedes or updates_state only if the new one replaces or updates the other"
+                    )),
                 },
                 "jev": verdict.as_ref().map(jev).unwrap_or(Value::Null),
             })),
@@ -153,6 +157,7 @@ mod tests {
                 .map(|r| CurateFact {
                     reference: (*r).into(),
                     about: r[..1].into(),
+                    kind: String::new(),
                     text: "x".repeat(400),
                     occurred: None,
                     labels: Vec::new(),

@@ -20,6 +20,9 @@ pub struct AskRetrievalContext {
     pub(super) ranked: Option<RankedSelection>,
     /// The anchored decision gate, unless the store opted out of it.
     pub(super) gate: Option<super::ask_gate::AskGate>,
+    /// How decisively the lexical ranking a judge's pool was built from
+    /// leads, once that pool was built.
+    pub(super) margin: Option<super::lexical_margin::LexicalMargin>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -31,6 +34,7 @@ impl From<GetContextResult> for AskRetrievalContext {
             lexical_cache: None,
             ranked: None,
             gate: None,
+            margin: None,
         }
     }
 }
@@ -135,16 +139,29 @@ impl AskRetrievalContext {
         for evidence in &mut candidates {
             admission.bound_supports(evidence);
         }
-        let ranked = RankedSelection::new(
-            question,
-            policy,
-            temporal,
-            bridge,
-            ranker.rank(question, policy, candidates.clone()),
-        );
+        let (ranking, lead) = ranker.rank_with_margin(question, policy, candidates.clone());
+        let ranked = RankedSelection::new(question, policy, temporal, bridge, ranking);
         let pool = ranker.rerank_pool(ranked.ranked(), &candidates, limit);
+        let core = ranked
+            .ranked()
+            .iter()
+            .filter(|item| !super::answer_selection::was_reached_indirectly(item))
+            .take(super::answer_ranker::ANSWER_CORE_LIMIT)
+            .cloned()
+            .collect::<Vec<_>>();
+        self.margin = Some(super::lexical_margin::LexicalMargin {
+            tenths: lead,
+            high_confidence: ranker.confidence(question, &core)
+                == kmp_proto::v1beta1::MemoryConfidence::High,
+        });
         self.ranked = Some(ranked);
         Ok(pool)
+    }
+
+    /// How decisively the lexical ranking leads, once [`Self::rerank_pool`]
+    /// read it; `None` before.
+    pub fn lexical_margin(&self) -> Option<super::lexical_margin::LexicalMargin> {
+        self.margin
     }
 
     pub fn with_rerank_candidates(mut self, ranking: RerankCandidateRanking) -> Self {

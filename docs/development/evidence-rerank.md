@@ -22,6 +22,9 @@ Beside the selected store, place:
   {"pool_size": 400, "excerpt_chars": 300}
   ```
 
+  `margin_tenths` sets the margin gate below (default 0; `null` turns it
+  off).
+
 and set `TYPESAFE_API_KEY` in the environment of the MCP process, or put
 `TYPESAFE_API_KEY=<key>` in `~/.config/typesafe.env` with mode 600. The
 environment wins when both are set. Then
@@ -36,6 +39,17 @@ appears in logs, warnings or errors.
   still be read. Nothing the selection does not admit is ever sent: scope,
   interval, lifecycle and content version apply first. Each passage is cut
   to `excerpt_chars`.
+- **The margin gate** (DESIGN L4 4c, after AgentIR 2605.25092). An Ask the
+  text already settles is not sent: when the first eligible candidate's
+  content score leads the second's by at least `margin_tenths` tenths of a
+  BM25 point (a lone eligible candidate leads by its whole score) and the
+  answer it would give has `High` confidence, the Ask reads the lexical
+  order and no warning names a rerank. The default 0 was fixed on three
+  recorded samples of both judged corpora: at every threshold from 0 to 200
+  the re-ranked MRR, top-5, R@1 and R@5 were those of the ungated arm in all
+  three, and 0 sends the fewest requests: 9 of the 35 retrieval cases
+  instead of 35 (13.6k → 3.8k Jev tokens) and 14 of the 16 trap asks
+  (`jev-evaluation.md`).
 - **The question.** Jev answers one yes/no question per passage: does it
   answer the question? Only passages with a probability of at least 0.5
   join the ranking, ordered by that probability, with ties broken by ref and
@@ -110,9 +124,13 @@ against 14/15) and was 27% smaller (`jev-evaluation.md`).
 
 Put `write-relations.json` (`{}`) beside `typesafe.json` and a committed
 `kmp_write_memory` of memories carries `proposed_relations`. For each new
-memory (at most 8 per write), Jev reads every current fact of its about. It
-answers whether each has a direct relation to the new memory: causes,
-explains, supports, contradicts, updates, answers or repeats. Up to three
+memory (at most 8 per write), Jev reads its shortlisted partners: the
+current facts of its about that name one of its hard anchors (identifiers
+with a digit or `#`, as the anchored gate reads them, hubs aside) and its 40
+best BM25 matches over the about. An about of at most 40 other facts is read
+whole, in its own order. Jev answers whether each has a direct relation to
+the new memory: causes, explains, supports, contradicts, updates, answers or
+repeats. Up to three
 facts at 0.5 or above are kept, relations already declared are skipped, and
 each pair is typed. Kernel pairs that touch the new memory are typed with
 them. A pair Jev types as no relation is dropped.
@@ -126,5 +144,19 @@ Without the opt-in, or when Jev fails, the write is unchanged. Only a
 warning says why. On the judged corpus, the partner a reader expected was
 proposed for 11/11 new facts, against 7/11 from kernel pairs alone. None of
 the 4 distractors was proposed, where the kernel proposed 3. Each fact gets
-about 1.5 proposals in 1.1 KB. A write costs about 3.6k Jev tokens on a small
-about and 26k on a 318-fact one, about $0.001 (`jev-evaluation.md`).
+about 1.5 proposals in 1.1 KB. With the shortlist a write costs about 3.6k Jev
+tokens on a small about, as before, and 4.8k on a 318-fact one (26.4k before it), and
+the partner question round stays near 3.5k however large the about grows
+(`jev-evaluation.md`).
+
+`{"lifecycle": "rule"}` in `write-relations.json` also proposes, in every
+focused review of the store, the current facts of the same entry kind that
+name the new fact's principal anchor (its rarest hard anchor), as
+`supersedes` for the writer to confirm, retype to `updates_state` or ignore;
+`{"lifecycle": "jev"}` has Jev read each such pair first (duplicate,
+update_state, supersede, contradict or novel) and withdraws the novel ones.
+Both are off by default: sharing an anchor is not a replacement
+(MemStrata, 2606.26511), and on the judged corpora none of the 68 pairs the
+rule proposed was one. A review of an about of more than 60 facts without
+`focus` now says that Jev looked for no orphan's partner there, instead of
+going quiet.

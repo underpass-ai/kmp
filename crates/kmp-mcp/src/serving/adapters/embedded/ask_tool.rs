@@ -157,7 +157,8 @@ impl<'a> EmbeddedAskTool<'a> {
                         reranker.pool_size(),
                     )
                     .map_err(|status| mapping_error(&status))?;
-                if !pool.is_empty() {
+                // A lead the text settles is not sent to the judge.
+                if !pool.is_empty() && !reranker.is_settled(retrieval.lexical_margin()) {
                     let outcome = reranker
                         .rank(&question, &pool, continuation)
                         .await

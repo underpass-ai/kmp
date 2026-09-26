@@ -261,3 +261,22 @@ async fn different_asks_judge_in_parallel_and_the_same_ask_judges_once() {
     );
     assert_eq!(*finished.lock().expect("finished"), 3);
 }
+
+#[test]
+fn the_margin_gate_settles_only_a_high_confidence_lead_at_its_threshold() {
+    use kmp_proto_mapping::v1beta1::LexicalMargin;
+    let lead = |tenths, high_confidence| {
+        Some(LexicalMargin {
+            tenths,
+            high_confidence,
+        })
+    };
+    let gated = JudgementReranker::new(judge(false), 40, 2_000).with_margin(Some(30));
+    assert!(gated.is_settled(lead(Some(30), true)));
+    assert!(!gated.is_settled(lead(Some(29), true)));
+    assert!(!gated.is_settled(lead(Some(300), false)));
+    assert!(!gated.is_settled(lead(None, true)));
+    assert!(!gated.is_settled(None), "no ranking read, nothing settled");
+    let off = JudgementReranker::new(judge(false), 40, 2_000).with_margin(None);
+    assert!(!off.is_settled(lead(Some(1_000), true)));
+}
