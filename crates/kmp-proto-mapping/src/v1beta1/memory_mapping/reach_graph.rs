@@ -43,7 +43,11 @@ pub(super) struct ReachGraph {
 /// replacement, and the lifecycle already decides which side of one is
 /// current. `contradicts` keeps two claims in tension, which is the opposite
 /// of the same thing.
-const EQUIVALENCE_RELATIONS: &[&str] = &["restates", "same_event_as", "same_entity_as"];
+const EQUIVALENCE_RELATIONS: &[&str] = &["restates", "same_event_as", SAME_ENTITY_AS];
+
+/// The declared equivalence that makes an identifier one memory names name
+/// the other too (the anchored ask gate's rescue).
+const SAME_ENTITY_AS: &str = "same_entity_as";
 
 impl ReachGraph {
     pub(super) fn from_bundle(bundle: &KmpBundle) -> Self {
@@ -158,6 +162,17 @@ impl ReachGraph {
             }
         }
         equivalents
+    }
+
+    /// The memories a writer declared to be the same entity as `node`, one
+    /// hop away: `same_entity_as` only, not a restatement or the same event.
+    pub(super) fn same_entity_as<'s>(&'s self, node: &str) -> impl Iterator<Item = &'s str> + 's {
+        self.equivalences
+            .get(node)
+            .into_iter()
+            .flatten()
+            .filter(|edge| edge.relation == SAME_ENTITY_AS)
+            .map(|edge| edge.target.as_str())
     }
 
     /// Walks out from what the question already matched.

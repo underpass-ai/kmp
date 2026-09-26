@@ -435,6 +435,19 @@ pub fn ask_response_from_result(
     let superseded_refs = lifecycle.superseded_refs().clone();
     let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
         .with_lexical_cache(retrieval.lexical_cache.as_deref(), lexical_identity);
+    // The anchored gate reads a question that names an identifier, when the
+    // store opted into it and the policy promises evidence or UNKNOWN; it
+    // reads every memory with the alias terms it spells.
+    let strict = matches!(
+        policy,
+        MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
+    );
+    let gated = retrieval.gate.is_some() && strict;
+    let ranker = if gated {
+        ranker.with_identifier_aliases()
+    } else {
+        ranker
+    };
     // What the selection admits is decided before the ranker weighs a word,
     // so the collection its statistics read is the selection's own: a word
     // common in the about and rare in the span earns what it earns there.
@@ -469,20 +482,18 @@ pub fn ask_response_from_result(
     if !reranked.is_empty() {
         supplemental.push(reranked);
     }
-    // The anchored gate reads a question that names an identifier, when the
-    // store opted into it and the policy promises evidence or UNKNOWN.
-    let strict = matches!(
-        policy,
-        MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
-    );
-    let contract = retrieval
-        .gate
-        .filter(|_| strict)
-        .map(|_| QuestionContract::read(question, ranker.morphology()));
+    let contract = gated.then(|| QuestionContract::read(question, ranker.morphology()));
+    // What the ranker reads: the question, or under the gate the question
+    // without what it excluded and with its anchors' alias terms.
+    let asked = contract
+        .as_ref()
+        .and_then(QuestionContract::asked)
+        .unwrap_or(question);
     let (ranked, verdict) = match (&contract, retrieval.gate) {
         (Some(contract), Some(gate)) if contract.requires_anchors() => {
             let reading = ranker.read_anchored(
-                question,
+                asked,
+                contract.anchored_asked().unwrap_or(question),
                 policy,
                 contract,
                 gate.allows_partial(),
@@ -495,8 +506,8 @@ pub fn ask_response_from_result(
         _ => (
             retrieval
                 .ranked
-                .and_then(|ranked| ranked.into_ranking_for(question, policy, temporal, bridge))
-                .unwrap_or_else(|| ranker.rank(question, policy, candidate_evidence)),
+                .and_then(|ranked| ranked.into_ranking_for(asked, policy, temporal, bridge))
+                .unwrap_or_else(|| ranker.rank(asked, policy, candidate_evidence)),
             None,
         ),
     };
@@ -510,11 +521,17 @@ pub fn ask_response_from_result(
     // rather than by refusing to retrieve the hop at all.
     //
     // Under the anchored gate the core is what it cited. Without a required
-    // anchor, a memory that names only an anchor the question excluded
-    // (`excluding C7`) stays out of it.
+    // anchor, a memory whose only anchor is one the question excluded
+    // (`excluding C7`) stays out of it, whether its sentence or its entry's
+    // details name it; one that also names an anchor the question asked
+    // about stays in.
     let negated = contract
         .as_ref()
         .map(QuestionContract::negated_terms)
+        .unwrap_or_default();
+    let asked_anchors = contract
+        .as_ref()
+        .map(QuestionContract::unnegated_terms)
         .unwrap_or_default();
     let answer_core = evidence
         .iter()
@@ -522,7 +539,9 @@ pub fn ask_response_from_result(
             Some(verdict) => verdict.cited().contains(item.id.as_str()),
             None => {
                 !was_reached_indirectly(item)
-                    && (negated.is_empty() || !ranker.names_any(item, &negated))
+                    && (negated.is_empty()
+                        || !ranker.memory_names_any(item, &negated)
+                        || ranker.memory_names_any(item, &asked_anchors))
             }
         })
         .cloned()
@@ -531,7 +550,7 @@ pub fn ask_response_from_result(
     // Confidence must describe those surviving citations, not a stronger item
     // that `max_entries` or a later transport budget omitted.
     let retained_evidence = &answer_core[..answer_core.len().min(ANSWER_CORE_LIMIT)];
-    let confidence = ranker.confidence(question, retained_evidence);
+    let confidence = ranker.confidence(asked, retained_evidence);
     let status = verdict
         .as_ref()
         .map_or(AnswerStatus::Unspecified, |verdict| verdict.status);
@@ -541,8 +560,8 @@ pub fn ask_response_from_result(
     } else {
         confidence
     };
-    let matched_terms = ranker.matched_query_terms(question, retained_evidence);
-    let matched_relations = ranker.matched_relations(question, retained_evidence);
+    let matched_terms = ranker.matched_query_terms(asked, retained_evidence);
+    let matched_relations = ranker.matched_relations(asked, retained_evidence);
     let because = answer_core
         .iter()
         .take(ANSWER_CORE_LIMIT)
@@ -670,7 +689,7 @@ pub fn ask_response_from_result(
     // instead of concluding the memory was never written.
     if unknown && admission.bounds_a_span() && !outside_evidence.is_empty() {
         let outside_core = ranker
-            .rank(question, policy, outside_evidence)
+            .rank(asked, policy, outside_evidence)
             .into_iter()
             .filter(|item| !was_reached_indirectly(item))
             .take(ANSWER_CORE_LIMIT)
@@ -679,7 +698,7 @@ pub fn ask_response_from_result(
             && !(matches!(
                 policy,
                 MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
-            ) && ranker.confidence(question, &outside_core) == MemoryConfidence::Low);
+            ) && ranker.confidence(asked, &outside_core) == MemoryConfidence::Low);
         if outside_bears {
             answer_proof.nearest_outside = admission.nearest_outside(&outside_core);
         }

@@ -4,6 +4,7 @@ use kmp_application::MemoryAnswerPolicy;
 use kmp_domain::KmpBundle;
 use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence, UnknownReason};
 
+use super::anchor_rescue::AnchorRescue;
 use super::anchor_selection::AnchorSelection;
 use super::anchored_gate::AnchoredGate;
 use super::anchored_reading::AnchoredReading;
@@ -11,9 +12,9 @@ use super::answer_candidate::AnswerCandidate;
 use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{
-    REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_bridged, mark_reached,
-    mark_reached_by, mark_restated, prioritize_distinct_claims, stable_evidence_key,
-    was_reached_indirectly,
+    REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_anchor_rescued,
+    mark_bridged, mark_reached, mark_reached_by, mark_restated, prioritize_distinct_claims,
+    stable_evidence_key, was_reached_indirectly,
 };
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
@@ -184,6 +185,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
         self
     }
 
+    /// Reads every candidate with the alias terms it spells (`corte 10` as
+    /// `c10`), as the anchored gate compares them with a question's anchors.
+    pub(super) fn with_identifier_aliases(mut self) -> Self {
+        self.context.identifier_aliases = true;
+        self.lexical_identity = self.lexical_identity.map(|identity| identity.aliased());
+        self
+    }
+
     /// The `proof.expired` list for the lifecycle this ranker stands on.
     pub(super) fn expired_memories(&self) -> Vec<kmp_proto::v1beta1::ExpiredMemory> {
         self.context.expired_memories()
@@ -333,6 +342,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
     pub(super) fn read_anchored(
         &self,
         question: &str,
+        anchored_question: &str,
         policy: MemoryAnswerPolicy,
         contract: &QuestionContract,
         allow_partial: bool,
@@ -343,7 +353,6 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if question_terms.is_empty() {
             return AnchoredReading::unanchored(self.rank(question, policy, evidence));
         }
-        let strict_focus = self.strict_focus(question, policy);
         let prepared = self.prepare(evidence);
         let collection = self.collection(&prepared);
         let selection = AnchorSelection::read(
@@ -351,35 +360,36 @@ impl<'a> AnswerEvidenceRanker<'a> {
             |term| collection.direct.document_frequency(term),
             collection.direct.documents(),
         );
-        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
         let (principal, others) = match selection {
-            AnchorSelection::Unanchored => {
-                return AnchoredReading::unanchored(self.rank_prepared(
-                    question,
-                    &question_terms,
-                    strict_focus,
-                    None,
-                    prepared,
-                    &lexicon,
-                ));
-            }
-            AnchorSelection::Absent(missing) => {
+            AnchorSelection::Anchored { principal, others } => (principal, others),
+            unanchored_or_absent => {
+                let lexicon =
+                    Lexicon::build(question, morphology, &prepared, self.bridge, collection);
                 let evidence = self.rank_prepared(
                     question,
                     &question_terms,
-                    strict_focus,
+                    self.strict_focus(question, policy),
                     None,
                     prepared,
                     &lexicon,
                 );
-                return AnchoredReading::decided(
-                    evidence,
-                    GateVerdict::unknown(UnknownReason::AnchorAbsentInSelection, missing),
-                );
+                return match unanchored_or_absent {
+                    AnchorSelection::Absent(missing) => AnchoredReading::decided(
+                        evidence,
+                        GateVerdict::unknown(UnknownReason::AnchorAbsentInSelection, missing),
+                    ),
+                    _ => AnchoredReading::unanchored(evidence),
+                };
             }
-            AnchorSelection::Anchored { principal, others } => (principal, others),
         };
-        let unfiltered = strict_focus.map(|(terms, _)| (terms, 0));
+        // An anchor decides: the question is read without the facets it
+        // enumerates, which break ties by entry kind and nothing more.
+        let question = anchored_question;
+        let question_terms = informative_terms(question, morphology);
+        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+        let unfiltered = self
+            .strict_focus(question, policy)
+            .map(|(terms, _)| (terms, 0));
         let ranked = self.rank_prepared(
             question,
             &question_terms,
@@ -388,28 +398,53 @@ impl<'a> AnswerEvidenceRanker<'a> {
             prepared,
             &lexicon,
         );
+        let direct = ranked
+            .iter()
+            .filter(|item| !was_reached_indirectly(item))
+            .map(|item| {
+                (
+                    item,
+                    AnswerCandidateTerms::from_evidence(item, &self.context),
+                )
+            })
+            .collect::<Vec<_>>();
+        let anchors = std::iter::once(&principal)
+            .chain(&others)
+            .map(|anchor| anchor.term.clone())
+            .collect::<BTreeSet<_>>();
+        let rescue = AnchorRescue::read(&anchors, &direct, &self.context.reach_graph);
         let verdict = AnchoredGate::new(contract, allow_partial).decide(
             &principal,
             &others,
-            ranked
-                .iter()
-                .filter(|item| !was_reached_indirectly(item))
-                .map(|item| {
-                    (
-                        item,
-                        AnswerCandidateTerms::from_evidence(item, &self.context),
-                    )
-                }),
+            direct.iter().map(|(item, terms)| (*item, terms)),
+            &rescue,
             |key, terms| lexicon.focus_matches(&BTreeSet::from([key.to_string()]), terms) > 0,
         );
+        // A citation the gate admitted through a declared `same_entity_as`
+        // says so, and says which memory named the anchor.
+        let cited = verdict.cited();
+        let ranked = ranked
+            .into_iter()
+            .map(|item| match rescue.standing_in_for(&item.id) {
+                Some(from) if cited.contains(item.id.as_str()) => {
+                    let from = from.to_string();
+                    mark_anchor_rescued(item, &from)
+                }
+                _ => item,
+            })
+            .collect::<Vec<_>>();
         AnchoredReading::decided(ranked, verdict)
     }
 
-    /// Whether a candidate names any of these terms in its text, its refs or
-    /// its metadata.
-    pub(super) fn names_any(&self, item: &MemoryEvidence, terms: &BTreeSet<String>) -> bool {
-        let direct = AnswerCandidateTerms::from_evidence(item, &self.context).direct_counts;
-        terms.iter().any(|term| direct.count(term) > 0)
+    /// Whether the memory a candidate states or supports names any of these
+    /// terms: in the candidate's text, refs or metadata, or in the details of
+    /// the entry it belongs to (an entry whose evidence names `#599` is about
+    /// `#599` however its own sentence reads).
+    pub(super) fn memory_names_any(&self, item: &MemoryEvidence, terms: &BTreeSet<String>) -> bool {
+        let read = AnswerCandidateTerms::from_evidence(item, &self.context);
+        terms
+            .iter()
+            .any(|term| read.direct_counts.count(term) > 0 || read.claim.contains(term))
     }
 
     /// The morphology this ranker compares words in.

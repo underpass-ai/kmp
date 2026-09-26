@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use kmp_domain::language::identifier_terms;
 
 use super::anchor_strength::AnchorStrength;
+use super::identifier_aliases::is_year;
 use super::morphology::Morphology;
 use super::question_anchor::QuestionAnchor;
 use super::question_contract_vocabulary::QuestionContractVocabulary;
@@ -29,6 +30,10 @@ pub(super) struct QuestionContract {
     facet_entry_kinds: BTreeSet<String>,
     form: QuestionForm,
     time: QuestionTime,
+    /// See [`Self::asked`].
+    asked: Option<String>,
+    /// See [`Self::anchored_asked`].
+    anchored_asked: Option<String>,
 }
 
 /// One whitespace token of the question as the contract reads it.
@@ -78,13 +83,6 @@ impl Word {
     }
 }
 
-fn is_year(digits: &str) -> bool {
-    digits.len() == 4
-        && digits
-            .parse::<u32>()
-            .is_ok_and(|year| (1900..=2099).contains(&year))
-}
-
 /// How far after a bare number a unit may stand, through the words a range
 /// is written with: `from 300 to 30 seconds`.
 const UNIT_LOOKAHEAD: usize = 3;
@@ -104,10 +102,23 @@ impl QuestionContract {
         let negated = negated_words(&words, &folded, vocabulary);
 
         let mut anchors = Vec::<QuestionAnchor>::new();
+        let mut aliased = Vec::<String>::new();
         for (index, word) in words.iter().enumerate() {
             for (term, strength) in anchor_terms(&words, index, vocabulary) {
+                // `corte 10` names `c10`, the term `C10` reads as; `ADR-018`
+                // names `adr18`, like `ADR 18`. The reader's words stay as
+                // they were written.
+                let (term, written) = match bound_alias(&words, index, strength, vocabulary) {
+                    Some((alias, written)) => {
+                        if alias != term {
+                            aliased.push(alias.clone());
+                        }
+                        (alias, written)
+                    }
+                    None => (term, word.written.clone()),
+                };
                 let anchor = QuestionAnchor {
-                    written: word.written.clone(),
+                    written,
                     term,
                     strength,
                     negated: negated[index],
@@ -135,6 +146,7 @@ impl QuestionContract {
         let mut facets = BTreeSet::new();
         let mut facet_entry_kinds = BTreeSet::new();
         let mut coordinations = 0;
+        let mut facet_words = vec![false; words.len()];
         let mut asks_existence = false;
         for index in main {
             let word = &words[index];
@@ -150,6 +162,7 @@ impl QuestionContract {
             }
             asks_existence |= vocabulary.asks_existence(&word.folded);
             if let Some((facet, kinds)) = families.facet_of(&word.folded) {
+                facet_words[index] = true;
                 facets.insert(facet.to_string());
                 facet_entry_kinds.extend(kinds.iter().cloned());
                 continue;
@@ -159,12 +172,18 @@ impl QuestionContract {
             {
                 continue;
             }
-            for part in informative_tokens(&word.written) {
+            let parts = informative_tokens(&word.written).collect::<Vec<_>>();
+            let whole = parts.len() == 1;
+            for part in parts {
                 let key = search_key(&part, morphology);
                 if !vocabulary.carries_no_subject(&part)
                     && !subject.iter().any(|(known, _)| *known == key)
                 {
-                    subject.push((key, part));
+                    // What `missing` reports is the reader's word as written,
+                    // accents and all; a word read as several parts reports
+                    // each part.
+                    let reader = if whole { word.written.clone() } else { part };
+                    subject.push((key, reader));
                 }
             }
         }
@@ -183,6 +202,23 @@ impl QuestionContract {
         } else {
             QuestionTime::Unstated
         };
+        // The question the ranker reads under the gate: without what it
+        // excluded, which it does not ask for, and with the alias terms its
+        // anchors name, which the memories are read with too.
+        let read_as = |skip: &dyn Fn(usize) -> bool| {
+            question
+                .split_whitespace()
+                .enumerate()
+                .filter(|(index, _)| !skip(*index))
+                .map(|(_, token)| token)
+                .chain(aliased.iter().map(String::as_str))
+                .collect::<Vec<_>>()
+                .join(" ")
+        };
+        let asked = (negated.iter().any(|negated| *negated) || !aliased.is_empty())
+            .then(|| read_as(&|index| negated[index]));
+        let anchored_asked = (asked.is_some() || facet_words.iter().any(|facet| *facet))
+            .then(|| read_as(&|index| negated[index] || facet_words[index]));
         Self {
             anchors,
             subject,
@@ -190,7 +226,35 @@ impl QuestionContract {
             facet_entry_kinds,
             form,
             time,
+            asked,
+            anchored_asked,
         }
+    }
+
+    /// The question as the ranker reads it under the gate, when that is not
+    /// the question itself: its negated stretches left out and its alias
+    /// terms added.
+    pub(super) fn asked(&self) -> Option<&str> {
+        self.asked.as_deref()
+    }
+
+    /// The question as the ranker reads it when an anchor decides: as
+    /// [`Self::asked`], and without the facets it enumerates, which only
+    /// break ties by entry kind and must not raise the bar a memory that
+    /// names the anchor has to clear (`What was decided for C4?` asks about
+    /// C4).
+    pub(super) fn anchored_asked(&self) -> Option<&str> {
+        self.anchored_asked.as_deref()
+    }
+
+    /// The terms of every anchor the question requires or searches for, not
+    /// the ones it excludes.
+    pub(super) fn unnegated_terms(&self) -> BTreeSet<String> {
+        self.anchors
+            .iter()
+            .filter(|anchor| !anchor.negated)
+            .map(|anchor| anchor.term.clone())
+            .collect()
     }
 
     /// Every anchor the question named, in the order it named them.
@@ -295,6 +359,28 @@ fn anchor_terms(
         .into_iter()
         .map(|term| (term, single_strength(words, index, vocabulary)))
         .collect()
+}
+
+/// The alias term an anchor names and the reader's words for it: a hard
+/// number a guide word introduces (`corte 10`, written `corte 10`), or a
+/// token that writes a kind and its number together (`ADR-018`).
+fn bound_alias(
+    words: &[Word],
+    index: usize,
+    strength: AnchorStrength,
+    vocabulary: &QuestionContractVocabulary,
+) -> Option<(String, String)> {
+    let aliases = vocabulary.identifier_aliases();
+    let word = &words[index];
+    if strength == AnchorStrength::Hard
+        && let Some(previous) = index.checked_sub(1).map(|previous| &words[previous])
+        && let Some(term) = aliases.bound(&previous.folded, &word.folded)
+    {
+        return Some((term, format!("{} {}", previous.written, word.written)));
+    }
+    aliases
+        .joined(&word.folded)
+        .map(|term| (term, word.written.clone()))
 }
 
 /// Whether one identifier the question names is required.

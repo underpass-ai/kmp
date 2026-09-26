@@ -1,5 +1,5 @@
 {
-  "note": "The words the anchored ask gate reads a question's shape with: which words negate what follows them, which name a unit or a kind of identifier, which only ask whether something exists, and which carry no subject. Written folded and without diacritics, because that is the form a question reaches the reader in. The facets a question enumerates live beside the relation families in question_families.json. Adding a word here is a data change, not a code change; the gate only reads these lists when a store opted into it with ask-gate.json.",
+  "note": "The words the anchored ask gate reads a question's shape with: which words negate what follows them, which name a unit or a kind of identifier (and, for `identifier_aliases`, the one term `corte 10`, `C10` and `cut 10` all name), which only ask whether something exists, and which carry no subject. Written folded and without diacritics, because that is the form a question reaches the reader in. The facets a question enumerates live beside the relation families in question_families.json. Adding a word here is a data change, not a code change; the gate only reads these lists when a store opted into it with ask-gate.json.",
   "negations": [
     "except",
     "excepto",
@@ -22,13 +22,16 @@
   ],
   "guide_words": [
     "adr",
+    "adrs",
     "bug",
     "commit",
     "corte",
     "cortes",
     "cut",
+    "cuts",
     "epic",
     "fase",
+    "fases",
     "hito",
     "inc",
     "incident",
@@ -37,6 +40,7 @@
     "issues",
     "milestone",
     "phase",
+    "phases",
     "pr",
     "prs",
     "pull",
@@ -179,9 +183,11 @@
   ],
   "filler_words": [
     "about",
+    "acerca",
     "all",
     "any",
     "anything",
+    "concerning",
     "cuanto",
     "cuantos",
     "detail",
@@ -191,12 +197,14 @@
     "exactly",
     "exacto",
     "info",
-    "information",
     "informacion",
+    "information",
     "many",
     "much",
-    "some",
+    "regarding",
+    "respecto",
     "sobre",
+    "some",
     "specific",
     "tell",
     "todo",
@@ -213,6 +221,64 @@
     "today",
     "vigente"
   ],
-  "hub_document_share": 0.05,
-  "hub_min_documents": 10
+  "hub_document_share": 0.2,
+  "hub_min_documents": 30,
+  "identifier_aliases": [
+    {
+      "prefix": "c",
+      "guide_words": [
+        "corte",
+        "cortes",
+        "cut",
+        "cuts"
+      ]
+    },
+    {
+      "prefix": "phase",
+      "guide_words": [
+        "fase",
+        "fases",
+        "phase",
+        "phases"
+      ]
+    },
+    {
+      "prefix": "adr",
+      "guide_words": [
+        "adr",
+        "adrs"
+      ]
+    },
+    {
+      "prefix": "inc",
+      "guide_words": [
+        "inc",
+        "incident",
+        "incidente"
+      ]
+    },
+    {
+      "prefix": "#",
+      "guide_words": [
+        "bug",
+        "issue",
+        "issues",
+        "pr",
+        "prs",
+        "pull",
+        "ticket",
+        "tickets"
+      ]
+    },
+    {
+      "prefix": "v",
+      "guide_words": [
+        "release",
+        "releases",
+        "version",
+        "versiones",
+        "versions"
+      ]
+    }
+  ]
 }

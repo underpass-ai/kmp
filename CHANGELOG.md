@@ -25,6 +25,22 @@ Detailed notes from the early release cycle remain available in the
   byte what it was. The words the question contract reads live in
   `kmp-proto-mapping/language/question_contract.json` and the `facet:*`
   families of `question_families.json`.
+- Under the anchored gate an identifier is read the same however it is
+  spelled: a guide word binds the number after it (`corte 10`, `cut 10` and
+  `C10` are `c10`; `ADR 18` and `ADR-018` are `adr18`; `issue 185` and
+  `PR 185` are `#185`), in the question and in the memories it is compared
+  with (`identifier_aliases` in `question_contract.json`). A memory a writer
+  declared `same_entity_as` one that names the anchor may be cited for it,
+  marked `anchor_via: same_entity_as` and `anchor_from`. A memory leaves the
+  core for an excluded anchor only when that is its only anchor; the words a
+  question excludes no longer count toward the ⌈2/3⌉ rule. `proof.missing`
+  names what was not found in the reader's own words, accents included.
+  An enumerative question that found none of what it asked is UNKNOWN, not
+  PARTIAL. `ask-gate.json` also accepts `{"mode":"off"}`, and
+  `AskGate::STORE_DEFAULT` is the one switch that would make the gate the
+  default (still off).
+- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v2` (the PARTIAL
+  scoring rules changed meaning); every cache entry of v1 is invalidated.
 
 ## [0.23.0] - 2026-09-25
 

@@ -20,6 +20,15 @@ use super::{AskGate, AskRetrievalContext, LexicalBridge, ask_response_from_resul
 
 /// A store of one about whose entries are `(ref, entry_kind, text)`.
 fn store(entries: &[(&str, &str, &str)]) -> GetContextResult {
+    store_related(entries, &[])
+}
+
+/// The same, with proven relations `(source, relation, target)` between the
+/// entries.
+pub(super) fn store_related(
+    entries: &[(&str, &str, &str)],
+    related: &[(&str, &str, &str)],
+) -> GetContextResult {
     let node = |id: &str, kind: &str, summary: &str, entry_kind: Option<&str>| {
         let properties = entry_kind
             .map(|kind| BTreeMap::from([("entry_kind".to_string(), kind.to_string())]))
@@ -38,6 +47,17 @@ fn store(entries: &[(&str, &str, &str)]) -> GetContextResult {
                 .with_dimension("timeline")
                 .with_scope_id("timeline:main")
                 .with_sequence(sequence as u32 + 1),
+        ));
+    }
+    for (source, relation, target) in related {
+        relationships.push(BundleRelationship::new(
+            *source,
+            *target,
+            *relation,
+            RelationExplanation::new(RelationSemanticClass::Evidential)
+                .with_rationale("the writer checked both describe one change")
+                .with_evidence("review notes 12")
+                .with_confidence("high"),
         ));
     }
     let bundle = KmpBundle::new(
@@ -62,7 +82,15 @@ fn store(entries: &[(&str, &str, &str)]) -> GetContextResult {
 }
 
 fn ask_with(gate: Option<AskGate>, question: &str, entries: &[(&str, &str, &str)]) -> AskResponse {
-    let context = AskRetrievalContext::from(store(entries));
+    ask_in(gate, question, store(entries))
+}
+
+pub(super) fn ask_in(
+    gate: Option<AskGate>,
+    question: &str,
+    store: GetContextResult,
+) -> AskResponse {
+    let context = AskRetrievalContext::from(store);
     let context = match gate {
         Some(gate) => context.with_gate(gate),
         None => context,
@@ -79,19 +107,19 @@ fn ask_with(gate: Option<AskGate>, question: &str, entries: &[(&str, &str, &str)
     .expect("an ask response")
 }
 
-fn ask(question: &str, entries: &[(&str, &str, &str)]) -> AskResponse {
+pub(super) fn ask(question: &str, entries: &[(&str, &str, &str)]) -> AskResponse {
     ask_with(Some(AskGate::anchored(true)), question, entries)
 }
 
-fn status(response: &AskResponse) -> AnswerStatus {
+pub(super) fn status(response: &AskResponse) -> AnswerStatus {
     AnswerStatus::try_from(response.answer_status).expect("a status")
 }
 
-fn reason(response: &AskResponse) -> UnknownReason {
+pub(super) fn reason(response: &AskResponse) -> UnknownReason {
     UnknownReason::try_from(response.unknown_reason).expect("a reason")
 }
 
-fn cited(response: &AskResponse) -> Vec<&str> {
+pub(super) fn cited(response: &AskResponse) -> Vec<&str> {
     response
         .because
         .iter()
@@ -99,11 +127,11 @@ fn cited(response: &AskResponse) -> Vec<&str> {
         .collect()
 }
 
-fn missing(response: &AskResponse) -> Vec<String> {
+pub(super) fn missing(response: &AskResponse) -> Vec<String> {
     response.proof.as_ref().expect("proof").missing.clone()
 }
 
-fn confidence(response: &AskResponse) -> MemoryConfidence {
+pub(super) fn confidence(response: &AskResponse) -> MemoryConfidence {
     MemoryConfidence::try_from(response.proof.as_ref().expect("proof").confidence)
         .expect("a confidence")
 }
@@ -226,7 +254,8 @@ fn a_concept_stated_only_in_another_entry_does_not_answer_the_anchor() {
     assert_eq!(response.answer, UNANSWERED);
     assert_eq!(status(&response), AnswerStatus::Unknown);
     assert_eq!(reason(&response), UnknownReason::AttributeNotFound);
-    assert_eq!(missing(&response), ["kubernetes", "cluster"]);
+    // In the reader's words, as written.
+    assert_eq!(missing(&response), ["Kubernetes", "cluster"]);
 
     // The same question without the gate is what the table guards against
     // regressing into; the gate never needs it to have answered.
@@ -301,9 +330,10 @@ fn an_anchor_no_candidate_names_is_absent_in_the_selection() {
         assert_eq!(missing(&response), ["C6.24"]);
         assert!(response.summary.ends_with("; not found: C6.24"));
     }
+    // The guide word is part of how the reader named it.
     let response = ask("issue #288 pause resume preflight", ATLAS);
     assert_eq!(reason(&response), UnknownReason::AnchorAbsentInSelection);
-    assert_eq!(missing(&response), ["#288"]);
+    assert_eq!(missing(&response), ["issue #288"]);
 }
 
 #[test]
@@ -393,7 +423,7 @@ fn a_question_without_anchors_still_says_how_it_settled() {
 }
 
 #[test]
-fn a_negated_anchor_keeps_its_entries_out_of_the_core_without_a_required_one() {
+fn a_negated_anchor_keeps_only_its_own_entries_out_of_the_core_without_a_required_one() {
     let entries = [
         (
             "decision:runner-limit",
@@ -408,17 +438,38 @@ fn a_negated_anchor_keeps_its_entries_out_of_the_core_without_a_required_one() {
     ];
     let question = "What limit applies to the ceremony runner, excluding C7?";
 
-    // The ⌈2/3⌉ rule is not touched: it still counts `excluding` and `C7`
-    // among the concepts, so only the C7 entry clears it, and the core the
-    // gate keeps from it is empty.
+    // Without the gate the ⌈2/3⌉ rule counts `excluding` and `C7` among the
+    // concepts, so only the C7 entry clears it.
     let plain = ask_with(None, question, &entries);
     assert_eq!(cited(&plain), ["decision:c7-runner-limit"]);
 
+    // The gate does not ask for what the question excluded: the rule reads
+    // the question without it, and the entry whose only anchor is C7 stays
+    // out of the core.
     let response = ask(question, &entries);
 
-    assert_eq!(status(&response), AnswerStatus::Unknown);
-    assert_eq!(reason(&response), UnknownReason::NoBearing);
-    assert!(response.because.is_empty());
+    assert_eq!(status(&response), AnswerStatus::Answered);
+    assert_eq!(cited(&response), ["decision:runner-limit"]);
+}
+
+#[test]
+fn an_entry_that_names_an_asked_anchor_besides_the_excluded_one_stays_in_the_core() {
+    let entries = [
+        (
+            "decision:c613-with-c7",
+            "decision",
+            "C6.13 scope covers pause and resume, and C7 inherits its journal format.",
+        ),
+        (
+            "decision:c7-scope",
+            "decision",
+            "C7 scope covers the migration of the artifact store.",
+        ),
+    ];
+    let response = ask("What scope does C6.13 cover, excluding C7?", &entries);
+
+    assert_eq!(status(&response), AnswerStatus::Answered);
+    assert_eq!(cited(&response), ["decision:c613-with-c7"]);
 }
 
 #[test]

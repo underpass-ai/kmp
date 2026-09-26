@@ -1,5 +1,8 @@
+mod anchor_rescue;
 mod anchor_selection;
 mod anchor_strength;
+#[cfg(test)]
+mod anchored_alias_tests;
 mod anchored_gate;
 #[cfg(test)]
 mod anchored_gate_tests;
@@ -20,6 +23,8 @@ mod candidate_temporal_state;
 mod dimensions;
 mod gate_verdict;
 mod hybrid_evidence;
+mod identifier_alias;
+mod identifier_aliases;
 mod identifier_binding;
 mod ingest;
 mod judged_selection;

@@ -11,6 +11,15 @@ pub struct AskGate {
 }
 
 impl AskGate {
+    /// The gate of a store that says nothing about it (no `ask-gate.json`).
+    ///
+    /// The one place that decides whether the anchored gate is the default:
+    /// `None` keeps every ask byte for byte what it was, and a store opts in
+    /// with the file. Turning it on for every store is changing this to
+    /// `Some(AskGate::anchored(true))`; a store can then opt out with
+    /// `{"mode":"off"}`. It stays off until B-real is judged.
+    pub const STORE_DEFAULT: Option<AskGate> = None;
+
     /// The anchored gate. With `partial`, an enumerative question whose
     /// cited memories state only some of what it asked is PARTIAL; without
     /// it, UNKNOWN like a singular one.

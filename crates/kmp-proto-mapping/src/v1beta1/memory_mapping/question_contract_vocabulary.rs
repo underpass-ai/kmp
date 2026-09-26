@@ -3,6 +3,8 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 
+use super::identifier_aliases::IdentifierAliases;
+
 /// The words a question's contract is read with: what negates, what names a
 /// unit or a kind of identifier, what only asks whether something exists and
 /// what carries no subject.
@@ -36,6 +38,8 @@ pub(super) struct QuestionContractVocabulary {
     /// ... and by more than this many of them: in a small selection every
     /// anchor is a large share of it.
     hub_min_documents: usize,
+    /// The one term each spelling of an introduced identifier reads as.
+    identifier_aliases: IdentifierAliases,
 }
 
 const SOURCE: &str = include_str!("../../../language/question_contract.json");
@@ -70,6 +74,11 @@ impl QuestionContractVocabulary {
 
     pub(super) fn is_guide_word(&self, word: &str) -> bool {
         self.guide_words.contains(word)
+    }
+
+    /// How `corte 10`, `C10` and `ADR-018` read as one term each.
+    pub(super) fn identifier_aliases(&self) -> &IdentifierAliases {
+        &self.identifier_aliases
     }
 
     pub(super) fn is_unit(&self, word: &str) -> bool {
@@ -144,6 +153,27 @@ mod tests {
     }
 
     #[test]
+    fn every_word_that_introduces_an_alias_is_a_guide_word() {
+        let vocabulary = QuestionContractVocabulary::shipped();
+        for word in [
+            "corte", "cut", "fase", "phase", "adr", "inc", "issue", "pr", "release",
+        ] {
+            assert!(vocabulary.identifier_aliases().introduces(word), "{word}");
+        }
+        let source: serde_json::Value = serde_json::from_str(SOURCE).expect("json");
+        for alias in source["identifier_aliases"].as_array().expect("aliases") {
+            for word in alias["guide_words"].as_array().expect("words") {
+                let word = word.as_str().expect("a word");
+                assert!(
+                    vocabulary.is_guide_word(word),
+                    "`{word}` introduces an alias"
+                );
+                assert_eq!(word, super::super::search_terms::fold_search_term(word));
+            }
+        }
+    }
+
+    #[test]
     fn a_negation_spans_one_word_or_a_phrase() {
         let vocabulary = QuestionContractVocabulary::shipped();
 
@@ -171,10 +201,14 @@ mod tests {
         assert!(vocabulary.carries_no_subject("exact"));
         assert!(!vocabulary.carries_no_subject("database"));
 
-        // Ten candidates of a hundred is a hub; two of twelve is not, however
-        // large a share of so small a selection it is.
-        assert!(vocabulary.is_hub(11, 100));
+        // Thirty-one candidates of a hundred is a hub; eleven of a hundred,
+        // fifty of four hundred or two of twelve is not, however large a
+        // share of so small a selection it is: an identifier that `corte 4`,
+        // `C4` and a `corte4` branch all name is still one subject.
+        assert!(vocabulary.is_hub(31, 100));
+        assert!(!vocabulary.is_hub(11, 100));
+        assert!(!vocabulary.is_hub(50, 400));
         assert!(!vocabulary.is_hub(2, 12));
-        assert!(!vocabulary.is_hub(11, 1000));
+        assert!(!vocabulary.is_hub(31, 1000));
     }
 }

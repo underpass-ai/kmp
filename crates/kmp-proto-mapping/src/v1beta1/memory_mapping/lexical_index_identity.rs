@@ -11,6 +11,9 @@ pub(super) struct LexicalIndexIdentity {
     about: String,
     scopes: Vec<String>,
     temporal: TemporalSelection,
+    /// Whether the candidates were read with their alias terms (the
+    /// anchored ask gate): a different collection from the same snapshot.
+    aliased: bool,
 }
 
 impl LexicalIndexIdentity {
@@ -20,7 +23,16 @@ impl LexicalIndexIdentity {
             about: result.bundle.root_node().node_id().to_owned(),
             scopes: result.requested_scopes.clone(),
             temporal: temporal.clone(),
+            aliased: false,
         })
+    }
+
+    /// The same snapshot read with alias terms.
+    pub(super) fn aliased(self) -> Self {
+        Self {
+            aliased: true,
+            ..self
+        }
     }
 
     pub(super) fn retained_bytes(&self) -> usize {

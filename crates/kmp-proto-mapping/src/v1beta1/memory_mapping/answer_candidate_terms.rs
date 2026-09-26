@@ -5,6 +5,7 @@ use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{answer_context_refs, is_retrieval_provenance};
+use super::question_contract_vocabulary::QuestionContractVocabulary;
 use super::search_terms::{informative_term_counts, informative_terms};
 use super::term_counts::TermCounts;
 
@@ -36,10 +37,15 @@ impl AnswerCandidateTerms {
         let summary = summary_text
             .map(|summary| informative_terms(summary, morphology))
             .unwrap_or_default();
-        let content_text = match summary_text {
+        let mut content_text = match summary_text {
             Some(summary) => format!("{} {}", item.text, summary),
             None => item.text.clone(),
         };
+        // Under the anchored gate `corte 10` and `ADR 18` also read as the
+        // terms `c10` and `adr18` a question's anchor names.
+        if context.identifier_aliases {
+            push_aliases(&mut content_text);
+        }
         // A set of terms is the keys of its counts: read the text once.
         let content_counts = informative_term_counts(&content_text, morphology);
         let content = content_counts.terms().cloned().collect::<BTreeSet<_>>();
@@ -61,6 +67,14 @@ impl AnswerCandidateTerms {
             direct_text.push_str(key);
             direct_text.push(' ');
             direct_text.push_str(value);
+        }
+        if context.identifier_aliases {
+            // The content's aliases are in it already; what the source, the
+            // refs and the metadata spell is read here.
+            let beyond_content = direct_text[content_text.len()..].to_string();
+            let mut extra = beyond_content.clone();
+            push_aliases(&mut extra);
+            direct_text.push_str(&extra[beyond_content.len()..]);
         }
         let direct_counts = informative_term_counts(&direct_text, morphology);
         let direct = direct_counts.terms().cloned().collect::<BTreeSet<_>>();
@@ -103,6 +117,17 @@ impl AnswerCandidateTerms {
             relation,
             searchable,
         }
+    }
+}
+
+/// Appends the alias terms a text spells, once each.
+fn push_aliases(text: &mut String) {
+    let terms = QuestionContractVocabulary::shipped()
+        .identifier_aliases()
+        .text_terms(text);
+    for term in terms {
+        text.push(' ');
+        text.push_str(&term);
     }
 }
 

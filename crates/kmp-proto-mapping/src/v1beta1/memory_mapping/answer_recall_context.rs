@@ -37,6 +37,9 @@ pub(super) struct AnswerRecallContext {
     pub(super) morphology: Morphology,
     /// The declared `entry_kind` of each entry node that has one.
     pub(super) entry_kinds: BTreeMap<String, String>,
+    /// Whether a memory's text also reads as the alias terms it spells
+    /// (`corte 10` as `c10`): only under the anchored ask gate.
+    pub(super) identifier_aliases: bool,
 }
 
 impl AnswerRecallContext {
@@ -148,6 +151,7 @@ impl AnswerRecallContext {
             reach_graph: ReachGraph::from_bundle(bundle),
             morphology,
             entry_kinds,
+            identifier_aliases: false,
         }
     }
 
