@@ -7,7 +7,7 @@
 //! one JSON line per text to standard output with the layers
 //! `kmp_proto_mapping::v1beta1::SearchProbe` reports: informative terms,
 //! concept keys, search keys under the about's morphology, identifiers, and
-//! compound identifiers (empty until the kernel reads them).
+//! and the identifiers the ranker also reads as whole search terms.
 //!
 //! It opens no store and calls no model; the output is a pure function of
 //! the input and the kernel build.
@@ -183,7 +183,8 @@ mod tests {
                 .expect("array")
                 .contains(&json!("kmp-469"))
         );
-        assert_eq!(first["compound_identifiers"], json!([]));
+        assert_eq!(first["compound_identifiers"], json!(["kmp.469"]));
+        assert!(search_keys.contains(&json!("kmp.469")));
 
         assert_eq!(records[1]["line"], 3);
         assert_eq!(records[1]["id"], Value::Null);

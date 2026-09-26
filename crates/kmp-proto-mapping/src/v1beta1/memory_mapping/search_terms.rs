@@ -90,12 +90,26 @@ pub(super) fn informative_terms(value: &str, morphology: &Morphology) -> BTreeSe
 /// unifies keeps behaving exactly as it did. Morphology only reaches the words
 /// the table has nothing to say about, which is almost all of them and all of
 /// the Spanish.
+///
+/// A whole identifier (`c6.24`, `0.7.0`, `kmp-469`) is compared as written:
+/// it is the only kind of term that keeps a joiner, and neither the concept
+/// table nor a stemmer has anything to say about a name.
 pub(super) fn search_key(term: &str, morphology: &Morphology) -> String {
+    if is_whole_identifier(term) {
+        return term.to_string();
+    }
     let concept = concept_key(term);
     if concept != term {
         return concept.to_string();
     }
     morphology.stem(term).into_owned()
+}
+
+/// Whether a term is an identifier kept whole by the tokenizer rather than a
+/// word: words are split at every character that is not alphanumeric, so only
+/// a whole identifier still carries one.
+pub(super) fn is_whole_identifier(term: &str) -> bool {
+    term.chars().any(|character| !character.is_alphanumeric())
 }
 
 pub(super) fn terms_match(left: &str, right: &str) -> bool {

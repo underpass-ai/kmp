@@ -12,6 +12,7 @@ mod bundle_views;
 mod candidate_temporal_state;
 mod dimensions;
 mod hybrid_evidence;
+mod identifier_binding;
 mod ingest;
 mod judged_selection;
 mod lexical_bridge;

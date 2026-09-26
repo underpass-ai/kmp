@@ -1,11 +1,19 @@
 use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
 
+use super::compound_identifiers::compound_forms;
+
 /// The words of a text that could carry a search, in the form they are
 /// compared in.
 ///
 /// Stop words in either shipped language are dropped, single characters are
 /// dropped unless they are digits, and what remains is folded. Stored text
 /// is never changed by this; it only decides which of its words count.
+///
+/// An identifier that carries a digit or a `#` is also yielded whole, after
+/// its parts (see [`compound_identifiers`](super::compound_identifiers)):
+/// `C6.24` yields `c6`, `24` and `c6.24`, so it no longer meets `C6.4` on
+/// everything it is made of. A whole form always keeps a joiner, which is how
+/// the ranker tells it from a word and leaves it unstemmed.
 pub fn informative_tokens(value: &str) -> impl Iterator<Item = String> + '_ {
     const STOP_WORDS: &[&str] = &[
         "a", "against", "an", "and", "are", "as", "at", "be", "because", "by", "came", "did", "do",
@@ -15,14 +23,17 @@ pub fn informative_tokens(value: &str) -> impl Iterator<Item = String> + '_ {
         "will", "with", "el", "la", "los", "las", "de", "al", "del", "donde", "en", "es", "lo",
         "no", "por", "para", "que", "se", "su", "un", "ya", "como", "cual", "cuando",
     ];
-    value
-        .split(|character: char| !character.is_alphanumeric())
-        .map(fold_search_term)
-        .filter(|term| {
-            !term.is_empty()
-                && !STOP_WORDS.contains(&term.as_str())
-                && (term.chars().all(|character| character.is_ascii_digit()) || term.len() >= 2)
-        })
+    value.split_whitespace().flat_map(|token| {
+        token
+            .split(|character: char| !character.is_alphanumeric())
+            .map(fold_search_term)
+            .filter(|term| {
+                !term.is_empty()
+                    && !STOP_WORDS.contains(&term.as_str())
+                    && (term.chars().all(|character| character.is_ascii_digit()) || term.len() >= 2)
+            })
+            .chain(compound_forms(token))
+    })
 }
 
 /// Produces the comparison form only. Stored evidence and returned query text
@@ -61,5 +72,19 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(tokens, ["valve", "469", "pasarela", "2", "minutes", "late"]);
+    }
+
+    #[test]
+    fn identifiers_are_yielded_whole_after_their_parts() {
+        let tokens =
+            informative_tokens("C6.24 cites C6.8+C6.9, v0.7.0 and #188.").collect::<Vec<_>>();
+
+        assert_eq!(
+            tokens,
+            [
+                "c6", "24", "c6.24", "cites", "c6", "8", "c6", "9", "c6.8", "c6.9", "v0", "7", "0",
+                "0.7.0", "188"
+            ]
+        );
     }
 }

@@ -30,7 +30,7 @@ all_answer_core_precision	0.8095
 all_false_unknown_rate	0.1429
 guarded_cases	13
 guarded_false_answer_rate	0.2308
-guarded_high_false_answer_rate	0.2308
+guarded_high_false_answer_rate	0.0770
 false_answer_rate_anchor_absent	0.5000
 false_answer_rate_anchor_neighbor_existing	0.5000
 false_answer_rate_cross_about_anchor	0.0000

@@ -1,4 +1,4 @@
-use kmp_domain::language::{identifiers, informative_tokens};
+use kmp_domain::language::{compound_identifiers, identifiers, informative_tokens};
 
 use super::morphology::Morphology;
 use super::search_probe_terms::SearchProbeTerms;
@@ -60,7 +60,7 @@ impl SearchProbe {
             concept_keys,
             search_keys,
             identifiers: identifiers(text),
-            compound_identifiers: Default::default(),
+            compound_identifiers: compound_identifiers(text),
         }
     }
 }
@@ -206,7 +206,11 @@ mod tests {
 
             assert_eq!(probed.search_keys, ranked.text, "text terms for {text:?}");
             assert_eq!(probed.search_keys, ranked.content, "content for {text:?}");
-            assert!(probed.compound_identifiers.is_empty());
+            assert_eq!(
+                probed.compound_identifiers,
+                compound_identifiers(text),
+                "whole identifiers for {text:?}"
+            );
         }
     }
 
@@ -246,6 +250,27 @@ mod tests {
                 .map(|term| concept_key(term).to_string())
                 .collect::<BTreeSet<_>>()
         );
+    }
+
+    #[test]
+    fn whole_identifiers_are_search_keys_unstemmed() {
+        let about = ["The deployment of the gateway was frozen during the audit."];
+        let probe = SearchProbe::from_about_texts(about, false);
+        let text = "C6.24 local execution adapters, v0.7.0 and C6.8+C6.9.";
+        let probed = probe.probe(text);
+
+        let whole = ["0.7.0", "c6.24", "c6.8", "c6.9"]
+            .map(str::to_string)
+            .into_iter()
+            .collect::<BTreeSet<_>>();
+        assert_eq!(probed.compound_identifiers, whole);
+        assert!(probed.search_keys.is_superset(&whole));
+        assert!(probed.search_keys.contains("c6"));
+        assert!(probed.search_keys.contains("adapt"));
+        assert!(!probed.search_keys.contains("c6.4"));
+
+        let ranked = candidate_terms(&bundle(&about, false), text);
+        assert_eq!(probed.search_keys, ranked.content);
     }
 
     #[test]

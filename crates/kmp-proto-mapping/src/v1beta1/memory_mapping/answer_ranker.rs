@@ -14,13 +14,14 @@ use super::answer_selection::{
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
+use super::identifier_binding::IdentifierBinding;
 use super::lexical_bridge::LexicalBridge;
 use super::lexicon::Lexicon;
 use super::memory_lifecycle::MemoryLifecycle;
 use super::question_intent::QuestionIntent;
 use super::search_terms::{
-    concept_count, informative_term_counts, informative_terms, informative_tokens,
-    matching_term_count, search_key, strict_answer_focus_terms,
+    concept_count, informative_term_counts, informative_terms, informative_tokens, matching_terms,
+    search_key, strict_answer_focus_terms,
 };
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
@@ -502,12 +503,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if question_terms.is_empty() {
             return MemoryConfidence::Low;
         }
+        let binding = IdentifierBinding::read(question, &self.context.morphology);
         let best_matches = evidence
             .iter()
             .map(|item| {
-                matching_term_count(
-                    &question_terms,
-                    &AnswerCandidateTerms::from_evidence(item, &self.context).searchable,
+                let searchable =
+                    AnswerCandidateTerms::from_evidence(item, &self.context).searchable;
+                concept_count(
+                    &binding.credited(matching_terms(&question_terms, &searchable), &searchable),
                 )
             })
             .max()
@@ -615,6 +618,7 @@ mod tests {
     use super::super::morphology::Morphology;
     use super::super::relation_direction::RelationDirection;
     use super::super::relation_feature::RelationFeature;
+    use super::super::search_terms::matching_term_count;
     use super::super::search_terms::{fold_search_term, terms_match};
 
     fn ev(source: &str) -> MemoryEvidence {

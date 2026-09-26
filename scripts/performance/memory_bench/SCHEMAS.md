@@ -1183,11 +1183,11 @@ Output: one canonical-order JSON line per text, keys sorted, every field present
 | `line` | 1-based input line (blank lines counted) |
 | `index` | position of the text inside `texts` (0 for `text`) |
 | `language` | the Snowball language the probe stems in, or `null` (exact matching) |
-| `informative_terms` | `kmp_domain::language::informative_tokens`: folded (NFKD, no diacritics, lowercase, `ß`→`ss`) tokens split on non-alphanumerics, minus stop words and one-letter non-digits |
+| `informative_terms` | `kmp_domain::language::informative_tokens`: folded (NFKD, no diacritics, lowercase, `ß`→`ss`) tokens split on non-alphanumerics, minus stop words and one-letter non-digits, plus the whole identifiers of `compound_identifiers` |
 | `concept_keys` | each informative term through the hand-kept concept table only (`concept:movement`, ...); unknown words unchanged |
-| `search_keys` | what the ranker compares: concept key when the table knows the word, else the Snowball stem under `language`. Equal to `AnswerCandidateTerms.text` for the same text (unit-tested) |
+| `search_keys` | what the ranker compares: a whole identifier as written, else the concept key when the table knows the word, else the Snowball stem under `language`. Equal to `AnswerCandidateTerms.text` for the same text (unit-tested) |
 | `identifiers` | `kmp_domain::language::identifiers`, folded |
-| `compound_identifiers` | always `[]` until P3 lands multi-token identifiers |
+| `compound_identifiers` | `kmp_domain::language::compound_identifiers` (P3): each identifier with a digit or `#` kept whole, folded, without `#` or a version `v`, split at `+`, `,` and a slash between identifiers (`C6.4/C6.5`), a range `C6.1-C6.4` as its two ends, an inner hyphen read as a dot (`c6-4` and `C6.4` both give `c6.4`); only forms that keep a joiner (`#469` is the part `469`). They reach BM25, PMI and the bridge unstemmed |
 
 All term lists are sorted and unique because the ranker compares sets. Errors (bad
 JSON, both or neither of `text`/`texts`, unreadable file, extra arguments) go to stderr as

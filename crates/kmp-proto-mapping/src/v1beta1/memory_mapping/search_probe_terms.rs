@@ -21,6 +21,9 @@ pub struct SearchProbeTerms {
     /// The identifiers the text carries, folded, as
     /// `kmp_domain::language::identifiers` reads them.
     pub identifiers: BTreeSet<String>,
-    /// Multi-token identifiers. Always empty until the kernel reads them.
+    /// The identifiers the ranker also reads as whole search terms, as
+    /// `kmp_domain::language::compound_identifiers` yields them: `c6.24`,
+    /// `0.7.0`, `c6.8` and `c6.9` from `C6.8+C6.9`. Each is in
+    /// `search_keys` as written, unstemmed.
     pub compound_identifiers: BTreeSet<String>,
 }
