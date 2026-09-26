@@ -276,6 +276,24 @@ class ProbeTest(unittest.TestCase):
         self.assertEqual(usage['io']['rchar'], 60)
         self.assertEqual(usage['absent'], {})
 
+    def test_a_thread_that_exits_during_the_call_never_makes_cpu_negative(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder) / '7'
+            (base / 'task/7').mkdir(parents=True)
+            (base / 'task/8').mkdir()
+            (base / 'clear_refs').write_text('')
+            (base / 'task/7/schedstat').write_text('1000 5 6\n')
+            (base / 'task/8/schedstat').write_text('34000000000 1 1\n')
+            probe = ProcessProbe(7, proc_root=folder)
+            snapshot = probe.before()
+            (base / 'task/8/schedstat').unlink()
+            (base / 'task/8').rmdir()
+            (base / 'task/9').mkdir()
+            (base / 'task/7/schedstat').write_text('1700 5 6\n')
+            (base / 'task/9/schedstat').write_text('250 1 1\n')
+            usage = probe.after(snapshot)
+        self.assertEqual(usage['cpu_ns'], 700 + 250)
+
 
 class FakeSession:
     def __init__(self, pages):

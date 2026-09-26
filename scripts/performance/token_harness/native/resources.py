@@ -4,7 +4,11 @@ Before the call the peak RSS is reset (`5` into `/proc/<pid>/clear_refs`), and
 `/proc/<pid>/io` plus the `schedstat` of every task are read; after the call
 `VmHWM` is the peak RSS of that call and the other two are deltas. Anything the
 platform does not offer is null and named in `absent` with its reason, never
-guessed. CPU of a thread that exits during the call is lost (a lower bound).
+guessed. CPU is summed task by task over the tasks alive after the call, each
+against its own reading before it (zero for a task born during the call): a
+thread that exits during the call takes its CPU with it (a lower bound), and
+never turns the delta negative, as subtracting two totals over different sets
+of threads did when a worker that had run before the call ended inside it.
 """
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,7 +21,7 @@ RESOURCE_FIELDS = ('rss_peak_kb', 'cpu_ns', 'io')
 @dataclass(frozen=True)
 class Snapshot:
     io: dict | None
-    cpu_ns: int | None
+    cpu_ns: dict | None  # task id -> schedstat run time in ns, before the call
     peak_reset: bool
     absent: dict  # field -> reason, for what could not be read before the call
 
@@ -39,13 +43,13 @@ class ProcessProbe:
         return {key: values[key] for key in IO_FIELDS}
 
     def _cpu_ns(self):
-        total = 0
+        tasks = {}
         for task in (self.base / 'task').iterdir():
             try:
-                total += int((task / 'schedstat').read_text().split()[0])
+                tasks[task.name] = int((task / 'schedstat').read_text().split()[0])
             except FileNotFoundError:
                 continue  # the thread exited between listing and reading
-        return total
+        return tasks
 
     def _peak_kb(self):
         for line in (self.base / 'status').read_text().splitlines():
@@ -78,7 +82,8 @@ class ProcessProbe:
         io = self._read('io', self._io, absent) if snapshot.io is not None else None
         cpu = self._read('cpu_ns', self._cpu_ns, absent) if snapshot.cpu_ns is not None else None
         return {'rss_peak_kb': peak,
-                'cpu_ns': None if cpu is None else cpu - snapshot.cpu_ns,
+                'cpu_ns': None if cpu is None else sum(
+                    max(0, ns - snapshot.cpu_ns.get(task, 0)) for task, ns in cpu.items()),
                 'io': None if io is None else {k: io[k] - snapshot.io[k] for k in IO_FIELDS},
                 'absent': {k: absent[k] for k in RESOURCE_FIELDS if k in absent}}
 
