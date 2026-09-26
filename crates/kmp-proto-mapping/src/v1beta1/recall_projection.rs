@@ -22,6 +22,7 @@ mod response_value;
 mod reused_core;
 mod scalars;
 mod serialized_size;
+mod superseded_core;
 mod text_shortening;
 mod typed_recall;
 mod typed_response;
@@ -67,6 +68,8 @@ mod request_arguments_tests;
 mod response_value_tests;
 #[cfg(test)]
 mod serialized_size_tests;
+#[cfg(test)]
+mod superseded_core_tests;
 #[cfg(test)]
 mod test_support;
 #[cfg(test)]

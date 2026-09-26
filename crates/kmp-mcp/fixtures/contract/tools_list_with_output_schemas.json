@@ -2556,7 +2556,7 @@
                 "type": "array"
               },
               "superseded": {
-                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded.",
                 "type": "array"
               }
             },
@@ -3237,7 +3237,7 @@
                 "type": "array"
               },
               "superseded": {
-                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded.",
                 "type": "array"
               }
             },
@@ -3623,7 +3623,7 @@
                 "type": "array"
               },
               "superseded": {
-                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded.",
                 "type": "array"
               }
             },
@@ -4288,7 +4288,7 @@
                 "type": "array"
               },
               "superseded": {
-                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded.",
                 "type": "array"
               }
             },

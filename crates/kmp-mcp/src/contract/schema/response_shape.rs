@@ -65,7 +65,7 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
              summary_en, not the canonical text."
         ),
         "missing": described("array", "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN."),
-        "superseded": described("array", "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice."),
+        "superseded": described("array", "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded."),
         "expired": described("array", "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement."),
         "conflicts": described("array", "Explicit contradictions whose entries are both still live; distinct from supersession."),
         "matched_relations": described("array", "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer."),

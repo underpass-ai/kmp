@@ -66,13 +66,13 @@ pub(super) fn attach_metadata<E, S>(
     let mut sections = Map::new();
     for section in Section::ALL {
         let core = plan.core_lengths.get(&section).copied().unwrap_or(0);
-        let total = core
-            + plan
-                .items
-                .iter()
-                .filter(|item| item.section == section)
-                .count();
-        if total == 0 {
+        let expansion = plan
+            .items
+            .iter()
+            .filter(|item| item.section == section)
+            .count();
+        let total = core + expansion;
+        if total == 0 || (expansion == 0 && !section.reported_without_expansion()) {
             continue;
         }
         let eligible_total = core
