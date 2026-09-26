@@ -127,16 +127,14 @@ impl DoubtBandJudge {
         };
         let mut judged = Vec::new();
         for (n, passage) in band.passages.iter().enumerate() {
-            let judgement = response
-                .answers
-                .get(&format!("d{n}"))
-                .and_then(doubt_judgement);
+            let answer = response.answers.get(&format!("d{n}"));
+            let judgement = answer.and_then(doubt_judgement);
             if let Some(judgement) = judgement
                 && verdicts
                     .judge(&passage.id, &passage.text_sha256, judgement)
                     .is_ok()
             {
-                judged.push(Some(judgement));
+                judged.push(Some((judgement, answer.and_then(graded))));
             } else {
                 judged.push(None);
             }
@@ -203,6 +201,22 @@ pub(super) fn doubt_judgement(answer: &JudgementAnswer) -> Option<DoubtJudgement
     }
 }
 
+/// A graded answer's expected grade as thousandths of the way from the
+/// worst level to the best, for telemetry: 1000 answers, 0 unrelated.
+pub(super) fn graded(answer: &JudgementAnswer) -> Option<u16> {
+    match answer {
+        JudgementAnswer::Score {
+            score,
+            probabilities,
+            ..
+        } if probabilities.len() > 1 => {
+            let top = (probabilities.len() - 1) as f64;
+            Some(((1.0 - score / top).clamp(0.0, 1.0) * 1_000.0).round() as u16)
+        }
+        _ => None,
+    }
+}
+
 fn unavailable(error: String) -> DoubtOutcome {
     DoubtOutcome {
         verdicts: None,
@@ -215,11 +229,12 @@ fn unavailable(error: String) -> DoubtOutcome {
 /// One debug line per band on `kmp_mcp::doubt_band`
 /// (`RUST_LOG=kmp_mcp::doubt_band=debug`): the entry, how it ended, and per
 /// passage a digest of its entry ref (never the ref or the text), whether it
-/// is cited and the judged thousandths, so the bench can score the judge
-/// against gold refs without the log carrying stored words.
+/// is cited and the judged thousandths (answering/not, and for a graded
+/// question the expected grade), so the bench can score the judge against
+/// gold refs without the log carrying stored words.
 fn report(
     band: &DoubtBand,
-    judged: Option<&[Option<DoubtJudgement>]>,
+    judged: Option<&[Option<(DoubtJudgement, Option<u16>)>]>,
     status: &str,
     started: Instant,
 ) {
@@ -234,7 +249,10 @@ fn report(
             let digest = format!("{:x}", Sha256::digest(passage.entry_ref.as_bytes()));
             let judged = judged
                 .and_then(|judged| judged.get(n).copied().flatten())
-                .map(|j| format!("{}/{}", j.answers, j.not_answers))
+                .map(|(j, grade)| match grade {
+                    Some(grade) => format!("{}/{}/{grade}", j.answers, j.not_answers),
+                    None => format!("{}/{}", j.answers, j.not_answers),
+                })
                 .unwrap_or_else(|| "-".into());
             format!(
                 "{}:{}:{}",

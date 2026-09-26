@@ -6,7 +6,7 @@ use kmp_proto_mapping::v1beta1::{DoubtBand, DoubtEntry, DoubtJudgement, DoubtPas
 use sha2::{Digest, Sha256};
 
 use super::ask_judge_config::AskJudgeConfig;
-use super::doubt_band_judge::{DoubtBandJudge, doubt_judgement};
+use super::doubt_band_judge::{DoubtBandJudge, doubt_judgement, graded};
 use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
@@ -197,6 +197,19 @@ fn answers_read_as_thousandths_of_answering_and_of_not() {
         None,
         "another scale"
     );
+}
+
+#[test]
+fn a_graded_answer_reads_as_the_share_of_the_scale_above_its_expected_grade() {
+    let score = |score| JudgementAnswer::Score {
+        score,
+        probabilities: vec![0.25; 4],
+        confidence: 0.5,
+    };
+    assert_eq!(graded(&score(0.0)), Some(1_000));
+    assert_eq!(graded(&score(3.0)), Some(0));
+    assert_eq!(graded(&score(2.03)), Some(323));
+    assert_eq!(graded(&JudgementAnswer::Noul { yes: 0.5 }), None);
 }
 
 #[tokio::test]
