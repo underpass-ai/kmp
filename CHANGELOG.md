@@ -25,6 +25,26 @@ Detailed notes from the early release cycle remain available in the
   from 0.1429 to 0.0477, the 35 original cases unchanged
   (`docs/development/retrieval-baseline.tsv`); `RETRIEVAL_ASK_GATE=off`
   and the bench variant `ask-gate-off.toml` measure without it.
+- An ask the gate answered keeps its proof past the cited core on request
+  (P8). Below `budget.detail: "full"` its first page carries the cited core
+  and what fits, `projection.more_on_request` counts the rest (proto
+  `RecallProjection.more_on_request`, field 12) and no continuation is
+  offered; `full` pages it as before. A shortened answered page restarts at
+  the allowance of its whole core, not that plus 10 KB of expansion.
+  `partial` and `unknown` keep paging. Every gated UNKNOWN states its
+  `unknown_reason`, also when the gate answered but `max_entries` left none
+  of its citations. Measured against the P1–P6 set, same answers on every
+  question: tokens per `kmp_ask` journey on B-real (31 questions, 3 samples)
+  11,656 → 4,778 (gate off: 10,231), hard negatives and identifier guards
+  11,061 → 3,978 (v0.23.0: 6,929), synth-v1 10^3 22,935 → 13,257 (gate off:
+  13,246).
+- A continuation or restart of a `kmp_ask` or `kmp_wake` page is cut from
+  the first page's frozen read. A request without `budget.detail` was echoed
+  on its continuation as `balanced`, a different kernel query, so none of
+  them matched the frozen read; the echo now leaves it unnamed. A first page
+  whose core was shortened is kept for its one restart. Ask continuation
+  p95: 46 → 7 ms on B-real, 225 → 4 ms on the real store's negatives and
+  guards, 324 → 3 ms on synth 10^3.
 - A PARTIAL's `proof.missing` holds only what the question asked and no
   cited memory states, in the reader's words: the sources `max_entries`
   withheld are no longer listed beside them (`projection.selection_omitted`

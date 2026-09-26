@@ -177,6 +177,16 @@ Probar que la primera página más todas las continuaciones reproduce la lectura
 completa con presupuesto grande, y que el cursor sigue rechazando otra
 selección con y sin `repeat_core`.
 
+Un Ask que la puerta deja `answered` no ofrece continuación por debajo de
+`budget.detail: "full"`: su primera página lleva el núcleo citado y lo que
+quepa, `projection.more_on_request` cuenta el resto (campo 12 de
+`RecallProjection`) y `next_action` es nulo. Si el núcleo se acortó, el
+reinicio propone sólo el margen que cabe el núcleo entero. `partial` y
+`unknown` siguen paginando. Una continuación y el reinicio de una página
+acortada se cortan de la lectura congelada de la primera página: el eco de la
+petición no nombra un `detail` que el llamador no nombró, porque para el
+núcleo `balanced` y "sin nivel" son consultas distintas.
+
 Al cambiar etiquetas temporales, probar una entrada antigua con una pertenencia
 posterior: ésta no puede satisfacer un selector ni aparecer en las coordenadas
 del Goto anterior. Mantener etiquetas múltiples y filtros de otras dimensiones
