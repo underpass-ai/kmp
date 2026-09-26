@@ -7,7 +7,7 @@ use crate::ApplicationError;
 pub use crate::queries::render_graph_bundle::RenderedContext;
 use crate::queries::{
     ContextRenderOptions, QueryApplicationService, QueryTimingBreakdown, RehydrateSessionUseCase,
-    clamp_native_graph_traversal_depth, render_graph_bundle_with_options,
+    RenderDemand, clamp_native_graph_traversal_depth, render_graph_bundle_on_demand,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -54,6 +54,27 @@ where
         requested_scopes: &[String],
         render_options: &ContextRenderOptions,
     ) -> Result<GetContextResult, ApplicationError> {
+        self.execute_on_demand(
+            root_node_id,
+            role,
+            depth,
+            requested_scopes,
+            render_options,
+            RenderDemand::Measured,
+        )
+        .await
+    }
+
+    /// The same read, rendering only what the caller will consume.
+    pub async fn execute_on_demand(
+        &self,
+        root_node_id: &str,
+        role: &str,
+        depth: u32,
+        requested_scopes: &[String],
+        render_options: &ContextRenderOptions,
+        demand: RenderDemand,
+    ) -> Result<GetContextResult, ApplicationError> {
         // The scopes were resolved before this query was built. Handing them to
         // the reader is what lets a store narrow on the axis rather than the
         // caller discarding what it should never have loaded.
@@ -67,7 +88,7 @@ where
                 SnapshotSaveOptions::default(),
             )
             .await?;
-        let rendered = render_graph_bundle_with_options(&bundle, render_options);
+        let rendered = render_graph_bundle_on_demand(&bundle, render_options, demand);
 
         Ok(GetContextResult {
             bundle,
@@ -168,6 +189,16 @@ where
         &self,
         query: GetContextQuery,
     ) -> Result<GetContextResult, ApplicationError> {
+        self.get_context_on_demand(query, RenderDemand::Measured)
+            .await
+    }
+
+    /// Read a context, rendering only what the caller will consume.
+    pub async fn get_context_on_demand(
+        &self,
+        query: GetContextQuery,
+        demand: RenderDemand,
+    ) -> Result<GetContextResult, ApplicationError> {
         let rehydrate = RehydrateSessionUseCase::new(
             std::sync::Arc::clone(&self.graph_reader),
             std::sync::Arc::clone(&self.detail_reader),
@@ -176,12 +207,13 @@ where
         );
 
         GetContextUseCase::new(rehydrate)
-            .execute(
+            .execute_on_demand(
                 &query.root_node_id,
                 &query.role,
                 query.depth,
                 &query.requested_scopes,
                 &query.render_options,
+                demand,
             )
             .await
     }

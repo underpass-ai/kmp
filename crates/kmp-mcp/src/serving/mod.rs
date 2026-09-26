@@ -7,6 +7,8 @@ pub(crate) mod backend_choice;
 mod curate_dispatch;
 pub(crate) mod environment;
 mod existing_entry_read;
+pub(crate) mod frozen_recall;
+pub(crate) mod frozen_recall_key;
 pub(crate) mod grpc_tls_config;
 pub(crate) mod grpc_tls_mode;
 mod guide_dispatch;

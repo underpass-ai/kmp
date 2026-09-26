@@ -25,6 +25,9 @@ use super::search_terms::{
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 
+/// A candidate with the terms the ranker read it with.
+type ReadCandidate = (MemoryEvidence, AnswerCandidateTerms);
+
 /// How far retrieval may walk from something the question actually matched.
 /// Two hops covers `symptom → decision → constraint`, the shape a root-cause
 /// question needs, without opening the whole neighbourhood.
@@ -107,17 +110,16 @@ impl<'a> AnswerEvidenceRanker<'a> {
         ranking.resolve(&live)
     }
 
-    /// What a remote judge may read: this ranker's order, then the live
-    /// admitted entries it did not keep, unique by entry and exact text.
+    /// What a remote judge may read: this ranker's order (`ranked`, what
+    /// [`Self::rank`] returned for `candidates`), then the live admitted
+    /// entries it did not keep, unique by entry and exact text.
     pub(super) fn rerank_pool(
         &self,
-        question: &str,
-        policy: MemoryAnswerPolicy,
-        candidates: Vec<MemoryEvidence>,
+        ranked: &[MemoryEvidence],
+        candidates: &[MemoryEvidence],
         limit: usize,
     ) -> Vec<super::semantic_source::SemanticSource> {
         use sha2::{Digest, Sha256};
-        let ranked = self.rank(question, policy, candidates.clone());
         let mut seen = BTreeSet::new();
         let mut pool = Vec::new();
         for item in ranked.iter().chain(candidates.iter()) {
@@ -227,6 +229,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
 
         let mut candidates = Vec::new();
+        // A rejected candidate keeps the terms it was read with: every
+        // rescue below reads the same item, so it reads the same terms.
         let mut rejected = Vec::new();
         for (item, terms) in prepared {
             match AnswerCandidate::eligible(
@@ -239,7 +243,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 &self.context,
             ) {
                 Ok(candidate) => candidates.push(candidate),
-                Err(item) => rejected.push(*item),
+                Err(rejection) => rejected.push(*rejection),
             }
         }
 
@@ -259,6 +263,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         answer.extend(restated);
         let (associated, rejected) = self.associated_candidates(rejected, &lexicon);
         let (bridged, rejected) = self.bridged_candidates(rejected, &lexicon);
+        let rejected = rejected.into_iter().map(|(item, _)| item).collect();
         answer.extend(self.reached_candidates(&answer, rejected));
         answer.extend(associated);
         answer.extend(bridged);
@@ -279,8 +284,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
     fn restated_candidates(
         &self,
         eligible: &[MemoryEvidence],
-        rejected: Vec<MemoryEvidence>,
-    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+        rejected: Vec<ReadCandidate>,
+    ) -> (Vec<MemoryEvidence>, Vec<ReadCandidate>) {
         if rejected.is_empty() || !self.context.reach_graph.has_equivalences() {
             return (Vec::new(), rejected);
         }
@@ -297,7 +302,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
 
         let mut restated = Vec::new();
         let mut still_rejected = Vec::new();
-        for item in rejected {
+        for (item, terms) in rejected {
             let current =
                 self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
             let hop = answer_context_refs(&item)
@@ -307,7 +312,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cloned();
             match hop {
                 Some(hop) if current => restated.push((hop, item)),
-                _ => still_rejected.push(item),
+                _ => still_rejected.push((item, terms)),
             }
         }
         // The memory's own text is the citation; its evidence follows it.
@@ -342,13 +347,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// pairs that reached it and stays out of the answer core.
     fn bridged_candidates(
         &self,
-        rejected: Vec<MemoryEvidence>,
+        rejected: Vec<ReadCandidate>,
         lexicon: &Lexicon,
-    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+    ) -> (Vec<MemoryEvidence>, Vec<ReadCandidate>) {
         let mut bridged = Vec::new();
         let mut still_rejected = Vec::new();
-        for item in rejected {
-            let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+        for (item, terms) in rejected {
             let current =
                 self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
             let pairs = lexicon.bridged_pairs(&terms);
@@ -359,7 +363,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     item,
                 ));
             } else {
-                still_rejected.push(item);
+                still_rejected.push((item, terms));
             }
         }
         bridged.sort_by(|(left_score, _, left), (right_score, _, right)| {
@@ -385,19 +389,18 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// so an association can carry retrieval and still cannot answer.
     fn associated_candidates(
         &self,
-        rejected: Vec<MemoryEvidence>,
+        rejected: Vec<ReadCandidate>,
         lexicon: &Lexicon,
-    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+    ) -> (Vec<MemoryEvidence>, Vec<ReadCandidate>) {
         let mut associated = Vec::new();
         let mut still_rejected = Vec::new();
-        for item in rejected {
-            let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+        for (item, terms) in rejected {
             let current =
                 self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
             if current && lexicon.is_associated(&terms) {
                 associated.push((lexicon.direct_score(&terms), item));
             } else {
-                still_rejected.push(item);
+                still_rejected.push((item, terms));
             }
         }
         associated.sort_by(|(left_score, left), (right_score, right)| {

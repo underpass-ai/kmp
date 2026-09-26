@@ -18,6 +18,9 @@ pub mod node_centric_projection_reader;
 pub mod ordered_neighborhood;
 pub mod query_application_service;
 pub mod rehydrate_session;
+pub mod render_demand;
+#[cfg(test)]
+mod render_demand_render_tests;
 pub mod render_graph_bundle;
 pub(crate) mod tier_section_classifier;
 pub mod timing_breakdown;
@@ -47,9 +50,10 @@ pub use query_application_service::QueryApplicationService;
 pub use rehydrate_session::{
     RehydrateSessionQuery, RehydrateSessionResult, RehydrateSessionUseCase,
 };
+pub use render_demand::RenderDemand;
 pub use render_graph_bundle::{
     RenderedContext, RenderedSection, RenderedTier, render_graph_bundle,
-    render_graph_bundle_with_options,
+    render_graph_bundle_on_demand, render_graph_bundle_with_options,
 };
 pub use tier_section_classifier::NO_RECORDED_ACTION;
 pub use timing_breakdown::QueryTimingBreakdown;

@@ -33,7 +33,7 @@ use super::wake_current_state::{SUPPORT_BOOKKEEPING, rendered_current_state};
 pub const UNANSWERED: &str = "UNKNOWN";
 use super::bundle_views::{
     about_by_entry, abouts_in_bundle, answer_evidence_from_bundle, answer_relations_from_bundle,
-    bundle_memory_metadata, conflicts_from_relations, memory_evidence_from_bundle,
+    conflicts_from_relations, memory_evidence_from_bundle,
     memory_relation_from_bundle_relationship, memory_relations_from_bundle,
     persisted_memory_metadata, persisted_memory_source, proof, proto_coordinate_from_domain,
     proto_relation_explanation, rendered_summary, superseded_from_relations,
@@ -468,10 +468,13 @@ pub fn ask_response_from_result(
     if !reranked.is_empty() {
         supplemental.push(reranked);
     }
-    let relevant_evidence = super::hybrid_evidence::fuse_evidence(
-        ranker.rank(question, policy, candidate_evidence),
-        supplemental,
-    );
+    // The pool a remote judge read was ranked from these very candidates;
+    // the answer stands on that ranking instead of taking it again.
+    let ranked = retrieval
+        .ranked
+        .and_then(|ranked| ranked.into_ranking_for(question, policy, temporal, bridge))
+        .unwrap_or_else(|| ranker.rank(question, policy, candidate_evidence));
+    let relevant_evidence = super::hybrid_evidence::fuse_evidence(ranked, supplemental);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
     let selection_projection = selection_cap_projection(withheld.len());
     // A candidate the graph reached is proof, not an answer. It travels in
@@ -831,6 +834,7 @@ pub fn temporal_response_from_result(
         traversal.axis(),
         expiry_boundary,
     );
+    let source_nodes = super::bundle_node_index::BundleNodeIndex::new(&result.source_bundle);
     let entries = traversal
         .entries()
         .iter()
@@ -843,7 +847,7 @@ pub fn temporal_response_from_result(
                 .iter()
                 .map(proto_coordinate_from_domain)
                 .collect(),
-            metadata: bundle_memory_metadata(&result.source_bundle, entry.ref_id()),
+            metadata: source_nodes.memory_metadata(entry.ref_id()),
         })
         .collect::<Vec<_>>();
     let selected_refs = entries

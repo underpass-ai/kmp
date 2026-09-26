@@ -6,10 +6,12 @@ use kmp_domain::{
     RelationExplanation, RelationSemanticClass, TemporalCoordinate,
 };
 use kmp_proto::v1beta1::{
-    MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation,
-    MemorySemanticClass, Proof, SupersededMemory, TemporalCoordinate as ProtoTemporalCoordinate,
+    MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation, Proof,
+    SupersededMemory, TemporalCoordinate as ProtoTemporalCoordinate,
 };
 
+use super::super::proof_evidence_index::ProofEvidenceIndex;
+use super::bundle_node_index::BundleNodeIndex;
 use super::scalars::{proto_confidence, proto_semantic_class, timestamp_from_sort_or_rfc3339};
 
 pub(super) fn memory_relations_from_bundle(bundle: &KmpBundle) -> Vec<MemoryRelation> {
@@ -42,6 +44,7 @@ pub(super) fn memory_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
     // A source says which memories it supports; a detail with no `supports`
     // edge stands for its own node.
     let support_targets = support_targets_by_source(bundle);
+    let nodes = BundleNodeIndex::new(bundle);
     bundle
         .node_details()
         .iter()
@@ -50,7 +53,7 @@ pub(super) fn memory_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
                 .get(detail.node_id())
                 .cloned()
                 .unwrap_or_else(|| vec![detail.node_id().to_string()]);
-            evidence_from_detail(bundle, detail, supports)
+            evidence_from_detail(&nodes, detail, supports)
         })
         .collect()
 }
@@ -58,6 +61,7 @@ pub(super) fn memory_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
 pub(super) fn answer_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvidence> {
     let node_kinds = bundle_node_kinds(bundle);
     let support_targets = support_targets_by_source(bundle);
+    let nodes = BundleNodeIndex::new(bundle);
     let mut candidates = bundle
         .node_details()
         .iter()
@@ -71,7 +75,7 @@ pub(super) fn answer_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
                 .get(detail.node_id())
                 .cloned()
                 .unwrap_or_else(|| vec![detail.node_id().to_string()]);
-            evidence_from_detail(bundle, detail, supports)
+            evidence_from_detail(&nodes, detail, supports)
         })
         .collect::<Vec<_>>();
 
@@ -157,6 +161,7 @@ pub(super) fn temporal_evidence_from_bundle(
 ) -> Vec<MemoryEvidence> {
     let node_kinds = bundle_node_kinds(bundle);
     let support_targets = support_targets_by_source(bundle);
+    let nodes = BundleNodeIndex::new(bundle);
     let mut evidence_refs = selected_refs.clone();
     for relationship in bundle.relationships().iter().filter(|relationship| {
         relationship.relationship_type() == "supports"
@@ -177,17 +182,17 @@ pub(super) fn temporal_evidence_from_bundle(
                 .get(detail.node_id())
                 .cloned()
                 .unwrap_or_else(|| vec![detail.node_id().to_string()]);
-            evidence_from_detail(bundle, detail, supports)
+            evidence_from_detail(&nodes, detail, supports)
         })
         .collect()
 }
 
 fn evidence_from_detail(
-    bundle: &KmpBundle,
+    nodes: &BundleNodeIndex<'_>,
     detail: &BundleNodeDetail,
     supports: Vec<String>,
 ) -> MemoryEvidence {
-    let properties = bundle_node_properties(bundle, detail.node_id());
+    let properties = nodes.properties(detail.node_id());
     let mut metadata = properties
         .map(persisted_memory_metadata)
         .unwrap_or_default();
@@ -212,12 +217,6 @@ fn evidence_from_detail(
         ),
         metadata,
     }
-}
-
-pub(super) fn bundle_memory_metadata(bundle: &KmpBundle, node_id: &str) -> HashMap<String, String> {
-    bundle_node_properties(bundle, node_id)
-        .map(persisted_memory_metadata)
-        .unwrap_or_default()
 }
 
 pub(super) fn persisted_memory_metadata(
@@ -251,16 +250,6 @@ pub(super) fn persisted_support_clocks(
             clocks.get("ingested_at").and_then(|v| v.as_str()),
         ),
     })
-}
-
-pub(super) fn bundle_node_properties<'a>(
-    bundle: &'a KmpBundle,
-    node_id: &str,
-) -> Option<&'a BTreeMap<String, String>> {
-    std::iter::once(bundle.root_node())
-        .chain(bundle.neighbor_nodes())
-        .find(|node| node.node_id() == node_id)
-        .map(|node| node.properties())
 }
 
 fn bundle_node_kinds(bundle: &KmpBundle) -> BTreeMap<&str, &str> {
@@ -386,51 +375,9 @@ fn normalize_proof_path(
     mut path: Vec<MemoryRelation>,
     evidence: &[MemoryEvidence],
 ) -> Vec<MemoryRelation> {
+    let index = ProofEvidenceIndex::new(evidence);
     for relation in &mut path {
-        let mut refs = relation
-            .evidence_refs
-            .iter()
-            .cloned()
-            .collect::<BTreeSet<_>>();
-        let mut repeated_why = false;
-        let mut repeated_evidence = false;
-
-        for item in evidence {
-            let evidence_node_ref = item.id.strip_prefix("detail:").unwrap_or(&item.id);
-            let why_matches = !relation.why.is_empty() && relation.why == item.text;
-            let evidence_matches = !relation.evidence.is_empty() && relation.evidence == item.text;
-            let endpoint = relation.source_ref == evidence_node_ref
-                || relation.target_ref == evidence_node_ref;
-            let supports_endpoint = item.supports.iter().any(|supported_ref| {
-                relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
-            });
-            // A source that merely supports an endpoint backs that memory, not
-            // this hop; it joins the hop only when it holds the hop's own text.
-            let incident = endpoint || (supports_endpoint && (why_matches || evidence_matches));
-
-            // Equal text proves nothing about provenance: a body only joins a
-            // hop through a source the graph ties to one of its endpoints.
-            if incident {
-                refs.insert(item.id.clone());
-                repeated_why |= why_matches;
-                repeated_evidence |= evidence_matches;
-            }
-        }
-
-        if repeated_why {
-            relation.why.clear();
-        }
-        if repeated_evidence {
-            relation.evidence.clear();
-        }
-        relation.evidence_refs = refs.into_iter().collect();
-        if relation.semantic_class != MemorySemanticClass::Structural as i32
-            && relation.why.is_empty()
-            && relation.evidence.is_empty()
-            && !relation.evidence_refs.is_empty()
-        {
-            relation.why = "Supported by canonical evidence refs.".to_string();
-        }
+        index.normalize(relation);
     }
     path
 }

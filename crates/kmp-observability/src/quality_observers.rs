@@ -125,6 +125,11 @@ impl CompositeQualityObserver {
 }
 
 impl QualityMetricsObserver for CompositeQualityObserver {
+    /// Active when any backend it fans out to is.
+    fn is_active(&self) -> bool {
+        self.observers.iter().any(|observer| observer.is_active())
+    }
+
     fn observe(&self, metrics: &BundleQualityMetrics, context: &QualityObservationContext) {
         let observers = Arc::clone(&self.observers);
         let metrics = metrics.clone();
@@ -144,6 +149,11 @@ pub struct NoopQualityObserver;
 
 impl QualityMetricsObserver for NoopQualityObserver {
     fn observe(&self, _metrics: &BundleQualityMetrics, _context: &QualityObservationContext) {}
+
+    /// Discarding a measurement is no reason to take one.
+    fn is_active(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
@@ -172,6 +182,25 @@ mod tests {
     #[test]
     fn noop_observer_does_not_panic() {
         NoopQualityObserver.observe(&sample_metrics(), &sample_context());
+    }
+
+    #[test]
+    fn exporting_observers_are_active_and_noop_is_not() {
+        assert!(!NoopQualityObserver.is_active());
+        assert!(TracingQualityObserver.is_active());
+        let meter = opentelemetry::global::meter("test");
+        assert!(OTelQualityObserver::new(&meter).is_active());
+    }
+
+    #[test]
+    fn composite_is_active_when_any_backend_is() {
+        let passive = CompositeQualityObserver::new(vec![Box::new(NoopQualityObserver)]);
+        assert!(!passive.is_active());
+        let mixed = CompositeQualityObserver::new(vec![
+            Box::new(NoopQualityObserver),
+            Box::new(TracingQualityObserver),
+        ]);
+        assert!(mixed.is_active());
     }
 
     #[test]

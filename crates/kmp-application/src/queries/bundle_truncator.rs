@@ -12,31 +12,41 @@ pub struct TruncationMetadata {
     pub token_estimator: String,
 }
 
+/// A section the budget kept: its text, its source, and its token count when
+/// the budget had to count it.
+pub(crate) type KeptSection = (String, String, Option<u32>);
+
 /// Tier-aware truncation: L0 guaranteed, L1 prioritized, L2 sacrificed.
 ///
 /// Unlike greedy sequential packing, this continues past L2 sections that
 /// don't fit — later L1 sections can still be included if their tier budget
-/// allows. Returns `(content, source_id)` pairs and truncation metadata.
+/// allows. Returns `(content, source_id, tokens)` triples and truncation
+/// metadata. Each section is tokenized once: the count that decides whether
+/// it fits is the one its total and its rendered section carry.
 pub(crate) fn limit_sections_by_tier_budget(
     sections: Vec<TaggedSection>,
     token_budget: Option<u32>,
     resolved_mode: KmpMode,
     estimator: &dyn TokenEstimator,
-) -> (Vec<(String, String)>, Option<TruncationMetadata>) {
+) -> (Vec<KeptSection>, Option<TruncationMetadata>) {
     let Some(budget) = token_budget else {
-        let pairs = sections
+        let kept = sections
             .into_iter()
-            .map(|s| (s.content, s.source_id))
+            .map(|s| (s.content, s.source_id, None))
             .collect();
-        return (pairs, None);
+        return (kept, None);
     };
 
     let tier_budget = TierBudget::from_total_with_mode(budget, resolved_mode);
     let total_sections = sections.len() as u32;
-    let total_before: u32 = sections
-        .iter()
-        .map(|s| estimator.estimate_tokens(&s.content))
-        .sum();
+    let counted = sections
+        .into_iter()
+        .map(|section| {
+            let tokens = estimator.estimate_tokens(&section.content);
+            (section, tokens)
+        })
+        .collect::<Vec<_>>();
+    let total_before: u32 = counted.iter().map(|(_, tokens)| *tokens).sum();
 
     let mut l0_used = 0u32;
     let mut l1_used = 0u32;
@@ -44,8 +54,7 @@ pub(crate) fn limit_sections_by_tier_budget(
     let mut kept = Vec::new();
     let mut total_used = 0u32;
 
-    for section in sections {
-        let tokens = estimator.estimate_tokens(&section.content);
+    for (section, tokens) in counted {
         let (tier_used, tier_cap) = match section.tier {
             ResolutionTier::L0Summary => (&mut l0_used, tier_budget.l0),
             ResolutionTier::L1CausalSpine => (&mut l1_used, tier_budget.l1),
@@ -59,7 +68,7 @@ pub(crate) fn limit_sections_by_tier_budget(
         if fits_tier && fits_total {
             *tier_used += tokens;
             total_used += tokens;
-            kept.push((section.content, section.source_id));
+            kept.push((section.content, section.source_id, Some(tokens)));
         }
         // Don't break — a later section from a different tier may still fit.
     }

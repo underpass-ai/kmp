@@ -4,13 +4,14 @@ use super::embedded::{
     EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool, EmbeddedIngestTool,
     EmbeddedInspectTool, EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool,
     EmbeddedRelateTool, EmbeddedSummariesAuditTool, EmbeddedTemporalMoveTool, EmbeddedTraceTool,
-    EmbeddedVisualProjectionTool, EmbeddedWakeTool,
+    EmbeddedVisualProjectionTool, EmbeddedWakeTool, FrozenRecallReads,
 };
 use super::judgement_reranker::JudgementReranker;
 use super::judgement_source::load_judgement;
 use super::lexical_bridge_file::{lexical_bridge_path, load_lexical_bridge};
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
 use super::observed_judgement::ObservedJudgement;
+use super::process_frozen_recalls::ProcessFrozenRecalls;
 use super::store_config_report::StoreConfigReport;
 use super::wake_focus_judge::WakeFocusJudge;
 use crate::contract::{TIME_TOOL, TimeMove};
@@ -43,6 +44,9 @@ pub struct EmbeddedKernelMcpBackend {
     /// store. Silent when none is installed.
     lexical_bridge: LexicalBridge,
     lexical_cache: Arc<LexicalIndexCache>,
+    /// First pages of paged Wake and Ask reads, kept so their continuations
+    /// cut pages instead of reading again while the store stands still.
+    frozen_recalls: ProcessFrozenRecalls,
     semantic: Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
     /// TypeSafe Jev for `kmp_curate`, opted into per store. Off without
     /// `typesafe.json`; an error names why a present opt-in cannot run.
@@ -117,6 +121,7 @@ impl EmbeddedKernelMcpBackend {
             commit_native,
             lexical_bridge,
             lexical_cache: Arc::default(),
+            frozen_recalls: ProcessFrozenRecalls::default(),
             semantic,
             judgement,
             rerank,
@@ -215,9 +220,14 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     .await
                 }
                 "kmp_wake" => {
-                    EmbeddedWakeTool::new(&service, telemetry, &self.wake_focus)
-                        .call(arguments)
-                        .await
+                    EmbeddedWakeTool::new(
+                        &service,
+                        telemetry,
+                        &self.wake_focus,
+                        FrozenRecallReads::new(&self.frozen_recalls, &service),
+                    )
+                    .call(arguments)
+                    .await
                 }
                 "kmp_ask" => {
                     EmbeddedAskTool::new(
@@ -227,6 +237,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         &self.semantic,
                         &self.rerank,
                         &self.lexical_cache,
+                        FrozenRecallReads::new(&self.frozen_recalls, &service),
                     )
                     .call(arguments)
                     .await

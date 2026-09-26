@@ -5,6 +5,7 @@
 #[path = "recall_actions.rs"]
 mod actions;
 mod budget;
+mod canonical_json_key;
 mod core_fit;
 mod cursor;
 mod json_paths;
@@ -31,7 +32,10 @@ pub use projection_outcome::ProjectionOutcome;
 pub use recall_output::{project_recall_output, project_recall_output_typed};
 pub use request_arguments::requested_byte_limit;
 pub use response_value::{ask_value, wake_value};
-pub use typed_recall::{project_ask_response, project_wake_response};
+pub use typed_recall::{
+    project_ask_response, project_rendered_ask, project_rendered_wake, project_wake_response,
+    render_ask, render_wake,
+};
 
 #[cfg(test)]
 #[path = "recall_action_tests.rs"]
@@ -60,5 +64,7 @@ mod response_value_tests;
 mod serialized_size_tests;
 #[cfg(test)]
 mod test_support;
+#[cfg(test)]
+mod typed_recall_tests;
 #[cfg(test)]
 mod typed_response_tests;

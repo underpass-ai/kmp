@@ -49,7 +49,8 @@ pub use queries::{
     GraphNodeView, GraphRelationshipView, MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH,
     MIN_NATIVE_GRAPH_TRAVERSAL_DEPTH, NodeCentricProjectionReader, NodeDetailView,
     QueryApplicationService, QueryTimingBreakdown, RehydrateSessionQuery, RehydrateSessionResult,
-    RehydrateSessionUseCase, RenderedContext, RenderedTier, ScopeValidation, ValidateScopeQuery,
-    ValidateScopeUseCase, clamp_native_graph_traversal_depth, render_graph_bundle_with_options,
+    RehydrateSessionUseCase, RenderDemand, RenderedContext, RenderedTier, ScopeValidation,
+    ValidateScopeQuery, ValidateScopeUseCase, clamp_native_graph_traversal_depth,
+    render_graph_bundle_on_demand, render_graph_bundle_with_options,
 };
 pub mod consolidation;

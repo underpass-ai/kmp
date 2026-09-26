@@ -19,6 +19,7 @@ mod observed_judgement;
 #[cfg(test)]
 mod observed_judgement_tests;
 mod passage_judgement;
+pub(crate) mod process_frozen_recalls;
 mod rerank_config;
 pub(crate) mod retrying_embedded_backend;
 mod semantic_rank_response;

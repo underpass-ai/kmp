@@ -204,3 +204,71 @@ fn a_ranking_for_another_question_is_refused() {
     .expect_err("refused");
     assert!(error.contains("different question"), "{error}");
 }
+
+fn ask_with(
+    context: AskRetrievalContext,
+    question: &str,
+    bridge: &LexicalBridge,
+) -> kmp_proto::v1beta1::AskResponse {
+    ask_response_from_result(
+        question,
+        None,
+        MemoryAnswerPolicy::EvidenceOrUnknown,
+        None,
+        context,
+        bridge,
+        &TemporalSelection::Frontier,
+    )
+    .expect("answer")
+}
+
+/// The answer stands on the ranking the pool was read from: ranking once
+/// changes no byte of what it says.
+#[test]
+fn the_answer_reuses_the_pools_ranking_byte_for_byte() {
+    let bridge = LexicalBridge::none();
+    let ranking = || {
+        RerankCandidateRanking::new(
+            "jev-1.13.0".into(),
+            QUESTION,
+            vec![
+                ("entry:b".into(), sha(PARAPHRASE)),
+                ("entry:a".into(), sha(LEXICAL)),
+            ],
+        )
+        .expect("ranking")
+    };
+    let mut pooled = AskRetrievalContext::from(context(false));
+    pooled
+        .rerank_pool(
+            QUESTION,
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            &TemporalSelection::Frontier,
+            &bridge,
+            40,
+        )
+        .expect("pool");
+    assert!(pooled.ranked.is_some(), "the pool keeps its ranking");
+    let reused = ask_with(pooled.with_rerank_candidates(ranking()), QUESTION, &bridge);
+    let fresh = ask_with(
+        AskRetrievalContext::from(context(false)).with_rerank_candidates(ranking()),
+        QUESTION,
+        &bridge,
+    );
+    assert_eq!(reused, fresh);
+
+    // A ranking kept for one question is never the answer to another.
+    let mut pooled = AskRetrievalContext::from(context(false));
+    pooled
+        .rerank_pool(
+            "Which brakes were repaired?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            &TemporalSelection::Frontier,
+            &bridge,
+            40,
+        )
+        .expect("pool");
+    let other = ask_with(pooled, QUESTION, &bridge);
+    let fresh = ask_with(AskRetrievalContext::from(context(false)), QUESTION, &bridge);
+    assert_eq!(other, fresh);
+}

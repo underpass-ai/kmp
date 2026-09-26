@@ -82,7 +82,7 @@ impl<'a> EmbeddedTraceTool<'a> {
             .await
             .map_err(kernel_error("trace", &from))?;
         self.telemetry
-            .observe("kmp_trace", &result.path_bundle, &result.rendered.quality);
+            .observe("kmp_trace", &result.path_bundle, &result.rendered);
         let response = trace_response_from_result(result, page);
         let fingerprint = response.selection_fingerprint.clone();
         Ok(tool_success_result(RelationPageBudget::Trace.apply(

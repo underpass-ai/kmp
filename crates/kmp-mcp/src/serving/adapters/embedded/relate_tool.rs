@@ -4,6 +4,7 @@ use crate::projection::relate_from_response;
 use crate::projection::relation_page_budget::RelationPageBudget;
 use crate::serving::adapters::tool_request_mapping::RelateRequestMapper;
 use crate::serving::{ToolError, tool_success_result};
+use kmp_application::RenderDemand;
 use kmp_embedded::EmbeddedMemoryService;
 use kmp_proto_mapping::v1beta1::{
     LexicalBridge, relate_query_from_proto, relate_response_from_result,
@@ -37,11 +38,14 @@ impl<'a> EmbeddedRelateTool<'a> {
         let about = query.about.clone();
         let result = self
             .service
-            .relate(query.clone())
+            .relate_on_demand(
+                query.clone(),
+                self.telemetry.render_demand(RenderDemand::Skip),
+            )
             .await
             .map_err(kernel_error("relate", &about))?;
         self.telemetry
-            .observe("kmp_relate", &result.bundle, &result.rendered.quality);
+            .observe("kmp_relate", &result.bundle, &result.rendered);
         let response = relate_response_from_result(result, &query, self.bridge)
             .map_err(|status| mapping_error(&status))?;
         let fingerprint = response.selection_fingerprint.clone();

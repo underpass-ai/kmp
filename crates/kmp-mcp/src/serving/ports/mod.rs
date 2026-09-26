@@ -1,3 +1,4 @@
+pub(crate) mod frozen_recall_store;
 pub(crate) mod judgement_model;
 pub(crate) mod kernel_tool_backend;
 pub(crate) mod kernel_tool_future;

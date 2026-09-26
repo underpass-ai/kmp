@@ -7,12 +7,14 @@ use kmp_proto::v1beta1::{
 };
 use serde_json::{Map, Value, json};
 
+use super::super::proof_evidence_index::ProofEvidenceIndex;
 use super::normalization::normalized_proof_relation;
 use super::scalars::{confidence_label, insert_non_empty, insert_timestamp, semantic_class_label};
 
 pub(super) fn proof_value(proof: &kmp_proto::v1beta1::Proof, normalize: bool) -> Value {
+    let index = normalize.then(|| ProofEvidenceIndex::new(&proof.evidence));
     json!({
-        "path": proof.path.iter().map(|relation| if normalize { memory_relation_value(&normalized_proof_relation(relation, &proof.evidence)) } else { memory_relation_value(relation) }).collect::<Vec<_>>(),
+        "path": proof.path.iter().map(|relation| match &index { Some(index) => memory_relation_value(&normalized_proof_relation(relation, index)), None => memory_relation_value(relation) }).collect::<Vec<_>>(),
         "evidence": proof.evidence.iter().map(memory_evidence_value).collect::<Vec<_>>(),
         "conflicts": proof.conflicts,
         "superseded": proof.superseded.iter().map(superseded_value).collect::<Vec<_>>(),

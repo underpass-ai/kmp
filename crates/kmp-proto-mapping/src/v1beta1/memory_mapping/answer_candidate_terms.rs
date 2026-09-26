@@ -40,8 +40,9 @@ impl AnswerCandidateTerms {
             Some(summary) => format!("{} {}", item.text, summary),
             None => item.text.clone(),
         };
-        let content = informative_terms(&content_text, morphology);
+        // A set of terms is the keys of its counts: read the text once.
         let content_counts = informative_term_counts(&content_text, morphology);
+        let content = content_counts.terms().cloned().collect::<BTreeSet<_>>();
         let mut direct_text = format!("{} {}", content_text, item.source);
         direct_text.push(' ');
         direct_text.push_str(&ref_words(&item.id));
@@ -62,7 +63,7 @@ impl AnswerCandidateTerms {
             direct_text.push_str(value);
         }
         let direct_counts = informative_term_counts(&direct_text, morphology);
-        let direct = informative_terms(&direct_text, morphology);
+        let direct = direct_counts.terms().cloned().collect::<BTreeSet<_>>();
 
         let mut claim = item
             .supports
@@ -165,5 +166,44 @@ mod ref_words_tests {
             "x y"
         );
         assert_eq!(ref_words("service:billing:b11"), "b11");
+    }
+}
+
+#[cfg(test)]
+mod term_set_tests {
+    use super::*;
+
+    /// The sets are the keys of the counts read from the same text, so
+    /// reading the text once must give what reading it twice gave.
+    #[test]
+    fn term_sets_are_the_keys_of_their_counts() {
+        let context = AnswerRecallContext::default();
+        let mut item = MemoryEvidence {
+            id: "project:plant:entry:decision:valve-froze-b9e0944852682702".to_string(),
+            text: "The reserve valve froze; the valves were replaced at 03:00 (#469).".to_string(),
+            source: "operator log".to_string(),
+            supports: vec!["project:plant:entry:fact:night-shift".to_string()],
+            ..Default::default()
+        };
+        item.metadata
+            .insert("shift".to_string(), "night crews Freezing".to_string());
+        item.metadata.insert(
+            SearchSummary::METADATA_KEY.to_string(),
+            "The reserve valve froze during the night (#469).".to_string(),
+        );
+        let terms = AnswerCandidateTerms::from_evidence(&item, &context);
+        let content_text = match search_summary(&item) {
+            Some(summary) => format!("{} {}", item.text, summary),
+            None => item.text.clone(),
+        };
+        assert_eq!(
+            terms.content,
+            informative_terms(&content_text, &context.morphology)
+        );
+        assert!(terms.direct_counts.terms().count() >= terms.content.len());
+        for term in &terms.content {
+            assert!(terms.direct_counts.count(term) > 0, "{term}");
+        }
+        assert!(terms.searchable.is_superset(&terms.content));
     }
 }

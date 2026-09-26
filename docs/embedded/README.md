@@ -136,7 +136,14 @@ telemetry; KMP does not upload memory to Underpass.
 The prompt-quality journal covers reads that render a model prompt. Temporal
 reads (`goto`, `near`, `forward`, `rewind`) and ChronoLoom projections read the
 structured bundle directly; they do not render and tokenize a discarded prompt
-to produce journal metrics. Their MCP response quality remains computed from
+to produce journal metrics. Over MCP, `kmp_ask`, `kmp_relate` and `kmp_curate`
+project the bundle and never return the prompt, and `kmp_wake` reads only the
+rendered sections it projects, so none of them measures a prompt for the
+journal. The journal is a passive observer (`QualityMetricsObserver::is_active`
+is false): it records the renders that are measured anyway, such as
+`kmp_trace` and the `kmp-embedded` API's recall, which returns the rendered
+content. A composition that installs an active observer makes those reads
+measure again. Their MCP response quality remains computed from
 the selected entries and proof. An absent prompt-quality observation is not a
 zero-quality read.
 

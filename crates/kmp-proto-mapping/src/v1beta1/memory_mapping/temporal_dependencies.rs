@@ -7,7 +7,8 @@ use kmp_domain::{
 };
 use kmp_proto::v1beta1::{ProofDependencyGroup as ProtoGroup, TemporalEntry};
 
-use super::bundle_views::{bundle_memory_metadata, proto_coordinate_from_domain};
+use super::bundle_node_index::BundleNodeIndex;
+use super::bundle_views::proto_coordinate_from_domain;
 use super::temporal_admission::{TemporalAdmission, coordinates_by_ref};
 
 pub(super) fn select(
@@ -39,6 +40,7 @@ pub(super) fn select(
         .map(|entry| entry.r#ref.as_str())
         .collect::<BTreeSet<_>>();
     let coordinates = coordinates_by_ref(bundle);
+    let nodes = BundleNodeIndex::new(bundle);
     let extra_entries = std::iter::once(bundle.root_node())
         .chain(bundle.neighbor_nodes())
         .filter_map(|node| {
@@ -62,7 +64,7 @@ pub(super) fn select(
                     .iter()
                     .map(proto_coordinate_from_domain)
                     .collect(),
-                metadata: bundle_memory_metadata(bundle, id),
+                metadata: nodes.memory_metadata(id),
             })
         })
         .collect();
