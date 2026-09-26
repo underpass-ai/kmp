@@ -8,6 +8,7 @@
   "isError": false,
   "structuredContent": {
     "answer": "<budget-shortened prefix of the full answer>",
+    "answer_status": "answered",
     "because": [
       {
         "claim": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",

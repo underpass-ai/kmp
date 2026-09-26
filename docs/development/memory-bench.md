@@ -198,9 +198,10 @@ environment (allowlisted) and Jev mode.
 
 | File | What |
 |---|---|
-| `variants/baseline.toml` | this checkout's `target/release/kmp-mcp`, no store file, no Jev |
+| `variants/baseline.toml` | this checkout's `target/release/kmp-mcp`, no store file (so with the ask gate), no Jev |
 | `variants/examples/parity-template.toml` | declared parity of a `git_ref` (default `HEAD`): every call byte-identical after the volatile fields |
-| `variants/examples/ask-gate.toml` | a quality claim configured by `ask-gate.json` beside the store (the P4 gate) |
+| `variants/examples/ask-gate.toml` | a quality claim configured by `ask-gate.json` beside the store (the P4 gate; the default since 26 Sept 2026, so on a current binary it only writes the default out) |
+| `variants/examples/ask-gate-off.toml` | the same binary with `ask-gate.json` `{"mode":"off"}`: how to measure without the gate now that it is the default |
 | `variants/examples/wake-focus.toml` | a Jev arm in replay: `typesafe.json` + `wake-focus.json` and a cassette |
 
 **Store files must be acknowledged.** Each file in `[store_files]` is written

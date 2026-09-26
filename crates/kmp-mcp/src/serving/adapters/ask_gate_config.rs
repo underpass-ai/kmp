@@ -3,14 +3,14 @@ use std::path::Path;
 use kmp_proto_mapping::v1beta1::AskGate;
 use serde::Deserialize;
 
-/// The file beside a store that opts it into the anchored ask gate.
+/// The file beside a store that chooses its anchored ask gate.
 pub(super) const ASK_GATE_FILE: &str = "ask-gate.json";
 
 /// Per-store choice of the anchored decision of `kmp_ask`:
-/// `{"mode":"anchored","partial":true}` opts in, `{"mode":"off"}` opts out.
-/// Absent, the store gets [`AskGate::STORE_DEFAULT`] (today: no gate, ask
-/// answers exactly as it did); unreadable or unknown, it is ignored and
-/// reported so.
+/// `{"mode":"anchored","partial":true}` is the gate, `{"mode":"off"}` opts
+/// out of it (ask answers as v0.23.0 did). Absent, the store gets
+/// [`AskGate::STORE_DEFAULT`] (the gate, with PARTIAL); unreadable or
+/// unknown, it is ignored and reported so, and the default applies.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct AskGateConfig {
@@ -78,14 +78,24 @@ mod tests {
 
     #[test]
     fn a_store_without_the_file_has_the_default_gate() {
-        // The default is off until B-real is judged; this pins it, so turning
-        // it on is a reviewed change of `AskGate::STORE_DEFAULT` and of this.
-        assert_eq!(AskGate::STORE_DEFAULT, None);
+        // The gate is the default since B-real was judged (2026-09-26); this
+        // pins it, so turning it off is a reviewed change of
+        // `AskGate::STORE_DEFAULT` and of this.
+        assert_eq!(AskGate::STORE_DEFAULT, Some(AskGate::anchored(true)));
         let dir = std::env::temp_dir().join(format!("kmp-ask-gate-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("dir");
         assert_eq!(AskGateConfig::load(&dir), Ok(AskGate::STORE_DEFAULT));
-        std::fs::write(dir.join(ASK_GATE_FILE), r#"{"mode":"anchored"}"#).expect("write");
-        assert_eq!(AskGateConfig::load(&dir), Ok(Some(AskGate::anchored(true))));
+        std::fs::write(
+            dir.join(ASK_GATE_FILE),
+            r#"{"mode":"anchored","partial":false}"#,
+        )
+        .expect("write");
+        assert_eq!(
+            AskGateConfig::load(&dir),
+            Ok(Some(AskGate::anchored(false)))
+        );
+        std::fs::write(dir.join(ASK_GATE_FILE), r#"{"mode":"off"}"#).expect("write");
+        assert_eq!(AskGateConfig::load(&dir), Ok(None));
         std::fs::write(dir.join(ASK_GATE_FILE), "{").expect("write");
         assert!(AskGateConfig::load(&dir).is_err());
         std::fs::remove_dir_all(&dir).expect("cleanup");

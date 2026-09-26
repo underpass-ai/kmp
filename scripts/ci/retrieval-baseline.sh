@@ -11,6 +11,11 @@
 # Refresh them deliberately, never to make a red build green:
 #
 #   RETRIEVAL_BASELINE=write bash scripts/ci/retrieval-baseline.sh
+#
+# The floors are read with the anchored ask gate, the default. Measure without
+# it (the rule of v0.23.0; reported, never gated) with:
+#
+#   RETRIEVAL_ASK_GATE=off bash scripts/ci/retrieval-baseline.sh
 
 set -euo pipefail
 

@@ -9,11 +9,34 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking: the anchored ask gate is the default.** Every store reads
+  `kmp_ask` with it (`AskGate::STORE_DEFAULT`), in `kmp-mcp` and in the gRPC
+  `KernelMemoryService.Ask`, so an ask is no longer byte for byte what
+  v0.23.0 answered: under `evidence_or_unknown` and `show_conflicts` a
+  question that names an identifier is answered only from memories that name
+  it, and every response carries `answer_status` (and `unknown_reason` when
+  it is UNKNOWN). A store opts out with `{"mode":"off"}` in `ask-gate.json`
+  beside it and then answers with the ⌈2/3⌉ rule of v0.23.0, without those
+  fields; an `ask-gate.json` that cannot apply is reported and the default
+  stands. On the judged retrieval collection the gate takes the guarded
+  false answers from 0.2308 to 0 and the false UNKNOWNs of every judged case
+  from 0.1429 to 0.0477, the 35 original cases unchanged
+  (`docs/development/retrieval-baseline.tsv`); `RETRIEVAL_ASK_GATE=off`
+  and the bench variant `ask-gate-off.toml` measure without it.
+- A PARTIAL's `proof.missing` holds only what the question asked and no
+  cited memory states, in the reader's words: the sources `max_entries`
+  withheld are no longer listed beside them (`projection.selection_omitted`
+  still counts them). An answered reading's `proof.missing` (the withheld
+  sources) is no longer kept in the core of every page under the gate; it
+  waits for a `full` page, as it does without the gate.
+
 ### Added
 
-- Anchored ask gate, opt-in per store with `ask-gate.json` beside it
-  (`{"mode":"anchored","partial":true}`). Under `evidence_or_unknown` and
-  `show_conflicts`, a question that names an identifier (`C6.4`, `#188`,
+- Anchored ask gate, chosen per store with `ask-gate.json` beside it
+  (`{"mode":"anchored","partial":true}`; the default since this release, see
+  Changed). Under `evidence_or_unknown` and `show_conflicts`, a question that names an identifier (`C6.4`, `#188`,
   `v0.7.0`) is answered only from memories that name its rarest required
   anchor and none it excludes (`excluding C7`), and only when what it asks
   stands beside that anchor. An anchor no memory of the selection names is
@@ -21,8 +44,8 @@ Detailed notes from the early release cycle remain available in the
   states is `attribute_not_found`; an enumerative question answered in part
   is `answer_status: partial`, `proof.missing` naming the rest, confidence at
   most medium. `AskResponse.answer_status` and `unknown_reason` are additive
-  and set only on a store with the gate; without it every answer is byte for
-  byte what it was. The words the question contract reads live in
+  and set only under the gate; a store that opts out answers as v0.23.0
+  did. The words the question contract reads live in
   `kmp-proto-mapping/language/question_contract.json` and the `facet:*`
   families of `question_families.json`.
 - Under the anchored gate an identifier is read the same however it is
@@ -37,8 +60,7 @@ Detailed notes from the early release cycle remain available in the
   names what was not found in the reader's own words, accents included.
   An enumerative question that found none of what it asked is UNKNOWN, not
   PARTIAL. `ask-gate.json` also accepts `{"mode":"off"}`, and
-  `AskGate::STORE_DEFAULT` is the one switch that would make the gate the
-  default (still off).
+  `AskGate::STORE_DEFAULT` is the one switch that decides the default.
 - The anchored gate reads a memory's content and nothing else: its text
   and its search summary. Whether a memory names the anchor (and the
   anchor's document frequency, the core, the `same_entity_as` rescue) and
@@ -60,7 +82,7 @@ Detailed notes from the early release cycle remain available in the
   every page went from 46,229 to 11,655 tokens on average (10,231 without
   the gate) and from 8 to 2.3 pages, with the same false UNKNOWNs and core
   precision and one wrong PARTIAL fewer (a withheld source whose slug spelled
-  a covered facet no longer reads as missing). Without `ask-gate.json` every
+  a covered facet no longer reads as missing). With `{"mode":"off"}` every
   response is byte for byte what it was.
 - `memory_bench` synth-v1 `1.2.0`: the `negated_anchor` gold forbids only the
   entries whose only anchor is the excluded one. An entry of the subject that

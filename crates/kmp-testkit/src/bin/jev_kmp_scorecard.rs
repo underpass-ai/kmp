@@ -1287,6 +1287,10 @@ fn write_baseline(
          # wake_all_pages_* follow projection.next_action to the last page; before that fix the scorecard\n\
          # read a top-level next_action no wake carries, so \"all pages\" was only the first page and\n\
          # wake_all_pages_plain sat at the first-page 0.9333. Following the chain raised it to 1.0000.\n\
+         # ask_*_plain are read with the anchored ask gate since it became the default (2026-09-26):\n\
+         # a plain ask whose question names an identifier ranks the memories that name it, and\n\
+         # ask_mrr_plain rose 0.1875 -> 0.2500, ask_top5_plain 0.2500 -> 0.3125. The re-ranked arms\n\
+         # do not move.\n\
          # Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh\n\
          metric\tfloor\n",
     );

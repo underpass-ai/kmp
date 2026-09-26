@@ -11,6 +11,16 @@
 #
 # Refresh deliberately, never to make a red build green:
 #   RETRIEVAL_BASELINE=write cargo run -p kmp-testkit --bin retrieval_kmp_scorecard
+#
+# Reviewed change (2026-09-26): the anchored ask gate became the default, so
+# these rows are read with it. The 35 original rows do not move. The all_ rows
+# rise and all_false_unknown_rate falls from 0.1429 to 0.0477 (the two
+# anchored enumerative and two negated-anchor cases the rule left UNKNOWN
+# are answered from the memories that name their anchor); every false_answer ceiling of the
+# guarded cases falls to 0 (anchor_absent 0.5 -> 0, anchor_neighbor_existing
+# 0.5 -> 0, guarded_false_answer_rate 0.2308 -> 0, guarded_high 0.0770 -> 0):
+# an identifier no cited memory names is UNKNOWN. Measure the rule of v0.23.0
+# with RETRIEVAL_ASK_GATE=off (reported, not gated).
 metric	floor
 cases	35
 recall_at_1	0.8428
@@ -21,18 +31,18 @@ ndcg_at_10	0.9160
 answer_core_precision	0.8857
 false_unknown_rate	0.0572
 all_positives	42
-all_recall_at_1	0.8055
-all_recall_at_5	0.9047
-all_recall_at_10	0.9047
-all_mean_reciprocal_rank	0.8750
-all_ndcg_at_10	0.8824
-all_answer_core_precision	0.8095
-all_false_unknown_rate	0.1429
+all_recall_at_1	0.8412
+all_recall_at_5	0.9523
+all_recall_at_10	0.9523
+all_mean_reciprocal_rank	0.9226
+all_ndcg_at_10	0.9300
+all_answer_core_precision	0.9047
+all_false_unknown_rate	0.0477
 guarded_cases	13
-guarded_false_answer_rate	0.2308
-guarded_high_false_answer_rate	0.0770
-false_answer_rate_anchor_absent	0.5000
-false_answer_rate_anchor_neighbor_existing	0.5000
+guarded_false_answer_rate	0.0000
+guarded_high_false_answer_rate	0.0000
+false_answer_rate_anchor_absent	0.0000
+false_answer_rate_anchor_neighbor_existing	0.0000
 false_answer_rate_cross_about_anchor	0.0000
 false_answer_rate_near_miss_attribute	0.0000
 false_answer_rate_negated_anchor	0.0000

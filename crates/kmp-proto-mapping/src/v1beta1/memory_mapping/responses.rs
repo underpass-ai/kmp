@@ -445,7 +445,7 @@ pub fn ask_response_from_result(
     let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
         .with_lexical_cache(retrieval.lexical_cache.as_deref(), lexical_identity);
     // The anchored gate reads a question that names an identifier, when the
-    // store opted into it and the policy promises evidence or UNKNOWN; it
+    // store did not opt out of it and the policy promises evidence or UNKNOWN; it
     // reads every memory with the alias terms it spells.
     let strict = matches!(
         policy,
@@ -648,7 +648,10 @@ pub fn ask_response_from_result(
         .as_ref()
         .map(|verdict| verdict.missing.clone())
         .unwrap_or_default();
-    let missing = if unknown && !not_found.is_empty() {
+    // A PARTIAL says what the question asked that it did not find, and only
+    // that: the sources `max_entries` withheld are not what was missing, and
+    // named beside the reader's words they read as if they were.
+    let missing = if (unknown && !not_found.is_empty()) || status == AnswerStatus::Partial {
         not_found.clone()
     } else if unknown {
         vec![if evidence_retained == 0 {
@@ -659,10 +662,10 @@ pub fn ask_response_from_result(
     } else {
         not_found.iter().cloned().chain(withheld).collect()
     };
-    // Under the gate each name is said once. The withheld sources are one per
-    // withheld entry, and a writer's source stands behind many entries: one
-    // PARTIAL named 151 sources 207 times. Without the gate the list stays as
-    // it always was.
+    // Under the gate each name is said once. The withheld sources of an
+    // ANSWERED reading are one per withheld entry, and a writer's source
+    // stands behind many entries. Without the gate the list stays as it
+    // always was.
     let missing = if verdict.is_some() {
         said_once(missing)
     } else {
@@ -739,8 +742,8 @@ pub fn ask_response_from_result(
         })
         .unwrap_or_default();
 
-    // How the question settled and, unknown, why: only when the store opted
-    // into the gate, so a store that did not answers byte for byte as before.
+    // How the question settled and, unknown, why: only under the gate, so a
+    // store that opted out of it answers byte for byte as v0.23.0 did.
     let (answer_status, unknown_reason) = match retrieval.gate {
         None => (AnswerStatus::Unspecified, UnknownReason::Unspecified),
         Some(_) if !unknown => (

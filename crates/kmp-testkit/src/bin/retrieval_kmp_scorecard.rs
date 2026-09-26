@@ -118,8 +118,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .ok()
         .and_then(|value| value.parse::<u64>().ok())
         .unwrap_or(10);
-    // The anchored ask gate (`ask-gate.json` beside each case's store):
-    // `anchored`, or `anchored-strict` without PARTIAL. An arm like the others.
+    // The anchored ask gate is on by default, and the recorded floors are
+    // read with it. `ask-gate.json` beside each case's store makes an arm:
+    // `off` (the rule of v0.23.0, how to measure without the gate),
+    // `anchored-strict` without PARTIAL, or `anchored` (the default, written
+    // out). An arm like the others.
     let ask_gate = std::env::var("RETRIEVAL_ASK_GATE").ok();
     let gated = arm.is_none() && ask_gate.is_none() && max_entries == 10;
     let mut bytes_to_judged = Vec::new();
@@ -279,6 +282,7 @@ async fn run_case(
         fs::write(
             data_dir.join("ask-gate.json"),
             match gate {
+                "off" => r#"{"mode":"off"}"#,
                 "anchored-strict" => r#"{"mode":"anchored","partial":false}"#,
                 _ => r#"{"mode":"anchored","partial":true}"#,
             },

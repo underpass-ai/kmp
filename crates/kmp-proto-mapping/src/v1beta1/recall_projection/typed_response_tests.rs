@@ -383,6 +383,18 @@ fn a_gated_ask_keeps_its_status_reason_and_missing_on_every_page() {
         serde_json::json!(["raw:one", "raw:two"])
     );
 
+    // An answered reading's `missing` is only what `max_entries` withheld:
+    // it waits for a full page, as it does without the gate.
+    let mut answered = response.clone();
+    answered.answer_status = AnswerStatus::Answered as i32;
+    answered.unknown_reason = UnknownReason::Unspecified as i32;
+    let page = ask_value(&project_ask_response(answered, &request).expect("typed projection"));
+    assert_eq!(page["answer_status"], "answered");
+    assert_ne!(
+        page["proof"]["missing"],
+        serde_json::json!(["raw:one", "raw:two"])
+    );
+
     // Without the gate the same response defers `missing` to a full page.
     let mut plain = response;
     plain.answer_status = AnswerStatus::Unspecified as i32;

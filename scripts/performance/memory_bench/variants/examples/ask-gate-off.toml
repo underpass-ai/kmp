@@ -1,0 +1,22 @@
+# How to measure without the anchored ask gate, now that it is the default
+# (26 Sept 2026). `ask-gate.json` `{"mode":"off"}` beside the store opts the
+# store out: `kmp_ask` decides with the ⌈2/3⌉ rule of v0.23.0 and carries no
+# `answer_status`. Run it against `baseline.toml` (the same binary, gate on).
+#
+# Pre-registered: without the gate the false answers on the hard negatives rise
+# by at least 10 points. No guards: the gate is what this arm takes away, so
+# useful answers, false UNKNOWNs and core precision are reported, not held.
+name = "ask-gate-off"
+description = "The default binary with the anchored ask gate turned off by ask-gate.json (the rule of v0.23.0)."
+claim = "quality"
+targets = [{ metric = "false_answer_rate", direction = "up", effect = 0.10 }]
+guards = []
+n = 100
+store = "shared"
+jev = "off"
+
+[binary]
+path = "target/release/kmp-mcp"
+
+[store_files]
+"ask-gate.json" = { json = { mode = "off" } }

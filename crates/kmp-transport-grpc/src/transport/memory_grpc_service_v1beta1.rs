@@ -187,7 +187,8 @@ where
                 answer_policy,
                 max_entries,
                 AskRetrievalContext::from(result)
-                    .with_lexical_cache(Arc::clone(&self.lexical_cache)),
+                    .with_lexical_cache(Arc::clone(&self.lexical_cache))
+                    .with_default_gate(),
                 &self.lexical_bridge,
                 &temporal,
             )

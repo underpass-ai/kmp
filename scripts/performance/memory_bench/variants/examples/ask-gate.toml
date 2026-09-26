@@ -1,6 +1,8 @@
 # Example of a quality claim configured by a store file: the P4 ask gate
 # (UNKNOWN or PARTIAL when the anchor is present but the asked attribute is not).
-# The gate reads `ask-gate.json` beside the store. The bench writes the file and
+# The gate reads `ask-gate.json` beside the store. It is the default since
+# 26 Sept 2026, so on a current binary this file only writes the default out;
+# `ask-gate-off.toml` measures without it. The bench writes the file and
 # requires the binary to acknowledge it in its `kmp_store_config` log line; a
 # binary that does not read the file (v0.23.0 and this checkout before P4 lands)
 # leaves the variant `not_applied`, and the verdict is `captura_fallida`, never a

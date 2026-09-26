@@ -2785,7 +2785,7 @@
             "type": "string"
           },
           "answer_policy": {
-            "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy unless an endpoint was superseded at the selected time; the historical edge remains auditable. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
+            "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy unless an endpoint was superseded at the selected time; the historical edge remains auditable. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question or, for a question naming an identifier, no retained memory names it beside what was asked; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
             "enum": [
               "evidence_or_unknown",
               "show_conflicts",
@@ -3038,7 +3038,7 @@
             ]
           },
           "answer_status": {
-            "description": "Present only when the store opted into the anchored ask gate (ask-gate.json). partial: an enumerative question whose citations state part of it; proof.missing names the rest, confidence at most medium.",
+            "description": "Present unless the store opted out of the anchored ask gate (ask-gate.json mode off). partial: an enumerative question whose citations state part of it; proof.missing names the rest, confidence at most medium.",
             "enum": [
               "answered",
               "partial",

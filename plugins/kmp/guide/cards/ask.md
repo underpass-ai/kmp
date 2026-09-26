@@ -8,7 +8,10 @@ Preserve numbers, identifiers and acronyms; put the user's words in `asked_as`.
 Send this to `kmp_ask`. Expect stored citations or UNKNOWN, not a generated answer.
 Complete `projection.next_action` before judging partial proof. Inspect a claim
 you rely on. An honest UNKNOWN can end the task; do not sweep the graph merely
-to force a different answer.
+to force a different answer. `answer_status` says how it settled: `partial`
+cites part of an enumeration and `proof.missing` names the rest in the
+question's words; `unknown_reason` says why it is UNKNOWN. A question naming
+an identifier (`C6.4`, `#188`) is answered only from memories that name it.
 
 For a semantic question with a time, supply `as_of` or `interval` and the right
 axis. For “what changed”, “latest”, or a history, use temporal navigation.

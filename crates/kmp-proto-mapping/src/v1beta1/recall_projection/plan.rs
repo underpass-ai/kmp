@@ -221,8 +221,13 @@ impl ProjectionPlan {
             ));
         }
         // What the anchored gate did not find is its answer's other half: a
-        // response that says how it settled keeps `missing` in the core.
-        let missing_is_core = value.get("answer_status").is_some();
+        // PARTIAL or gated UNKNOWN keeps `missing` in the core. An answered
+        // reading's `missing` is only what `max_entries` withheld, detail
+        // like any other, as it is without the gate.
+        let missing_is_core = value
+            .get("answer_status")
+            .and_then(Value::as_str)
+            .is_some_and(|status| status != "answered");
         let missing = if missing_is_core {
             Vec::new()
         } else {

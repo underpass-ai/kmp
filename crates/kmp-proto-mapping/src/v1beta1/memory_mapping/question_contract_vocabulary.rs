@@ -11,7 +11,7 @@ use super::identifier_aliases::IdentifierAliases;
 ///
 /// Data, like the relation families: `language/question_contract.json` is
 /// reviewable without knowing Rust. Only the anchored ask gate reads it, so a
-/// store that did not opt into the gate answers exactly as it did.
+/// store that opted out of the gate answers exactly as it did.
 #[derive(Debug, Deserialize)]
 pub(super) struct QuestionContractVocabulary {
     /// Single words and two-word phrases (`fuera de`) that exclude what

@@ -237,7 +237,7 @@ async fn lexical_cache_preserves_real_grpc_ask_after_peer_edits()
     use kmp_proto::v1beta1::{AskRequest, MemoryBudget, MemoryDetailLevel};
     use kmp_proto_mapping::v1beta1::recall_projection::project_ask_response;
     use kmp_proto_mapping::v1beta1::{
-        LexicalBridge, ask_query_from_proto, ask_response_from_result,
+        AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
     };
     let scratch = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../tmp"));
     std::fs::create_dir_all(scratch)?;
@@ -283,7 +283,8 @@ async fn lexical_cache_preserves_real_grpc_ask_after_peer_edits()
                     None,
                     query.answer_policy,
                     query.max_entries,
-                    result,
+                    // The service reads with the default anchored gate.
+                    AskRetrievalContext::from(result).with_default_gate(),
                     &LexicalBridge::none(),
                     &query.temporal,
                 )

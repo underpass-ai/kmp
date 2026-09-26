@@ -273,22 +273,19 @@ fn ask_capped(gate: Option<AskGate>, question: &str) -> AskResponse {
 }
 
 #[test]
-fn the_gate_names_each_withheld_source_once() {
+fn a_partial_names_only_what_the_question_asked_and_did_not_find() {
     let gated = ask_capped(Some(AskGate::anchored(true)), QUESTION);
     assert_eq!(status(&gated), AnswerStatus::Partial);
-    let names = missing(&gated);
-    let writer = names
-        .iter()
-        .filter(|name| name.as_str() == "kmp_write_memory:traveler-1")
-        .count();
-    assert_eq!(writer, 1, "{names:?}");
-    // More than one entry of that writer was withheld.
+    // More than one entry of the writer was withheld by `max_entries`...
     let omitted = gated
         .projection
         .as_ref()
         .map_or(0, |projection| projection.selection_omitted);
     assert!(omitted > 1, "{omitted}");
-    assert_eq!(&names[..2], ["rollback", "plan"]);
+    // ...and none of their sources reads as something the question lacked:
+    // `missing` is the reader's words and nothing else.
+    let names = missing(&gated);
+    assert_eq!(names, ["rollback", "plan"]);
     let proof = gated.proof.as_ref().expect("proof");
     assert_eq!(proof.frontier_size as usize, names.len());
 }

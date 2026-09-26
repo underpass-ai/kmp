@@ -18,7 +18,7 @@ pub struct AskRetrievalContext {
     /// The lexical ranking a remote judge's pool was built from, which the
     /// answer reuses when it is asked with the same inputs.
     pub(super) ranked: Option<RankedSelection>,
-    /// The anchored decision gate, when the store opted into it.
+    /// The anchored decision gate, unless the store opted out of it.
     pub(super) gate: Option<super::ask_gate::AskGate>,
 }
 
@@ -85,9 +85,17 @@ impl AskRetrievalContext {
         Ok(sources.into_values().collect())
     }
 
-    /// Decide with the anchored gate the store opted into.
+    /// Decide with the store's anchored gate (on unless it opted out).
     pub fn with_gate(mut self, gate: super::ask_gate::AskGate) -> Self {
         self.gate = Some(gate);
+        self
+    }
+
+    /// Decide with the default gate (`AskGate::STORE_DEFAULT`): the
+    /// transport that reads no store configuration answers as a store that
+    /// said nothing about it.
+    pub fn with_default_gate(mut self) -> Self {
+        self.gate = super::ask_gate::AskGate::STORE_DEFAULT;
         self
     }
 

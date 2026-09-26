@@ -446,6 +446,16 @@ pub fn render_baseline(rows: &[BaselineRow]) -> String {
          #\n\
          # Refresh deliberately, never to make a red build green:\n\
          #   RETRIEVAL_BASELINE=write cargo run -p kmp-testkit --bin retrieval_kmp_scorecard\n\
+         #\n\
+         # Reviewed change (2026-09-26): the anchored ask gate became the default, so\n\
+         # these rows are read with it. The 35 original rows do not move. The all_ rows\n\
+         # rise and all_false_unknown_rate falls from 0.1429 to 0.0477 (the two\n\
+         # anchored enumerative and two negated-anchor cases the rule left UNKNOWN\n\
+         # are answered from the memories that name their anchor); every false_answer ceiling of the\n\
+         # guarded cases falls to 0 (anchor_absent 0.5 -> 0, anchor_neighbor_existing\n\
+         # 0.5 -> 0, guarded_false_answer_rate 0.2308 -> 0, guarded_high 0.0770 -> 0):\n\
+         # an identifier no cited memory names is UNKNOWN. Measure the rule of v0.23.0\n\
+         # with RETRIEVAL_ASK_GATE=off (reported, not gated).\n\
          metric\tfloor\n",
     );
     for row in rows {

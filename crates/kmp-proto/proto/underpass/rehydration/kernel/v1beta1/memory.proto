@@ -476,8 +476,9 @@ message AskResponse {
   // How the anchored ask gate settled the question: answered, partial (an
   // enumerative question whose cited memories state some of what it asked,
   // `proof.missing` naming the rest in the reader's words, confidence at most
-  // Medium) or unknown. UNSPECIFIED when the store did not opt into the gate
-  // (`ask-gate.json` beside it); `answer` stays the compatible reading.
+  // Medium) or unknown. The gate is on by default; UNSPECIFIED when a store
+  // opted out of it (`ask-gate.json` `{"mode":"off"}` beside it). `answer`
+  // stays the compatible reading.
   AnswerStatus answer_status = 9;
   // Why an unknown answer is unknown, when the gate settled it; UNSPECIFIED
   // otherwise.

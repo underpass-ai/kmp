@@ -60,8 +60,9 @@ pub struct EmbeddedKernelMcpBackend {
     /// Relations proposed after each write, opted into by
     /// `write-relations.json` beside `typesafe.json`.
     write_relations: bool,
-    /// The anchored ask gate, opted into by `ask-gate.json` beside the
-    /// store. Off without it, and off when the file cannot apply.
+    /// The anchored ask gate: [`AskGate::STORE_DEFAULT`] (on) unless
+    /// `ask-gate.json` beside the store says otherwise; a file that cannot
+    /// apply is reported and the default stands.
     ask_gate: Option<AskGate>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
@@ -136,7 +137,7 @@ impl EmbeddedKernelMcpBackend {
             rerank,
             wake_focus,
             write_relations,
-            ask_gate: ask_gate.ok().flatten(),
+            ask_gate: ask_gate.unwrap_or(AskGate::STORE_DEFAULT),
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
         })
