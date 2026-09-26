@@ -17,7 +17,8 @@ use super::normalization::{normalized_answer_reason, normalized_proof_relation};
 use super::proof_value::{expired_value, memory_evidence_value, memory_relation_value};
 use super::response_value::raw_answer_reason_value;
 use super::scalars::{
-    confidence_from_label, detail_from_label, string_at, strings_at, u32_at, u64_at,
+    answer_status_from_label, confidence_from_label, detail_from_label, string_at, strings_at,
+    u32_at, u64_at, unknown_reason_from_label,
 };
 
 pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> WakeResponse {
@@ -70,6 +71,8 @@ pub(super) fn apply_wake_value(mut response: WakeResponse, value: &Value) -> Wak
 pub(super) fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskResponse {
     response.summary = string_at(value, "/summary");
     response.asked_as = string_at(value, "/asked_as");
+    response.answer_status = answer_status_from_label(&string_at(value, "/answer_status"));
+    response.unknown_reason = unknown_reason_from_label(&string_at(value, "/unknown_reason"));
     response.answer = value
         .get("answer")
         .and_then(Value::as_str)

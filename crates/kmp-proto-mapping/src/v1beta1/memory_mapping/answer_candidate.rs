@@ -13,6 +13,7 @@ use super::candidate_temporal_state::CandidateTemporalState;
 use super::lexicon::Lexicon;
 use super::morphology::Morphology;
 use super::question_intent::QuestionIntent;
+use super::ranking_focus::RankingFocus;
 use super::relevance_key::RelevanceKey;
 use super::search_terms::{
     informative_tokens, matching_term_count, matching_terms, query_requests_lifecycle, search_key,
@@ -37,7 +38,7 @@ impl AnswerCandidate {
         item: MemoryEvidence,
         terms: AnswerCandidateTerms,
         question_terms: &BTreeSet<String>,
-        strict_focus: Option<&(BTreeSet<String>, usize)>,
+        focus: RankingFocus<'_>,
         lexicon: &Lexicon,
         intent: &QuestionIntent,
         context: &AnswerRecallContext,
@@ -57,6 +58,7 @@ impl AnswerCandidate {
 
         // A memory in another language is about the same thing; the focus
         // it must answer counts a bridged concept as answered.
+        let strict_focus = focus.strict;
         let answers_requested_focus =
             strict_focus.is_none_or(|(focus_terms, required_focus_matches)| {
                 lexicon.focus_matches(focus_terms, &terms) >= *required_focus_matches
@@ -83,6 +85,11 @@ impl AnswerCandidate {
             content_score: lexicon.content_score(&terms),
             direct_score: lexicon.direct_score(&terms),
             claim_matches: matching_term_count(question_terms, &terms.claim),
+            facet_kind_matches: focus
+                .facet_kinds
+                .zip(context.entry_kind(&item))
+                .is_some_and(|(kinds, kind)| kinds.contains(kind))
+                .into(),
             intent_relation_matches: intent_relation_matches(intent, &relations),
             relation_why_matches: matching_term_count(question_terms, &terms.relation_why),
             relation_matches: matching_term_count(question_terms, &terms.relation),

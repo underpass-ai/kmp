@@ -347,3 +347,83 @@ fn shortened_wake_core_keeps_every_supersession_marker() {
             <= 4_000
     );
 }
+
+/// The anchored gate's status and reason survive a projected page, and what
+/// it did not find stays in the core instead of waiting for a `full` page.
+#[test]
+fn a_gated_ask_keeps_its_status_reason_and_missing_on_every_page() {
+    use kmp_proto::v1beta1::{AnswerStatus, UnknownReason};
+
+    let mut response = typed_ask_fixture(24);
+    response.answer_status = AnswerStatus::Unknown as i32;
+    response.unknown_reason = UnknownReason::AttributeNotFound as i32;
+    let request = AskRequest {
+        about: "project:kmp".into(),
+        question: "Which storage engine is current?".into(),
+        budget: Some(kmp_proto::v1beta1::MemoryBudget {
+            max_bytes: 3_000,
+            detail: MemoryDetailLevel::Balanced as i32,
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    let typed = project_ask_response(response.clone(), &request).expect("typed projection");
+    let page = ask_value(&typed);
+
+    assert_eq!(page["answer_status"], "unknown");
+    assert_eq!(page["unknown_reason"], "attribute_not_found");
+    assert_eq!(typed.answer_status, AnswerStatus::Unknown as i32);
+    assert_eq!(
+        typed.unknown_reason,
+        UnknownReason::AttributeNotFound as i32
+    );
+    assert_eq!(
+        page["proof"]["missing"],
+        serde_json::json!(["raw:one", "raw:two"])
+    );
+
+    // Without the gate the same response defers `missing` to a full page.
+    let mut plain = response;
+    plain.answer_status = AnswerStatus::Unspecified as i32;
+    plain.unknown_reason = UnknownReason::Unspecified as i32;
+    let page = ask_value(&project_ask_response(plain, &request).expect("typed projection"));
+    assert!(page.get("answer_status").is_none());
+    assert!(page.get("unknown_reason").is_none());
+    assert_ne!(
+        page["proof"]["missing"],
+        serde_json::json!(["raw:one", "raw:two"])
+    );
+}
+
+#[test]
+fn every_gate_label_reads_back_to_its_value() {
+    use super::scalars::{
+        answer_status_from_label, answer_status_label, unknown_reason_from_label,
+        unknown_reason_label,
+    };
+    use kmp_proto::v1beta1::{AnswerStatus, UnknownReason};
+
+    for status in [
+        AnswerStatus::Answered,
+        AnswerStatus::Partial,
+        AnswerStatus::Unknown,
+    ] {
+        let label = answer_status_label(status as i32).expect("a label");
+        assert_eq!(answer_status_from_label(label), status as i32);
+    }
+    assert_eq!(answer_status_label(AnswerStatus::Unspecified as i32), None);
+    assert_eq!(answer_status_from_label("maybe"), 0);
+    for reason in [
+        UnknownReason::NoCandidates,
+        UnknownReason::NoBearing,
+        UnknownReason::OutOfWindow,
+        UnknownReason::AnchorAbsentInSelection,
+        UnknownReason::AttributeNotFound,
+    ] {
+        let label = unknown_reason_label(reason as i32).expect("a label");
+        assert_eq!(unknown_reason_from_label(label), reason as i32);
+    }
+    assert_eq!(unknown_reason_label(0), None);
+    assert_eq!(unknown_reason_from_label(""), 0);
+}

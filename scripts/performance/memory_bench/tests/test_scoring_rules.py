@@ -6,7 +6,7 @@ from ..domain.gold import Gold
 
 A = 'synth:mono-a000'
 # SHA-256 of domain/scoring_rules.py as pre-registered; see test_rules_hash_is_stable.
-RULES_SHA256 = '488db24b5b29a3d2e73ef57dbe42bf92f4fc9ca67d47332f6afc2c0dca5be40c'
+RULES_SHA256 = '322dc58a9a4e2a4038a7f7f2525ce8dd29377e23ddeb8dc76c2ccb117c31f53b'
 
 
 def ref(n):
@@ -135,6 +135,18 @@ class ObservedTest(unittest.TestCase):
         read = r.Observed.from_structured({'answer': 'PARTIAL', 'because': [],
                                            'proof': {'missing': ['the cache engine']}})
         self.assertEqual(r.score(negative, read).outcome, r.ABSTAIN_CORRECT)
+
+    def test_reads_the_gate_status_before_the_answer_field(self):
+        """A P4 binary states `answer_status`; its PARTIAL keeps the citations in `answer`."""
+        partial = r.Observed.from_structured({'answer': 'entry:a', 'answer_status': 'partial',
+                                              'because': [{'ref': 'entry:' + ref(1)}],
+                                              'proof': {'missing': ['rollback'], 'confidence': 'medium'}})
+        self.assertEqual((partial.decision, partial.cited, partial.missing), (r.PARTIAL, (ref(1),), ('rollback',)))
+        unknown = r.Observed.from_structured({'answer': 'UNKNOWN', 'answer_status': 'unknown',
+                                              'unknown_reason': 'attribute_not_found'})
+        self.assertEqual(unknown.decision, r.UNKNOWN)
+        answered = r.Observed.from_structured({'answer': 'PARTIAL', 'answer_status': 'answered'})
+        self.assertEqual(answered.decision, r.ANSWER)
 
     def test_rejects_unknown_decisions(self):
         with self.assertRaises(ValueError):

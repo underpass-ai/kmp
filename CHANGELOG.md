@@ -9,6 +9,23 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- Anchored ask gate, opt-in per store with `ask-gate.json` beside it
+  (`{"mode":"anchored","partial":true}`). Under `evidence_or_unknown` and
+  `show_conflicts`, a question that names an identifier (`C6.4`, `#188`,
+  `v0.7.0`) is answered only from memories that name its rarest required
+  anchor and none it excludes (`excluding C7`), and only when what it asks
+  stands beside that anchor. An anchor no memory of the selection names is
+  `unknown_reason: anchor_absent_in_selection`; an attribute no cited memory
+  states is `attribute_not_found`; an enumerative question answered in part
+  is `answer_status: partial`, `proof.missing` naming the rest, confidence at
+  most medium. `AskResponse.answer_status` and `unknown_reason` are additive
+  and set only on a store with the gate; without it every answer is byte for
+  byte what it was. The words the question contract reads live in
+  `kmp-proto-mapping/language/question_contract.json` and the `facet:*`
+  families of `question_families.json`.
+
 ## [0.23.0] - 2026-09-25
 
 ### Added

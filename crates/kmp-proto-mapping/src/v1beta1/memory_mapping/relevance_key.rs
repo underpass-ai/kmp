@@ -15,6 +15,12 @@ pub(super) struct RelevanceKey {
     /// is addressed by.
     pub(super) direct_score: i64,
     pub(super) claim_matches: usize,
+    /// Whether the candidate's entry kind states a facet the question
+    /// enumerates: a decision for "which decisions". Read only by the
+    /// anchored gate, over candidates that all name the anchor, and always 0
+    /// otherwise; it breaks ties under the text and never lifts a candidate
+    /// over one that says more of the question.
+    pub(super) facet_kind_matches: usize,
     /// Relations of the kind the question asked for: a *why* question met by
     /// a causal edge, a replacement question met by `supersedes`.
     pub(super) intent_relation_matches: usize,

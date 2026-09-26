@@ -1,3 +1,4 @@
+use super::ask_gate_config::{ASK_GATE_FILE, AskGateConfig};
 use super::curate_doubt_cache::CurateDoubtCache;
 use super::curate_review_cache::CurateReviewCache;
 use super::embedded::{
@@ -25,7 +26,7 @@ use crate::serving::tool_success_result;
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture, ToolError};
 use kmp_domain::TemporalDirection;
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel};
-use kmp_proto_mapping::v1beta1::{LexicalBridge, LexicalIndexCache};
+use kmp_proto_mapping::v1beta1::{AskGate, LexicalBridge, LexicalIndexCache};
 use serde_json::{Value, json};
 use std::path::Path;
 use std::sync::Arc;
@@ -59,6 +60,9 @@ pub struct EmbeddedKernelMcpBackend {
     /// Relations proposed after each write, opted into by
     /// `write-relations.json` beside `typesafe.json`.
     write_relations: bool,
+    /// The anchored ask gate, opted into by `ask-gate.json` beside the
+    /// store. Off without it, and off when the file cannot apply.
+    ask_gate: Option<AskGate>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
 }
@@ -104,7 +108,12 @@ impl EmbeddedKernelMcpBackend {
         let write_relations = data_dir.join(WRITE_RELATIONS_FILE).is_file();
         let lexical_bridge = load_lexical_bridge(data_dir);
         let semantic = LoopbackSemanticRetriever::load(data_dir);
+        let ask_gate = AskGateConfig::load(data_dir);
         acknowledge_store_config(data_dir, &judgement, &rerank, &wake_focus, &semantic)
+            .beside_store(
+                ASK_GATE_FILE,
+                ask_gate.as_ref().map(|_| ()).map_err(Clone::clone),
+            )
             .at(
                 "lexical-bridge.kmpb",
                 lexical_bridge_path(data_dir),
@@ -127,6 +136,7 @@ impl EmbeddedKernelMcpBackend {
             rerank,
             wake_focus,
             write_relations,
+            ask_gate: ask_gate.ok().flatten(),
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
         })
@@ -239,6 +249,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         &self.lexical_cache,
                         FrozenRecallReads::new(&self.frozen_recalls, &service),
                     )
+                    .with_gate(self.ask_gate)
                     .call(arguments)
                     .await
                 }

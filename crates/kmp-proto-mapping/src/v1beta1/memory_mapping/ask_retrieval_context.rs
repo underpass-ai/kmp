@@ -18,6 +18,8 @@ pub struct AskRetrievalContext {
     /// The lexical ranking a remote judge's pool was built from, which the
     /// answer reuses when it is asked with the same inputs.
     pub(super) ranked: Option<RankedSelection>,
+    /// The anchored decision gate, when the store opted into it.
+    pub(super) gate: Option<super::ask_gate::AskGate>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -28,6 +30,7 @@ impl From<GetContextResult> for AskRetrievalContext {
             rerank: None,
             lexical_cache: None,
             ranked: None,
+            gate: None,
         }
     }
 }
@@ -80,6 +83,12 @@ impl AskRetrievalContext {
             }
         }
         Ok(sources.into_values().collect())
+    }
+
+    /// Decide with the anchored gate the store opted into.
+    pub fn with_gate(mut self, gate: super::ask_gate::AskGate) -> Self {
+        self.gate = Some(gate);
+        self
     }
 
     pub fn with_semantic_candidates(mut self, ranking: SemanticCandidateRanking) -> Self {

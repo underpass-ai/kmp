@@ -105,6 +105,10 @@ class VerdictTest(unittest.TestCase):
         vague = {'answer': 'PARTIAL', 'proof': {'missing': ['deployment']}}
         self.assertFalse(jr.AskVerdict.read(vague, absent).abstains())
         self.assertEqual(jr.AskVerdict('ANSWER'), jr.AskVerdict.read({'answer': 'Staging.'}, absent))
+        gated = {'answer': 'entry:x', 'answer_status': 'partial', 'proof': {'missing': ['kubernetes']}}
+        self.assertEqual(jr.AskVerdict('PARTIAL', True), jr.AskVerdict.read(gated, absent))
+        self.assertEqual(jr.AskVerdict('UNKNOWN'),
+                         jr.AskVerdict.read({'answer': 'UNKNOWN', 'answer_status': 'unknown'}, absent))
         self.assertTrue(jr.AskVerdict('PARTIAL', True).abstains())
 
     def test_guarded_scorecard_by_kind(self):

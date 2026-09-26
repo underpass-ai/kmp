@@ -254,6 +254,12 @@ class ReadingTest(unittest.TestCase):
         bench = {'answer': 'UNKNOWN', 'reason': 'attribute_not_found'}
         self.assertEqual(unknown_reasons.translate(bench), ('attribute_not_found', 'attribute_not_found'))
         self.assertEqual(unknown_reasons.translate({'answer': 'UNKNOWN', 'proof': {}}), ('unstated', None))
+        for native, bench in [('anchor_absent_in_selection', 'anchor_not_found'),
+                              ('attribute_not_found', 'attribute_not_found'),
+                              ('no_candidates', 'no_evidence'), ('out_of_window', 'not_in_selection'),
+                              ('no_bearing', None)]:
+            gated = {'answer': 'UNKNOWN', 'answer_status': 'unknown', 'unknown_reason': native}
+            self.assertEqual(unknown_reasons.translate(gated), (native, bench))
 
     def test_trace_routes_and_direction(self):
         gold = PathGold(ref(1), ref(3), (ref(1), ref(2), ref(3)), (), (), True, True)

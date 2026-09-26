@@ -68,6 +68,11 @@ impl LexicalField {
         }
     }
 
+    /// How many candidates the field was measured over.
+    pub(super) fn documents(&self) -> usize {
+        self.documents
+    }
+
     /// How many of this question's candidates carry a term. A whole
     /// identifier is a term of its own, so this is also how many candidates
     /// name an anchor such as `c6.24` exactly.

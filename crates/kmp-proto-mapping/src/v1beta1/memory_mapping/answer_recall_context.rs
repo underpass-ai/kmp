@@ -35,6 +35,8 @@ pub(super) struct AnswerRecallContext {
     /// of the singular in an English summary. A store with no summary keeps
     /// exact matching rather than being stemmed by rules its text never was.
     pub(super) morphology: Morphology,
+    /// The declared `entry_kind` of each entry node that has one.
+    pub(super) entry_kinds: BTreeMap<String, String>,
 }
 
 impl AnswerRecallContext {
@@ -130,13 +132,31 @@ impl AnswerRecallContext {
             relationships.truncate(MAX_RELATION_FEATURES_PER_CANDIDATE);
         }
 
+        let entry_kinds = std::iter::once(bundle.root_node())
+            .chain(bundle.neighbor_nodes())
+            .filter_map(|node| {
+                node.properties()
+                    .get("entry_kind")
+                    .map(|kind| (node.node_id().to_string(), kind.clone()))
+            })
+            .collect();
+
         Self {
             details_by_ref,
             relationships_by_ref,
             lifecycle,
             reach_graph: ReachGraph::from_bundle(bundle),
             morphology,
+            entry_kinds,
         }
+    }
+
+    /// The declared kind of the entry a candidate states or supports.
+    pub(super) fn entry_kind(&self, item: &MemoryEvidence) -> Option<&str> {
+        answer_context_refs(item)
+            .iter()
+            .find_map(|item_ref| self.entry_kinds.get(item_ref))
+            .map(String::as_str)
     }
 
     /// The `proof.expired` list for the lifecycle this context stands on.

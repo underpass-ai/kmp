@@ -39,15 +39,18 @@ pub(super) fn concept_count(terms: &BTreeSet<String>) -> usize {
         .len()
 }
 
+/// The words that open a context clause: what a question asks stands before
+/// them, the circumstances it asks about after them.
+pub(super) const CONTEXT_BOUNDARIES: &[&str] = &[
+    "after", "before", "because", "if", "once", "when", "while", "antes", "cuando", "despues",
+    "después", "mientras", "porque", "si",
+];
+
 /// Extracts the subject-bearing clause used by strict answer policies.
 pub(super) fn strict_answer_focus_terms(
     question: &str,
     morphology: &Morphology,
 ) -> BTreeSet<String> {
-    const CONTEXT_BOUNDARIES: &[&str] = &[
-        "after", "before", "because", "if", "once", "when", "while", "antes", "cuando", "despues",
-        "después", "mientras", "porque", "si",
-    ];
     const GENERIC_QUESTION_PREDICATES: &[&str] = &[
         "happen", "happened", "occur", "occurred", "ocurrio", "ocurrió", "paso", "pasó", "prove",
         "proved", "proves",

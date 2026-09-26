@@ -118,7 +118,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .ok()
         .and_then(|value| value.parse::<u64>().ok())
         .unwrap_or(10);
-    let gated = arm.is_none() && max_entries == 10;
+    // The anchored ask gate (`ask-gate.json` beside each case's store):
+    // `anchored`, or `anchored-strict` without PARTIAL. An arm like the others.
+    let ask_gate = std::env::var("RETRIEVAL_ASK_GATE").ok();
+    let gated = arm.is_none() && ask_gate.is_none() && max_entries == 10;
     let mut bytes_to_judged = Vec::new();
 
     let collection: JudgedCollection = serde_json::from_str(&fs::read_to_string(&cases_path)?)?;
@@ -137,7 +140,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         if arm.is_some() && case.kind.is_some() {
             continue;
         }
-        let asked = run_case(case, arm.as_deref(), max_entries).await?;
+        let asked = run_case(case, arm.as_deref(), ask_gate.as_deref(), max_entries).await?;
         let outcome = asked.outcome;
         let decision = case.is_guarded().then(|| GuardedDecision {
             kind: case.kind.clone().unwrap_or_else(|| "original".to_string()),
@@ -234,8 +237,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     if !gated {
         println!(
-            "\narm rerank={} max_entries={max_entries}: reported, not gated",
-            arm.as_deref().unwrap_or("off")
+            "\narm rerank={} ask_gate={} max_entries={max_entries}: reported, not gated",
+            arm.as_deref().unwrap_or("off"),
+            ask_gate.as_deref().unwrap_or("off")
         );
         return Ok(());
     }
@@ -250,6 +254,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn run_case(
     case: &JudgedCase,
     arm: Option<&str>,
+    ask_gate: Option<&str>,
     max_entries: u64,
 ) -> Result<Asked, Box<dyn Error>> {
     // A fresh store per case, so one case cannot weight another's terms: the
@@ -267,6 +272,15 @@ async fn run_case(
             match arm {
                 "wide" => r#"{"pool_size":400,"excerpt_chars":300}"#,
                 _ => r#"{"pool_size":40}"#,
+            },
+        )?;
+    }
+    if let Some(gate) = ask_gate {
+        fs::write(
+            data_dir.join("ask-gate.json"),
+            match gate {
+                "anchored-strict" => r#"{"mode":"anchored","partial":false}"#,
+                _ => r#"{"mode":"anchored","partial":true}"#,
             },
         )?;
     }

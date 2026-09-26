@@ -118,6 +118,9 @@ def load_cases(path):
 # --- Guarded decisions: retrieval_scorecard.rs, ported ----------------------------------------
 
 ANSWER, PARTIAL, UNKNOWN = 'ANSWER', 'PARTIAL', 'UNKNOWN'
+# `answer_status` of a binary with the P4 ask gate; it speaks before `answer`, whose
+# PARTIAL keeps the citations.
+STATUS_DECISIONS = {'answered': ANSWER, 'partial': PARTIAL, 'unknown': UNKNOWN}
 
 
 @dataclass(frozen=True)
@@ -129,6 +132,9 @@ class AskVerdict:
     @classmethod
     def read(cls, answer, absent):
         value = answer.get('answer') if isinstance(answer, dict) else None
+        status = answer.get('answer_status') if isinstance(answer, dict) else None
+        if isinstance(status, str):
+            value = STATUS_DECISIONS.get(status, ANSWER)
         if value == UNKNOWN:
             return cls(UNKNOWN)
         if value == PARTIAL:

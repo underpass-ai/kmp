@@ -169,11 +169,18 @@ pub enum AskVerdict {
 impl AskVerdict {
     /// How a `kmp_ask` response settled the question.
     ///
-    /// v0.23.0 answers or says UNKNOWN; a PARTIAL is read the way the
-    /// benchmark specification scores it, as an abstention only when
+    /// A store with the anchored gate says so in `answer_status`; without
+    /// it, v0.23.0 answers or says UNKNOWN in `answer`. A PARTIAL is read the
+    /// way the benchmark specification scores it, as an abstention only when
     /// `proof.missing` names one of the words the case says are absent.
     pub fn read(answer: &Value, absent: &[String]) -> Self {
-        match answer["answer"].as_str() {
+        let status = match answer["answer_status"].as_str() {
+            Some("unknown") => Some("UNKNOWN"),
+            Some("partial") => Some("PARTIAL"),
+            Some(_) => Some("ANSWER"),
+            None => answer["answer"].as_str(),
+        };
+        match status {
             Some("UNKNOWN") => Self::Unknown,
             Some("PARTIAL") => {
                 let missing = answer["proof"]["missing"].to_string().to_lowercase();
@@ -520,6 +527,24 @@ mod tests {
             }
         );
         assert_eq!(AskVerdict::read(&answered, &absent), AskVerdict::Answer);
+        // The gate's status speaks first: its PARTIAL keeps the citations in
+        // `answer`.
+        let gated = |status: &str| {
+            serde_json::json!({"answer": "decision:x", "answer_status": status,
+                               "proof": {"missing": ["kubernetes"]}})
+        };
+        assert_eq!(
+            AskVerdict::read(&gated("partial"), &absent),
+            AskVerdict::Partial { names_absent: true }
+        );
+        assert_eq!(
+            AskVerdict::read(&gated("unknown"), &absent),
+            AskVerdict::Unknown
+        );
+        assert_eq!(
+            AskVerdict::read(&gated("answered"), &absent),
+            AskVerdict::Answer
+        );
         assert_eq!(
             ["ANSWER", "PARTIAL", "UNKNOWN"],
             [

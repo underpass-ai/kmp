@@ -13,7 +13,7 @@ use kmp_embedded::EmbeddedMemoryService;
 use kmp_proto::v1beta1::AskResponse;
 use kmp_proto_mapping::v1beta1::recall_projection::{project_rendered_ask, render_ask};
 use kmp_proto_mapping::v1beta1::{
-    AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
+    AskGate, AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
 };
 use serde_json::Value;
 use std::sync::Arc;
@@ -27,6 +27,7 @@ pub(crate) struct EmbeddedAskTool<'a> {
     rerank: &'a Result<Option<Arc<JudgementReranker>>, String>,
     lexical_cache: &'a Arc<kmp_proto_mapping::v1beta1::LexicalIndexCache>,
     frozen: FrozenRecallReads<'a>,
+    gate: Option<AskGate>,
 }
 
 impl<'a> EmbeddedAskTool<'a> {
@@ -47,7 +48,14 @@ impl<'a> EmbeddedAskTool<'a> {
             rerank,
             lexical_cache,
             frozen,
+            gate: None,
         }
+    }
+
+    /// Decide with the anchored gate the store opted into, if any.
+    pub(crate) fn with_gate(mut self, gate: Option<AskGate>) -> Self {
+        self.gate = gate;
+        self
     }
 
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
@@ -111,6 +119,9 @@ impl<'a> EmbeddedAskTool<'a> {
         let revision = result.read_revision.clone();
         let mut retrieval =
             AskRetrievalContext::from(result).with_lexical_cache(Arc::clone(self.lexical_cache));
+        if let Some(gate) = self.gate {
+            retrieval = retrieval.with_gate(gate);
+        }
         let mut warnings = Vec::new();
         let continuation = arguments
             .get("page")

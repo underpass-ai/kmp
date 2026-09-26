@@ -18,8 +18,23 @@ A v0.23.0 `kmp_ask` UNKNOWN carries no reason field. What it does say
 (*) anchor or attribute: the binary does not say which, so the reason stays unmapped.
 
 A binary that states a reason (a `reason` / `unknown_reason` string on the answer or
-its proof, as the P4 gate is expected to) is read first: a bench word is taken as is,
-and the aliases below map the obvious synonyms. Anything else is native and unmapped.
+its proof) is read first: a bench word is taken as is, and the aliases below map the
+obvious synonyms. Anything else is native and unmapped.
+
+The P4 ask gate states `unknown_reason` on the answer, in the contract's words:
+
+| `unknown_reason` | Bench reason |
+|---|---|
+| `no_candidates` | `no_evidence` |
+| `no_bearing` | None (*) |
+| `out_of_window` | `not_in_selection` |
+| `anchor_absent_in_selection` | `anchor_not_found` (**) |
+| `attribute_not_found` | `attribute_not_found` |
+
+(**) The gate reads only the selected abouts and span, so an anchor that lives in
+another about (`anchor_in_other_about` in gold) is reported absent from the selection:
+the reason is right for `anchor_not_found` and wrong for `anchor_in_other_about`, which
+the gate cannot tell apart.
 """
 from . import refs
 from .gold import UNKNOWN_REASONS
@@ -48,6 +63,10 @@ ALIASES = {
     'outside_selection': 'not_in_selection',
     'not_then': 'not_in_selection',
     'nothing_retrieved': 'no_evidence',
+    # The P4 ask gate (`unknown_reason` on the answer).
+    'no_candidates': 'no_evidence',
+    'out_of_window': 'not_in_selection',
+    'anchor_absent_in_selection': 'anchor_not_found',
 }
 
 

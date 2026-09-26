@@ -38,6 +38,8 @@ ANSWER = 'ANSWER'
 PARTIAL = 'PARTIAL'
 UNKNOWN = 'UNKNOWN'
 DECISIONS = (ANSWER, PARTIAL, UNKNOWN)
+# `answer_status` as a binary with the P4 ask gate writes it.
+STATUS_DECISIONS = {'answered': ANSWER, 'partial': PARTIAL, 'unknown': UNKNOWN}
 
 # Outcome labels, stable strings a report groups by.
 ANSWER_CORRECT = 'answer_correct'
@@ -73,17 +75,23 @@ class Observed:
 
     @classmethod
     def from_structured(cls, structured, reason=None):
-        """Read a v0.23.0 `kmp_ask` answer: ANSWER or UNKNOWN (PARTIAL arrives with P4).
+        """Read a `kmp_ask` answer: ANSWER, PARTIAL or UNKNOWN.
 
-        The decision is the `answer` field, as `AskVerdict::read` in retrieval_scorecard.rs
-        and `corpora/judged_retrieval.py` read it: `"UNKNOWN"`, `"PARTIAL"`, anything else
-        an answer. The reader therefore works unchanged once a binary emits PARTIAL.
+        A binary with the P4 ask gate states the decision in `answer_status`
+        (`answered`, `partial`, `unknown`), and its PARTIAL keeps the citations in
+        `answer`. Without that field the decision is the `answer` field, as
+        `AskVerdict::read` in retrieval_scorecard.rs and `corpora/judged_retrieval.py`
+        read it: `"UNKNOWN"`, `"PARTIAL"`, anything else an answer. A response without
+        `answer_status` is therefore read exactly as before.
         """
         proof = structured.get('proof') if isinstance(structured, dict) else None
         missing = proof.get('missing') if isinstance(proof, dict) else None
         items = tuple(item if isinstance(item, str) else json.dumps(item, sort_keys=True, ensure_ascii=False)
                       for item in (missing if isinstance(missing, list) else ()))
-        if refs.is_unknown(structured):
+        status = structured.get('answer_status') if isinstance(structured, dict) else None
+        if isinstance(status, str):
+            decision = STATUS_DECISIONS.get(status, ANSWER)
+        elif refs.is_unknown(structured):
             decision = UNKNOWN
         elif isinstance(structured, dict) and structured.get('answer') == PARTIAL:
             decision = PARTIAL

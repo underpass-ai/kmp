@@ -1,7 +1,9 @@
 //! The scalar edge of the recall mapping: enum labels, timestamps and the
 //! pointer reads that turn projected JSON back into typed fields.
 
-use kmp_proto::v1beta1::{MemoryConfidence, MemoryDetailLevel, MemorySemanticClass};
+use kmp_proto::v1beta1::{
+    AnswerStatus, MemoryConfidence, MemoryDetailLevel, MemorySemanticClass, UnknownReason,
+};
 use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
 
@@ -66,6 +68,51 @@ pub(super) fn confidence_from_label(value: &str) -> i32 {
         "low" => MemoryConfidence::Low as i32,
         _ => MemoryConfidence::Unknown as i32,
     }
+}
+
+/// The MCP label of an answer status: `answered`, `partial`, `unknown`, or
+/// `None` when the gate did not settle the answer.
+pub(super) fn answer_status_label(value: i32) -> Option<&'static str> {
+    match AnswerStatus::try_from(value) {
+        Ok(AnswerStatus::Answered) => Some("answered"),
+        Ok(AnswerStatus::Partial) => Some("partial"),
+        Ok(AnswerStatus::Unknown) => Some("unknown"),
+        _ => None,
+    }
+}
+
+pub(super) fn answer_status_from_label(value: &str) -> i32 {
+    match value {
+        "answered" => AnswerStatus::Answered as i32,
+        "partial" => AnswerStatus::Partial as i32,
+        "unknown" => AnswerStatus::Unknown as i32,
+        _ => AnswerStatus::Unspecified as i32,
+    }
+}
+
+/// The MCP label of why an answer is unknown, or `None` when unstated.
+pub(super) fn unknown_reason_label(value: i32) -> Option<&'static str> {
+    match UnknownReason::try_from(value) {
+        Ok(UnknownReason::NoCandidates) => Some("no_candidates"),
+        Ok(UnknownReason::NoBearing) => Some("no_bearing"),
+        Ok(UnknownReason::OutOfWindow) => Some("out_of_window"),
+        Ok(UnknownReason::AnchorAbsentInSelection) => Some("anchor_absent_in_selection"),
+        Ok(UnknownReason::AttributeNotFound) => Some("attribute_not_found"),
+        _ => None,
+    }
+}
+
+pub(super) fn unknown_reason_from_label(value: &str) -> i32 {
+    [
+        UnknownReason::NoCandidates,
+        UnknownReason::NoBearing,
+        UnknownReason::OutOfWindow,
+        UnknownReason::AnchorAbsentInSelection,
+        UnknownReason::AttributeNotFound,
+    ]
+    .into_iter()
+    .find(|reason| unknown_reason_label(*reason as i32) == Some(value))
+    .map_or(UnknownReason::Unspecified as i32, |reason| reason as i32)
 }
 
 pub(super) fn string_at(value: &Value, pointer: &str) -> String {

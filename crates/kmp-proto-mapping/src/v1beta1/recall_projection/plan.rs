@@ -220,7 +220,15 @@ impl ProjectionPlan {
                 priority,
             ));
         }
-        for missing in take_array(&mut value, &["proof", "missing"]) {
+        // What the anchored gate did not find is its answer's other half: a
+        // response that says how it settled keeps `missing` in the core.
+        let missing_is_core = value.get("answer_status").is_some();
+        let missing = if missing_is_core {
+            Vec::new()
+        } else {
+            take_array(&mut value, &["proof", "missing"])
+        };
+        for missing in missing {
             items.push(ProjectionItem::new(
                 Section::ProofMissing,
                 missing,

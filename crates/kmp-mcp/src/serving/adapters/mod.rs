@@ -1,3 +1,4 @@
+mod ask_gate_config;
 mod cassette_judgement;
 #[cfg(test)]
 mod cassette_judgement_tests;

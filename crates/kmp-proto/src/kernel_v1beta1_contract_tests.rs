@@ -173,6 +173,8 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "warnings",
             "projection",
             "asked_as",
+            "answer_status",
+            "unknown_reason",
         ]
     );
     assert_eq!(

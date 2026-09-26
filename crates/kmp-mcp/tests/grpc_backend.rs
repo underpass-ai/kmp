@@ -828,6 +828,8 @@ impl KernelMemoryService for FakeMemoryService {
             warnings: Vec::new(),
             projection: None,
             asked_as: String::new(),
+            answer_status: 0,
+            unknown_reason: 0,
         };
         Ok(Response::new(
             project_ask_response(response, &request)
