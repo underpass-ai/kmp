@@ -755,7 +755,12 @@ Shared shapes:
   "wilson"|"clopper_pearson"|"bootstrap"|"exact"|null, "absent_reason": string|null}`.
 - **Delta**: `{"metric", "baseline": Metric, "candidate": Metric, "delta", "ci95",
   "method": "mcnemar_exact"|"paired_bootstrap", "p_value", "discordant": {"improved",
-  "worsened", "rate"}, "mde", "effect", "decidable"}`.
+  "worsened", "rate"}, "mde", "effect", "decidable", "unit", "samples"}`. The unit of a
+  rate or mean Delta is the question (`"unit": "question"`): the paired samples of one
+  question collapse first (a rate to the majority of its samples, a tie to the first
+  sample; a mean to their mean), so `baseline.n`, the discordant counts, the bootstrap
+  and the MDE count questions, and `samples` counts the (question, sample) pairs that
+  were collapsed. A pooled rate stays descriptive over every sample (`"unit": "sample"`).
 - **Verdict values** (ASCII slugs of section 12): `mejora`, `mejora_con_coste`,
   `solo_coste`, `neutral`, `regresion`, `indecidible`, `no_comparable`,
   `captura_fallida`.

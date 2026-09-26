@@ -165,6 +165,13 @@ Sweep runs get their own mode name in the result key (`full-mb2048`), because
 
 ### Verdicts
 
+Every comparison counts questions, not samples. With `--samples 3` the three
+samples of a question collapse into one observation per arm before any test
+(`application/compare.py`, `collapse`): a rate takes the majority of its samples,
+a tie going to the first sample, and a mean takes their mean. McNemar, the paired
+bootstrap and the MDE then run over the questions, so 29 questions measured three
+times are n = 29, not 87. Each Delta says so (`unit`, `samples`).
+
 Each section's verdict follows the pre-registered rules of
 `application/verdict.py` (BENCH_SPEC section 12). The mode's verdict takes the
 first value, in the order `verdict_precedence` of `modes.toml` gives (worst

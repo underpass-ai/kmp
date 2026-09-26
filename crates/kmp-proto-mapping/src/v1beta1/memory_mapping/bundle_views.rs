@@ -122,7 +122,50 @@ pub(super) fn answer_relations_from_bundle(
     bundle: &KmpBundle,
     evidence: &[MemoryEvidence],
 ) -> Vec<MemoryRelation> {
-    let selected_refs = evidence
+    let selected_refs = relation_refs_of(evidence);
+
+    memory_relations_from_bundle(bundle)
+        .into_iter()
+        .filter(|relationship| {
+            selected_refs.contains(&relationship.source_ref)
+                || selected_refs.contains(&relationship.target_ref)
+        })
+        .collect()
+}
+
+/// The path of a PARTIAL answer: the relations incident to what it cites,
+/// and the lifecycle of the rest of its proof.
+///
+/// The anchored gate ranks without the focus filter, so the proof beside a
+/// PARTIAL is every candidate that shares a word with the question, and the
+/// relations incident to all of it are most of the about's graph: on the
+/// private bench one PARTIAL carried 929 relations over 46 pages to cite
+/// three memories. The citations keep every relation that audits them, as
+/// [`answer_relations_from_bundle`] would; the rest of the proof keeps only
+/// its supersessions and conflicts, which change how the evidence reads.
+pub(super) fn partial_answer_relations_from_bundle(
+    bundle: &KmpBundle,
+    cited: &[MemoryEvidence],
+    evidence: &[MemoryEvidence],
+) -> Vec<MemoryRelation> {
+    let cited_refs = relation_refs_of(cited);
+    let evidence_refs = relation_refs_of(evidence);
+    memory_relations_from_bundle(bundle)
+        .into_iter()
+        .filter(|relationship| {
+            let touches = |refs: &BTreeSet<String>| {
+                refs.contains(&relationship.source_ref) || refs.contains(&relationship.target_ref)
+            };
+            touches(&cited_refs)
+                || (touches(&evidence_refs)
+                    && (is_supersession(&relationship.rel)
+                        || is_conflict_relation(&relationship.rel)))
+        })
+        .collect()
+}
+
+fn relation_refs_of(evidence: &[MemoryEvidence]) -> BTreeSet<String> {
+    evidence
         .iter()
         .flat_map(|item| {
             item.id
@@ -130,14 +173,6 @@ pub(super) fn answer_relations_from_bundle(
                 .map(str::to_string)
                 .into_iter()
                 .chain(item.supports.iter().cloned())
-        })
-        .collect::<BTreeSet<_>>();
-
-    memory_relations_from_bundle(bundle)
-        .into_iter()
-        .filter(|relationship| {
-            selected_refs.contains(&relationship.source_ref)
-                || selected_refs.contains(&relationship.target_ref)
         })
         .collect()
 }

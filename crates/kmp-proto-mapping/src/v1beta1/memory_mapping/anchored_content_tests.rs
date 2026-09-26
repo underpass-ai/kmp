@@ -36,7 +36,9 @@ const BACKGROUND: &[(&str, &str, &str)] = &[
 
 /// A store of one about whose entries are `(ref, entry_kind, text,
 /// source, metadata)`.
-fn store_with_properties(entries: &[(&str, &str, &str, &str, &str)]) -> GetContextResult {
+pub(super) fn store_with_properties(
+    entries: &[(&str, &str, &str, &str, &str)],
+) -> GetContextResult {
     let node = |id: &str, kind: &str, summary: &str, properties: BTreeMap<String, String>| {
         BundleNode::new(id, kind, id, summary, "ACTIVE", Vec::new(), properties)
     };

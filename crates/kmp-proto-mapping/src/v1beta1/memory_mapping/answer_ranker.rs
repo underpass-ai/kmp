@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use kmp_application::MemoryAnswerPolicy;
 use kmp_domain::KmpBundle;
-use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence, UnknownReason};
+use kmp_proto::v1beta1::{AnswerStatus, MemoryConfidence, MemoryEvidence, UnknownReason};
 
 use super::anchor_rescue::AnchorRescue;
 use super::anchor_selection::AnchorSelection;
@@ -427,11 +427,34 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 }
             },
         );
+        // What the gate did not answer whole is proved by the memories about
+        // its anchors. The ranking above had no focus filter, so the rest of
+        // it is every candidate that shares a word with the question: on the
+        // private bench one PARTIAL carried 287 of them to cite three, and
+        // one UNKNOWN 146. A memory that names no anchor, in its content or
+        // by a declared `same_entity_as`, is not about what was asked; an
+        // answered reading keeps its whole proof, as the ungated rule does.
+        let about_anchors = (verdict.status != AnswerStatus::Answered).then(|| {
+            direct
+                .iter()
+                .filter(|(item, terms)| {
+                    anchors
+                        .iter()
+                        .any(|anchor| rescue.names(item, terms, anchor))
+                })
+                .map(|(item, _)| item.id.clone())
+                .collect::<BTreeSet<_>>()
+        });
         // A citation the gate admitted through a declared `same_entity_as`
         // says so, and says which memory named the anchor.
         let cited = verdict.cited();
         let ranked = ranked
             .into_iter()
+            .filter(|item| {
+                about_anchors.as_ref().is_none_or(|about| {
+                    about.contains(&item.id) || cited.contains(item.id.as_str())
+                })
+            })
             .map(|item| match rescue.standing_in_for(&item.id) {
                 Some(from) if cited.contains(item.id.as_str()) => {
                     let from = from.to_string();

@@ -49,6 +49,19 @@ Detailed notes from the early release cycle remain available in the
   as that stem and not through the table: `correctness` no longer matches
   `correction`, while `fixes` still matches `fixed` (`inflectional_endings`
   in `question_contract.json`).
+- What the anchored gate does not answer whole carries a proof its size.
+  A PARTIAL or gated UNKNOWN keeps in `proof.evidence` only the memories
+  that name one of the question's anchors (in their content, or by a
+  declared `same_entity_as`); a PARTIAL's `proof.path` keeps the relations
+  incident to what it cites and, of the rest of its proof, only
+  supersessions and conflicts; and under the gate `proof.missing` names each
+  thing once (the withheld sources were one per withheld entry). An
+  ANSWERED reading keeps its whole proof. On B-real the gated walk through
+  every page went from 46,229 to 11,655 tokens on average (10,231 without
+  the gate) and from 8 to 2.3 pages, with the same false UNKNOWNs and core
+  precision and one wrong PARTIAL fewer (a withheld source whose slug spelled
+  a covered facet no longer reads as missing). Without `ask-gate.json` every
+  response is byte for byte what it was.
 - `memory_bench` synth-v1 `1.2.0`: the `negated_anchor` gold forbids only the
   entries whose only anchor is the excluded one. An entry of the subject that
   also names the excluded anchor may be cited; it is neither an answer nor

@@ -5,9 +5,17 @@ driver version, encoders with their asset SHA-256, bench version:
 `RunManifest.comparability`, `cachekey.drift`); otherwise the comparison is
 refused and the verdict is `no_comparable`, never a number.
 
-Questions are paired by (question id, sample), repeat 0. A rate is compared with
-exact McNemar on the discordant pairs and a paired bootstrap CI of the difference;
-a mean (tokens, pages, coverage) with the paired bootstrap alone. Every Delta
+Questions are paired by (question id, sample), repeat 0, and the inference unit is
+the question: the samples of one question are not independent trials (the same
+store, the same words, usually the same answer), so counting 3 samples of 29
+questions as n = 87 inflated every p-value, CI and MDE. Before any test the paired
+samples of a question collapse into one observation per side (`collapse`): a rate
+takes the majority of its samples, a tie going to the lowest sample (the first
+measured); a mean takes the mean of its samples. A rate is then compared with exact
+McNemar on the discordant questions and a paired bootstrap CI of the difference
+over questions; a mean (tokens, pages, coverage) with the paired bootstrap alone.
+A pooled rate (hits over totals) is descriptive and still sums every sample. Every
+Delta carries `unit: "question"`, `n` questions and the `samples` it collapsed. Every Delta
 carries the minimum detectable effect at alpha 0.05 and 80 % power
 (`domain/power.py`): for a rate MDE = 2.8 * sqrt(d / n) with d the discordant
 rate, floored at one discordant pair (d >= 1/n) so that a run without
@@ -69,9 +77,10 @@ class Pairing:
         return Pairing(keys, self.baseline, self.candidate, self.unpaired)
 
 
-def _values(pairing, name, extra, encoding):
-    """Paired observations (baseline, candidate) of a metric where both sides have one."""
-    pairs = []
+def _samples(pairing, name, extra, encoding):
+    """Paired observations (key, baseline, candidate) of a metric where both sides have one,
+    one per (question, sample)."""
+    observed = []
     for key in pairing.keys:
         if extra is not None:
             a, b = extra[0].get(key), extra[1].get(key)
@@ -79,7 +88,31 @@ def _values(pairing, name, extra, encoding):
             a = aggregate.per_question(pairing.baseline[key], name, encoding)
             b = aggregate.per_question(pairing.candidate[key], name, encoding)
         if a is not None and b is not None:
-            pairs.append((a, b))
+            observed.append((key, a, b))
+    return observed
+
+
+def _majority(values):
+    """The value most samples hold; a tie goes to the first sample's value."""
+    trues = sum(1 for value in values if value)
+    falses = len(values) - trues
+    return trues > falses if trues != falses else bool(values[0])
+
+
+def collapse(observed, kind):
+    """One (baseline, candidate) pair per question from its paired samples, in question
+    order: the majority of a rate's samples, the mean of any other metric's."""
+    by_question = {}
+    for (question_id, sample), a, b in sorted(observed, key=lambda item: item[0]):
+        by_question.setdefault(question_id, []).append((a, b))
+    pairs = []
+    for question_id in sorted(by_question):
+        samples = by_question[question_id]
+        if kind == RATE:
+            pairs.append((_majority([a for a, _ in samples]), _majority([b for _, b in samples])))
+        else:
+            pairs.append((math.fsum(float(a) for a, _ in samples) / len(samples),
+                          math.fsum(float(b) for _, b in samples) / len(samples)))
     return pairs
 
 
@@ -102,11 +135,14 @@ def delta(pairing, name, effect=None, b=stats.BOOTSTRAP_B, encoding=PRIMARY_ENCO
     """One Delta object (SCHEMAS.md section 5). `extra`: ({key: v}, {key: v}) for metrics
     outside the per-question scores (Jev dollars)."""
     kind = _kind(name, extra)
-    pairs = _values(pairing, name, extra, encoding)
+    observed = _samples(pairing, name, extra, encoding)
     better_up = higher_is_better(name)
     row = {'metric': name, 'delta': None, 'ci95': None, 'method': None, 'p_value': None,
-           'discordant': None, 'mde': None, 'effect': effect, 'decidable': False}
+           'discordant': None, 'mde': None, 'effect': effect, 'decidable': False,
+           'unit': 'question', 'samples': len(observed)}
     if kind == POOLED:
+        row['unit'] = 'sample'
+        pairs = [(a, b) for _, a, b in observed]
         hits = [sum(h for h, _ in side) for side in zip(*pairs)] if pairs else [0, 0]
         totals = [sum(t for _, t in side) for side in zip(*pairs)] if pairs else [0, 0]
         row['baseline'] = aggregate.rate_metric(hits[0], totals[0])
@@ -114,6 +150,7 @@ def delta(pairing, name, effect=None, b=stats.BOOTSTRAP_B, encoding=PRIMARY_ENCO
         if totals[0] and totals[1]:
             row['delta'] = hits[1] / totals[1] - hits[0] / totals[0]
         return row
+    pairs = collapse(observed, kind)
     if not pairs:
         row['baseline'] = row['candidate'] = aggregate.absent('no paired question has this metric')
         return row

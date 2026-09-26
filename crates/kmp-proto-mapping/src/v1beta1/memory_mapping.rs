@@ -8,6 +8,8 @@ mod anchored_content_tests;
 mod anchored_gate;
 #[cfg(test)]
 mod anchored_gate_tests;
+#[cfg(test)]
+mod anchored_partial_proof_tests;
 mod anchored_reading;
 mod answer_candidate;
 mod answer_candidate_terms;

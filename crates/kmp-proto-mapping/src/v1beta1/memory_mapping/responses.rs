@@ -36,9 +36,9 @@ use super::bundle_views::{
     about_by_entry, abouts_in_bundle, answer_evidence_from_bundle, answer_relations_from_bundle,
     conflicts_from_relations, memory_evidence_from_bundle,
     memory_relation_from_bundle_relationship, memory_relations_from_bundle,
-    persisted_memory_metadata, persisted_memory_source, proof, proto_coordinate_from_domain,
-    proto_relation_explanation, rendered_summary, superseded_from_relations,
-    temporal_evidence_from_bundle, temporal_relations_from_bundle,
+    partial_answer_relations_from_bundle, persisted_memory_metadata, persisted_memory_source,
+    proof, proto_coordinate_from_domain, proto_relation_explanation, rendered_summary,
+    superseded_from_relations, temporal_evidence_from_bundle, temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::memory_catalog::labels_from_bundle;
@@ -394,6 +394,15 @@ fn cap_wake_evidence(
     }
 }
 
+/// The names in first-said order, each once.
+fn said_once(names: Vec<String>) -> Vec<String> {
+    let mut said = BTreeSet::new();
+    names
+        .into_iter()
+        .filter(|name| said.insert(name.clone()))
+        .collect()
+}
+
 /// Carry the selection-stage count into the existing projection envelope.
 /// The transport fills the remaining fields when it projects the response.
 fn selection_cap_projection(omitted: usize) -> Option<RecallProjection> {
@@ -650,12 +659,24 @@ pub fn ask_response_from_result(
     } else {
         not_found.iter().cloned().chain(withheld).collect()
     };
+    // Under the gate each name is said once. The withheld sources are one per
+    // withheld entry, and a writer's source stands behind many entries: one
+    // PARTIAL named 151 sources 207 times. Without the gate the list stays as
+    // it always was.
+    let missing = if verdict.is_some() {
+        said_once(missing)
+    } else {
+        missing
+    };
+    let path = if unknown {
+        Vec::new()
+    } else if status == AnswerStatus::Partial {
+        partial_answer_relations_from_bundle(&bounded, &answer_core, &evidence)
+    } else {
+        answer_relations_from_bundle(&bounded, &evidence)
+    };
     let mut answer_proof = proof(
-        if unknown {
-            Vec::new()
-        } else {
-            answer_relations_from_bundle(&bounded, &evidence)
-        },
+        path,
         evidence,
         missing,
         if unknown && verdict.is_some() {

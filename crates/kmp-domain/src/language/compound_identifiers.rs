@@ -49,7 +49,7 @@ pub(super) fn compound_forms(token: &str) -> Vec<String> {
 ///
 /// Every one of them is a term the ranker indexes, which is what lets a
 /// question's anchor be looked up by document frequency: the whole forms are
-/// the ones [`compound_forms`] adds, and a form with no joiner is one of the
+/// the ones `compound_forms` adds, and a form with no joiner is one of the
 /// token's own parts.
 pub fn identifier_terms(token: &str) -> Vec<String> {
     let Some(identifier) = identifiers(token).into_iter().next() else {

@@ -69,10 +69,10 @@ def leaky_pages(q, sample=0):
     return better_pages(q)
 
 
-def rate_score(i, useful):
+def rate_score(i, useful, sample=0, pages=1):
     """A bare kmp_ask score carrying one Bernoulli trial of useful_rate."""
-    return QuestionScore(f'q{i:03d}', 'singular_anchored', 'synth', 'kmp_ask', 0, False, (), 'completed', 1, 10,
-                         values={'useful': useful})
+    return QuestionScore(f'q{i:03d}', 'singular_anchored', 'synth', 'kmp_ask', sample, False, (), 'completed',
+                         pages, 10, values={'useful': useful})
 
 
 def arm(name, run, variant_value=None):
@@ -278,6 +278,46 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(compare.improvement({**row, 'p_value': 0.04}), 1)
         self.assertEqual(compare.improvement({**row, 'p_value': 0.04, 'delta': -0.05,
                                               'ci95': [-0.09, -0.01]}), -1)
+
+    # --- The question is the unit: samples collapse before any test -----------------------
+
+    def sampled(self, improved, n=29, samples=3):
+        base = [rate_score(i, False, s) for i in range(n) for s in range(samples)]
+        cand = [rate_score(i, i < improved, s) for i in range(n) for s in range(samples)]
+        return Pairing.of(base, cand)
+
+    def test_samples_of_one_question_count_once(self):
+        # 6 of 29 questions improve in all 3 samples: 6 discordant questions, not 18 pairs.
+        row = delta(self.sampled(6), 'useful_rate', effect=0.1, b=200)
+        self.assertEqual((row['unit'], row['samples']), ('question', 87))
+        self.assertEqual(row['baseline']['n'], 29)
+        self.assertEqual((row['discordant']['improved'], row['discordant']['worsened']), (6, 0))
+        self.assertEqual(row['p_value'], 0.03125)
+        self.assertAlmostEqual(row['delta'], 6 / 29)
+        self.assertAlmostEqual(row['mde'], compare.power.mde(29, 6 / 29))
+        # 5 questions x 3 samples used to read as 15 discordant pairs, p < 0.001.
+        five = delta(self.sampled(5), 'useful_rate', effect=0.1, b=200)
+        self.assertEqual(five['p_value'], 0.0625)
+        self.assertFalse(five['decidable'])
+        self.assertEqual(compare.improvement(five), 0)
+
+    def test_a_rate_takes_the_majority_of_its_samples_and_a_tie_the_first(self):
+        base = [rate_score(0, False, s) for s in range(3)] + [rate_score(1, False, s) for s in range(2)]
+        cand = [rate_score(0, s != 2, s) for s in range(3)] + [rate_score(1, s == 1, s) for s in range(2)]
+        row = delta(Pairing.of(base, cand), 'useful_rate', b=None)
+        self.assertEqual(row['baseline']['n'], 2)
+        # q000: True, True, False -> True; q001: False, True -> tie -> sample 0 -> False.
+        self.assertEqual(row['candidate']['value'], 0.5)
+        self.assertEqual(row['discordant']['improved'], 1)
+
+    def test_a_mean_takes_the_mean_of_its_samples(self):
+        base = [rate_score(i, False, s, pages=1) for i in range(4) for s in range(3)]
+        cand = [rate_score(i, False, s, pages=1 + s + i) for i in range(4) for s in range(3)]
+        row = delta(Pairing.of(base, cand), 'pages', b=200)
+        self.assertEqual((row['method'], row['baseline']['n'], row['samples']), ('paired_bootstrap', 4, 12))
+        # per question the candidate is 1 + i + 1 on average: differences 1, 2, 3, 4
+        self.assertAlmostEqual(row['delta'], 2.5)
+        self.assertAlmostEqual(row['mde'], compare.power.coefficient() * compare.statistics_sd([1, 2, 3, 4]) / 2)
 
     def test_mcnemar_needs_six_discordant_pairs_at_alpha_005(self):
         self.assertEqual(compare.MIN_DISCORDANT, 6)
