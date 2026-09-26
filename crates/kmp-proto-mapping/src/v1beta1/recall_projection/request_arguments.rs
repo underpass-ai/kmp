@@ -95,7 +95,6 @@ fn budget_value(
     let budget = budget.cloned().unwrap_or_default();
     let mut value = json!({
         "tokens": if budget.tokens == 0 { default_tokens } else { budget.tokens },
-        "detail": detail_label(budget.detail),
         "depth": if budget.depth == 0 { default_depth } else { budget.depth },
         "max_entries": budget.max_entries,
         "max_bytes": if budget.max_bytes == 0 {
@@ -109,6 +108,17 @@ fn budget_value(
             .as_object_mut()
             .expect("budget object")
             .remove("max_entries");
+    }
+    // A detail the caller did not name stays unnamed. The projection reads
+    // its absence as `balanced`, but the kernel query does not: an
+    // unspecified detail reads without a tier cap, `balanced` caps it at the
+    // causal spine. Echoing `balanced` made every continuation and restart
+    // a different query from its first page, so none of them could thaw the
+    // first page's read (P8: 46 ms continuations on the real store).
+    if kmp_proto::v1beta1::MemoryDetailLevel::try_from(budget.detail)
+        .is_ok_and(|detail| detail != kmp_proto::v1beta1::MemoryDetailLevel::Unspecified)
+    {
+        value["detail"] = json!(detail_label(budget.detail));
     }
     value
 }

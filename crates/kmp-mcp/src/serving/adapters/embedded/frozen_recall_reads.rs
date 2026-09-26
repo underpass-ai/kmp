@@ -10,7 +10,9 @@ use crate::serving::ports::frozen_recall_store::FrozenRecallStore;
 /// Continuations of Wake and Ask cut from the first page's frozen read.
 ///
 /// Only a call carrying a cursor may thaw a read, and only at the store's
-/// current revision; any other call reads as it always has. The kernel's
+/// current revision — or the one restart a first page with a shortened core
+/// proposed, which is the same query at a larger byte ceiling. Any other
+/// call reads as it always has. The kernel's
 /// read already stands on the memory frontier and never on the wall clock,
 /// so an unchanged revision reads the same selection, lifecycle and proof.
 #[derive(Clone, Copy)]
@@ -34,16 +36,18 @@ impl<'a> FrozenRecallReads<'a> {
         key: &FrozenRecallKey,
         arguments: &Value,
     ) -> Option<FrozenRecall> {
-        if !continues(arguments) {
-            return None;
-        }
         // A store that cannot certify its revision is read again; an error
         // here surfaces, if it persists, from the ordinary read.
         let revision = self.service.read_revision().await.ok().flatten()?;
-        self.store.thaw(key, &revision)
+        if continues(arguments) {
+            self.store.thaw(key, &revision)
+        } else {
+            self.store.thaw_restart(key, &revision)
+        }
     }
 
-    /// Keep a read whose projected page left more to page through.
+    /// Keep a read whose projected page left more to page through, or whose
+    /// shortened core proposed a restart.
     pub(crate) fn freeze(
         &self,
         key: FrozenRecallKey,
@@ -51,10 +55,11 @@ impl<'a> FrozenRecallReads<'a> {
         recall: FrozenRecall,
         projection: Option<&RecallProjection>,
     ) {
+        let restart = restarts(projection);
         if let Some(revision) = revision
-            && has_more(projection)
+            && (has_more(projection) || restart)
         {
-            self.store.freeze(key, revision, recall);
+            self.store.freeze(key, revision, recall, restart);
         }
     }
 }
@@ -64,6 +69,11 @@ fn continues(arguments: &Value) -> bool {
         .pointer("/page/cursor")
         .and_then(Value::as_str)
         .is_some_and(|cursor| !cursor.is_empty())
+}
+
+/// The page shortened its core, so its next action restarts the read.
+fn restarts(projection: Option<&RecallProjection>) -> bool {
+    projection.is_some_and(|projection| projection.core_text_shortened)
 }
 
 fn has_more(projection: Option<&RecallProjection>) -> bool {
@@ -103,5 +113,16 @@ mod tests {
         assert!(!has_more(Some(&page(true, None))));
         assert!(!has_more(Some(&RecallProjection::default())));
         assert!(!has_more(None));
+    }
+
+    #[test]
+    fn a_shortened_core_awaits_its_restart() {
+        let shortened = RecallProjection {
+            core_text_shortened: true,
+            ..RecallProjection::default()
+        };
+        assert!(restarts(Some(&shortened)));
+        assert!(!restarts(Some(&RecallProjection::default())));
+        assert!(!restarts(None));
     }
 }

@@ -191,7 +191,8 @@ async fn frozen_wake_and_ask_pages_equal_fresh_reads_byte_for_byte() {
         ),
         (
             "kmp_ask",
-            json!({"about": ABOUT, "question": "Why does the rollout gate stay closed?", "budget": {"max_bytes": 2048}}),
+            // An answered ask pages its proof only at full detail.
+            json!({"about": ABOUT, "question": "Why does the rollout gate stay closed?", "budget": {"max_bytes": 2048, "detail": "full"}}),
         ),
     ] {
         let mut id = 100;
@@ -279,4 +280,49 @@ async fn a_repeated_first_page_and_a_repeat_core_page_are_unchanged() {
         without_handles(&served),
         without_handles(&fresh(dir.path(), 22, &name, &repeat).await)
     );
+}
+
+/// The page shortened its core and proposes a restart, not a cursor page.
+fn restart_proposed(response: &str) -> bool {
+    let value: Value = serde_json::from_str(response).expect("JSON");
+    let projection = &value["result"]["structuredContent"]["projection"];
+    projection["core_text_shortened"] == true && projection["next_action"].is_object()
+}
+
+#[tokio::test]
+async fn the_restart_of_a_shortened_first_page_equals_a_fresh_read() {
+    let (dir, server) = seeded().await;
+    for (tool, first) in [
+        (
+            "kmp_wake",
+            json!({"about": ABOUT, "budget": {"max_bytes": 600}}),
+        ),
+        (
+            "kmp_ask",
+            json!({"about": ABOUT, "question": "Why does the rollout gate stay closed?", "budget": {"max_bytes": 600}}),
+        ),
+    ] {
+        let page = raw(&server, 30, tool, &first).await;
+        assert!(!is_error(&page), "{page}");
+        assert!(
+            restart_proposed(&page),
+            "{tool} fixture must shorten: {page}"
+        );
+        let (name, restart) = next_action(&page).expect("a restart");
+        assert!(restart.get("continuation").is_none() && restart["page"]["cursor"].is_null());
+        // Served from the first page's read, it is what a fresh read returns.
+        let served = raw(&server, 31, &name, &restart).await;
+        assert!(!is_error(&served), "{served}");
+        assert_eq!(
+            without_handles(&served),
+            without_handles(&fresh(dir.path(), 31, &name, &restart).await),
+            "{tool} restart differs from a fresh read"
+        );
+        // Once: the same call again reads again, and still equals it.
+        let again = raw(&server, 32, &name, &restart).await;
+        assert_eq!(
+            without_handles(&again),
+            without_handles(&fresh(dir.path(), 32, &name, &restart).await)
+        );
+    }
 }

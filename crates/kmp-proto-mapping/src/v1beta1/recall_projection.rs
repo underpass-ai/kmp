@@ -62,6 +62,8 @@ mod proof_on_request_tests;
 #[path = "recall_projection_rank_tests.rs"]
 mod rank_tests;
 #[cfg(test)]
+mod request_arguments_tests;
+#[cfg(test)]
 mod response_value_tests;
 #[cfg(test)]
 mod serialized_size_tests;
