@@ -8,7 +8,6 @@ use super::anchor_rescue::AnchorRescue;
 use super::anchor_selection::AnchorSelection;
 use super::anchored_gate::AnchoredGate;
 use super::anchored_reading::AnchoredReading;
-use super::ask_gate::AskGate;
 use super::answer_candidate::AnswerCandidate;
 use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::answer_recall_context::AnswerRecallContext;
@@ -17,6 +16,7 @@ use super::answer_selection::{
     mark_bridged, mark_reached, mark_reached_by, mark_restated, prioritize_distinct_claims,
     stable_evidence_key, was_reached_along_a_lifecycle, was_reached_indirectly,
 };
+use super::ask_gate::AskGate;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;

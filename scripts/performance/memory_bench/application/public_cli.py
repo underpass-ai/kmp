@@ -62,7 +62,9 @@ def load_corpora(args, lock=None, log=sys.stderr):
     if args.corpus == 'factconsolidation':
         entry, folder = fetching.locate('memoryagentbench-cr', args.out, lock=lock)
         rows = memoryagentbench.load_rows(folder / memoryagentbench.PARQUET)
-        found = [(memoryagentbench.build(rows, size, limit=args.limit), entry) for size in args.size]
+        declared = getattr(args, 'declared', False)
+        found = [(memoryagentbench.build(rows, size, limit=args.limit, declared=declared), entry)
+                 for size in args.size]
     elif args.corpus == 'longmemeval-s':
         entry, folder = fetching.locate('longmemeval-s', args.out, lock=lock)
         items = longmemeval.load_items(folder / longmemeval.FILE)
@@ -255,6 +257,8 @@ def build_parser():
         command.set_defaults(action=action)
         command.add_argument('--corpus', choices=CORPORA, required=True)
         command.add_argument('--size', type=_sizes, default=('32k',), help='FactConsolidation sizes')
+        command.add_argument('--declared', action='store_true',
+                             help='FactConsolidation: the writer-declared supersedes variant')
         command.add_argument('--limit', type=int, help='questions per FC variant / multi-hop subset size')
         command.add_argument('--per-type', type=int, default=10, help='LongMemEval questions per type')
         command.add_argument('--abstention', type=int, default=30, help='LongMemEval _abs items')

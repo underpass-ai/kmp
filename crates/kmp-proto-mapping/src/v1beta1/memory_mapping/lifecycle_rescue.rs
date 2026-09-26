@@ -150,7 +150,7 @@ impl LifecycleRescue<'_> {
             .filter_map(|found| {
                 let index = pool[&found.node];
                 let (item, _) = slots[index].take()?;
-                Some(self.mark(item, &found))
+                Some(self.mark(item, &found, ask))
             })
             .collect();
         (rescued, slots.into_iter().flatten().collect())
@@ -239,23 +239,27 @@ impl LifecycleRescue<'_> {
         !self.context.lifecycle.is_superseded(node) && !self.context.lifecycle.is_expired(node)
     }
 
-    fn mark(&self, item: MemoryEvidence, found: &Found) -> MemoryEvidence {
-        let state = if answer_context_refs(&item)
+    /// Marks a rescued memory with its route. Every page may repeat the
+    /// largest item's bytes, so the marks say only what the route does not
+    /// already imply: a question about now brings only standing heads, so
+    /// their state goes unsaid, and one hop goes unsaid.
+    fn mark(&self, item: MemoryEvidence, found: &Found, ask: LifecycleAsk) -> MemoryEvidence {
+        let replaced = !answer_context_refs(&item)
             .iter()
-            .all(|node| self.stands(node))
-        {
-            "current"
-        } else {
-            "replaced"
-        };
+            .all(|node| self.stands(node));
         let mut item = mark_reached_by(item, REACHED_BY_LIFECYCLE);
         let metadata = &mut item.metadata;
         metadata.insert("reached_from".to_string(), found.seed.clone());
         if let Some(via) = &found.via {
             metadata.insert("reached_via".to_string(), via.clone());
         }
-        metadata.insert("reached_hops".to_string(), found.hops.to_string());
-        metadata.insert(LIFECYCLE_STATE_KEY.to_string(), state.to_string());
+        if ask == LifecycleAsk::History || found.hops > 1 {
+            metadata.insert("reached_hops".to_string(), found.hops.to_string());
+        }
+        if ask == LifecycleAsk::History {
+            let state = if replaced { "replaced" } else { "current" };
+            metadata.insert(LIFECYCLE_STATE_KEY.to_string(), state.to_string());
+        }
         if !found.heads.is_empty() {
             metadata.insert(LIFECYCLE_HEADS_KEY.to_string(), found.heads.join(","));
         }

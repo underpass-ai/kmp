@@ -164,9 +164,17 @@ pub(super) fn partial_answer_relations_from_bundle(
         .collect()
 }
 
+/// The refs whose relations audit this evidence.
+///
+/// A memory the lifecycle rescue brought carries its route on itself
+/// (`reached_from`, `reached_via`); its relations stay out of the path. They
+/// would only repeat that route, and every `supersedes` among them would add
+/// to `proof.superseded`, which every page repeats: on a store that declares
+/// its supersessions that alone overflowed the default byte budget.
 fn relation_refs_of(evidence: &[MemoryEvidence]) -> BTreeSet<String> {
     evidence
         .iter()
+        .filter(|item| !super::answer_selection::was_reached_along_a_lifecycle(item))
         .flat_map(|item| {
             item.id
                 .strip_prefix("detail:")

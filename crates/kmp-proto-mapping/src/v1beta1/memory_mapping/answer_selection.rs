@@ -23,9 +23,10 @@ pub(super) const REACHED_BY_BRIDGE: &str = "bridge";
 /// `updates_state`) from a memory the question matched: the current head of
 /// a replaced memory, or, for a question about history, the chain.
 pub(super) const REACHED_BY_LIFECYCLE: &str = "lifecycle";
-/// Whether a lifecycle-reached memory still stands (`current`) or was
-/// itself replaced or ran out (`replaced`), so a chain never reads as a list
-/// of current advice.
+/// On a chain returned for a question about history: whether each member
+/// still stands (`current`) or was itself replaced or ran out (`replaced`),
+/// so a chain never reads as a list of current advice. A question about now
+/// brings only standing heads and leaves it unsaid.
 pub(super) const LIFECYCLE_STATE_KEY: &str = "lifecycle_state";
 /// Every head of a chain that forked, in `(occurred, id)` order.
 pub(super) const LIFECYCLE_HEADS_KEY: &str = "lifecycle_heads";

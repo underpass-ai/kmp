@@ -52,8 +52,10 @@ fn a_question_that_matches_a_replaced_memory_brings_its_current_head() {
     assert_eq!(meta(head, REACHED_BY_KEY), Some("lifecycle"));
     assert_eq!(meta(head, "reached_from"), Some("mem:queue-v1"));
     assert_eq!(meta(head, "reached_via"), Some("supersedes"));
-    assert_eq!(meta(head, "reached_hops"), Some("1"));
-    assert_eq!(meta(head, LIFECYCLE_STATE_KEY), Some("current"));
+    // A question about now brings only standing heads, one hop away here:
+    // neither goes said, since every page may repeat the largest item.
+    assert_eq!(meta(head, "reached_hops"), None);
+    assert_eq!(meta(head, LIFECYCLE_STATE_KEY), None);
     assert!(
         find(&response, "mem:queue-v1").is_none(),
         "a replaced memory never comes back as current"
@@ -61,6 +63,11 @@ fn a_question_that_matches_a_replaced_memory_brings_its_current_head() {
     assert!(
         !cited(&response).contains(&"mem:queue-v2"),
         "succession is not an answer: the head stays outside the core"
+    );
+    let proof = response.proof.as_ref().expect("proof");
+    assert!(
+        proof.superseded.is_empty() && proof.path.is_empty(),
+        "the route travels on the item; it adds nothing every page repeats"
     );
 }
 
