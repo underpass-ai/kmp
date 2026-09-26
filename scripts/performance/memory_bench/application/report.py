@@ -41,6 +41,13 @@ STRATA_METRICS = ('useful_rate', 'false_answer_rate', 'recall_at_5', 'full_chain
 TOKEN_FIELDS = ('journey', 'first_page', 'to_first_evidence', 'to_task_ready')
 REFERENCE_D = (0.08, 0.30)  # BENCH_SPEC section 11 table
 B_REAL_MIN = 60
+JEV_NO_COMPARABLE = 'JEV_NO_COMPARABLE'  # run_questions: a Jev sample the fixture could not answer
+
+
+def jev_samples(run):
+    """The Jev fixture outcomes `run_questions` sealed into run.json (empty without a fixture)."""
+    jev = (run.manifest.get('isolation') or {}).get('jev') or {}
+    return list(jev.get('samples') or ())
 
 
 @dataclass(frozen=True)
@@ -340,6 +347,9 @@ def _limitations(states, questions, tokens_reason, options):
         reason = jev_cost.missing_reason(state.arm.primary)
         if reason:
             notes.append(f'{state.arm.name}: Jev cost unknown ({reason})')
+        unverified = [s for s in jev_samples(state.arm.primary) if s.get('status') == 'unverified']
+        if unverified:
+            notes.append(f'{state.arm.name}: Jev replay unverified ({unverified[0].get("reason")})')
         if any(s.private for s in state.primary_scores):
             notes.append(f'{state.arm.name}: private corpora reported as aggregates only')
     if len(states) < 2:
@@ -353,6 +363,8 @@ def _capture_failures(states):
     for state in states:
         run = state.arm.primary
         for failure in run.manifest.get('failures') or []:
+            if failure.get('code') == JEV_NO_COMPARABLE:
+                continue  # a verdict of its own (no_comparable), not a failed capture
             reasons.append(f'{state.arm.name}: {failure.get("code")}')
         errors = [s for s in state.primary_scores if s.error]
         if errors:
@@ -436,6 +448,8 @@ def build_report(baseline, candidate, questions, counters=(), options=None, toke
         'unpaired_questions': None if pairing is None else pairing.unpaired}
     misses = sum(jev_cost.cassette_misses(state.arm.primary) for state in states
                  if (state.arm.variant is None or state.arm.variant.jev == 'replay'))
+    misses += sum(1 for state in states for sample in jev_samples(state.arm.primary)
+                  if sample.get('status') == 'no_comparable')
     verdict = decide(variant.claim if variant is not None else None, targets, guards, cost,
                      single_arm=candidate is None, drift=differing,
                      capture_failures=_capture_failures(states), replay_misses=misses, parity=parity)

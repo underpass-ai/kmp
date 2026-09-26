@@ -9,6 +9,17 @@ first and are never measured. Repeats of a question run back to back on the
 same process (`phase = repeat`). A process whose call timed out or died is
 replaced by a fresh one before the next journey.
 
+An arm with a Jev fixture (`runtime.jev_fixture.JevFixture`, BENCH_SPEC section
+9) gets one `JevSample` per sample: its environment replaces the variant's
+cassette variables, it is the store hook of every process of the sample (a book
+is seeded before the binary starts and harvested before the store is deleted),
+a provider key is refused in replay, and it is sealed when the sample's last
+process closes. The outcomes land in `run.json` `isolation.jev`; a sample that
+is `no_comparable` (a replay that reached for the provider, a failed record)
+also becomes a `JEV_NO_COMPARABLE` failure, and the report turns it into the
+`no_comparable` verdict. A binary without judgement telemetry seals `unverified`:
+a declared limitation, not a failure.
+
 Each arm's output is one run directory (SCHEMAS.md section 3): token_harness
 traces sealed by token_harness' own `_seal`, plus run.json, calls.jsonl and
 journeys.jsonl, so `token_harness verify|measure --run DIR` works on it. The
@@ -64,6 +75,7 @@ class Arm:
     binary_version: str | None = None
     provenance: dict | None = None
     secrets: dict = field(default_factory=dict, repr=False)
+    jev_fixture: object = None  # runtime.jev_fixture.JevFixture, for jev = replay | record
 
 
 @dataclass(frozen=True)
@@ -130,13 +142,47 @@ class _ArmRun:
         self.pending = []  # JourneyRun of the live process
         self.calls, self.journeys, self.rows, self.failures, self.reports = [], [], [], [], []
         self.isolation_env = None
+        self.jev_sample, self.jev_outcomes = None, []
 
     def config(self, pinning):
+        env, hooks = self.arm.variant.env_map(), ()
+        if self.jev_sample is not None:
+            env, hooks = self.jev_sample.env(env), (self.jev_sample,)
         return ProcessConfig(self.arm.binary, self.layout.scratch(), self.arm.variant.name,
-                             env=self.arm.variant.env_map(), store_files=self.arm.variant.store_files,
+                             env=env, store_files=self.arm.variant.store_files,
                              template=self.arm.store.template, secrets=self.arm.secrets,
                              timeout_seconds=self.plan.timeout_s,
-                             probe_resources=self.plan.probe_resources, pinning=pinning)
+                             probe_resources=self.plan.probe_resources, pinning=pinning,
+                             store_hooks=hooks)
+
+    def begin_sample(self, sample):
+        """A fresh Jev sample (its own cassette or book) before the sample's first process."""
+        fixture = self.arm.jev_fixture
+        if fixture is None:
+            return
+        from ..runtime.jev_fixture import sample_work_dir
+        self.jev_sample = fixture.sample(sample, sample_work_dir(self.layout, fixture.key, sample))
+        self.jev_sample.check_secrets(self.arm.secrets)
+
+    def end_sample(self):
+        """Close the sample's process and seal its Jev sample."""
+        self.close()
+        if self.jev_sample is None:
+            return
+        outcome = self.jev_sample.seal()
+        shutil.rmtree(self.jev_sample.work, ignore_errors=True)  # sealed: the recording, if any, is kept
+        self.jev_outcomes.append(outcome.as_dict())
+        if outcome.status == 'no_comparable':
+            self.failures.append({'question_id': None, 'code': 'JEV_NO_COMPARABLE',
+                                  'detail': f'sample {outcome.sample}: {outcome.reason}'})
+        self.jev_sample = None
+
+    def jev_isolation(self):
+        fixture = self.arm.jev_fixture
+        if fixture is None:
+            return None
+        return {'fixture_key': fixture.key, 'mode': fixture.mode, 'backend': fixture.backend,
+                'model': fixture.model, 'samples': self.jev_outcomes}
 
     def open(self, pinning, sample):
         index = next(self.processes)
@@ -210,7 +256,7 @@ def _manifest(state, plan, machine, order, started, ended):
             'machine': machine, 'order': {**order, 'position': state.position},
             'isolation': {'env': state.isolation_env, 'variant_applied': applied,
                           'store_files': {f.name: f.sha256 for f in variant.store_files},
-                          'processes': state.reports},
+                          'processes': state.reports, 'jev': state.jev_isolation()},
             'started_at': started, 'ended_at': ended, 'failures': state.failures}
 
 
@@ -267,6 +313,8 @@ def run_arms(arms, plan, layout):
     try:
         for sample in range(plan.samples):
             for state in live:
+                state.begin_sample(sample)
+            for state in live:
                 for question in plan.questions[:plan.warmup]:
                     state.run(_journey_plan(plan, question, sample, 0), True, pinning)
             for block in plan.blocks():
@@ -275,7 +323,7 @@ def run_arms(arms, plan, layout):
                         for repeat in range(plan.repeats):
                             state.run(_journey_plan(plan, question, sample, repeat), False, pinning)
             for state in live:
-                state.close()
+                state.end_sample()
         results = {id(s): _seal_arm(s, plan, machine, order, started) for s in live}
     finally:
         for state in live:

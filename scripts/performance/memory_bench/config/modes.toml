@@ -1,0 +1,111 @@
+# What each memory_bench mode runs, pre-registered (BENCH_SPEC sections 11-13).
+#
+# The result key of a run (cachekey.result_key) holds the binary, the variant's
+# config digest, the store, the question set and the mode name, but not the
+# measurement parameters below. This file is where they are fixed: a mode always
+# runs with the same max_calls, samples, repeats, max_bytes and timeout_s, and a
+# cached run whose manifest disagrees with its mode is refused, never reused.
+# Changing a parameter is a reviewed edit; its SHA-256 is recorded in every
+# report (provenance.rules.modes_sha256) and quick-a summary.
+#
+# Question subsets are part of the question digest, so they need no key of
+# their own: a different subset is a different question set.
+schema = "kmp.bench.modes.v1"
+
+# How the per-section verdicts of one mode combine into the mode's verdict
+# (worst first; the first value any section reached wins). A candidate earns
+# `mejora` only when every section that measured one of its targets says so.
+verdict_precedence = [
+  "captura_fallida", "no_comparable", "regresion", "indecidible",
+  "mejora_con_coste", "solo_coste", "mejora", "neutral",
+]
+
+[modes.quick-a]
+description = "Phase A quick run: B-real, hard negatives, identifier guards, judged retrieval and Jev corpora, synth 10^3 mono, parity. Smoke-sized strata (BENCH_SPEC 11: ~8 per type)."
+budget_s = 600          # acceptance: <= 10 minutes on the GX10 with the base cached
+max_calls = 256
+samples = 1
+repeats = 1
+max_bytes = 4096
+timeout_s = 60.0
+warmup = 1
+block = 10
+cpus = "5-9"            # the latency cores (probes.LATENCY_CPUS)
+bootstrap_b = 2000      # paired bootstrap resamples in the section reports
+sections = ["real-store", "synth", "retrieval-judged", "jev-judged"]
+
+[modes.quick-a.real]
+b_real = true                 # gold.jsonl of the freeze, when it exists; skipped with a reason otherwise
+hard_negatives_per_stratum = 4  # stratum = type x form (12 strata: 48 questions)
+guards_per_stratum = 4          # stratum = family x polarity (14 strata: 45 questions)
+
+[modes.quick-a.synth]
+seed = 7
+topologies = ["mono"]
+levels = [1000]
+batch_size = 5000
+per_type = 4            # 22 types: 88 questions (an ask on 10^3 mono costs ~1.3 s on v0.23.0)
+
+[modes.quick-a.judged]
+retrieval_arms = ["plain", "narrow"]  # plain: the 53 cases (35 originals apart); narrow: rerank from the cassette
+jev = true                            # jev_cases.json in cassette replay
+
+[modes.full]
+description = "Every private question, the synth ladder 10^3-10^4 on both topologies with a max_bytes sweep at 10^3, and the judged corpora. Public benchmarks join when BT17 lands."
+budget_s = 0            # no budget: the base costs hours once and is cached
+max_calls = 256
+samples = 1
+repeats = 2             # repeat 1 against repeat 0 is the in-run determinism control
+max_bytes = 4096
+timeout_s = 120.0
+warmup = 1
+block = 10
+cpus = "5-9"
+bootstrap_b = 10000
+sections = ["real-store", "synth", "retrieval-judged", "jev-judged", "public"]
+
+[modes.full.real]
+b_real = true
+hard_negatives_per_stratum = 0  # 0: every question
+guards_per_stratum = 0
+
+[modes.full.synth]
+seed = 7
+topologies = ["mono", "multi"]
+levels = [1000, 10000]
+batch_size = 5000
+max_bytes_sweep = [2048, 10000]  # extra runs at the lowest level: the quality-tokens curve
+
+[modes.full.judged]
+retrieval_arms = ["plain", "narrow", "wide"]
+jev = true
+
+[modes.jev]
+description = "Jev arms: three samples, each with its own fresh cassette or book (BENCH_SPEC 9), on the quick strata."
+budget_s = 0
+max_calls = 256
+samples = 3
+repeats = 1
+max_bytes = 4096
+timeout_s = 120.0
+warmup = 1
+block = 10
+cpus = "5-9"
+bootstrap_b = 10000
+sections = ["real-store", "synth"]
+
+[modes.jev.real]
+b_real = true
+hard_negatives_per_stratum = 4
+guards_per_stratum = 4
+
+[modes.jev.synth]
+seed = 7
+topologies = ["mono"]
+levels = [1000]
+batch_size = 5000
+per_type = 4
+
+[modes.aa]
+description = "A/A control (BENCH_SPEC 10): the variant's quick-a runs (cached or fresh) against a fresh replica of the same variant, run now under a unique nonce. Every quality and token delta must be exactly 0; the latency band it shows is the smallest latency effect worth reporting."
+replica_of = "quick-a"  # same parameters, sections and question sets as that mode

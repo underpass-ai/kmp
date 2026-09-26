@@ -17,6 +17,7 @@ so an example here that stops being valid fails the build.
 | report | `kmp.bench.report.v1` | this file (BT10 implements) | BT10 | BT10 Markdown, BT20 |
 | built store | `kmp.bench.store.v1` | `runtime/store_cache.py` | BT14 (`build`) | every runner (`run_questions.StoreRef`), BT18 |
 | write cost | `kmp.bench.write_cost.v1` | `application/write_cost.py` | BT05 | BT10 (`latency_resources`) |
+| mode summary, judged rows, git_ref builds | `kmp.bench.mode_summary.v1`, `kmp.bench.judged.v1`, `kmp.bench.binary.v1` | `application/mode_run.py`, `application/judged_section.py`, `runtime/git_build.py` | BT12 | people, BT20 |
 | answer reading, write receipts | — | `domain/refs.py`, `domain/receipt.py` | — | every runner and scorer |
 | cache keys | — | `domain/cachekey.py` | all | all |
 | cache layout | — | `runtime/layout.py` | all | all |
@@ -823,7 +824,7 @@ kinds never collide and a bench version bump invalidates every cache entry.
 |---|---|---|
 | `result` | `result_key(binary_sha256, config_digest, store_key, questions_digest, mode, nonce=None)` | section 8 of the spec; `nonce` only for `jev = "record"` runs, which are never reused |
 | `world` | `world_key(generator, generator_version, seed, topology, max_level, block_size)` | |
-| `store` | `store_key(source, n, bundle_format, reader_sha256, build, writer_sha256=None, batch_size=None, store_mode="shared")` | `source` is `synth_source(generator, generator_version, seed, topology, world_digest)` or `bundle_source(content_digest, label)`; `build` ∈ `ingest`, `import`, `copy` |
+| `store` | `store_key(source, n, bundle_format, reader_sha256, build, writer_sha256=None, batch_size=None, store_mode="shared")` | `source` is `synth_source(generator, generator_version, seed, topology, world_digest)` or `bundle_source(content_digest, label)` or, for a public dataset (BT17), `dataset_source(corpus, lock_sha256, selection_digest, adapter_version)`; `build` ∈ `ingest`, `import`, `copy` |
 | `report` | `report_key(result_keys, options)` | result keys sorted |
 
 - `questions_digest(questions)` (`question.py`): SHA-256 over `id \0 digest \0` for each
@@ -840,6 +841,8 @@ kinds never collide and a bench version bump invalidates every cache entry.
   stores/<store_key>/                  store.json (kmp.bench.store.v1), bundle.jsonl, store/ (template data dir)
   runs/<run_id>/                       section 3
   reports/<report_key>/                report.json, report.md
+  reports/<summary_key>/               summary.json, summary.md of a mode run (BT12)
+  reports/<judged_key>/                judged.json: one arm's judged-corpus rows (BT12)
   bin/<binary_sha256>/                 kmp-mcp built from a git_ref, provenance.json
   jev/<key>/                           Jev books per variant and sample (BT11)
   work/                                disposable stores of running sessions; deletable any time
@@ -1174,3 +1177,36 @@ All term lists are sorted and unique because the ranker compares sets. Errors (b
 JSON, both or neither of `text`/`texts`, unreadable file, extra arguments) go to stderr as
 `kmp_search_probe: line N: ...` with exit status 2 and no partial guarantee for later
 lines; lines before the error have already been written.
+
+## Mode runs (BT12)
+
+`quick-a`, `full`, `jev` and `aa` (`application/mode_run.py`) run the sections their
+mode in `config/modes.toml` (`kmp.bench.modes.v1`) names. Each run section is one
+`report.json` (section 5); what ties them together is the mode summary.
+
+- **`kmp.bench.mode_summary.v1`** (`reports/<summary_key>/summary.json` and the
+  `summary.md` rendered from it alone): `summary_key` (digest of the mode, the modes
+  file, both arms' (binary sha, config digest) and every section's (name, status,
+  report key, judged-rows digest)), `mode`, `modes_sha256`, `generated_by`, `arms`
+  (`baseline`, `candidate`; null for the `aa` replica: variant, path, claim, jev,
+  store, binary sha/version/provenance, config and pre-registration digests),
+  `replica`, `parameters` (the mode's run parameters), `sections[]` (name, status
+  `ran`/`skipped`/`failed`, reason, layout, report key, run ids and cache hits,
+  questions by corpus, verdict and reasons, whether it voted, headline rates per arm,
+  parity counts, A/A control, limitations, judged rows, seconds), `timings`
+  (`started_at`, `total_s`, `budget_s`, `within_budget`, `by_section`) and `verdict`
+  (`value`, `reasons`, `by_section`). Aggregates only; it lands in the private cache
+  when a private section ran.
+- **`kmp.bench.judged.v1`** (`reports/<judged_key>/judged.json`): one arm of a judged
+  corpus (`retrieval` plain/narrow/wide, `jev` replay) on one binary: `key`, `corpus`,
+  `arm`, `variant`, `binary_sha256`, `config_digest`, `rows` (the scorecard rows by
+  name), `unverified_stores` (stores whose files a binary without `kmp_store_config`
+  could not acknowledge), `stores`, `seconds`, `created_at`. The key digests the
+  binary, the case file, the environment (path values by content) and the variant's
+  store files.
+- **`kmp.bench.binary.v1`** (`bin/<sha256>/provenance.json`): `source = "git_ref"`,
+  `git_ref`, `git_commit`, `build` (`cargo build --release --locked -p kmp-mcp`),
+  `cargo`, `rustc`, `built_at`, `build_s`, `binary_sha256`, `version`. It is the
+  `binary.provenance` of every run of that binary; a path binary's provenance is
+  `{source: "path", path, git_commit, dirty}` (`path` and the commit only inside the
+  checkout).

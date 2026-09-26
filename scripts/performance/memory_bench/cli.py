@@ -3,13 +3,13 @@
   B='python3 -m scripts.performance.memory_bench'
   TT='uv run --no-project --with tiktoken==0.14.0 python -m scripts.performance.memory_bench'
 
-  $TT prepare                       verify the pinned tiktoken assets
+  $TT prepare                       verify the pinned tiktoken assets (offline)
   $B  fetch --dataset NAME          download a public dataset with sha and licence lock
   $B  world --generator synth-v1 --seed 7 --levels 1e3,1e4,1e5 --topology mono,multi
   $B  build | materialize           build and cache stores
-  $TT quick-a --candidate variants/X.toml
+  $TT quick-a --candidate variants/X.toml [--baseline variants/baseline.toml] [--freeze DIR]
   $TT full --candidate variants/X.toml
-  $TT jev --candidate variants/X.toml --samples 3
+  $TT jev --candidate variants/X.toml --samples 3 [--record]
   $TT aa --variant variants/baseline.toml
   $B  compare | render | real | cache ls|gc
   $B  validate --questions F --variant F --calls F   check files against SCHEMAS.md
@@ -25,6 +25,7 @@ from ..token_harness.domain.errors import HarnessError
 from .domain.errors import NotImplementedYet
 from .domain.jsonl import REPO_ROOT
 
+DEFAULT_BASELINE = REPO_ROOT / 'scripts/performance/memory_bench/variants/baseline.toml'
 # Command -> task that implements it (bench_tasks.json).
 OWNERS = {'prepare': 'BT12', 'fetch': 'BT17', 'build': 'BT14',
           'materialize': 'BT14', 'quick-a': 'BT12', 'full': 'BT12', 'jev': 'BT11', 'aa': 'BT12',
@@ -69,6 +70,40 @@ def run_store_command(args):
             'cache': build.run_cache}[args.command](args)
 
 
+def run_prepare(args):
+    from .application import tokens
+    counters, reason = tokens.try_load_counters(args.cache_dir)
+    report = {'cache_dir': str(args.cache_dir or tokens.default_cache_dir()),
+              'encoders': [{'encoding': c.identity.encoding, 'asset_sha256': c.identity.asset_sha256}
+                           for c in counters], 'ready': bool(counters), 'reason': reason}
+    if not counters:
+        report['fix'] = ('python3 -m scripts.performance.token_harness prepare --cache-dir '
+                         'tmp/memory-bench/tiktoken-cache (downloads the pinned assets once, checks their sha256)')
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if counters else 1
+
+
+def run_mode_command(args):
+    from .application.mode_run import ModeRequest, run_mode
+    if args.command == 'jev' and args.samples is not None:
+        from .application.modes import ModeInvalid, load_modes
+        fixed = load_modes().get('jev').samples
+        if args.samples != fixed:
+            raise ModeInvalid(f'modes.toml fixes jev samples at {fixed}; edit it to change them')
+    request = ModeRequest(mode=args.command, baseline=args.variant if args.command == 'aa' else args.baseline,
+                          candidate=None if args.command == 'aa' else args.candidate,
+                          freeze=args.freeze, private_root=args.private_root,
+                          record=getattr(args, 'record', False), out=args.out)
+    summary, paths, _ = run_mode(request)
+    print(json.dumps({'summary': str(paths[0]), 'markdown': str(paths[1]),
+                      'verdict': summary['verdict']['value'], 'total_s': summary['timings']['total_s'],
+                      'within_budget': summary['timings']['within_budget'],
+                      'sections': {s['name']: {'status': s['status'], 'verdict': s['verdict'],
+                                               'layout': s['layout'], 'report_key': s['report_key']}
+                                   for s in summary['sections']}}, indent=1, ensure_ascii=False))
+    return 0 if summary['verdict']['value'] not in ('captura_fallida',) else 1
+
+
 def run_validate(args):
     from .domain.question import load_questions, questions_digest
     from .domain.run_record import CallRecord, JourneyRecord
@@ -103,7 +138,9 @@ def build_parser():
     parser = argparse.ArgumentParser(prog='memory_bench', description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
-    _stub(commands, 'prepare', 'verify the pinned tiktoken assets')
+    prepare = commands.add_parser('prepare', help='verify the pinned tiktoken assets (offline)')
+    prepare.set_defaults(action=run_prepare)
+    prepare.add_argument('--cache-dir', type=Path, help='default: TIKTOKEN_CACHE_DIR or tmp/memory-bench/tiktoken-cache')
     _stub(commands, 'fetch', 'download a public dataset').add_argument(
         '--dataset', action='append', required=True)
     world = commands.add_parser('world', help='generate, check and calibrate synth-v1 worlds')
@@ -122,12 +159,24 @@ def build_parser():
     build.set_defaults(action=run_store_command)
     materialize = commands.add_parser('materialize', help='copy a cached store template into work/')
     materialize.set_defaults(action=run_store_command)
-    for name, help_text in (('quick-a', 'phase A quick run'), ('full', 'ladder and public corpora')):
-        _stub(commands, name, help_text).add_argument('--candidate', type=Path, required=True)
-    jev = _stub(commands, 'jev', 'Jev arms: samples with a fresh book each')
-    jev.add_argument('--candidate', type=Path, required=True)
-    jev.add_argument('--samples', type=int, default=3)
-    _stub(commands, 'aa', 'A/A control of one variant').add_argument('--variant', type=Path, required=True)
+    for name, help_text in (('quick-a', 'phase A quick run (<= 10 min with the base cached)'),
+                            ('full', 'every private question, the synth ladder, the judged corpora'),
+                            ('jev', 'Jev arms: samples with a fresh cassette or book each'),
+                            ('aa', 'A/A control: a variant against a fresh replica of itself')):
+        command = commands.add_parser(name, help=help_text)
+        command.set_defaults(action=run_mode_command)
+        if name == 'aa':
+            command.add_argument('--variant', type=Path, required=True)
+        else:
+            command.add_argument('--candidate', type=Path, required=True)
+            command.add_argument('--baseline', type=Path, default=DEFAULT_BASELINE)
+        command.add_argument('--freeze', type=Path, help='B-real freeze (default: latest under the private root)')
+        command.add_argument('--private-root', type=Path, help='default: $MEMORY_BENCH_PRIVATE_ROOT')
+        command.add_argument('--out', type=Path, help='public cache root (default <repo>/tmp/memory-bench)')
+        if name == 'jev':
+            command.add_argument('--samples', type=int, help='must equal modes.toml (3)')
+            command.add_argument('--record', action='store_true',
+                                 help='jev = "record" variants ask the real provider with TYPESAFE_API_KEY')
     from .application import report_cli
     report_cli.add_arguments(commands)  # compare, render (BT10)
     real = commands.add_parser('real', help='B-real private corpus: freeze, blind labeling, kappa, run (BT07)')

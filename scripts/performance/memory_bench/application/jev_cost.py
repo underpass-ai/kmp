@@ -13,10 +13,28 @@ section 0). With several samples each figure also carries min / mean / max over
 samples.
 """
 from collections import Counter
+from pathlib import Path
+import tomllib
 
+from ..domain.errors import BenchError
 from ..domain.run_record import JEV_SOURCES
 
-PRICE_USD_PER_MTOK = 0.042
+PRICES = Path(__file__).resolve().parents[1] / 'config' / 'prices.toml'
+
+
+def pinned_price(path=PRICES):
+    """$ per million input tokens of the pinned model, from config/prices.toml."""
+    try:
+        data = tomllib.loads(Path(path).read_text(encoding='utf-8'))
+        price = data['jev'][data['model']]['input_usd_per_mtok']
+    except (OSError, KeyError, TypeError, tomllib.TOMLDecodeError) as error:
+        raise BenchError(f'{path}: no input_usd_per_mtok for the pinned model: {error}') from error
+    if isinstance(price, bool) or not isinstance(price, (int, float)) or price < 0:
+        raise BenchError(f'{path}: input_usd_per_mtok must be a non-negative number')
+    return float(price)
+
+
+PRICE_USD_PER_MTOK = pinned_price()
 SITE_LETTERS = {'rerank': 'p', 'wake_focus': 'p', 'curate_review': 'r', 'curate_focus': 'r',
                 'write_relations': 'r', 'precheck': 't', 'paths': 'w/n/c', 'labels': 't',
                 'summaries': 's/b'}

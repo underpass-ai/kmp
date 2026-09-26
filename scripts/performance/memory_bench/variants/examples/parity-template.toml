@@ -1,0 +1,23 @@
+# Template for a change that must not change what KMP answers: a refactor, a
+# telemetry line, a dependency bump. Copy it, rename it, point `git_ref` at the
+# branch or commit, and run
+#
+#   $TT quick-a --candidate scripts/performance/memory_bench/variants/examples/parity-template.toml
+#
+# The ref is built in a throwaway git worktree with
+# `cargo build --release --locked -p kmp-mcp` (provenance in bin/<sha>/), both arms
+# answer the same questions on the same stores, and every tool call is compared
+# byte for byte after the documented volatile fields (application/parity.py).
+# Verdict: `neutral` when parity holds, `regresion` with the differing JSON paths
+# otherwise. HEAD is this checkout's last commit: uncommitted work is not in it.
+name = "parity-template"
+description = "Declared parity: the ref must answer every call exactly as the baseline does."
+claim = "parity"
+targets = ["parity_rate"]
+guards = ["false_answer_rate", "false_unknown_rate", "core_precision"]
+n = 60
+store = "shared"
+jev = "off"
+
+[binary]
+git_ref = "HEAD"

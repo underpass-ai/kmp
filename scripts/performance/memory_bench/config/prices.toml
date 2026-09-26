@@ -1,0 +1,13 @@
+# Prices the bench bills Jev at (BENCH_SPEC section 7, "Jev"). One table per
+# pinned model; application/jev_cost.py reads the model the bench pins.
+#
+# A price change is a reviewed edit of this file. It changes no cache key:
+# dollars are derived from the input tokens each run records, so a report
+# rendered after the edit bills the same tokens at the new price.
+schema = "kmp.bench.prices.v1"
+model = "jev-1.13.0"
+currency = "USD"
+
+[jev."jev-1.13.0"]
+input_usd_per_mtok = 0.042
+source = "TypeSafe price list used by BENCH_SPEC section 9 (0.042 $/M input tokens)"

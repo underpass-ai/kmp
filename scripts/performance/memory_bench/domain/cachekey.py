@@ -118,11 +118,20 @@ def bundle_source(*, content_digest, label):
     return {'kind': 'bundle', 'content_digest': content_digest, 'label': label}
 
 
+def dataset_source(*, corpus, lock_sha256, selection_digest, adapter_version):
+    """A store loaded from a public dataset (BT17): the locked files, the subset and the adapter."""
+    return {'kind': 'dataset', 'corpus': corpus,
+            'lock_sha256': require_hex64(lock_sha256, 'lock_sha256'),
+            'selection_digest': require_hex64(selection_digest, 'selection_digest'),
+            'adapter_version': adapter_version}
+
+
 def store_key(*, source, n, bundle_format, reader_sha256, build, writer_sha256=None,
               batch_size=None, store_mode='shared', bench_version=BENCH_VERSION):
     """BT14: generator, version, seed, topology, N, format and the reader's sha are all in."""
-    if not isinstance(source, dict) or source.get('kind') not in ('synth', 'bundle'):
-        raise CacheKeyInvalid('store source must come from synth_source() or bundle_source()')
+    if not isinstance(source, dict) or source.get('kind') not in ('synth', 'bundle', 'dataset'):
+        raise CacheKeyInvalid('store source must come from synth_source(), bundle_source() '
+                              'or dataset_source()')
     if build not in BUILDS:
         raise CacheKeyInvalid(f'build {build!r} is not one of {", ".join(BUILDS)}')
     if store_mode not in ('shared', 'own'):
