@@ -47,7 +47,11 @@ Detailed notes from the early release cycle remain available in the
   candidates are ranked once per ask, proof normalization is linear, and a
   continuation page (`read_…`, cursor `kmp1:…`) is cut from the read the
   first page froze in the process instead of reading the store again. Every
-  response is byte for byte what it was. The prompt-quality journal no
+  response is byte for byte what it was. Measured on the integrated binary
+  (P1–P6) against v0.23.0 on synth-v1 mono: a `kmp_wake` continuation page
+  from 416 ms to 17 ms at 10^3, `kmp_relate` from 661 ms to 69 ms (6.9 s to
+  0.87 s at 10^4) and a one-entry write from 526 ms to 22 ms (5.8 s to
+  0.23 s at 10^4). The prompt-quality journal no
   longer records the MCP reads that return no prompt (`ask`, `wake`,
   `relate`, `curate`); `kmp_trace` and the `kmp-embedded` recall still do.
 - `kmp_ask` computes co-occurrence (PMI) only for the question's own terms
