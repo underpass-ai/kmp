@@ -40,6 +40,10 @@ pub(super) struct QuestionContractVocabulary {
     hub_min_documents: usize,
     /// The one term each spelling of an introduced identifier reads as.
     identifier_aliases: IdentifierAliases,
+    /// The endings that only inflect a word (`fixes`, `stored`): a stem the
+    /// concept table lists keeps the table's reading through one of these
+    /// and through nothing else.
+    inflectional_endings: BTreeSet<String>,
 }
 
 const SOURCE: &str = include_str!("../../../language/question_contract.json");
@@ -79,6 +83,11 @@ impl QuestionContractVocabulary {
     /// How `corte 10`, `C10` and `ADR-018` read as one term each.
     pub(super) fn identifier_aliases(&self) -> &IdentifierAliases {
         &self.identifier_aliases
+    }
+
+    /// Whether `ending`, what a stemmer took off a word, only inflects it.
+    pub(super) fn is_inflection(&self, ending: &str) -> bool {
+        self.inflectional_endings.contains(ending)
     }
 
     pub(super) fn is_unit(&self, word: &str) -> bool {

@@ -3,6 +3,8 @@ mod anchor_selection;
 mod anchor_strength;
 #[cfg(test)]
 mod anchored_alias_tests;
+#[cfg(test)]
+mod anchored_content_tests;
 mod anchored_gate;
 #[cfg(test)]
 mod anchored_gate_tests;
@@ -71,6 +73,7 @@ mod semantic_candidate_ranking;
 #[cfg(test)]
 mod semantic_recall_tests;
 mod semantic_source;
+mod subject_concept;
 mod temporal_admission;
 mod temporal_dependencies;
 #[cfg(test)]

@@ -13,7 +13,8 @@ use super::reach_graph::ReachGraph;
 /// names, the other is about: an entry on `issue 185` and one on the PR that
 /// closed it, declared the same thing, both answer for `#185`. The rescue is
 /// one hop, only from a candidate that names the anchor itself, and every
-/// memory it admits is marked with the ref it stands in for.
+/// memory it admits is marked with the ref it stands in for. "Names" is
+/// read in the candidate's content, as the gate reads everything else.
 #[derive(Debug, Default)]
 pub(super) struct AnchorRescue {
     /// Candidate id -> anchor term -> the ref that names it.
@@ -33,14 +34,14 @@ impl AnchorRescue {
         for term in anchors {
             let naming = candidates
                 .iter()
-                .filter(|(_, terms)| terms.direct_counts.count(term) > 0)
+                .filter(|(_, terms)| terms.content_counts.count(term) > 0)
                 .flat_map(|(item, _)| answer_context_refs(item))
                 .collect::<BTreeSet<_>>();
             if naming.is_empty() {
                 continue;
             }
             for (item, terms) in candidates {
-                if terms.direct_counts.count(term) > 0 {
+                if terms.content_counts.count(term) > 0 {
                     continue;
                 }
                 let from = answer_context_refs(item).iter().find_map(|item_ref| {
@@ -61,13 +62,16 @@ impl AnchorRescue {
     }
 
     /// Whether a candidate names `term`, in its own words or by rescue.
+    ///
+    /// Its own words are its content: a source, a ref or a metadata value
+    /// that spells the anchor does not make the memory about it.
     pub(super) fn names(
         &self,
         item: &MemoryEvidence,
         terms: &AnswerCandidateTerms,
         term: &str,
     ) -> bool {
-        terms.direct_counts.count(term) > 0
+        terms.content_counts.count(term) > 0
             || self
                 .rescued
                 .get(&item.id)

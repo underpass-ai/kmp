@@ -7,6 +7,7 @@ use super::gate_verdict::GateVerdict;
 use super::question_anchor::QuestionAnchor;
 use super::question_contract::QuestionContract;
 use super::question_form::QuestionForm;
+use super::subject_concept::SubjectConcept;
 
 /// The anchored decision of `evidence_or_unknown` and `show_conflicts`.
 ///
@@ -27,6 +28,11 @@ use super::question_form::QuestionForm;
 /// subject stands in some cited memory, and PARTIAL, what was found cited and
 /// what was not named, when some but not all do. Otherwise it is UNKNOWN,
 /// `attribute_not_found`, naming what the best memory lacks.
+///
+/// Everything it reads of a memory is the memory's content — its text and
+/// its search summary. A source, a ref such as `entry:success_path:…`, the
+/// entry kind or any other metadata neither names the anchor nor states what
+/// was asked of it; entry kinds only break ties between facets.
 pub(super) struct AnchoredGate<'a> {
     contract: &'a QuestionContract,
     allow_partial: bool,
@@ -41,15 +47,16 @@ impl<'a> AnchoredGate<'a> {
     }
 
     /// Decides over the candidates the question reached in its own words, in
-    /// rank order. `answers(key, terms)` is the same match the focus rule
-    /// makes: stem, concept key or the lexical bridge.
+    /// rank order. `answers(concept, terms)` is the match the focus rule
+    /// makes — stem, concept key or the lexical bridge — over the
+    /// candidate's content alone.
     pub(super) fn decide<'e>(
         &self,
         principal: &QuestionAnchor,
         others: &[QuestionAnchor],
         ranked: impl IntoIterator<Item = (&'e MemoryEvidence, &'e AnswerCandidateTerms)>,
         rescue: &AnchorRescue,
-        answers: impl Fn(&str, &AnswerCandidateTerms) -> bool,
+        answers: impl Fn(&SubjectConcept, &AnswerCandidateTerms) -> bool,
     ) -> GateVerdict {
         let core = ranked
             .into_iter()
@@ -63,7 +70,7 @@ impl<'a> AnchoredGate<'a> {
         let stated = |terms: &AnswerCandidateTerms| {
             subject
                 .iter()
-                .map(|(key, _)| answers(key, terms))
+                .map(|concept| answers(concept, terms))
                 .collect::<Vec<_>>()
         };
         let per_item = core
@@ -109,7 +116,7 @@ impl<'a> AnchoredGate<'a> {
             .iter()
             .zip(&found)
             .filter(|(_, stated)| !**stated)
-            .map(|((_, word), _)| word.clone())
+            .map(|(concept, _)| concept.written.clone())
             .collect::<Vec<_>>();
         let cited = core.iter().map(|(item, _)| item.id.clone()).collect();
         if missing.is_empty() && stated_count >= required {

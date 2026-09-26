@@ -146,6 +146,16 @@ impl Lexicon {
         BridgedKey::focus_matches(&self.bridged, focus_terms, terms)
     }
 
+    /// How many of the focus concepts this candidate states in its own
+    /// words, or through the table onto them: its content alone.
+    pub(super) fn content_focus_matches(
+        &self,
+        focus_terms: &BTreeSet<String>,
+        terms: &AnswerCandidateTerms,
+    ) -> usize {
+        BridgedKey::content_matches(&self.bridged, focus_terms, terms)
+    }
+
     pub(super) fn content_score(&self, terms: &AnswerCandidateTerms) -> i64 {
         ranked_score(
             self.collection

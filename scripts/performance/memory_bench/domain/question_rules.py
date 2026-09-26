@@ -41,8 +41,10 @@ def check_rules(question, fields):
     if kind in NEGATIVE_TYPES:
         if gold.answerable != 'UNKNOWN' or gold.unknown_reason is None or not gold.absent_terms:
             fields.fail('gold', f'{kind} is UNKNOWN with an unknown_reason and absent_terms')
-    if kind == 'negated_anchor' and (gold.answerable != 'KNOWN' or not gold.excluded_refs):
-        fields.fail('gold', 'negated_anchor is KNOWN with the excluded refs it must not cite')
+    # Its excluded refs are the entries whose only anchor is the excluded one, which may
+    # be none: an entry that names another anchor of the question may be cited.
+    if kind == 'negated_anchor' and gold.answerable != 'KNOWN':
+        fields.fail('gold', 'negated_anchor is KNOWN, with any excluded refs it must not cite')
     if kind == 'multihop_why_k' and gold.chain is None:
         fields.fail('gold', 'multihop_why_k carries its chain')
     if kind in PATH_TYPES:

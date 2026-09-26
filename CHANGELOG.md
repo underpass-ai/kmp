@@ -39,6 +39,24 @@ Detailed notes from the early release cycle remain available in the
   PARTIAL. `ask-gate.json` also accepts `{"mode":"off"}`, and
   `AskGate::STORE_DEFAULT` is the one switch that would make the gate the
   default (still off).
+- The anchored gate reads a memory's content and nothing else: its text
+  and its search summary. Whether a memory names the anchor (and the
+  anchor's document frequency, the core, the `same_entity_as` rescue) and
+  whether it states what the question asked of it no longer read its
+  source, refs (`entry:success_path:…`), entry kind or other metadata;
+  entry kinds still break ties between facets. A question word the stemmer
+  carries onto a concept-table word by more than an inflection is compared
+  as that stem and not through the table: `correctness` no longer matches
+  `correction`, while `fixes` still matches `fixed` (`inflectional_endings`
+  in `question_contract.json`).
+- `memory_bench` synth-v1 `1.2.0`: the `negated_anchor` gold forbids only the
+  entries whose only anchor is the excluded one. An entry of the subject that
+  also names the excluded anchor may be cited; it is neither an answer nor
+  forbidden. `excluded_refs` may therefore be empty. World digests regenerated.
+- An anchor that lives in another about is still reported
+  `anchor_absent_in_selection` (the bench's `anchor_in_other_about` is
+  scored as a wrong reason); telling the two apart is deferred to L6, the
+  lexical index, which can read an anchor's postings outside the selection.
 - `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v2` (the PARTIAL
   scoring rules changed meaning); every cache entry of v1 is invalidated.
 

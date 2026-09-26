@@ -34,7 +34,8 @@ The P4 ask gate states `unknown_reason` on the answer, in the contract's words:
 (**) The gate reads only the selected abouts and span, so an anchor that lives in
 another about (`anchor_in_other_about` in gold) is reported absent from the selection:
 the reason is right for `anchor_not_found` and wrong for `anchor_in_other_about`, which
-the gate cannot tell apart.
+the gate cannot tell apart. Telling them apart is deferred to L6 (Tirso, 26 Sept 2026):
+the lexical index reads an anchor's postings outside the selection without loading it.
 """
 from . import refs
 from .gold import UNKNOWN_REASONS

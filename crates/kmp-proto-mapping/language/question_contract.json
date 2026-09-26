@@ -1,5 +1,5 @@
 {
-  "note": "The words the anchored ask gate reads a question's shape with: which words negate what follows them, which name a unit or a kind of identifier (and, for `identifier_aliases`, the one term `corte 10`, `C10` and `cut 10` all name), which only ask whether something exists, and which carry no subject. Written folded and without diacritics, because that is the form a question reaches the reader in. The facets a question enumerates live beside the relation families in question_families.json. Adding a word here is a data change, not a code change; the gate only reads these lists when a store opted into it with ask-gate.json.",
+  "note": "The words the anchored ask gate reads a question's shape with: which words negate what follows them, which name a unit or a kind of identifier (and, for `identifier_aliases`, the one term `corte 10`, `C10` and `cut 10` all name), which only ask whether something exists, which carry no subject, and which endings only inflect a word (a stem the concept table lists keeps the table's reading through one of those and no other ending, so `correctness` is not read as `correction`). Written folded and without diacritics, because that is the form a question reaches the reader in. The facets a question enumerates live beside the relation families in question_families.json. Adding a word here is a data change, not a code change; the gate only reads these lists when a store opted into it with ask-gate.json.",
   "negations": [
     "except",
     "excepto",
@@ -223,6 +223,14 @@
   ],
   "hub_document_share": 0.2,
   "hub_min_documents": 30,
+  "inflectional_endings": [
+    "d",
+    "ed",
+    "es",
+    "ing",
+    "ings",
+    "s"
+  ],
   "identifier_aliases": [
     {
       "prefix": "c",

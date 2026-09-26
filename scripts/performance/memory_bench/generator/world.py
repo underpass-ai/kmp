@@ -39,7 +39,7 @@ from .calibration import REFERENCE
 from .questions import block_questions
 from .topology import Topology
 
-GENERATOR_VERSION = '1.1.0'
+GENERATOR_VERSION = '1.2.0'
 BLOCK_SIZE = 1000
 SECTIONS = ('abouts', 'entries', 'relations', 'writes', 'questions')
 WORLD_SCHEMA = 'kmp.bench.world.v1'

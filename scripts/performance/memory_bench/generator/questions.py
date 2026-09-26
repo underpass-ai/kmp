@@ -11,6 +11,8 @@ same subject's entries that do not answer, and negatives are UNKNOWN by construc
 anchor no block renders, or an attribute no entry of the anchor states, at any level).
 The world invariants re-check each of those claims on the generated records.
 """
+import re
+
 from ..domain.question import Question
 from . import bridge, render
 from .blocks import QUESTION_BLOCKS, block_stream, hub_degree
@@ -45,6 +47,11 @@ def facet(name, words, answers=(), related=()):
     answers = sorted(set(answers))
     return {'name': name, 'words': words, 'answers': answers,
             'related': sorted(set(related) - set(answers)), 'answerable_facet': bool(answers)}
+
+
+def names_token(text, token):
+    """Whether `text` carries `token` as a whole token (not inside `svc-0091`)."""
+    return re.search(rf'(?<![\w.-]){re.escape(token)}(?![\w]|[.-]\w)', text) is not None
 
 
 def reader_words(item):
@@ -217,7 +224,13 @@ class QuestionBuilder:
                     continue
                 for name, member in family.members.items():
                     answers.setdefault(name, []).append(member.ref)
-            excluded_refs = [member.ref for member in excluded.members.values()]
+            # Only an entry whose only anchor is the excluded one is forbidden (DISENO
+            # §13, 26 Sept 2026). The question also names its subject, and an entry of
+            # the subject that names the excluded anchor as well may be cited: it is
+            # neither an answer nor forbidden. Every family entry states its subject,
+            # so in synth-v1 this is usually empty.
+            excluded_refs = [member.ref for member in excluded.members.values()
+                             if not names_token(member.text, group.subject)]
             facets = [facet(name, reader_words(FACET_BY_NAME[name]), refs)
                       for name, refs in sorted(answers.items())]
             negation = NEGATIONS[n % len(NEGATIONS)]

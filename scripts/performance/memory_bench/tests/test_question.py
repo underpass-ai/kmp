@@ -137,7 +137,8 @@ class InvalidTest(unittest.TestCase):
             (ask(type='singular_anchored'), 'anchors'),
             (negative(absent_terms=[]), 'absent_terms'),
             (negative(unknown_reason=None), 'unknown_reason'),
-            (ask(type='negated_anchor', anchors=['Y']), 'excluded refs'),
+            (ask(type='negated_anchor', anchors=['Y'],
+                 gold=gold(answerable='UNKNOWN', facets=[facet('a')])), 'excluded refs'),
             (ask(type='multihop_why_k'), 'chain'),
             (ask(type='current_after_supersession', gold=gold(current_ref=ref(2))), 'stale_refs'),
             (ask(type='current_after_supersession', gold=gold(current_ref=ref(7), stale_refs=[ref(3)])), 'current_ref'),
@@ -149,6 +150,12 @@ class InvalidTest(unittest.TestCase):
         for record, fragment in cases:
             with self.subTest(fragment=fragment):
                 self.refuse(record, fragment)
+
+    def test_a_negated_anchor_may_forbid_nothing(self):
+        # Only the entries whose only anchor is the excluded one are forbidden, and
+        # every entry that names it may also name the subject (DISENO §13).
+        parsed = q.Question.from_dict(ask(type='negated_anchor', anchors=['Y']))
+        self.assertEqual(parsed.gold.excluded_refs, ())
 
 
 class ToolTest(unittest.TestCase):

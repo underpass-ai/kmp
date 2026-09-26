@@ -580,7 +580,7 @@ fn the_contract_reads_subject_facets_form_and_time() {
         enumeration
             .subject()
             .iter()
-            .map(|(_, word)| word.clone())
+            .map(|concept| concept.written.clone())
             .collect::<Vec<_>>(),
         ["work"]
     );
@@ -595,7 +595,7 @@ fn the_contract_reads_subject_facets_form_and_time() {
         singular
             .subject()
             .iter()
-            .map(|(_, word)| word.clone())
+            .map(|concept| concept.written.clone())
             .collect::<Vec<_>>(),
         ["database", "engine"]
     );
@@ -624,7 +624,7 @@ fn the_contract_reads_subject_facets_form_and_time() {
     assert_eq!(
         when.subject()
             .iter()
-            .map(|(_, word)| word.clone())
+            .map(|concept| concept.written.clone())
             .collect::<Vec<_>>(),
         ["deployed"]
     );

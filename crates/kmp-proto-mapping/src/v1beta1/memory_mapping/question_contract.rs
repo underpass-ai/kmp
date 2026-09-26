@@ -10,7 +10,10 @@ use super::question_contract_vocabulary::QuestionContractVocabulary;
 use super::question_form::QuestionForm;
 use super::question_time::QuestionTime;
 use super::question_vocabulary::QuestionVocabulary;
-use super::search_terms::{CONTEXT_BOUNDARIES, fold_search_term, informative_tokens, search_key};
+use super::search_terms::{
+    CONTEXT_BOUNDARIES, concept_key, fold_search_term, informative_tokens, search_key,
+};
+use super::subject_concept::SubjectConcept;
 
 /// What one question asks, read off its words before any memory is read.
 ///
@@ -23,9 +26,8 @@ use super::search_terms::{CONTEXT_BOUNDARIES, fold_search_term, informative_toke
 #[derive(Debug, Clone, Default)]
 pub(super) struct QuestionContract {
     anchors: Vec<QuestionAnchor>,
-    /// Search key of each subject concept and the reader's word for it, in
-    /// the order the question asks them.
-    subject: Vec<(String, String)>,
+    /// Each subject concept, in the order the question asks them.
+    subject: Vec<SubjectConcept>,
     facets: BTreeSet<String>,
     facet_entry_kinds: BTreeSet<String>,
     form: QuestionForm,
@@ -142,7 +144,7 @@ impl QuestionContract {
             .unwrap_or(words.len());
         let main = 0..main_end;
 
-        let mut subject = Vec::<(String, String)>::new();
+        let mut subject = Vec::<SubjectConcept>::new();
         let mut facets = BTreeSet::new();
         let mut facet_entry_kinds = BTreeSet::new();
         let mut coordinations = 0;
@@ -177,13 +179,18 @@ impl QuestionContract {
             for part in parts {
                 let key = search_key(&part, morphology);
                 if !vocabulary.carries_no_subject(&part)
-                    && !subject.iter().any(|(known, _)| *known == key)
+                    && !subject.iter().any(|known| known.key == key)
                 {
+                    let literal = derived_onto_a_table_word(&part, &key, vocabulary);
                     // What `missing` reports is the reader's word as written,
                     // accents and all; a word read as several parts reports
                     // each part.
-                    let reader = if whole { word.written.clone() } else { part };
-                    subject.push((key, reader));
+                    let written = if whole { word.written.clone() } else { part };
+                    subject.push(SubjectConcept {
+                        key,
+                        written,
+                        literal,
+                    });
                 }
             }
         }
@@ -276,9 +283,9 @@ impl QuestionContract {
             .collect()
     }
 
-    /// Search key of each concept that must stand beside the principal
-    /// anchor, with the reader's word for it.
-    pub(super) fn subject(&self) -> &[(String, String)] {
+    /// Each concept that must stand beside the principal anchor, with the
+    /// reader's word for it.
+    pub(super) fn subject(&self) -> &[SubjectConcept] {
         &self.subject
     }
 
@@ -305,6 +312,23 @@ impl QuestionContract {
     pub(super) fn time(&self) -> QuestionTime {
         self.time
     }
+}
+
+/// Whether the stemmer carried `word` onto `key` by more than an
+/// inflection, and `key` is a word the concept table lists: `correctness`
+/// onto `correct`, which the table reads as `correction`. `fixes` onto `fix`
+/// is an inflection and keeps the table's reading.
+fn derived_onto_a_table_word(
+    word: &str,
+    key: &str,
+    vocabulary: &QuestionContractVocabulary,
+) -> bool {
+    if key == word || concept_key(key) == key {
+        return false;
+    }
+    !word
+        .strip_prefix(key)
+        .is_some_and(|ending| vocabulary.is_inflection(ending))
 }
 
 /// Which words stand in a negated stretch: from a negation to the end of

@@ -187,6 +187,11 @@ hash), so 1.1.0 moved the link to `relations`: the receipt then says both source
 unchanged (`attachment.unchanged_sources`) and `kmp_inspect` shows revision 1 and the
 same content hash before and after. Only `multi` has writes, so only its digests moved.
 
+Generator 1.2.0 changed only questions: a `negated_anchor` forbids the entries whose only
+anchor is the excluded one (DISENO §13, 26 Sept 2026). Every synth family entry also names
+its subject, which the question names too, so its `excluded_refs` are empty and entries,
+relations and writes are the bytes 1.1.0 wrote.
+
 `manifest.json`:
 
 ```json world-manifest
@@ -337,7 +342,7 @@ Structural rules enforced by `domain/question_rules.py`:
 | `singular_anchored` | ask | anchors; shape `singular` (1 facet) |
 | `anchor_neighbor_existing`, `anchor_absent`, `near_miss_attribute`, `cross_about_anchor` | ask | anchors; `UNKNOWN`, `unknown_reason`, `absent_terms` |
 | `singular_anchored_twin` | ask | as above, and shape `singular` |
-| `negated_anchor` | ask | anchors; `KNOWN` with `excluded_refs` |
+| `negated_anchor` | ask | anchors; `KNOWN`, `excluded_refs` possibly empty |
 | `identifier_guard`, `rare_identifier` | ask | anchors |
 | `lookup_exact`, `paraphrase_zero_overlap`, `crosslang_es_en`, `crosslang_en_es`, `hard_distractor`, `hub_adjacent`, `multi_about`, `evidence_recall` | ask | shape and facets |
 | `multihop_why_k` | ask | `chain` (k = number of refs, ≥2) |
@@ -368,7 +373,7 @@ least one answering entry. Strata a metric is split by live in `tags` as `key:va
 | `nearest_outside` | ref or null | interval UNKNOWN: what the proof must name outside the span |
 | `unknown_reason` | enum or null | `anchor_not_found`, `attribute_not_found`, `anchor_in_other_about`, `not_in_selection`, `no_evidence` |
 | `absent_terms` | strings | what a PARTIAL's `missing` must name to count as abstention (section 6 of the spec) |
-| `excluded_refs` | refs | `negated_anchor`: never citable |
+| `excluded_refs` | refs | `negated_anchor`: never citable; only the entries whose only anchor is the excluded one (an entry that also names another anchor of the question may be cited) |
 | `wake_required` | refs | `wake_resume` obligations |
 
 Invariants: facet names unique; a facet with answers is `answerable_facet: true`; a ref

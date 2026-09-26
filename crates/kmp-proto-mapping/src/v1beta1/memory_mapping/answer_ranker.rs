@@ -355,10 +355,11 @@ impl<'a> AnswerEvidenceRanker<'a> {
         }
         let prepared = self.prepare(evidence);
         let collection = self.collection(&prepared);
+        // The gate reads anchors where it cites them: in what memories say.
         let selection = AnchorSelection::read(
             contract,
-            |term| collection.direct.document_frequency(term),
-            collection.direct.documents(),
+            |term| collection.content.document_frequency(term),
+            collection.content.documents(),
         );
         let (principal, others) = match selection {
             AnchorSelection::Anchored { principal, others } => (principal, others),
@@ -418,7 +419,13 @@ impl<'a> AnswerEvidenceRanker<'a> {
             &others,
             direct.iter().map(|(item, terms)| (*item, terms)),
             &rescue,
-            |key, terms| lexicon.focus_matches(&BTreeSet::from([key.to_string()]), terms) > 0,
+            |concept, terms| {
+                if concept.literal {
+                    terms.content.contains(&concept.key)
+                } else {
+                    lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms) > 0
+                }
+            },
         );
         // A citation the gate admitted through a declared `same_entity_as`
         // says so, and says which memory named the anchor.
