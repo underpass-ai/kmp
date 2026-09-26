@@ -33,7 +33,8 @@ pub use projection::{
     ProjectionMutation, RelatedNodeExplanationData, RelatedNodeReference,
 };
 pub use repositories::{
-    AdjacencyPage, AdjacencyRequest, BoundedRelationReader, RelationDirection, RelationPosition,
+    AdjacencyPage, AdjacencyRequest, BoundedRelationReader, LifecycleChainReader,
+    RelationDirection, RelationPosition,
 };
 pub use repositories::{COMMAND_RECEIPT_ENTITY_KIND, StoredCommandReceipt};
 pub use repositories::{
@@ -87,6 +88,11 @@ pub use value_objects::{
     TraceCondenseCandidates, TraceExpansionPlan, TraceExpansionRefusal,
 };
 
+pub use model::{
+    AdjacencyLifecycleLinks, LifecycleChain, LifecycleFork, LifecycleLink, LifecycleLinkSource,
+    LifecycleNeighbours, LifecycleRelation, LifecycleSide, LifecycleStep, MAX_LIFECYCLE_DEPTH,
+    MAX_LIFECYCLE_LINKS_PER_NODE, MAX_LIFECYCLE_MEMBERS,
+};
 pub use model::{MemoryNodeHeader, MemoryNodesRequest, MemoryNodesResult, read_memory_nodes};
 
 #[cfg(test)]

@@ -29,6 +29,9 @@ pub(super) struct MemoryLifecycle {
     frontier: Option<(i64, i32)>,
     expired: BTreeMap<String, Option<Timestamp>>,
     superseded: BTreeSet<String>,
+    /// Whether the caller named the instant this was read at (`as_of`, an
+    /// interval): a question standing in the past asks about history.
+    at_an_instant: bool,
 }
 
 impl MemoryLifecycle {
@@ -79,6 +82,7 @@ impl MemoryLifecycle {
             frontier,
             expired,
             superseded,
+            at_an_instant: false,
         }
     }
 
@@ -160,6 +164,7 @@ impl MemoryLifecycle {
             frontier: Some(at),
             expired,
             superseded,
+            at_an_instant: true,
         }
     }
 
@@ -168,6 +173,12 @@ impl MemoryLifecycle {
     #[cfg(test)]
     fn frontier(&self) -> Option<(i64, i32)> {
         self.frontier
+    }
+
+    /// Whether this lifecycle stands at an instant the caller named rather
+    /// than at the memory's frontier.
+    pub(super) fn reads_an_instant(&self) -> bool {
+        self.at_an_instant
     }
 
     pub(super) fn is_expired(&self, memory_ref: &str) -> bool {

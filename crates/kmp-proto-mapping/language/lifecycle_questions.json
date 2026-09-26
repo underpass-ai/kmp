@@ -1,0 +1,17 @@
+{
+  "note": "Words that ask how memory changed rather than what holds now. With one of them, or a word of the lifecycle family in question_families.json, or an as_of / interval selection, kmp_ask returns the declared lifecycle chain (supersedes, corrects, updates_state) of what it matched, marked reached_by lifecycle and outside the answer core; without them it brings only the current head of a replaced memory's chain. Written folded and without diacritics. A data change, not a code change; the ranker's relation families are not read from here, so adding a word never moves a ranking.",
+  "history_words": [
+    "anteriormente",
+    "antes",
+    "cronologia",
+    "earlier",
+    "evolucion",
+    "evolution",
+    "historia",
+    "historial",
+    "historico",
+    "history",
+    "previously",
+    "timeline"
+  ]
+}

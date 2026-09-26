@@ -505,7 +505,7 @@ pub fn ask_response_from_result(
                 contract.anchored_asked().unwrap_or(question),
                 policy,
                 contract,
-                gate.allows_partial(),
+                gate,
                 candidate_evidence,
             );
             (reading.evidence, reading.verdict)

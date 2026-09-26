@@ -7,6 +7,7 @@ mod dimension_lookup_header;
 mod engine;
 mod format_version;
 mod graph_read;
+mod lifecycle_chain_read;
 mod memory_about_index;
 mod migration;
 mod node_body_descriptor;
