@@ -8,12 +8,12 @@ use crate::curate::application::prepared_relation::PreparedRelation;
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_fact::CurateFact;
 use crate::curate::domain::curate_thresholds::{NONE, SYMMETRIC};
+use crate::curate::domain::partner_cap::PartnerCap;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
 
 const SENT_CHARS: usize = 2_000;
 const PARTNER_CHARS: usize = 400;
-pub(crate) const PARTNER_FACTS: usize = 60;
 const PARTNER_ORPHANS: usize = 30;
 
 pub(crate) fn excerpt(text: &str, chars: usize) -> String {
@@ -95,13 +95,14 @@ pub(crate) fn text_of(material: &CurateMaterial, reference: &str) -> String {
 }
 
 /// One request per about: its facts as the state, one choice per orphan over
-/// the others. Keys `f<n>` map back to refs. None when the about is too
-/// large to show whole or has nothing to pair.
+/// the others. Keys `f<n>` map back to refs. None when the about is larger
+/// than `cap` or has nothing to pair.
 pub(crate) fn partner_request(
     facts: &[&CurateFact],
     orphans: &[&CurateFact],
+    cap: PartnerCap,
 ) -> Option<(JudgementRequest, BTreeMap<String, String>)> {
-    if facts.len() < 2 || facts.len() > PARTNER_FACTS || orphans.is_empty() {
+    if facts.len() < 2 || !cap.admits(facts.len()) || orphans.is_empty() {
         return None;
     }
     let keys = facts

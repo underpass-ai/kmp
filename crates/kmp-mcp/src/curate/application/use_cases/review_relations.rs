@@ -2,13 +2,14 @@ use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::curate_review::CurateReview;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{
-    PARTNER_FACTS, pair_request, partner_request, relation_options, suspect_request,
+    pair_request, partner_request, relation_options, suspect_request,
 };
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
 use crate::curate::domain::curate_thresholds::{DOUBT_BELOW, NONE, PARTNER_AT, RETYPE_AT};
 use crate::curate::domain::jev_verdict::JevVerdict;
 use crate::curate::domain::pair_origin::PairOrigin;
+use crate::curate::domain::partner_cap::PartnerCap;
 use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_response::JudgementResponse;
@@ -19,6 +20,8 @@ use crate::serving::ports::judgement_model::JudgementModel;
 /// declared links whose reason does not hold. Writes nothing.
 pub(crate) struct ReviewRelations<'a> {
     pub judgement: Option<&'a dyn JudgementModel>,
+    /// The largest about whose orphans get a Jev partner choice.
+    pub partner_cap: PartnerCap,
 }
 
 impl ReviewRelations<'_> {
@@ -63,10 +66,11 @@ impl ReviewRelations<'_> {
                 .iter()
                 .filter(|f| f.about == about)
                 .collect::<Vec<_>>();
-            if facts.len() > PARTNER_FACTS {
+            if !self.partner_cap.admits(facts.len()) {
                 too_large.push(format!(
-                    "`{about}` has {} current facts: Jev looks for orphans' partners only in abouts of at most {PARTNER_FACTS}; review with `focus` on the facts to pair, which reads each one's shortlisted partners",
-                    facts.len()
+                    "`{about}` has {} current facts: Jev looks for orphans' partners only in abouts of at most {}; review with `focus` on the facts to pair, which reads each one's shortlisted partners",
+                    facts.len(),
+                    self.partner_cap.facts()
                 ));
             }
             let orphans = material
@@ -74,7 +78,7 @@ impl ReviewRelations<'_> {
                 .into_iter()
                 .filter(|f| f.about == about)
                 .collect::<Vec<_>>();
-            let Some((request, keys)) = partner_request(&facts, &orphans) else {
+            let Some((request, keys)) = partner_request(&facts, &orphans, self.partner_cap) else {
                 continue;
             };
             let Some(response) = ask(request).await else {
@@ -294,9 +298,12 @@ mod tests {
 
     #[tokio::test]
     async fn without_jev_kernel_pairs_come_back_untyped_with_a_warning() {
-        let review = ReviewRelations { judgement: None }
-            .run(material(), 12)
-            .await;
+        let review = ReviewRelations {
+            judgement: None,
+            partner_cap: PartnerCap::DEFAULT,
+        }
+        .run(material(), 12)
+        .await;
         assert_eq!(review.findings.len(), 1);
         assert!(matches!(
             &review.findings[0],
@@ -320,6 +327,7 @@ mod tests {
         };
         let review = ReviewRelations {
             judgement: Some(&model),
+            partner_cap: PartnerCap::DEFAULT,
         }
         .run(material(), 12)
         .await;
@@ -356,6 +364,7 @@ mod tests {
         };
         let review = ReviewRelations {
             judgement: Some(&model),
+            partner_cap: PartnerCap::DEFAULT,
         }
         .run(material(), 12)
         .await;
@@ -363,7 +372,12 @@ mod tests {
             !review.findings.iter().any(|f| matches!(f, CurateFinding::Missing { suggested_rel: Some(rel), .. } if rel == "none")),
             "none is never proposed"
         );
-        let capped = ReviewRelations { judgement: None }.run(material(), 0).await;
+        let capped = ReviewRelations {
+            judgement: None,
+            partner_cap: PartnerCap::DEFAULT,
+        }
+        .run(material(), 0)
+        .await;
         assert!(capped.findings.is_empty());
     }
 
@@ -393,6 +407,7 @@ mod tests {
         };
         let review = ReviewRelations {
             judgement: Some(&model),
+            partner_cap: PartnerCap::DEFAULT,
         }
         .run(material(), 12)
         .await;
@@ -408,6 +423,33 @@ mod tests {
             !suggested.iter().any(|rel| rel == "contradicts"),
             "{suggested:?}"
         );
+    }
+
+    #[tokio::test]
+    async fn past_the_partner_cap_no_partner_choice_is_asked_and_the_review_says_so() {
+        let calls = async |cap: Option<&str>| {
+            let model = Scripted {
+                noul: 0.9,
+                choice: "supports",
+                confidence: 0.9,
+                calls: Mutex::new(0),
+            };
+            let partner_cap = PartnerCap::from_eval(cap);
+            let review = ReviewRelations {
+                judgement: Some(&model),
+                partner_cap,
+            }
+            .run(material(), 12)
+            .await;
+            let calls = *model.calls.lock().expect("calls");
+            (calls, review.warnings)
+        };
+        let (within, quiet) = calls(None).await;
+        assert_eq!(within, 3, "partners, typing and audit");
+        assert!(quiet.is_empty(), "{quiet:?}");
+        let (past, warned) = calls(Some("2")).await;
+        assert_eq!(past, 2, "typing and audit only");
+        assert!(warned.iter().any(|w| w.contains("at most 2")), "{warned:?}");
     }
 
     #[test]
@@ -434,6 +476,7 @@ mod tests {
             .retain(|fact| fact.reference == "a1" || fact.reference == "a3");
         let review = ReviewRelations {
             judgement: Some(&model),
+            partner_cap: PartnerCap::DEFAULT,
         }
         .run(lone, 12)
         .await;

@@ -20,8 +20,10 @@ use super::wake_focus_judge::WakeFocusJudge;
 use super::write_relations_config::WriteRelationsConfig;
 use crate::contract::{TIME_TOOL, TimeMove};
 use crate::curate::domain::lifecycle_mode::LifecycleMode;
+use crate::curate::domain::partner_cap::PartnerCap;
 use crate::serving::environment::{
-    TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV, TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
+    EVAL_PARTNER_FACTS_ENV, TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV,
+    TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
 };
 use crate::serving::judgement_site::JudgementSite;
 use crate::serving::ports::judgement_model::JudgementModel;
@@ -68,6 +70,9 @@ pub struct EmbeddedKernelMcpBackend {
     /// Whether and how focused reviews propose write-time lifecycle pairs
     /// (`write-relations.json` `lifecycle`).
     lifecycle: LifecycleMode,
+    /// The largest about a review without `focus` pairs orphans in: the
+    /// measured default unless evaluation names another.
+    partner_cap: PartnerCap,
     /// The anchored ask gate: [`AskGate::STORE_DEFAULT`] (on) unless
     /// `ask-gate.json` beside the store says otherwise; a file that cannot
     /// apply is reported and the default stands.
@@ -162,6 +167,9 @@ impl EmbeddedKernelMcpBackend {
             wake_focus,
             write_relations,
             lifecycle,
+            partner_cap: PartnerCap::from_eval(
+                optional_env_string(EVAL_PARTNER_FACTS_ENV).as_deref(),
+            ),
             ask_gate: ask_gate.unwrap_or(AskGate::STORE_DEFAULT),
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
@@ -329,6 +337,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         &self.curate_doubts,
                     )
                     .with_lifecycle(self.lifecycle)
+                    .with_partner_cap(self.partner_cap)
                     .call(arguments)
                     .await
                 }

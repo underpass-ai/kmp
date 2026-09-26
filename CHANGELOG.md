@@ -19,7 +19,10 @@ Detailed notes from the early release cycle remain available in the
   about of at most 40 other facts is read as before.
 - A `kmp_curate` review without `focus` over an about of more than 60 facts
   says that Jev looked for no orphan's partner there, instead of going
-  quiet.
+  quiet. The cap stays at 60: at 120, on a 118-fact about, the partner round
+  found three true relations the kernel misses but also proposed eight
+  pairs of routine notes (6 of 14 proposals right, against 3 of 3), for
+  3.7 times the Jev tokens; at 240 the provider refuses the request.
 - **Breaking: the anchored ask gate is the default.** Every store reads
   `kmp_ask` with it (`AskGate::STORE_DEFAULT`), in `kmp-mcp` and in the gRPC
   `KernelMemoryService.Ask`, so an ask is no longer byte for byte what

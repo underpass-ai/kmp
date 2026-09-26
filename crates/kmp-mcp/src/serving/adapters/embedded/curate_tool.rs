@@ -22,6 +22,7 @@ use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
 use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::pair_origin::PairOrigin;
+use crate::curate::domain::partner_cap::PartnerCap;
 use crate::serving::adapters::tool_request_mapping::RelateRequestMapper;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::{ToolError, tool_success_result};
@@ -47,6 +48,7 @@ pub(crate) struct EmbeddedCurateTool<'a> {
     cache: &'a CurateReviewCache,
     doubts: &'a CurateDoubtCache,
     lifecycle: LifecycleMode,
+    partner_cap: PartnerCap,
 }
 
 impl<'a> EmbeddedCurateTool<'a> {
@@ -68,7 +70,14 @@ impl<'a> EmbeddedCurateTool<'a> {
             cache,
             doubts,
             lifecycle: LifecycleMode::Off,
+            partner_cap: PartnerCap::DEFAULT,
         }
+    }
+
+    /// The largest about a review without `focus` pairs orphans in.
+    pub(crate) fn with_partner_cap(mut self, partner_cap: PartnerCap) -> Self {
+        self.partner_cap = partner_cap;
+        self
     }
 
     /// Whether and how a focused review proposes write-time lifecycle pairs.
@@ -141,6 +150,7 @@ impl<'a> EmbeddedCurateTool<'a> {
         let mut review = if focus.is_empty() {
             ReviewRelations {
                 judgement: self.judgement,
+                partner_cap: self.partner_cap,
             }
             .run(material.clone(), max_pairs)
             .await

@@ -172,6 +172,10 @@ because it adds latency and bytes to every Ask.
   `retrieval_kmp_scorecard`: the independent retrieval cases with
   re-ranking. The arm reports without gating, and it is answered from
   `crates/kmp-testkit/judged/retrieval.jev.cassette.json`.
+- `KMP_EVAL_PARTNER_FACTS=n` with `jev_review_probe <cases.json>`: the
+  review without `focus` alone, seeded and called as the scorecard does it,
+  one JSON line per case with every missing item and Jev's usage. `n` is the
+  largest about whose orphans get a Jev partner choice (default 60).
 
 ## The cascade (P9, 2026-09-27, three recorded samples)
 
@@ -255,6 +259,31 @@ review of a fact on the 318-fact about takes about 535 ms of Jev (at most
 
 Recording the three samples cost 916,442 Jev input tokens ($0.038), and the
 latency recording 448,759 more ($0.019).
+
+**Partner cap of the review without `focus`.** Past 60 current facts in an
+about, the review asks Jev for no orphan's partner. Caps of 60, 120 and 240
+were compared on payments (abouts under 60, the same request at every cap)
+and on two deterministic subsets of the atlas case, 120 and 240 facts, that
+keep every fact of its gold (3 recorded samples each, measured in replay; the
+cap-60 arm read the verdict book of the same sample). The registered rule
+kept 60:
+
+| | cap 60 | cap 120 | cap 240 |
+|---|---|---|---|
+| Gold missing found, atlas 120 / 240 | 3/3 / 3/3 | 3/3 / 3/3 | 3/3 / 3/3 |
+| Proposed right, atlas 120 (s1/s2/s3) | 3/3 in each | 6/14, 6/14, 6/12 | as 120 |
+| Pairs of two noise facts proposed, atlas 120 | 0 | 8, 8, 6 | as 120 |
+| Jev tokens per review, atlas 120 | about 14.6k | about 54k | as 120 |
+| Atlas 240 | no partner round | no partner round | refused by the provider |
+
+At 120 the partner round found three true relations of the pricing chain
+that the kernel never pairs (price rise, price list, churn, loyalty
+discount), and proposed eight pairs of routine notes that share a template
+(two people approving the same offsite's budget, read as a contradiction).
+At 240 the partner request (about 104 KB) is refused with
+`max_tokens_exceeded` in every sample, so the review falls back to kernel
+pairs with a "Jev unavailable" warning. Recording cost about 306k Jev input
+tokens ($0.013).
 
 ## First result (2026-09-25, `jev-1.13.0`, payments case only)
 
