@@ -363,3 +363,26 @@ fn the_variant_never_cites_a_head_for_a_history_question() {
         }
     );
 }
+
+#[test]
+fn under_the_gate_a_walk_starts_only_from_a_memory_that_names_an_anchor() {
+    // The gate ranks without the focus filter: the replaced statement about
+    // pool-003 clears the floor on `pool`, `from` and `team`, and is still not
+    // about pool-008.
+    let entries = &[
+        ("mem:p3-old", "decision", "From March, the pager for pool-003 goes to team Aster."),
+        ("mem:p3-new", "decision", "Rotation handed to Birch."),
+        ("mem:p8", "decision", "From May, the pager for pool-008 goes to team Elm."),
+    ];
+    let response = ask_in(
+        Some(AskGate::anchored(true)),
+        "Which team gets the pager for pool-008 now?",
+        store_related(entries, &[("mem:p3-new", "supersedes", "mem:p3-old")]),
+    );
+
+    assert_eq!(cited(&response), ["mem:p8"]);
+    assert!(
+        find(&response, "mem:p3-new").is_none(),
+        "the head of an unrelated chain is not brought in"
+    );
+}

@@ -46,6 +46,10 @@ pub(super) struct LifecycleRescue<'a> {
     pub(super) context: &'a AnswerRecallContext,
     pub(super) question: &'a str,
     pub(super) focus: RankingFocus<'a>,
+    /// Under the anchored gate, the anchor terms a walk must start from: the
+    /// gate ranks without the focus filter, so a memory that only clears
+    /// the floor is not about what was asked unless it names an anchor.
+    pub(super) anchors: Option<&'a BTreeSet<String>>,
     pub(super) lexicon: &'a Lexicon,
 }
 
@@ -172,8 +176,21 @@ impl LifecycleRescue<'_> {
             LifecycleAsk::Current => links.has_newer(node),
             LifecycleAsk::History => links.touches(node),
         };
+        let names_an_anchor = |terms: &AnswerCandidateTerms| {
+            self.anchors.is_none_or(|anchors| {
+                anchors
+                    .iter()
+                    .any(|anchor| terms.content_counts.count(anchor) > 0)
+            })
+        };
         for item in answer {
-            for node in answer_context_refs(item) {
+            let refs = answer_context_refs(item);
+            if !refs.iter().any(|node| walkable(node))
+                || !names_an_anchor(&AnswerCandidateTerms::from_evidence(item, self.context))
+            {
+                continue;
+            }
+            for node in refs {
                 if walkable(&node) && seen.insert(node.clone()) {
                     seeds.push(Seed {
                         node,
@@ -187,7 +204,9 @@ impl LifecycleRescue<'_> {
             .filter(|(item, _)| {
                 self.context.temporal_state(item) != CandidateTemporalState::CurrentOrUnspecified
             })
-            .filter(|(_, terms)| reached_by_the_question(self.focus, self.lexicon, terms))
+            .filter(|(_, terms)| {
+                names_an_anchor(terms) && reached_by_the_question(self.focus, self.lexicon, terms)
+            })
             .map(|(item, terms)| (self.lexicon.direct_score(terms), item))
             .collect::<Vec<_>>();
         withheld.sort_by(|(left_score, left), (right_score, right)| {

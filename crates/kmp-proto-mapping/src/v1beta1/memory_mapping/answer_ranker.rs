@@ -272,14 +272,16 @@ impl<'a> AnswerEvidenceRanker<'a> {
         }
     }
 
-    /// Ranks candidates already read against their collection. `facet_kinds`
-    /// breaks ties by entry kind, for the anchored gate only.
+    /// Ranks candidates already read against their collection. For the
+    /// anchored gate only, `anchored` holds the facet entry kinds that break
+    /// ties by entry kind and the anchor terms a lifecycle rescue must start
+    /// from.
     fn rank_prepared(
         &self,
         question: &str,
         question_terms: &BTreeSet<String>,
         strict_focus: Option<(BTreeSet<String>, usize)>,
-        facet_kinds: Option<&BTreeSet<String>>,
+        anchored: Option<(&BTreeSet<String>, &BTreeSet<String>)>,
         prepared: Vec<ReadCandidate>,
         lexicon: &Lexicon,
     ) -> Vec<MemoryEvidence> {
@@ -289,6 +291,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             .map(|(terms, _)| terms.clone())
             .unwrap_or_default();
         let intent = QuestionIntent::read(question);
+        let facet_kinds = anchored.map(|(kinds, _)| kinds);
 
         let mut candidates = Vec::new();
         // A rejected candidate keeps the terms it was read with: every
@@ -333,6 +336,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 strict: strict_focus.as_ref(),
                 facet_kinds,
             },
+            anchors: anchored.map(|(_, anchors)| anchors),
             lexicon,
         }
         .rescue(&answer, rejected);
@@ -424,7 +428,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             question,
             &question_terms,
             unfiltered,
-            Some(contract.facet_entry_kinds()),
+            Some((contract.facet_entry_kinds(), &anchors)),
             prepared,
             &lexicon,
         );
