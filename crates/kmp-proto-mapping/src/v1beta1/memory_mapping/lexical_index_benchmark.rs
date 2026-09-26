@@ -54,14 +54,39 @@ fn lexical_index_phase_control() {
             };
             let mut row = serde_json::Map::new();
             for operation in if n % 2 == 0 {
-                ["association", "bm25", "hit", "fresh_rank", "cached_rank"]
+                [
+                    "association",
+                    "restricted_association",
+                    "bm25",
+                    "hit",
+                    "fresh_rank",
+                    "cached_rank",
+                ]
             } else {
-                ["cached_rank", "fresh_rank", "hit", "bm25", "association"]
+                [
+                    "cached_rank",
+                    "fresh_rank",
+                    "hit",
+                    "bm25",
+                    "restricted_association",
+                    "association",
+                ]
             } {
                 let start = Instant::now();
                 match operation {
                     "association" => {
                         black_box(AssociationIndex::build(
+                            terms.iter().map(|(_, t)| &t.direct_counts),
+                        ));
+                    }
+                    "restricted_association" => {
+                        let asked = super::search_terms::informative_term_counts(
+                            question,
+                            &super::morphology::Morphology::default(),
+                        );
+                        black_box(AssociationIndex::for_question(
+                            &asked,
+                            &first.direct,
                             terms.iter().map(|(_, t)| &t.direct_counts),
                         ));
                     }

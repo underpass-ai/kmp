@@ -1,4 +1,5 @@
 use super::answer_candidate_terms::AnswerCandidateTerms;
+use super::association_index::AssociationIndex;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::lexical_bridge::LexicalBridge;
@@ -59,7 +60,12 @@ impl Lexicon {
             }
         }
         let floor = collection.direct.eligibility_floor(&asked_for);
-        let associated = collection.associations.expand(&question_counts);
+        let associated = AssociationIndex::for_question(
+            &question_counts,
+            &collection.direct,
+            prepared.iter().map(|(_, terms)| &terms.direct_counts),
+        )
+        .expand(&question_counts);
         let mut asked = associated.clone();
         for pair in &bridged {
             let weight = asked.entry(pair.candidate_key.clone()).or_insert(0.0);
