@@ -25,16 +25,12 @@
       "core_text_shortened": "boolean",
       "detail": "string",
       "excluded_by_detail": "integer",
-      "next_action": {
-        "arguments": {
-          "continuation": "string"
-        },
-        "tool": "string"
-      },
+      "more_on_request": "integer",
+      "next_action": "null",
       "page": {
         "has_more": "boolean",
         "minimum_progress_bytes": "string",
-        "next_cursor": "string",
+        "next_cursor": "null",
         "offset": "integer",
         "returned": "integer",
         "total": "integer"
@@ -45,7 +41,6 @@
         },
         "proof.path": {
           "excluded_by_detail": "integer",
-          "remaining": "integer",
           "returned_on_page": "integer"
         }
       },

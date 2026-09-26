@@ -311,6 +311,7 @@ fn projection_from_value(value: &Value) -> Option<RecallProjection> {
             .get("core_reused")
             .and_then(Value::as_bool)
             .unwrap_or(false),
+        more_on_request: u64_at(value, "/more_on_request"),
     })
 }
 

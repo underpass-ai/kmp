@@ -756,15 +756,11 @@ pub fn ask_response_from_result(
         ),
         Some(_) => (
             AnswerStatus::Unknown,
-            if answer_proof.nearest_outside.is_some() {
-                UnknownReason::OutOfWindow
-            } else if let Some(verdict) = &verdict {
-                verdict.reason
-            } else if evidence_retained == 0 {
-                UnknownReason::NoCandidates
-            } else {
-                UnknownReason::NoBearing
-            },
+            super::unknown_cause::unknown_cause(
+                answer_proof.nearest_outside.is_some(),
+                verdict.as_ref().map(|verdict| verdict.reason),
+                evidence_retained,
+            ),
         ),
     };
     let not_found_note = if not_found.is_empty() {

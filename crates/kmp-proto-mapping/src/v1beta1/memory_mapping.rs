@@ -93,6 +93,9 @@ mod temporal_goto_proof_tests;
 #[cfg(test)]
 mod temporal_relation_clock_tests;
 mod term_counts;
+mod unknown_cause;
+#[cfg(test)]
+mod unknown_cause_tests;
 mod visual_projection;
 mod wake_claim_evidence;
 mod wake_current_state;

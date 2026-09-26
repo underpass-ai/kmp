@@ -13,6 +13,7 @@ use super::metadata::{append_warning, attach_metadata};
 use super::plan::{ProjectionPlan, section_lengths};
 use super::projection_error::RecallProjectionError;
 use super::projection_outcome::ProjectionOutcome;
+use super::proof_on_request::withholds;
 use super::reused_core::{CORE_REUSED, retain_expansion, reuses_core, skeleton};
 use super::text_shortening::truncate_json_text;
 
@@ -58,6 +59,9 @@ pub fn project_recall_output_typed(
     // A continuation sends only new expansion items: the caller holds the
     // first page's core, and the cursor already binds that core by hash.
     let core_reused = reuses_core(offset, budget.repeat_core);
+    // An answered first page below `full` detail ends where it fits: what
+    // it could not carry is counted as on request, not offered as a page.
+    let withheld = withholds(plan.settled, budget.detail, offset);
 
     // Size the core against one worst-case metadata envelope so its bytes do
     // not change with detail, cursor offset, or an advisory-token override.
@@ -112,6 +116,7 @@ pub fn project_recall_output_typed(
         &budget,
         core_text_shortened,
         true,
+        0,
     );
     if core_reused {
         planning["projection"][CORE_REUSED] = true.into();
@@ -160,6 +165,13 @@ pub fn project_recall_output_typed(
         for item in &selected {
             push_array(&mut projected, item.section.path(), item.value.clone());
         }
+        // Withheld, this page ends the reading: `selected` is a prefix of
+        // `eligible` on a first page, and the rest is on request.
+        let more_on_request = if withheld {
+            eligible.len() - selected.len()
+        } else {
+            0
+        };
         attach_metadata(
             &mut projected,
             &plan,
@@ -171,6 +183,7 @@ pub fn project_recall_output_typed(
             &budget,
             core_text_shortened,
             false,
+            more_on_request,
         );
         if core_reused {
             projected["projection"][CORE_REUSED] = true.into();

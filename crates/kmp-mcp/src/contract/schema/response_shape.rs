@@ -116,7 +116,8 @@ fn projection_output_schema() -> Value {
         "sections": described("object", "Per-section counts; a zero counter and a section with none are omitted. core and excluded_by_detail appear on the page that carries the core; returned_on_page and remaining on every page. remaining counts eligible expansion after this page, excluding the core and prior pages. eligible = core + all returned_on_page + last remaining; total = eligible + excluded_by_detail. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage."),
         "selection_omitted": described("integer", "Items excluded by budget.max_entries before paging."),
         "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes."),
-        "core_reused": described("boolean", "Present and true on a continuation that omits the stable core: it carries only new expansion items. Combine them with the first page's core and earlier pages; page.repeat_core=true returns the core again.")
+        "core_reused": described("boolean", "Present and true on a continuation that omits the stable core: it carries only new expansion items. Combine them with the first page's core and earlier pages; page.repeat_core=true returns the core again."),
+        "more_on_request": described("integer", "Present on an answered ask: proof past its cited core left unpaged; budget.detail=full pages it.")
     }))
 }
 pub(crate) fn quality_output_schema() -> Value {

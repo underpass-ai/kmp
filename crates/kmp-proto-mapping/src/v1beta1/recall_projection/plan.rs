@@ -8,6 +8,7 @@ use serde_json::Value;
 use super::budget::{Detail, ProjectionBudget};
 use super::json_paths::{array_at_mut, array_len, push_array, take_array};
 use super::normalization::{cited_evidence_refs, rebuild_answer, wake_evidence_refs};
+use super::proof_on_request::settles_on_first_page;
 use super::scalars::u64_at;
 use super::serialized_size::serialized_size;
 
@@ -92,10 +93,14 @@ pub(super) struct ProjectionPlan {
     pub(super) selection_omitted: usize,
     pub(super) arguments: Value,
     pub(super) progress_bytes: usize,
+    /// The gate answered this ask: its proof past the first page is on
+    /// request (`proof_on_request`).
+    pub(super) settled: bool,
 }
 
 impl ProjectionPlan {
     pub(super) fn build(mut value: Value, budget: &ProjectionBudget) -> Self {
+        let settled = settles_on_first_page(&value);
         // Mapping may already have capped the ranked evidence. Those items
         // are no longer here to count and must not become detail exclusions.
         let mut selection_omitted =
@@ -256,6 +261,7 @@ impl ProjectionPlan {
             selection_omitted,
             arguments: Value::Null,
             progress_bytes: 0,
+            settled,
         }
     }
 }

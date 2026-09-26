@@ -41,6 +41,7 @@
       "core_text_shortened": true,
       "detail": "compact",
       "excluded_by_detail": 13,
+      "more_on_request": 2,
       "next_action": {
         "arguments": {
           "about": "question:parity",
@@ -56,12 +57,12 @@
         "tool": "kmp_ask"
       },
       "page": {
-        "has_more": true,
+        "has_more": false,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:1:<stamped at call time>",
+        "next_cursor": null,
         "offset": 0,
         "returned": 1,
-        "total": 3
+        "total": 1
       },
       "sections": {
         "proof.evidence": {
@@ -69,7 +70,6 @@
         },
         "proof.path": {
           "excluded_by_detail": 13,
-          "remaining": 2,
           "returned_on_page": 1
         }
       },
