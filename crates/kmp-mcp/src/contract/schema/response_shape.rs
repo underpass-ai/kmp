@@ -65,7 +65,7 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
              summary_en, not the canonical text."
         ),
         "missing": described("array", "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN."),
-        "superseded": described("array", "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice."),
+        "superseded": described("array", "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded."),
         "expired": described("array", "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement."),
         "conflicts": described("array", "Explicit contradictions whose entries are both still live; distinct from supersession."),
         "matched_relations": described("array", "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer."),
@@ -116,7 +116,8 @@ fn projection_output_schema() -> Value {
         "sections": described("object", "Per-section counts; a zero counter and a section with none are omitted. core and excluded_by_detail appear on the page that carries the core; returned_on_page and remaining on every page. remaining counts eligible expansion after this page, excluding the core and prior pages. eligible = core + all returned_on_page + last remaining; total = eligible + excluded_by_detail. Zero does not prove sufficient evidence; core_text_shortened, detail and selection caps still qualify coverage."),
         "selection_omitted": described("integer", "Items excluded by budget.max_entries before paging."),
         "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes."),
-        "core_reused": described("boolean", "Present and true on a continuation that omits the stable core: it carries only new expansion items. Combine them with the first page's core and earlier pages; page.repeat_core=true returns the core again.")
+        "core_reused": described("boolean", "Present and true on a continuation that omits the stable core: it carries only new expansion items. Combine them with the first page's core and earlier pages; page.repeat_core=true returns the core again."),
+        "more_on_request": described("integer", "Present on an answered ask: proof past its cited core left unpaged; budget.detail=full pages it.")
     }))
 }
 pub(crate) fn quality_output_schema() -> Value {

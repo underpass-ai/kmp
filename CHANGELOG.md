@@ -25,6 +25,38 @@ Detailed notes from the early release cycle remain available in the
   from 0.1429 to 0.0477, the 35 original cases unchanged
   (`docs/development/retrieval-baseline.tsv`); `RETRIEVAL_ASK_GATE=off`
   and the bench variant `ask-gate-off.toml` measure without it.
+- An ask the gate answered keeps its proof past the cited core on request
+  (P8). Below `budget.detail: "full"` its first page carries the cited core
+  and what fits, `projection.more_on_request` counts the rest (proto
+  `RecallProjection.more_on_request`, field 12) and no continuation is
+  offered; `full` pages it as before. A shortened answered page restarts at
+  the allowance of its whole core, not that plus 10 KB of expansion.
+  `partial` and `unknown` keep paging. Every gated UNKNOWN states its
+  `unknown_reason`, also when the gate answered but `max_entries` left none
+  of its citations. Measured against the P1–P6 set, same answers on every
+  question: tokens per `kmp_ask` journey on B-real (31 questions, 3 samples)
+  11,656 → 4,778 (gate off: 10,231), hard negatives and identifier guards
+  11,061 → 3,978 (v0.23.0: 6,929), synth-v1 10^3 22,935 → 13,257 (gate off:
+  13,246).
+- An ask's stable core keeps only the `proof.superseded` entries that touch
+  a cited memory (the replaced one or its replacement). The rest follow the
+  ranked evidence as expansion in section `proof.superseded`: they page like
+  any other item, and an answered first page counts them in
+  `projection.more_on_request`. `budget.detail: "full"` still returns every
+  entry; a wake keeps all of its markers in the core. The list covered the
+  whole proof path, so it grew with the store's declared history: on
+  FactConsolidation-6k with its supersessions declared, the first page's
+  `proof.superseded` goes from p90 5,158 / max 6,478 bytes (56 entries) to
+  864 / 1,250 bytes (7 entries), and at a 3 KB ceiling the largest page from
+  8,630 to 3,447 bytes. SH answers are unchanged; MH R@10 goes from 0.543
+  to 0.553 because more evidence fits on the first page.
+- A continuation or restart of a `kmp_ask` or `kmp_wake` page is cut from
+  the first page's frozen read. A request without `budget.detail` was echoed
+  on its continuation as `balanced`, a different kernel query, so none of
+  them matched the frozen read; the echo now leaves it unnamed. A first page
+  whose core was shortened is kept for its one restart. Ask continuation
+  p95: 46 → 7 ms on B-real, 225 → 4 ms on the real store's negatives and
+  guards, 324 → 3 ms on synth 10^3.
 - A PARTIAL's `proof.missing` holds only what the question asked and no
   cited memory states, in the reader's words: the sources `max_entries`
   withheld are no longer listed beside them (`projection.selection_omitted`
@@ -65,6 +97,36 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- Declared lifecycle in `kmp_ask` (P7). `LifecycleChain` walks `supersedes`,
+  `corrects` and `updates_state` both ways from a memory, at most 32 hops
+  and 256 memories a side, cutting cycles and reporting forks in
+  `(occurred, id)` order; the embedded store answers each hop from its
+  `relations_*_by_kind` index (`LifecycleChainReader`), one typed range per
+  relation, so a chain of depth D costs O(D·log N). When a question matches
+  a replaced memory, the standing head of its chain now comes back in
+  `proof.evidence` marked `reached_by: lifecycle` (`reached_from`,
+  `reached_via`), outside the answer core and at most three; a replaced
+  memory never comes back as current. A question about history (a word of
+  the lifecycle family, `historial`, `antes`, `timeline`…, or `as_of` /
+  `interval`) gets the chain instead, at most eight members, each with
+  `lifecycle_state` `current` or `replaced`. Under the anchored gate a walk
+  starts only from a memory that names an anchor, and the head of one that
+  did stays in a PARTIAL or UNKNOWN proof. The rescued memory's relations
+  stay out of `proof.path`, so nothing every page repeats grows. A bundle
+  with no lifecycle relation answers byte for byte as before. Measured
+  against P1–P6: B-real, hard negatives and guards unchanged in quality (6
+  of 124 journeys gain one lifecycle item, the core and every status
+  unchanged; +19 tokens per journey), synth-v1 10^3 byte for byte, the
+  judged retrieval and Jev corpora unchanged, ask latency unchanged (B-real
+  first page p50 177 ms both). `{"successor_core": true}` in `ask-gate.json`
+  is a measured variant, off by default: under the gate, a question about
+  now may cite that head for the anchor its predecessor named
+  (`anchor_via: supersedes`).
+  A lifecycle item is expansion like any other rescue: an answered first
+  page carries it if it fits and otherwise counts it in
+  `projection.more_on_request` (on FactConsolidation-6k declared, 58 of the
+  217 rescued items reach the default first page; none of them comes from a
+  cited memory).
 - Verdict book for TypeSafe Jev (P5): every judged question is kept, by a
   key of hashes (model, template, type, instructions, options, the texts of
   the state), as Q16 probabilities in `judgements.sqlite3` beside the store.

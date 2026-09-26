@@ -102,6 +102,7 @@ pub(super) fn progress_bytes(
         &planning,
         false,
         true,
+        0,
     );
     serialized_bytes(&value)
 }

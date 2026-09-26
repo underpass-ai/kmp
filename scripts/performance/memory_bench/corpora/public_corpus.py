@@ -14,6 +14,11 @@ Rules every adapter keeps, and that `check()` enforces:
 - the store carries text and order only: no relation, no validity window, nothing
   derived from the benchmark's gold (answers, evidence labels, which fact replaced
   which). Gold lives in the questions and never reaches the store.
+- the one exception is a *declared* variant (`CorpusRelation`): the relations a writer
+  following the dataset's own instructions would declare, built by a rule that never
+  reads the answers (FactConsolidation: "later facts override earlier ones"). It is
+  its own corpus with its own name and digest, and the undeclared corpus stays the
+  headline.
 """
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -77,9 +82,31 @@ class CorpusEntry:
 
 
 @dataclass(frozen=True)
+class CorpusRelation:
+    """A relation a writer declared between two entries of one about."""
+    source: str
+    target: str
+    rel: str
+    semantic_class: str
+    why: str
+    evidence: str
+    confidence: str = 'high'
+
+    def payload(self):
+        return {'from': self.source, 'to': self.target, 'rel': self.rel,
+                'class': self.semantic_class, 'why': self.why, 'evidence': self.evidence,
+                'confidence': self.confidence}
+
+    def identity(self):
+        return [self.source, self.target, self.rel, self.semantic_class, self.why,
+                self.evidence, self.confidence]
+
+
+@dataclass(frozen=True)
 class CorpusAbout:
     about: str
     entries: tuple
+    relations: tuple = ()  # CorpusRelation, only in a declared variant
 
 
 @dataclass(frozen=True)
@@ -108,8 +135,13 @@ class PublicCorpus:
 
     def content_digest(self):
         """Digest of what the store is loaded with (order included), independent of questions."""
-        return cachekey.digest({'abouts': [[about.about, [e.identity() for e in about.entries]]
-                                           for about in self.abouts]})
+        abouts = []
+        for about in self.abouts:
+            row = [about.about, [e.identity() for e in about.entries]]
+            if about.relations:  # absent from an undeclared corpus, whose digest never moves
+                row.append([relation.identity() for relation in about.relations])
+            abouts.append(row)
+        return cachekey.digest({'abouts': abouts})
 
     def selection_digest(self):
         return cachekey.digest({'selection': self.selection, 'content': self.content_digest()})
@@ -133,6 +165,11 @@ class PublicCorpus:
                 last_sequence, last_time = entry.sequence, entry.occurred_at
                 if not entry.text.strip():
                     raise CorpusError(f'{entry.ref}: empty text')
+            held = {entry.ref for entry in about.entries}
+            for relation in about.relations:
+                if relation.source not in held or relation.target not in held:
+                    raise CorpusError(f'{relation.rel} {relation.source} -> {relation.target}: '
+                                      f'both ends must be entries of {about.about}')
         abouts = {about.about for about in self.abouts}
         for question in self.questions:
             if question.about not in abouts:
@@ -149,20 +186,28 @@ class PublicCorpus:
 
 
 def ingest_calls(corpus, batch_size=DEFAULT_BATCH, key_prefix=None):
-    """[(about, kmp_ingest arguments)]: entries only, in load order, `batch_size` per call."""
+    """[(about, kmp_ingest arguments)]: entries in load order, `batch_size` per call, and a
+    declared variant's relations in the batch that holds their later endpoint."""
     if batch_size < 1:
         raise CorpusError('batch_size must be positive')
     prefix = key_prefix or f'{corpus.name}:{corpus.selection_digest()[:16]}'
     calls = []
     for about in corpus.abouts:
+        position = {entry.ref: index for index, entry in enumerate(about.entries)}
+        # A relation travels with the batch that holds its later endpoint.
+        later = {}
+        for relation in about.relations:
+            later.setdefault(max(position[relation.source], position[relation.target]), []).append(relation)
         for index, start in enumerate(range(0, len(about.entries), batch_size)):
             batch = about.entries[start:start + batch_size]
+            relations = [relation.payload() for offset in range(start, start + len(batch))
+                         for relation in later.get(offset, ())]
             calls.append((about.about, {
                 'about': about.about,
                 'idempotency_key': f'{prefix}:{about.about}:B{batch_size}:{index}',
                 'memory': {'dimensions': [dict(DIMENSION)] if index == 0 else [],
                            'entries': [entry.payload() for entry in batch],
-                           'relations': []}}))
+                           'relations': relations}}))
     return calls
 
 

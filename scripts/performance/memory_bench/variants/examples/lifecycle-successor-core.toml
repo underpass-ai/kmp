@@ -1,0 +1,25 @@
+# The measured variant of the lifecycle rescue (P7, DISENO §L5): with
+# `ask-gate.json` `{"mode":"anchored","successor_core":true}`, a question about
+# now may cite, under the anchored gate, the standing head of a replaced memory
+# that named its principal anchor (`anchor_via: supersedes`). By default the head
+# travels in `proof.evidence` marked `reached_by: lifecycle`, outside the core.
+# Run it against `baseline.toml` (the same binary, the variant off).
+#
+# Pre-registered: the successor enters the core only where the kernel was
+# withholding it; no negative may become an answer (false answers are a guard)
+# and useful answers must not fall. The kernel proposes, the writer declares: it
+# is not the default without data.
+name = "lifecycle-successor-core"
+description = "The default binary with the lifecycle variant: a standing successor may be cited for the anchor its predecessor named."
+claim = "quality"
+targets = [{ metric = "useful_rate", direction = "up", effect = 0.05 }]
+guards = ["false_answer_rate", "false_unknown_rate", "core_precision", "stale_serve_rate", "future_leak_rate"]
+n = 100
+store = "shared"
+jev = "off"
+
+[binary]
+path = "target/release/kmp-mcp"
+
+[store_files]
+"ask-gate.json" = { json = { mode = "anchored", partial = true, successor_core = true } }

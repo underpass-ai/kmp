@@ -50,6 +50,7 @@ pub(super) fn fit_core(
             budget,
             max_chars.is_some(),
             true,
+            0,
         );
         candidate
     };

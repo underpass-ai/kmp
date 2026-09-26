@@ -2404,6 +2404,10 @@
                 "description": "Excluded by detail tier, not truncation; increase budget.detail to include them.",
                 "type": "integer"
               },
+              "more_on_request": {
+                "description": "Present on an answered ask: proof past its cited core left unpaged; budget.detail=full pages it.",
+                "type": "integer"
+              },
               "next_action": {
                 "additionalProperties": false,
                 "description": "Execute this call unchanged. A continuation is {continuation}: a handle the server resolves to the complete call, cursor included. A restart when core_text_shortened is the complete call without page.cursor, recovering the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
@@ -2552,7 +2556,7 @@
                 "type": "array"
               },
               "superseded": {
-                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded.",
                 "type": "array"
               }
             },
@@ -3038,7 +3042,7 @@
             ]
           },
           "answer_status": {
-            "description": "Present unless the store opted out of the anchored ask gate (ask-gate.json mode off). partial: an enumerative question whose citations state part of it; proof.missing names the rest, confidence at most medium.",
+            "description": "Present unless the store opted out of the anchored ask gate (ask-gate.json mode off). answered: the page holds the cited core and offers no continuation; projection.more_on_request counts the rest, paged with budget.detail full. partial: an enumerative question whose citations state part of it; proof.missing names the rest, confidence at most medium.",
             "enum": [
               "answered",
               "partial",
@@ -3079,6 +3083,10 @@
               },
               "excluded_by_detail": {
                 "description": "Excluded by detail tier, not truncation; increase budget.detail to include them.",
+                "type": "integer"
+              },
+              "more_on_request": {
+                "description": "Present on an answered ask: proof past its cited core left unpaged; budget.detail=full pages it.",
                 "type": "integer"
               },
               "next_action": {
@@ -3229,7 +3237,7 @@
                 "type": "array"
               },
               "superseded": {
-                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded.",
                 "type": "array"
               }
             },
@@ -3615,7 +3623,7 @@
                 "type": "array"
               },
               "superseded": {
-                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded.",
                 "type": "array"
               }
             },
@@ -4280,7 +4288,7 @@
                 "type": "array"
               },
               "superseded": {
-                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice. An ask's core keeps those touching a cited memory; the rest page as section proof.superseded.",
                 "type": "array"
               }
             },

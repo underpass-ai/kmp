@@ -76,6 +76,13 @@ mod trace_routing_stats;
 pub use trace_dimension_policy::TraceDimensionPolicy;
 pub use trace_routing_stats::TraceRoutingStats;
 
+mod lifecycle;
+pub use lifecycle::{
+    AdjacencyLifecycleLinks, LifecycleChain, LifecycleFork, LifecycleLink, LifecycleLinkSource,
+    LifecycleNeighbours, LifecycleRelation, LifecycleSide, LifecycleStep, MAX_LIFECYCLE_DEPTH,
+    MAX_LIFECYCLE_LINKS_PER_NODE, MAX_LIFECYCLE_MEMBERS,
+};
+
 mod evidence_paths;
 pub use evidence_paths::{
     EvidenceMissingWitness, EvidencePathBinding, EvidencePathBindings, EvidencePathCandidate,

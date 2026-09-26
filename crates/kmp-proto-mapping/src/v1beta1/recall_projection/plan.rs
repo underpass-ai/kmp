@@ -8,8 +8,10 @@ use serde_json::Value;
 use super::budget::{Detail, ProjectionBudget};
 use super::json_paths::{array_at_mut, array_len, push_array, take_array};
 use super::normalization::{cited_evidence_refs, rebuild_answer, wake_evidence_refs};
+use super::proof_on_request::settles_on_first_page;
 use super::scalars::u64_at;
 use super::serialized_size::serialized_size;
+use super::superseded_core::{SUPERSEDED_PATH, cited_nodes, split_superseded};
 
 /// The head of the catalogue: the labels most entries stand in, the current
 /// about first, up to this many and this many serialized bytes. A writer
@@ -29,12 +31,13 @@ pub(super) enum Section {
     WakeGuardrails,
     ProofEvidence,
     ProofPath,
+    ProofSuperseded,
     ProofMissing,
     Labels,
 }
 
 impl Section {
-    pub(super) const ALL: [Self; 9] = [
+    pub(super) const ALL: [Self; 10] = [
         Self::WakeCurrentState,
         Self::WakeCausalSpine,
         Self::WakeOpenLoops,
@@ -42,6 +45,7 @@ impl Section {
         Self::WakeGuardrails,
         Self::ProofEvidence,
         Self::ProofPath,
+        Self::ProofSuperseded,
         Self::ProofMissing,
         Self::Labels,
     ];
@@ -55,9 +59,18 @@ impl Section {
             Self::WakeGuardrails => "wake.guardrails",
             Self::ProofEvidence => "proof.evidence",
             Self::ProofPath => "proof.path",
+            Self::ProofSuperseded => "proof.superseded",
             Self::ProofMissing => "proof.missing",
             Self::Labels => "labels",
         }
+    }
+
+    /// Whether the progress block reports this section when it has no
+    /// expansion item. The supersessions were core-only until an ask began
+    /// paging the ones that touch no citation (`superseded_core`); a page
+    /// that pages none of them says nothing new about them.
+    pub(super) fn reported_without_expansion(self) -> bool {
+        self != Self::ProofSuperseded
     }
 
     pub(super) fn path(self) -> &'static [&'static str] {
@@ -69,6 +82,7 @@ impl Section {
             Self::WakeGuardrails => &["wake", "guardrails"],
             Self::ProofEvidence => &["proof", "evidence"],
             Self::ProofPath => &["proof", "path"],
+            Self::ProofSuperseded => &SUPERSEDED_PATH,
             Self::ProofMissing => &["proof", "missing"],
             Self::Labels => &["labels"],
         }
@@ -92,10 +106,14 @@ pub(super) struct ProjectionPlan {
     pub(super) selection_omitted: usize,
     pub(super) arguments: Value,
     pub(super) progress_bytes: usize,
+    /// The gate answered this ask: its proof past the first page is on
+    /// request (`proof_on_request`).
+    pub(super) settled: bool,
 }
 
 impl ProjectionPlan {
     pub(super) fn build(mut value: Value, budget: &ProjectionBudget) -> Self {
+        let settled = settles_on_first_page(&value);
         // Mapping may already have capped the ranked evidence. Those items
         // are no longer here to count and must not become detail exclusions.
         let mut selection_omitted =
@@ -211,6 +229,29 @@ impl ProjectionPlan {
                 selection_omitted += 1;
             }
         }
+        // An ask keeps in its core only the supersessions that touch a cited
+        // memory (`superseded_core`); the rest follow the ranked evidence. A
+        // wake's markers stay core: its spine is the reading, not a citation.
+        let paged_superseded = if value.get("wake").is_none() {
+            let cited = cited_nodes(
+                value
+                    .pointer("/proof/evidence")
+                    .and_then(Value::as_array)
+                    .map(Vec::as_slice)
+                    .unwrap_or_default(),
+            );
+            split_superseded(&mut value, &cited)
+        } else {
+            Vec::new()
+        };
+        for entry in paged_superseded {
+            items.push(ProjectionItem::new(
+                Section::ProofSuperseded,
+                entry,
+                Detail::Balanced,
+                30,
+            ));
+        }
         for relation in take_array(&mut value, &["proof", "path"]) {
             let (min_detail, priority) = relation_priority(&relation);
             items.push(ProjectionItem::new(
@@ -256,6 +297,7 @@ impl ProjectionPlan {
             selection_omitted,
             arguments: Value::Null,
             progress_bytes: 0,
+            settled,
         }
     }
 }

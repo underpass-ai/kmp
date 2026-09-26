@@ -14,6 +14,8 @@ pub use adjacency_request::AdjacencyRequest;
 pub use bounded_relation_reader::BoundedRelationReader;
 pub use relation_direction::RelationDirection;
 pub use relation_position::RelationPosition;
+pub mod lifecycle_chain_reader;
+pub use lifecycle_chain_reader::LifecycleChainReader;
 pub mod memory_about_index_reader;
 pub mod neighborhood_request;
 pub mod node_card_store;

@@ -14,6 +14,7 @@ mod normalization;
 mod plan;
 mod projection_error;
 mod projection_outcome;
+mod proof_on_request;
 mod proof_value;
 mod recall_output;
 mod request_arguments;
@@ -21,6 +22,7 @@ mod response_value;
 mod reused_core;
 mod scalars;
 mod serialized_size;
+mod superseded_core;
 mod text_shortening;
 mod typed_recall;
 mod typed_response;
@@ -56,12 +58,18 @@ mod pending_tests;
 #[cfg(test)]
 mod plan_tests;
 #[cfg(test)]
+mod proof_on_request_tests;
+#[cfg(test)]
 #[path = "recall_projection_rank_tests.rs"]
 mod rank_tests;
+#[cfg(test)]
+mod request_arguments_tests;
 #[cfg(test)]
 mod response_value_tests;
 #[cfg(test)]
 mod serialized_size_tests;
+#[cfg(test)]
+mod superseded_core_tests;
 #[cfg(test)]
 mod test_support;
 #[cfg(test)]

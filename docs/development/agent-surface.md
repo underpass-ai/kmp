@@ -177,6 +177,25 @@ Probar que la primera página más todas las continuaciones reproduce la lectura
 completa con presupuesto grande, y que el cursor sigue rechazando otra
 selección con y sin `repeat_core`.
 
+Un Ask que la puerta deja `answered` no ofrece continuación por debajo de
+`budget.detail: "full"`: su primera página lleva el núcleo citado y lo que
+quepa, `projection.more_on_request` cuenta el resto (campo 12 de
+`RecallProjection`) y `next_action` es nulo. Si el núcleo se acortó, el
+reinicio propone sólo el margen que cabe el núcleo entero. `partial` y
+`unknown` siguen paginando. Una continuación y el reinicio de una página
+acortada se cortan de la lectura congelada de la primera página: el eco de la
+petición no nombra un `detail` que el llamador no nombró, porque para el
+núcleo `balanced` y "sin nivel" son consultas distintas.
+
+En un Ask, el núcleo estable sólo lleva de `proof.superseded` las sustituciones
+que tocan una memoria citada (la sustituida o la que sustituye). El resto es
+expansión de la sección `proof.superseded`, detrás de la evidencia ordenada:
+pagina como cualquier otra y, en una primera página `answered`, cuenta en
+`projection.more_on_request`. Un Wake conserva todas sus marcas en el núcleo, y
+la sección sólo aparece en `projection.sections` cuando pagina algo. Un ítem
+`reached_by: lifecycle` es expansión como los demás rescates: va en la primera
+página de un `answered` si cabe y, si no, cuenta en `more_on_request`.
+
 Al cambiar etiquetas temporales, probar una entrada antigua con una pertenencia
 posterior: ésta no puede satisfacer un selector ni aparecer en las coordenadas
 del Goto anterior. Mantener etiquetas múltiples y filtros de otras dimensiones

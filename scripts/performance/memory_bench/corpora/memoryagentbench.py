@@ -24,16 +24,27 @@ Question side (gold only, never in the store), rule `fc-triples.v1`:
   (`multihop_why_k`, ordered, question side first).
 A question whose gold cannot be derived under the rule is dropped and counted in
 `notes['dropped']`, never guessed.
+
+Declared variant (`build(..., declared=True)`, corpus `factconsolidation-<size>-declared`):
+the same entries plus the `supersedes` a writer following the dataset's instruction ("later
+facts override earlier ones") would declare: each parsed fact supersedes the previous fact
+of the same (subject, relation) template. The rule reads the fact list only, never the
+questions or their answers; it is the (subject, relation) key MemoryAgentBench and
+MemStrata use, the key the kernel's write-time proposal (DISENO 4e) will offer a writer to
+accept. It measures what ask does once supersession is declared, and does not replace the
+undeclared corpus, where the kernel must find the current fact alone.
 """
 from collections import defaultdict
 import re
 
 from ..domain.gold import Chain
 from .parquet import read_columns
-from .public_corpus import CorpusAbout, CorpusEntry, PublicCorpus, evidence_question, synthetic_time
+from .public_corpus import (CorpusAbout, CorpusEntry, CorpusRelation, PublicCorpus, evidence_question,
+                            synthetic_time)
 from .public_errors import CorpusError
 
 ADAPTER_VERSION = 'memoryagentbench-fc.v1'
+DECLARED_SUFFIX = '-declared'
 DATASET = 'memoryagentbench-cr'
 PARQUET = 'Conflict_Resolution-00000-of-00001.parquet'
 SIZES = ('6k', '32k', '64k', '262k')
@@ -206,8 +217,21 @@ def about_of(size):
     return f'factconsolidation:{size}'
 
 
-def build(rows, size, variants=('sh', 'mh'), limit=None, policy='best_effort'):
-    """One PublicCorpus: the `size` fact list and the SH/MH questions over it."""
+def declared_supersessions(kb, about):
+    """(CorpusRelation, ...): each fact supersedes the previous one of its (subject, relation)."""
+    relations = []
+    for (subject, relation), facts in sorted(kb.history.items()):
+        for older, newer in zip(facts, facts[1:]):
+            relations.append(CorpusRelation(
+                fact_ref(about, newer[0]), fact_ref(about, older[0]), 'supersedes', 'evidential',
+                f'A later statement of the {relation} of {subject} replaces the earlier one.',
+                'FactConsolidation fact list: later facts override earlier ones.'))
+    return tuple(relations)
+
+
+def build(rows, size, variants=('sh', 'mh'), limit=None, policy='best_effort', declared=False):
+    """One PublicCorpus: the `size` fact list and the SH/MH questions over it; with `declared`,
+    the writer-declared variant (module docstring)."""
     if size not in SIZES:
         raise CorpusError(f'size {size!r} is not one of {", ".join(SIZES)}')
     about = about_of(size)
@@ -260,7 +284,12 @@ def build(rows, size, variants=('sh', 'mh'), limit=None, policy='best_effort'):
             kept += 1
         dropped[variant] = lost
     selection = {'dataset': DATASET, 'size': size, 'facts': len(facts)}
+    relations = declared_supersessions(kb, about) if declared else ()
+    if declared:
+        selection['declared'] = 'supersedes by (subject, relation), fact order'
     notes = {'variants': list(variants), 'limit': limit, 'gold_rule': GOLD_RULE, 'policy': policy,
-             'unparsed_facts': kb.unparsed, 'dropped': dropped, 'types': dict(sorted(kinds.items()))}
-    return PublicCorpus(f'factconsolidation-{size}', DATASET, ADAPTER_VERSION, selection,
-                        (CorpusAbout(about, entries),), tuple(questions), notes=notes).check()
+             'unparsed_facts': kb.unparsed, 'dropped': dropped, 'types': dict(sorted(kinds.items())),
+             'declared_relations': len(relations)}
+    suffix = DECLARED_SUFFIX if declared else ''
+    return PublicCorpus(f'factconsolidation-{size}{suffix}', DATASET, ADAPTER_VERSION + suffix, selection,
+                        (CorpusAbout(about, entries, relations),), tuple(questions), notes=notes).check()

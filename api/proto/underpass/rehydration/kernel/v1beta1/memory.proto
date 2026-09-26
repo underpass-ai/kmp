@@ -1523,6 +1523,11 @@ message RecallProjection {
   // expansion items with the first page's core and earlier pages. Set
   // PageRequest.repeat_core to receive the core again.
   bool core_reused = 11;
+  // Expansion items an answered ask (AskResponse.answer_status ANSWERED)
+  // kept on request instead of offering a continuation: its first page
+  // carries the cited core and what fit, and no next_call. Request detail
+  // FULL to page them. Zero otherwise.
+  uint64 more_on_request = 12;
 }
 
 // An executable native recall call. JSON preserves integer arguments without

@@ -9,6 +9,7 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AskGate {
     partial: bool,
+    successor_core: bool,
 }
 
 impl AskGate {
@@ -24,10 +25,27 @@ impl AskGate {
     /// cited memories state only some of what it asked is PARTIAL; without
     /// it, UNKNOWN like a singular one.
     pub const fn anchored(partial: bool) -> Self {
-        Self { partial }
+        Self {
+            partial,
+            successor_core: false,
+        }
+    }
+
+    /// The measured variant of the lifecycle rescue (P7): the current head
+    /// of a replaced memory that named the question's principal anchor may
+    /// be cited for that anchor, marked `anchor_via: <relation>`, when the
+    /// question asks about now. Off unless a store turns it on; the kernel
+    /// proposes a successor, and only a store that chose to may cite it.
+    pub const fn with_successor_core(mut self, on: bool) -> Self {
+        self.successor_core = on;
+        self
     }
 
     pub fn allows_partial(&self) -> bool {
         self.partial
+    }
+
+    pub fn admits_successor_to_core(&self) -> bool {
+        self.successor_core
     }
 }

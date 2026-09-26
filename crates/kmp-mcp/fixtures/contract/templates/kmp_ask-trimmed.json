@@ -25,6 +25,7 @@
       "core_text_shortened": "boolean",
       "detail": "string",
       "excluded_by_detail": "integer",
+      "more_on_request": "integer",
       "next_action": {
         "arguments": {
           "about": "string",
@@ -42,7 +43,7 @@
       "page": {
         "has_more": "boolean",
         "minimum_progress_bytes": "string",
-        "next_cursor": "string",
+        "next_cursor": "null",
         "offset": "integer",
         "returned": "integer",
         "total": "integer"
@@ -53,7 +54,6 @@
         },
         "proof.path": {
           "excluded_by_detail": "integer",
-          "remaining": "integer",
           "returned_on_page": "integer"
         }
       },

@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::MemoryAnswerPolicy;
 use kmp_domain::KmpBundle;
@@ -14,8 +14,9 @@ use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{
     REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_anchor_rescued,
     mark_bridged, mark_reached, mark_reached_by, mark_restated, prioritize_distinct_claims,
-    stable_evidence_key, was_reached_indirectly,
+    stable_evidence_key, was_reached_along_a_lifecycle, was_reached_indirectly,
 };
+use super::ask_gate::AskGate;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
@@ -23,10 +24,13 @@ use super::gate_verdict::GateVerdict;
 use super::identifier_binding::IdentifierBinding;
 use super::lexical_bridge::LexicalBridge;
 use super::lexicon::Lexicon;
+use super::lifecycle_anchors::LifecycleAnchors;
+use super::lifecycle_rescue::LifecycleRescue;
 use super::memory_lifecycle::MemoryLifecycle;
 use super::morphology::Morphology;
 use super::question_contract::QuestionContract;
 use super::question_intent::QuestionIntent;
+use super::question_time::QuestionTime;
 use super::ranking_focus::RankingFocus;
 use super::search_terms::{
     concept_count, informative_term_counts, informative_terms, informative_tokens, matching_terms,
@@ -268,14 +272,16 @@ impl<'a> AnswerEvidenceRanker<'a> {
         }
     }
 
-    /// Ranks candidates already read against their collection. `facet_kinds`
-    /// breaks ties by entry kind, for the anchored gate only.
+    /// Ranks candidates already read against their collection. For the
+    /// anchored gate only, `anchored` holds the facet entry kinds that break
+    /// ties by entry kind and the anchor terms a lifecycle rescue must start
+    /// from.
     fn rank_prepared(
         &self,
         question: &str,
         question_terms: &BTreeSet<String>,
         strict_focus: Option<(BTreeSet<String>, usize)>,
-        facet_kinds: Option<&BTreeSet<String>>,
+        anchored: Option<(&BTreeSet<String>, &BTreeSet<String>)>,
         prepared: Vec<ReadCandidate>,
         lexicon: &Lexicon,
     ) -> Vec<MemoryEvidence> {
@@ -285,6 +291,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             .map(|(terms, _)| terms.clone())
             .unwrap_or_default();
         let intent = QuestionIntent::read(question);
+        let facet_kinds = anchored.map(|(kinds, _)| kinds);
 
         let mut candidates = Vec::new();
         // A rejected candidate keeps the terms it was read with: every
@@ -322,6 +329,18 @@ impl<'a> AnswerEvidenceRanker<'a> {
 
         let (restated, rejected) = self.restated_candidates(&answer, rejected);
         answer.extend(restated);
+        let (lifecycle, rejected) = LifecycleRescue {
+            context: &self.context,
+            question,
+            focus: RankingFocus {
+                strict: strict_focus.as_ref(),
+                facet_kinds,
+            },
+            anchors: anchored.map(|(_, anchors)| anchors),
+            lexicon,
+        }
+        .rescue(&answer, rejected);
+        answer.extend(lifecycle);
         let (associated, rejected) = self.associated_candidates(rejected, lexicon);
         let (bridged, rejected) = self.bridged_candidates(rejected, lexicon);
         let rejected = rejected.into_iter().map(|(item, _)| item).collect();
@@ -345,7 +364,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         anchored_question: &str,
         policy: MemoryAnswerPolicy,
         contract: &QuestionContract,
-        allow_partial: bool,
+        gate: AskGate,
         evidence: Vec<MemoryEvidence>,
     ) -> AnchoredReading {
         let morphology = &self.context.morphology;
@@ -391,17 +410,50 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let unfiltered = self
             .strict_focus(question, policy)
             .map(|(terms, _)| (terms, 0));
+        let anchors = std::iter::once(&principal)
+            .chain(&others)
+            .map(|anchor| anchor.term.clone())
+            .collect::<BTreeSet<_>>();
+        let lifecycle_anchors = LifecycleAnchors::read(
+            !self.context.lifecycle_links.is_empty(),
+            &anchors,
+            prepared.iter().map(|(item, terms)| (item, terms)),
+        );
+        // The measured variant: a question about now may cite the standing
+        // head of a replaced memory that named its principal anchor.
+        let successor_core = gate.admits_successor_to_core()
+            && contract.time() != QuestionTime::History
+            && !self.context.lifecycle.reads_an_instant();
         let ranked = self.rank_prepared(
             question,
             &question_terms,
             unfiltered,
-            Some(contract.facet_entry_kinds()),
+            Some((contract.facet_entry_kinds(), &anchors)),
             prepared,
             &lexicon,
         );
+        let heads = if successor_core {
+            lifecycle_anchors.standing_heads(
+                &principal.term,
+                &self.context.lifecycle_links,
+                &self.context.lifecycle,
+            )
+        } else {
+            BTreeMap::new()
+        };
+        let successors = ranked
+            .iter()
+            .filter(|item| !was_reached_indirectly(item) || was_reached_along_a_lifecycle(item))
+            .filter_map(|item| {
+                answer_context_refs(item)
+                    .iter()
+                    .find_map(|node| heads.get(node))
+                    .map(|standing| (item.id.clone(), standing.clone()))
+            })
+            .collect::<BTreeMap<_, _>>();
         let direct = ranked
             .iter()
-            .filter(|item| !was_reached_indirectly(item))
+            .filter(|item| !was_reached_indirectly(item) || successors.contains_key(&item.id))
             .map(|item| {
                 (
                     item,
@@ -409,12 +461,16 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 )
             })
             .collect::<Vec<_>>();
-        let anchors = std::iter::once(&principal)
-            .chain(&others)
-            .map(|anchor| anchor.term.clone())
-            .collect::<BTreeSet<_>>();
-        let rescue = AnchorRescue::read(&anchors, &direct, &self.context.reach_graph);
-        let verdict = AnchoredGate::new(contract, allow_partial).decide(
+        let mut rescue = AnchorRescue::read(&anchors, &direct, &self.context.reach_graph);
+        for (id, (from, via)) in &successors {
+            if let Some((_, terms)) = direct.iter().find(|(item, _)| &item.id == id)
+                && terms.content_counts.count(&principal.term) > 0
+            {
+                continue;
+            }
+            rescue.stand_in_along_lifecycle(id, &principal.term, from, via);
+        }
+        let verdict = AnchoredGate::new(contract, gate.allows_partial()).decide(
             &principal,
             &others,
             direct.iter().map(|(item, terms)| (*item, terms)),
@@ -434,6 +490,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
         // one UNKNOWN 146. A memory that names no anchor, in its content or
         // by a declared `same_entity_as`, is not about what was asked; an
         // answered reading keeps its whole proof, as the ungated rule does.
+        // The current head of a replaced memory that named an anchor is
+        // about it too: the writer declared it took over.
         let about_anchors = (verdict.status != AnswerStatus::Answered).then(|| {
             direct
                 .iter()
@@ -443,10 +501,17 @@ impl<'a> AnswerEvidenceRanker<'a> {
                         .any(|anchor| rescue.names(item, terms, anchor))
                 })
                 .map(|(item, _)| item.id.clone())
+                .chain(
+                    ranked
+                        .iter()
+                        .filter(|item| lifecycle_anchors.reached_from_an_anchor(item))
+                        .map(|item| item.id.clone()),
+                )
                 .collect::<BTreeSet<_>>()
         });
         // A citation the gate admitted through a declared `same_entity_as`
-        // says so, and says which memory named the anchor.
+        // (or, in the lifecycle variant, a replacement) says so, and says
+        // which memory named the anchor.
         let cited = verdict.cited();
         let ranked = ranked
             .into_iter()
@@ -456,9 +521,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 })
             })
             .map(|item| match rescue.standing_in_for(&item.id) {
-                Some(from) if cited.contains(item.id.as_str()) => {
+                Some((from, via)) if cited.contains(item.id.as_str()) => {
                     let from = from.to_string();
-                    mark_anchor_rescued(item, &from)
+                    mark_anchor_rescued(item, &from, via)
                 }
                 _ => item,
             })

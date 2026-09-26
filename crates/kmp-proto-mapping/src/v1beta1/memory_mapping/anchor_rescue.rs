@@ -6,6 +6,9 @@ use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::answer_selection::answer_context_refs;
 use super::reach_graph::ReachGraph;
 
+/// The relation a declared-equivalence rescue stands on.
+const SAME_ENTITY_AS: &str = "same_entity_as";
+
 /// Which candidates name a question's anchor through a declared
 /// `same_entity_as` rather than in their own words.
 ///
@@ -17,8 +20,9 @@ use super::reach_graph::ReachGraph;
 /// read in the candidate's content, as the gate reads everything else.
 #[derive(Debug, Default)]
 pub(super) struct AnchorRescue {
-    /// Candidate id -> anchor term -> the ref that names it.
-    rescued: BTreeMap<String, BTreeMap<String, String>>,
+    /// Candidate id -> anchor term -> the ref that names it, and the
+    /// relation that lets the candidate stand in for it.
+    rescued: BTreeMap<String, BTreeMap<String, (String, &'static str)>>,
 }
 
 impl AnchorRescue {
@@ -27,7 +31,7 @@ impl AnchorRescue {
         candidates: &[(&MemoryEvidence, AnswerCandidateTerms)],
         graph: &ReachGraph,
     ) -> Self {
-        let mut rescued = BTreeMap::<String, BTreeMap<String, String>>::new();
+        let mut rescued = BTreeMap::<String, BTreeMap<String, (String, &'static str)>>::new();
         if !graph.has_equivalences() {
             return Self { rescued };
         }
@@ -54,7 +58,7 @@ impl AnchorRescue {
                     rescued
                         .entry(item.id.clone())
                         .or_default()
-                        .insert(term.clone(), from);
+                        .insert(term.clone(), (from, SAME_ENTITY_AS));
                 }
             }
         }
@@ -78,11 +82,29 @@ impl AnchorRescue {
                 .is_some_and(|rescued| rescued.contains_key(term))
     }
 
-    /// The ref a rescued candidate stands in for, if it was rescued.
-    pub(super) fn standing_in_for(&self, id: &str) -> Option<&str> {
+    /// Lets the current head of a replaced memory that names `term` stand
+    /// in for it (the lifecycle rescue's measured variant): `via` is the
+    /// lifecycle relation that reached it.
+    pub(super) fn stand_in_along_lifecycle(
+        &mut self,
+        id: &str,
+        term: &str,
+        from: &str,
+        via: &'static str,
+    ) {
+        self.rescued
+            .entry(id.to_string())
+            .or_default()
+            .entry(term.to_string())
+            .or_insert_with(|| (from.to_string(), via));
+    }
+
+    /// The ref a rescued candidate stands in for, and the relation that lets
+    /// it, if it was rescued.
+    pub(super) fn standing_in_for(&self, id: &str) -> Option<(&str, &'static str)> {
         self.rescued
             .get(id)
             .and_then(|rescued| rescued.values().next())
-            .map(String::as_str)
+            .map(|(from, via)| (from.as_str(), *via))
     }
 }

@@ -24,4 +24,7 @@ def requested_scope_exhausted(packet, is_write):
     if is_write:
         return None
     projection = packet.final.get('projection') or {}
-    return projection.get('excluded_by_detail') == 0 and projection.get('selection_omitted') == 0
+    # An answered ask's proof past its cited core is on request (`more_on_request`,
+    # absent when zero): the selection closed, the scope was not exhausted.
+    return (projection.get('excluded_by_detail') == 0 and projection.get('selection_omitted') == 0
+            and not projection.get('more_on_request'))

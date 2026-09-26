@@ -9,6 +9,7 @@ use serde_json::{Map, Value, json};
 
 use super::actions;
 use super::normalization::{normalized_answer_reason, normalized_ask_answer};
+use super::proof_on_request::MORE_ON_REQUEST_KEY;
 use super::proof_value::{empty_proof_value, proof_value, temporal_cursor_value};
 use super::request_arguments::dimension_selection_value;
 use super::reused_core::{CORE_REUSED, retain_expansion};
@@ -136,6 +137,9 @@ fn projection_value(projection: &RecallProjection) -> Value {
     });
     if projection.core_reused {
         value[CORE_REUSED] = json!(true);
+    }
+    if projection.more_on_request > 0 {
+        value[MORE_ON_REQUEST_KEY] = json!(projection.more_on_request);
     }
     value
 }

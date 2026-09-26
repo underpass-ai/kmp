@@ -8,7 +8,9 @@ pub(super) const ASK_GATE_FILE: &str = "ask-gate.json";
 
 /// Per-store choice of the anchored decision of `kmp_ask`:
 /// `{"mode":"anchored","partial":true}` is the gate, `{"mode":"off"}` opts
-/// out of it (ask answers as v0.23.0 did). Absent, the store gets
+/// out of it (ask answers as v0.23.0 did). `"successor_core":true` turns on
+/// the measured lifecycle variant (P7): the current head of a replaced
+/// memory that named the principal anchor may be cited for it. Absent, the store gets
 /// [`AskGate::STORE_DEFAULT`] (the gate, with PARTIAL); unreadable or
 /// unknown, it is ignored and reported so, and the default applies.
 #[derive(Debug, Deserialize)]
@@ -19,6 +21,10 @@ pub(super) struct AskGateConfig {
     /// than UNKNOWN.
     #[serde(default = "partial_by_default")]
     partial: bool,
+    /// Whether a question about now may cite the standing successor of a
+    /// replaced memory that named its principal anchor. Off by default.
+    #[serde(default)]
+    successor_core: bool,
 }
 
 fn partial_by_default() -> bool {
@@ -43,7 +49,9 @@ impl AskGateConfig {
         let config: Self = serde_json::from_str(text)
             .map_err(|error| format!("{ASK_GATE_FILE} is not a gate configuration: {error}"))?;
         match config.mode.as_str() {
-            "anchored" => Ok(Some(AskGate::anchored(config.partial))),
+            "anchored" => Ok(Some(
+                AskGate::anchored(config.partial).with_successor_core(config.successor_core),
+            )),
             "off" => Ok(None),
             other => Err(format!(
                 "{ASK_GATE_FILE} names mode `{other}`; this kmp-mcp knows `anchored` and `off`"
@@ -71,6 +79,17 @@ mod tests {
             Ok(Some(AskGate::anchored(true)))
         );
         assert_eq!(AskGateConfig::parse(r#"{"mode":"off"}"#), Ok(None));
+        assert_eq!(
+            AskGateConfig::parse(r#"{"mode":"anchored","successor_core":true}"#),
+            Ok(Some(AskGate::anchored(true).with_successor_core(true)))
+        );
+        assert!(
+            !AskGateConfig::parse(r#"{"mode":"anchored"}"#)
+                .expect("parses")
+                .expect("a gate")
+                .admits_successor_to_core(),
+            "the lifecycle variant is off unless a store turns it on"
+        );
         assert!(AskGateConfig::parse(r#"{"mode":"judged"}"#).is_err());
         assert!(AskGateConfig::parse(r#"{"mode":"anchored","tau":3}"#).is_err());
         assert!(AskGateConfig::parse("not json").is_err());

@@ -4,7 +4,8 @@
 //! counter here (prior pages in `page.offset`, pending delivery in
 //! `sections.*.remaining`, per-section detail exclusions in
 //! `sections.*.excluded_by_detail`, detail in `excluded_by_detail`, the entries cap in
-//! `selection_omitted`, shortened prose in `core_text_shortened`).
+//! `selection_omitted`, shortened prose in `core_text_shortened`, and the
+//! proof an answered ask keeps on request in `more_on_request`).
 
 use std::borrow::Borrow;
 
@@ -14,6 +15,7 @@ use super::actions;
 use super::budget::{DEFAULT_MAX_BYTES, ProjectionBudget};
 use super::cursor::make_cursor;
 use super::plan::{ProjectionItem, ProjectionPlan, Section};
+use super::proof_on_request::{MORE_ON_REQUEST, MORE_ON_REQUEST_KEY, withholds};
 use super::reused_core::reuses_core;
 
 pub const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v3";
@@ -30,6 +32,7 @@ pub(super) fn attach_metadata<E, S>(
     budget: &ProjectionBudget,
     core_text_shortened: bool,
     planning: bool,
+    more_on_request: usize,
 ) where
     E: Borrow<ProjectionItem>,
     S: Borrow<ProjectionItem>,
@@ -40,8 +43,11 @@ pub(super) fn attach_metadata<E, S>(
     const DETAIL: &str = "recall detail excludes expansion items; start a fresh recall with a richer budget.detail to include them";
     const CAPPED: &str = "recall selection was capped by budget.max_entries; start a fresh recall with a larger cap to include those items";
     const FINAL: &str = "final continuation page; combine its expansion items with the stable core and earlier pages";
+    // What this reading pages: the eligible items, less those an answered
+    // first page left on request (`proof_on_request`).
+    let paged = eligible.len().saturating_sub(more_on_request);
     let next_offset = offset.saturating_add(selected.len());
-    let has_more = next_offset < eligible.len();
+    let has_more = next_offset < paged;
     let reported_offset = if planning { usize::MAX } else { offset };
     let cursor = if planning {
         make_cursor(usize::MAX, &"f".repeat(64))
@@ -60,13 +66,13 @@ pub(super) fn attach_metadata<E, S>(
     let mut sections = Map::new();
     for section in Section::ALL {
         let core = plan.core_lengths.get(&section).copied().unwrap_or(0);
-        let total = core
-            + plan
-                .items
-                .iter()
-                .filter(|item| item.section == section)
-                .count();
-        if total == 0 {
+        let expansion = plan
+            .items
+            .iter()
+            .filter(|item| item.section == section)
+            .count();
+        let total = core + expansion;
+        if total == 0 || (expansion == 0 && !section.reported_without_expansion()) {
             continue;
         }
         let eligible_total = core
@@ -78,7 +84,7 @@ pub(super) fn attach_metadata<E, S>(
             .iter()
             .filter(|item| <S as Borrow<ProjectionItem>>::borrow(*item).section == section)
             .count();
-        let remaining = eligible[next_offset.min(eligible.len())..]
+        let remaining = eligible[next_offset.min(paged)..paged]
             .iter()
             .filter(|item| <E as Borrow<ProjectionItem>>::borrow(*item).section == section)
             .count();
@@ -112,11 +118,17 @@ pub(super) fn attach_metadata<E, S>(
         || offset > 0
         || excluded_by_detail > 0
         || plan.selection_omitted > 0
+        || more_on_request > 0
         || core_text_shortened;
     let stalled = !planning && has_more && selected.is_empty();
     let next_action = (planning || has_more || core_text_shortened).then(|| {
         let max_bytes = if planning {
             usize::MAX
+        } else if core_text_shortened && withholds(plan.settled, budget.detail, 0) {
+            // An answered page restarts only to carry its whole core: what
+            // follows it is on request, so the allowance that fits the core
+            // and one item is sufficient, and more would only be filled.
+            plan.progress_bytes.max(budget.byte_limit)
         } else if stalled || core_text_shortened {
             plan.progress_bytes
                 .saturating_add(DEFAULT_MAX_BYTES)
@@ -154,7 +166,7 @@ pub(super) fn attach_metadata<E, S>(
         "page": {
             "offset": reported_offset,
             "returned": if planning { eligible.len() } else { selected.len() },
-            "total": eligible.len(),
+            "total": paged,
             "has_more": planning || has_more,
             "next_cursor": if cursor.is_empty() { Value::Null } else { json!(cursor) },
             "minimum_progress_bytes": if planning { Some(usize::MAX) } else if stalled || core_text_shortened { Some(plan.progress_bytes) } else { None }
@@ -165,20 +177,37 @@ pub(super) fn attach_metadata<E, S>(
         "core_text_shortened": core_text_shortened,
         "next_action": next_action
     });
+    // Present only when an answered first page withheld proof; planning
+    // reserves it at its widest for any answered ask.
+    if planning && plan.settled {
+        value["projection"][MORE_ON_REQUEST_KEY] = json!(usize::MAX);
+    } else if !planning && more_on_request > 0 {
+        value["projection"][MORE_ON_REQUEST_KEY] = json!(more_on_request);
+    }
     if truncated {
         let warning = if planning {
             // Reserve the longest warning we actually emit, rather than a
             // separate planning paragraph that displaces usable evidence.
-            [RESTART, STALLED, PARTIAL, DETAIL, CAPPED, FINAL]
-                .into_iter()
-                .max_by_key(|warning| warning.len())
-                .expect("recall warnings")
+            [
+                RESTART,
+                STALLED,
+                PARTIAL,
+                DETAIL,
+                CAPPED,
+                FINAL,
+                MORE_ON_REQUEST,
+            ]
+            .into_iter()
+            .max_by_key(|warning| warning.len())
+            .expect("recall warnings")
         } else if core_text_shortened {
             RESTART
         } else if stalled {
             STALLED
         } else if has_more {
             PARTIAL
+        } else if more_on_request > 0 {
+            MORE_ON_REQUEST
         } else if excluded_by_detail > 0 {
             DETAIL
         } else if plan.selection_omitted > 0 {

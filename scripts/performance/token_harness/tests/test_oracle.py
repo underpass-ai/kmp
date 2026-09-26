@@ -4,7 +4,7 @@ import unittest
 from ..oracle.calls import tool_calls
 from ..oracle.checks import (cited_refs, disguised_refs, historical_actions, merged_identical_bodies,
                              support_bookkeeping, unresolved_refs)
-from ..oracle.completeness import selected_packet_complete
+from ..oracle.completeness import requested_scope_exhausted, selected_packet_complete
 from ..oracle.contracts import contract
 from ..oracle.journey import evaluate_journey
 from ..oracle.packet import build_packet
@@ -111,6 +111,15 @@ class CompletenessTest(unittest.TestCase):
         self.assertEqual(packet.pages, 1)
         self.assertEqual(packet.state, [])
         self.assertTrue(selected_packet_complete(packet, False))
+
+    def test_proof_on_request_closes_the_packet_without_exhausting_the_scope(self):
+        page = wake_page([], [evidence()])
+        packet = packet_of(page)
+        self.assertTrue(requested_scope_exhausted(packet, False))
+        page['projection']['more_on_request'] = 3
+        packet = packet_of(page)
+        self.assertTrue(selected_packet_complete(packet, False))
+        self.assertFalse(requested_scope_exhausted(packet, False))
 
     def test_shortened_final_page_is_not_complete(self):
         packet = packet_of(wake_page([], [evidence()], shortened=True))

@@ -279,6 +279,30 @@ class FactConsolidation(unittest.TestCase):
         self.assertTrue(all(set(e.metadata) == {'serial'} for e in corpus.abouts[0].entries))
         self.assertGreaterEqual(len(corpus.questions), 180)
 
+    def test_the_declared_variant_adds_only_the_writer_rule_supersedes(self):
+        plain = fc.build(fc_rows(), '6k')
+        declared = fc.build(fc_rows(), '6k', declared=True)
+        self.assertEqual(declared.name, 'factconsolidation-6k-declared')
+        self.assertEqual(declared.abouts[0].entries, plain.abouts[0].entries)
+        self.assertNotEqual(declared.content_digest(), plain.content_digest())
+        [(_, arguments)] = ingest_calls(declared)
+        relations = arguments['memory']['relations']
+        # Alice's citizenship is stated twice: the later statement replaces the earlier.
+        self.assertEqual([(r['from'], r['rel'], r['to']) for r in relations],
+                         [('factconsolidation:6k:fact:3', 'supersedes', 'factconsolidation:6k:fact:0')])
+        self.assertEqual(relations[0]['class'], 'evidential')
+        self.assertEqual(declared.notes['declared_relations'], 1)
+        # The rule reads the fact list only: other answers, the same relations.
+        other = fc.build(fc_rows(sh_answer='France', mh_answer='Paris'), '6k', declared=True)
+        self.assertEqual(ingest_calls(declared), ingest_calls(other))
+        self.assertEqual(declared.questions_digest(), plain.questions_digest())
+
+    def test_a_relation_travels_with_the_batch_that_holds_its_later_end(self):
+        declared = fc.build(fc_rows(), '6k', declared=True)
+        calls = ingest_calls(declared, batch_size=2)
+        carried = [[(r['from'], r['to']) for r in args['memory']['relations']] for _, args in calls]
+        self.assertEqual(carried, [[], [('factconsolidation:6k:fact:3', 'factconsolidation:6k:fact:0')], []])
+
     def test_sh_gold_is_the_latest_fact_and_names_the_stale_one(self):
         corpus = fc.build(fc_rows(), '6k')
         sh = [q for q in corpus.questions if q.corpus == 'factconsolidation-sh']

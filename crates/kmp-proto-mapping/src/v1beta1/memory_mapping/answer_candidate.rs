@@ -56,14 +56,8 @@ impl AnswerCandidate {
             return Err(Box::new((item, terms)));
         }
 
-        // A memory in another language is about the same thing; the focus
-        // it must answer counts a bridged concept as answered.
         let strict_focus = focus.strict;
-        let answers_requested_focus =
-            strict_focus.is_none_or(|(focus_terms, required_focus_matches)| {
-                lexicon.focus_matches(focus_terms, &terms) >= *required_focus_matches
-            });
-        if !answers_requested_focus {
+        if !answers_focus(focus, lexicon, &terms) {
             return Err(Box::new((item, terms)));
         }
         // A citation that crossed a language says which words carried it.
@@ -127,6 +121,32 @@ impl AnswerCandidate {
             .join(", ");
         note_summary_terms(self.item, &words)
     }
+}
+
+/// Whether a candidate answers the focus a strict policy requires. A memory
+/// in another language is about the same thing; the focus it must answer
+/// counts a bridged concept as answered.
+pub(super) fn answers_focus(
+    focus: RankingFocus<'_>,
+    lexicon: &Lexicon,
+    terms: &AnswerCandidateTerms,
+) -> bool {
+    focus
+        .strict
+        .is_none_or(|(focus_terms, required_focus_matches)| {
+            lexicon.focus_matches(focus_terms, terms) >= *required_focus_matches
+        })
+}
+
+/// Whether the question reaches a candidate on its own words, whatever its
+/// lifecycle: it clears the floor and answers the focus. `eligible` asks
+/// this and then whether the candidate still stands.
+pub(super) fn reached_by_the_question(
+    focus: RankingFocus<'_>,
+    lexicon: &Lexicon,
+    terms: &AnswerCandidateTerms,
+) -> bool {
+    lexicon.clears_floor(terms) && answers_focus(focus, lexicon, terms)
 }
 
 /// The question's search keys that reached a candidate through its summary

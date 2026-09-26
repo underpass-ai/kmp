@@ -261,6 +261,24 @@ class ReadingTest(unittest.TestCase):
             gated = {'answer': 'UNKNOWN', 'answer_status': 'unknown', 'unknown_reason': native}
             self.assertEqual(unknown_reasons.translate(gated), (native, bench))
 
+    def test_a_gated_answer_is_read_from_the_contract_without_text_heuristics(self):
+        # The text a v0.23.0 UNKNOWN carries never decides a gated reason.
+        nothing = {'answer': 'UNKNOWN', 'answer_status': 'unknown',
+                   'proof': {'missing': ['any stored memory for: q']}}
+        self.assertEqual(unknown_reasons.translate(nothing), ('unstated_under_gate', None))
+        near = {'answer': 'UNKNOWN', 'answer_status': 'unknown',
+                'proof': {'nearest_outside': {'ref': 'entry:x'}}}
+        self.assertEqual(unknown_reasons.translate(near), ('unstated_under_gate', None))
+        stated = dict(near, unknown_reason='out_of_window')
+        self.assertEqual(unknown_reasons.translate(stated), ('out_of_window', 'not_in_selection'))
+        # `answer_status` decides whether it is UNKNOWN at all.
+        for status in ('answered', 'partial'):
+            self.assertEqual(unknown_reasons.translate({'answer': 'UNKNOWN', 'answer_status': status}),
+                             (None, None))
+        # Without the gate, the legacy signals still translate.
+        legacy = {'answer': 'UNKNOWN', 'proof': {'missing': ['any stored memory for: q']}}
+        self.assertEqual(unknown_reasons.translate(legacy), ('nothing_retrieved', 'no_evidence'))
+
     def test_trace_routes_and_direction(self):
         gold = PathGold(ref(1), ref(3), (ref(1), ref(2), ref(3)), (), (), True, True)
         structured = {'trace': [{'from': ref(1), 'to': ref(2)}, {'from': ref(2), 'to': ref(3)}]}

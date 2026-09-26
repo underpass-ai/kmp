@@ -216,6 +216,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "next_action",
             "next_call",
             "core_reused",
+            "more_on_request",
         ]
     );
     assert_eq!(

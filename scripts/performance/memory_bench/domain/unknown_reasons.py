@@ -31,6 +31,15 @@ The P4 ask gate states `unknown_reason` on the answer, in the contract's words:
 | `anchor_absent_in_selection` | `anchor_not_found` (**) |
 | `attribute_not_found` | `attribute_not_found` |
 
+Under the gate the reason is read from the contract and nothing else: an answer that
+carries `answer_status` is UNKNOWN exactly when that field says `unknown`, and its
+reason is the `unknown_reason` it states. No text heuristic applies to it — neither
+the `proof.missing` prefixes nor the `nearest_outside` signal above, which remain for
+binaries without the gate (v0.23.0, or a store with `ask-gate.json` off). A gated
+UNKNOWN that states no reason breaks the contract (it is emitted on every gated
+UNKNOWN, 26 Sept 2026) and reads as `unstated_under_gate`, unmapped, so the report
+counts it apart instead of guessing it.
+
 (**) The gate reads only the selected abouts and span, so an anchor that lives in
 another about (`anchor_in_other_about` in gold) is reported absent from the selection:
 the reason is right for `anchor_not_found` and wrong for `anchor_in_other_about`, which
@@ -44,6 +53,7 @@ NEAREST_OUTSIDE = 'nearest_outside'
 NOTHING_RETRIEVED = 'nothing_retrieved'
 RETRIEVED_NOT_BEARING = 'retrieved_not_bearing'
 NATIVE_UNSTATED = 'unstated'  # an UNKNOWN with none of the signals above
+GATE_UNSTATED = 'unstated_under_gate'  # a gated UNKNOWN without `unknown_reason`
 
 NOTHING_PREFIX = 'any stored memory for:'
 NOT_BEARING_PREFIX = 'stored memory that bears on:'
@@ -54,6 +64,7 @@ TRANSLATION = {
     NOTHING_RETRIEVED: 'no_evidence',
     RETRIEVED_NOT_BEARING: None,
     NATIVE_UNSTATED: None,
+    GATE_UNSTATED: None,
 }
 ALIASES = {
     'anchor_absent': 'anchor_not_found',
@@ -83,8 +94,21 @@ def _stated(structured):
     return None
 
 
+def _gate_status(structured):
+    status = structured.get('answer_status') if isinstance(structured, dict) else None
+    return status if isinstance(status, str) else None
+
+
 def native_reason(structured):
-    """The binary's own reason for an UNKNOWN answer; None for an answer that is not UNKNOWN."""
+    """The binary's own reason for an UNKNOWN answer; None for an answer that is not UNKNOWN.
+
+    A gated answer (`answer_status` present) is read from the contract alone."""
+    status = _gate_status(structured)
+    if status is not None:
+        if status != 'unknown':
+            return None
+        stated = structured.get('unknown_reason')
+        return stated if isinstance(stated, str) and stated else GATE_UNSTATED
     if not refs.is_unknown(structured):
         return None
     stated = _stated(structured)

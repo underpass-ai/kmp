@@ -4,6 +4,7 @@ use kmp_domain::{KmpBundle, RelationSemanticClass, RelationSignal, SearchSummary
 use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::answer_selection::answer_context_refs;
+use super::bundle_lifecycle_links::BundleLifecycleLinks;
 use super::bundle_views::persisted_memory_metadata;
 use super::candidate_temporal_state::CandidateTemporalState;
 use super::memory_lifecycle::MemoryLifecycle;
@@ -23,6 +24,9 @@ pub(super) struct AnswerRecallContext {
     pub(super) relationships_by_ref: BTreeMap<String, Vec<RelationFeature>>,
     pub(super) lifecycle: MemoryLifecycle,
     pub(super) reach_graph: ReachGraph,
+    /// The declared `supersedes`, `corrects` and `updates_state` links, for
+    /// the lifecycle rescue; empty in a bundle that declares none.
+    pub(super) lifecycle_links: BundleLifecycleLinks,
     /// Read once, then used for both sides of every comparison. Stemming a
     /// question by one language's rules and the memory by another's would
     /// split families rather than join them, so the question, the text, the
@@ -149,6 +153,7 @@ impl AnswerRecallContext {
             relationships_by_ref,
             lifecycle,
             reach_graph: ReachGraph::from_bundle(bundle),
+            lifecycle_links: BundleLifecycleLinks::from_bundle(bundle),
             morphology,
             entry_kinds,
             identifier_aliases: false,

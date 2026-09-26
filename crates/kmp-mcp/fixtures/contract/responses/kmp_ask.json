@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "READ_INCOMPLETE: finish the selected packet using the returned read action before concluding. If unavailable, keep the result partial.\nRetrieved 5 memory items for: Where is Rachel moving?",
+      "text": "Retrieved 5 memory items for: Where is Rachel moving?",
       "type": "text"
     }
   ],
@@ -35,25 +35,21 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9196
+        "used_bytes": 9091
       },
       "contract": "kmp.recall.projection.v3",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 7,
-      "next_action": {
-        "arguments": {
-          "continuation": "<stamped at call time>"
-        },
-        "tool": "kmp_ask"
-      },
+      "more_on_request": 5,
+      "next_action": null,
       "page": {
-        "has_more": true,
+        "has_more": false,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:4:<stamped at call time>",
+        "next_cursor": null,
         "offset": 0,
         "returned": 4,
-        "total": 9
+        "total": 4
       },
       "sections": {
         "proof.evidence": {
@@ -61,7 +57,6 @@
         },
         "proof.path": {
           "excluded_by_detail": 7,
-          "remaining": 5,
           "returned_on_page": 4
         }
       },
@@ -245,7 +240,7 @@
     },
     "summary": "Retrieved 5 memory items for: Where is Rachel moving?",
     "warnings": [
-      "recall expansion pending; see projection.sections.*.remaining and execute projection.next_action"
+      "answer settled by its cited core; projection.more_on_request counts the rest of its proof: repeat with budget.detail \"full\" to page it"
     ]
   }
 }

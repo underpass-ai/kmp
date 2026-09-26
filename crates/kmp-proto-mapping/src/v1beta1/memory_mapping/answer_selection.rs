@@ -19,6 +19,17 @@ pub(super) const REACHED_BY_ASSOCIATION: &str = "association";
 /// and some of this candidate's words mean the same thing in two languages —
 /// not enough of them to answer, enough to be worth showing.
 pub(super) const REACHED_BY_BRIDGE: &str = "bridge";
+/// Reached along a declared lifecycle (`supersedes`, `corrects`,
+/// `updates_state`) from a memory the question matched: the current head of
+/// a replaced memory, or, for a question about history, the chain.
+pub(super) const REACHED_BY_LIFECYCLE: &str = "lifecycle";
+/// On a chain returned for a question about history: whether each member
+/// still stands (`current`) or was itself replaced or ran out (`replaced`),
+/// so a chain never reads as a list of current advice. A question about now
+/// brings only standing heads and leaves it unsaid.
+pub(super) const LIFECYCLE_STATE_KEY: &str = "lifecycle_state";
+/// Every head of a chain that forked, in `(occurred, id)` order.
+pub(super) const LIFECYCLE_HEADS_KEY: &str = "lifecycle_heads";
 /// The word pairs the table bridged on a candidate that did answer, so a
 /// citation that crossed a language says which words carried it.
 pub(super) const BRIDGED_TERMS_KEY: &str = "bridged_terms";
@@ -53,6 +64,8 @@ const RETRIEVAL_PROVENANCE_KEYS: &[&str] = &[
     SUMMARY_TERMS_KEY,
     ANCHOR_VIA_KEY,
     ANCHOR_FROM_KEY,
+    LIFECYCLE_STATE_KEY,
+    LIFECYCLE_HEADS_KEY,
     "semantic_model_revision",
     "retrieval_channel",
 ];
@@ -229,11 +242,16 @@ pub(super) fn mark_restated(item: MemoryEvidence, hop: &RelationReach) -> Memory
 }
 
 /// Records, on a memory the anchored gate may cite for an anchor it does not
-/// name, that it stands in for `from`, which names it, by a declared
-/// `same_entity_as`.
-pub(super) fn mark_anchor_rescued(mut item: MemoryEvidence, from: &str) -> MemoryEvidence {
+/// name, that it stands in for `from`, which names it, by `via`: a declared
+/// `same_entity_as`, or (the lifecycle variant) the relation that replaced
+/// `from` with it.
+pub(super) fn mark_anchor_rescued(
+    mut item: MemoryEvidence,
+    from: &str,
+    via: &str,
+) -> MemoryEvidence {
     item.metadata
-        .insert(ANCHOR_VIA_KEY.to_string(), "same_entity_as".to_string());
+        .insert(ANCHOR_VIA_KEY.to_string(), via.to_string());
     item.metadata
         .insert(ANCHOR_FROM_KEY.to_string(), from.to_string());
     item
@@ -268,4 +286,9 @@ pub(super) fn is_retrieval_provenance(key: &str) -> bool {
 /// words — a proven relation, this memory's own vocabulary, or the table.
 pub(super) fn was_reached_indirectly(item: &MemoryEvidence) -> bool {
     item.metadata.contains_key(REACHED_BY_KEY)
+}
+
+/// Whether a candidate arrived along a declared lifecycle.
+pub(super) fn was_reached_along_a_lifecycle(item: &MemoryEvidence) -> bool {
+    item.metadata.get(REACHED_BY_KEY).map(String::as_str) == Some(REACHED_BY_LIFECYCLE)
 }
