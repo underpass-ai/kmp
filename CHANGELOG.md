@@ -38,6 +38,18 @@ Detailed notes from the early release cycle remain available in the
   11,656 → 4,778 (gate off: 10,231), hard negatives and identifier guards
   11,061 → 3,978 (v0.23.0: 6,929), synth-v1 10^3 22,935 → 13,257 (gate off:
   13,246).
+- An ask's stable core keeps only the `proof.superseded` entries that touch
+  a cited memory (the replaced one or its replacement). The rest follow the
+  ranked evidence as expansion in section `proof.superseded`: they page like
+  any other item, and an answered first page counts them in
+  `projection.more_on_request`. `budget.detail: "full"` still returns every
+  entry; a wake keeps all of its markers in the core. The list covered the
+  whole proof path, so it grew with the store's declared history: on
+  FactConsolidation-6k with its supersessions declared, the first page's
+  `proof.superseded` goes from p90 5,158 / max 6,478 bytes (56 entries) to
+  864 / 1,250 bytes (7 entries), and at a 3 KB ceiling the largest page from
+  8,630 to 3,447 bytes. SH answers are unchanged; MH R@10 goes from 0.543
+  to 0.553 because more evidence fits on the first page.
 - A continuation or restart of a `kmp_ask` or `kmp_wake` page is cut from
   the first page's frozen read. A request without `budget.detail` was echoed
   on its continuation as `balanced`, a different kernel query, so none of
@@ -110,6 +122,11 @@ Detailed notes from the early release cycle remain available in the
   is a measured variant, off by default: under the gate, a question about
   now may cite that head for the anchor its predecessor named
   (`anchor_via: supersedes`).
+  A lifecycle item is expansion like any other rescue: an answered first
+  page carries it if it fits and otherwise counts it in
+  `projection.more_on_request` (on FactConsolidation-6k declared, 58 of the
+  217 rescued items reach the default first page; none of them comes from a
+  cited memory).
 - Verdict book for TypeSafe Jev (P5): every judged question is kept, by a
   key of hashes (model, template, type, instructions, options, the texts of
   the state), as Q16 probabilities in `judgements.sqlite3` beside the store.
