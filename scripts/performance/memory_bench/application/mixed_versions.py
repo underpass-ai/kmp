@@ -26,9 +26,12 @@ wall latency of what it measured:
   with the same bytes (the first verdict won), and a third process with the
   network blocked replays everything from the book.
 
-The last two need product features that do not exist yet. They run only when
-the candidate binary declares the capability (it names the sidecar or book file)
-and are otherwise `skipped: not in this binary`; tests drive them against a fake.
+The last two need product features. They run only when the candidate binary
+declares the capability (it names the sidecar or book file) and are otherwise
+`skipped: not in this binary`; tests drive them against a fake. The book
+scenario also needs Jev answers without the network: the CLI gives its store
+`typesafe.json` and `rerank.json` and a stand-in cassette built from a warm-up
+process (`runtime/jev_stand_in`), behind the book like the provider.
 
 Ports (duck-typed; `runtime/shared_store.py` is the real adapter):
 
@@ -161,6 +164,8 @@ class Environment:
     candidate: BinaryRef
     old: BinaryRef | None = None
     jev_available: bool = False  # a replay setup exists for the book scenario
+    # (store, binary, settings) -> None: makes a jev store's judgements answerable offline
+    prepare_jev: object = None
 
 
 # -- writes and reads ---------------------------------------------------------------------
@@ -603,6 +608,8 @@ def book_first_wins(env, settings):
     checks, latency, facts = [], {'ask_a': [], 'ask_b': [], 'ask_replay': []}, {}
     replay = None
     try:
+        if env.prepare_jev is not None:
+            env.prepare_jev(store, candidate, settings)
         servers = (store.open(candidate, 'book-a'), store.open(candidate, 'book-b'))
         try:
             got = run_parallel([lambda s=s: answers(s, settings.about, settings.questions)

@@ -1,13 +1,16 @@
-use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
 
+use std::time::Duration;
+
 use kmp_proto_mapping::v1beta1::{RerankCandidateRanking, SemanticSource};
 use sha2::{Digest, Sha256};
-use tokio::sync::Mutex;
 
 use super::passage_judgement::judge_passages;
 use super::rerank_config::RerankConfig;
+use super::shared_outcomes::SharedOutcomes;
+use crate::serving::environment::judgement_deadline;
+use crate::serving::judgement_site::JudgementSite;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::rerank_outcome::RerankOutcome;
 
@@ -23,12 +26,17 @@ const ANSWERS_AT: f64 = 0.5;
 /// Ask re-ranking by a remote judgement model, behind its own opt-in. One
 /// yes/no question per admitted passage — does it answer the question? —
 /// ordered best first. Frozen outcomes include failures, so a continuation
-/// can never read a different order than its first page.
+/// can never read a different order than its first page. Concurrent asks
+/// for the same selection share one judgement; different selections judge
+/// in parallel. A first page waits at most the site's deadline, then reads
+/// ordinary retrieval with a warning while the judgement finishes in the
+/// background into the verdict book.
 pub(super) struct JudgementReranker {
     model: Arc<dyn JudgementModel>,
     pool_size: usize,
     excerpt_chars: usize,
-    selections: Mutex<BTreeMap<String, RerankOutcome>>,
+    deadline: Option<Duration>,
+    selections: SharedOutcomes<RerankOutcome>,
 }
 
 impl JudgementReranker {
@@ -67,8 +75,16 @@ impl JudgementReranker {
             model,
             pool_size,
             excerpt_chars,
-            selections: Mutex::new(BTreeMap::new()),
+            deadline: judgement_deadline(JudgementSite::Rerank),
+            selections: SharedOutcomes::new(KEPT),
         }
+    }
+
+    /// The same reranker with another first-page deadline (tests).
+    #[cfg(test)]
+    pub(super) fn with_deadline(mut self, deadline: Option<Duration>) -> Self {
+        self.deadline = deadline;
+        self
     }
 
     pub(super) fn pool_size(&self) -> usize {
@@ -82,52 +98,65 @@ impl JudgementReranker {
         continuation: bool,
     ) -> Result<RerankOutcome, String> {
         let key = selection_key(self.model.model(), question, pool);
-        let mut selections = self.selections.lock().await;
-        if let Some(outcome) = selections.get(&key) {
-            return Ok(outcome.clone());
-        }
-        if continuation {
-            return Err(
+        self.selections
+            .get_or_run(&key, !continuation, || self.judge_in_time(question, pool))
+            .await
+            .map(|(outcome, _)| outcome)
+            .ok_or_else(|| {
                 "evidence rerank selection expired or its source snapshot changed; start a fresh ask"
-                    .into(),
-            );
-        }
-        let outcome = match self.judge(question, pool).await {
-            Ok(ranking) => RerankOutcome {
+                    .into()
+            })
+    }
+
+    async fn judge_in_time(&self, question: &str, pool: &[SemanticSource]) -> RerankOutcome {
+        let model = Arc::clone(&self.model);
+        let (question, pool, excerpt_chars) =
+            (question.to_string(), pool.to_vec(), self.excerpt_chars);
+        // Detached, so a judgement past the deadline still lands in the book
+        // for the next ask.
+        let judged = tokio::spawn(async move {
+            let kept = judge_passages(
+                model.as_ref(),
+                &question,
+                "Does `passage` answer the question in the state?",
+                &pool,
+                excerpt_chars,
+                ANSWERS_AT,
+                RANKED,
+            )
+            .await?;
+            RerankCandidateRanking::new(model.model().to_string(), &question, kept)
+                .map_err(|_| "invalid rerank identities".to_string())
+        });
+        let joined = match self.deadline {
+            Some(deadline) => match tokio::time::timeout(deadline, judged).await {
+                Ok(joined) => joined,
+                Err(_) => {
+                    return unavailable(format!(
+                        "Jev did not answer within {} ms",
+                        deadline.as_millis()
+                    ));
+                }
+            },
+            None => judged.await,
+        };
+        match joined {
+            Ok(Ok(ranking)) => RerankOutcome {
                 ranking: Some(ranking),
                 warning: None,
             },
-            Err(error) => RerankOutcome {
-                ranking: None,
-                warning: Some(format!(
-                    "evidence rerank unavailable; using ordinary retrieval: {error}"
-                )),
-            },
-        };
-        if selections.len() >= KEPT {
-            selections.pop_first();
+            Ok(Err(error)) => unavailable(error),
+            Err(_) => unavailable("the judgement task failed".into()),
         }
-        selections.insert(key, outcome.clone());
-        Ok(outcome)
     }
+}
 
-    async fn judge(
-        &self,
-        question: &str,
-        pool: &[SemanticSource],
-    ) -> Result<RerankCandidateRanking, String> {
-        let kept = judge_passages(
-            self.model.as_ref(),
-            question,
-            "Does `passage` answer the question in the state?",
-            pool,
-            self.excerpt_chars,
-            ANSWERS_AT,
-            RANKED,
-        )
-        .await?;
-        RerankCandidateRanking::new(self.model.model().to_string(), question, kept)
-            .map_err(|_| "invalid rerank identities".to_string())
+fn unavailable(error: String) -> RerankOutcome {
+    RerankOutcome {
+        ranking: None,
+        warning: Some(format!(
+            "evidence rerank unavailable; using ordinary retrieval: {error}"
+        )),
     }
 }
 

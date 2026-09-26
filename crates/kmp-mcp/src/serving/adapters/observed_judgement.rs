@@ -14,6 +14,8 @@ use std::time::Instant;
 use sha2::{Digest, Sha256};
 
 use super::cassette_judgement::judgement_key;
+use super::ledgered_judgement::LedgeredJudgement;
+use super::verdict_ledger::VerdictLedger;
 use crate::serving::judgement_origin::JudgementOrigin;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_response::JudgementResponse;
@@ -35,15 +37,28 @@ impl ObservedJudgement {
         Self { inner, site }
     }
 
-    /// The store's judgement, observed for one site; absence and the reason
-    /// a present opt-in cannot run pass through.
+    /// The store's judgement for one site: behind its verdict book when it
+    /// has one, and observed; absence and the reason a present opt-in
+    /// cannot run pass through.
     pub(super) fn for_site(
         judgement: &Result<Option<Arc<dyn JudgementModel>>, String>,
+        ledger: Option<&Arc<VerdictLedger>>,
         site: JudgementSite,
     ) -> Result<Option<Arc<dyn JudgementModel>>, String> {
         judgement.clone().map(|model| {
-            model.map(|model| Arc::new(Self::new(model, site)) as Arc<dyn JudgementModel>)
+            model.map(|model| {
+                Arc::new(Self::at_site(&model, ledger, site)) as Arc<dyn JudgementModel>
+            })
         })
+    }
+
+    /// `model` behind the book when there is one, observed for `site`.
+    pub(super) fn at_site(
+        model: &Arc<dyn JudgementModel>,
+        ledger: Option<&Arc<VerdictLedger>>,
+        site: JudgementSite,
+    ) -> Self {
+        Self::new(LedgeredJudgement::in_front_of(model, ledger, site), site)
     }
 
     fn report(
@@ -127,7 +142,10 @@ impl JudgementModel for ObservedJudgement {
     > {
         Box::pin(async move {
             let started = Instant::now();
-            let (outcome, origin) = self.inner.evaluate_traced(request).await;
+            let (mut outcome, origin) = self.inner.evaluate_traced(request).await;
+            if let Ok(response) = &mut outcome {
+                response.elapsed_us = started.elapsed().as_micros() as u64;
+            }
             self.report(request, &outcome, origin, started);
             (outcome, origin)
         })

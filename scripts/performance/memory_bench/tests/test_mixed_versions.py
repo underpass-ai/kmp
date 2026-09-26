@@ -460,7 +460,8 @@ REFERENCE_ENV = 'MEMORY_BENCH_REFERENCE_BINARY'
 
 
 class RealBinaryTest(unittest.TestCase):
-    """The release binary on the cached 10^3 store: v0.23.0 has neither sidecar nor book."""
+    """The release binary on the cached 10^3 store: v0.23.0 has neither sidecar nor book; a
+    P5 build has the book, and its scenario runs offline through the CLI's Jev setup."""
 
     def setUp(self):
         candidate =Path(os.environ.get(REFERENCE_ENV) or shared_store.binaries.DEFAULT_BINARY)
@@ -475,7 +476,9 @@ class RealBinaryTest(unittest.TestCase):
         self.out = Path(tempfile.mkdtemp(prefix='bt18-test-', dir=layout.scratch()))
         self.addCleanup(shutil.rmtree, self.out, True)
         self.env = mv.Environment(cli.store_factory(self.entry, layout.scratch(), self.out),
-                                  cli.binary_ref('reference', candidate), self.binary)
+                                  cli.binary_ref('reference', candidate), self.binary,
+                                  jev_available=mv.BOOK in self.binary.capabilities,
+                                  prepare_jev=cli.prepare_jev)
 
     def test_release_binary_on_one_store(self):
         settings = mv.Settings(writes=2, reads=1)
@@ -486,6 +489,8 @@ class RealBinaryTest(unittest.TestCase):
         self.assertEqual(statuses[('concurrent_writers', 'candidate+candidate')], mv.PASS, report)
         self.assertEqual(statuses[('sidecar_catch_up', 'reference writes behind candidate sidecar')],
                          mv.SKIPPED)
+        book = statuses[('book_first_wins', 'candidate x2 on one book')]
+        self.assertEqual(book, mv.PASS if mv.BOOK in self.binary.capabilities else mv.SKIPPED, report)
         self.assertTrue(all(r['reason'] == mv.NOT_IN_BINARY for r in report['results']
                             if r['status'] == mv.SKIPPED))
 

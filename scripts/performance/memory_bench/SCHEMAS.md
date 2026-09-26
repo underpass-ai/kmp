@@ -1255,6 +1255,11 @@ store files and environment, without the cassette, its mode or `RUST_LOG`), the 
 key, the question digest and the backend, so record and replay of one arm share it.
 Next to the manifest lies the sample's content: `cassette.json` (backend `cassette`,
 `kmp.typesafe.cassette.v1`) or `judgements.sqlite3` (backend `book`, opaque bytes).
+Where the network is blocked, a `book` record may name a `provider_stand_in`: a
+cassette in replay mode answering in the provider's place, built by
+`runtime/jev_stand_in.py` from a warm-up process's `cassette_miss` lines (passage
+sites only). `tests/test_jev_fixture_binary.py` drives record and replay on the real
+binary this way (`KMP_BENCH_BINARY=target/release/kmp-mcp`).
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1343,6 +1348,12 @@ scenario never stops the others. The command exits 1 when any scenario failed.
 | `settings` | `about`, `writes` (ingests per writing process), `reads`, `questions` (count) |
 | `counts` | `pass`, `fail`, `skipped` |
 | `results[]` | `scenario` (`write_then_read`, `concurrent_writers`, `reads_during_writes`, `sidecar_catch_up`, `book_first_wins`), `case` (e.g. `reference->candidate`), `status`, `reason`, `checks[]` (`name`, `ok`, `detail`, `gating`: a non-gating check is reported and never fails the scenario), `latency_ms[name]` (`n`, `p50`, `p95`, `max` of wall ms; p95 indicative below n = 20), `facts` (format stamps, the path taken: `direct` or `bundle`, conflict retries…) |
+
+`book_first_wins` runs when the candidate names `judgements.sqlite3`. Its store gets
+`typesafe.json`, `rerank.json` (`pool_size` 40) and a stand-in cassette in replay mode,
+filled from a warm-up process on a fork (`runtime/jev_stand_in.py`): the scenario's
+processes judge offline, behind the book, and the network-blocked replay must answer
+every judgement from the book (`http_requests` 0).
 
 ```json mixed-versions
 {"schema": "kmp.bench.mixed_versions.v1",

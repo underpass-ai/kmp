@@ -22,7 +22,9 @@ from ..runtime.jev_fault_proxy import (Fault, FaultPlan, FaultProxy, LocalUpstre
                                        check_upstream)
 from ..runtime.layout import public_layout
 
-RUST = REPO_ROOT / 'crates/kmp-mcp/src/serving/adapters/typesafe_judgement.rs'
+# The client (typesafe_judgement.rs) and its HTTP exchange with retries (typesafe_transport.rs).
+RUST = tuple(REPO_ROOT / f'crates/kmp-mcp/src/serving/adapters/{name}.rs'
+             for name in ('typesafe_judgement', 'typesafe_transport'))
 STAND_IN = 'stand-in-key-7f3a9c'
 
 
@@ -35,7 +37,7 @@ def fast_settings(concurrency=(2, 4), requests=12, plan=jev_tail.SELF_CHECK_PLAN
 
 class RetryPolicyMirrorTest(unittest.TestCase):
     def test_the_client_mirrors_the_binary_retry_policy(self):
-        source = RUST.read_text(encoding='utf-8')
+        source = '\n'.join(path.read_text(encoding='utf-8') for path in RUST)
         self.assertEqual(int(re.search(r'const MAX_RETRIES: u32 = (\d+);', source).group(1)), jev_tail.MAX_RETRIES)
         self.assertEqual(int(re.search(r'const MAX_RETRY_WAIT_SECS: u64 = (\d+);', source).group(1)),
                          jev_tail.MAX_RETRY_WAIT_SECS)

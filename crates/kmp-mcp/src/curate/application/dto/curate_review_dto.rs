@@ -104,7 +104,7 @@ pub(crate) fn review_to_value(
         "missing": missing,
         "suspect": suspect,
         "jev": review.jev.as_ref().map(|usage| json!({
-            "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens,
+            "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens, "elapsed_ms": usage.elapsed_ms(),
         })),
         "page": {"entries": entries, "total": total, "next_cursor": next_cursor},
         "next_actions": next_actions,

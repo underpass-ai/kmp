@@ -14,6 +14,8 @@ use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
 use super::observed_judgement::ObservedJudgement;
 use super::process_frozen_recalls::ProcessFrozenRecalls;
 use super::store_config_report::StoreConfigReport;
+use super::verdict_book_config::VERDICT_BOOK_CONFIG_FILE;
+use super::verdict_ledger::VerdictLedger;
 use super::wake_focus_judge::WakeFocusJudge;
 use crate::contract::{TIME_TOOL, TimeMove};
 use crate::serving::environment::{
@@ -52,6 +54,10 @@ pub struct EmbeddedKernelMcpBackend {
     /// TypeSafe Jev for `kmp_curate`, opted into per store. Off without
     /// `typesafe.json`; an error names why a present opt-in cannot run.
     judgement: Result<Option<Arc<dyn JudgementModel>>, String>,
+    /// Verdicts already judged, beside the store (`judgements.sqlite3`):
+    /// only with a working `typesafe.json`, unless `judgement-book.json`
+    /// turns it off.
+    ledger: Option<Arc<VerdictLedger>>,
     /// Ask re-ranking by the same model, opted into separately because it
     /// sends text on every Ask.
     rerank: Result<Option<Arc<JudgementReranker>>, String>,
@@ -97,19 +103,29 @@ impl EmbeddedKernelMcpBackend {
             optional_env_string(TYPESAFE_CASSETTE_ENV),
             optional_env_string(TYPESAFE_CASSETTE_MODE_ENV),
         );
+        let ledger = VerdictLedger::load(
+            data_dir,
+            &judgement,
+            optional_env_string(TYPESAFE_CASSETTE_ENV).is_some(),
+        );
+        let book = ledger.as_ref().ok().and_then(Option::as_ref);
         let rerank = JudgementReranker::load(
             data_dir,
-            &ObservedJudgement::for_site(&judgement, JudgementSite::Rerank),
+            &ObservedJudgement::for_site(&judgement, book, JudgementSite::Rerank),
         );
         let wake_focus = WakeFocusJudge::load(
             data_dir,
-            &ObservedJudgement::for_site(&judgement, JudgementSite::WakeFocus),
+            &ObservedJudgement::for_site(&judgement, book, JudgementSite::WakeFocus),
         );
         let write_relations = data_dir.join(WRITE_RELATIONS_FILE).is_file();
         let lexical_bridge = load_lexical_bridge(data_dir);
         let semantic = LoopbackSemanticRetriever::load(data_dir);
         let ask_gate = AskGateConfig::load(data_dir);
         acknowledge_store_config(data_dir, &judgement, &rerank, &wake_focus, &semantic)
+            .beside_store(
+                VERDICT_BOOK_CONFIG_FILE,
+                ledger.as_ref().map(|_| ()).map_err(Clone::clone),
+            )
             .beside_store(
                 ASK_GATE_FILE,
                 ask_gate.as_ref().map(|_| ()).map_err(Clone::clone),
@@ -133,6 +149,7 @@ impl EmbeddedKernelMcpBackend {
             frozen_recalls: ProcessFrozenRecalls::default(),
             semantic,
             judgement,
+            ledger: ledger.ok().flatten(),
             rerank,
             wake_focus,
             write_relations,
@@ -145,7 +162,11 @@ impl EmbeddedKernelMcpBackend {
     /// The store's judgement observed for one call site, when it can run.
     fn observed(&self, site: JudgementSite) -> Option<ObservedJudgement> {
         match &self.judgement {
-            Ok(Some(model)) => Some(ObservedJudgement::new(Arc::clone(model), site)),
+            Ok(Some(model)) => Some(ObservedJudgement::at_site(
+                model,
+                self.ledger.as_ref(),
+                site,
+            )),
             _ => None,
         }
     }

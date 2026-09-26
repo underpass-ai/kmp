@@ -1,3 +1,7 @@
+use std::time::Duration;
+
+use super::verdict_template::VerdictTemplate;
+
 /// The caller a judgement is spent for, so its cost can be attributed. The
 /// words are a telemetry contract read by the memory bench
 /// (`scripts/performance/memory_bench/SCHEMAS.md`); add, never rename.
@@ -24,6 +28,20 @@ pub(crate) enum JudgementSite {
 }
 
 impl JudgementSite {
+    /// Every site, for what must cover them all (the verdict book retiring
+    /// superseded templates).
+    pub(crate) const ALL: [Self; 9] = [
+        Self::Rerank,
+        Self::WakeFocus,
+        Self::CurateReview,
+        Self::CurateFocus,
+        Self::WriteRelations,
+        Self::Precheck,
+        Self::Paths,
+        Self::Labels,
+        Self::Summaries,
+    ];
+
     pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::Rerank => "rerank",
@@ -35,6 +53,28 @@ impl JudgementSite {
             Self::Paths => "paths",
             Self::Labels => "labels",
             Self::Summaries => "summaries",
+        }
+    }
+
+    /// The prompt template this site's verdicts answer. Bump a version when
+    /// what the site asks changes meaning without its text changing, so the
+    /// verdict book stops answering it with the old meaning.
+    pub(crate) fn template(self) -> VerdictTemplate {
+        VerdictTemplate {
+            id: self.as_str(),
+            version: 1,
+        }
+    }
+
+    /// How long a first page may wait for Jev before it degrades, warned,
+    /// to the deterministic path (DESIGN L4 4b): 1.5 s for ask re-ranking,
+    /// 3 s for the first page of a focused wake, none for curate, whose
+    /// agent asked for the judgement itself.
+    pub(crate) fn deadline(self) -> Option<Duration> {
+        match self {
+            Self::Rerank => Some(Duration::from_millis(1_500)),
+            Self::WakeFocus => Some(Duration::from_millis(3_000)),
+            _ => None,
         }
     }
 
@@ -85,18 +125,23 @@ mod tests {
     }
 
     #[test]
+    fn only_first_pages_of_reads_carry_a_deadline() {
+        assert_eq!(
+            JudgementSite::Rerank.deadline(),
+            Some(std::time::Duration::from_millis(1_500))
+        );
+        assert_eq!(
+            JudgementSite::WakeFocus.deadline(),
+            Some(std::time::Duration::from_millis(3_000))
+        );
+        assert_eq!(JudgementSite::CurateReview.deadline(), None);
+        assert_eq!(JudgementSite::Paths.deadline(), None);
+        assert_eq!(JudgementSite::Paths.template().id, "paths");
+    }
+
+    #[test]
     fn every_site_has_a_distinct_word() {
-        let all = [
-            JudgementSite::Rerank,
-            JudgementSite::WakeFocus,
-            JudgementSite::CurateReview,
-            JudgementSite::CurateFocus,
-            JudgementSite::WriteRelations,
-            JudgementSite::Precheck,
-            JudgementSite::Paths,
-            JudgementSite::Labels,
-            JudgementSite::Summaries,
-        ];
+        let all = JudgementSite::ALL;
         let words = all
             .iter()
             .map(|site| site.as_str())

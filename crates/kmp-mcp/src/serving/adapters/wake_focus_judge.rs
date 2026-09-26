@@ -1,13 +1,15 @@
-use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration;
 
 use kmp_proto_mapping::v1beta1::{JudgedSelection, SemanticSource};
 use sha2::{Digest, Sha256};
-use tokio::sync::Mutex;
 
 use super::passage_judgement::judge_passages;
 use super::rerank_config::RerankConfig;
+use super::shared_outcomes::SharedOutcomes;
+use crate::serving::environment::judgement_deadline;
+use crate::serving::judgement_site::JudgementSite;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::wake_focus_outcome::WakeFocusOutcome;
 
@@ -19,12 +21,15 @@ const MATTERS_AT: f64 = 0.5;
 /// A wake focused on what the caller says it is resuming. One yes/no
 /// question per admitted evidence entry — does it matter for this intent? —
 /// behind its own opt-in, `wake-focus.json`, on top of `typesafe.json`.
-/// Frozen per intent, pool and model so continuation pages agree.
+/// Frozen per intent, pool and model so continuation pages agree. The first
+/// page waits at most the site's deadline, then reads an ordinary wake with
+/// a warning while the judgement finishes into the verdict book.
 pub(super) struct WakeFocusJudge {
     model: Arc<dyn JudgementModel>,
     pool_size: usize,
     excerpt_chars: usize,
-    selections: Mutex<BTreeMap<String, WakeFocusOutcome>>,
+    deadline: Option<Duration>,
+    selections: SharedOutcomes<WakeFocusOutcome>,
 }
 
 impl WakeFocusJudge {
@@ -46,7 +51,8 @@ impl WakeFocusJudge {
                 model: Arc::clone(model),
                 pool_size,
                 excerpt_chars,
-                selections: Mutex::new(BTreeMap::new()),
+                deadline: judgement_deadline(JudgementSite::WakeFocus),
+                selections: SharedOutcomes::new(KEPT),
             }))),
             Ok(None) => Err("wake-focus.json needs typesafe.json beside the store".into()),
             Err(error) => Err(error.clone()),
@@ -71,40 +77,63 @@ impl WakeFocusJudge {
             hasher.update(source.text_sha256.as_bytes());
         }
         let key = format!("{:x}", hasher.finalize());
-        let mut selections = self.selections.lock().await;
-        if let Some(outcome) = selections.get(&key) {
-            return Ok(outcome.clone());
-        }
-        if continuation {
-            return Err("wake focus expired or its evidence changed; start a fresh wake".into());
-        }
-        let outcome = match judge_passages(
-            self.model.as_ref(),
-            &format!("An agent is resuming this work: {intent}"),
-            "Does `passage` matter for resuming the work in the state?",
-            pool,
+        self.selections
+            .get_or_run(&key, !continuation, || self.judge_in_time(intent, pool))
+            .await
+            .map(|(outcome, _)| outcome)
+            .ok_or_else(|| "wake focus expired or its evidence changed; start a fresh wake".into())
+    }
+
+    async fn judge_in_time(&self, intent: &str, pool: &[SemanticSource]) -> WakeFocusOutcome {
+        let model = Arc::clone(&self.model);
+        let (state, pool, excerpt_chars) = (
+            format!("An agent is resuming this work: {intent}"),
+            pool.to_vec(),
             self.excerpt_chars,
-            MATTERS_AT,
-            pool.len(),
-        )
-        .await
-        .and_then(|kept| {
-            JudgedSelection::new(self.model.model().to_string(), kept)
+        );
+        // Detached, so a judgement past the deadline still lands in the book
+        // for the next wake.
+        let judged = tokio::spawn(async move {
+            let limit = pool.len();
+            let kept = judge_passages(
+                model.as_ref(),
+                &state,
+                "Does `passage` matter for resuming the work in the state?",
+                &pool,
+                excerpt_chars,
+                MATTERS_AT,
+                limit,
+            )
+            .await?;
+            JudgedSelection::new(model.model().to_string(), kept)
                 .map_err(|_| "invalid wake focus identities".to_string())
-        }) {
-            Ok(selection) => WakeFocusOutcome {
+        });
+        let joined = match self.deadline {
+            Some(deadline) => match tokio::time::timeout(deadline, judged).await {
+                Ok(joined) => joined,
+                Err(_) => {
+                    return unavailable(format!(
+                        "Jev did not answer within {} ms",
+                        deadline.as_millis()
+                    ));
+                }
+            },
+            None => judged.await,
+        };
+        match joined {
+            Ok(Ok(selection)) => WakeFocusOutcome {
                 selection: Some(selection),
                 warning: None,
             },
-            Err(error) => WakeFocusOutcome {
-                selection: None,
-                warning: Some(format!("wake focus unavailable; ordinary wake: {error}")),
-            },
-        };
-        if selections.len() >= KEPT {
-            selections.pop_first();
+            Ok(Err(error)) => unavailable(error),
+            Err(_) => unavailable("the judgement task failed".into()),
         }
-        selections.insert(key, outcome.clone());
-        Ok(outcome)
+    }
+}
+
+fn unavailable(error: String) -> WakeFocusOutcome {
+    WakeFocusOutcome {
+        selection: None,
+        warning: Some(format!("wake focus unavailable; ordinary wake: {error}")),
     }
 }

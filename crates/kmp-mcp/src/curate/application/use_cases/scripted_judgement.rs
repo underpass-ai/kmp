@@ -60,6 +60,7 @@ impl JudgementModel for Scripted {
                 answers,
                 input_tokens: 10,
                 requests: 1,
+                elapsed_us: 0,
             })
         })
     }

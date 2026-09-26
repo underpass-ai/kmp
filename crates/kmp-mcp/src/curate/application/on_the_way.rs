@@ -78,8 +78,7 @@ pub(crate) async fn facts_on_the_way(
             break;
         }
         let response = model.evaluate(&request).await?;
-        usage.requests += response.requests;
-        usage.input_tokens += response.input_tokens;
+        usage.add(&response);
         let mut added = refs
             .iter()
             .enumerate()
@@ -189,11 +188,7 @@ mod tests {
             confidence: 0.9,
             calls: Mutex::new(0),
         };
-        let mut usage = JevUsage {
-            model: "jev-test".into(),
-            requests: 0,
-            input_tokens: 0,
-        };
+        let mut usage = JevUsage::new("jev-test");
         let kept = facts_on_the_way(&model, &material(), "a", None, &mut usage)
             .await
             .expect("judged");

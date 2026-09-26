@@ -44,6 +44,7 @@ impl TypeSafeWireResponse {
                 .and_then(Value::as_u64)
                 .unwrap_or(0),
             requests: 1,
+            elapsed_us: 0,
         })
     }
 }

@@ -137,10 +137,10 @@ impl PrepareApply<'_> {
                         Ok(response) => FrozenCheck {
                             checked_by: Some(model.model().to_string()),
                             doubts: {
-                                prepared.jev = Some(JevUsage {
-                                    model: model.model().to_string(),
-                                    requests: response.requests,
-                                    input_tokens: response.input_tokens,
+                                prepared.jev = Some({
+                                    let mut usage = JevUsage::new(model.model());
+                                    usage.add(&response);
+                                    usage
                                 });
                                 prepared
                                     .relations

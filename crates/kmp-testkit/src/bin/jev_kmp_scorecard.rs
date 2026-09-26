@@ -9,6 +9,13 @@
 //! instead of being guessed. Re-recording with a real key
 //! (`KMP_TYPESAFE_CASSETTE_MODE=record`) is how a new model or prompt is
 //! measured.
+//!
+//! With `JEV_SCORECARD_KEEP_BOOK=1` each arm's store keeps the verdict book
+//! (`judgements.sqlite3`) of the previous run while everything else is
+//! seeded afresh: a second run then answers from the book alone, which
+//! `scripts/eval/jev-book-second-pass.sh` checks against an empty cassette.
+//! Every run prints the sha256 of every tool answer it read, without the
+//! Jev cost accounting, so two runs can be compared byte for byte.
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fs;
@@ -18,6 +25,12 @@ use kmp_mcp::KernelMcpServer;
 use kmp_testkit::WriteReceipt;
 use serde::Deserialize;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+
+/// Every tool answer this run read, in order, without Jev cost accounting.
+static ANSWERS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+/// The verdict book beside a store, and its write-ahead log.
+const BOOK_FILES: [&str; 2] = ["judgements.sqlite3", "judgements.sqlite3-wal"];
 
 const ACTOR: &str = "jev-scorecard";
 const TYPESAFE: &str = r#"{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"jev-1.13.0","timeout_ms":20000}"#;
@@ -314,6 +327,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
         scores.ask_ms[1] / asks,
         scores.ask_ms[2] / asks
     );
+
+    let answers = ANSWERS.lock().map_err(|_| "answer log poisoned")?.clone();
+    let mut digest = Sha256::new();
+    for answer in &answers {
+        digest.update(answer.as_bytes());
+        digest.update(b"\n");
+    }
+    println!(
+        "  (replay, not gated)          {} tool answers, sha256 {:x}",
+        answers.len(),
+        digest.finalize()
+    );
+    if let Ok(path) = std::env::var("JEV_SCORECARD_ANSWERS") {
+        fs::write(path, answers.join("\n") + "\n")?;
+    }
 
     if std::env::var("JEV_REPORT_ONLY").as_deref() == Ok("1") {
         return Ok(());
@@ -1060,8 +1088,17 @@ async fn seeded_server(
     files: &[(&str, &str)],
 ) -> Result<KernelMcpServer, Box<dyn Error>> {
     let data_dir = std::env::temp_dir().join(format!("kmp-jev-{}-{arm}", case.id));
+    let keep_book = std::env::var("JEV_SCORECARD_KEEP_BOOK").as_deref() == Ok("1");
+    let kept = BOOK_FILES
+        .iter()
+        .filter(|_| keep_book)
+        .filter_map(|name| Some((*name, fs::read(data_dir.join(name)).ok()?)))
+        .collect::<Vec<_>>();
     let _ = fs::remove_dir_all(&data_dir);
     fs::create_dir_all(&data_dir)?;
+    for (name, bytes) in kept {
+        fs::write(data_dir.join(name), bytes)?;
+    }
     for (name, body) in files {
         fs::write(data_dir.join(name), body)?;
     }
@@ -1268,7 +1305,56 @@ async fn call(
     if value["result"]["isError"].as_bool() == Some(true) {
         return Err(format!("tool `{name}` failed: {}", value["result"]).into());
     }
-    Ok(value["result"]["structuredContent"].clone())
+    let content = value["result"]["structuredContent"].clone();
+    ANSWERS
+        .lock()
+        .map_err(|_| "answer log poisoned")?
+        .push(format!("{name} {}", without_cost(&content)));
+    Ok(content)
+}
+
+/// An answer without what Jev cost to produce it: the `jev` usage objects
+/// and the "used N requests" of a summary change when the verdict book
+/// answers instead of the provider; nothing else may. The store is seeded
+/// afresh on every run, so what names that store instance — ingest wall
+/// times, and the review tokens, cursors and continuations derived from
+/// its snapshot — is left out too.
+fn without_cost(value: &Value) -> Value {
+    match value {
+        Value::Object(map) => Value::Object(
+            map.iter()
+                .filter(|(key, _)| {
+                    !matches!(
+                        key.as_str(),
+                        "jev"
+                            | "clocks"
+                            | "ingested_at"
+                            | "review_token"
+                            | "write_review_token"
+                            | "token"
+                            | "continuation"
+                            | "next_cursor"
+                    )
+                })
+                .map(|(key, child)| (key.clone(), without_cost(child)))
+                .collect(),
+        ),
+        Value::Array(items) => Value::Array(items.iter().map(without_cost).collect()),
+        Value::String(text) => Value::String(without_request_count(text)),
+        other => other.clone(),
+    }
+}
+
+fn without_request_count(text: &str) -> String {
+    let Some(at) = text.find(" used ") else {
+        return text.to_string();
+    };
+    let rest = &text[at + " used ".len()..];
+    let digits = rest.chars().take_while(char::is_ascii_digit).count();
+    if digits == 0 || !rest[digits..].starts_with(" request") {
+        return text.to_string();
+    }
+    format!("{} used N{}", &text[..at], &rest[digits..])
 }
 
 fn write_baseline(

@@ -14,6 +14,7 @@ mod judgement_reranker;
 #[cfg(test)]
 mod judgement_reranker_tests;
 mod judgement_source;
+mod ledgered_judgement;
 pub(crate) mod lexical_bridge_file;
 mod loopback_semantic_retriever;
 mod observed_judgement;
@@ -25,6 +26,8 @@ mod rerank_config;
 pub(crate) mod retrying_embedded_backend;
 mod semantic_rank_response;
 mod semantic_retriever_config;
+mod shared_outcomes;
+mod sqlite_verdict_book;
 mod store_config_report;
 #[cfg(test)]
 mod store_config_report_tests;
@@ -39,5 +42,8 @@ mod typesafe_judgement;
 #[cfg(test)]
 mod typesafe_judgement_tests;
 mod typesafe_request_body;
+mod typesafe_transport;
 mod typesafe_wire_response;
+mod verdict_book_config;
+mod verdict_ledger;
 mod wake_focus_judge;

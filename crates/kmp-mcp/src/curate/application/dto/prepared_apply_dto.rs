@@ -29,7 +29,7 @@ pub(crate) fn prepared_to_value(prepared: &PreparedApply) -> Value {
             "item_id": rejection.item_id, "reason": rejection.reason,
         })).collect::<Vec<_>>(),
         "jev": prepared.jev.as_ref().map(|usage| json!({
-            "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens,
+            "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens, "elapsed_ms": usage.elapsed_ms(),
         })),
         "checked_by": prepared.checked_by,
         "warnings": prepared.warnings,

@@ -259,7 +259,7 @@ impl<'a> EmbeddedCurateTool<'a> {
                     .unwrap_or_default(),
             })).collect::<Vec<_>>(),
             "jev": usage.map(|usage| serde_json::json!({
-                "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens,
+                "model": usage.model, "requests": usage.requests, "input_tokens": usage.input_tokens, "elapsed_ms": usage.elapsed_ms(),
             })),
             "next_actions": [],
             "warnings": warnings,

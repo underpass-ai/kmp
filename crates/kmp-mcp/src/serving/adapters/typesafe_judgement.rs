@@ -1,28 +1,30 @@
-use std::{collections::BTreeMap, path::Path, pin::Pin, sync::Arc, time::Duration};
+use std::{path::Path, pin::Pin, sync::Arc, time::Duration};
 
-use reqwest::StatusCode;
-use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, RETRY_AFTER};
+use tokio::sync::Semaphore;
+use tokio::task::JoinSet;
 
 use super::typesafe_api_key::TypeSafeApiKey;
-use super::typesafe_batches::{REQUEST_BYTES, typesafe_batches};
+use super::typesafe_batches::typesafe_batches;
 use super::typesafe_config::TypeSafeConfig;
 use super::typesafe_request_body::typesafe_request_body;
-use super::typesafe_wire_response::TypeSafeWireResponse;
+use super::typesafe_transport::TypeSafeTransport;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::judgement_response::JudgementResponse;
 use crate::serving::ports::judgement_model::JudgementModel;
 
-const MAX_RETRIES: u32 = 2;
-const MAX_RETRY_WAIT_SECS: u64 = 5;
+/// Provider requests in flight at once, over every caller of the process
+/// (DESIGN L4 4b: 3–4, well inside 1,200 requests a minute).
+pub(super) const CONCURRENT_REQUESTS: usize = 4;
 
 /// TypeSafe Jev behind an explicit per-store opt-in. Answers are validated
 /// against the questions sent; failures carry no key and no provider body.
+/// The batches of one judgement go out in parallel, at most
+/// `CONCURRENT_REQUESTS` at a time for the whole process.
 #[derive(Debug)]
 pub(super) struct TypeSafeJudgement {
-    endpoint: reqwest::Url,
     model: String,
-    key: TypeSafeApiKey,
-    client: reqwest::Client,
+    transport: Arc<TypeSafeTransport>,
+    permits: Arc<Semaphore>,
 }
 
 impl TypeSafeJudgement {
@@ -77,73 +79,14 @@ impl TypeSafeJudgement {
             .build()
             .map_err(|_| "cannot create TypeSafe client")?;
         Ok(Self {
-            endpoint,
             model,
-            key,
-            client,
+            transport: Arc::new(TypeSafeTransport {
+                endpoint,
+                key,
+                client,
+            }),
+            permits: Arc::new(Semaphore::new(CONCURRENT_REQUESTS)),
         })
-    }
-
-    async fn send(&self, body: Vec<u8>) -> Result<TypeSafeWireResponse, String> {
-        if body.len() > REQUEST_BYTES {
-            return Err("TypeSafe request exceeds 256 KiB".into());
-        }
-        let mut attempt = 0;
-        loop {
-            let mut response = self
-                .client
-                .post(self.endpoint.clone())
-                .header(AUTHORIZATION, self.key.header())
-                .header(CONTENT_TYPE, "application/json")
-                .body(body.clone())
-                .send()
-                .await
-                .map_err(|error| {
-                    if error.is_timeout() {
-                        "TypeSafe timed out"
-                    } else {
-                        "TypeSafe unavailable"
-                    }
-                })?;
-            let status = response.status();
-            if status == StatusCode::TOO_MANY_REQUESTS && attempt < MAX_RETRIES {
-                let wait = response
-                    .headers()
-                    .get(RETRY_AFTER)
-                    .and_then(|value| value.to_str().ok())
-                    .and_then(|value| value.trim().parse::<u64>().ok())
-                    .unwrap_or(1)
-                    .min(MAX_RETRY_WAIT_SECS);
-                tokio::time::sleep(Duration::from_secs(wait)).await;
-                attempt += 1;
-                continue;
-            }
-            match status.as_u16() {
-                200..=299 => {}
-                401 | 403 => {
-                    return Err(format!(
-                        "TypeSafe rejected the API key ({})",
-                        status.as_u16()
-                    ));
-                }
-                429 => return Err("TypeSafe rate limit persisted after retries".into()),
-                code => return Err(format!("TypeSafe returned HTTP {code}")),
-            }
-            let mut bytes = Vec::new();
-            while let Some(chunk) = response.chunk().await.map_err(|error| {
-                if error.is_timeout() {
-                    "TypeSafe timed out"
-                } else {
-                    "TypeSafe response interrupted"
-                }
-            })? {
-                if bytes.len() + chunk.len() > REQUEST_BYTES {
-                    return Err("TypeSafe response exceeds 256 KiB".into());
-                }
-                bytes.extend_from_slice(&chunk);
-            }
-            return serde_json::from_slice(&bytes).map_err(|_| "invalid TypeSafe response".into());
-        }
     }
 }
 
@@ -170,17 +113,33 @@ impl JudgementModel for TypeSafeJudgement {
     ) -> Pin<Box<dyn std::future::Future<Output = Result<JudgementResponse, String>> + Send + 'a>>
     {
         Box::pin(async move {
-            let mut merged = JudgementResponse {
-                model: self.model.clone(),
-                answers: BTreeMap::new(),
-                input_tokens: 0,
-                requests: 0,
-            };
-            for batch in typesafe_batches(request)? {
+            let mut merged = JudgementResponse::empty(&self.model);
+            let mut sent = JoinSet::new();
+            let batches = typesafe_batches(request)?;
+            for (index, batch) in batches.iter().enumerate() {
                 let body =
-                    serde_json::to_vec(&typesafe_request_body(&self.model, &request.state, &batch))
+                    serde_json::to_vec(&typesafe_request_body(&self.model, &request.state, batch))
                         .map_err(|_| "cannot encode TypeSafe request")?;
-                let part = self.send(body).await?.into_response(&self.model, &batch)?;
+                let transport = Arc::clone(&self.transport);
+                let permits = Arc::clone(&self.permits);
+                sent.spawn(async move {
+                    let _permit = permits
+                        .acquire_owned()
+                        .await
+                        .map_err(|_| "TypeSafe requests closed".to_string())?;
+                    Ok::<_, String>((index, transport.send(body).await))
+                });
+            }
+            let mut replies = (0..batches.len()).map(|_| None).collect::<Vec<_>>();
+            while let Some(joined) = sent.join_next().await {
+                let (index, reply) = joined.map_err(|_| "TypeSafe request task failed")??;
+                replies[index] = Some(reply);
+            }
+            // Merged in batch order, and the first failing batch in that
+            // order names the failure, however the replies interleaved.
+            for (batch, reply) in batches.iter().zip(replies) {
+                let reply = reply.ok_or("TypeSafe request task lost")?;
+                let part = reply?.into_response(&self.model, batch)?;
                 merged.answers.extend(part.answers);
                 merged.input_tokens += part.input_tokens;
                 merged.requests += 1;

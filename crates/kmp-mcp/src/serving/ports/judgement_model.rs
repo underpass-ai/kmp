@@ -29,3 +29,27 @@ pub(crate) trait JudgementModel: Send + Sync {
         Box::pin(async move { (self.evaluate(request).await, JudgementOrigin::Remote) })
     }
 }
+
+/// A shared model is the model: decorators generic over `M: JudgementModel`
+/// wrap an `Arc<dyn JudgementModel>` as they would a concrete one.
+impl<T: JudgementModel + ?Sized> JudgementModel for std::sync::Arc<T> {
+    fn model(&self) -> &str {
+        (**self).model()
+    }
+
+    fn evaluate<'a>(
+        &'a self,
+        request: &'a JudgementRequest,
+    ) -> Pin<Box<dyn Future<Output = Result<JudgementResponse, String>> + Send + 'a>> {
+        (**self).evaluate(request)
+    }
+
+    fn evaluate_traced<'a>(
+        &'a self,
+        request: &'a JudgementRequest,
+    ) -> Pin<
+        Box<dyn Future<Output = (Result<JudgementResponse, String>, JudgementOrigin)> + Send + 'a>,
+    > {
+        (**self).evaluate_traced(request)
+    }
+}

@@ -109,6 +109,7 @@ async fn judge_page(
         "model": response.model,
         "requests": response.requests,
         "input_tokens": response.input_tokens,
+        "elapsed_ms": response.elapsed_us / 1_000,
     });
 }
 

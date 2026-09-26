@@ -5,6 +5,8 @@ use serde_json::json;
 
 use super::cassette_judgement::{CassetteJudgement, judgement_key};
 use super::observed_judgement::ObservedJudgement;
+use super::sqlite_verdict_book::SqliteVerdictBook;
+use super::verdict_ledger::VerdictLedger;
 use crate::serving::judgement_answer::JudgementAnswer;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
@@ -40,6 +42,7 @@ impl JudgementModel for TwoRequests {
                 answers,
                 input_tokens: 321,
                 requests: 2,
+                elapsed_us: 0,
             })
         })
     }
@@ -179,17 +182,66 @@ async fn nothing_is_written_or_hashed_below_debug() {
 fn a_site_view_keeps_absence_and_the_reason_a_store_cannot_judge() {
     let off: Result<Option<Arc<dyn JudgementModel>>, String> = Ok(None);
     assert!(matches!(
-        ObservedJudgement::for_site(&off, JudgementSite::Rerank),
+        ObservedJudgement::for_site(&off, None, JudgementSite::Rerank),
         Ok(None)
     ));
     let broken: Result<Option<Arc<dyn JudgementModel>>, String> = Err("no key".into());
     assert_eq!(
-        ObservedJudgement::for_site(&broken, JudgementSite::Rerank).err(),
+        ObservedJudgement::for_site(&broken, None, JudgementSite::Rerank).err(),
         Some("no key".to_string())
     );
     let on: Result<Option<Arc<dyn JudgementModel>>, String> = Ok(Some(Arc::new(TwoRequests)));
-    let observed = ObservedJudgement::for_site(&on, JudgementSite::Summaries)
+    let observed = ObservedJudgement::for_site(&on, None, JudgementSite::Summaries)
         .expect("on")
         .expect("model");
     assert_eq!(observed.model(), "jev-1.13.0");
+}
+
+#[tokio::test]
+async fn a_book_hit_says_so_sends_nothing_and_keeps_the_request_key() {
+    let dir = tempfile::tempdir().expect("dir");
+    let cassette = dir.path().join("jev.cassette.json");
+    CassetteJudgement::record(&cassette, Arc::new(TwoRequests))
+        .expect("record")
+        .evaluate(&request("kept", 2))
+        .await
+        .expect("recorded");
+    let replay: Arc<dyn JudgementModel> =
+        Arc::new(CassetteJudgement::replay(&cassette, "jev-1.13.0".into()).expect("replay"));
+    let book =
+        SqliteVerdictBook::open(&dir.path().join("judgements.sqlite3"), 1 << 20).expect("book");
+    let ledger = Arc::new(VerdictLedger::new(Arc::new(book)));
+    let on: Result<Option<Arc<dyn JudgementModel>>, String> = Ok(Some(replay));
+    let observed = ObservedJudgement::for_site(&on, Some(&ledger), JudgementSite::Rerank)
+        .expect("on")
+        .expect("model");
+    let (log, _guard) = CapturedLog::start(DEBUG);
+
+    let first = observed
+        .evaluate(&request("kept", 2))
+        .await
+        .expect("cassette");
+    let again = observed.evaluate(&request("kept", 2)).await.expect("book");
+
+    assert_eq!(first.answers, again.answers);
+    assert_eq!((again.requests, again.input_tokens), (0, 0));
+    let lines = log.events("kmp_judgement");
+    let fields = lines
+        .iter()
+        .map(|line| {
+            (
+                line["fields"]["source"].as_str().map(str::to_string),
+                line["fields"]["http_requests"].as_u64(),
+                line["fields"]["request_key"].as_str().map(str::to_string),
+            )
+        })
+        .collect::<Vec<_>>();
+    let key = Some(judgement_key("jev-1.13.0", &request("kept", 2)));
+    assert_eq!(
+        fields,
+        vec![
+            (Some("cassette_hit".into()), Some(0), key.clone()),
+            (Some("book_hit".into()), Some(0), key),
+        ]
+    );
 }

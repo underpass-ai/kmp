@@ -38,6 +38,7 @@ impl JudgementModel for Counting {
                 answers,
                 input_tokens: 42,
                 requests: 1,
+                elapsed_us: 0,
             })
         })
     }
