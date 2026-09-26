@@ -62,12 +62,17 @@ token figure is `null` with its reason; nothing else changes.
 
 The A/A control of a variant (the same arm against a fresh replica of itself)
 is `$TT aa --variant scripts/performance/memory_bench/variants/baseline.toml`.
-Every quality delta must be 0, and parity must hold. Token deltas are not
-exactly 0 yet: a paged read returns a continuation handle the server mints at
-random per process (`read_<32 hex>`), the next request sends it back, and two
-random handles tokenize to slightly different counts. Parity reconciles those
-values (`normalized` calls), the token meter does not, so the A/A reports
-`tokens_journey` as moved by a fraction of a token per journey.
+Every quality delta must be 0, and parity must hold. Tokens are counted twice.
+A paged read returns a continuation handle the server mints at random per
+process (`read_<32 hex>`), the next request sends it back, and two random
+handles tokenize to slightly different counts, so the raw count
+(`tokens_journey`) may move by a fraction of a token per journey. The
+normalized count (`tokens_journey_normalized`) replaces every handle by a
+placeholder of the same length before counting, and that one must not move:
+the A/A `holds` only when quality, pages and the normalized tokens are all
+exactly 0, and it lists the raw movement apart (`raw_moved`). Measured on
+2026-09-26: raw Δ 1.01 tokens per journey on the real store and 0.48 on synth
+10^3, normalized Δ 0 on both.
 
 ### What quick-a runs
 
@@ -133,9 +138,27 @@ report (`provenance.rules.modes_sha256`) and summary.
 | Mode | Command | What |
 |---|---|---|
 | `quick-a` | `$TT quick-a --candidate V` | the sections above, smoke strata; budget 600 s |
-| `full` | `$TT full --candidate V` | every private question, synth 10^3 and 10^4 on both topologies (10^4 as extra levels of the 10^3 question set), a `max_bytes` sweep {2048, 10000} at 10^3, the judged corpora with the wide arm; the public benchmarks are reported as skipped until BT17 |
+| `full` | `$TT full --candidate V` | every private question, synth 10^3 and 10^4 on both topologies (10^4 as extra levels of the 10^3 question set), a `max_bytes` sweep {2048, 10000} at 10^3, the judged corpora with the wide arm, and evidence recall on the fetched public benchmarks (`[modes.full.public]`: FactConsolidation 32k, LongMemEval-S, MuSiQue and 2Wiki subsets; a corpus not fetched is skipped with the `fetch` command as its reason; descriptive, it does not vote) |
 | `jev` | `$TT jev --candidate V --samples 3 [--record]` | the quick strata with three samples, each with its own Jev fixture |
 | `aa` | `$TT aa --variant V` | `quick-a`'s parameters and sections, the candidate a fresh replica of the baseline under a nonce |
+| `ci` | `$B ci --variant V` | the A/A of `quick-public` (the judged corpora and synth 10^3 mono, no private section, no network, no key); run by `scripts/ci/memory-bench-quick.sh` in the informative CI job `memory-bench-quick`, which publishes `report.md` and never blocks. `docs/development/bench-floors.tsv` proposes the floors a later gate would hold (floors rise freely, ceilings fall freely; the other way is a reviewed change) |
+
+Three more commands sit beside the modes:
+
+- `$B fetch --dataset NAME [--verify-only]` downloads a public dataset pinned in
+  `corpora/datasets.lock.json` and checks its SHA-256 (`application/public_cli.py`;
+  `public_cli build|run|plan-full` stay available as a module).
+- `$B mixed --reference PATH [--candidate PATH] [--old PATH]` runs the mixed-version
+  and multiprocess scenarios (BENCH_SPEC 10) on a cached 10^3 store and writes
+  `tmp/memory-bench/bt18/<time>/report.json` (`kmp.bench.mixed_versions.v1`).
+- `$B jev-tail [--self-check]` is the Jev tail test (BENCH_SPEC 9): 2-4 concurrent
+  evaluations through a local proxy that injects 429 with Retry-After, delays and
+  held connections, reporting the maximum and p99 of the added latency and the
+  deadline share per site. Real mode needs `TYPESAFE_API_KEY` in the environment
+  and is skipped with its reason without it; `--self-check` measures against a
+  loopback stand-in. kmp-mcp pins `https://api.typesafe.ai` and ignores proxies, so
+  the client mirrors the binary's retry policy (a test reads it from the Rust
+  source) rather than driving the binary through the proxy.
 
 Sweep runs get their own mode name in the result key (`full-mb2048`), because
 `max_bytes` is not a key part.
@@ -238,8 +261,8 @@ rebuild, nothing else.
 - **The Jev book and cassettes** keep request hashes and answers, not stored
   text.
 - **Licences** (BENCH_SPEC section 14). The synth-v1 worlds and the judged
-  corpora are the repository's own. The public benchmarks join with BT17 under
-  these rules: MuSiQue (CC BY 4.0, ids and gold may be kept with attribution),
+  corpora are the repository's own. The public benchmarks follow these rules
+  (`corpora/datasets.lock.json` records each licence): MuSiQue (CC BY 4.0, ids and gold may be kept with attribution),
   2Wiki (Apache-2.0), LongMemEval and MemoryAgentBench (MIT) may be cached;
   HotpotQA (CC BY-SA 4.0) is evaluation only; LoCoMo (CC BY-NC 4.0) is local
   evaluation only and nothing of it enters the repository (it is a private corpus

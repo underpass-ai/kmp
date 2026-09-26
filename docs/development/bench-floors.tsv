@@ -1,0 +1,53 @@
+# Proposed memory bench floors (BENCH_SPEC section 12, BT20). A PROPOSAL, not a gate:
+# nothing reads this file to fail a build yet. The informative CI job
+# (scripts/ci/memory-bench-quick.sh, `memory_bench ci`) reports the same figures,
+# so a reviewer can see a row move before it is ever enforced.
+#
+# Policy, as for retrieval-baseline.tsv and coverage-floors.tsv:
+# - bound `floor`: the value may rise freely; lowering it is a reviewed change that says why.
+# - bound `ceiling` (false_*, stale_*, future_*, distractor_*, scale_exponent_*): the value may
+#   fall freely; raising it is the reviewed change.
+# - Refresh deliberately, from a baseline run, never to make a red run green.
+#
+# Source of the synth rows: the release build of branch feat/recall-bench at 64957773 (base
+# v0.23.0, main 9ed08b68; kmp-mcp sha256 03589082...), `aa` of
+# variants/baseline.toml on 2026-09-26: quick-a strata, synth-v1 seed 7, mono, 10^3 entries,
+# 4 questions per type (88 questions; A/A deltas 0, handles normalized). Smoke-sized: with
+# n = 4 per type a single question moves a rate by 0.25 (BENCH_SPEC 11), so per-type rows are
+# guards with margin 0 against a regression, never evidence of an improvement.
+#
+# Source of the scale rows: build times of the cached synth-v1 seed 7 mono stores at
+# 10^3, 10^4 and 10^5 (batch 5000, same binary), least-squares slope of log10(ms) on
+# log10(entries). Ask-latency exponents are not proposed yet: they need `full` at 10^4 on
+# the latency cores, which has not run on this binary.
+#
+# The judged corpora keep their own recorded files (retrieval-baseline.tsv,
+# jev-baseline.tsv, relate-baseline.tsv); their false_unknown and false_answer rows are
+# repeated here only so the proposal is complete, with those files as the authority.
+# B-real rows are a local release gate and stay outside the repository (privacy).
+section	metric	bound	value	n
+synth-1e3-mono	useful_rate	floor	0.5172	58
+synth-1e3-mono	answer_correct_rate	floor	0.5172	58
+synth-1e3-mono	recall_at_5	floor	0.6049	58
+synth-1e3-mono	core_precision	floor	0.8095	42
+synth-1e3-mono	facet_coverage	floor	0.5862	58
+synth-1e3-mono	as_of_accuracy	floor	1.0000	6
+synth-1e3-mono	path_found	floor	0.2500	8
+synth-1e3-mono	wake_obligations_met	floor	1.0000	4
+synth-1e3-mono	false_unknown_rate	ceiling	0.2759	58
+synth-1e3-mono	false_answer_rate	ceiling	0.6667	18
+synth-1e3-mono	false_answer_rate_anchor_absent	ceiling	0.2500	4
+synth-1e3-mono	false_answer_rate_anchor_neighbor_existing	ceiling	1.0000	4
+synth-1e3-mono	false_answer_rate_near_miss_attribute	ceiling	0.7500	4
+synth-1e3-mono	false_answer_rate_singular_anchored_twin	ceiling	0.7500	4
+synth-1e3-mono	false_answer_rate_interval_scoped	ceiling	0.5000	2
+synth-1e3-mono	stale_serve_rate	ceiling	0.2500	4
+synth-1e3-mono	future_leak_rate	ceiling	0.0000	6
+synth-1e3-mono	distractor_in_core_rate_hard_distractor	ceiling	1.0000	4
+scale-mono-b5000	scale_exponent_ingest	ceiling	1.89	3
+scale-mono-b5000	scale_exponent_import	ceiling	0.91	3
+scale-mono-b5000	scale_exponent_export	ceiling	0.93	3
+retrieval-judged	false_unknown_rate	ceiling	0.0572	35
+retrieval-judged	all_false_unknown_rate	ceiling	0.1429	42
+retrieval-judged	guarded_false_answer_rate	ceiling	0.2308	13
+retrieval-judged	guarded_high_false_answer_rate	ceiling	0.2308	13

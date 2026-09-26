@@ -1,6 +1,10 @@
 """Controls of a report (BENCH_SPEC section 10), wired to the parity and determinism oracles.
 
 - `aa`: with one variant on both arms, the quality and token deltas must be exactly 0.
+  Tokens are reported twice: as recorded (`token_delta_zero`), where the random
+  continuation handles of paged reads can move a count, and normalized
+  (`token_delta_zero_normalized`), with those handles replaced by a fixed-length
+  placeholder. `holds` asks the quality and the normalized token deltas for 0.
 - `parity`: `parity.compare_captures` over the two runs' traces, call by call, after
   the documented volatile fields; this is what a `claim = 'parity'` variant is judged by.
 - `repeat`: the same oracle between repeat 0 and every later repeat of one run
@@ -25,6 +29,7 @@ AA_QUALITY = ('useful_rate', 'answer_correct_rate', 'partial_useful_rate', 'fals
               'false_answer_rate', 'facet_coverage', 'recall_at_5', 'core_precision', 'path_found',
               'wake_obligation_coverage')
 AA_TOKENS = ('tokens_journey', 'tokens_first_page', 'pages')
+AA_TOKENS_NORMALIZED = ('tokens_journey_normalized', 'tokens_first_page_normalized')
 PARITY_KEYS = ('calls', 'identical', 'normalized', 'different', 'parity_rate', 'byte_identical_rate',
                'by_kind', 'volatile_reconciled', 'path_counts')
 
@@ -34,19 +39,27 @@ class ControlUnreadable(BenchError):
 
 
 def aa(pairing):
-    """Δ of every A/A metric that both arms measured; `holds` when all are exactly 0."""
+    """Δ of every A/A metric that both arms measured.
+
+    `holds` when every quality delta, `pages` and the normalized token deltas are
+    exactly 0; the raw token deltas are reported (`raw_moved`) but do not break it."""
     rows = {}
-    for name in AA_QUALITY + AA_TOKENS:
+    for name in AA_QUALITY + AA_TOKENS + AA_TOKENS_NORMALIZED:
         row = delta(pairing, name, b=None)
         if row['delta'] is not None:
             rows[name] = row['delta']
     quality = {k: v for k, v in rows.items() if k in AA_QUALITY}
-    tokens = {k: v for k, v in rows.items() if k in AA_TOKENS}
-    moved = sorted(k for k, v in rows.items() if v != 0)
+    raw_only = ('tokens_journey', 'tokens_first_page')
+    tokens = {k: v for k, v in rows.items() if k in raw_only}  # `pages` alone is not a token count
+    normalized = {k: v for k, v in rows.items() if k in AA_TOKENS_NORMALIZED}
+    moved = sorted(k for k, v in rows.items() if v != 0 and k not in raw_only)
+    raw_moved = sorted(k for k in raw_only if rows.get(k, 0) != 0)
     return {'quality_delta_zero': all(v == 0 for v in quality.values()),
             'token_delta_zero': all(v == 0 for v in tokens.values()) if tokens else None,
+            'token_delta_zero_normalized': all(v == 0 for v in normalized.values()) if normalized else None,
             'token_absent_reason': None if tokens else 'tokens not counted',
-            'deltas': dict(sorted(rows.items())), 'moved': moved, 'holds': not moved}
+            'deltas': dict(sorted(rows.items())), 'moved': moved, 'raw_moved': raw_moved,
+            'holds': not moved}
 
 
 def _public(summary, private):

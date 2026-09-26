@@ -62,7 +62,9 @@ def _sections(summary):
         if aa:
             moved = ', '.join(aa.get('moved') or ()) or 'none'
             notes.append(f'- **{section["name"]}** A/A: quality deltas 0: {_yes(aa.get("quality_delta_zero"))}; '
-                         f'token deltas 0: {_yes(aa.get("token_delta_zero"))}; moved: {moved}')
+                         f'token deltas 0: {_yes(aa.get("token_delta_zero"))} raw, '
+                         f'{_yes(aa.get("token_delta_zero_normalized"))} with handles normalized; '
+                         f'moved: {moved}')
     return lines + ([''] + notes if notes else [])
 
 
@@ -97,6 +99,30 @@ def _judged(summary):
     return lines or ['No judged corpus in this mode.']
 
 
+PUBLIC_ROWS = ('recall_at_1', 'recall_at_5', 'mrr', 'full_chain_at_5', 'session_recall_at_5',
+               'stale_served', 'successor_rescued', 'abstained', 'unknown')
+
+
+def _public(summary):
+    """One table per public corpus the `public` section ran; a skipped corpus says why."""
+    lines = []
+    for section in summary['sections']:
+        for row in section.get('public') or ():
+            if row['status'] != 'ran':
+                lines += [f'- **{row["corpus"]}** {row["status"]}: {row["reason"]}']
+                continue
+            base, cand = row['arms']['baseline']['headline'], row['arms']['candidate']['headline']
+            for name in sorted(base):
+                lines += ['', f'### {name}', '', '| Figure | Baseline | Candidate | Δ |', '|---|---|---|---|']
+                shift = row['delta'].get(name) or {}
+                for figure in ('questions',) + PUBLIC_ROWS:
+                    a, b = base[name].get(figure), (cand.get(name) or {}).get(figure)
+                    if a is None and b is None:
+                        continue
+                    lines.append(f'| {figure} | {number(a)} | {number(b)} | {number(shift.get(figure))} |')
+    return lines
+
+
 def _limitations(summary):
     notes = sorted({note for s in summary['sections'] for note in s.get('limitations') or ()})
     return [f'- {note}' for note in notes] or ['None recorded.']
@@ -123,5 +149,8 @@ def render(summary):
               '`report.json` and `report.md` under `reports/<key>/` of the named cache.', '']
     lines += _sections(summary)
     lines += ['', '## Judged corpora', ''] + _judged(summary)
+    public = _public(summary)
+    if public:
+        lines += ['', '## Public benchmarks (evidence recall)', ''] + public
     lines += ['', '## Limitations', ''] + _limitations(summary)
     return '\n'.join(lines).rstrip('\n') + '\n'

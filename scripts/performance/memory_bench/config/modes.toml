@@ -51,7 +51,7 @@ retrieval_arms = ["plain", "narrow"]  # plain: the 53 cases (35 originals apart)
 jev = true                            # jev_cases.json in cassette replay
 
 [modes.full]
-description = "Every private question, the synth ladder 10^3-10^4 on both topologies with a max_bytes sweep at 10^3, and the judged corpora. Public benchmarks join when BT17 lands."
+description = "Every private question, the synth ladder 10^3-10^4 on both topologies with a max_bytes sweep at 10^3, the judged corpora, and evidence recall on the fetched public benchmarks."
 budget_s = 0            # no budget: the base costs hours once and is cached
 max_calls = 256
 samples = 1
@@ -80,6 +80,18 @@ max_bytes_sweep = [2048, 10000]  # extra runs at the lowest level: the quality-t
 retrieval_arms = ["plain", "narrow", "wide"]
 jev = true
 
+# Evidence recall on the public benchmarks (BT17: application/public_run.py), each arm on
+# its own import of the corpus store. A corpus whose dataset is not fetched is skipped with
+# the fetch command as its reason. Descriptive: the section reports each arm and the Δ,
+# and does not vote on the mode's verdict (no pre-registered target lives here).
+[modes.full.public]
+corpora = ["factconsolidation", "longmemeval-s", "musique", "2wiki"]
+sizes = ["32k"]         # FactConsolidation
+per_type = 10           # LongMemEval questions per type
+abstention = 30         # LongMemEval _abs items
+setup = "subset"        # MuSiQue/2Wiki: 200 questions, internal deltas only
+max_calls = 1           # the first answer page, as the Rust runners read it
+
 [modes.jev]
 description = "Jev arms: three samples, each with its own fresh cassette or book (BENCH_SPEC 9), on the quick strata."
 budget_s = 0
@@ -105,6 +117,35 @@ topologies = ["mono"]
 levels = [1000]
 batch_size = 5000
 per_type = 4
+
+[modes.quick-public]
+description = "The public part of quick-a: the judged corpora in replay and synth 10^3 mono. No private corpus, no network, no provider key: what CI can run (`ci`, BENCH_SPEC 12)."
+budget_s = 600
+max_calls = 256
+samples = 1
+repeats = 1
+max_bytes = 4096
+timeout_s = 60.0
+warmup = 1
+block = 10
+# no cpus: CI runners have no latency cores, so latency here is informative only
+bootstrap_b = 2000
+sections = ["synth", "retrieval-judged", "jev-judged"]
+
+[modes.quick-public.synth]
+seed = 7
+topologies = ["mono"]
+levels = [1000]
+batch_size = 5000
+per_type = 4
+
+[modes.quick-public.judged]
+retrieval_arms = ["plain", "narrow"]
+jev = true
+
+[modes.ci]
+description = "Informative CI job (scripts/ci/memory-bench-quick.sh): A/A of the checkout's release binary on quick-public. Every quality and normalized token delta must be 0; the judged rows are held to the recorded baselines. Never blocks the gate."
+replica_of = "quick-public"
 
 [modes.aa]
 description = "A/A control (BENCH_SPEC 10): the variant's quick-a runs (cached or fresh) against a fresh replica of the same variant, run now under a unique nonce. Every quality and token delta must be exactly 0; the latency band it shows is the smallest latency effect worth reporting."

@@ -213,8 +213,10 @@ def _controls(section):
     aa = section.get('aa')
     lines.append(f'- A/A: {DASH}' if aa is None else
                  f'- A/A: holds {num(aa["holds"])}; quality Δ = 0 {num(aa["quality_delta_zero"])}; '
-                 f'tokens Δ = 0 {num(aa["token_delta_zero"])}'
-                 + (f'; moved: {", ".join(aa["moved"])}' if aa['moved'] else ''))
+                 f'tokens Δ = 0 {num(aa["token_delta_zero"])} (raw), '
+                 f'{num(aa.get("token_delta_zero_normalized"))} (handles normalized)'
+                 + (f'; moved: {", ".join(aa["moved"])}' if aa['moved'] else '')
+                 + (f'; raw moved: {", ".join(aa["raw_moved"])}' if aa.get('raw_moved') else ''))
     det = section.get('determinism')
     lines.append(f'- Determinism: {DASH} (no determinism report given)' if det is None else
                  f'- Determinism: rate {num(det["determinism_rate"])} over {num(det["calls"])} calls, '

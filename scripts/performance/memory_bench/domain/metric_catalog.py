@@ -82,7 +82,11 @@ BY_NAME = {spec.name: spec for spec in CATALOG}
 # Per-question numbers read from QuestionScore itself rather than `values`.
 TOKEN_METRICS = {
     'tokens_journey': 'journey', 'tokens_first_page': 'first_page',
-    'tokens_to_first_evidence': 'to_first_evidence', 'tokens_to_task_ready': 'to_task_ready'}
+    'tokens_to_first_evidence': 'to_first_evidence', 'tokens_to_task_ready': 'to_task_ready',
+    # The same journey with every continuation handle replaced by a fixed-length placeholder
+    # (application/tokens.py): what the A/A control holds to Δ = 0.
+    'tokens_journey_normalized': 'journey_normalized',
+    'tokens_first_page_normalized': 'first_page_normalized'}
 LOWER_IS_BETTER_EXTRA = ('pages', 'response_bytes', 'tokens_per_useful', 'aurc', 'jev_usd') + tuple(TOKEN_METRICS)
 
 

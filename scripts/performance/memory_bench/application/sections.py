@@ -49,13 +49,15 @@ class SectionResult:
     limitations: list = field(default_factory=list)
     seconds: float = 0.0
     judged: list | None = None  # judged corpora: one comparison per corpus arm (judged_section)
+    public: list | None = None  # public benchmarks: one row per corpus (public_section)
 
     def as_dict(self):
         return {'name': self.name, 'status': self.status, 'reason': self.reason, 'layout': self.layout,
                 'report_key': self.report_key, 'runs': self.runs, 'questions': self.questions,
                 'verdict': self.verdict, 'reasons': self.reasons, 'applicable': self.applicable,
                 'headline': self.headline, 'parity': self.parity, 'aa': self.aa,
-                'limitations': self.limitations, 'judged': self.judged, 'seconds': round(self.seconds, 3)}
+                'limitations': self.limitations, 'judged': self.judged, 'public': self.public,
+                'seconds': round(self.seconds, 3)}
 
 
 def skipped(name, reason):

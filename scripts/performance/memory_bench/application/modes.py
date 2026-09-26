@@ -20,6 +20,8 @@ MODES_PATH = Path(__file__).resolve().parents[1] / 'config' / 'modes.toml'
 SECTIONS = ('real-store', 'synth', 'retrieval-judged', 'jev-judged', 'public')
 RETRIEVAL_ARMS = ('plain', 'narrow', 'wide')
 TOPOLOGIES = ('mono', 'multi')
+PUBLIC_CORPORA = ('factconsolidation', 'longmemeval-s', 'musique', '2wiki', 'locomo')
+PUBLIC_SETUPS = ('subset', 'full')
 
 
 class ModeInvalid(BenchError):
@@ -50,6 +52,17 @@ class JudgedArms:
 
 
 @dataclass(frozen=True)
+class PublicCorpora:
+    """The `public` section: which public benchmarks and how (application/public_section.py)."""
+    corpora: tuple
+    sizes: tuple = ('32k',)
+    per_type: int = 10
+    abstention: int = 30
+    setup: str = 'subset'
+    max_calls: int = 1
+
+
+@dataclass(frozen=True)
 class Mode:
     name: str
     description: str
@@ -69,6 +82,7 @@ class Mode:
     judged: JudgedArms
     sha256: str  # of the whole modes.toml
     replica_of: str | None = None  # aa: runs as that mode, the candidate is a fresh replica
+    public: PublicCorpora | None = None
 
     @property
     def run_mode(self):
@@ -135,11 +149,30 @@ def _judged(table, where):
     return JudgedArms(arms, bool(table.get('jev', False)))
 
 
+def _public(table, where):
+    if not table:
+        return None
+    corpora = tuple(table.get('corpora', ()))
+    if not corpora or set(corpora) - set(PUBLIC_CORPORA) or len(set(corpora)) != len(corpora):
+        raise ModeInvalid(f'{where}.corpora: distinct names among {", ".join(PUBLIC_CORPORA)}')
+    sizes = tuple(table.get('sizes', ('32k',)))
+    if not sizes or any(not isinstance(v, str) or not v for v in sizes):
+        raise ModeInvalid(f'{where}.sizes: FactConsolidation size names')
+    setup = table.get('setup', 'subset')
+    if setup not in PUBLIC_SETUPS:
+        raise ModeInvalid(f'{where}.setup: one of {", ".join(PUBLIC_SETUPS)}')
+    return PublicCorpora(corpora, sizes, _int(table, 'per_type', where, 1, default=10),
+                         _int(table, 'abstention', where, default=30), setup,
+                         _int(table, 'max_calls', where, 1, MAX_CALLS_LIMIT, default=1))
+
+
 def _mode(name, table, sha, replica_of=None):
     where = f'modes.{name}'
     sections = tuple(table.get('sections', ()))
     if not sections or set(sections) - set(SECTIONS):
         raise ModeInvalid(f'{where}.sections: some of {", ".join(SECTIONS)}')
+    if 'public' in sections and not table.get('public'):
+        raise ModeInvalid(f'{where}.public: a mode with the public section says which corpora it runs')
     max_bytes = table.get('max_bytes')
     if max_bytes is not None:
         max_bytes = _int(table, 'max_bytes', where, minimum=1)
@@ -157,7 +190,8 @@ def _mode(name, table, sha, replica_of=None):
                 bootstrap_b=_int(table, 'bootstrap_b', where, 1), sections=sections,
                 real=_real(table.get('real'), where + '.real'),
                 synth=_synth(table.get('synth'), where + '.synth'),
-                judged=_judged(table.get('judged'), where + '.judged'), sha256=sha, replica_of=replica_of)
+                judged=_judged(table.get('judged'), where + '.judged'), sha256=sha, replica_of=replica_of,
+                public=_public(table.get('public'), where + '.public'))
 
 
 @dataclass(frozen=True)

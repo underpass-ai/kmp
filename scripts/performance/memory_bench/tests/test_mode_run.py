@@ -360,7 +360,8 @@ class SummaryTest(unittest.TestCase):
                                          headline={'baseline': {'useful_rate': 0.5}, 'candidate': {'useful_rate': 0.5}},
                                          parity={'calls': 2, 'different': 0, 'parity_rate': 1.0},
                                          aa={'quality_delta_zero': True, 'token_delta_zero': False,
-                                             'moved': ['tokens_journey']})
+                                             'token_delta_zero_normalized': True, 'moved': [],
+                                             'raw_moved': ['tokens_journey']})
         judged = sections.SectionResult('retrieval-judged', 'ran', layout='public', verdict='neutral', judged=[{
             'arm': 'retrieval-plain', 'baseline': {'recall_at_1': 0.8}, 'candidate': {'recall_at_1': 0.8},
             'deltas': {'recall_at_1': 0.0}, 'worse': [], 'breaks_recorded': [],
@@ -386,7 +387,8 @@ class SummaryTest(unittest.TestCase):
         for needle in ('**Verdict: `neutral`**', 'within budget', '| synth-mono | ran | neutral |',
                        '0.500 → 0.500', '1.0000 (0 differ)', '### retrieval-plain', 'replica of the baseline',
                        '**public** skipped: BT17', 'git_ref `HEAD`', '9 rows of `docs/x.tsv`, 2 not ported',
-                       'A/A: quality deltas 0: yes; token deltas 0: no; moved: tokens_journey'):
+                       'A/A: quality deltas 0: yes; token deltas 0: no raw, yes with handles normalized; '
+                       'moved: none'):
             self.assertIn(needle, text)
 
 

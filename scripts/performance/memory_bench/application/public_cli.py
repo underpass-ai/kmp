@@ -24,8 +24,8 @@ SHA-256; `build` loads a corpus through the release binary into a cached store
 (`application/public_build.py`); `run` asks its questions on that store with the
 variant (default `variants/baseline.toml`) and writes the recall summary next to the
 cache (`<cache>/public/<corpus>/summary-<run>.json`; private corpora under the private
-root). This module is wired into `memory_bench fetch` by the CLI owner; it stands on
-its own meanwhile.
+root). `memory_bench fetch` is `cmd_fetch`; the `public` section of `full`
+(`application/public_section.py`) builds and runs through the same functions.
 """
 import argparse
 import json
@@ -148,6 +148,26 @@ def _journey_wall(run):
             'total_s': round(sum(values) / 1e9, 3)}
 
 
+def recall_report(corpus, binary_sha256, variant, max_calls, result, run, load_row, elapsed_s):
+    """The `kmp.bench.public_recall.v1` summary of one corpus run (SCHEMAS.md)."""
+    summary = public_run.recall_summary(corpus, run)
+    return {'schema': 'kmp.bench.public_recall.v1', 'corpus': _corpus_row(corpus),
+            'binary_sha256': binary_sha256, 'variant': str(variant), 'max_calls': max_calls,
+            'run': {'run_id': result.run_id, 'cached': result.cached, 'dir': str(result.run_dir),
+                    'elapsed_s': round(elapsed_s, 3), 'journey_wall': _journey_wall(run),
+                    'failures': result.manifest.get('failures') or []},
+            'load': load_row['timings'], 'load_elapsed_s': load_row['elapsed_s'], 'recall': summary,
+            'scope': 'evidence recall without a reader; QA accuracy is not measured here'}
+
+
+def write_recall_report(layout, corpus, report):
+    """`<cache>/public/<corpus>/summary-<run>.json`; returns its path."""
+    target = summary_dir(layout, corpus) / f'summary-{report["run"]["run_id"][:16]}.json'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(report, indent=1, sort_keys=True, ensure_ascii=False) + '\n', encoding='utf-8')
+    return target
+
+
 def cmd_run(args):
     writer = binaries.KmpBinary.locate(args.binary)
     out = []
@@ -157,20 +177,11 @@ def cmd_run(args):
         result, run = public_run.run_public(corpus, built, layout, args.variant, writer.path, args.max_calls,
                                             None if args.run_cpus == 'none' else args.run_cpus,
                                             timeout_s=args.timeout)
-        summary = public_run.recall_summary(corpus, run)
-        report = {'schema': 'kmp.bench.public_recall.v1', 'corpus': _corpus_row(corpus),
-                  'binary_sha256': writer.sha256, 'variant': str(args.variant), 'max_calls': args.max_calls,
-                  'run': {'run_id': result.run_id, 'cached': result.cached, 'dir': str(result.run_dir),
-                          'elapsed_s': round(time.perf_counter() - started, 3),
-                          'journey_wall': _journey_wall(run),
-                          'failures': result.manifest.get('failures') or []},
-                  'load': row['timings'], 'load_elapsed_s': row['elapsed_s'], 'recall': summary,
-                  'scope': 'evidence recall without a reader; QA accuracy is not measured here'}
-        target = summary_dir(layout, corpus) / f'summary-{result.run_id[:16]}.json'
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(report, indent=1, sort_keys=True, ensure_ascii=False) + '\n', encoding='utf-8')
+        report = recall_report(corpus, writer.sha256, args.variant, args.max_calls, result, run, row,
+                               time.perf_counter() - started)
+        target = write_recall_report(layout, corpus, report)
         out.append({'corpus': corpus.name, 'summary': str(target), 'run_id': result.run_id,
-                    'headline': headline(summary), 'load_ms': row['timings'], 'run': report['run']})
+                    'headline': headline(report['recall']), 'load_ms': row['timings'], 'run': report['run']})
     print(json.dumps(out, indent=1, sort_keys=True))
     return 0
 

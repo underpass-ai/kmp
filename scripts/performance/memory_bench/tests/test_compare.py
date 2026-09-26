@@ -11,10 +11,18 @@ from ..application import controls, markdown, report as reports, verdict
 from ..application.compare import ComparisonRefused, Pairing, delta, drift, require_comparable
 from ..application.run_data import load_run
 from ..application.score import ScoringRefused, score_run
+from ..application import tokens as tokens_module
 from ..application.tokens import unavailable
 from ..domain import cachekey
 from ..domain.variant import parse_variant_toml
 from .run_fixture import WordCounter, answer, facet, make_run, question
+
+
+class LetterCounter(WordCounter):
+    """Words plus the letter `a`: a count that moves with the hex digits of a handle."""
+
+    def count(self, text):
+        return super().count(text) + text.count('a')
 
 N = 40
 QUESTIONS = tuple(question(f'q{i:02d}', 'singular_anchored', {
@@ -100,6 +108,32 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(report['controls']['parity']['parity_rate'], 1.0)
         self.assertEqual(report['verdict']['value'], 'neutral')
         self.assertEqual(report['verdict']['deltas']['tokens_journey']['delta'], 0.0)
+
+    def test_aa_normalizes_the_random_continuation_handles(self):
+        """Two fresh processes mint different `read_<32 hex>` handles: the raw token count may
+        move, the normalized one may not, and only the normalized one decides `holds`."""
+        def paged(handle):
+            def pages(q, sample=0):
+                return [{**page, 'continuation': handle} for page in baseline_pages(q, sample)]
+            return pages
+        base = self.run_dir('base', paged('read_' + 'a' * 32))
+        again = self.run_dir('base-again', paged('read_' + 'b' * 32), binary='a' * 64)
+        counters = (LetterCounter('o200k_base'), LetterCounter('cl100k_base'))
+        aa = self.report(base, again, variant('parity', guards=()), counters=counters)['controls']['aa']
+        self.assertFalse(aa['token_delta_zero'])
+        self.assertEqual(aa['raw_moved'], ['tokens_first_page', 'tokens_journey'])
+        self.assertTrue(aa['token_delta_zero_normalized'])
+        self.assertEqual(aa['deltas']['tokens_journey_normalized'], 0.0)
+        self.assertEqual(aa['moved'], [])
+        self.assertTrue(aa['holds'])
+
+    def test_normalizing_keeps_length_and_touches_only_handles(self):
+        raw = b'{"continuation":"read_' + b'f' * 32 + b'","x":"read_' + b'f' * 33 + b'","y":"xread_' + b'1' * 32 + b'"}'
+        fixed = tokens_module.normalize_handles(raw)
+        self.assertEqual(len(fixed), len(raw))
+        self.assertIn(b'"read_' + b'0' * 32 + b'"', fixed)
+        self.assertIn(b'read_' + b'f' * 33, fixed)  # not a handle: 33 hex digits
+        self.assertIn(b'xread_' + b'1' * 32, fixed)  # not a handle: glued to a word
 
     def test_parity_claim_broken_is_a_regression(self):
         base = self.run_dir('base', baseline_pages)

@@ -18,6 +18,10 @@ so an example here that stops being valid fails the build.
 | built store | `kmp.bench.store.v1` | `runtime/store_cache.py` | BT14 (`build`) | every runner (`run_questions.StoreRef`), BT18 |
 | write cost | `kmp.bench.write_cost.v1` | `application/write_cost.py` | BT05 | BT10 (`latency_resources`) |
 | mode summary, judged rows, git_ref builds | `kmp.bench.mode_summary.v1`, `kmp.bench.judged.v1`, `kmp.bench.binary.v1` | `application/mode_run.py`, `application/judged_section.py`, `runtime/git_build.py` | BT12 | people, BT20 |
+| Jev fixture sample | `kmp.bench.jev_fixture.v1` | `runtime/jev_fixture.py` | BT11 (`jev --record`) | BT11 replay, BT12 |
+| public recall summary | `kmp.bench.public_recall.v1` | `application/public_cli.py` (`recall_report`) | BT17 (`public_cli run`, `full`'s `public` section) | people, BT12 summary |
+| mixed versions report | `kmp.bench.mixed_versions.v1` | `application/mixed_versions.py` | BT18 (`mixed`) | people |
+| Jev tail report | `kmp.bench.jev_tail.v1` | `application/jev_tail.py` | BT19 (`jev-tail`) | people |
 | answer reading, write receipts | — | `domain/refs.py`, `domain/receipt.py` | — | every runner and scorer |
 | cache keys | — | `domain/cachekey.py` | all | all |
 | cache layout | — | `runtime/layout.py` | all | all |
@@ -777,9 +781,19 @@ this key order, compact, no NaN):
   points per `max_bytes` and level).
 - `jev_by_site`: `price_usd_per_mtok`, `arms[arm]` (`sites` or null with
   `absent_reason`), `delta_usd`, `marginal_cost_per_useful`.
-- `controls`: `aa`, `determinism_rate` and `determinism` (a `determinism.py` report),
+- `controls`: `aa` (below), `determinism_rate` and `determinism` (a `determinism.py` report),
   `parity` (parity oracle between the two runs), `repeat[arm]` (repeat 0 against later
   repeats, JSON-RPC id set aside), `unpaired_questions`.
+  `aa` (same binary and configuration on both arms, else null): `deltas` (Δ of every
+  A/A metric both arms measured), `quality_delta_zero`, `token_delta_zero` (raw
+  `tokens_journey` and `tokens_first_page`; null with `token_absent_reason` when tokens
+  were not counted), `token_delta_zero_normalized`
+  (`tokens_journey_normalized`, `tokens_first_page_normalized`: the same journeys with
+  every `continuation` handle `read_<32 hex>` replaced by the fixed-length placeholder
+  `read_000…0` before counting, `application/tokens.py`), `token_absent_reason`,
+  `moved` (metrics whose Δ ≠ 0, raw token counts excluded), `raw_moved` (raw token
+  counts whose Δ ≠ 0: the handles are minted at random per process, so these may move)
+  and `holds` (`moved` is empty: quality, pages and normalized tokens all exactly 0).
 - `power[]`: targets and guards, then headline rates; a single-arm report gives
   `mde_at_reference_d` for d = 0.08 and 0.30 instead.
 - `verdict`: also `deltas` (`tokens_journey`, `jev_usd`, `useful_rate` when measured).
@@ -1036,12 +1050,12 @@ with a frozen selection (continuation page) evaluates nothing.
 |---|---|---|
 | `site` | enum | who spent it, below |
 | `model` | string | pinned model (`jev-1.13.0`) |
-| `source` | `remote`, `cassette_hit`, `cassette_miss` | provider over the network; answered from `KMP_TYPESAFE_CASSETTE`; not in the cassette (replay: the evaluation fails; record: the provider was asked and the answer kept) |
+| `source` | `remote`, `cassette_hit`, `cassette_miss`, `book_hit` | provider over the network; answered from `KMP_TYPESAFE_CASSETTE`; not in the cassette (replay: the evaluation fails; record: the provider was asked and the answer kept); answered from the verdict book (P5, `<data dir>/judgements.sqlite3`) with no provider request. A binary without the book never logs `book_hit`; the bench accepts it already (`domain/run_record.JEV_SOURCES`) and counts it as a replayed answer (`runtime/judgement_log.REPLAY_SOURCES`, `jev_cost` `book_hits`) |
 | `status` | `ok`, `error` | |
 | `questions` | int | typed questions in the request (one per passage for rerank/wake focus) |
 | `answers` | int | `ok` only: answers returned |
 | `requests` | int | `ok` only: provider requests this judgement costs (budget batching, `typesafe_batches.rs`); for a cassette hit, what the recording cost |
-| `http_requests` | int | `ok` only: HTTP requests this process actually sent: `0` for `cassette_hit`, else `requests` |
+| `http_requests` | int | `ok` only: HTTP requests this process actually sent: `0` for `cassette_hit` and `book_hit`, else `requests` |
 | `input_tokens` | int | `ok` only: provider-reported input tokens (summed over batches; from the cassette entry on a hit) |
 | `elapsed_us` | int | wall time of the evaluation in µs, retries included |
 | `request_key` | hex | SHA-256 of the whole request's provider body = the cassette entry key (`cassette_judgement.rs`), so a line joins its cassette/book entry |
@@ -1180,8 +1194,12 @@ lines; lines before the error have already been written.
 
 ## Mode runs (BT12)
 
-`quick-a`, `full`, `jev` and `aa` (`application/mode_run.py`) run the sections their
-mode in `config/modes.toml` (`kmp.bench.modes.v1`) names. Each run section is one
+`quick-a`, `full`, `jev`, `aa` and `ci` (`application/mode_run.py`) run the sections their
+mode in `config/modes.toml` (`kmp.bench.modes.v1`) names. `aa` replicates `quick-a`
+and `ci` replicates `quick-public` (the judged corpora and synth 10^3 mono: no private
+section, no network, no key; `scripts/ci/memory-bench-quick.sh`). A mode with the
+`public` section names its corpora in `[modes.<mode>.public]` (`corpora`, `sizes`,
+`per_type`, `abstention`, `setup`, `max_calls`). Each run section is one
 `report.json` (section 5); what ties them together is the mode summary.
 
 - **`kmp.bench.mode_summary.v1`** (`reports/<summary_key>/summary.json` and the
@@ -1193,10 +1211,15 @@ mode in `config/modes.toml` (`kmp.bench.modes.v1`) names. Each run section is on
   `replica`, `parameters` (the mode's run parameters), `sections[]` (name, status
   `ran`/`skipped`/`failed`, reason, layout, report key, run ids and cache hits,
   questions by corpus, verdict and reasons, whether it voted, headline rates per arm,
-  parity counts, A/A control, limitations, judged rows, seconds), `timings`
+  parity counts, A/A control, limitations, judged rows, public rows, seconds), `timings`
   (`started_at`, `total_s`, `budget_s`, `within_budget`, `by_section`) and `verdict`
   (`value`, `reasons`, `by_section`). Aggregates only; it lands in the private cache
-  when a private section ran.
+  when a private section ran. `sections[].public` (the `public` section only, else
+  null): one row per corpus of the mode, `{corpus, status, reason}` and, when it ran,
+  `questions`, `arms[baseline|candidate]` (`run_id`, `cached`, `headline`: the
+  `public_cli.headline` figures per question corpus) and `delta` (candidate minus
+  baseline of every number both headlines hold). The section never votes
+  (`applicable = false`, `verdict = null`).
 - **`kmp.bench.judged.v1`** (`reports/<judged_key>/judged.json`): one arm of a judged
   corpus (`retrieval` plain/narrow/wide, `jev` replay) on one binary: `key`, `corpus`,
   `arm`, `variant`, `binary_sha256`, `config_digest`, `rows` (the scorecard rows by
@@ -1210,3 +1233,144 @@ mode in `config/modes.toml` (`kmp.bench.modes.v1`) names. Each run section is on
   `binary.provenance` of every run of that binary; a path binary's provenance is
   `{source: "path", path, git_commit, dirty}` (`path` and the commit only inside the
   checkout).
+
+## Jev fixtures (`kmp.bench.jev_fixture.v1`, BT11)
+
+`jev/<fixture key>/sample-<i>/fixture.json` under the cache layout, written when a
+sample is recorded (`runtime/jev_fixture.py`; BENCH_SPEC 9). The fixture key digests
+the binary, the part of the variant that changes Jev's requests (`judged_config`:
+store files and environment, without the cassette, its mode or `RUST_LOG`), the store
+key, the question digest and the backend, so record and replay of one arm share it.
+Next to the manifest lies the sample's content: `cassette.json` (backend `cassette`,
+`kmp.typesafe.cassette.v1`) or `judgements.sqlite3` (backend `book`, opaque bytes).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `schema` | const | `kmp.bench.jev_fixture.v1` |
+| `fixture_key` | hex64 | the key above; replay refuses a manifest for another key |
+| `sample` | int ≥ 0 | sample index; each sample records and replays alone |
+| `backend` | `cassette`, `book` | per-body cassette (every binary up to P5) or the P5 verdict book |
+| `model` | string | pinned model (`jev-1.13.0`) |
+| `file` | string or null | `cassette.json` or `judgements.sqlite3`; null when nothing was written |
+| `sha256` | hex64 or null | of that file |
+| `request_keys` | [hex64] | sorted `request_key`s the sample's `kmp_judgement` lines named |
+| `by_source` | object | lines per `source` (`remote`, `cassette_hit`, `cassette_miss`, `book_hit`) |
+| `telemetry` | bool | the binary logged `kmp_judgement` (BT03); false: completeness unprovable |
+
+```json jev-fixture
+{"schema": "kmp.bench.jev_fixture.v1",
+ "fixture_key": "7777777777777777777777777777777777777777777777777777777777777777",
+ "sample": 0, "backend": "cassette", "model": "jev-1.13.0", "file": "cassette.json",
+ "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+ "request_keys": ["a0b4a155271abd4b5cbb4c446fba3ccb7a96299de1b60a27e222b270aded6b2b"],
+ "by_source": {"remote": 1}, "telemetry": true}
+```
+
+A sample's outcome (`SampleOutcome`, in the run's Jev section) is `recorded`,
+`complete`, `no_comparable` (a failed evaluation, a miss or a provider call during
+replay) or `unverified` (replay by a binary without telemetry). Replay copies the
+recording into a work directory, never the other way, and refuses a provider key.
+
+## Public recall (`kmp.bench.public_recall.v1`, BT17)
+
+`<cache>/public/<corpus>/summary-<run id[:16]>.json` (the private cache for LoCoMo),
+written by `public_cli run` and by the `public` section of a mode, one per corpus run
+(`application/public_cli.recall_report`). Evidence recall without a reader: QA
+accuracy is not measured here (BENCH_SPEC 4.6).
+
+| Field | Meaning |
+|---|---|
+| `schema` | `kmp.bench.public_recall.v1` |
+| `corpus` | `corpus`, `dataset` (lock name), `abouts`, `entries`, `questions`, `questions_digest`, `selection` (`"(private)"` for a private corpus), `notes` |
+| `binary_sha256`, `variant`, `max_calls` | what asked (`max_calls` 1 = the first answer page, as the Rust runners read it) |
+| `run` | `run_id`, `cached`, `dir`, `elapsed_s`, `journey_wall` (`n`, `mean_ms`, `p50_ms`, `max_ms`, `total_s` of sample 0 repeat 0) or null, `failures` |
+| `load`, `load_elapsed_s` | the corpus store as built (`public_build.timings`: entries, batches, ingest/export/import/re-export/copy ms, template and bundle bytes, event count, content digest, both store keys) |
+| `recall` | `public_run.recall_summary`: `run_id`, `statuses`, `not_run`, `corpora[question corpus][stratum]` with `questions` and each figure as a rate `{value, hits, n, wilson95}`, a mean `{value, n}` or, for `evidence_hit`, counts of `Full`/`Partial`/`Missing` |
+| `scope` | the sentence saying this is evidence recall only |
+
+Strata are `all`, `type:<question type>` and the tags `hops:`, `qtype:`, `category:`,
+`size:` and `abstention`. A figure that does not apply to a corpus is absent, never 0.
+
+```json public-recall
+{"schema": "kmp.bench.public_recall.v1",
+ "corpus": {"corpus": "musique-hipporag200", "dataset": "musique", "abouts": 1, "entries": 3254,
+            "questions": 200, "questions_digest": "3333333333333333333333333333333333333333333333333333333333333333",
+            "selection": {"dataset": "musique", "first_id": "2hop__13548_13529", "last_id": "2hop__85596_807969"},
+            "notes": {"comparable_with_published": false, "policy": "best_effort", "types": {"multihop_why_k": 200}}},
+ "binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+ "variant": "scripts/performance/memory_bench/variants/baseline.toml", "max_calls": 1,
+ "run": {"run_id": "d69566426316216abb930f49452b8c6d3fdb12cd4a70d82fcc8b3753d6c978e0", "cached": false,
+         "dir": "tmp/memory-bench/runs/d695...", "elapsed_s": 412.3,
+         "journey_wall": {"n": 200, "mean_ms": 2010.4, "p50_ms": 1998.2, "max_ms": 2511.0, "total_s": 402.1},
+         "failures": []},
+ "load": {"entries": 3254, "batches": 1, "ingest_ms": 237.605, "export_ms": 88.366, "import_ms": 268.445,
+          "reexport_ms": 58.366, "copy_ms": 4.603, "template_bytes": 28266500, "bundle_bytes": 3525486,
+          "event_count": 1, "content_digest": "sha256:cb95169449ac1474bfd1ec85e78814f5bcb1b062c33d3714671cab575db918e5",
+          "ingest_key": "910277431f55e5c1a39df8ab6d25fa799c1985c5b5aef1e275b25f728d5a500d",
+          "import_key": "8c84c5792eec3a03ce1884f7ea1f8dd45bfdc8ce2b5c83553b3b3575a043d4bc"},
+ "load_elapsed_s": 0.9,
+ "recall": {"run_id": "d69566426316216abb930f49452b8c6d3fdb12cd4a70d82fcc8b3753d6c978e0",
+            "statuses": {"completed": 200}, "not_run": [],
+            "corpora": {"musique": {"all": {"questions": 200,
+                "recall_at_5": {"value": 0.41, "n": 200},
+                "full_chain_at_5": {"value": 0.2, "hits": 40, "n": 200, "wilson95": [0.15, 0.26]}}}}},
+ "scope": "evidence recall without a reader; QA accuracy is not measured here"}
+```
+
+## Mixed versions (`kmp.bench.mixed_versions.v1`, BT18)
+
+`tmp/memory-bench/bt18/<utc time>/report.json`, written by `memory_bench mixed`
+(`application/mixed_versions_cli.py`), with one trace and one stderr per process next
+to it. Every scenario ends in `pass`, `fail` or `skipped` with its reason; one failing
+scenario never stops the others. The command exits 1 when any scenario failed.
+
+| Field | Meaning |
+|---|---|
+| `schema` | `kmp.bench.mixed_versions.v1` |
+| `binaries[]` | `role` (`reference`, `candidate`, `old`), `path`, `sha256`, `version`, `capabilities` (`sidecar`, `book`: the binary names that file) |
+| `settings` | `about`, `writes` (ingests per writing process), `reads`, `questions` (count) |
+| `counts` | `pass`, `fail`, `skipped` |
+| `results[]` | `scenario` (`write_then_read`, `concurrent_writers`, `reads_during_writes`, `sidecar_catch_up`, `book_first_wins`), `case` (e.g. `reference->candidate`), `status`, `reason`, `checks[]` (`name`, `ok`, `detail`, `gating`: a non-gating check is reported and never fails the scenario), `latency_ms[name]` (`n`, `p50`, `p95`, `max` of wall ms; p95 indicative below n = 20), `facts` (format stamps, the path taken: `direct` or `bundle`, conflict retries…) |
+
+```json mixed-versions
+{"schema": "kmp.bench.mixed_versions.v1",
+ "binaries": [{"role": "reference", "path": "tmp/memory-bench/bin/0.23.0/kmp-mcp",
+               "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+               "version": "0.23.0", "capabilities": []}],
+ "settings": {"about": "synth:mono-a000", "writes": 6, "reads": 4, "questions": 2},
+ "counts": {"fail": 0, "pass": 1, "skipped": 0},
+ "results": [{"scenario": "write_then_read", "case": "reference->candidate", "status": "pass",
+              "reason": null,
+              "checks": [{"name": "writes_visible", "ok": true, "detail": "6/6", "gating": true}],
+              "latency_ms": {"write": {"n": 6, "p50": 529.463, "p95": 556.307, "max": 564.638}},
+              "facts": {"path": "direct", "format_before": "4", "format_after": "4"}}]}
+```
+
+## Jev tail (`kmp.bench.jev_tail.v1`, BT19)
+
+`tmp/memory-bench/jev-tail/<utc time>/report.json`, written by `memory_bench jev-tail`
+(`application/jev_tail.py`, proxy in `runtime/jev_fault_proxy.py`). Real mode needs
+`TYPESAFE_API_KEY` in the environment and is otherwise `skipped` with its reason (exit
+0); `--self-check` runs the same measurement against a loopback stand-in. The key is
+never written: `key` records its source and `recorded: false` only. The proxy cannot
+sit in front of kmp-mcp (it pins `https://api.typesafe.ai` and ignores proxies), so the
+client mirrors the binary's retry policy; `limitations` says so.
+
+| Field | Meaning |
+|---|---|
+| `schema`, `bench_version`, `status` | `ran` or `skipped` (then `reason`, empty `levels`) |
+| `mode`, `upstream`, `key` | `real` / `self_check`; the provider URL or `loopback stand-in`; `{source, recorded: false}` |
+| `settings` | `concurrency` (2–4), `requests` per level and pass, `sites`, `deadlines_ms[site]`, `plan` (faults cycled by arrival: `pass`, `429[:s]`, `delay:<ms>`, `timeout:<s>`), `policy` (`max_retries`, `max_wait_s`, `default_wait_s`, `timeout_s`) |
+| `levels[]` | `concurrency`, `all` and `by_site[site]` rows, `proxy` (`clean_requests`, `faulted_requests`, `faults` by label) |
+| row | `n`, `added_ms` (`max`, `p99` or null with `p99_absent_reason` below n = 100, `mean`; added = faulted minus clean wall time of the same request), `deadline_ms`, `within_deadline`, `within_deadline_rate`, `retries`, `waited_s`, `degraded` (requests that gave up), `warned` and `warnings` (the binary's message per way of giving up), `clean_errors` |
+| `elapsed_s`, `limitations` | |
+
+```json jev-tail
+{"schema": "kmp.bench.jev_tail.v1", "bench_version": "kmp.memory_bench.v1", "status": "skipped",
+ "reason": "TYPESAFE_API_KEY is not set: the Jev tail test runs only in real mode (BENCH_SPEC 9); run it with the key exported, or `--self-check` against the loopback stand-in",
+ "settings": {"concurrency": [2, 3, 4], "requests": 40, "sites": ["rerank", "wake_focus", "paths", "labels"],
+              "deadlines_ms": {"labels": 20000, "paths": 20000, "rerank": 20000, "wake_focus": 20000},
+              "plan": "pass,429:1,pass,delay:1500,pass,timeout:25,pass,429,pass,pass",
+              "policy": {"max_retries": 2, "max_wait_s": 5, "default_wait_s": 1, "timeout_s": 20.0}},
+ "levels": [], "limitations": ["kmp-mcp pins https://api.typesafe.ai ..."]}
+```

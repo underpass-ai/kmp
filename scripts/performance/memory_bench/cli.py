@@ -11,6 +11,9 @@
   $TT full --candidate variants/X.toml
   $TT jev --candidate variants/X.toml --samples 3 [--record]
   $TT aa --variant variants/baseline.toml
+  $B  ci --variant variants/baseline.toml   A/A on quick-public (scripts/ci/memory-bench-quick.sh)
+  $B  mixed --reference PATH [--candidate PATH] [--old PATH]   mixed versions, multiprocess (BT18)
+  $B  jev-tail [--self-check] [--concurrency 2,3,4]   Jev tail through a local fault proxy (BT19)
   $B  compare | render | real | cache ls|gc
   $B  validate --questions F --variant F --calls F   check files against SCHEMAS.md
 
@@ -25,6 +28,7 @@ from ..token_harness.domain.errors import HarnessError
 from .domain.errors import NotImplementedYet
 from .domain.jsonl import REPO_ROOT
 
+REPLICA_COMMANDS = ('aa', 'ci')  # a variant against a fresh replica of itself
 DEFAULT_BASELINE = REPO_ROOT / 'scripts/performance/memory_bench/variants/baseline.toml'
 # Command -> task that implements it (bench_tasks.json).
 OWNERS = {'prepare': 'BT12', 'fetch': 'BT17', 'build': 'BT14',
@@ -83,6 +87,11 @@ def run_prepare(args):
     return 0 if counters else 1
 
 
+def run_fetch(args):
+    from .application.public_cli import cmd_fetch
+    return cmd_fetch(args)
+
+
 def run_mode_command(args):
     from .application.mode_run import ModeRequest, run_mode
     if args.command == 'jev' and args.samples is not None:
@@ -90,9 +99,10 @@ def run_mode_command(args):
         fixed = load_modes().get('jev').samples
         if args.samples != fixed:
             raise ModeInvalid(f'modes.toml fixes jev samples at {fixed}; edit it to change them')
-    request = ModeRequest(mode=args.command, baseline=args.variant if args.command == 'aa' else args.baseline,
-                          candidate=None if args.command == 'aa' else args.candidate,
-                          freeze=args.freeze, private_root=args.private_root,
+    replica = args.command in REPLICA_COMMANDS
+    request = ModeRequest(mode=args.command, baseline=args.variant if replica else args.baseline,
+                          candidate=None if replica else args.candidate,
+                          freeze=getattr(args, 'freeze', None), private_root=getattr(args, 'private_root', None),
                           record=getattr(args, 'record', False), out=args.out)
     summary, paths, _ = run_mode(request)
     print(json.dumps({'summary': str(paths[0]), 'markdown': str(paths[1]),
@@ -141,8 +151,12 @@ def build_parser():
     prepare = commands.add_parser('prepare', help='verify the pinned tiktoken assets (offline)')
     prepare.set_defaults(action=run_prepare)
     prepare.add_argument('--cache-dir', type=Path, help='default: TIKTOKEN_CACHE_DIR or tmp/memory-bench/tiktoken-cache')
-    _stub(commands, 'fetch', 'download a public dataset').add_argument(
-        '--dataset', action='append', required=True)
+    fetch = commands.add_parser('fetch', help='download locked public datasets and verify them (BT17)')
+    fetch.set_defaults(action=run_fetch)
+    fetch.add_argument('--dataset', action='append', required=True, help="lock name, or 'all'")
+    fetch.add_argument('--verify-only', action='store_true', help='check what is present; download nothing')
+    fetch.add_argument('--out', type=Path, help='cache root (default <repo>/tmp/memory-bench)')
+    fetch.add_argument('--private-root', type=Path, help='root of private datasets (LoCoMo)')
     world = commands.add_parser('world', help='generate, check and calibrate synth-v1 worlds')
     world.set_defaults(action=run_world)
     world.add_argument('--generator', choices=('synth-v1',), default='synth-v1')
@@ -162,16 +176,18 @@ def build_parser():
     for name, help_text in (('quick-a', 'phase A quick run (<= 10 min with the base cached)'),
                             ('full', 'every private question, the synth ladder, the judged corpora'),
                             ('jev', 'Jev arms: samples with a fresh cassette or book each'),
-                            ('aa', 'A/A control: a variant against a fresh replica of itself')):
+                            ('aa', 'A/A control: a variant against a fresh replica of itself'),
+                            ('ci', 'informative CI run: A/A on the public part of quick-a, no network, no key')):
         command = commands.add_parser(name, help=help_text)
         command.set_defaults(action=run_mode_command)
-        if name == 'aa':
+        if name in REPLICA_COMMANDS:
             command.add_argument('--variant', type=Path, required=True)
         else:
             command.add_argument('--candidate', type=Path, required=True)
             command.add_argument('--baseline', type=Path, default=DEFAULT_BASELINE)
-        command.add_argument('--freeze', type=Path, help='B-real freeze (default: latest under the private root)')
-        command.add_argument('--private-root', type=Path, help='default: $MEMORY_BENCH_PRIVATE_ROOT')
+        if name != 'ci':  # ci runs no private section
+            command.add_argument('--freeze', type=Path, help='B-real freeze (default: latest under the private root)')
+            command.add_argument('--private-root', type=Path, help='default: $MEMORY_BENCH_PRIVATE_ROOT')
         command.add_argument('--out', type=Path, help='public cache root (default <repo>/tmp/memory-bench)')
         if name == 'jev':
             command.add_argument('--samples', type=int, help='must equal modes.toml (3)')
@@ -188,6 +204,12 @@ def build_parser():
     cache.add_argument('operation', choices=('ls', 'gc'))
     from .application.build import add_arguments
     add_arguments(build, materialize, cache)
+    mixed = commands.add_parser('mixed', help='mixed versions and multiprocess scenarios (BT18)')
+    from .application.mixed_versions_cli import add_arguments as add_mixed_arguments
+    add_mixed_arguments(mixed)
+    jev_tail = commands.add_parser('jev-tail', help='Jev tail test through a local fault proxy (BT19)')
+    from .application.jev_tail import add_arguments as add_tail_arguments
+    add_tail_arguments(jev_tail)
     validate = commands.add_parser('validate', help='check files against SCHEMAS.md contracts')
     validate.set_defaults(action=run_validate)
     for flag in ('questions', 'variant', 'calls', 'journeys'):

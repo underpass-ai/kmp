@@ -265,9 +265,12 @@ def _tokens(run_tokens, journey, first_judged, ready):
         counted = run_tokens.of(journey, encoding)
         if counted is None:
             continue
+        fixed = run_tokens.of_normalized(journey, encoding)
         rows[encoding] = {'journey': counted.total, 'first_page': counted.through(1),
                           'to_first_evidence': counted.through(first_judged) if first_judged else None,
-                          'to_task_ready': counted.through(ready) if ready else None}
+                          'to_task_ready': counted.through(ready) if ready else None,
+                          'journey_normalized': None if fixed is None else fixed.total,
+                          'first_page_normalized': None if fixed is None else fixed.through(1)}
     return rows
 
 

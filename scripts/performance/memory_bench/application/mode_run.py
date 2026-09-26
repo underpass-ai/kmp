@@ -14,7 +14,8 @@ written as its own `report.json` + `report.md` (application/sections.py):
 - `retrieval-judged`, `jev-judged`: the repository's judged corpora in replay
   (application/judged_section.py);
 - parity: every run section compares the two arms call by call (report controls);
-- `public`: the public benchmarks, skipped until BT17 lands.
+- `public`: evidence recall on the fetched public benchmarks, per arm
+  (application/public_section.py); descriptive, it does not vote.
 
 The mode's verdict combines the sections' by the precedence modes.toml
 pre-registers; sections where the claim measured nothing do not vote. The summary
@@ -34,13 +35,12 @@ from ..domain import cachekey, jsonl
 from ..domain.errors import BenchError
 from ..domain.jsonl import REPO_ROOT
 from ..runtime.layout import private_layout, public_layout
-from . import judged_section, real_section, sections, summary_markdown, synth_section
+from . import judged_section, public_section, real_section, sections, summary_markdown, synth_section
 from .arms import load_spec
 from .modes import load_modes
 from .report import code_sha256
 
 SCHEMA = 'kmp.bench.mode_summary.v1'
-PUBLIC_REASON = 'public benchmarks are not wired yet (BT17: fetch, licence lock, adapters)'
 
 
 class ModeRefused(BenchError):
@@ -143,7 +143,7 @@ def run_mode(request, log=sys.stderr):
         elif name in judged_section.CORPORA:
             results.append(judged_section.run(name, specs, mode, public, REPO_ROOT, nonce is not None))
         elif name == 'public':
-            results.append(sections.skipped('public', PUBLIC_REASON))
+            results.append(public_section.run(specs, mode, public, request.private_root))
         print(f'memory_bench {mode.name}: {results[-1].name} {results[-1].status} '
               f'{results[-1].verdict or ""} {results[-1].seconds:.1f}s', file=log, flush=True)
     summary = summarize(request, mode, modes, specs, results, started_at, time.perf_counter() - started)
