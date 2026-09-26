@@ -267,8 +267,9 @@ def distractor_in_core_rate(cases):
 class FalseUnknown:
     """The two definitions BENCH_SPEC §7 asks for, side by side.
 
-    - `scorecard`: the Rust column, UNKNOWN on a question with judged answers over every
-      question scored (negatives included in the denominator);
+    - `scorecard`: the Rust column, as retrieval_kmp_scorecard.rs scores its `positives`:
+      UNKNOWN on a question with judged answers, over the questions with judged answers
+      only (a negative has nothing judged and never enters the denominator);
     - `given_known`: P(UNKNOWN | KNOWN), over the answerable questions only.
     """
     scorecard: Rate
@@ -276,12 +277,14 @@ class FalseUnknown:
 
 
 def false_unknown_rate(cases):
-    """`cases`: `(known, unknown)` boolean pairs, one per question."""
-    cases = [(bool(known), bool(unknown)) for known, unknown in cases]
+    """`cases`: `(known, judged, unknown)` boolean triples, one per question; `judged` says
+    the question has at least one judged ref (a Rust scorecard positive)."""
+    cases = [(bool(known), bool(judged), bool(unknown)) for known, judged, unknown in cases]
     return FalseUnknown(
-        scorecard=Rate(sum(1 for known, unknown in cases if known and unknown), len(cases)),
-        given_known=Rate(sum(1 for known, unknown in cases if known and unknown),
-                         sum(1 for known, _ in cases if known)))
+        scorecard=Rate(sum(1 for _, judged, unknown in cases if judged and unknown),
+                       sum(1 for _, judged, _ in cases if judged)),
+        given_known=Rate(sum(1 for known, _, unknown in cases if known and unknown),
+                         sum(1 for known, _, _ in cases if known)))
 
 
 def false_answer_rate_by_type(cases):

@@ -7,10 +7,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from ..application import controls, markdown, report as reports, verdict
+from ..application import compare, controls, markdown, report as reports, verdict
 from ..application.compare import ComparisonRefused, Pairing, delta, drift, require_comparable
 from ..application.run_data import load_run
-from ..application.score import ScoringRefused, score_run
+from ..application.score import QuestionScore, ScoringRefused, score_run
 from ..application import tokens as tokens_module
 from ..application.tokens import unavailable
 from ..domain import cachekey
@@ -67,6 +67,12 @@ def leaky_pages(q, sample=0):
     if q.id.startswith('n'):
         return [answer([200])]
     return better_pages(q)
+
+
+def rate_score(i, useful):
+    """A bare kmp_ask score carrying one Bernoulli trial of useful_rate."""
+    return QuestionScore(f'q{i:03d}', 'singular_anchored', 'synth', 'kmp_ask', 0, False, (), 'completed', 1, 10,
+                         values={'useful': useful})
 
 
 def arm(name, run, variant_value=None):
@@ -228,6 +234,53 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(verdict.decide('quality', [verdict.target_row(flat)], cost=cheaper)['value'], 'solo_coste')
         self.assertEqual(verdict.decide('quality', [verdict.target_row(flat)])['value'], 'neutral')
         self.assertEqual(verdict.decide('quality', [], replay_misses=2)['value'], 'no_comparable')
+
+    # --- McNemar boundary: b + c < 6 cannot decide, a rate moves only with p < 0.05 ---------
+
+    def rate_verdict(self, improved, n=100, effect=0.1):
+        base = [rate_score(i, False) for i in range(n)]
+        cand = [rate_score(i, i < improved) for i in range(n)]
+        row = delta(Pairing.of(base, cand), 'useful_rate', effect=effect)
+        return row, verdict.decide('quality', [verdict.target_row(row)])
+
+    def test_four_to_zero_is_indecidible(self):
+        row, decided = self.rate_verdict(4)
+        self.assertEqual((row['discordant']['improved'], row['p_value']), (4, 0.125))
+        self.assertGreater(row['ci95'][0], 0)  # the bootstrap alone would call it an improvement
+        self.assertLessEqual(row['mde'], row['effect'])
+        self.assertFalse(row['decidable'])
+        self.assertEqual(compare.improvement(row), 0)
+        self.assertEqual(decided['value'], 'indecidible')
+        self.assertIn('discordant 4 < 6', decided['reasons'][0])
+
+    def test_five_to_zero_is_indecidible(self):
+        row, decided = self.rate_verdict(5)
+        self.assertEqual(row['p_value'], 0.0625)
+        self.assertFalse(row['decidable'])
+        self.assertEqual(compare.improvement(row), 0)
+        self.assertEqual(decided['value'], 'indecidible')
+
+    def test_six_to_zero_is_mejora(self):
+        row, decided = self.rate_verdict(6)
+        self.assertEqual(row['p_value'], 0.03125)
+        self.assertGreater(row['ci95'][0], 0)
+        self.assertTrue(row['decidable'])
+        self.assertEqual(compare.improvement(row), 1)
+        self.assertEqual(decided['value'], 'mejora')
+
+    def test_a_rate_ci_above_zero_without_mcnemar_significance_does_not_move(self):
+        row = {'metric': 'useful_rate', 'delta': 0.05, 'ci95': [0.01, 0.09], 'method': 'mcnemar_exact',
+               'p_value': 0.07, 'discordant': {'improved': 7, 'worsened': 1, 'rate': 0.08},
+               'mde': 0.05, 'effect': 0.1, 'decidable': True, 'baseline': None, 'candidate': None}
+        self.assertEqual(compare.improvement(row), 0)
+        self.assertEqual(compare.improvement({**row, 'delta': -0.05, 'ci95': [-0.09, -0.01]}), 0)
+        self.assertEqual(verdict.decide('quality', [verdict.target_row(row)])['value'], 'neutral')
+        self.assertEqual(compare.improvement({**row, 'p_value': 0.04}), 1)
+        self.assertEqual(compare.improvement({**row, 'p_value': 0.04, 'delta': -0.05,
+                                              'ci95': [-0.09, -0.01]}), -1)
+
+    def test_mcnemar_needs_six_discordant_pairs_at_alpha_005(self):
+        self.assertEqual(compare.MIN_DISCORDANT, 6)
 
     def test_delta_of_a_mean_uses_the_paired_bootstrap(self):
         base = score_run(self.run_dir('base', baseline_pages), ALL, unavailable())

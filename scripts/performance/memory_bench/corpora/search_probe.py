@@ -24,6 +24,29 @@ BUILD_HINT = 'build it with cargo build --release -p kmp-testkit --bin kmp_searc
 
 
 @dataclass(frozen=True)
+class ProbeScope:
+    """What the probe chooses the about's morphology from, as the ranker does
+    (`Morphology::search_language` in kmp-proto-mapping): the about's own texts, and
+    whether it carries an English search summary to fall back on when their language
+    cannot be read (`AboutDocs.carries_search_summary`)."""
+    about_texts: tuple
+    carries_search_summary: bool = False
+
+    @classmethod
+    def of(cls, about_docs):
+        return cls(tuple(about_docs.about_texts), bool(about_docs.carries_search_summary))
+
+    @classmethod
+    def coerce(cls, value):
+        """A scope, or plain about texts read as an about without a search summary."""
+        return value if isinstance(value, cls) else cls(tuple(value))
+
+    def request(self, texts):
+        return {'about_texts': list(self.about_texts), 'carries_search_summary': self.carries_search_summary,
+                'texts': list(texts)}
+
+
+@dataclass(frozen=True)
 class ProbeTerms:
     text: str
     language: str | None
@@ -77,12 +100,13 @@ class BinaryProbe:
             raise ProbeFailed(f'kmp_search_probe not found at {self.path}; {BUILD_HINT}')
         self.sha256 = hashlib.sha256(self.path.read_bytes()).hexdigest()
 
-    def probe(self, about_texts, texts):
-        """ProbeTerms for each of `texts`, read with the morphology of `about_texts`."""
+    def probe(self, scope, texts):
+        """ProbeTerms for each of `texts`, read with the morphology of `scope` (a
+        `ProbeScope`, or plain about texts for an about without a search summary)."""
         texts = list(texts)
         if not texts:
             return ()
-        records = run_lines(self.path, [{'about_texts': list(about_texts), 'texts': texts}])
+        records = run_lines(self.path, [ProbeScope.coerce(scope).request(texts)])
         if len(records) != len(texts):
             raise ProbeFailed(f'asked {len(texts)} texts, got {len(records)} lines')
         return tuple(_terms(record, text) for record, text in zip(records, texts))

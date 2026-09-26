@@ -1,4 +1,4 @@
-use kmp_domain::language::{KERNEL_LANGUAGE, identifiers, informative_tokens};
+use kmp_domain::language::{identifiers, informative_tokens};
 
 use super::morphology::Morphology;
 use super::search_probe_terms::SearchProbeTerms;
@@ -25,14 +25,14 @@ impl SearchProbe {
     ///
     /// `carries_search_summary` mirrors the ranker's fallback: a store whose
     /// language cannot be read is stemmed in the kernel's search language
-    /// only if it carries a linted English summary to land on.
+    /// only if it carries a linted English summary to land on. The choice is
+    /// `Morphology::search_language`, the function the ranker's
+    /// `search_morphology` decides through.
     pub fn from_about_texts<'a>(
         about_texts: impl IntoIterator<Item = &'a str>,
         carries_search_summary: bool,
     ) -> Self {
-        let store_language = Morphology::read_language(about_texts);
-        let language =
-            store_language.or_else(|| carries_search_summary.then(|| KERNEL_LANGUAGE.to_string()));
+        let language = Morphology::search_language(about_texts, || carries_search_summary);
         let morphology = Morphology::for_language(language.as_deref());
         Self {
             language,
@@ -67,13 +67,20 @@ impl SearchProbe {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
 
+    use kmp_domain::{BundleMetadata, BundleNode, CaseId, KmpBundle, Role, SearchSummary};
     use kmp_proto::v1beta1::MemoryEvidence;
 
     use super::super::answer_candidate_terms::AnswerCandidateTerms;
-    use super::super::answer_recall_context::AnswerRecallContext;
+    use super::super::answer_recall_context::{
+        AnswerRecallContext, search_language, search_morphology,
+    };
     use super::*;
+
+    /// A linted English search summary for the Spanish fixture text, so the
+    /// bundle carries one exactly when the fixture says it does.
+    const SUMMARY: &str = "The gateway deployment stayed frozen through the weekly audit.";
 
     /// (about texts, whether the about carries a search summary, text,
     /// expected language). Spanish, English, mixed and unreadable abouts, so
@@ -123,9 +130,56 @@ mod tests {
         ),
     ];
 
-    fn candidate_terms(probe: &SearchProbe, text: &str) -> AnswerCandidateTerms {
+    /// A bundle whose memories read as `about`: the texts the ranker reads
+    /// its language from. With `summary`, the last memory carries an English
+    /// search summary that passes the ranker's lint.
+    fn bundle(about: &[&str], summary: bool) -> KmpBundle {
+        let node = |id: String, text: &str, properties: BTreeMap<String, String>| {
+            BundleNode::new(
+                id.clone(),
+                "observation",
+                id,
+                text,
+                "ACTIVE",
+                Vec::new(),
+                properties,
+            )
+        };
+        let neighbors = about
+            .iter()
+            .enumerate()
+            .map(|(index, text)| {
+                let mut properties = BTreeMap::new();
+                if summary && index + 1 == about.len() {
+                    assert!(
+                        SearchSummary::lint(text, SUMMARY).is_ok(),
+                        "fixture summary lints"
+                    );
+                    properties.insert(
+                        "payload_metadata".to_string(),
+                        serde_json::json!({ SearchSummary::METADATA_KEY: SUMMARY }).to_string(),
+                    );
+                }
+                node(format!("project:probe:entry:e{index}"), text, properties)
+            })
+            .collect();
+        KmpBundle::new(
+            CaseId::new("project:probe").expect("valid test fixture"),
+            Role::new("answerer").expect("valid test fixture"),
+            node("project:probe".to_string(), "", BTreeMap::new()),
+            neighbors,
+            Vec::new(),
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("valid test fixture")
+    }
+
+    /// The terms the ranker builds for `text` in `bundle`, with the morphology
+    /// the ranker itself chooses (`search_morphology`), not the probe's.
+    fn candidate_terms(bundle: &KmpBundle, text: &str) -> AnswerCandidateTerms {
         let context = AnswerRecallContext {
-            morphology: Morphology::for_language(probe.language()),
+            morphology: search_morphology(bundle),
             ..AnswerRecallContext::default()
         };
         let item = MemoryEvidence {
@@ -139,10 +193,16 @@ mod tests {
     fn search_keys_are_the_text_terms_the_ranker_builds() {
         for (about, summary, text, language) in FIXTURES {
             let probe = SearchProbe::from_about_texts(about.iter().copied(), *summary);
+            let ranker = bundle(about, *summary);
             assert_eq!(probe.language(), *language, "language for {text:?}");
+            assert_eq!(
+                probe.language(),
+                search_language(&ranker).as_deref(),
+                "the probe and search_morphology choose the same language for {text:?}"
+            );
 
             let probed = probe.probe(text);
-            let ranked = candidate_terms(&probe, text);
+            let ranked = candidate_terms(&ranker, text);
 
             assert_eq!(probed.search_keys, ranked.text, "text terms for {text:?}");
             assert_eq!(probed.search_keys, ranked.content, "content for {text:?}");

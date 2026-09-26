@@ -5,6 +5,8 @@ from ..domain import scoring_rules as r
 from ..domain.gold import Gold
 
 A = 'synth:mono-a000'
+# SHA-256 of domain/scoring_rules.py as pre-registered; see test_rules_hash_is_stable.
+RULES_SHA256 = '488db24b5b29a3d2e73ef57dbe42bf92f4fc9ca67d47332f6afc2c0dca5be40c'
 
 
 def ref(n):
@@ -23,6 +25,7 @@ ENUMERATIVE = Gold.from_dict({'answerable': 'KNOWN', 'shape': 'enumerative',
 SINGULAR = Gold.from_dict({'answerable': 'KNOWN', 'shape': 'singular', 'facets': [facet('valve', [1])]})
 NEGATED = Gold.from_dict({'answerable': 'KNOWN', 'shape': 'singular', 'facets': [facet('valve', [1])],
                           'excluded_refs': [ref(4)]})
+NEGATIVE_FACETS = [{'name': 'kubernetes', 'answers': [], 'related': [], 'answerable_facet': False}]
 NEGATIVE = Gold.from_dict({'answerable': 'UNKNOWN', 'shape': 'singular',
                            'facets': [{'name': 'kubernetes', 'answers': [], 'related': [],
                                        'answerable_facet': False}],
@@ -92,6 +95,19 @@ class NegativeTest(unittest.TestCase):
         self.assertEqual((silent.outcome, silent.false_answer), (r.FALSE_ANSWER, True))
         self.assertEqual(r.score(NEGATIVE, seen(r.PARTIAL, [1], [])).outcome, r.FALSE_ANSWER)
 
+    def test_citing_a_forbidden_ref_is_a_false_answer_whatever_the_decision(self):
+        """Rust `GuardedDecision::is_false_answer`: `cited_forbidden` alone makes it false."""
+        guarded = Gold.from_dict({'answerable': 'UNKNOWN', 'shape': 'singular', 'facets': NEGATIVE_FACETS,
+                                  'absent_terms': ['Kubernetes'], 'wrong_subject': [ref(7)],
+                                  'excluded_refs': [ref(8)]})
+        partial = r.score(guarded, seen(r.PARTIAL, [7], ['no kubernetes here']))
+        self.assertEqual((partial.outcome, partial.false_answer), (r.FALSE_ANSWER, True))
+        self.assertIn(ref(7), partial.detail)
+        unknown = r.score(guarded, seen(r.UNKNOWN, [8]))
+        self.assertEqual((unknown.outcome, unknown.false_answer), (r.FALSE_ANSWER, True))
+        self.assertEqual(r.score(guarded, seen(r.UNKNOWN, [1])).outcome, r.ABSTAIN_CORRECT)
+        self.assertEqual(r.score(guarded, seen(r.PARTIAL, [1], ['kubernetes'])).outcome, r.ABSTAIN_CORRECT)
+
     def test_answer_on_a_negative_is_a_false_answer(self):
         result = r.score(NEGATIVE, seen(r.ANSWER, [1]))
         self.assertEqual((result.outcome, result.false_answer, result.positive), (r.FALSE_ANSWER, True, False))
@@ -105,8 +121,20 @@ class ObservedTest(unittest.TestCase):
         self.assertEqual(unknown.missing[1], '{"term": "x"}')
         answer = r.Observed.from_structured({'answer': 'text', 'because': [{'ref': 'entry:' + ref(1)}]})
         self.assertEqual((answer.decision, answer.cited, answer.missing), (r.ANSWER, (ref(1),), ()))
-        partial = r.Observed.from_structured({'answer': 'text', 'decision': 'PARTIAL'})
-        self.assertEqual(partial.decision, r.PARTIAL)
+        partial = r.Observed.from_structured({'answer': 'PARTIAL', 'because': [],
+                                              'proof': {'missing': ['the cache engine']}})
+        self.assertEqual((partial.decision, partial.missing), (r.PARTIAL, ('the cache engine',)))
+
+    def test_partial_is_read_from_the_answer_field_like_rust(self):
+        """`AskVerdict::read` (retrieval_scorecard.rs) reads `answer`; a `decision` field is not
+        part of the contract and must not turn an answer into a PARTIAL."""
+        stray = r.Observed.from_structured({'answer': 'text', 'decision': 'PARTIAL'})
+        self.assertEqual(stray.decision, r.ANSWER)
+        negative = Gold.from_dict({'answerable': 'UNKNOWN', 'shape': 'singular', 'facets': NEGATIVE_FACETS,
+                                   'absent_terms': ['cache']})
+        read = r.Observed.from_structured({'answer': 'PARTIAL', 'because': [],
+                                           'proof': {'missing': ['the cache engine']}})
+        self.assertEqual(r.score(negative, read).outcome, r.ABSTAIN_CORRECT)
 
     def test_rejects_unknown_decisions(self):
         with self.assertRaises(ValueError):
@@ -123,8 +151,9 @@ class ObservedTest(unittest.TestCase):
         self.assertFalse(r.confidence_correct(r.score(NEGATIVE, seen(r.ANSWER, [1]))))
 
     def test_rules_hash_is_stable(self):
-        self.assertEqual(r.rules_sha256(), r.rules_sha256())
-        self.assertRegex(r.rules_sha256(), r'^[0-9a-f]{64}$')
+        """The pre-registered rules are frozen by hash: editing scoring_rules.py must be a
+        deliberate act that updates this constant (and SCHEMAS.md §0's BENCH_VERSION rule)."""
+        self.assertEqual(r.rules_sha256(), RULES_SHA256)
 
 
 if __name__ == '__main__':

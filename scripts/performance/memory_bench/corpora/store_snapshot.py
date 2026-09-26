@@ -18,6 +18,7 @@ from .errors import StoreUnreadable
 
 LIVE_STORE_PARTS = ('.local/share/kmp', '.config/kmp')
 SUMMARY_KEYS = ('summary_en', 'search_summary')
+SEARCH_SUMMARY_KEY = 'summary_en'  # kmp_domain::SearchSummary::METADATA_KEY
 EXPLANATION_KEYS = ('rationale', 'motivation', 'evidence')
 
 
@@ -45,6 +46,9 @@ class AboutDocs:
     entries: tuple  # EntryDoc, sorted by ref
     about_texts: tuple  # what the ranker reads the about's language from
     neighbors: tuple  # (ref, (neighbor refs...)) over entry-to-entry relations, sorted
+    # Whether a memory of the about carries an English search summary: the ranker's
+    # fallback language when `about_texts` read as no language (`ProbeScope`).
+    carries_search_summary: bool = False
 
     def neighbor_map(self):
         return dict(self.neighbors)
@@ -63,7 +67,9 @@ class StoreSnapshot:
     def digest(self):
         """Content identity of what the generator read (independent of SQLite pages and WAL)."""
         return cachekey.digest([[a.about, [[e.ref, e.kind, e.active, e.own_count, list(e.texts)] for e in a.entries],
-                                 [[r, list(n)] for r, n in a.neighbors]] for a in self.abouts])
+                                 [[r, list(n)] for r, n in a.neighbors]]
+                                + (['carries_search_summary'] if a.carries_search_summary else [])
+                                for a in self.abouts])
 
 
 def _refuse_live(path):
@@ -105,6 +111,31 @@ def _rows(path):
     return nodes, details, relations
 
 
+def _metadata(properties, payload):
+    """`persisted_memory_metadata` (bundle_views.rs): `payload_metadata`, else `metadata`, as
+    JSON; the payload's own `metadata` when neither property is there."""
+    for key in ('payload_metadata', 'metadata'):
+        if key in properties:
+            try:
+                value = json.loads(properties[key])
+            except (TypeError, ValueError):
+                return {}
+            return value if isinstance(value, dict) else {}
+    value = payload.get('metadata')
+    return value if isinstance(value, dict) else {}
+
+
+def carries_search_summary(properties, payload):
+    """Whether a node carries a non-empty English search summary.
+
+    The ranker (`bundle_carries_search_summary`, answer_recall_context.rs) also lints the
+    summary against the node text; the lint lives in the kernel and is not copied here, so
+    this reads presence only and may say yes where the lint would say no. It matters only
+    for an about whose texts read as no language (a mixed store)."""
+    summary = _metadata(properties, payload).get(SEARCH_SUMMARY_KEY)
+    return isinstance(summary, str) and bool(summary.strip())
+
+
 def _explanations(value):
     return [value[key] for key in EXPLANATION_KEYS if isinstance(value.get(key), str) and value[key].strip()]
 
@@ -119,7 +150,7 @@ def read_store(store_dir):
     """A StoreSnapshot of every about in the copy at `store_dir`."""
     _refuse_live(store_dir)
     nodes, details, relations = _rows(_database(store_dir))
-    entries, about_texts = {}, {}
+    entries, about_texts, summarized = {}, {}, set()
     for ref, node in nodes.items():
         properties = node.get('properties') or {}
         about = properties.get('memory_about')
@@ -127,9 +158,17 @@ def read_store(store_dir):
             continue
         about_texts.setdefault(about, []).extend(
             text for text in (node.get('summary'), details.get(ref)) if text)
-        if properties.get('memory_entity_kind') != 'memory_entry':
+        entry = properties.get('memory_entity_kind') == 'memory_entry'
+        try:
+            payload = _payload(properties)
+        except StoreUnreadable:
+            if entry:
+                raise
+            payload = {}  # a non-entry node's payload is read for its summary flag only
+        if carries_search_summary(properties, payload):
+            summarized.add(about)
+        if not entry:
             continue
-        payload = _payload(properties)
         metadata = payload.get('metadata') or {}
         texts = [payload.get('text') or node.get('summary') or '']
         texts += [metadata[key] for key in SUMMARY_KEYS if isinstance(metadata.get(key), str)]
@@ -155,5 +194,6 @@ def read_store(store_dir):
         refs = {doc.ref for doc in docs}
         neighbors = tuple((ref, tuple(sorted(links[ref] & refs)))
                           for ref in sorted(refs) if links.get(ref, set()) & refs)
-        abouts.append(AboutDocs(about, docs, tuple(about_texts.get(about, ())), neighbors))
+        abouts.append(AboutDocs(about, docs, tuple(about_texts.get(about, ())), neighbors,
+                                about in summarized))
     return StoreSnapshot(tuple(abouts))

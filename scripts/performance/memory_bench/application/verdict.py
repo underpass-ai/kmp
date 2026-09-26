@@ -15,9 +15,12 @@ the Deltas of `compare.py`. The rules, first match wins:
 4. `claim = parity`: parity holds (every call identical after the documented
    volatile fields, and Δ = 0 on the targets) -> `neutral` ("same behaviour");
    otherwise `regresion`; not measured -> `indecidible`.
-5. `indecidible`: a target whose MDE exceeds its pre-registered effect (principle
-   3: without power there is no verdict, not even a favourable one).
-6. every target's CI95 wholly on the better side: `mejora` for a quality claim
+5. `indecidible`: a target whose MDE exceeds its pre-registered effect, or a rate
+   target with fewer discordant pairs than exact McNemar needs to reach p < 0.05
+   (b + c < 6) (principle 3: without power there is no verdict, not even a
+   favourable one).
+6. every target moved to the better side (CI95 wholly above 0 and, for a rate,
+   McNemar p < 0.05 as well; `compare.improvement`): `mejora` for a quality claim
    whose cost does not worsen, `mejora_con_coste` when it does (a trade-off table
    for Tirso), `solo_coste` for a cost claim.
 7. no target improved but the cost did: `solo_coste`.
@@ -40,6 +43,16 @@ def guard_row(row, margin):
             'candidate': row['candidate'], 'delta': row['delta'], 'worsening': worse,
             'broken': broken,
             'absent_reason': None if worse is not None else 'not measured on both arms'}
+
+
+def _underpowered(target):
+    detail = f'{target["metric"]} (MDE {target["mde"]}, effect {target["effect"]}'
+    discordant = target.get('discordant')
+    if target.get('method') == 'mcnemar_exact' and discordant:
+        detail += (f', discordant {discordant["improved"] + discordant["worsened"]}'
+                   f' < {compare.MIN_DISCORDANT}'
+                   if discordant['improved'] + discordant['worsened'] < compare.MIN_DISCORDANT else '')
+    return detail + ')'
 
 
 def target_row(row):
@@ -95,9 +108,9 @@ def decide(claim, targets=(), guards=(), cost=None, *, single_arm=False, drift=(
         return verdict('regresion', 'declared parity broken: ' + '; '.join(reasons))
     underpowered = [t['metric'] for t in targets if not t['decidable']]
     if underpowered:
-        details = ', '.join(f'{t["metric"]} (MDE {t["mde"]}, effect {t["effect"]})'
-                            for t in targets if not t['decidable'])
-        return verdict('indecidible', 'MDE above the pre-registered effect: ' + details)
+        details = ', '.join(_underpowered(t) for t in targets if not t['decidable'])
+        return verdict('indecidible', 'MDE above the pre-registered effect or too few discordant '
+                       'pairs for McNemar: ' + details)
     improved = bool(targets) and all(t['status'] == 1 for t in targets)
     cost_worse = bool(cost and cost['worse'])
     cost_better = bool(cost and cost['better'])

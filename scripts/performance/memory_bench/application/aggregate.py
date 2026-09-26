@@ -90,9 +90,17 @@ def summarize(scores, b=None, only_present=True, names=None):
     return table
 
 
+def _judged(score):
+    return score.retrieval is not None and bool(score.retrieval.judged)
+
+
 def scorecard_port(scores):
-    """`RetrievalScorecard::score` over every kmp_ask question, as the Rust bins print it."""
-    outcomes = [s.retrieval for s in scores if s.retrieval is not None]
+    """`RetrievalScorecard::score` over the kmp_ask questions with judged answers, as
+    retrieval_kmp_scorecard.rs scores its `positives`; None when there is none.
+
+    A question with nothing judged (a negative) would add a 0.0 to every column, so the
+    Rust bin keeps it out and so does this port."""
+    outcomes = [s.retrieval for s in scores if _judged(s)]
     if not outcomes:
         return None
     card = metrics.RetrievalScorecard.score(outcomes)
@@ -101,10 +109,10 @@ def scorecard_port(scores):
 
 
 def false_unknown_both(scores):
-    """BENCH_SPEC section 7: the scorecard definition and P(UNKNOWN | KNOWN), side by side."""
+    """BENCH_SPEC section 7: the scorecard definition (over questions with judged answers,
+    as Rust) and P(UNKNOWN | KNOWN), side by side."""
     ask = [s for s in scores if 'unknown' in s.values]
-    pairs = [('useful' in s.values, s.values['unknown']) for s in ask]
-    both = metrics.false_unknown_rate(pairs)
+    both = metrics.false_unknown_rate(('useful' in s.values, _judged(s), s.values['unknown']) for s in ask)
     return {'scorecard': rate_metric(both.scorecard.hits, both.scorecard.n),
             'given_known': rate_metric(both.given_known.hits, both.given_known.n)}
 

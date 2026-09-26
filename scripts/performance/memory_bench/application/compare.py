@@ -13,7 +13,13 @@ carries the minimum detectable effect at alpha 0.05 and 80 % power
 rate, floored at one discordant pair (d >= 1/n) so that a run without
 disagreements does not claim unlimited power; for a mean MDE = 2.8 * sd(diff) /
 sqrt(n). A Delta is `decidable` only when a pre-registered effect exists and
-MDE <= effect.
+MDE <= effect; a rate Delta also needs at least `stats.mcnemar_min_discordant()`
+discordant pairs (6 at alpha 0.05), because with fewer no split can reach
+McNemar p < alpha and the comparison has no power whatever its MDE says.
+
+A rate moves (`improvement` +1 or -1) only when its bootstrap CI95 lies wholly on
+one side of 0 *and* exact McNemar gives p < alpha: the bootstrap alone calls 4-0
+out of 100 an improvement although McNemar gives p = 0.125.
 """
 from dataclasses import dataclass
 import math
@@ -25,6 +31,8 @@ from . import aggregate
 from .tokens import PRIMARY_ENCODING
 
 NO_EFFECT = 'no pre-registered effect for this metric'
+ALPHA = power.ALPHA
+MIN_DISCORDANT = stats.mcnemar_min_discordant(ALPHA)
 
 
 class ComparisonRefused(BenchError):
@@ -136,13 +144,16 @@ def delta(pairing, name, effect=None, b=stats.BOOTSTRAP_B, encoding=PRIMARY_ENCO
         interval = stats.paired_bootstrap(base, cand, b=b)
         row['ci95'] = [interval.lo, interval.hi]
     row['decidable'] = effect is not None and row['mde'] is not None and row['mde'] <= effect
+    if kind == RATE and improved + worsened < MIN_DISCORDANT:
+        row['decidable'] = False
     return row
 
 
 def improvement(row):
     """+1 when the CI95 of Δ lies wholly on the better side, -1 on the worse side, else 0.
 
-    Without a CI (no bootstrap) the point Δ decides only when it is exactly 0 (A/A)."""
+    A rate compared with McNemar also needs p < alpha to move either way. Without a CI
+    (no bootstrap) the point Δ decides only when it is exactly 0 (A/A)."""
     if row['delta'] is None:
         return None
     sign = 1 if higher_is_better(row['metric']) else -1
@@ -150,6 +161,9 @@ def improvement(row):
         return 0 if row['delta'] == 0 else None
     lo, hi = (value * sign for value in row['ci95'])
     lo, hi = min(lo, hi), max(lo, hi)
+    if row.get('method') == 'mcnemar_exact' and not (row.get('p_value') is not None
+                                                     and row['p_value'] < ALPHA):
+        return 0
     if lo > 0:
         return 1
     if hi < 0:

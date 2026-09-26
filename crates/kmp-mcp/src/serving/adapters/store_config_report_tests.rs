@@ -2,7 +2,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use super::embedded_backend::EmbeddedKernelMcpBackend;
-use super::store_config_report::StoreConfigReport;
+use super::store_config_report::{IGNORED_HASH_LIMIT, StoreConfigReport};
 use crate::serving::telemetry::captured_log::CapturedLog;
 
 const DEBUG: &str = "kmp_mcp=info,kmp_mcp::store_config=debug";
@@ -119,4 +119,45 @@ fn an_opened_store_says_which_opt_ins_it_could_not_honour() {
     let ignored = summary["fields"]["ignored"].as_str().unwrap_or_default();
     assert!(ignored.contains("rerank.json") && ignored.contains("write-relations.json"));
     assert!(!summary["fields"]["loaded"].to_string().contains("rerank"));
+}
+
+#[test]
+fn a_large_ignored_file_is_hashed_only_at_debug() {
+    let dir = tempfile::tempdir().expect("dir");
+    let large = vec![b'x'; IGNORED_HASH_LIMIT as usize + 1];
+    let small = vec![b'y'; IGNORED_HASH_LIMIT as usize];
+    std::fs::write(dir.path().join("stray-bridge.kmpb"), &large).expect("large unread");
+    std::fs::write(dir.path().join("rerank.json"), &large).expect("large ignored");
+    std::fs::write(dir.path().join("old-gate.json"), &small).expect("small unread");
+    let report = || {
+        StoreConfigReport::new(dir.path())
+            .beside_store("rerank.json", Err("needs typesafe.json".into()))
+            .emit()
+    };
+
+    let (log, guard) = CapturedLog::start("kmp_mcp=info");
+    report();
+    let lines = log.events("kmp_store_config");
+    assert_eq!(lines.len(), 3, "{lines:?}");
+    for file in ["stray-bridge.kmpb", "rerank.json"] {
+        let line = by_file(&lines, file);
+        assert_eq!(line["fields"]["status"], "ignored");
+        assert_eq!(line["fields"]["sha256"], "", "{file} is not read at warn");
+        assert_eq!(line["fields"]["bytes"], IGNORED_HASH_LIMIT + 1);
+    }
+    let small_line = by_file(&lines, "old-gate.json");
+    assert_eq!(
+        small_line["fields"]["sha256"],
+        format!("{:x}", Sha256::digest(&small)).as_str()
+    );
+    assert_eq!(small_line["fields"]["bytes"], IGNORED_HASH_LIMIT);
+    drop(guard);
+
+    let (log, _guard) = CapturedLog::start(DEBUG);
+    report();
+    let lines = log.events("kmp_store_config");
+    let expected = format!("{:x}", Sha256::digest(&large));
+    for file in ["stray-bridge.kmpb", "rerank.json"] {
+        assert_eq!(by_file(&lines, file)["fields"]["sha256"], expected.as_str());
+    }
 }

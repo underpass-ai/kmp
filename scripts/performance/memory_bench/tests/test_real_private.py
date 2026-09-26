@@ -11,6 +11,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import sqlite3
 import stat
 import tempfile
@@ -106,31 +107,33 @@ def fake_binary(root):
 
 
 class AnchorsAndTemplates(unittest.TestCase):
+    # Synthetic texts only: they exercise the same anchor and enumeration forms as the
+    # real questions without quoting any of them (a 6-gram cross against the private
+    # question file finds nothing here).
     def test_anchor_forms_in_words(self):
-        cases = {'What is the state of issue #188 pause resume?': ('#188',),
-                 'Was GitHub issue 185 fully implemented?': ('#185',),
-                 'patterns from issues 190 and 191 must issue 192 preserve': ('#190', '#191', '#192'),
-                 'GitHub issues 185 and 187 through 189': ('#185', '#187', '#188', '#189'),
-                 'context for C6.8+C6.9 artifacts': ('C6.8', 'C6.9'),
-                 'pruebas para C6/C6.4 y el adaptador': ('C6.4',),
+        cases = {'Where does ticket #412 stand after the freeze?': ('#412',),
+                 'Did the platform team close issue 517 last week?': ('#517',),
+                 'lessons of issues 610 and 611 should issue 612 keep': ('#610', '#611', '#612'),
+                 'tracker issues 520 and 522 through 524': ('#520', '#522', '#523', '#524'),
+                 'notes on C9.2+C9.3 bundles': ('C9.2', 'C9.3'),
+                 'ensayos para C7/C7.1 y el puente': ('C7.1',),
                  'review of the KMP v0.18.6 submission': ('v0.18.6',),
-                 'Why did the Lambda have a timeout of 300 seconds?': ()}
+                 'Why did the cron job have a retry limit of 900 seconds?': ()}
         for text, expected in cases.items():
             self.assertEqual(RP.extract_anchors(text), expected, text)
 
     def test_facet_template_from_the_enumeration(self):
-        template = RP.facet_template('What decisions, implementation status, known gaps, and validation '
-                                     'evidence are stored for issue 203?')
+        template = RP.facet_template('What owners, rollout status, open risks, and test evidence are '
+                                     'recorded for issue 731?')
         self.assertEqual([f['words'] for f in template],
-                         ['decisions', 'implementation status', 'known gaps', 'validation evidence'])
-        self.assertEqual(template[1]['name'], 'implementation-status')
-        spanish = RP.facet_template('¿Qué decisiones, contratos, límites y trabajo pendiente están almacenados?')
-        self.assertEqual([f['name'] for f in spanish], ['decisiones', 'contratos', 'limites', 'trabajo-pendiente'])
-        trailing = RP.facet_template('What durable context exists for C6.8 artifacts backup, retention, GC, '
-                                     'and leases?')
-        self.assertEqual([f['words'] for f in trailing], ['C6.8 artifacts backup', 'retention', 'GC', 'leases'])
-        single = RP.facet_template('Why did the Lambda have a timeout of 300 seconds?')
-        self.assertEqual(single, ({'name': 'answer', 'words': 'Why did the Lambda have a timeout of 300 seconds?'},))
+                         ['owners', 'rollout status', 'open risks', 'test evidence'])
+        self.assertEqual(template[1]['name'], 'rollout-status')
+        spanish = RP.facet_template('¿Qué riesgos, plazos, márgenes y tareas abiertas están registrados?')
+        self.assertEqual([f['name'] for f in spanish], ['riesgos', 'plazos', 'margenes', 'tareas-abiertas'])
+        trailing = RP.facet_template('Which durable notes exist for C9.2 bundles storage, expiry, GC, and locks?')
+        self.assertEqual([f['words'] for f in trailing], ['C9.2 bundles storage', 'expiry', 'GC', 'locks'])
+        text = 'Why did the cron job have a retry limit of 900 seconds?'
+        self.assertEqual(RP.facet_template(text), ({'name': 'answer', 'words': text},))
 
 
 class Intake(unittest.TestCase):
@@ -336,7 +339,7 @@ class Resolution(unittest.TestCase):
         self.assertEqual((question.corpus, question.type, question.private), ('b-real', 'enumerative_anchored', True))
         self.assertEqual(question.answer_policy, 'evidence_or_unknown')
         self.assertIn('split:development', question.tags)
-        free = RP.make_intake({'about': ABOUT, 'question': 'Why a 300 s timeout?', 'answer_policy': 'best_effort'},
+        free = RP.make_intake({'about': ABOUT, 'question': 'Why a 900 s retry limit?', 'answer_policy': 'best_effort'},
                               '2026-09-16T00:00:00Z', 'codex')
         single = gold(shape='singular', facets=[{'name': 'answer', 'words': 'why', 'answers': [REFS[3]],
                                                  'related': [], 'answerable_facet': True}])
@@ -492,6 +495,33 @@ class EndToEnd(unittest.TestCase):
             sqlite_store(Path(root) / 'data')
             self.assertEqual(len(read_store(Path(root) / 'data').about(ABOUT).entries), len(REFS))
             self.assertEqual(RF.integrity(Path(root) / 'data' / 'store' / 'kernel.sqlite3'), 'ok')
+
+
+def _six_grams(text):
+    words = re.findall(r'\w+', text.lower())
+    return {' '.join(words[i:i + 6]) for i in range(len(words) - 5)}
+
+
+@unittest.skipUnless(os.environ.get('MEMORY_BENCH_PRIVATE_ROOT'), 'needs $MEMORY_BENCH_PRIVATE_ROOT (local only)')
+class NoPrivateQuestionInTests(unittest.TestCase):
+    """No test source shares a 6-gram with a real frozen question. Reports file:line only,
+    never the question, so a failure does not copy private text into a log."""
+
+    def test_no_six_gram_of_a_real_question(self):
+        private = Path(os.environ['MEMORY_BENCH_PRIVATE_ROOT'])
+        grams = set()
+        for path in sorted(private.glob('**/questions.jsonl')):
+            for line in path.read_text(encoding='utf-8').splitlines():
+                call = json.loads(line).get('call') or {}
+                grams |= _six_grams(call.get('question') or '')
+        if not grams:
+            self.skipTest('no frozen questions under the private root')
+        hits = []
+        for source in sorted(Path(__file__).resolve().parent.glob('*.py')):
+            for number, line in enumerate(source.read_text(encoding='utf-8').splitlines(), 1):
+                if _six_grams(line) & grams:
+                    hits.append(f'{source.name}:{number}')
+        self.assertEqual(hits, [])
 
 
 if __name__ == '__main__':

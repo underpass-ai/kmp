@@ -1129,7 +1129,9 @@ Absent files produce no line.
 Levels: `loaded` lines and the summary are `DEBUG` (the file is read and hashed only
 then, so an ordinary start does not hash a 13 MB bridge); `ignored` lines are `WARN` and
 appear under the default filter. `sha256` is of the file bytes as read at open time
-(`""` with `bytes = 0` if the read failed between the check and the hash). `loaded` and
+(`""` with `bytes = 0` if the read failed between the check and the hash). Without debug,
+an `ignored` file larger than 8 KiB is not read: its line carries `sha256 = ""` and its
+size from the file metadata in `bytes`. `loaded` and
 `ignored` in the summary are comma-joined `file` values in report order.
 
 Variant acknowledgement (§4): a store file named `N` is applied iff a

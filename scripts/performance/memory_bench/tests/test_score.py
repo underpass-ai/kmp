@@ -1,4 +1,5 @@
 """BT10 scoring: synthetic answers of known outcome through a sealed run directory."""
+import math
 import tempfile
 import unittest
 
@@ -6,7 +7,7 @@ from ...token_harness.application.measure import measure_journey
 from ...token_harness.domain.representation import RepresentationId
 from ..application import aggregate, jev_cost, tokens as tokens_module
 from ..application.run_data import load_run
-from ..application.score import direction_correct, read_routes, score_run
+from ..application.score import direction_correct, read_routes, retrieved_across_pages, score_run
 from ..domain import unknown_reasons
 from ..domain.gold import PathGold
 from .run_fixture import WordCounter, answer, facet, make_run, question, ref
@@ -51,7 +52,7 @@ def hop(a, b, declared):
 def pages(q, sample=0):
     return {
         'q-enum': [answer([1, 5])],
-        'q-partial': [answer([1, 2], missing=['status of the rollout'], decision='PARTIAL')],
+        'q-partial': [answer([1, 2], missing=['status of the rollout'], answer='PARTIAL')],
         'q-missed': [answer(unknown=True, evidence=[], missing=['any stored memory for: valve'])],
         'q-near-miss': [answer(unknown=True, evidence=[1], missing=['stored memory that bears on: ns'])],
         'q-absent': [answer([5], confidence='high')],
@@ -99,9 +100,19 @@ class ScoreRunTest(unittest.TestCase):
 
     def test_false_unknown_both_definitions(self):
         both = aggregate.false_unknown_both(list(self.scores.values()))
-        ask = 7  # every kmp_ask question
-        self.assertEqual((both['scorecard']['value'], both['scorecard']['n']), (1 / ask, ask))
+        judged = 4  # kmp_ask questions with judged answers: Rust's positives, negatives left out
+        self.assertEqual((both['scorecard']['value'], both['scorecard']['n']), (1 / judged, judged))
         self.assertEqual((both['given_known']['value'], both['given_known']['n']), (1 / 4, 4))
+
+    def test_scorecard_port_scores_only_questions_with_judged_answers(self):
+        """retrieval_kmp_scorecard.rs scores its `positives` (judged non-empty) only."""
+        scores = list(self.scores.values())
+        card = aggregate.scorecard_port(scores)
+        self.assertEqual(card['cases'], 4)
+        self.assertEqual(card['false_unknown_rate'], 1 / 4)
+        negatives = [self.scores[i] for i in ('q-near-miss', 'q-absent', 'q-not-then')]
+        self.assertIsNone(aggregate.scorecard_port(negatives))
+        self.assertEqual(aggregate.scorecard_port(negatives + [self.scores['q-enum']])['cases'], 1)
 
     def test_negatives_and_reasons(self):
         near, absent, not_then = self.scores['q-near-miss'], self.scores['q-absent'], self.scores['q-not-then']
@@ -196,6 +207,43 @@ class ScoreRunTest(unittest.TestCase):
             self.assertIsNone(table['sites'])
             self.assertIn('predates BT03', table['absent_reason'])
             self.assertIsNone(jev_cost.per_question_usd(run))
+
+
+CHAIN = question('q-chain', 'multihop_why_k', {
+    'answerable': 'KNOWN', 'shape': 'singular', 'facets': [facet('why', [40])],
+    'chain': {'refs': [ref(40), ref(41)], 'ordered': True}}, anchors=['C6.4'])
+
+
+def paged_pages(q, sample=0):
+    """First page: three fillers then the answer; the continuation repeats the answer before
+    the second chain link and the first page's fillers."""
+    return [answer([40], evidence=[50, 51, 52, 40]), answer([40], evidence=[40, 41, 50, 40])]
+
+
+class MultiPageTest(unittest.TestCase):
+    """The ported Rust columns read the first page; bench metrics read every page, de-duplicated."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        data = load_run(make_run(cls.tmp.name, (CHAIN,), paged_pages))
+        cls.score = score_run(data, (CHAIN,), tokens_module.unavailable())[0]
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_rust_columns_read_the_first_page_only(self):
+        self.assertEqual(self.score.retrieval.retrieved, (ref(50), ref(51), ref(52), ref(40)))
+        self.assertEqual(self.score.values['mean_reciprocal_rank'], 1 / 4)
+        self.assertAlmostEqual(self.score.values['ndcg_at_10'], 1 / math.log2(5))
+        self.assertEqual(aggregate.scorecard_port([self.score])['ndcg_at_10'], self.score.values['ndcg_at_10'])
+
+    def test_all_page_metrics_deduplicate_and_keep_the_first_rank(self):
+        self.assertEqual(retrieved_across_pages(paged_pages(CHAIN)),
+                         [ref(50), ref(51), ref(52), ref(40), ref(41)])
+        # Concatenated, the repeated 40 would push 41 to rank 6.
+        self.assertTrue(self.score.values['full_chain_recovered_at_5'])
 
 
 class ReadingTest(unittest.TestCase):

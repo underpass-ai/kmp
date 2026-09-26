@@ -11,6 +11,7 @@ import re
 import unicodedata
 
 from .anchor_forms import anchors_in
+from .search_probe import ProbeScope
 
 WORD = re.compile(r'[^\W\d_]+', re.UNICODE)
 # A word after a lowercase letter or clause punctuation and a space: not sentence-initial.
@@ -144,15 +145,16 @@ def build_index(about_docs, probe, candidate_word=None):
     """AboutIndex of one AboutDocs, reading every text through `probe`."""
     joined = [doc.joined() for doc in about_docs.entries]
     owned = [doc.own() for doc in about_docs.entries]
-    terms = probe.probe(about_docs.about_texts, joined)
-    own_terms = probe.probe(about_docs.about_texts, owned)
+    scope = ProbeScope.of(about_docs)
+    terms = probe.probe(scope, joined)
+    own_terms = probe.probe(scope, owned)
     languages = {t.language for t in terms}
     language = terms[0].language if len(languages) == 1 and terms else None
     docs = [DocTerms(doc.ref, doc.active, raw, t.identifiers, t.search_keys, own, o.search_keys)
             for doc, raw, t, own, o in zip(about_docs.entries, joined, terms, owned, own_terms)]
     words = sorted({w for raw in joined for w in WORD.findall(raw.lower())
                     if candidate_word is None or candidate_word(w)})
-    word_terms = probe.probe(about_docs.about_texts, words)
+    word_terms = probe.probe(scope, words)
     pairs = [(w, next(iter(t.search_keys))) for w, t in zip(words, word_terms)
              if len(t.search_keys) == 1 and not t.identifiers]
     return AboutIndex(about_docs.about, language, docs, about_docs.neighbor_map(), pairs)

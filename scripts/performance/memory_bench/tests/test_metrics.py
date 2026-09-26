@@ -2,6 +2,9 @@
 import json
 import re
 from pathlib import Path
+import subprocess
+import sys
+import tempfile
 import unittest
 
 from ..domain import metrics as m
@@ -10,6 +13,7 @@ from ..domain.gold import Facet, PathGold
 ROOT = Path(__file__).resolve().parents[4]
 PARITY = ROOT / 'crates/kmp-testkit/judged/metric_parity.json'
 SCORECARD_RS = ROOT / 'crates/kmp-testkit/src/retrieval_scorecard.rs'
+GENERATOR = ROOT / 'scripts/performance/memory_bench/tools/gen_metric_parity.py'
 
 
 def outcome(case):
@@ -24,6 +28,20 @@ class ParityFixtureTest(unittest.TestCase):
     def setUpClass(cls):
         cls.fixture = json.loads(PARITY.read_text(encoding='utf-8'))
         cls.tolerance = cls.fixture['tolerance']
+
+    def test_fixture_covers_large_and_duplicated_judged_sets(self):
+        cases = self.fixture['cases']
+        self.assertTrue(any(len(set(c['judged'])) > 10 for c in cases), 'a judged set larger than k=10')
+        self.assertTrue(any(5 < len(set(c['judged'])) <= 10 for c in cases), 'a judged set larger than k=5')
+        self.assertTrue(any(len(c['judged']) != len(set(c['judged'])) for c in cases), 'a duplicated judged ref')
+
+    def test_generator_runs_as_a_script_and_reproduces_the_fixture(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / 'metric_parity.json'
+            done = subprocess.run([sys.executable, str(GENERATOR), '--out', str(out)], cwd=tmp,
+                                  capture_output=True, text=True, check=False)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(out.read_text(encoding='utf-8'), PARITY.read_text(encoding='utf-8'))
 
     def test_every_case(self):
         self.assertGreaterEqual(len(self.fixture['cases']), 10)
@@ -130,7 +148,10 @@ class PathTest(unittest.TestCase):
     def test_required_and_direction(self):
         self.assertFalse(m.path_found(path(required=('m',), accept_edges=(('s', 't'),)), ['s', 't']))
         self.assertFalse(m.path_found(path(), ['s', 'm', 't'][::-1]))
-        undirected = path(start='t', end='s', steps=('t', 'm', 's'), directed=True)
+        # The reference route s->m->t walked backwards: only an undirected gold accepts it.
+        backwards = path(start='t', end='s')
+        self.assertFalse(m.path_found(backwards, ['t', 'm', 's']))
+        undirected = path(start='t', end='s', directed=False)
         self.assertTrue(m.path_found(undirected, ['t', 'm', 's']))
         self.assertTrue(m.path_found(path(directed=False, start='s', end='t'), ['s', 'm', 't']))
         loose = path(directed=False, steps=('t', 'm', 's'), start='t', end='s')
@@ -161,9 +182,11 @@ class DecisionTest(unittest.TestCase):
         self.assertEqual(m.distractor_in_core_rate([(['d'], ['a']), (['d'], ['d']), ([], ['a'])]), m.Rate(1, 3))
 
     def test_false_unknown_has_two_definitions(self):
-        result = m.false_unknown_rate([(True, True), (True, False), (False, True), (False, False)])
-        self.assertEqual(result.scorecard, m.Rate(1, 4))
-        self.assertEqual(result.given_known, m.Rate(1, 2))
+        # (known, judged, unknown): the scorecard reads the judged ones only, as Rust's positives.
+        result = m.false_unknown_rate([(True, True, True), (True, True, False), (False, False, True),
+                                       (False, False, False), (True, False, True)])
+        self.assertEqual(result.scorecard, m.Rate(1, 2))
+        self.assertEqual(result.given_known, m.Rate(2, 3))
 
     def test_false_answer_by_type(self):
         rates = m.false_answer_rate_by_type([('anchor_absent', True), ('anchor_absent', False),

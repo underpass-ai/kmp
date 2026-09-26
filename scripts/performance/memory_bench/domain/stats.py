@@ -75,6 +75,21 @@ def mcnemar_exact(improved, worsened):
     return McNemar(improved, worsened, float(p))
 
 
+def mcnemar_min_discordant(alpha=0.05):
+    """Fewest discordant pairs an exact two-sided McNemar needs to reach p < `alpha`.
+
+    Even an all-one-sided split (m-0) has p = 2 / 2**m; below this count no split can
+    be significant, so a rate comparison with fewer discordant pairs cannot decide.
+    At alpha 0.05 it is 6 (5-0 gives 0.0625, 6-0 gives 0.03125).
+    """
+    if not 0 < alpha < 1:
+        raise ValueError('alpha in (0, 1)')
+    count = 1
+    while mcnemar_exact(count, 0).p_value >= alpha:
+        count += 1
+    return count
+
+
 def mcnemar_from_pairs(pairs):
     """`pairs`: `(baseline_correct, candidate_correct)` per question."""
     pairs = [(bool(a), bool(b)) for a, b in pairs]

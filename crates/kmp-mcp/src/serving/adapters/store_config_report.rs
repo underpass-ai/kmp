@@ -9,7 +9,10 @@
 //! target (`RUST_LOG=kmp_mcp=info,kmp_mcp::store_config=debug`), so an
 //! ordinary start does not hash a multi-megabyte lexical bridge. A `*.json` or `*.kmpb` file beside the store that this binary
 //! does not read is reported as ignored too, so a configuration written for
-//! another version cannot pass for applied. The memory bench reads these
+//! another version cannot pass for applied. An ignored file is hashed at warn
+//! only up to `IGNORED_HASH_LIMIT` bytes; a larger one reports its size with
+//! an empty `sha256` unless debug is on, so a stray bridge left beside a store
+//! costs no read at an ordinary start. The memory bench reads these
 //! lines (`scripts/performance/memory_bench/SCHEMAS.md`, section telemetry).
 
 use std::path::{Path, PathBuf};
@@ -17,6 +20,10 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 
 const TARGET: &str = "kmp_mcp::store_config";
+
+/// The largest ignored file hashed when debug is off: configuration files
+/// are a few hundred bytes, a lexical bridge is megabytes.
+pub(super) const IGNORED_HASH_LIMIT: u64 = 8 * 1024;
 
 /// The optional files one store consulted, and whether each took effect.
 pub(super) struct StoreConfigReport {
@@ -67,7 +74,7 @@ impl StoreConfigReport {
             };
             let applied = verdict.as_ref().map_err(String::as_str).copied();
             if verbose || applied.is_err() {
-                Self::file_line(&data_dir, name, path, applied);
+                Self::file_line(&data_dir, name, path, applied, verbose);
             }
             match verdict {
                 Ok(()) => loaded.push((*name).to_string()),
@@ -84,6 +91,7 @@ impl StoreConfigReport {
                 &name,
                 &unread,
                 Err("not read by this kmp-mcp version"),
+                verbose,
             );
             ignored.push(name);
         }
@@ -97,11 +105,15 @@ impl StoreConfigReport {
         );
     }
 
-    fn file_line(data_dir: &str, name: &str, path: &Path, applied: Result<(), &str>) {
-        let (sha256, bytes) = match std::fs::read(path) {
-            Ok(bytes) => (format!("{:x}", Sha256::digest(&bytes)), bytes.len() as u64),
-            Err(_) => (String::new(), 0),
-        };
+    fn file_line(
+        data_dir: &str,
+        name: &str,
+        path: &Path,
+        applied: Result<(), &str>,
+        verbose: bool,
+    ) {
+        let (sha256, bytes) = Self::fingerprint(path, verbose || applied.is_ok());
+
         let path = path.display().to_string();
         match applied {
             Ok(()) => tracing::debug!(
@@ -127,6 +139,25 @@ impl StoreConfigReport {
                 reason,
                 "store configuration present but ignored"
             ),
+        }
+    }
+
+    /// The file's sha256 and size. Without `hash_any_size` a file above
+    /// `IGNORED_HASH_LIMIT` is not read: its size comes from the metadata and
+    /// its hash is empty. A failed read reports `""` and 0.
+    fn fingerprint(path: &Path, hash_any_size: bool) -> (String, u64) {
+        if !hash_any_size {
+            match std::fs::metadata(path) {
+                Ok(metadata) if metadata.len() > IGNORED_HASH_LIMIT => {
+                    return (String::new(), metadata.len());
+                }
+                Ok(_) => {}
+                Err(_) => return (String::new(), 0),
+            }
+        }
+        match std::fs::read(path) {
+            Ok(bytes) => (format!("{:x}", Sha256::digest(&bytes)), bytes.len() as u64),
+            Err(_) => (String::new(), 0),
         }
     }
 

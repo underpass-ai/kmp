@@ -28,7 +28,7 @@ from .errors import NegativesShortfall
 from .negative_builders import BUILDERS, FORMS, TYPES, Context
 from .negative_render import build_question, render_text, verification
 from .negative_rules import load_rules, register, require_registered
-from .search_probe import BinaryProbe
+from .search_probe import BinaryProbe, ProbeScope
 from .store_snapshot import read_store
 from .term_index import build_index
 
@@ -48,7 +48,7 @@ def build_context(snapshot, probe, rules):
     for about in snapshot.abouts:
         if len(about.entries) >= rules['store']['min_entries'] or about.about in rules['store']['abouts']:
             indexes[about.about] = build_index(about, probe, candidate_word(rules))
-            texts[about.about] = about.about_texts
+            texts[about.about] = ProbeScope.of(about)
     queried = tuple(a for a in rules['store']['abouts'] if a in indexes)
     twin_words = {}
     for about in queried:

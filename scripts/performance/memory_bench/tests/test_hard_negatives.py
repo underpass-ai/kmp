@@ -22,8 +22,8 @@ from ..corpora.negative_builders import FORMS, TYPES
 from ..corpora.negative_render import join_words
 from ..corpora.negative_rules import (HASH_PATH, RULES_PATH, NegativeRules, load_rules, parse_rules,
                                       register, registered_sha256, require_registered, rules_sha256)
-from ..corpora.search_probe import BinaryProbe, ProbeTerms
-from ..corpora.store_snapshot import AboutDocs, EntryDoc, StoreSnapshot, read_store
+from ..corpora.search_probe import BinaryProbe, ProbeScope, ProbeTerms
+from ..corpora.store_snapshot import AboutDocs, EntryDoc, StoreSnapshot, carries_search_summary, read_store
 from ..domain.question import parse_questions, questions_digest
 from ..domain.jsonl import REPO_ROOT, dump_lines
 
@@ -386,6 +386,7 @@ def _sqlite_store(root):
          metadata={'summary_en': 'Issue #12 fixed the adapter.'})
     node('p:a:entry:decision:two', 'decision', 'p:a', 'Old router note.', status='SUPERSEDED')
     node('evidence:p:a:one', 'memory_evidence', 'p:a', 'Proof: the encoder log.', entity='memory_evidence')
+    node('p:b:entry:decision:one', 'decision', 'p:b', 'Nota sin resumen en ingles.')
     detail = json.dumps({'detail': 'Issue #12 fixed the adapter.'})
     connection.execute('INSERT INTO details VALUES (?, ?)', ('p:a:entry:decision:one', detail))
     connection.execute('INSERT INTO relations_by_source VALUES (?, ?, ?, ?)',
@@ -417,6 +418,36 @@ class StoreSnapshotTest(unittest.TestCase):
         with self.assertRaises(StoreUnreadable):
             snapshot.about('p:missing')
 
+    def test_carries_search_summary_per_about(self):
+        """The ranker's fallback language (`search_morphology`) needs to know whether an about
+        carries an English search summary; the snapshot hands it to the probe."""
+        with tempfile.TemporaryDirectory() as root:
+            _sqlite_store(root)
+            snapshot = read_store(root)
+        self.assertTrue(snapshot.about('p:a').carries_search_summary)
+        self.assertFalse(snapshot.about('p:b').carries_search_summary)
+        self.assertEqual(ProbeScope.of(snapshot.about('p:a')).request(['x'])['carries_search_summary'], True)
+        self.assertEqual(ProbeScope.of(snapshot.about('p:b')).request(['x'])['carries_search_summary'], False)
+        self.assertTrue(carries_search_summary({'payload_metadata': json.dumps({'summary_en': 'An English line.'})}, {}))
+        self.assertFalse(carries_search_summary({'payload_metadata': '{}'}, {'metadata': {'summary_en': 'x'}}))
+        self.assertFalse(carries_search_summary({}, {'metadata': {'summary_en': '  '}}))
+
+    def test_binary_probe_sends_the_summary_flag(self):
+        with tempfile.TemporaryDirectory() as root:
+            seen = Path(root) / 'request.jsonl'
+            fake = Path(root) / 'kmp_search_probe'
+            fake.write_text(FAKE_PROBE.format(seen=str(seen)))
+            fake.chmod(0o755)
+            probe = BinaryProbe(fake)
+            about = AboutDocs('p:a', (), ('mixed text',), (), True)
+            terms = probe.probe(ProbeScope.of(about), ['valves'])
+            request = json.loads(seen.read_text())
+            probe.probe(['plain about texts'], ['valves'])
+            plain = json.loads(seen.read_text())
+        self.assertEqual(terms[0].language, 'english')
+        self.assertEqual((request['carries_search_summary'], request['about_texts']), (True, ['mixed text']))
+        self.assertFalse(plain['carries_search_summary'])
+
     def test_refuses_the_live_store_and_missing_files(self):
         with self.assertRaises(StoreUnreadable):
             read_store(Path.home() / '.local/share/kmp')
@@ -425,6 +456,16 @@ class StoreSnapshotTest(unittest.TestCase):
 
 
 PROBE = REPO_ROOT / 'target' / 'release' / 'kmp_search_probe'
+FAKE_PROBE = """#!/usr/bin/env python3
+import json, sys
+line = sys.stdin.readline()
+open({seen!r}, 'w').write(line)
+request = json.loads(line)
+language = 'english' if request.get('carries_search_summary') else None
+for index, text in enumerate(request['texts']):
+    print(json.dumps({{'schema': 'kmp.bench.search_probe.v1', 'text': text, 'language': language,
+                      'identifiers': [], 'search_keys': [], 'informative_terms': []}}))
+"""
 
 
 @unittest.skipUnless(PROBE.is_file(), 'kmp_search_probe not built')
@@ -436,6 +477,15 @@ class RealProbeTest(unittest.TestCase):
         self.assertIn('#188', terms[0].identifiers)
         self.assertTrue({'c6.24', 'v0.18.6'} <= terms[1].identifiers)
         self.assertEqual(len(probe.sha256), 64)
+
+    def test_summary_flag_reaches_the_kernel_fallback(self):
+        mixed = ('The deployment of the gateway was frozen and the audit was in the way.',
+                 'El despliegue de la pasarela se congelo por la auditoria de la semana.')
+        probe = BinaryProbe(PROBE)
+        plain = probe.probe(ProbeScope(mixed, False), ['Deployments of the gateways stayed frozen.'])
+        summarized = probe.probe(ProbeScope(mixed, True), ['Deployments of the gateways stayed frozen.'])
+        self.assertIsNone(plain[0].language)
+        self.assertEqual(summarized[0].language, 'english')
 
 
 if __name__ == '__main__':

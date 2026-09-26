@@ -100,6 +100,15 @@ def mentioned_refs(structured):
 
 # --- kmp_ask ------------------------------------------------------------------------------
 
+def retrieved_across_pages(pages):
+    """Evidence refs of every page in response order, each kept once at its first rank.
+
+    A later page may repeat a ref an earlier one returned; counted twice it would push
+    other refs down (chains at k) and earn nDCG gain twice. The Rust columns never see
+    it: they read the first page only (`_score_ask`)."""
+    return list(dict.fromkeys(ref for page in pages for ref in refs.evidence_refs(page)))
+
+
 def _first_judged_call(pages, judged):
     for index, page in enumerate(pages):
         if judged & set(refs.evidence_refs(page)):
@@ -108,6 +117,9 @@ def _first_judged_call(pages, judged):
 
 
 def _ask_values(question, pages, observed, scored, retrieved):
+    """`retrieved`: every page, de-duplicated (`retrieved_across_pages`), for the bench-only
+    metrics. The ported scorecard columns (recall@k, MRR, nDCG@10, core precision) read the
+    first page only, as retrieval_kmp_scorecard.rs reads one `kmp_ask` response."""
     gold, cited = question.gold, set(observed.cited)
     judged = gold.answer_refs()
     unknown = observed.decision == scoring_rules.UNKNOWN
@@ -128,7 +140,7 @@ def _ask_values(question, pages, observed, scored, retrieved):
     first = pages[0]
     budget = ((first.get('projection') or {}).get('budget') or {}) if isinstance(first, dict) else {}
     used = budget.get('used_bytes') if isinstance(budget.get('used_bytes'), int) else 0
-    retrieval = metrics.RetrievalOutcome.of(judged, retrieved, cited, unknown, used)
+    retrieval = metrics.RetrievalOutcome.of(judged, refs.evidence_refs(first), cited, unknown, used)
     if judged:
         values.update(recall_at_1=retrieval.recall_at(1), recall_at_5=retrieval.recall_at(5),
                       recall_at_10=retrieval.recall_at(10),
@@ -165,7 +177,7 @@ def _score_ask(question, pages):
     native, reason = unknown_reasons.translate(pages[0])
     observed = scoring_rules.Observed.from_structured(pages[0], reason)
     scored = scoring_rules.score(question.gold, observed)
-    retrieved = [ref for page in pages for ref in refs.evidence_refs(page)]
+    retrieved = retrieved_across_pages(pages)
     values, retrieval = _ask_values(question, pages, observed, scored, retrieved)
     fields = {'outcome': scored.outcome, 'decision': observed.decision,
               'confidence': observed.confidence, 'native_reason': native, 'reason': reason,

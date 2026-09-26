@@ -19,6 +19,8 @@ Negative questions (gold `UNKNOWN`):
 - UNKNOWN: correct abstention; the reason is right when it equals `unknown_reason`.
 - PARTIAL: abstention only when `missing` names an `absent_terms` entry, else a false answer.
 - ANSWER: a false answer.
+- Any decision that cites a forbidden ref (`wrong_subject` or `excluded_refs`) is a
+  false answer, as `GuardedDecision::cited_forbidden` in retrieval_scorecard.rs.
 
 "Names" is one textual rule for both checks (`names`): after case folding, turning
 `_` and `-` into spaces and collapsing whitespace, the term occurs inside a
@@ -73,8 +75,9 @@ class Observed:
     def from_structured(cls, structured, reason=None):
         """Read a v0.23.0 `kmp_ask` answer: ANSWER or UNKNOWN (PARTIAL arrives with P4).
 
-        A structured answer that carries `decision: "PARTIAL"` is read as PARTIAL, so the
-        reader works unchanged once a binary emits it.
+        The decision is the `answer` field, as `AskVerdict::read` in retrieval_scorecard.rs
+        and `corpora/judged_retrieval.py` read it: `"UNKNOWN"`, `"PARTIAL"`, anything else
+        an answer. The reader therefore works unchanged once a binary emits PARTIAL.
         """
         proof = structured.get('proof') if isinstance(structured, dict) else None
         missing = proof.get('missing') if isinstance(proof, dict) else None
@@ -82,7 +85,7 @@ class Observed:
                       for item in (missing if isinstance(missing, list) else ()))
         if refs.is_unknown(structured):
             decision = UNKNOWN
-        elif isinstance(structured, dict) and structured.get('decision') == PARTIAL:
+        elif isinstance(structured, dict) and structured.get('answer') == PARTIAL:
             decision = PARTIAL
         else:
             decision = ANSWER
@@ -152,7 +155,7 @@ def score(gold, observed):
     coverage = _coverage(gold, cited)
     if gold.answerable == 'KNOWN':
         return _score_positive(gold, observed, cited, distractor, coverage)
-    return _score_negative(gold, observed, distractor, coverage)
+    return _score_negative(gold, observed, cited, distractor, coverage)
 
 
 def _score_positive(gold, observed, cited, distractor, coverage):
@@ -178,10 +181,14 @@ def _score_positive(gold, observed, cited, distractor, coverage):
     return scored(PARTIAL_USEFUL, True, 'cites an answer; missing names only uncovered facets')
 
 
-def _score_negative(gold, observed, distractor, coverage):
+def _score_negative(gold, observed, cited, distractor, coverage):
     def scored(outcome, detail, reason_correct=None):
         return Scored(outcome, False, None, outcome == FALSE_ANSWER, None, reason_correct,
                       coverage, distractor, detail)
+
+    forbidden = sorted(cited & (set(gold.wrong_subject) | set(gold.excluded_refs)))
+    if forbidden:
+        return scored(FALSE_ANSWER, f'{observed.decision} citing a forbidden entry: {", ".join(forbidden)}')
 
     if observed.decision == UNKNOWN:
         return scored(ABSTAIN_CORRECT, 'UNKNOWN on an unanswerable question',
