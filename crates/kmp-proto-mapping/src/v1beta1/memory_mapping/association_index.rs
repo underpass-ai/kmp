@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use super::lexical_field::LexicalField;
 use super::term_counts::TermCounts;
 
 /// What this memory has learned that its own words mean together.
@@ -38,26 +39,18 @@ const MAX_NEIGHBOURS: usize = 3;
 /// What an expanded term is worth against a word the reader actually wrote.
 /// It is a hint about this store's vocabulary, not a term of the question.
 const EXPANSION_WEIGHT: f64 = 0.35;
+/// How far below `MINIMUM_ASSOCIATION` the PMI bound ln(N/df) must fall before
+/// a question term is skipped uncounted. Far wider than the few ulps either
+/// logarithm can drift, far narrower than any bound that matters.
+const BOUND_MARGIN: f64 = 1e-9;
 
 impl AssociationIndex {
-    pub(super) fn retained_bytes(&self) -> usize {
-        self.neighbours
-            .iter()
-            .fold(0usize, |total, (term, neighbours)| {
-                total
-                    .saturating_add(
-                        128 + term.capacity()
-                            + neighbours.capacity() * std::mem::size_of::<(String, f64)>(),
-                    )
-                    .saturating_add(
-                        neighbours
-                            .iter()
-                            .map(|(word, _)| word.capacity())
-                            .sum::<usize>(),
-                    )
-            })
-    }
-
+    /// Every term's neighbours, from every pair of every document.
+    ///
+    /// Θ(Σ L_d²) over the documents' distinct terms. Retrieval asks only for
+    /// the question's own terms (`for_question`); this whole-store form stays
+    /// as the oracle that the restricted one must reproduce bit for bit.
+    #[cfg(test)]
     pub(super) fn build<'a>(documents: impl IntoIterator<Item = &'a TermCounts>) -> Self {
         let documents = documents.into_iter().collect::<Vec<_>>();
         if documents.len() < MINIMUM_DOCUMENTS {
@@ -89,11 +82,7 @@ impl AssociationIndex {
             if left_count <= 0.0 || right_count <= 0.0 {
                 continue;
             }
-            // Pointwise mutual information: how much more often these two
-            // appear together than two unrelated words of the same frequency
-            // would.
-            let association =
-                ((together as f64 / total) / ((left_count / total) * (right_count / total))).ln();
+            let association = association(together, left_count, right_count, total);
             if association < MINIMUM_ASSOCIATION {
                 continue;
             }
@@ -108,16 +97,112 @@ impl AssociationIndex {
         }
 
         for entries in neighbours.values_mut() {
-            entries.sort_by(|left, right| {
-                right
-                    .1
-                    .partial_cmp(&left.1)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-                    .then_with(|| left.0.cmp(&right.0))
-            });
-            entries.truncate(MAX_NEIGHBOURS);
+            strongest_first(entries);
         }
         Self { neighbours }
+    }
+
+    /// The neighbours of the question's own terms only, exactly as `build`
+    /// would find them.
+    ///
+    /// `expand` reads nothing but the neighbours of the terms the reader
+    /// wrote, and a term's neighbours depend only on the pairs it is part of:
+    /// its count with each co-occurring word, both document frequencies and
+    /// the document total. Counting the documents that contain a question
+    /// term costs O(df(t)·L̄) instead of every pair in the store.
+    ///
+    /// A term is skipped before counting when no partner could clear the bar:
+    /// with c(t,x) ≤ df(x), PMI(t,x) = ln(c·N / (df(t)·df(x))) ≤ ln(N/df(t)).
+    /// The margin keeps a rounding in either computation from skipping a
+    /// term the whole-store build would keep; a term below it is below the
+    /// bar by far more than a float can drift.
+    ///
+    /// `field` must be the direct field measured over exactly `documents`:
+    /// its document count and frequencies are the N and df of the pairs.
+    pub(super) fn for_question<'a>(
+        question: &TermCounts,
+        field: &LexicalField,
+        documents: impl IntoIterator<Item = &'a TermCounts>,
+    ) -> Self {
+        if field.documents() < MINIMUM_DOCUMENTS {
+            return Self::default();
+        }
+        let total = field.documents() as f64;
+        let asked = question
+            .terms()
+            .map(String::as_str)
+            .filter(|term| {
+                let frequency = field.document_frequency(term);
+                frequency >= MINIMUM_PAIR_COUNT
+                    && (total / frequency as f64).ln() >= MINIMUM_ASSOCIATION - BOUND_MARGIN
+            })
+            .collect::<Vec<_>>();
+        if asked.is_empty() {
+            return Self::default();
+        }
+
+        let mut together = asked
+            .iter()
+            .map(|term| (*term, BTreeMap::<&str, usize>::new()))
+            .collect::<BTreeMap<_, _>>();
+        for document in documents {
+            for (term, partners) in &mut together {
+                if document.count(term) == 0 {
+                    continue;
+                }
+                for other in document.terms() {
+                    if other != term {
+                        *partners.entry(other.as_str()).or_default() += 1;
+                    }
+                }
+            }
+        }
+
+        let mut neighbours = BTreeMap::<String, Vec<(String, f64)>>::new();
+        for (term, partners) in together {
+            let mut entries = Vec::new();
+            for (other, count) in partners {
+                if count < MINIMUM_PAIR_COUNT {
+                    continue;
+                }
+                // The whole-store build sees the pair with its terms in
+                // lexical order; keep that order so the float is the same.
+                let (left, right) = if term < other {
+                    (term, other)
+                } else {
+                    (other, term)
+                };
+                let (left_count, right_count) = (
+                    field.document_frequency(left) as f64,
+                    field.document_frequency(right) as f64,
+                );
+                if left_count <= 0.0 || right_count <= 0.0 {
+                    continue;
+                }
+                let association = association(count, left_count, right_count, total);
+                if association < MINIMUM_ASSOCIATION {
+                    continue;
+                }
+                entries.push((other.to_string(), association));
+            }
+            if !entries.is_empty() {
+                strongest_first(&mut entries);
+                neighbours.insert(term.to_string(), entries);
+            }
+        }
+        Self { neighbours }
+    }
+
+    /// One term's neighbours, strongest first; only the tests ask.
+    #[cfg(test)]
+    pub(super) fn neighbours_of(&self, term: &str) -> Option<&[(String, f64)]> {
+        self.neighbours.get(term).map(Vec::as_slice)
+    }
+
+    /// The terms that have neighbours; only the tests ask.
+    #[cfg(test)]
+    pub(super) fn terms(&self) -> impl Iterator<Item = &String> {
+        self.neighbours.keys()
     }
 
     /// Whether this memory said enough for its vocabulary to mean anything.
@@ -144,6 +229,25 @@ impl AssociationIndex {
         }
         weights
     }
+}
+
+/// Pointwise mutual information: how much more often these two appear
+/// together than two unrelated words of the same frequency would. One
+/// expression for both builders, so their floats are the same bits.
+fn association(together: usize, left_count: f64, right_count: f64, total: f64) -> f64 {
+    ((together as f64 / total) / ((left_count / total) * (right_count / total))).ln()
+}
+
+/// Strongest association first, ties by word, at most `MAX_NEIGHBOURS`.
+fn strongest_first(entries: &mut Vec<(String, f64)>) {
+    entries.sort_by(|left, right| {
+        right
+            .1
+            .partial_cmp(&left.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| left.0.cmp(&right.0))
+    });
+    entries.truncate(MAX_NEIGHBOURS);
 }
 
 #[cfg(test)]
