@@ -19,6 +19,7 @@ mod lifecycle_neighbours;
 mod lifecycle_relation;
 mod lifecycle_side;
 mod lifecycle_step;
+mod side_walk;
 
 pub use adjacency_lifecycle_links::AdjacencyLifecycleLinks;
 pub use lifecycle_chain::{
