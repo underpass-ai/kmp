@@ -106,8 +106,10 @@ class WorldShapeTest(unittest.TestCase):
         self.assertEqual([a['about'] for a in abouts], list(Topology('multi').abouts()))
         writes = generated.records('writes')
         self.assertEqual(len(writes), COMPOSITION.echoes)
-        link = writes[0]['arguments']['memories'][0]['connect_to'][0]
-        self.assertNotEqual(link['ref'].rsplit(':e', 1)[0], writes[0]['about'])
+        link = writes[0]['arguments']['relations'][0]
+        self.assertTrue(link['from'].startswith(writes[0]['about'] + ':e'))
+        self.assertNotEqual(link['to'].rsplit(':e', 1)[0], writes[0]['about'])
+        self.assertNotIn('memories', writes[0]['arguments'])  # a link never rewrites the echo
         self.assertEqual(world('mono').records('writes'), [])
 
     def test_manifest_and_files(self):

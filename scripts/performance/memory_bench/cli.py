@@ -63,6 +63,12 @@ def run_world(args):
     return run(args)
 
 
+def run_store_command(args):
+    from .application import build
+    return {'build': build.run_build, 'materialize': build.run_materialize,
+            'cache': build.run_cache}[args.command](args)
+
+
 def run_validate(args):
     from .domain.question import load_questions, questions_digest
     from .domain.run_record import CallRecord, JourneyRecord
@@ -112,18 +118,27 @@ def build_parser():
     world.add_argument('--no-nested-check', action='store_true',
                        help='skip regenerating lower levels to check the nesting invariant')
     world.add_argument('--out', type=Path, help='cache root (default <repo>/tmp/memory-bench)')
-    _stub(commands, 'build', 'build and cache stores')
-    _stub(commands, 'materialize', 'materialize a cached store for a run')
+    build = commands.add_parser('build', help='build synth-v1 stores and cache them')
+    build.set_defaults(action=run_store_command)
+    materialize = commands.add_parser('materialize', help='copy a cached store template into work/')
+    materialize.set_defaults(action=run_store_command)
     for name, help_text in (('quick-a', 'phase A quick run'), ('full', 'ladder and public corpora')):
         _stub(commands, name, help_text).add_argument('--candidate', type=Path, required=True)
     jev = _stub(commands, 'jev', 'Jev arms: samples with a fresh book each')
     jev.add_argument('--candidate', type=Path, required=True)
     jev.add_argument('--samples', type=int, default=3)
     _stub(commands, 'aa', 'A/A control of one variant').add_argument('--variant', type=Path, required=True)
-    _stub(commands, 'compare', 'paired comparison into report.json')
-    _stub(commands, 'render', 'report.md from report.json')
-    _stub(commands, 'real', 'B-real private corpus (local release gate)')
-    _stub(commands, 'cache', 'list or collect the cache').add_argument('operation', choices=('ls', 'gc'))
+    from .application import report_cli
+    report_cli.add_arguments(commands)  # compare, render (BT10)
+    real = commands.add_parser('real', help='B-real private corpus: freeze, blind labeling, kappa, run (BT07)')
+    real.set_defaults(action=lambda args: args.real_action(args))
+    from .labeling.cli import add_commands as add_real_commands
+    add_real_commands(real.add_subparsers(dest='real_command', required=True))
+    cache = commands.add_parser('cache', help='list cached stores or remove abandoned staging')
+    cache.set_defaults(action=run_store_command)
+    cache.add_argument('operation', choices=('ls', 'gc'))
+    from .application.build import add_arguments
+    add_arguments(build, materialize, cache)
     validate = commands.add_parser('validate', help='check files against SCHEMAS.md contracts')
     validate.set_defaults(action=run_validate)
     for flag in ('questions', 'variant', 'calls', 'journeys'):

@@ -48,6 +48,9 @@ class ProcessConfig:
     timeout_seconds: float = TIMEOUT_SECONDS
     probe_resources: bool = True
     pinning: probes.Pinning = probes.Pinning(None, frozenset(), 'pinning not requested')
+    # objects with prepare_store(data_dir) and harvest_store(data_dir, journal_lines), such as
+    # jev_fixture.JevSample: state that must not live in the store template (a Jev book)
+    store_hooks: tuple = ()
 
     def store_file_digests(self):
         return tuple((item.name, item.sha256) for item in self.store_files)
@@ -112,6 +115,8 @@ class BenchProcess:
         try:
             for item in config.store_files:
                 (self.store.data_dir / item.name).write_bytes(item.content())
+            for hook in config.store_hooks:
+                hook.prepare_store(self.store.data_dir)
             self.cursor = server_log.LogCursor(self.store.data_dir)
             self.recorder = TraceRecorder(self.out_dir / f'{self.name}.jsonl', self.store.redactions())
             self.recorder.marker({'session_start': self.name})
@@ -165,7 +170,10 @@ class BenchProcess:
             for secret, public in self.store.redactions():
                 text = text.replace(secret, public)
             (self.out_dir / f'{self.name}.stderr').write_text(text)
-            telemetry = server_log.parse(self.cursor.read_new())
+            lines = self.cursor.read_new()
+            telemetry = server_log.parse(lines)
+            for hook in self.config.store_hooks:
+                hook.harvest_store(self.store.data_dir, lines)
             acks = server_log.acknowledge(self.config.store_file_digests(), telemetry)
             return ProcessReport(self.index, code, self.startup_ns, self.cpus_allowed, telemetry, acks,
                                  self.session.tool_calls, self.protocol['effective_store'])

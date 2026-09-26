@@ -165,7 +165,7 @@ def read_store(store_dir):
     Opens a copy of kernel.sqlite3 read-only; the caller keeps the copy outside the repo.
     """
     path = Path(store_dir) / 'store' / 'kernel.sqlite3'
-    connection = sqlite3.connect(f'file:{path}?mode=ro', uri=True)
+    connection = sqlite3.connect(f'file:{path}?mode=ro&immutable=1', uri=True)
     try:
         entries = []
         for key, value in connection.execute('select k, v from nodes'):

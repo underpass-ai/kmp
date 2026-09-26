@@ -89,7 +89,7 @@ def _payload(properties):
 
 def _rows(path):
     try:
-        connection = sqlite3.connect(f'file:{path}?mode=ro', uri=True)
+        connection = sqlite3.connect(f'file:{path}?mode=ro&immutable=1', uri=True)
     except sqlite3.Error as failure:
         raise StoreUnreadable(f'{path}: {failure}') from failure
     try:

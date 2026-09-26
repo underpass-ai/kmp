@@ -39,7 +39,7 @@ from .calibration import REFERENCE
 from .questions import block_questions
 from .topology import Topology
 
-GENERATOR_VERSION = '1.0.0'
+GENERATOR_VERSION = '1.1.0'
 BLOCK_SIZE = 1000
 SECTIONS = ('abouts', 'entries', 'relations', 'writes', 'questions')
 WORLD_SCHEMA = 'kmp.bench.world.v1'
@@ -167,7 +167,14 @@ def _valid_until(block):
 
 
 def write_record(number, echo, target, block_size):
-    """A cross-about `same_event_as` link, as the kmp_write_memory call that makes it."""
+    """A cross-about `same_event_as` link, as the kmp_write_memory call that makes it.
+
+    The link goes in `relations`, the tool's shape for connecting memories that already
+    exist: the kernel commits only the link and its evidence and leaves both entries
+    untouched. Resubmitting the stored echo under `memories` would write a second
+    revision of it (writer metadata, a label coordinate, a new content hash), and v0.23.0
+    refuses that shape without `labels` anyway.
+    """
     identifier = echo.truth['subject']
     return {'id': f'w{number:07d}', 'block': echo.ordinal // block_size, 'about': echo.about,
             'arguments': {
@@ -177,14 +184,10 @@ def write_record(number, echo, target, block_size):
                                  'relate_proposals': [{'from': echo.ref, 'to': target.ref,
                                                        'proposed_by': ['identifier']}]},
                 'options': {'strict': True},
-                'memories': [{'id': 'current', 'ref': echo.ref, 'kind': echo.kind,
-                              'summary': echo.text,
-                              'evidence': f'Both entries carry {identifier}.',
-                              'connect_to': [{'ref': target.ref, 'rel': 'same_event_as',
-                                              'class': 'evidential',
-                                              'why': f'Both record {identifier}.',
-                                              'evidence': f'Identifier {identifier} in both.',
-                                              'confidence': 'high'}]}]}}
+                'relations': [{'from': echo.ref, 'to': target.ref, 'rel': 'same_event_as',
+                               'class': 'evidential', 'why': f'Both record {identifier}.',
+                               'evidence': f'Identifier {identifier} in both.',
+                               'confidence': 'high'}]}}
 
 
 def level_digest(world, level):

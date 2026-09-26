@@ -69,7 +69,10 @@ class CliTest(unittest.TestCase):
         arguments = {'fetch': ['--dataset', 'musique'], 'world': ['--seed', '7'],
                      'quick-a': ['--candidate', 'v.toml'], 'full': ['--candidate', 'v.toml'],
                      'jev': ['--candidate', 'v.toml'], 'aa': ['--variant', 'v.toml'], 'cache': ['ls']}
+        commands = cli.build_parser()._subparsers._group_actions[0].choices
         for command, owner in cli.OWNERS.items():
+            if commands[command].get_default('action') is not cli.not_yet:
+                continue  # landed: its own tests cover it
             with self.subTest(command=command):
                 code, _, err = self.run_cli(command, *arguments.get(command, []))
                 self.assertEqual(code, 2)

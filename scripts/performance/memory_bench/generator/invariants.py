@@ -63,7 +63,7 @@ def refs_about_prefix(world, entries, questions):
                 messages.append(f'relation {relation["id"]}: {end} is not an entry of its about')
     for write in map(json.loads, world.lines['writes']):
         arguments = write['arguments']
-        if arguments['about'] != write['about'] or not arguments['memories'][0]['ref'].startswith(
+        if arguments['about'] != write['about'] or not arguments['relations'][0]['from'].startswith(
                 write['about'] + ':'):
             messages.append(f'write {write["id"]}: does not write into its own about')
     for question in questions:

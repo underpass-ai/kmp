@@ -1,5 +1,5 @@
 {
- "_comment": "synth-v1 level digests for seed 7 (SCHEMAS.md 1.2), identical under Python 3.11.15 and 3.12.3. Regenerate only with a generator_version bump; tests/test_generator.py checks 10^3 and 10^4 on every run and 10^5 with MEMORY_BENCH_SLOW=1.",
+ "_comment": "synth-v1 level digests for seed 7 (SCHEMAS.md 1.2), identical under Python 3.11.15 and 3.12.3. 1.1.0 moved the cross-about writes to kmp_write_memory `relations` (BT14), which changed only multi. Regenerate only with a generator_version bump; tests/test_generator.py checks 10^3 and 10^4 on every run and 10^5 with MEMORY_BENCH_SLOW=1.",
  "block_size": 1000,
  "digests": {
   "mono": {
@@ -8,12 +8,12 @@
    "100000": "49fc08ee81209a3773d92c0b16c08ab37320339eb62033a243f90f3679b138f7"
   },
   "multi": {
-   "1000": "97a09ce1b31f92f7081332b87f848462269c56b2610991d635802c3e18ac0d70",
-   "10000": "11b61e79d9f4a696a7a511f3cacbbfcb0d721b67f8a402db419a2c556852d2aa",
-   "100000": "47a8b9325e6727186cc4d033aa61904d34506e57a08f08efe4359f773e02bf40"
+   "1000": "dd1469233c108252883681707ddfbe319ebcd309858164314e8ad79ae5cec21e",
+   "10000": "c2fad34e5e7f06bd397911b9f90c0ecb05353fa278f371606237481703b739b8",
+   "100000": "6c9078117d0f4fbf27b4cac1ec14efdf929196fb45c3f2049993a6c3eb95e74d"
   }
  },
  "generator": "synth-v1",
- "generator_version": "1.0.0",
+ "generator_version": "1.1.0",
  "seed": 7
 }

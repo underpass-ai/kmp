@@ -15,6 +15,8 @@ so an example here that stops being valid fails the build.
 | journey record | `kmp.bench.journey.v1` | `domain/run_record.py` | BT15 | BT10 |
 | variant | `kmp.bench.variant.v1` | `domain/variant.py` | humans, BT12 | every runner |
 | report | `kmp.bench.report.v1` | this file (BT10 implements) | BT10 | BT10 Markdown, BT20 |
+| built store | `kmp.bench.store.v1` | `runtime/store_cache.py` | BT14 (`build`) | every runner (`run_questions.StoreRef`), BT18 |
+| write cost | `kmp.bench.write_cost.v1` | `application/write_cost.py` | BT05 | BT10 (`latency_resources`) |
 | answer reading, write receipts | — | `domain/refs.py`, `domain/receipt.py` | — | every runner and scorer |
 | cache keys | — | `domain/cachekey.py` | all | all |
 | cache layout | — | `runtime/layout.py` | all | all |
@@ -121,8 +123,26 @@ invariants and calibration; it is never sent to KMP:
 Required entry fields: `ref`, `about`, `ordinal`, `block`, `kind`, `text`,
 `coordinates` (at least one; each names a dimension its about declares; `sequence`
 is `ordinal + 1`), `metadata` (string values only; `summary_en` is KMP's reserved
-search summary), `truth` (`subject`, `anchors`, `lang` required; the rest is the
-generator's and documented in `generator/world.py`).
+search summary), `truth` (`subject`, `anchors`, `lang` required).
+
+`truth` is written with every key below (null or `[]` when it does not apply), so an
+entry's truth has one canonical form:
+
+| Key | Meaning |
+|---|---|
+| `subject` | who the entry is about: `svc-017`, `db-004`, a chain host, a paraphrase row id, the shared identifier of an echo |
+| `attribute` | the facet it states (`cache-engine`), `event` (chain nodes), a changing attribute (supersessions), `hub`, `note`… |
+| `value` | what it states about the subject: the words a reader would quote |
+| `anchors` | anchors the entry carries (family entries only) |
+| `chain` | chain nodes only: `{id, position, length, declared_prev, mentions_prev}`; `id` is `b<block>-c<n>`, `position` counts from 0 (the root cause), `declared_prev` says whether a relation to the previous node was ingested, `mentions_prev` whether the text names the previous node's identifier |
+| `lang` | `en` or `es` |
+| `paraphrase_of` | paraphrase entries: the combo (`s03+p07`) of `paraphrase.tsv` rows it renders |
+| `supersedes` | the ref this version replaces, whatever the supersession mode |
+| `episode` | what generated it: `family`, `chain`, `supersession-declared`, `supersession-valid_until`, `supersession-date_only`, `hub`, `hub_note`, `distractor`, `rare`, `paraphrase`, `crosslang`, `echo`, `filler` |
+| `group` | family entries: `g<group>-f<family>` |
+
+The three supersession modes are how a replacement is told to KMP: a `supersedes`
+relation, only a `valid_until` on the old version, or only the dates.
 
 `relations.jsonl` — both endpoints in the same about; `block` is the later endpoint's:
 
@@ -135,7 +155,8 @@ generator's and documented in `generator/world.py`).
 ```
 
 `writes.jsonl` — `arguments` is a `kmp_write_memory` call, verbatim (the only way a
-link crosses abouts, as `retrieval_cases.json` `writes` does):
+link crosses abouts). Both endpoints are already stored, so the link travels in the
+tool's `relations` (links between existing memories), never as a `memories` record:
 
 ```json world-write
 {"id": "w0000002", "block": 3, "about": "synth:multi-a004",
@@ -146,15 +167,20 @@ link crosses abouts, as `retrieval_cases.json` `writes` does):
                                                       "to": "synth:multi-a001:e0003007",
                                                       "proposed_by": ["identifier"]}]},
                "options": {"strict": true},
-               "memories": [{"id": "current", "ref": "synth:multi-a004:e0003120",
-                             "kind": "observation", "summary": "Same event as a001's outage.",
-                             "evidence": "Both carry INC-3120.",
-                             "connect_to": [{"ref": "synth:multi-a001:e0003007",
-                                             "rel": "same_event_as", "class": "evidential",
-                                             "why": "Both record INC-3120.",
-                                             "evidence": "Identifier INC-3120 in both.",
-                                             "confidence": "high"}]}]}}
+               "relations": [{"from": "synth:multi-a004:e0003120",
+                              "to": "synth:multi-a001:e0003007",
+                              "rel": "same_event_as", "class": "evidential",
+                              "why": "Both record INC-3120.",
+                              "evidence": "Identifier INC-3120 in both.",
+                              "confidence": "high"}]}}
 ```
+
+Generator 1.0.0 sent the echo again under `memories` with `connect_to`. Against v0.23.0
+that shape is refused without `labels` (`INVALID_LABELS`), and with labels it writes a
+second revision of the stored echo (writer metadata, a label coordinate, a new content
+hash), so 1.1.0 moved the link to `relations`: the receipt then says both sources are
+unchanged (`attachment.unchanged_sources`) and `kmp_inspect` shows revision 1 and the
+same content hash before and after. Only `multi` has writes, so only its digests moved.
 
 `manifest.json`:
 
@@ -206,7 +232,8 @@ send one `kmp_ingest` per batch:
 - A relation maps to `{from, to, rel, class, why, evidence, confidence}` plus `clocks`
   when non-null, and travels in the batch holding its later endpoint.
 - After every ingest of the level, each write at the level is sent through
-  `kmp_write_memory` in `id` order. A `needs_review` answer is resolved by executing
+  `kmp_write_memory` in `id` order (every v0.23.0 write of this shape asks for review:
+  the cross-about `same_event_as` is a rich link). A `needs_review` answer is resolved by executing
   `receipt.review_action(...)` (`next_actions[0]`) verbatim and saying so on stderr — the
   fixture resolving its own review, as `commit_judged_write` in retrieval_kmp_scorecard.rs
   does.
@@ -218,6 +245,27 @@ send one `kmp_ingest` per batch:
 - Checked against the v0.23.0 release binary on a disposable store: this call shape is
   accepted, a second batch with `dimensions: []` is accepted, and `kmp_ask` cites
   `entry:synth:mono-a000:e0000731`, which `refs.normalize` turns back into the entry id.
+  BT14 loaded 10^3, 10^4 and 10^5 through it (section 7, built stores): every ingest
+  and every write receipt accepted, each write after one review round.
+
+### 1.4 Question provenance (synth-v1 `source`)
+
+Every synth-v1 question has `source.kind = "generator"` and `source.rule =
+"<type>.v1"`, plus the keys its type needs to be audited (strings only: `source` is a
+flat object):
+
+| Key | Types | Meaning |
+|---|---|---|
+| `neighbour`, `keyword` | `anchor_neighbor_existing` | the sibling anchor (same subject) whose entries do state the asked facet, and that facet's keyword |
+| `perturbed_from` | `anchor_absent` | the real anchor the absent one was perturbed from |
+| `attribute` | `near_miss_attribute` | the value asked about: stated by another family of the about, never in the anchor's entries |
+| `keyword` | `singular_anchored_twin` | keyword of the asked facet, which no family of the subject states |
+| `anchor_about` | `cross_about_anchor` | the about where the anchor does live |
+| `combo` | `paraphrase_zero_overlap`, `crosslang_*` | the `paraphrase.tsv` row combo of the gold entry |
+| `bridged_terms` | `crosslang_*` | space-separated terms the lexical bridge table covers |
+| `chain` | `multihop_why_k`, `path_between`, `path_open` | `truth.chain.id` of the chain asked about |
+| `undeclared_edges` | `path_between`, `path_open` | comma-separated `from>to` hops with no ingested relation (the reader must infer them); `""` when every hop is declared |
+| `future_refs` | `as_of_historical`, `interval_scoped` (known) | comma-separated later versions of the asked value: citing one is a future leak |
 
 Judged repo corpora keep their own seeding (`retrieval_cases.json`: one `kmp_ingest` of
 `memory` with `idempotency_key` `judged:<case id>`, then each `memories[]` about, then
@@ -327,7 +375,11 @@ a `KNOWN` one has no `unknown_reason`/`nearest_outside`; `singular` ⇒ one face
 `from`/`to` must equal `arguments.from`/`arguments.to` when those are set.
 
 The expected `unknown_reason` is bench vocabulary: BT10 maps whatever a binary reports
-onto it, and a binary that reports no reason leaves `reason_accuracy` null with a reason.
+onto it (`domain/unknown_reasons.py`: a stated `reason`/`unknown_reason` first; for
+v0.23.0 `proof.nearest_outside` -> `not_in_selection`, `missing` "any stored memory
+for:" -> `no_evidence`, "stored memory that bears on:" -> unmapped), and a binary that
+reports no mappable reason leaves `reason_accuracy` null with a reason
+(`reason_mapped_rate` says how many UNKNOWNs could be judged).
 
 B-real labeling (BT07) may keep its own working files (`labeling/gold_schema.json`,
 one gold per labeler, the κ computation), but each labeler's gold is exactly the gold
@@ -512,6 +564,21 @@ as `<store-root>`), `started_at`, `ended_at`, `failures` (`[{question_id, code,
 detail}]`, token_harness' `{case_id, code, detail}`). It has its own name because
 token_harness' `oracle` reads `capture.json` as synthetic scenarios.
 
+What `application/run_questions.py` (BT15) writes in the optional objects:
+
+| Field | Content |
+|---|---|
+| `order.scheme` | `ABAB` when two arms are interleaved, `single` for one arm |
+| `order.block` | questions per block: each arm runs a whole block before the other takes its turn |
+| `order.arms` | variant names, in position order (`A` first) |
+| `order.warmup_journeys` | journeys each process runs first, kept out of the records |
+| `order.interleaved` | false when one arm came from the cache and only the other ran |
+| `order.position` | `A` or `B`: this arm's place in the order |
+| `isolation.env` | token_harness' `allowlisted_env()` of the first process: the child environment without secrets, store root as `<store-root>` |
+| `isolation.variant_applied` | false iff a store file was not acknowledged (`VARIANT_NOT_APPLIED` in `failures`) |
+| `isolation.store_files` | name → SHA-256 of each store file the runner copied |
+| `isolation.processes[]` | one per MCP process: `sample`, `process`, `exit_code`, `startup_ns`, `cpus_allowed`, `effective_store` (`{data_dir, rule, engine}` from the binary's own log), `tool_lines`, `unattributed_judgements`, `malformed_log_lines`, `store_files` (`{name, sha256, status: applied|not_applied, reason}`), `warmup_journeys` |
+
 `run_id` must equal `cachekey.result_key(**key)`; `binary.sha256`,
 `variant.config_digest`, `store.key` and `questions.digest` must equal their `key`
 fields. `RunManifest.comparability()` returns the anti-drift view (questions digest,
@@ -684,6 +751,37 @@ Shared shapes:
   `captura_fallida`.
 - Private corpora appear only as aggregates; `per_question` rows exist only for public
   corpora. ANSWER and PARTIAL are always separate metrics.
+- Metric names and directions: `domain/metric_catalog.py` (what variant targets and
+  guards may name, besides `parity_rate`, `tokens_journey`, `tokens_first_page`,
+  `pages` and `jev_usd`).
+
+What BT10 fills beyond the example (`application/report.py`; the file on disk keeps
+this key order, compact, no NaN):
+
+- `provenance.baseline|candidate`: also `store`, `samples`, `repeats`, `max_calls`,
+  `max_bytes` (one per run of the arm: primary run first, then sweep/level runs).
+- `headlines[]`: one row per run (`arm`, `run_id`, `level`, `topology`, `max_bytes`),
+  plus `false_unknown` (`scorecard` and `given_known`), `high_precision`,
+  `high_certified`, `tokens_per_useful`, `errors`.
+- `by_type[type]`: `metrics`, `deltas` (McNemar, no bootstrap), `per_question` keyed by
+  arm; also `outcomes`, `reasons` (native and bench), `confidence` (per level,
+  Clopper-Pearson, AURC), `scorecard` (the `retrieval_scorecard.rs` port) and `strata`
+  (tags `bridge:`, `form:`, `degree:`, `abouts:`, `supersession:`, `interval:`, `k:`,
+  `hops:`, `undeclared:`, `lang:`).
+- `tokens`: `encoders`, `representation` (`json_compact_lexical_v1`, token_harness'
+  primary), `absent_reason`, `by_type[type][arm][encoding]` with `journey`,
+  `first_page`, `to_first_evidence`, `to_task_ready`; `arms[arm]` with
+  `startup_amortized`, `tokens_per_useful`, `agent_load[tool]` and `wake_load` (pages,
+  response bytes and tokens until the journey completes); `curve[arm]` (quality-tokens
+  points per `max_bytes` and level).
+- `jev_by_site`: `price_usd_per_mtok`, `arms[arm]` (`sites` or null with
+  `absent_reason`), `delta_usd`, `marginal_cost_per_useful`.
+- `controls`: `aa`, `determinism_rate` and `determinism` (a `determinism.py` report),
+  `parity` (parity oracle between the two runs), `repeat[arm]` (repeat 0 against later
+  repeats, JSON-RPC id set aside), `unpaired_questions`.
+- `power[]`: targets and guards, then headline rates; a single-arm report gives
+  `mde_at_reference_d` for d = 0.08 and 0.30 instead.
+- `verdict`: also `deltas` (`tokens_journey`, `jev_usd`, `useful_rate` when measured).
 
 ```json report
 {"schema": "kmp.bench.report.v1", "bench_version": "kmp.memory_bench.v1",
@@ -755,13 +853,127 @@ $MEMORY_BENCH_PRIVATE_ROOT/            outside the repository; required for priv
   outside `work/` and keyed entries (`CacheLayout.require_inside`).
 - A store template is never opened by a run: each run copies it (`cp -a`) into `work/`
   first, so every run starts from the same `content_digest`.
-- `store.json` (`kmp.bench.store.v1`, BT14): `store_key`, the key material, KMP
-  `content_digest`, `event_count`, `bundle_format`, timings in ms (`ingest`, `export`,
-  `import`, `copy`) and `created_at`.
+- `store.json` (`kmp.bench.store.v1`, BT14): section 7.1.
 - tiktoken assets stay where token_harness keeps them (`tmp/tiktoken-cache`).
 - The private root has no default. The recommended value on the GX10 is
   `~/Documents/ai/artifacts/kmp-bench-private`; `private_layout` refuses any root inside
   the repository.
+
+
+### 7.1 Built store (`kmp.bench.store.v1`)
+
+`python3 -m scripts.performance.memory_bench build --seed 7 --levels 1e3,1e4 --topology
+mono,multi [--batch-size 5000] [--binary W] [--reader R]` makes two entries per
+(topology, level, batch size), both keyed by `cachekey.store_key`:
+
+- `build = "ingest"`: the writer loads the world over MCP stdio (section 1.3), then
+  `kmp-mcp export` writes `bundle.jsonl`. `reader_sha256 = writer_sha256`, and
+  `bundle_format = "stdio-ingest"`: nothing was read from a bundle.
+- `build = "import"`: the reader replays that bundle into an empty store with
+  `kmp-mcp import`, then re-exports it; the build stops unless the re-export has the
+  same `content_digest` and `event_count`. `bundle_format` is the bundle header's
+  `{bundle_format, event_format}`, so a reader of another format gets another key.
+
+`source` is `synth_source(...)` with `world_digest` = the level digest of `n` (equal to
+the world digest of a world generated up to `n`, by the nesting invariant), and
+`batch_size` is in the key because the bundle has one event per batch: B changes the
+`content_digest`. Runs read the `import` entry; the `ingest` entry keeps the write-path
+profile. `CachedStore` → `run_questions.StoreRef(key=record.store_key,
+content_digest=record.content_digest, label=record.label, template=entry.template)`.
+
+| Field | Meaning |
+|---|---|
+| `store_key`, `material` | the key and exactly the keyword arguments of `cachekey.store_key` that give it (a reader recomputes and refuses a mismatch) |
+| `label` | human label: `synth-v1 seed 7 mono 1000 B1000` (+ ` imported`) |
+| `content_digest`, `event_count` | KMP's own bundle digest (with `sha256:`) and events |
+| `bundle` | `{sha256, bytes, header}` of `bundle.jsonl`; `header` keeps `bundle_format`, `event_format`, `kernel_version`, `snapshot_id`, `event_count`, `content_digest` |
+| `template` | `{tree_sha256, bytes}` of `store/` (token_harness `tree_digest`, which every run's copy is checked against) |
+| `timings_ms` | wall ms: `ingest` (every `kmp_ingest` and write over MCP), `export` (the entry's `kmp-mcp export`; the re-export for an `import` entry), `import` (`kmp-mcp import`), `copy` (one copy of the template into `work/`, what every run pays) |
+| `absent` | timing → why it is null (an `ingest` entry was not imported; an `import` entry was not ingested) |
+| `ingest` | `ingest` entries: the profile below; null for `import` |
+| `checks` | what was verified before the entry was committed: `receipts_accepted`, `export_data_dir` (the export named the disposable store), `reexport_content_digest`, `source_store_key`, `events_imported`, `mutations_applied`, `template_excludes` (`["logs"]`: the build's server journals never enter a template) |
+| `created_at` | RFC 3339 UTC |
+
+`ingest` profile: `batch_size`, `abouts` (in load order), `columns` = `["about",
+"held_before", "entries", "relations", "wall_ms", "server_ms"]` and `batches` (one row
+per `kmp_ingest`: about index, entries the about held before the call, entries and
+relations sent, harness wall ms, `kmp_mcp_tool` `duration_ms`), `entries`, `relations`,
+`writes`, `reviews`, `write_ms` (wall ms per write, review included), `ingest_ms`,
+`writes_ms`, `server` (`serverInfo`), `cpus_allowed`, `pinning`, `loadavg`. The build
+pins the writer to cores 15-19 (the Cortex-X925 cores latency runs do not use) unless
+`--cpus` says otherwise.
+
+`domain/ingest_growth.py` fits the batch rows as `wall_ms ≈ c_B·B + c_H·H + c_BH·B·H +
+c_BB·B²` (H = `held_before`) and predicts a larger build by summing its batches;
+`build --batch-size 1000,5000 --estimate 1e5` prints the fit pooled over both sizes.
+Measured on v0.23.0 at 10^4 mono (BT14): c_H ≈ 0.51 ms per held entry per batch and
+c_B ≈ 0.08 ms per entry sent, with B·H and B² under 1 % of the largest batch. A batch
+re-reads the about it lands in, so a build is O(N²/B), not O(B·N); hence
+`DEFAULT_BATCH = 5000`.
+
+```json store
+{"schema": "kmp.bench.store.v1",
+ "store_key": "c9948f65469bc6463f94d367bc687352804dc7df1a4c00a5e2a9e12658839180",
+ "material": {"source": {"kind": "synth", "generator": "synth-v1", "generator_version": "1.1.0",
+                         "seed": 7, "topology": "mono",
+                         "world_digest": "c2c0c20d5d0469133fb0d0c169201f63c3751500273b7b13697502de47211f0e"},
+              "n": 1000, "bundle_format": {"bundle_format": 3, "event_format": 2},
+              "reader_sha256": "0358908298685e66fc4f0d37d8345fac058be6d401d2fb00ff97296634518f6f",
+              "build": "import",
+              "writer_sha256": "0358908298685e66fc4f0d37d8345fac058be6d401d2fb00ff97296634518f6f",
+              "batch_size": 1000, "store_mode": "shared"},
+ "label": "synth-v1 seed 7 mono 1000 B1000 imported",
+ "content_digest": "sha256:d9c936abe9238ad00aba22b50de5c0c69a23beaacdc74704f54703f04d53821e",
+ "event_count": 1,
+ "bundle": {"sha256": "57407b85f783cff461ed1853ec856f0e5d9b00df8c5242d121383a07be8de81f", "bytes": 1225509,
+            "header": {"bundle_format": 3, "event_format": 2, "kernel_version": "0.23.0",
+                       "snapshot_id": "content-d9c936abe9238ad0", "event_count": 1,
+                       "content_digest": "sha256:d9c936abe9238ad00aba22b50de5c0c69a23beaacdc74704f54703f04d53821e"}},
+ "template": {"tree_sha256": "87bc9f060b93430fee9a92c60731daa0a18247d8c2affc2ba16358abf9d66aef", "bytes": 8978436},
+ "timings_ms": {"ingest": null, "export": 29.757, "import": 118.551, "copy": 2.588},
+ "absent": {"ingest": "imported from the bundle of store 105972f1472dec75210fcf929e81567f5cb572c138111ce2eb2722b9f19c2bc6"},
+ "ingest": null,
+ "checks": {"source_store_key": "105972f1472dec75210fcf929e81567f5cb572c138111ce2eb2722b9f19c2bc6",
+            "reexport_content_digest": "equal", "events_imported": 1, "mutations_applied": 4313,
+            "template_excludes": ["logs"]},
+ "created_at": "2026-09-25T23:49:58Z"}
+```
+
+`memory_bench materialize --store-key K [--dest DIR]` copies a template into the cache
+root (`work/` by default); `memory_bench cache ls` lists the entries, `cache gc` removes
+abandoned `work/staging-*` directories. An entry is staged in `work/` and renamed into
+`stores/<key>/` in one step and is never overwritten.
+
+## Write cost (`kmp.bench.write_cost.v1`)
+
+`python3 -m scripts.performance.memory_bench.application.write_cost --binary B [--out DIR]`
+(BT05): milliseconds to write one entry. One pinned process over a store (empty or a
+template copy) runs `warmup` single-entry `kmp_ingest` calls unmeasured, then `writes`
+measured ones, each its own journey; every write must be accepted or the command fails.
+With `--out`, `write-cost.json` (canonical JSON) sits beside the process and per-write
+traces (`write-cost~w<NNN>.jsonl`).
+
+| Field | Meaning |
+|---|---|
+| `schema`, `binary_sha256`, `tool` (`kmp_ingest`), `about`, `entries_per_write` (1) | identity |
+| `writes`, `warmup` | the plan (at least 2 measured writes) |
+| `accepted`, `censored` | measured writes accepted by `receipt.is_accepted`, and timed out |
+| `wall_ns`, `server_ms`, `server_us`, `cpu_ns`, `rss_peak_kb` | `{n, p50, p95, min, max}` over accepted, uncensored writes (the same probes as a call record); null when nothing was measured |
+| `startup_ns`, `cpus_allowed`, `machine` | the process and the machine (`probes.machine`) |
+| `samples[]` | one per measured write: `write`, `status`, `accepted`, `calls`, `wall_ns`, `censored`, `server_ms`, `server_us`, `cpu_ns`, `rss_peak_kb`, `server_absent` (why the server line is missing, else null) |
+
+```json
+{"schema": "kmp.bench.write_cost.v1", "binary_sha256": "…", "tool": "kmp_ingest",
+ "about": "bench:write-cost", "entries_per_write": 1, "writes": 20, "warmup": 1,
+ "accepted": 20, "censored": 0,
+ "wall_ns": {"n": 20, "p50": 2100000, "p95": 2900000, "min": 1800000, "max": 3100000},
+ "server_ms": {"n": 20, "p50": 2, "p95": 3, "min": 1, "max": 3},
+ "server_us": null, "cpu_ns": null, "rss_peak_kb": null,
+ "startup_ns": 81200311, "cpus_allowed": "5-9", "machine": {"arch": "aarch64"},
+ "samples": [{"write": 0, "status": "completed", "accepted": true, "calls": 1,
+              "wall_ns": 2100000, "censored": false, "server_ms": 2, "server_us": null,
+              "cpu_ns": null, "rss_peak_kb": null, "server_absent": null}]}
+```
 
 ## Telemetry (kmp-mcp log lines, BT03)
 

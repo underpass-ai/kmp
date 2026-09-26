@@ -9,6 +9,7 @@ from ..domain.question import Question, load_questions
 from ..domain.run_manifest import RunManifest
 from ..domain.run_record import CallRecord, JourneyRecord
 from ..domain.variant import parse_variant_toml
+from ..runtime.store_cache import StoreRecord
 
 PACKAGE = Path(__file__).resolve().parents[1]
 FIXTURES = Path(__file__).resolve().parent / 'fixtures'
@@ -26,12 +27,13 @@ class SchemasDocTest(unittest.TestCase):
     def test_every_contract_has_examples(self):
         tags = [tag for tag, _ in examples()]
         for tag in ('question', 'call', 'journey', 'run', 'variant', 'report', 'world-entry',
-                    'world-relation', 'world-write', 'world-manifest', 'world-ingest', 'world-about'):
+                    'world-relation', 'world-write', 'world-manifest', 'world-ingest', 'world-about', 'store'):
             self.assertIn(tag, tags)
 
     def test_examples_validate(self):
         readers = {'question': Question.from_dict, 'call': CallRecord.from_dict,
-                   'journey': JourneyRecord.from_dict, 'run': RunManifest.from_dict}
+                   'journey': JourneyRecord.from_dict, 'run': RunManifest.from_dict,
+                   'store': StoreRecord.from_dict}
         for index, (tag, body) in enumerate(examples()):
             with self.subTest(index=index, tag=tag):
                 if tag == 'variant':
