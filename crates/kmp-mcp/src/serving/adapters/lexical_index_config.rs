@@ -37,6 +37,9 @@ impl LexicalIndexConfig {
     }
 
     fn parse(text: &str) -> Result<IndexLimits, String> {
+        // One verdict for the whole file on every surface: what the gRPC
+        // server discards, this discards too.
+        kmp_proto_mapping::v1beta1::recall_projection::RankPages::from_json(text)?;
         let config: Self = serde_json::from_str(text).map_err(|error| {
             format!("{LEXICAL_INDEX_CONFIG_FILE} is not a lexical index configuration: {error}")
         })?;
@@ -111,6 +114,38 @@ mod tests {
             assert_eq!(
                 (limits.head_window, limits.continuation_chunk),
                 (pages.head_window, pages.continuation_chunk)
+            );
+        }
+    }
+
+    /// One invalid file, both surfaces (Tirso, 28 Sept 2026): MCP and the
+    /// gRPC server discard it whole and apply every default, the index
+    /// limits and the page sizes alike.
+    #[test]
+    fn an_invalid_file_gives_every_default_on_both_surfaces() {
+        use kmp_proto_mapping::v1beta1::recall_projection::RankPages;
+        for text in [
+            r#"{"head_window":16,"max_candidate_share_percent":0}"#,
+            r#"{"continuation_chunk":8,"min_about_entries":-1}"#,
+            r#"{"head_window":0,"max_candidate_share_percent":50}"#,
+            r#"{"head_window":16,"share":35}"#,
+        ] {
+            let directory = tempfile::tempdir().expect("store");
+            std::fs::write(directory.path().join(LEXICAL_INDEX_CONFIG_FILE), text).expect("config");
+            // MCP: the backend applies the defaults to a file it ignored.
+            assert!(
+                LexicalIndexConfig::load(directory.path()).is_err(),
+                "{text}"
+            );
+            assert_eq!(
+                LexicalIndexConfig::load(directory.path()).unwrap_or_default(),
+                IndexLimits::DEFAULT
+            );
+            // gRPC: the server's reader gives the default pages.
+            assert_eq!(
+                kmp_transport_grpc::store_rank_pages(Some(directory.path())),
+                RankPages::default(),
+                "{text}"
             );
         }
     }

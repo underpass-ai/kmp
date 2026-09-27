@@ -316,7 +316,9 @@ field) and its page offers a deeper continuation.
 28 Sept 2026). They shape every ask of the store, indexed or not. The gRPC
 server reads the same keys from `lexical-index.json` in its data directory
 (`KMP_DATA_DIR`) with the same rule (`RankPages`), so API and MCP page an ask
-alike; decision of Tirso, 28 Sept 2026.
+alike. A file with an unknown key or any value out of range is discarded
+whole on both surfaces, index limits and page sizes alike, with a warning
+(`kmp_store_config`, `status = "ignored"`); decisions of Tirso, 28 Sept 2026.
 
 **What changed in the answer (breaking):**
 

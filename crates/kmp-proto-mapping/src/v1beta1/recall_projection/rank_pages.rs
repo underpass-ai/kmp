@@ -46,11 +46,31 @@ impl RankPages {
         })
     }
 
-    /// The sizes the file's text names, the default for a key it omits. Other
-    /// keys (the index limits) are the reader's own business.
+    /// The sizes the file's text names, the default for a key it omits.
+    ///
+    /// The whole file is validated, the lexical index limits included, with
+    /// the rule MCP applies: a file with an unknown key or any value out of
+    /// range is discarded whole by every reader, which then applies every
+    /// default (decision of Tirso, 28 Sept 2026).
     pub fn from_json(text: &str) -> Result<Self, String> {
         let value = serde_json::from_str::<Value>(text)
             .map_err(|error| format!("{RANK_PAGES_FILE} is not JSON: {error}"))?;
+        let object = value
+            .as_object()
+            .ok_or_else(|| format!("{RANK_PAGES_FILE} is not a JSON object"))?;
+        for (key, found) in object {
+            let valid = match key.as_str() {
+                "max_candidate_share_percent" => found
+                    .as_u64()
+                    .is_some_and(|share| (1..=100).contains(&share)),
+                "min_about_entries" => found.as_u64().is_some(),
+                "head_window" | "continuation_chunk" => true,
+                _ => return Err(format!("{RANK_PAGES_FILE} names unknown key `{key}`")),
+            };
+            if !valid && !found.is_null() {
+                return Err(format!("{RANK_PAGES_FILE} {key} is out of range"));
+            }
+        }
         let defaults = Self::default();
         let read = |key: &str, default: usize| match value.get(key) {
             None | Some(Value::Null) => Ok(default),
@@ -82,5 +102,7 @@ mod tests {
         );
         assert!(RankPages::from_json(r#"{"continuation_chunk":0}"#).is_err());
         assert!(RankPages::from_json(r#"{"head_window":"x"}"#).is_err());
+        assert!(RankPages::from_json(r#"{"max_candidate_share_percent":0}"#).is_err());
+        assert!(RankPages::from_json(r#"{"share":35}"#).is_err());
     }
 }
