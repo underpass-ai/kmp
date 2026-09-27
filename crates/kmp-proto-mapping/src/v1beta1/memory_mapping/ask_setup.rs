@@ -85,6 +85,10 @@ impl<'a> AskSetup<'a> {
                         indexed.stats(gated),
                     ),
                 ));
+                let ranker = match indexed.seed_documents(gated) {
+                    Some(documents) => ranker.with_indexed_seed_documents(documents),
+                    None => ranker,
+                };
                 match &indexed.vocabulary {
                     Some(vocabulary) => {
                         ranker.with_indexed_vocabulary(std::sync::Arc::clone(vocabulary))

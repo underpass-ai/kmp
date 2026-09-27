@@ -90,6 +90,12 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// The whole about's vocabulary the lexical bridge reads, when the
     /// candidates are only those the lexical index reached (DESIGN L6, P13).
     indexed_vocabulary: Option<std::sync::Arc<Vec<String>>>,
+    /// The direct field of every candidate that carries a word of the
+    /// question, under the reading this ranker reads, when the candidates
+    /// are only those the lexical index read (DESIGN L6, P14): what the
+    /// store's associations are counted over, however many candidates the
+    /// floor bound left unread.
+    indexed_seed_documents: Option<std::sync::Arc<Vec<super::term_counts::TermCounts>>>,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -102,6 +108,7 @@ impl Default for AnswerEvidenceRanker<'_> {
             witness: None,
             indexed_collection: None,
             indexed_vocabulary: None,
+            indexed_seed_documents: None,
         }
     }
 }
@@ -217,6 +224,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             witness: None,
             indexed_collection: None,
             indexed_vocabulary: None,
+            indexed_seed_documents: None,
         }
     }
 
@@ -280,6 +288,16 @@ impl<'a> AnswerEvidenceRanker<'a> {
         self
     }
 
+    /// Counts the store's associations over these candidates' direct
+    /// fields instead of the candidates it is given (DESIGN L6, P14).
+    pub(super) fn with_indexed_seed_documents(
+        mut self,
+        documents: std::sync::Arc<Vec<super::term_counts::TermCounts>>,
+    ) -> Self {
+        self.indexed_seed_documents = Some(documents);
+        self
+    }
+
     /// Reads every candidate with the alias terms it spells (`corte 10` as
     /// `c10`), as the anchored gate compares them with a question's anchors.
     pub(super) fn with_identifier_aliases(mut self) -> Self {
@@ -328,6 +346,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             self.bridge,
             std::sync::Arc::clone(&collection),
             self.indexed_vocabulary.as_deref().map(Vec::as_slice),
+            self.indexed_seed_documents.as_deref().map(Vec::as_slice),
         );
         self.observe(&prepared, &collection, &lexicon);
         self.rank_prepared(
@@ -532,6 +551,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     self.bridge,
                     std::sync::Arc::clone(&collection),
                     self.indexed_vocabulary.as_deref().map(Vec::as_slice),
+                    self.indexed_seed_documents.as_deref().map(Vec::as_slice),
                 );
                 self.observe(&prepared, &collection, &lexicon);
                 let (evidence, scores) = self.rank_prepared(
@@ -562,6 +582,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             self.bridge,
             std::sync::Arc::clone(&collection),
             self.indexed_vocabulary.as_deref().map(Vec::as_slice),
+            self.indexed_seed_documents.as_deref().map(Vec::as_slice),
         );
         self.observe(&prepared, &collection, &lexicon);
         let unfiltered = self
@@ -1149,6 +1170,7 @@ mod tests {
             witness: None,
             indexed_collection: None,
             indexed_vocabulary: None,
+            indexed_seed_documents: None,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1866,6 +1888,7 @@ mod tests {
             witness: None,
             indexed_collection: None,
             indexed_vocabulary: None,
+            indexed_seed_documents: None,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -2298,6 +2321,7 @@ mod tests {
             witness: None,
             indexed_collection: None,
             indexed_vocabulary: None,
+            indexed_seed_documents: None,
             context: AnswerRecallContext::default(),
             bridge,
         }

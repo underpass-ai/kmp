@@ -49,6 +49,7 @@ mod doubt_verdicts;
 mod expansion_rescue;
 #[cfg(test)]
 mod expansion_rescue_tests;
+mod floor_bound;
 mod gate_doubt;
 mod gate_verdict;
 mod hybrid_evidence;
@@ -157,6 +158,7 @@ pub use doubt_entry::DoubtEntry;
 pub use doubt_judgement::DoubtJudgement;
 pub use doubt_passage::DoubtPassage;
 pub use doubt_verdicts::DoubtVerdicts;
+pub use floor_bound::FloorBound;
 pub use indexed_ask::IndexedAsk;
 pub use indexed_field_stats::IndexedFieldStats;
 pub use indexed_lifecycle::IndexedLifecycle;

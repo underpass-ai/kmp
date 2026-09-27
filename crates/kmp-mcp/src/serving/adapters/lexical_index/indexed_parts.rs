@@ -116,6 +116,26 @@ impl<'a> IndexedParts<'a> {
             }
             level = next;
         }
+        // A node read at the edge of the walk may end a relation the proof
+        // cites; whether it still stands decides which conflicts are live,
+        // so its own lifecycle edges are read too, however few candidates
+        // the floor bound left to walk from (P14).
+        let edge = self
+            .nodes
+            .keys()
+            .filter(|id| !walked.contains(*id))
+            .cloned()
+            .collect::<Vec<_>>();
+        for id in edge {
+            if id == self.about || self.is_label(&id)? {
+                continue;
+            }
+            for relation_type in LIFECYCLE {
+                for edge in self.kept_edges(&id, true, true, Some(relation_type))? {
+                    self.add_edge(edge)?;
+                }
+            }
+        }
         // What makes every node read a candidate as the whole about makes
         // it one: its labels and the anchor's edge; for an entry walked, the
         // evidence that supports it; for evidence, everything it supports.

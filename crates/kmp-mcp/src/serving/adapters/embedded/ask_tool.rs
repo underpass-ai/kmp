@@ -177,6 +177,7 @@ impl<'a> EmbeddedAskTool<'a> {
             Some((mode, Ok(Ok(read)), started)) => {
                 let revision = read.result.read_revision.clone();
                 let (plan_us, parts_us, documents) = (read.plan_us, read.parts_us, read.documents);
+                let reached = read.reached;
                 let mut retrieval = AskRetrievalContext::from(read.result);
                 if let Some(gate) = self.gate {
                     retrieval = retrieval.with_gate(gate);
@@ -197,6 +198,7 @@ impl<'a> EmbeddedAskTool<'a> {
                         target: "kmp_mcp::lexical_index",
                         event = "kmp_lexical_answer",
                         answered = true,
+                        reached,
                         candidates = read.candidates,
                         documents,
                         plan_us,
@@ -208,6 +210,7 @@ impl<'a> EmbeddedAskTool<'a> {
                 }
                 Some((
                     answered,
+                    reached,
                     read.candidates,
                     documents,
                     elapsed_us,
@@ -337,11 +340,14 @@ impl<'a> EmbeddedAskTool<'a> {
         .map_err(|status| mapping_error(&status))?;
         response.warnings.extend(warnings);
         // Verify: the index's answer beside the one the about gave.
-        if let Some((answered, candidates, documents, elapsed_us, plan_us, parts_us)) = indexed {
+        if let Some((answered, reached, candidates, documents, elapsed_us, plan_us, parts_us)) =
+            indexed
+        {
             tracing::info!(
                 target: "kmp_mcp::lexical_index",
                 event = "kmp_lexical_verify",
                 equal = answered == response,
+                reached,
                 candidates,
                 documents,
                 plan_us,

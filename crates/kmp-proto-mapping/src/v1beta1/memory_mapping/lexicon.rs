@@ -40,6 +40,7 @@ impl Lexicon {
         bridge: &LexicalBridge,
         collection: Arc<LexicalCollection>,
         vocabulary: Option<&[String]>,
+        association_documents: Option<&[TermCounts]>,
     ) -> Self {
         let question_counts = informative_term_counts(question, morphology);
         // The table bridges the question to the words of every candidate:
@@ -67,12 +68,20 @@ impl Lexicon {
             }
         }
         let floor = collection.direct.eligibility_floor(&asked_for);
-        let associated = AssociationIndex::for_question(
-            &question_counts,
-            &collection.direct,
-            prepared.iter().map(|(_, terms)| &terms.direct_counts),
-        )
-        .expand(&question_counts);
+        // Associations are counted over every candidate that carries a word
+        // of the question: those given, or, when the lexical index left the
+        // ones below the floor unread (P14), the ones its postings reached.
+        let associations = match association_documents {
+            Some(documents) => {
+                AssociationIndex::for_question(&question_counts, &collection.direct, documents)
+            }
+            None => AssociationIndex::for_question(
+                &question_counts,
+                &collection.direct,
+                prepared.iter().map(|(_, terms)| &terms.direct_counts),
+            ),
+        };
+        let associated = associations.expand(&question_counts);
         let mut asked = associated.clone();
         for pair in &bridged {
             let weight = asked.entry(pair.candidate_key.clone()).or_insert(0.0);

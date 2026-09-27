@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use super::association_index::AssociationIndex;
 use super::bridged_key::BridgedKey;
@@ -9,7 +9,6 @@ use super::lexical_row::LexicalRow;
 use super::morphology::Morphology;
 use super::question_contract::QuestionContract;
 use super::search_terms::{informative_term_counts, informative_terms};
-use super::term_counts::TermCounts;
 
 /// What the lexical index must reach for one question (DESIGN L6, P13).
 ///
@@ -22,6 +21,8 @@ use super::term_counts::TermCounts;
 pub struct IndexedQuestion {
     forms: Vec<String>,
     morphology: Morphology,
+    /// Whether the question names an anchor the anchored gate requires.
+    anchored: bool,
 }
 
 impl IndexedQuestion {
@@ -37,7 +38,27 @@ impl IndexedQuestion {
                 forms.push(form.to_string());
             }
         }
-        Self { forms, morphology }
+        let anchored = contract.requires_anchors();
+        Self {
+            forms,
+            morphology,
+            anchored,
+        }
+    }
+
+    /// Every form the ranker may read the question in.
+    pub(super) fn forms(&self) -> &[String] {
+        &self.forms
+    }
+
+    pub(super) fn morphology(&self) -> &Morphology {
+        &self.morphology
+    }
+
+    /// Whether the anchored gate may read the question with the anchors it
+    /// requires (P14 leaves such an ask unpruned).
+    pub(super) fn requires_anchors(&self) -> bool {
+        self.anchored
     }
 
     /// The words of every form the ranker may read the question in.
@@ -73,16 +94,7 @@ impl IndexedQuestion {
             LexicalField::from_stats(stats.documents, stats.direct_length, &stats.direct_df);
         let counts = documents
             .iter()
-            .map(|row| {
-                TermCounts::from_counts(
-                    row.terms()
-                        .iter()
-                        .filter(|term| term.direct(aliased) > 0)
-                        .map(|term| (term.term.clone(), term.direct(aliased) as u32))
-                        .collect::<BTreeMap<_, _>>(),
-                    row.direct_length(aliased).max(0) as usize,
-                )
-            })
+            .map(|row| row.direct_counts(aliased))
             .collect::<Vec<_>>();
         let mut associated = BTreeSet::new();
         for form in &self.forms {

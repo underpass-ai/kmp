@@ -34,6 +34,8 @@ pub(crate) struct LexicalSidecar {
     maintainer: Option<Arc<LexicalMaintainer>>,
     mode: LexicalIndexMode,
     limits: IndexLimits,
+    /// MaxScore against the floor (P14).
+    prune: bool,
 }
 
 pub(crate) fn lexical_index_path(data_dir: &Path) -> PathBuf {
@@ -63,6 +65,7 @@ impl LexicalSidecar {
                     sidecar: Some(sidecar),
                     mode,
                     limits,
+                    prune: crate::serving::environment::lexical_maxscore(),
                 }
             }
             Err(error) => {
@@ -78,6 +81,7 @@ impl LexicalSidecar {
             maintainer: None,
             mode: LexicalIndexMode::Off,
             limits: IndexLimits::DEFAULT,
+            prune: false,
         }
     }
 
@@ -188,8 +192,9 @@ impl LexicalSidecar {
             // `verify` measures every ask the index can hold, however many
             // candidates it reaches; `on` answers only those it saves on.
             let bounded = (self.mode == LexicalIndexMode::On).then_some(self.limits);
+            let prune = self.prune;
             tokio::task::spawn_blocking(move || {
-                IndexedPlan::read(&sidecar, &about, &question, &bridge, bounded, deeper)
+                IndexedPlan::read(&sidecar, &about, &question, &bridge, bounded, deeper, prune)
             })
             .await
             .map_err(|error| error.to_string())??
@@ -225,11 +230,20 @@ impl LexicalSidecar {
         Ok(Ok(IndexedRead {
             result,
             indexed: plan.indexed,
+            reached: plan.reached,
             candidates: plan.candidates.len(),
             documents: plan.documents,
             plan_us,
             parts_us: started.elapsed().as_micros() as u64 - plan_us,
         }))
+    }
+
+    /// Leaves MaxScore on or off for this sidecar, whatever the environment
+    /// says (tests that compare both in one process).
+    #[cfg(test)]
+    pub(crate) fn with_maxscore(mut self, prune: bool) -> Self {
+        self.prune = prune;
+        self
     }
 
     /// Compares the sidecar with what an ask measured and logs the result.
