@@ -157,9 +157,8 @@ because it adds latency and bytes to every Ask.
   Asking for the cause as well as the consequence, and keeping a second
   choice, took paths found from 1/5 to 3/5 with no loss in step precision.
 
-  **Corridor (P11, DESIGN L7, 27 Sept 2026; off by default).** With a goal
-  and `curate.json` `"paths_corridor": "on"`, the facts asked about are the
-  corridor between the ends: the facts within four hops of
+  **Corridor (P11, DESIGN L7, 27 Sept 2026).** With a goal, the facts asked
+  about are now the corridor between the ends: the facts within four hops of
   either end over kernel pairs and declared relations, nearest to both ends
   first (d_f + d_b), then by the ends' rarer words (BM25), at most 22 besides
   the ends; when nothing links near either end, the 22 facts sharing most of
@@ -178,15 +177,15 @@ because it adds latency and bytes to every Ask.
   against 0.54 over the whole selection, so g30 → g32 returned one path and
   not the second, which was all right hops. The goal-less search is
   unchanged. At synth 10^4 without Jev a goal search went from 18.7 s and
-  3.6 GB to 0.73 s and 0.35 GB with the same answer. In short: Jev tokens
-  −58 % per goal search, a goal search at 10^4 from 19 s to 0.73 s, and a
-  cost in `proposed_hops_right` (0.95 to 0.9411 in two samples of three).
-  Because of that cost the corridor ships off: the baseline gates the old
-  filter (`proposed_hops_right` 0.95, replayed from the recorded answers) and
-  keeps the corridor arm as `proposed_hops_right_corridor_info`, a row no
-  scorecard column carries, so it gates nothing. Measure the arm with
-  `KMP_EVAL_PATHS_CORRIDOR=on bash scripts/ci/jev-baseline.sh`. Turning it
-  on by default is pending a decision.
+  3.6 GB to 0.73 s and 0.35 GB with the same answer. `curate.json`
+  `"paths_corridor": "off"` restores the old filter.
+
+  The corridor is **on by default** (decision of 28 Sept 2026): Jev tokens
+  −58 % per goal search and a goal search at 10^4 from 19 s to 0.73 s were
+  judged worth the cost in `proposed_hops_right`, so the baseline gates the
+  corridor arm at 0.9411 (a reviewed lowering from 0.95, written in
+  `jev-baseline.tsv`). `KMP_EVAL_PATHS_CORRIDOR=off bash
+  scripts/ci/jev-baseline.sh` still measures the old filter for reference.
 
 ### Tools behind these numbers
 

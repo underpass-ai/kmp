@@ -15,12 +15,11 @@ pub(super) const CURATE_FILE: &str = "curate.json";
 /// partner round (default 120, at most 512; past 255 facts the round reads
 /// the about in windows), and `"partner_filter"` (`off` by default,
 /// `rare_term` or `confirm`) names what the round's pairs must pass before
-/// they are typed. `"paths_corridor"` (`off` by default, or `on`) says
+/// they are typed. `"paths_corridor"` (`on` by default, or `off`) says
 /// whether a path search with a goal asks about the corridor between its
-/// ends (DESIGN L7) or, as before, about the facts near them; the corridor
-/// is opt-in while its cost in `proposed_hops_right` awaits a decision.
-/// Absent, the store gets the defaults; unreadable or unknown, it is
-/// ignored and reported so, and the defaults apply.
+/// ends (DESIGN L7) or, as before, about the facts near them. Absent, the
+/// store gets the defaults; unreadable or unknown, it is ignored and
+/// reported so, and the defaults apply.
 #[derive(Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct CurateConfig {
@@ -41,7 +40,7 @@ impl CurateConfig {
     ) -> Result<(PartnerCap, PartnerFilter, PathsCorridor), String> {
         let path = data_dir.join(CURATE_FILE);
         if !path.is_file() {
-            return Ok((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::Off));
+            return Ok((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::On));
         }
         let text = std::fs::read_to_string(&path)
             .map_err(|error| format!("{CURATE_FILE} is unreadable: {error}"))?;
@@ -69,7 +68,7 @@ impl CurateConfig {
             })?,
         };
         let corridor = match config.paths_corridor.as_deref() {
-            None => PathsCorridor::Off,
+            None => PathsCorridor::On,
             Some(name) => PathsCorridor::named(name).ok_or_else(|| {
                 format!(
                     "{CURATE_FILE} names paths_corridor `{name}`; this kmp-mcp knows `on` and `off`"
@@ -88,14 +87,14 @@ mod tests {
     fn a_store_may_raise_the_partner_cap_to_512_and_name_a_filter() {
         assert_eq!(
             CurateConfig::parse("{}"),
-            Ok((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::Off))
+            Ok((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::On))
         );
         assert_eq!(
             CurateConfig::parse(r#"{"partner_facts":512}"#),
             Ok((
                 PartnerCap::named("512").expect("cap"),
                 PartnerFilter::Off,
-                PathsCorridor::Off
+                PathsCorridor::On
             ))
         );
         assert_eq!(
@@ -103,12 +102,8 @@ mod tests {
             Ok((
                 PartnerCap::named("300").expect("cap"),
                 PartnerFilter::Confirm,
-                PathsCorridor::Off
+                PathsCorridor::On
             ))
-        );
-        assert_eq!(
-            CurateConfig::parse(r#"{"paths_corridor":"on"}"#).map(|(_, _, corridor)| corridor),
-            Ok(PathsCorridor::On)
         );
         assert_eq!(
             CurateConfig::parse(r#"{"paths_corridor":"off"}"#).map(|(_, _, corridor)| corridor),
@@ -131,7 +126,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("dir");
         assert_eq!(
             CurateConfig::load(dir.path()),
-            Ok((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::Off))
+            Ok((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::On))
         );
         std::fs::write(dir.path().join(CURATE_FILE), r#"{"partner_facts":512}"#).expect("write");
         assert_eq!(

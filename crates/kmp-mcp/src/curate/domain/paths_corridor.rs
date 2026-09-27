@@ -1,12 +1,11 @@
 /// Whether a `kmp_curate` path search with a goal asks the judge about the
 /// corridor between the ends, with each fact's next step offered among at
 /// most eight neighbours (DESIGN L7), or about the facts the graph links
-/// near the ends with every other fact as an option, as before (the
-/// default: the corridor is opt-in through `curate.json`).
+/// near the ends with every other fact as an option, as before.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) enum PathsCorridor {
-    On,
     #[default]
+    On,
     Off,
 }
 
@@ -34,6 +33,6 @@ mod tests {
         assert_eq!(PathsCorridor::named("on"), Some(PathsCorridor::On));
         assert_eq!(PathsCorridor::named("off"), Some(PathsCorridor::Off));
         assert_eq!(PathsCorridor::named("near"), None);
-        assert!(!PathsCorridor::default().is_on());
+        assert!(PathsCorridor::default().is_on());
     }
 }

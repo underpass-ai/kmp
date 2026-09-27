@@ -41,12 +41,10 @@ write a word. So Jev suggests a type and doubts a reason, and you write every
    - Written evidence carries `curated_by: kmp_curate` and the Jev model.
 
 6. To trace how one fact led to another, call `mode:"paths"` with `from` and,
-   optionally, `to` and `max_hops`, over one or several abouts. With `to`
-   and a store whose `curate.json` says `"paths_corridor": "on"` (off by
-   default), Jev reads only the corridor between the two ends: at most 22
-   facts within four linked hops of either end, or sharing their rarer words
-   when nothing links them, and picks each step among at most eight
-   neighbours. Otherwise Jev reads the facts near the ends as before. Without
+   optionally, `to` and `max_hops`, over one or several abouts. With `to`,
+   Jev reads only the corridor between the two ends: at most 22 facts within
+   four linked hops of either end, or sharing their rarer words when nothing
+   links them, and picks each step among at most eight neighbours. Without
    `to`, Jev reads the whole selection and also follows consequences of
    consequences. Each hop says
    whether it is `declared` or proposed by Jev, and whether it was walked

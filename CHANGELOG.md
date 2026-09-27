@@ -38,26 +38,24 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
-- A `kmp_curate` path search with a goal can ask Jev about its corridor
-  instead of the whole selection. **Off by default**: a store opts in with
-  `curate.json` `"paths_corridor": "on"`, because the corridor lowers the
-  `proposed_hops_right` floor (0.95 to 0.9411 in two samples of three) and
-  turning it on by default is pending a decision. With it: at most 22 facts within four hops of
+- A `kmp_curate` path search with a goal asks Jev about its corridor
+  instead of the whole selection, **on by default** (decided on 28 Sept 2026,
+  accepting the lower `proposed_hops_right` floor below): at most 22 facts within four hops of
   either end over kernel pairs and declared relations (nearest to both ends
   first, then by the ends' rarer words), each fact's next step chosen among
   at most eight neighbours, and only steps that can lie on a walk to the
   goal typed. On the judged corpus, three samples with the real Jev: 3.4k–3.6k
   Jev tokens per goal search on average instead of 8.2k (the largest search
   of the corpus, 22.4k, now 3.5k–4.4k), the same paths found (0.8), no path
-  through a planted bad declaration, proposed steps right 0.94–0.95 (one
-  search returns one path of two in two samples; see
-  `docs/development/jev-evaluation.md`). The kernel proposes pairs for such a
-  search only among the corridor's candidates, and none when no judge is
-  configured, since it walks declared relations alone: at synth 10^4 a goal
-  search without Jev went from 18.7–20.3 s and 3.6 GB to 0.73 s and 0.35 GB
-  with the same answer. Without the setting, and for a goal-less search,
-  nothing changes; `jev-baseline.tsv` keeps `proposed_hops_right` at 0.95 and
-  records the corridor arm as an informative row that gates nothing.
+  through a planted bad declaration, proposed steps right 0.94–0.95 (the floor
+  moves from 0.95 to 0.9411 because one search returns one path of two in
+  two samples; see `docs/development/jev-evaluation.md`). The kernel proposes
+  pairs for a path search only among the corridor's candidates, and none
+  when no judge is configured, since such a search walks declared relations
+  alone: at synth 10^4 a goal search without Jev went from 18.7 s and 3.6 GB
+  to 0.73 s and 0.35 GB with the same answer. A goal-less search is
+  unchanged. `curate.json` `"paths_corridor": "off"` restores the previous
+  filter.
 - **Breaking: a single-destination `kmp_trace` is bounded.** `to` as one
   ref with no `search` or time options used to walk everything the source
   reaches (O(reachable): 390 ms at 16k entries and 2.8 s at 10^5 on the
