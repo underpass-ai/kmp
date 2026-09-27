@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value, json};
 
+use super::batch_member::Member;
 use super::generated_ref::{generated_entry_ref, stable_idempotency_key};
 use super::json_value_type::JsonValueType;
 use super::plan::KernelWritePlan;
@@ -58,6 +59,10 @@ pub(crate) fn build_batch_plan(
     // A caller-chosen ref updates the entry it names. The result has to say
     // so, because the same packet shape also creates memories (#663).
     let mut supplied = BTreeSet::new();
+    // What a record got wrong that does not stop the packet being read, and
+    // the compiler's own finding each of those stands in for.
+    let mut early = Vec::new();
+    let mut superseded = BTreeMap::new();
     // Resolve forward references as well as references to earlier records.
     for (index, memory) in memories.iter().enumerate() {
         let memory = memory.as_object().ok_or_else(|| {
@@ -77,28 +82,40 @@ pub(crate) fn build_batch_plan(
                 "memories[{index}].id must start with a letter and contain only letters, digits, _ or -"
             )).at(format!("memories[{index}].id")).code("INVALID_LOCAL_ID").into());
         }
-        let kind = required_map_string(memory, "kind", &format!("memories[{index}].kind"))?;
-        let summary =
-            required_map_string(memory, "summary", &format!("memories[{index}].summary"))?;
-        super::expansion_selection::ExpansionSelection::proposed(
+        // A missing kind or summary is the compiler's to report, with the
+        // rest of the record; the generated ref only needs to be distinct.
+        let kind = optional_string(memory.get("kind")).unwrap_or_default();
+        let summary = optional_string(memory.get("summary")).unwrap_or_default();
+        if let Err(error) = super::expansion_selection::ExpansionSelection::proposed(
             memory.get("search_expansions"),
             &format!("memories[{index}].search_expansions"),
-        )?;
-        let reference = if let Some(reference) = optional_string(memory.get("ref")) {
-            kmp_application::validate_supplied_entry_ref(
+        ) {
+            early.push(error);
+        }
+        let supplied_ref = optional_string(memory.get("ref")).filter(|reference| {
+            match kmp_application::validate_supplied_entry_ref(
                 &about,
                 &format!("memories[{index}].ref"),
                 reference,
-            )
-            .map_err(|error| {
-                WriteValidationError::new(error)
-                    .at(format!("memories[{index}].ref"))
-                    .code("INVALID_REF")
-            })?;
-            supplied.insert(reference.to_owned());
-            reference.to_owned()
-        } else {
-            generated_entry_ref(&about, kind, summary, &identity, id)
+            ) {
+                Ok(()) => true,
+                Err(error) => {
+                    early.push(
+                        WriteValidationError::new(error)
+                            .at(format!("memories[{index}].ref"))
+                            .code("INVALID_REF"),
+                    );
+                    superseded.insert(index, "ref");
+                    false
+                }
+            }
+        });
+        let reference = match supplied_ref {
+            Some(reference) => {
+                supplied.insert(reference.to_owned());
+                reference.to_owned()
+            }
+            None => generated_entry_ref(&about, kind, summary, &identity, id),
         };
         if refs.insert(id.to_owned(), reference.clone()).is_some() {
             return Err(WriteValidationError::new(format!(
@@ -145,96 +162,20 @@ pub(crate) fn build_batch_plan(
     }
     let mut defaults = object.clone();
     defaults.remove("memories");
-    let mut errors = Vec::new();
+    let mut errors = early;
     for (index, memory) in memories.iter().enumerate() {
-        let planned = (|| {
-            let memory = memory.as_object().expect("validated record");
-            let id = memory["id"].as_str().expect("validated id");
-            let mut request = defaults.clone();
-            request.insert("idempotency_key".into(), json!(identity));
-            let kind = memory["kind"].as_str().expect("validated kind");
-            let intent = match kind {
-                "turn" => "record_turn",
-                "decision" => "record_decision",
-                "feedback" => "record_feedback",
-                _ => "record_observation",
-            };
-            request.insert("intent".into(), json!(intent));
-            let mut current = Map::new();
-            for field in ["kind", "summary", "summary_en", "evidence"] {
-                if let Some(value) = memory.get(field) {
-                    current.insert(field.into(), value.clone());
-                }
-            }
-            current.insert("ref".into(), json!(refs[id]));
-            request.insert("current".into(), Value::Object(current));
-            for field in [
-                "observed_at",
-                "occurred_at",
-                "valid_from",
-                "valid_until",
-                "rank",
-            ] {
-                if let Some(value) = memory.get(field) {
-                    request.insert(field.into(), value.clone());
-                }
-            }
-            let labels =
-                merged_labels(object.get("labels"), memory.get("labels")).map_err(|error| {
-                    WriteValidationError::new(error).at(format!("memories[{index}].labels"))
-                })?;
-            request.insert("labels".into(), labels.clone());
-            if let Some(options) = request.get_mut("options").and_then(Value::as_object_mut) {
-                // The declaration applies only to the labels that this member uses.
-                if let Some(keys) = options.get_mut("labels_new").and_then(Value::as_array_mut) {
-                    keys.retain(|key| key.as_str().is_some_and(|key| labels.get(key).is_some()));
-                }
-                if let Some(sequence) = options.get_mut("sequence") {
-                    let first = sequence
-                        .as_u64()
-                        .ok_or("options.sequence must be a positive integer")?;
-                    let next = first
-                        .checked_add(index as u64)
-                        .filter(|next| *next <= u64::from(u32::MAX))
-                        .ok_or("options.sequence overflows inside memories")?;
-                    *sequence = json!(next);
-                }
-            }
-            let mut links = memory
-                .get("connect_to")
-                .cloned()
-                .unwrap_or_else(|| json!([]));
-            for (link_index, link) in links
-                .as_array_mut()
-                .ok_or_else(|| format!("memories[{index}].connect_to must be an array"))?
-                .iter_mut()
-                .enumerate()
-            {
-                let target = link.get("ref").and_then(Value::as_str).ok_or_else(|| {
-                    format!("memories[{index}].connect_to[{link_index}].ref is required")
-                })?;
-                let local = target.strip_prefix('@').unwrap_or(target);
-                if let Some(reference) = refs.get(local) {
-                    link["ref"] = json!(reference);
-                } else if target.starts_with('@') || !target.contains(':') {
-                    return Err(WriteValidationError::new(format!(
-                        "unknown local id `{local}`; use an exact id declared in memories or a canonical ref returned by a read"
-                    )).at(format!("memories[{index}].connect_to[{link_index}].ref"))
-                      .code("UNKNOWN_LOCAL_REF").allowed_values(refs.keys()));
-                }
-            }
-            request.insert("connect_to".into(), links);
-            // A batch can record independent source facts. Strict proof validation
-            // still applies to every claimed link; never fabricate links for access.
-            build_write_plan_with_local_refs(&Value::Object(request), true, &targets)
-                .map_err(|error| error.within(&format!("memories[{index}]")))
-        })();
-        match planned {
+        let at = format!("memories[{index}]");
+        let member = Member {
+            index,
+            memory,
+            superseded: superseded.get(&index).copied(),
+        };
+        match plan_member(member, &defaults, object, &identity, &refs, &targets) {
             Ok(mut plan) => {
                 preserve_proof_observation(&mut plan.ingest_arguments);
                 plans.push(plan);
             }
-            Err(error) => errors.push(error),
+            Err(failures) => errors.extend(failures.into_iter().map(|error| error.within(&at))),
         }
     }
     if let Some(errors) = WriteValidationErrors::collected(errors) {
@@ -278,6 +219,152 @@ pub(crate) fn build_batch_plan(
     all.relation_quality_metrics = relation_quality_metrics(&all.relation_quality);
     all.replaced = super::replacement_view::replaced_memories(&all.ingest_arguments, &supplied);
     Ok(all)
+}
+
+/// One record of the packet compiled as its own write, every failure of it
+/// reported together. A failure found here, before the compiler runs, stands
+/// in for what the compiler would derive from the same cause: a record whose
+/// labels cannot be read is not also told it has none, and a link to an
+/// unknown local id is not also judged as a link.
+fn plan_member(
+    member: Member<'_>,
+    defaults: &Map<String, Value>,
+    packet: &Map<String, Value>,
+    identity: &str,
+    refs: &BTreeMap<String, String>,
+    targets: &BTreeSet<String>,
+) -> Result<KernelWritePlan, Vec<WriteValidationError>> {
+    let index = member.index;
+    let memory = member.memory.as_object().expect("validated record");
+    let id = memory["id"].as_str().expect("validated id");
+    let mut failures = Vec::new();
+    let mut superseded = member
+        .superseded
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    let mut request = defaults.clone();
+    request.insert("idempotency_key".into(), json!(identity));
+    let kind = memory
+        .get("kind")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let intent = match kind {
+        "turn" => "record_turn",
+        "decision" => "record_decision",
+        "feedback" => "record_feedback",
+        _ => "record_observation",
+    };
+    request.insert("intent".into(), json!(intent));
+    let mut current = Map::new();
+    for field in ["kind", "summary", "summary_en", "evidence"] {
+        if let Some(value) = memory.get(field) {
+            current.insert(field.into(), value.clone());
+        }
+    }
+    current.insert("ref".into(), json!(refs[id]));
+    request.insert("current".into(), Value::Object(current));
+    for field in [
+        "observed_at",
+        "occurred_at",
+        "valid_from",
+        "valid_until",
+        "rank",
+    ] {
+        if let Some(value) = memory.get(field) {
+            request.insert(field.into(), value.clone());
+        }
+    }
+    let labels = match merged_labels(packet.get("labels"), memory.get("labels")) {
+        Ok(labels) => labels,
+        Err(error) => {
+            failures.push(
+                WriteValidationError::new(error)
+                    .at("labels")
+                    .code("INVALID_LABELS"),
+            );
+            superseded.push("labels".to_owned());
+            json!({})
+        }
+    };
+    request.insert("labels".into(), labels.clone());
+    if let Some(options) = request.get_mut("options").and_then(Value::as_object_mut) {
+        // The declaration applies only to the labels that this member uses.
+        if let Some(keys) = options.get_mut("labels_new").and_then(Value::as_array_mut) {
+            keys.retain(|key| key.as_str().is_some_and(|key| labels.get(key).is_some()));
+        }
+        if let Some(sequence) = options.get_mut("sequence") {
+            let next = sequence
+                .as_u64()
+                .ok_or("options.sequence must be a positive integer")
+                .and_then(|first| {
+                    first
+                        .checked_add(index as u64)
+                        .filter(|next| *next <= u64::from(u32::MAX))
+                        .ok_or("options.sequence overflows inside memories")
+                });
+            match next {
+                Ok(next) => *sequence = json!(next),
+                Err(error) => {
+                    // A packet-wide option: said once, without a record path.
+                    return Err(vec![
+                        WriteValidationError::new(error)
+                            .at("options.sequence")
+                            .global(),
+                    ]);
+                }
+            }
+        }
+    }
+    let mut links = memory
+        .get("connect_to")
+        .cloned()
+        .unwrap_or_else(|| json!([]));
+    let Some(declared) = links.as_array_mut() else {
+        return Err(vec![WriteValidationError::wrong_type(
+            "connect_to",
+            JsonValueType::Array,
+            &links,
+        )]);
+    };
+    let mut resolved = Vec::new();
+    for (link_index, link) in declared.iter_mut().enumerate() {
+        let Some(target) = link.get("ref").and_then(Value::as_str) else {
+            // The compiler names the missing ref itself.
+            resolved.push(link.clone());
+            continue;
+        };
+        let local = target.strip_prefix('@').unwrap_or(target);
+        if let Some(reference) = refs.get(local) {
+            link["ref"] = json!(reference);
+        } else if target.starts_with('@') || !target.contains(':') {
+            failures.push(
+                WriteValidationError::new(format!(
+                    "unknown local id `{local}`; use an exact id declared in memories or a canonical ref returned by a read"
+                ))
+                .at(format!("connect_to[{link_index}].ref"))
+                .code("UNKNOWN_LOCAL_REF")
+                .allowed_values(refs.keys()),
+            );
+            superseded.push(format!("connect_to[{link_index}]"));
+        }
+        resolved.push(link.clone());
+    }
+    request.insert("connect_to".into(), Value::Array(resolved));
+    // A batch can record independent source facts. Strict proof validation
+    // still applies to every claimed link; never fabricate links for access.
+    match build_write_plan_with_local_refs(&Value::Object(request), true, targets) {
+        Ok(plan) if failures.is_empty() => Ok(plan),
+        Ok(_) => Err(failures),
+        Err(compiled) => {
+            failures.extend(compiled.into_iter().filter(|failure| {
+                !superseded
+                    .iter()
+                    .any(|cause| failure.field_is_within(cause))
+            }));
+            Err(failures)
+        }
+    }
 }
 
 fn merged_labels(common: Option<&Value>, own: Option<&Value>) -> Result<Value, String> {

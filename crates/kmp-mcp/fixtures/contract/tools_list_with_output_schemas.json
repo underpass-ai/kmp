@@ -824,6 +824,24 @@
                 ]
               },
               "then": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "labels"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "memories": {
+                        "items": {
+                          "required": [
+                            "labels"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ],
                 "if": {
                   "not": {
                     "properties": {
@@ -1051,11 +1069,12 @@
               "type": "array",
               "uniqueItems": true
             },
-            "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
+            "description": "Required for every record, shared here or on the record, e.g. {\"topic\":[\"write-path\"]}. Key-to-array memberships; each value is materialized. Reuse the about's keys from kmp_wake; a shared string does not prove entity identity.",
+            "minProperties": 1,
             "type": "object"
           },
           "memories": {
-            "description": "One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
+            "description": "One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership (labels here or per record). A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
             "items": {
               "additionalProperties": false,
               "properties": {
@@ -1201,7 +1220,8 @@
                     "type": "array",
                     "uniqueItems": true
                   },
-                  "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
+                  "description": "Required for every record, shared here or on the record, e.g. {\"topic\":[\"write-path\"]}. Key-to-array memberships; each value is materialized. Reuse the about's keys from kmp_wake; a shared string does not prove entity identity.",
+                  "minProperties": 1,
                   "type": "object"
                 },
                 "observed_at": {
@@ -1243,7 +1263,7 @@
                   "type": "string"
                 },
                 "summary_en": {
-                  "description": "Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples.",
+                  "description": "Required when summary is not English; omit it when summary is English (a copy is dropped). Your English search rendering, keeping numbers, identifiers and acronyms as written. Strict mode refuses a wrong-language, thin or identifier-dropping rendering; removing it never passes. Search uses it; citations keep summary.",
                   "minLength": 1,
                   "type": "string"
                 },

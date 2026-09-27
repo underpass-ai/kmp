@@ -93,3 +93,67 @@ pub(super) fn validate_label_key_at(field: &str, key: &str) -> Result<(), String
     }
     Ok(())
 }
+
+/// Said when a record carries no membership at all. The example is a shape,
+/// not a default: no membership is ever invented for a record.
+pub(super) const LABELS_REQUIRED: &str = "labels must declare at least one key/value \
+     membership for temporal navigation. Add `labels` at the top level for every record or \
+     inside this record, for example \"labels\": {\"topic\": [\"write-path\"]}; reuse the \
+     about's own keys (kmp_wake lists them). No membership is invented.";
+
+/// The labels a write emits, in the order the ingest has always carried
+/// them: the well-known task, process and episode scopes first, then the
+/// caller's own `labels` by key. Packet records can supply only labels;
+/// the single-current form provides the well-known process/task/episode
+/// memberships through scope. Neither path invents a label.
+pub(super) fn writer_labels(
+    process: Option<&str>,
+    task: Option<&str>,
+    episode: Option<&str>,
+    labels: Option<&serde_json::Value>,
+) -> Result<Vec<WriterLabel>, String> {
+    let mut emitted = Vec::new();
+    if let Some(task) = task {
+        emitted.push(WriterLabel::new(
+            "task",
+            task,
+            "scope.task",
+            "Kernel write task",
+        ));
+    }
+    if let Some(process) = process {
+        emitted.push(WriterLabel::new(
+            "agentic_process",
+            process,
+            "scope.process",
+            "Kernel write process",
+        ));
+    }
+    if let Some(episode) = episode {
+        emitted.push(WriterLabel::new(
+            "agentic_episode",
+            episode,
+            "scope.episode",
+            "Kernel write episode",
+        ));
+    }
+    if let Some(labels) = labels {
+        let object = labels.as_object().ok_or_else(|| {
+            "`labels` must map each key to a non-empty array of strings".to_string()
+        })?;
+        let mut own = object.iter().collect::<Vec<_>>();
+        own.sort_by(|left, right| left.0.cmp(right.0));
+        for (key, value) in own {
+            validate_label_key(key)?;
+            let field = format!("labels.{key}");
+            for value in label_values(value, &field)? {
+                emitted.push(WriterLabel::new(key, value, &field, "Kernel write label"));
+            }
+        }
+    }
+    validate_distinct_labels(&emitted)?;
+    if emitted.is_empty() {
+        return Err(LABELS_REQUIRED.to_string());
+    }
+    Ok(emitted)
+}

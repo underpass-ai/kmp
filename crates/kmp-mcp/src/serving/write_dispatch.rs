@@ -40,9 +40,18 @@ impl KernelMcpServer {
             arguments.get("search_summaries"),
             arguments.get("relations"),
         ) {
-            (Some(_), None, None) => build_batch_plan(arguments)
-                .map(|plan| (plan, None))
-                .map_err(ToolError::from),
+            (Some(_), None, None) => match build_batch_plan(arguments) {
+                Ok(plan) => Ok((plan, None)),
+                Err(mut errors) => {
+                    if errors.concern_labels()
+                        && let Some(about) = arguments.get("about").and_then(Value::as_str)
+                        && let Some(keys) = self.about_label_keys(about).await
+                    {
+                        errors.name_label_keys(&keys);
+                    }
+                    Err(ToolError::from(errors))
+                }
+            },
             (None, Some(_), None) => self.plan_search_summary_packet(arguments).await,
             (None, None, Some(_)) => build_relation_plan(arguments)
                 .map(|plan| (plan, None))

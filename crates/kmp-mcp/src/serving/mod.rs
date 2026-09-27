@@ -2,6 +2,7 @@
 //! the transport server and its dispatch, the backend port and its
 //! adapters, the tool error vocabulary, and result envelopes.
 
+mod about_label_keys;
 pub(crate) mod adapters;
 pub(crate) mod backend_choice;
 mod curate_dispatch;

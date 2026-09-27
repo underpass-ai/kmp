@@ -23,9 +23,9 @@ pub(crate) fn definition() -> Value {
 
 pub(crate) fn write_memory_schema() -> Value {
     let labels = json!({
-        "type": "object",
+        "type": "object", "minProperties": 1,
         "additionalProperties": {"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","minLength":1}},
-        "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary."
+        "description": "Required for every record, shared here or on the record, e.g. {\"topic\":[\"write-path\"]}. Key-to-array memberships; each value is materialized. Reuse the about's keys from kmp_wake; a shared string does not prove entity identity."
     });
     let observed = json!({"type":["string","null"],"description":"When this fact became known, with its true RFC3339 UTC offset. Omit for the packet observation; if neither is supplied, KMP uses the exact ingestion time. Null resets to ingestion time. Explicit backfill is preserved; more than five minutes ahead is refused."});
     let occurred = json!({"type":["string","null"],"description":"When the event occurred, if known. Records inherit the packet value when omitted; null explicitly keeps occurrence unknown. KMP never substitutes observation or ingestion for an unknown occurrence."});
@@ -56,7 +56,7 @@ pub(crate) fn write_memory_schema() -> Value {
     });
     let memories = json!({
         "type":"array","minItems":1,
-        "description":"One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
+        "description":"One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership (labels here or per record). A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
         "items":{
             "type":"object","additionalProperties":false,
             "required":["id","kind","summary"],
@@ -65,7 +65,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "ref":string_schema("Omit for a new memory. An explicit canonical ref updates that exact entry and must be a safe descendant of this about, not its anchor or an internal evidence/dimension object."),
                 "kind":{"type":"string","enum":WRITER_MEMORY_KINDS,"description":"What this memory records. No separate writer intent is needed."},
                 "summary":string_schema("Literal memory text, in the language of the work. Ask cites this text byte for byte."),
-                "summary_en":string_schema("Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples."),
+                "summary_en":string_schema("Required when summary is not English; omit it when summary is English (a copy is dropped). Your English search rendering, keeping numbers, identifiers and acronyms as written. Strict mode refuses a wrong-language, thin or identifier-dropping rendering; removing it never passes. Search uses it; citations keep summary."),
                 "search_expansions":search_expansions.clone(),
                 "evidence":string_schema("Concrete source or observation supporting this memory. Required unless options.strict is explicitly false."),
                 "labels":labels,
@@ -146,6 +146,7 @@ pub(crate) fn write_memory_schema() -> Value {
             {
                 "if":{"required":["memories"]},
                 "then":{
+                    "anyOf":[{"required":["labels"]},{"properties":{"memories":{"items":{"required":["labels"]}}}}],
                     "if":{"not":{"required":["options"],"properties":{"options":{"required":["strict"],"properties":{"strict":{"const":false}}}}}},
                     "then":{"properties":{"memories":{"items":{"required":["evidence"]}}}}
                 }
