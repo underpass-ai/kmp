@@ -125,6 +125,12 @@ where
     .with_telemetry_salt_path(
         telemetry_salt_location::TelemetrySaltLocation::resolve(|key| std::env::var(key).ok())
             .map(telemetry_salt_location::TelemetrySaltLocation::prepare),
+    )
+    // The store's lazy-page sizes, from its data directory, as MCP reads them.
+    .with_store_config_dir(
+        std::env::var_os("KMP_DATA_DIR")
+            .map(std::path::PathBuf::from)
+            .as_deref(),
     );
     let events_consumer = NatsProjectionConsumer::new(ctx.config.events_subject_prefix.clone());
     let projection_runtime = connect_projection_runtime(

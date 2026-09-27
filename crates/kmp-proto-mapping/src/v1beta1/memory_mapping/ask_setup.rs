@@ -85,6 +85,10 @@ impl<'a> AskSetup<'a> {
                         indexed.stats(gated),
                     ),
                 ));
+                let ranker = match indexed.seed_documents(gated) {
+                    Some(documents) => ranker.with_indexed_seed_documents(documents),
+                    None => ranker,
+                };
                 match &indexed.vocabulary {
                     Some(vocabulary) => {
                         ranker.with_indexed_vocabulary(std::sync::Arc::clone(vocabulary))
@@ -125,6 +129,35 @@ impl<'a> AskSetup<'a> {
             negated,
             asked_anchors,
         })
+    }
+
+    /// Ranks with a head of `window` eligible candidates (P14).
+    pub(super) fn with_head_window(mut self, window: usize) -> Self {
+        self.ranker = self.ranker.with_head_window(window);
+        self
+    }
+
+    /// Applies the store's measured variants to the ranker (P15's expansion
+    /// focus); without a gate the defaults stand.
+    pub(super) fn with_gate(mut self, gate: Option<super::ask_gate::AskGate>) -> Self {
+        if let Some(gate) = gate {
+            self.ranker = self
+                .ranker
+                .with_expansion_focus(gate.requires_expansion_focus());
+        }
+        self
+    }
+
+    /// Reads the candidates' terms through `cache`, shared by the readings
+    /// of one ask (P10): the doubt band keeps them (`keep`), the answer
+    /// takes them back.
+    pub(super) fn with_prepared_cache(
+        mut self,
+        cache: &'a super::prepared_terms_cache::PreparedTermsCache,
+        keep: bool,
+    ) -> Self {
+        self.ranker = self.ranker.with_prepared_cache(cache, keep);
+        self
     }
 
     /// What the ranker reads: the question, or under the gate the question

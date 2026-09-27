@@ -2,7 +2,7 @@ use super::super::doubt_band_judge::DoubtBandJudge;
 use super::super::embedded_errors::{kernel_error, mapping_error};
 use super::super::judgement_reranker::JudgementReranker;
 use super::super::lexical_index::lexical_sidecar::{
-    LEXICAL_ASK_DEPTH, LexicalSidecar, ShadowScope,
+    IndexedRead, LEXICAL_ASK_DEPTH, LexicalSidecar, ShadowScope,
 };
 use super::frozen_recall_reads::FrozenRecallReads;
 use super::read_telemetry::EmbeddedReadTelemetry;
@@ -16,7 +16,9 @@ use crate::serving::{ToolError, tool_success_result};
 use kmp_application::RenderDemand;
 use kmp_embedded::EmbeddedMemoryService;
 use kmp_proto::v1beta1::AskResponse;
-use kmp_proto_mapping::v1beta1::recall_projection::{project_rendered_ask, render_ask};
+use kmp_proto_mapping::v1beta1::recall_projection::{
+    RANK_DEPTH_CHUNK, RANK_HEAD_WINDOW, ask_rank_depth, project_rendered_ask, render_ask,
+};
 use kmp_proto_mapping::v1beta1::{
     AskGate, AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
 };
@@ -93,13 +95,27 @@ impl<'a> EmbeddedAskTool<'a> {
         let query =
             ask_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
         let key = FrozenRecallKey::Ask(query.clone());
+        // How deep into the ranking this page reads (P14, kmp2 lazy pages).
+        let (window, chunk) = self
+            .lexical
+            .map_or((RANK_HEAD_WINDOW, RANK_DEPTH_CHUNK), |(sidecar, _)| {
+                sidecar.ranking()
+            });
+        let depth = ask_rank_depth(
+            arguments.pointer("/page/cursor").and_then(Value::as_str),
+            chunk,
+        );
         // A continuation of an unchanged store cuts its page from the first
         // page's read and render: same ranking, same remote verdicts, same
-        // bytes.
+        // bytes; unless it needs more of the ranking than that read carries.
         let (response, rendered, revision) = match self.frozen.thaw(&key, arguments).await {
-            Some(FrozenRecall::Ask { response, rendered }) => (*response, rendered, None),
+            Some(FrozenRecall::Ask {
+                response,
+                rendered,
+                depth: carried,
+            }) if !response.more_ranked || carried >= depth => (*response, rendered, None),
             _ => {
-                let (response, revision) = self.read(query, arguments).await?;
+                let (response, revision) = self.read(query, arguments, window, depth).await?;
                 let rendered = render_ask(&response);
                 (response, rendered, revision)
             }
@@ -116,6 +132,7 @@ impl<'a> EmbeddedAskTool<'a> {
                 FrozenRecall::Ask {
                     response: Box::new(kept),
                     rendered,
+                    depth,
                 },
                 response.projection.as_ref(),
             );
@@ -129,6 +146,8 @@ impl<'a> EmbeddedAskTool<'a> {
         &self,
         query: kmp_application::memory::AskMemoryQuery,
         arguments: &Value,
+        window: usize,
+        depth: usize,
     ) -> Result<(AskResponse, Option<kmp_domain::GraphReadRevision>), ToolError> {
         let question = query.question.clone();
         let asked_as = query.asked_as.clone();
@@ -159,6 +178,36 @@ impl<'a> EmbeddedAskTool<'a> {
                     && !matches!(self.doubt_band, Some(Ok(Some(_)) | Err(_))) =>
             {
                 let started = std::time::Instant::now();
+                let gate = self.gate;
+                let bridge = self.bridge;
+                // What the index's candidates answer, as the about would.
+                let answer = |read: &IndexedRead| -> Result<AskResponse, String> {
+                    let mut retrieval = AskRetrievalContext::from(read.result.clone())
+                        .with_rank_window(window)
+                        .with_rank_depth(depth);
+                    if let Some(gate) = gate {
+                        retrieval = retrieval.with_gate(gate);
+                    }
+                    ask_response_from_result(
+                        &question,
+                        asked_as.as_deref(),
+                        policy,
+                        max_entries,
+                        retrieval.with_indexed(read.indexed.clone()),
+                        bridge,
+                        &temporal,
+                    )
+                    .map_err(|status| status.message().to_string())
+                };
+                // Top-k reads only what the page's depth needs (P14), unless
+                // the entries cap reads the whole ranking.
+                let gated = gate.is_some()
+                    && matches!(
+                        policy,
+                        kmp_application::MemoryAnswerPolicy::EvidenceOrUnknown
+                            | kmp_application::MemoryAnswerPolicy::ShowConflicts
+                    );
+                let ask = max_entries.is_none().then_some((policy, gated));
                 let read = sidecar
                     .indexed_read(
                         store,
@@ -167,6 +216,9 @@ impl<'a> EmbeddedAskTool<'a> {
                         followed.as_ref(),
                         self.bridge,
                         read.deeper(),
+                        ask,
+                        depth,
+                        &answer,
                     )
                     .await;
                 Some((sidecar.mode(), read, started))
@@ -174,29 +226,19 @@ impl<'a> EmbeddedAskTool<'a> {
             _ => None,
         };
         let indexed = match indexed {
-            Some((mode, Ok(Ok(read)), started)) => {
+            Some((mode, Ok(Ok((read, answered))), started)) => {
                 let revision = read.result.read_revision.clone();
                 let (plan_us, parts_us, documents) = (read.plan_us, read.parts_us, read.documents);
-                let mut retrieval = AskRetrievalContext::from(read.result);
-                if let Some(gate) = self.gate {
-                    retrieval = retrieval.with_gate(gate);
-                }
-                let answered = ask_response_from_result(
-                    &question,
-                    asked_as.as_deref(),
-                    policy,
-                    max_entries,
-                    retrieval.with_indexed(read.indexed),
-                    self.bridge,
-                    &temporal,
-                )
-                .map_err(|status| mapping_error(&status))?;
+                let reached = read.reached;
+                let planned = read.planned;
                 let elapsed_us = started.elapsed().as_micros() as u64;
                 if mode == LexicalIndexMode::On {
                     tracing::debug!(
                         target: "kmp_mcp::lexical_index",
                         event = "kmp_lexical_answer",
                         answered = true,
+                        reached,
+                        planned,
                         candidates = read.candidates,
                         documents,
                         plan_us,
@@ -208,6 +250,8 @@ impl<'a> EmbeddedAskTool<'a> {
                 }
                 Some((
                     answered,
+                    reached,
+                    planned,
                     read.candidates,
                     documents,
                     elapsed_us,
@@ -242,8 +286,10 @@ impl<'a> EmbeddedAskTool<'a> {
         self.telemetry
             .observe("kmp_ask", &result.bundle, &result.rendered);
         let revision = result.read_revision.clone();
-        let mut retrieval =
-            AskRetrievalContext::from(result).with_lexical_cache(Arc::clone(self.lexical_cache));
+        let mut retrieval = AskRetrievalContext::from(result)
+            .with_lexical_cache(Arc::clone(self.lexical_cache))
+            .with_rank_window(window)
+            .with_rank_depth(depth);
         if let Some(gate) = self.gate {
             retrieval = retrieval.with_gate(gate);
         }
@@ -337,11 +383,23 @@ impl<'a> EmbeddedAskTool<'a> {
         .map_err(|status| mapping_error(&status))?;
         response.warnings.extend(warnings);
         // Verify: the index's answer beside the one the about gave.
-        if let Some((answered, candidates, documents, elapsed_us, plan_us, parts_us)) = indexed {
+        if let Some((
+            answered,
+            reached,
+            planned,
+            candidates,
+            documents,
+            elapsed_us,
+            plan_us,
+            parts_us,
+        )) = indexed
+        {
             tracing::info!(
                 target: "kmp_mcp::lexical_index",
                 event = "kmp_lexical_verify",
                 equal = answered == response,
+                reached,
+                planned,
                 candidates,
                 documents,
                 plan_us,

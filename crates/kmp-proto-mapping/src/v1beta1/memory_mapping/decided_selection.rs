@@ -1,9 +1,9 @@
 use kmp_application::MemoryAnswerPolicy;
 use kmp_domain::TemporalSelection;
-use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::gate_verdict::GateVerdict;
 use super::lexical_bridge::LexicalBridge;
+use super::ranked_evidence::RankedEvidence;
 use super::ranked_selection::RankedSelection;
 
 /// The anchored gate's reading of one question over one admitted pool: the
@@ -23,7 +23,7 @@ impl DecidedSelection {
         policy: MemoryAnswerPolicy,
         temporal: &TemporalSelection,
         bridge: &LexicalBridge,
-        evidence: Vec<MemoryEvidence>,
+        evidence: RankedEvidence,
         verdict: Option<GateVerdict>,
     ) -> Self {
         Self {
@@ -39,7 +39,7 @@ impl DecidedSelection {
         policy: MemoryAnswerPolicy,
         temporal: &TemporalSelection,
         bridge: &LexicalBridge,
-    ) -> Option<(Vec<MemoryEvidence>, Option<GateVerdict>)> {
+    ) -> Option<(RankedEvidence, Option<GateVerdict>)> {
         let verdict = self.verdict;
         self.ranked
             .into_ranking_for(question, policy, temporal, bridge)
@@ -49,7 +49,7 @@ impl DecidedSelection {
 
 #[cfg(test)]
 mod tests {
-    use kmp_proto::v1beta1::UnknownReason;
+    use kmp_proto::v1beta1::{MemoryEvidence, UnknownReason};
 
     use super::*;
 
@@ -65,13 +65,16 @@ mod tests {
                 policy,
                 &temporal,
                 &bridge,
-                vec![MemoryEvidence::default()],
+                RankedEvidence::whole(vec![MemoryEvidence::default()]),
                 Some(verdict.clone()),
             )
         };
         assert_eq!(
             decided().into_decision_for("which port for #12", policy, &temporal, &bridge),
-            Some((vec![MemoryEvidence::default()], Some(verdict.clone())))
+            Some((
+                RankedEvidence::whole(vec![MemoryEvidence::default()]),
+                Some(verdict.clone())
+            ))
         );
         assert!(
             decided()

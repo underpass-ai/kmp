@@ -47,3 +47,6 @@ mod derivation_golden_tests;
 
 #[cfg(test)]
 mod indexed_ask_tests;
+
+#[cfg(test)]
+mod maxscore_parity_tests;

@@ -53,8 +53,58 @@ Detailed notes from the early release cycle remain available in the
   limits are per store in `lexical-index.json`
   (`{"max_candidate_share_percent":35,"min_about_entries":2250}`).
 
+- MaxScore against the eligibility floor (P14, DESIGN L6), **on by
+  default** (`KMP_LEXICAL_MAXSCORE=off` turns it off): an ask the lexical
+  index answers leaves unread every candidate no reading of the question lets
+  clear the floor and that carries no association or bridged word, and the
+  35 % cost bound applies to what is left. Byte-identical answers by
+  construction (the bound is `Σ idf·tf < floor`, sound for both readings,
+  every form of the question and the bridge); not pruned when the gate
+  requires an anchor. Implemented without a bench campaign: **not measured at
+  scale** (Tirso's decision). `kmp_lexical_answer`/`kmp_lexical_verify` log
+  `reached` beside `candidates`.
+- Two measured variants in `ask-gate.json`, both off: `"attribute_check":
+  true` holds an unanchored `high` to a citation that states the attribute
+  the question asks for (`¿quién aprobó …?` → *aprobó*), else `medium`
+  (finding `breal-997250f158ea`); `"expansion_rescue_focus": false` lets P15's
+  expansion rescue skip the ⌈2/3⌉ focus.
+
 ### Changed
 
+- **Breaking (continuations):** Wake/Ask cursors are `kmp2` (P14): they carry
+  a digest of the item the page ended on and resume only after it, and bind
+  the core and what earlier pages delivered, not what follows. A `kmp1`
+  cursor is refused with the new reason `RECALL_CURSOR_ERROR_REASON_OUTDATED`
+  (gRPC `ABORTED`, MCP `READ_CURSOR_OUTDATED`) and a restart call.
+- **Breaking (answer semantics): top-k with lazy pages** (P14, on by default,
+  not measured at scale). An ask's ranking is a head (the best 64 eligible
+  candidates, diversified, repeated claims at the end of that window, then
+  every rescue walked from them) and a tail (the other eligible candidates in
+  rank order). A first page reads the head; a `kmp2` continuation reads 64
+  tail items past its offset, so pages concatenate to the exhaustive ranking.
+  Changed: repeated claims and rescues are placed after the head window, not
+  after the whole list; `proof.path`, supersessions and conflicts are the
+  head's; the UNKNOWN summary counts the head; a lazy page pages evidence
+  only and sets `AskResponse.more_ranked` (new field 11); `page.total`,
+  `sections.*.remaining` and `more_on_request` count what the reading carries.
+  The lexical index reads only the candidates whose exact rank prefix can
+  reach the page (plus what a rescue needs, and under the anchored gate
+  every candidate naming an anchor) and certifies the answer, else reads
+  more. Semantic retrieval, re-ranking, the doubt band and `max_entries`
+  read the whole ranking. The head window and the continuation chunk are 64
+  each and per store in `lexical-index.json` (`head_window`,
+  `continuation_chunk`), read with one rule by MCP and by the gRPC server
+  (from `KMP_DATA_DIR`). Lower-bound counts say so explicitly:
+  `page.total_is_lower_bound` and `AskResponse.total_is_lower_bound`
+  (additive fields).
+- «quién» and «con» are stop words, as «who» and «with» are. Lexical index
+  version `lexical-index-4`: every sidecar is rebuilt on its next ask.
+- The doubt band no longer reads every candidate's terms twice: the answer
+  takes back the terms the band's reading read (P10; with a warm verdict book
+  the band cost +100–190 ms per ask on the real store; not re-measured).
+- The memory bench follows a Trace page's `page.required_bytes`
+  continuation (a relation larger than `budget.max_bytes`) instead of
+  stopping on its 0-item page. Trace itself still returns whole items.
 - Writes in O(delta) (P13, DESIGN L6). An ingest or `kmp_write_memory` that
   reads no neighbourhood for review asks the store point by point for what its
   translation needs instead of reading the about's neighbourhood, and the

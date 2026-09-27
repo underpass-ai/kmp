@@ -50,6 +50,8 @@ pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     lexical_cache: Arc<LexicalIndexCache>,
     /// The store's fingerprint salt for the Ask and Wake log lines.
     telemetry: Arc<GrpcCallTelemetry>,
+    /// The store's lazy-page sizes (P14), as MCP reads them.
+    rank_pages: kmp_proto_mapping::v1beta1::recall_projection::RankPages,
 }
 
 impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
@@ -59,7 +61,18 @@ impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
             lexical_bridge: Arc::new(LexicalBridge::none()),
             lexical_cache: Arc::default(),
             telemetry: Arc::default(),
+            rank_pages: Default::default(),
         }
+    }
+
+    /// Answers asks with the store's head window and continuation chunk
+    /// (P14, `lexical-index.json`), as MCP does.
+    pub fn with_rank_pages(
+        mut self,
+        rank_pages: kmp_proto_mapping::v1beta1::recall_projection::RankPages,
+    ) -> Self {
+        self.rank_pages = rank_pages;
+        self
     }
 
     /// Keys Ask and Wake fingerprints with the salt at `path`, kept beside
@@ -228,7 +241,14 @@ where
                 max_entries,
                 AskRetrievalContext::from(result)
                     .with_lexical_cache(Arc::clone(&self.lexical_cache))
-                    .with_default_gate(),
+                    .with_default_gate()
+                    .with_rank_window(self.rank_pages.head_window)
+                    .with_rank_depth(
+                        kmp_proto_mapping::v1beta1::recall_projection::ask_rank_depth(
+                            page_request.as_ref().map(|page| page.cursor.as_str()),
+                            self.rank_pages.continuation_chunk,
+                        ),
+                    ),
                 &self.lexical_bridge,
                 &temporal,
             )
@@ -943,6 +963,7 @@ fn recall_projection_status(error: RecallProjectionError) -> Status {
     match error.cursor_detail() {
         Some(detail) => Status::with_details(
             if detail.reason == kmp_proto::v1beta1::RecallCursorErrorReason::SelectionChanged as i32
+                || detail.reason == kmp_proto::v1beta1::RecallCursorErrorReason::Outdated as i32
             {
                 Code::Aborted
             } else {

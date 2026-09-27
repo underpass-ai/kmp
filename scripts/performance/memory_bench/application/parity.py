@@ -77,7 +77,8 @@ VOLATILE_FIELDS = (
                   'handle of a paged read that the server mints at random per process; two '
                   'fresh processes on one store return different handles for the same page '
                   '(measured: B-real wakes differ only here, and the request sends it back)'),
-    VolatileField('next_cursor', 'next_cursor', r'\.next_cursor$', r'kmp1:\d+:[0-9a-f]{64}',
+    VolatileField('next_cursor', 'next_cursor', r'\.next_cursor$',
+                  r'kmp[12]:\d+:(?:[0-9a-f]{16}:)?[0-9a-f]{64}',
                   'opaque page cursor bound to server-side read state; the page it names is '
                   'compared in full, so only its encoding is set aside'),
     VolatileField('ingested_at', 'ingested', r'\.ingested_at(\[\])?$', TIMESTAMP,

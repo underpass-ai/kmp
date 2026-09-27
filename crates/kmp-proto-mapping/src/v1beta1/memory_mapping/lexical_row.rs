@@ -129,6 +129,30 @@ impl LexicalRow {
         }
     }
 
+    /// Its direct field under one reading, as the ranker counts it.
+    pub(super) fn direct_counts(&self, aliased: bool) -> TermCounts {
+        TermCounts::from_counts(
+            self.terms
+                .iter()
+                .filter(|term| term.direct(aliased) > 0)
+                .map(|term| (term.term.clone(), term.direct(aliased) as u32))
+                .collect(),
+            self.direct_length(aliased).max(0) as usize,
+        )
+    }
+
+    /// Its content field under one reading, as the ranker counts it.
+    pub(super) fn content_counts(&self, aliased: bool) -> TermCounts {
+        TermCounts::from_counts(
+            self.terms
+                .iter()
+                .filter(|term| term.content(aliased) > 0)
+                .map(|term| (term.term.clone(), term.content(aliased) as u32))
+                .collect(),
+            self.content_length(aliased).max(0) as usize,
+        )
+    }
+
     /// Every term, ascending.
     pub fn terms(&self) -> &[LexicalTerm] {
         &self.terms

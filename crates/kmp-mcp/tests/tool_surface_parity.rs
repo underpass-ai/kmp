@@ -511,15 +511,23 @@ const VOLATILE_KEYS: [&str; 6] = [
 ];
 const REDACTED: &str = "<stamped at call time>";
 
-/// Inspect (`kmpi1`) and recall (`kmp1`) cursor digests cover link ingestion
-/// clocks. Keep version and offset; omit only their per-run digest. Behavioral
-/// cursor tests still require exact reuse and reject changed evidence.
+/// Inspect (`kmpi1`) and recall (`kmp2`) cursor digests cover link ingestion
+/// clocks. Keep version and offset; omit only their per-run digests (a
+/// recall cursor's boundary digest too). Behavioral cursor tests still
+/// require exact reuse and reject changed evidence.
 fn redact_cursor_digest(text: &str) -> Option<String> {
     let (head, digest) = text.rsplit_once(':')?;
-    let looks_like_a_digest =
-        digest.len() == 64 && digest.bytes().all(|byte| byte.is_ascii_hexdigit());
-    ((head.starts_with("kmpi") || head.starts_with("kmp1:")) && looks_like_a_digest)
-        .then(|| format!("{head}:{REDACTED}"))
+    let hex = |value: &str, len: usize| {
+        value.len() == len && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+    };
+    if !hex(digest, 64) {
+        return None;
+    }
+    if head.starts_with("kmpi") {
+        return Some(format!("{head}:{REDACTED}"));
+    }
+    let (offset, boundary) = head.strip_prefix("kmp2:")?.split_once(':')?;
+    hex(boundary, 16).then(|| format!("kmp2:{offset}:{REDACTED}"))
 }
 
 fn is_handle(text: &str) -> bool {

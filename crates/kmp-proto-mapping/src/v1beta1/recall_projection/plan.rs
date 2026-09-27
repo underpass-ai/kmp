@@ -109,11 +109,19 @@ pub(super) struct ProjectionPlan {
     /// The gate answered this ask: its proof past the first page is on
     /// request (`proof_on_request`).
     pub(super) settled: bool,
+    /// The ranking holds more evidence than this reading carries (P14): the
+    /// page offers a deeper continuation, and what sorts after the evidence
+    /// waits for the reading that carries the ranking to its end.
+    pub(super) more_ranked: bool,
 }
 
 impl ProjectionPlan {
     pub(super) fn build(mut value: Value, budget: &ProjectionBudget) -> Self {
         let settled = settles_on_first_page(&value);
+        let more_ranked = value
+            .as_object_mut()
+            .and_then(|object| object.remove("more_ranked"))
+            .is_some_and(|more| more == Value::Bool(true));
         // Mapping may already have capped the ranked evidence. Those items
         // are no longer here to count and must not become detail exclusions.
         let mut selection_omitted =
@@ -298,6 +306,7 @@ impl ProjectionPlan {
             arguments: Value::Null,
             progress_bytes: 0,
             settled,
+            more_ranked,
         }
     }
 }

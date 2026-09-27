@@ -486,7 +486,9 @@ async fn kmp_ask_rejects_a_cursor_from_another_projection() {
     assert!(
         response["result"]["content"][0]["text"]
             .as_str()
-            .is_some_and(|message| message.contains("invalid page.cursor"))
+            .is_some_and(|message| message.contains("invalid page.cursor")
+                && message.contains("kmp1")
+                && message.contains("restart"))
     );
 }
 

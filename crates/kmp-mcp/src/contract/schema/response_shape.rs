@@ -84,11 +84,15 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
 fn projection_output_schema() -> Value {
     let mut page = page_output_schema(
         "eligible expansion items",
-        "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",
+        "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary. A kmp1 cursor is refused as outdated (READ_CURSOR_OUTDATED): restart.",
     );
     page["properties"]["offset"] = described(
         "integer",
         "Number of eligible expansion items reconstructed by earlier pages.",
+    );
+    page["properties"]["total_is_lower_bound"] = described(
+        "boolean",
+        "True when the ask's ranking holds more than this reading carries (kmp2 lazy pages): total and sections.*.remaining are lower bounds and has_more is true.",
     );
     page["properties"]["minimum_progress_bytes"] = nullable_described(
         "integer",

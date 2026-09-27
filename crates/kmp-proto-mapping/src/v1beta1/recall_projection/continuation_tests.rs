@@ -335,7 +335,10 @@ fn an_incremental_cursor_still_rejects_a_changed_snapshot() {
         .expect("first wake page");
     let cursor = next_cursor(&wake_value(&first)).expect("cursor");
     let mut changed = response;
-    changed.proof.as_mut().expect("proof").evidence[5].text = "A later snapshot.".to_string();
+    // kmp2 binds the core and what the pages before the cursor delivered.
+    for item in &mut changed.proof.as_mut().expect("proof").evidence {
+        item.text = "A later snapshot.".to_string();
+    }
     for repeat_core in [false, true] {
         let mut request = wake_request(PAGE_BYTES);
         request.page = page_request(&cursor, repeat_core);

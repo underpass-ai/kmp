@@ -42,6 +42,7 @@ pub struct GrpcServer<G, D, S, E> {
     /// Where the Ask and Wake fingerprint salt of the served store lives
     /// (`KMP_TELEMETRY_SALT_PATH`); none logs no fingerprint.
     telemetry_salt_path: Option<std::path::PathBuf>,
+    rank_pages: kmp_proto_mapping::v1beta1::recall_projection::RankPages,
 }
 
 impl<G, D, S, E> GrpcServer<G, D, S, E>
@@ -97,6 +98,7 @@ where
             quality_observer,
             capability_name: KmpApplication::capability_name(),
             telemetry_salt_path: None,
+            rank_pages: Default::default(),
         }
     }
 
@@ -143,11 +145,19 @@ where
         self
     }
 
+    /// Reads the store's lazy-page sizes (P14) from `lexical-index.json` in
+    /// `data_dir`, as MCP does beside its store ([`store_rank_pages`]).
+    pub fn with_store_config_dir(mut self, data_dir: Option<&std::path::Path>) -> Self {
+        self.rank_pages = store_rank_pages(data_dir);
+        self
+    }
+
     pub fn memory_service(&self) -> MemoryGrpcService<G, D, S, E, ServerProjectionWriter<G, D>> {
         let service = MemoryGrpcService::new(Arc::new(ServerMemoryApplication::new(
             Arc::clone(&self.query_application),
             Arc::clone(&self.command_application),
-        )));
+        )))
+        .with_rank_pages(self.rank_pages);
         match &self.telemetry_salt_path {
             Some(path) => service.with_telemetry_salt(path.clone()),
             None => service,
@@ -243,4 +253,43 @@ fn read_required_pem(
             ),
         )) as Box<dyn std::error::Error + Send + Sync>
     })
+}
+
+/// The page sizes in `lexical-index.json` in `data_dir`: the defaults
+/// without the file, and, as MCP does, the defaults for everything when the
+/// file cannot apply as a whole (a warning says why).
+pub fn store_rank_pages(
+    data_dir: Option<&std::path::Path>,
+) -> kmp_proto_mapping::v1beta1::recall_projection::RankPages {
+    use kmp_proto_mapping::v1beta1::recall_projection::{RANK_PAGES_FILE, RankPages};
+    let Some(path) = data_dir.map(|dir| dir.join(RANK_PAGES_FILE)) else {
+        return RankPages::default();
+    };
+    let text = match std::fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return RankPages::default();
+        }
+        Err(error) => {
+            tracing::warn!(event = "kmp_store_config", file = RANK_PAGES_FILE, status = "ignored", %error, "store configuration unreadable; the defaults apply");
+            return RankPages::default();
+        }
+    };
+    match RankPages::from_json(&text) {
+        Ok(pages) => {
+            tracing::info!(
+                event = "kmp_store_config",
+                file = RANK_PAGES_FILE,
+                status = "loaded",
+                head_window = pages.head_window,
+                continuation_chunk = pages.continuation_chunk,
+                "store configuration"
+            );
+            pages
+        }
+        Err(error) => {
+            tracing::warn!(event = "kmp_store_config", file = RANK_PAGES_FILE, status = "ignored", %error, "store configuration ignored whole; the defaults apply");
+            RankPages::default()
+        }
+    }
 }

@@ -132,7 +132,10 @@ whole about gives, byte for byte. When those memories are more than a third of
 the about, the about has fewer than 2,250 entries (never indexed), or the ask is
 any other kind, it reads the about as before; `lexical-index.json` beside the
 store tunes both limits. It is on by default; `KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares it with
-every ask, and `verify` answers both ways and logs whether they agree. It can be
+every ask, and `verify` answers both ways and logs whether they agree. Among
+the memories the postings reach, those that cannot clear the ranker's floor
+under any reading of the question are not read at all (MaxScore, P14; on by
+default, `KMP_LEXICAL_MAXSCORE=off` reads them all). It can be
 deleted at any time: the next ask builds what it needs again. It is not part of
 a bundle.
 
@@ -170,6 +173,13 @@ is off by default because `high` has not been certified yet: on 170 labeled
 questions the table leaves 20 `high` answers, 19 of them right, and the
 one-sided Clopper-Pearson bound (δ = 0.1) is 0.82, short of the 0.95 it must
 reach before it is turned on.
+
+Two measured variants are off by default. `"attribute_check":true` holds a
+`high` the gate did not decide (no anchor) to a citation that states, in its
+own words, the attribute the question asks for (the word after «quién» /
+«who»); otherwise it reads `medium`. `"expansion_rescue_focus":false` lets a
+memory reached only through its judged search expansions be rescued without
+answering the ⌈2/3⌉ focus of a strict policy.
 
 ### The doubt band (opt-in, sends text to TypeSafe)
 

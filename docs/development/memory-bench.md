@@ -215,6 +215,8 @@ environment (allowlisted) and Jev mode.
 | `variants/examples/ask-gate-off.toml` | the same binary with `ask-gate.json` `{"mode":"off"}`: how to measure without the gate now that it is the default |
 | `variants/examples/lifecycle-successor-core.toml` | the P7 lifecycle variant, `ask-gate.json` `{"successor_core":true}`: a standing successor may be cited for the anchor its replaced predecessor named (off by default) |
 | `variants/examples/confidence-calibration.toml` | the P16 calibrated confidence, `ask-gate.json` `{"confidence_calibration":"shipped"}`: `high` is stated as `medium` where the versioned table says so (off by default; not certified) |
+| `variants/examples/attribute-check.toml` | the unanchored attribute check, `ask-gate.json` `{"attribute_check":true}`: an unanchored `high` needs a citation stating the asked attribute, else `medium` (off by default; not measured) |
+| `variants/examples/expansion-without-focus.toml` | P15's expansion rescue without the ⌈2/3⌉ focus, `ask-gate.json` `{"expansion_rescue_focus":false}` (off by default; adopted only if false answers do not rise) |
 | `variants/examples/wake-focus.toml` | a Jev arm in replay: `typesafe.json` + `wake-focus.json` and a cassette |
 
 **Store files must be acknowledged.** Each file in `[store_files]` is written

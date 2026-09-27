@@ -34,6 +34,14 @@ pub struct AskRetrievalContext {
     /// The whole about as the lexical index holds it, when `result` holds
     /// only the candidates its postings reached (DESIGN L6, P13).
     pub(super) indexed: Option<super::indexed_ask::IndexedAsk>,
+    /// The terms the doubt band's reading read the candidates with, which
+    /// the answer's reading of the same candidates takes back (P10).
+    pub(super) prepared: super::prepared_terms_cache::PreparedTermsCache,
+    /// How many tail items the reading carries (P14, kmp2 lazy pages);
+    /// `None` carries the whole ranking.
+    pub(super) depth: Option<usize>,
+    /// How many eligible candidates make the ranking's head (P14).
+    pub(super) head_window: usize,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -50,6 +58,9 @@ impl From<GetContextResult> for AskRetrievalContext {
             doubt: None,
             witness: None,
             indexed: None,
+            prepared: Default::default(),
+            depth: None,
+            head_window: super::ranked_evidence::HEAD_WINDOW,
         }
     }
 }
@@ -81,6 +92,21 @@ impl AskRetrievalContext {
     /// neighbourhood the ranker's rescues walk from them.
     pub fn with_indexed(mut self, indexed: super::indexed_ask::IndexedAsk) -> Self {
         self.indexed = Some(indexed);
+        self
+    }
+
+    /// Carries the ranking's head and `depth` items of its tail (P14):
+    /// `recall_projection::ask_rank_depth` reads it from the
+    /// page a request asks for.
+    pub fn with_rank_depth(mut self, depth: usize) -> Self {
+        self.depth = Some(depth);
+        self
+    }
+
+    /// Ranks with a head of `window` eligible candidates (a store's
+    /// `head_window`, 64 by default; P14).
+    pub fn with_rank_window(mut self, window: usize) -> Self {
+        self.head_window = window.max(1);
         self
     }
 
@@ -166,7 +192,8 @@ impl AskRetrievalContext {
         let ranker =
             super::answer_ranker::AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
                 .with_lexical_cache(self.lexical_cache.as_deref(), lexical_identity)
-                .with_lexical_witness(self.witness.as_deref());
+                .with_lexical_witness(self.witness.as_deref())
+                .with_head_window(self.head_window);
         let mut candidates = super::bundle_views::answer_evidence_from_bundle(&self.result.bundle)
             .into_iter()
             .filter(|item| admission.admits(item))
@@ -174,7 +201,7 @@ impl AskRetrievalContext {
         for evidence in &mut candidates {
             admission.bound_supports(evidence);
         }
-        let (ranking, scores) = ranker.rank_scored(question, policy, candidates.clone());
+        let (ranking, scores) = ranker.rank_split(question, policy, candidates.clone());
         let ranked = RankedSelection::new(question, policy, temporal, bridge, ranking);
         let pool = ranker.rerank_pool(ranked.ranked(), &candidates, limit);
         let core = ranked

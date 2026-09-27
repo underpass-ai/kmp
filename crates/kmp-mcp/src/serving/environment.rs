@@ -35,6 +35,17 @@ pub const JUDGEMENT_DEADLINES_ENV: &str = "KMP_JUDGEMENT_DEADLINES";
 /// ([`crate::serving::lexical_index_mode::LexicalIndexMode`]).
 pub const LEXICAL_INDEX_ENV: &str = "KMP_LEXICAL_INDEX";
 
+/// MaxScore against the floor (DESIGN L6, P14): an ask the lexical index
+/// answers leaves unread the candidates no reading of the question lets
+/// clear the floor. On by default; `off` reads every candidate the postings
+/// reach, as P13 did. Any other value keeps it on.
+pub const LEXICAL_MAXSCORE_ENV: &str = "KMP_LEXICAL_MAXSCORE";
+
+/// Whether MaxScore prunes (`KMP_LEXICAL_MAXSCORE`, on unless `off`).
+pub(crate) fn lexical_maxscore() -> bool {
+    optional_env_string(LEXICAL_MAXSCORE_ENV).is_none_or(|value| !value.eq_ignore_ascii_case("off"))
+}
+
 /// How long `site` waits for Jev on a first page, unless the operator
 /// lifted the deadlines.
 pub(crate) fn judgement_deadline(

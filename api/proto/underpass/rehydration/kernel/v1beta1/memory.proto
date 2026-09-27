@@ -519,6 +519,15 @@ message AskResponse {
   // Why an unknown answer is unknown, when the gate settled it; UNSPECIFIED
   // otherwise.
   UnknownReason unknown_reason = 10;
+  // The ranking holds more evidence than this reading carries (P14, kmp2
+  // lazy pages): `proof.evidence` is its head and the first part of its
+  // tail, and a continuation reads deeper. False on a reading carried to
+  // the end.
+  bool more_ranked = 11;
+  // The counts a page of this reading reports (page.total, sections.*.remaining,
+  // more_on_request) are lower bounds: the ranking holds more than the
+  // reading carries (P14). Set with more_ranked.
+  bool total_is_lower_bound = 12;
 }
 
 enum AnswerStatus {
@@ -1585,9 +1594,14 @@ message RecallProjectionPage {
   uint64 returned = 2;
   uint64 total = 3;
   bool has_more = 4;
+  // Opaque. `kmp2` (P14) binds the selection and the item the page ended
+  // on; a continuation resumes only after that item.
   optional string next_cursor = 5;
   // A sufficient byte allowance for unshortened core and expansion progress.
   optional uint64 minimum_progress_bytes = 6;
+  // total, and each section's remaining, count only what this reading carries;
+  // the ranking holds more (P14, kmp2 lazy pages). has_more is then true.
+  bool total_is_lower_bound = 7;
 }
 
 // Only counts a caller cannot derive. core and excluded_by_detail are static:
@@ -1609,7 +1623,7 @@ message RecallProjectionSection {
 }
 
 // Machine-readable detail for a Wake/Ask continuation failure: ABORTED for
-// a changed selection, INVALID_ARGUMENT for malformed or out-of-range cursors. Tonic serializes this message directly
+// a changed selection or an outdated cursor, INVALID_ARGUMENT for malformed or out-of-range cursors. Tonic serializes this message directly
 // into grpc-status-details-bin; clients can branch on `reason` without parsing
 // the human diagnostic.
 message RecallCursorError {
@@ -1622,8 +1636,13 @@ message RecallCursorError {
 enum RecallCursorErrorReason {
   RECALL_CURSOR_ERROR_REASON_UNSPECIFIED = 0;
   RECALL_CURSOR_ERROR_REASON_MALFORMED = 1;
+  // The selection changed, or the reading no longer resumes after the item
+  // the cursor's page ended on: restart.
   RECALL_CURSOR_ERROR_REASON_SELECTION_CHANGED = 2;
   RECALL_CURSOR_ERROR_REASON_OFFSET_OUT_OF_RANGE = 3;
+  // A cursor of a retired format (`kmp1`, before `kmp2`): ABORTED; restart
+  // the read without page.cursor.
+  RECALL_CURSOR_ERROR_REASON_OUTDATED = 4;
 }
 
 message DimensionSelection {

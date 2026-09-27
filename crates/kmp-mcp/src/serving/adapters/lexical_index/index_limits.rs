@@ -6,6 +6,10 @@
 ///   point costs about twice what reading it with the whole about does, so
 ///   past roughly 40 % the index saves nothing (measured on the frozen real
 ///   store; decision of Tirso, 27 Sept 2026: 35 % by default, configurable).
+/// - `head_window` and `continuation_chunk` (P14, 64 each; Tirso, 28 Sept
+///   2026): how many eligible candidates make an ask's head, and how many
+///   tail items a `kmp2` continuation reads past its offset. They shape every
+///   ask of the store, indexed or not.
 /// - `min_about_entries`: an about with fewer entries is never indexed, and its
 ///   asks read the about: below it the build on the first ask costs more
 ///   than the asks save (measured crossover, `docs/development/lexical-sidecar.md`).
@@ -13,12 +17,20 @@
 pub(crate) struct IndexLimits {
     pub(crate) max_candidate_share_percent: u8,
     pub(crate) min_about_entries: u64,
+    /// The ask ranking's head window (P14): the best eligible candidates
+    /// diversified and rescued from. 64 by default.
+    pub(crate) head_window: usize,
+    /// How many tail items a `kmp2` continuation reads past its offset
+    /// (P14). 64 by default.
+    pub(crate) continuation_chunk: usize,
 }
 
 impl IndexLimits {
     pub(crate) const DEFAULT: Self = Self {
         max_candidate_share_percent: 35,
         min_about_entries: 2250,
+        head_window: kmp_proto_mapping::v1beta1::recall_projection::RANK_HEAD_WINDOW,
+        continuation_chunk: kmp_proto_mapping::v1beta1::recall_projection::RANK_DEPTH_CHUNK,
     };
 
     /// No size threshold: every about asked about is indexed (tests, and the

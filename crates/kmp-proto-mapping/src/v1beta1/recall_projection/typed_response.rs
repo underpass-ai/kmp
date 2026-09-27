@@ -284,6 +284,10 @@ fn projection_from_value(value: &Value) -> Option<RecallProjection> {
                 .pointer("/page/minimum_progress_bytes")
                 .and_then(Value::as_u64),
             offset: u64_at(value, "/page/offset"),
+            total_is_lower_bound: value
+                .pointer("/page/total_is_lower_bound")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
             returned: u64_at(value, "/page/returned"),
             total: u64_at(value, "/page/total"),
             has_more: value

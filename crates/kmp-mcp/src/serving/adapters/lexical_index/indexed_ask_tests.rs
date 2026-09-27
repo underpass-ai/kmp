@@ -153,7 +153,21 @@ async fn assert_index_answers_as_the_about(bridge: LexicalBridge, bridged: bool)
         ] {
             let query = query(question, policy, depth);
             let followed = sidecar.catch_up(kernel.store(), Some(ABOUT)).await;
-            let read = match sidecar
+            let answer = |read: &super::indexed_read::IndexedRead| {
+                ask_response_from_result(
+                    question,
+                    None,
+                    policy,
+                    None,
+                    AskRetrievalContext::from(read.result.clone())
+                        .with_default_gate()
+                        .with_indexed(read.indexed.clone()),
+                    &bridge,
+                    &TemporalSelection::Frontier,
+                )
+                .map_err(|status| status.message().to_string())
+            };
+            let (read, indexed) = match sidecar
                 .indexed_read(
                     kernel.store(),
                     &service,
@@ -161,6 +175,9 @@ async fn assert_index_answers_as_the_about(bridge: LexicalBridge, bridged: bool)
                     followed.as_ref(),
                     &bridge,
                     depth > 2,
+                    None,
+                    0,
+                    &answer,
                 )
                 .await
                 .expect("the index reads")
@@ -181,18 +198,6 @@ async fn assert_index_answers_as_the_about(bridge: LexicalBridge, bridged: bool)
                 read.documents
             );
             reached_by_the_bridge |= read.indexed.vocabulary.is_some();
-            let indexed = ask_response_from_result(
-                question,
-                None,
-                policy,
-                None,
-                AskRetrievalContext::from(read.result)
-                    .with_default_gate()
-                    .with_indexed(read.indexed),
-                &bridge,
-                &TemporalSelection::Frontier,
-            )
-            .expect("indexed answer");
             let whole = service
                 .ask_on_demand(query, kmp_application::RenderDemand::Skip)
                 .await
@@ -253,6 +258,9 @@ async fn a_question_that_reaches_most_of_the_about_reads_the_about() {
             followed.as_ref(),
             &LexicalBridge::none(),
             false,
+            None,
+            0,
+            &|_| Ok(Default::default()),
         )
         .await
         .expect("the index reads");
@@ -269,6 +277,9 @@ async fn a_question_that_reaches_most_of_the_about_reads_the_about() {
             None,
             &LexicalBridge::none(),
             false,
+            None,
+            0,
+            &|_| Ok(Default::default()),
         )
         .await
         .expect("the index reads");

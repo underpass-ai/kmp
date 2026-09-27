@@ -226,6 +226,7 @@ mod tests {
         let ask = FrozenRecall::Ask {
             response: Box::default(),
             rendered: serde_json::Value::Null,
+            depth: 0,
         };
         store.freeze(key("c"), revision("r1"), ask.clone(), false);
         assert_eq!(store.thaw(&key("c"), &revision("r1")), Some(ask));

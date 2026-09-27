@@ -84,7 +84,10 @@ Route again after every response:
   the evidence does not answer, re-ask at most once in the user's own words.
   Changing budget, detail or optional arguments does not authorize another
   selection. Only following `projection.page.next_cursor` with every bound
-  argument unchanged is a continuation, not a retry.
+  argument unchanged is a continuation, not a retry. A recall cursor (`kmp2`)
+  resumes after the item its page ended on; a refused one (a changed
+  selection, or an old `kmp1` cursor: `READ_CURSOR_OUTDATED`) means restart
+  without `page.cursor`.
 - When Ask returns `UNKNOWN` or irrelevant evidence after those two
   selections, reclassify the **original goal**. Current, latest or recent
   state, what changed, why now, and release or decision history move to

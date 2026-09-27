@@ -21,7 +21,8 @@ pub fn informative_tokens(value: &str) -> impl Iterator<Item = String> + '_ {
         "my", "of", "on", "one", "or", "plus", "same", "should", "than", "the", "this", "to", "us",
         "use", "used", "uses", "was", "we", "were", "what", "when", "where", "which", "who", "why",
         "will", "with", "el", "la", "los", "las", "de", "al", "del", "donde", "en", "es", "lo",
-        "no", "por", "para", "que", "se", "su", "un", "ya", "como", "cual", "cuando",
+        "no", "por", "para", "que", "se", "su", "un", "ya", "como", "cual", "cuando", "quien",
+        "con",
     ];
     value.split_whitespace().flat_map(|token| {
         token
@@ -72,6 +73,15 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(tokens, ["valve", "469", "pasarela", "2", "minutes", "late"]);
+    }
+
+    #[test]
+    fn quien_and_con_are_stop_words_as_who_and_with_are() {
+        let tokens =
+            informative_tokens("¿Quién aprobó el cambio con Ana? Who approved it with Ana?")
+                .collect::<Vec<_>>();
+
+        assert_eq!(tokens, ["aprobo", "cambio", "ana", "approved", "ana"]);
     }
 
     #[test]
