@@ -84,7 +84,7 @@ pub struct EmbeddedKernelMcpBackend {
     /// `partner_filter`, off by default).
     partner_filter: PartnerFilter,
     /// Whether a goal path search reads its corridor (`curate.json`
-    /// `paths_corridor`, on by default).
+    /// `paths_corridor`, off by default).
     paths_corridor: PathsCorridor,
     /// The anchored ask gate: [`AskGate::STORE_DEFAULT`] (on) unless
     /// `ask-gate.json` beside the store says otherwise; a file that cannot
@@ -184,7 +184,7 @@ impl EmbeddedKernelMcpBackend {
             )
             .emit();
         let (partner_cap, partner_filter, paths_corridor) =
-            curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::On));
+            curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::Off));
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),

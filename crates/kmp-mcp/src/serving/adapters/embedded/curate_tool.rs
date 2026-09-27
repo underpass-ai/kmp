@@ -77,7 +77,7 @@ impl<'a> EmbeddedCurateTool<'a> {
             lifecycle: LifecycleMode::Off,
             partner_cap: PartnerCap::DEFAULT,
             partner_filter: PartnerFilter::Off,
-            paths_corridor: PathsCorridor::On,
+            paths_corridor: PathsCorridor::Off,
         }
     }
 
