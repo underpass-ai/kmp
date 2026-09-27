@@ -1,3 +1,4 @@
+use crate::curate::application::corridor::Corridor;
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{PATH_FACTS, on_the_way_request};
@@ -59,6 +60,7 @@ pub(crate) async fn facts_on_the_way(
     material: &CurateMaterial,
     from: &str,
     to: Option<&str>,
+    corridor: bool,
     usage: &mut JevUsage,
 ) -> Result<Vec<String>, String> {
     let mut kept = Vec::<String>::new();
@@ -72,7 +74,20 @@ pub(crate) async fn facts_on_the_way(
         // ones worth asking about: on the judged corpus that kept every path
         // found at 43% fewer tokens. Without one it lost the chain whose next
         // step the graph does not link yet, so the judge reads everything.
-        let only = to.and_then(|_| near(material, &seeds));
+        //
+        // The corridor (DESIGN L7) goes further: at most 22 facts between
+        // the ends, nearest to both first, whether the graph links them or
+        // not.
+        let only = match to {
+            Some(goal) if corridor => Some(
+                Corridor::between(material, from, goal)
+                    .refs
+                    .into_iter()
+                    .collect(),
+            ),
+            Some(_) => near(material, &seeds),
+            None => None,
+        };
         let (request, refs) = on_the_way_request(material, from, to, &kept, only.as_ref());
         if refs.is_empty() {
             break;
@@ -190,7 +205,7 @@ mod tests {
             calls: Mutex::new(0),
         };
         let mut usage = JevUsage::new("jev-test");
-        let kept = facts_on_the_way(&model, &material(), "a", None, &mut usage)
+        let kept = facts_on_the_way(&model, &material(), "a", None, true, &mut usage)
             .await
             .expect("judged");
         assert_eq!(kept, vec!["b".to_string(), "c".to_string()]);

@@ -157,6 +157,29 @@ because it adds latency and bytes to every Ask.
   Asking for the cause as well as the consequence, and keeping a second
   choice, took paths found from 1/5 to 3/5 with no loss in step precision.
 
+  **Corridor (P11, DESIGN L7, 27 Sept 2026).** With a goal, the facts asked
+  about are now the corridor between the ends: the facts within four hops of
+  either end over kernel pairs and declared relations, nearest to both ends
+  first (d_f + d_b), then by the ends' rarer words (BM25), at most 22 besides
+  the ends; when nothing links near either end, the 22 facts sharing most of
+  the ends' words stand in. Each fact's next-step choices offer at most eight
+  neighbours (linked facts first, then shared words) instead of every other
+  fact, and a proposed step is typed only when it can lie on a walk from the
+  start to the goal within `max_hops`. The kernel proposes pairs only among
+  the corridor's candidates (four declared hops of either end and the 64 facts
+  sharing most of the ends' words), and a search without Jev proposes none,
+  since it walks declared relations alone. Three samples with the real Jev on
+  the judged corpus: the goal searches cost 3.4k–3.6k Jev tokens on average
+  (8.2k before; g30 → g32 from 22.4k to 3.5k–4.4k; the largest, b01 → p11,
+  stays at 5.2k because its corridor equals the old filter), paths found 0.8
+  in all three, paths clean 1.0, avoided bad 1.0, proposed steps right
+  0.9412, 0.9412 and 0.95: in two samples g31 scored 0.49 in the corridor
+  against 0.54 over the whole selection, so g30 → g32 returned one path and
+  not the second, which was all right hops. The goal-less search is
+  unchanged. At synth 10^4 without Jev a goal search went from 18.7 s and
+  3.6 GB to 0.73 s and 0.35 GB with the same answer. `curate.json`
+  `"paths_corridor": "off"` restores the old filter.
+
 ### Tools behind these numbers
 
 - `bash scripts/ci/jev-baseline.sh`: the judged corpus, replayed from its

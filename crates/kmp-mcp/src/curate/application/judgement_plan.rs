@@ -314,9 +314,13 @@ pub(crate) fn on_the_way_request(
 /// which its direct cause (`c<k>`): a chain needs both directions, and a
 /// fact can lead to more than one thing.
 /// The facts are the state, dated, keyed `f<k>`.
+///
+/// With `neighbours` (a goal search's corridor, DESIGN L7), each fact's two
+/// choices offer only the facts named for it instead of every other fact.
 pub(crate) fn next_step_request(
     material: &CurateMaterial,
     refs: &[String],
+    neighbours: Option<&BTreeMap<String, Vec<String>>>,
 ) -> (JudgementRequest, BTreeMap<String, String>) {
     let keys = refs
         .iter()
@@ -327,11 +331,24 @@ pub(crate) fn next_step_request(
         .iter()
         .map(|(key, reference)| (key.clone(), json!(excerpt(&text_of(material, reference), PATH_CHARS))))
         .collect::<serde_json::Map<_, _>>() });
+    let key_of = keys
+        .iter()
+        .map(|(key, reference)| (reference.as_str(), key.as_str()))
+        .collect::<BTreeMap<_, _>>();
     let mut questions = BTreeMap::new();
-    for own in keys.keys() {
+    for (own, reference) in &keys {
+        let offered = |key: &String| {
+            neighbours.is_none_or(|neighbours| {
+                neighbours.get(reference).is_some_and(|options| {
+                    options
+                        .iter()
+                        .any(|other| key_of.get(other.as_str()) == Some(&key.as_str()))
+                })
+            })
+        };
         let options = keys
             .keys()
-            .filter(|key| *key != own)
+            .filter(|key| *key != own && offered(key))
             .cloned()
             .chain(std::iter::once(NONE.to_string()))
             .collect::<Vec<_>>();

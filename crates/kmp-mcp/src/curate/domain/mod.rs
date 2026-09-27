@@ -16,4 +16,5 @@ pub(crate) mod pair_origin;
 pub(crate) mod partner_cap;
 pub(crate) mod partner_filter;
 pub(crate) mod path_hop;
+pub(crate) mod paths_corridor;
 pub(crate) mod proposed_label;

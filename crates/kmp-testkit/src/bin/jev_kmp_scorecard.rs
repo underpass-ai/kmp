@@ -22,7 +22,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use kmp_mcp::KernelMcpServer;
-use kmp_testkit::{WriteReceipt, rerank_with_eval_margin};
+use kmp_testkit::{WriteReceipt, paths_corridor_eval_arm, rerank_with_eval_margin};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -416,10 +416,20 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
         .map(|body| vec![("write-relations.json", body)])
         .unwrap_or_default();
     let plain = seeded_server(case, "plain", &lifecycle_files).await?;
+    let corridor = paths_corridor_eval_arm();
+    let corridor_files = corridor
+        .as_deref()
+        .map(|body| vec![("curate.json", body)])
+        .unwrap_or_default();
     let judged = seeded_server(
         case,
         "judged",
-        &[&[("typesafe.json", TYPESAFE)], lifecycle_files.as_slice()].concat(),
+        &[
+            &[("typesafe.json", TYPESAFE)],
+            lifecycle_files.as_slice(),
+            corridor_files.as_slice(),
+        ]
+        .concat(),
     )
     .await?;
     let reranked = seeded_server(

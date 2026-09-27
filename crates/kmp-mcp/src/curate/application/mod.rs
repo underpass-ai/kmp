@@ -1,3 +1,4 @@
+pub(crate) mod corridor;
 pub(crate) mod curate_material;
 pub(crate) mod curate_review;
 pub(crate) mod dto;

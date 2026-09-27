@@ -24,6 +24,7 @@ use crate::contract::{TIME_TOOL, TimeMove};
 use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::partner_cap::PartnerCap;
 use crate::curate::domain::partner_filter::PartnerFilter;
+use crate::curate::domain::paths_corridor::PathsCorridor;
 use crate::serving::environment::{
     EVAL_PARTNER_FACTS_ENV, TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV,
     TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
@@ -82,6 +83,9 @@ pub struct EmbeddedKernelMcpBackend {
     /// What the pairs of that partner round must pass (`curate.json`
     /// `partner_filter`, off by default).
     partner_filter: PartnerFilter,
+    /// Whether a goal path search reads its corridor (`curate.json`
+    /// `paths_corridor`, on by default).
+    paths_corridor: PathsCorridor,
     /// The anchored ask gate: [`AskGate::STORE_DEFAULT`] (on) unless
     /// `ask-gate.json` beside the store says otherwise; a file that cannot
     /// apply is reported and the default stands.
@@ -179,8 +183,8 @@ impl EmbeddedKernelMcpBackend {
                 },
             )
             .emit();
-        let (partner_cap, partner_filter) =
-            curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off));
+        let (partner_cap, partner_filter, paths_corridor) =
+            curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::On));
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -201,6 +205,7 @@ impl EmbeddedKernelMcpBackend {
                 .and_then(PartnerCap::named)
                 .unwrap_or(partner_cap),
             partner_filter,
+            paths_corridor,
             ask_gate: ask_gate.unwrap_or(AskGate::STORE_DEFAULT),
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
@@ -370,6 +375,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     )
                     .with_lifecycle(self.lifecycle)
                     .with_partners(self.partner_cap, self.partner_filter)
+                    .with_paths_corridor(self.paths_corridor)
                     .call(arguments)
                     .await
                 }

@@ -1777,6 +1777,101 @@
       "model": "jev-1.13.0",
       "requests": 1
     },
+    "0e6ab3a8ac2a81bd027837cf7169f16e191e6dc97951c8ed2e8ca0d865c0e757": {
+      "answers": {
+        "w0": {
+          "type": "noul",
+          "yes": 0.85
+        },
+        "w1": {
+          "type": "noul",
+          "yes": 0.47
+        },
+        "w10": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w11": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w12": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w13": {
+          "type": "noul",
+          "yes": 0.1
+        },
+        "w14": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w15": {
+          "type": "noul",
+          "yes": 0.08
+        },
+        "w16": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w17": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w18": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w19": {
+          "type": "noul",
+          "yes": 0.15
+        },
+        "w2": {
+          "type": "noul",
+          "yes": 0.18
+        },
+        "w20": {
+          "type": "noul",
+          "yes": 0.05
+        },
+        "w21": {
+          "type": "noul",
+          "yes": 0.07
+        },
+        "w3": {
+          "type": "noul",
+          "yes": 0.27
+        },
+        "w4": {
+          "type": "noul",
+          "yes": 0.23
+        },
+        "w5": {
+          "type": "noul",
+          "yes": 0.11
+        },
+        "w6": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w7": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w8": {
+          "type": "noul",
+          "yes": 0.09
+        },
+        "w9": {
+          "type": "noul",
+          "yes": 0.13
+        }
+      },
+      "input_tokens": 1683,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
     "0e7c3d3c918fa94f99b5b01354099c82862f3d136297ae783331ab2630410f4d": {
       "answers": {
         "f0": {
@@ -3318,6 +3413,85 @@
         }
       },
       "input_tokens": 18455,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "1dbd8dd258ab66f5c6a2c6883c219df5a3341877e29407fd944dcee18ef05723": {
+      "answers": {
+        "t0": {
+          "choice": "contributes_to",
+          "confidence": 0.43,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.0,
+            "component_of": 0.0,
+            "confirms_selection": 0.0,
+            "contradicts": 0.0,
+            "contributes_to": 0.46,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.01,
+            "excluded_from": 0.0,
+            "follows": 0.23,
+            "matches_requirement": 0.0,
+            "none": 0.02,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.01,
+            "total_of": 0.0,
+            "triggers": 0.23,
+            "updates_state": 0.01,
+            "uses_background": 0.01,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        },
+        "t1": {
+          "choice": "triggers",
+          "confidence": 0.69,
+          "probabilities": {
+            "answers": 0.01,
+            "authorizes": 0.0,
+            "checked_against": 0.0,
+            "chosen_because": 0.03,
+            "component_of": 0.0,
+            "confirms_selection": 0.01,
+            "contradicts": 0.0,
+            "contributes_to": 0.06,
+            "corrects": 0.0,
+            "depends_on": 0.01,
+            "derived_from": 0.0,
+            "excluded_from": 0.0,
+            "follows": 0.09,
+            "matches_requirement": 0.0,
+            "none": 0.02,
+            "qualifies_as": 0.0,
+            "restates": 0.0,
+            "same_entity_as": 0.0,
+            "same_event_as": 0.0,
+            "satisfies_constraint": 0.0,
+            "semantic_delta_from": 0.0,
+            "supersedes": 0.0,
+            "supports": 0.04,
+            "total_of": 0.0,
+            "triggers": 0.7,
+            "updates_state": 0.01,
+            "uses_background": 0.02,
+            "verified_by": 0.0,
+            "violates_constraint": 0.0
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 962,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -12803,6 +12977,73 @@
         }
       },
       "input_tokens": 465,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "35f98b7d48be1d984c193ae95869efde7a105bc54504c0de623bd8721292c05d": {
+      "answers": {
+        "c0": {
+          "choice": "none",
+          "confidence": 0.99,
+          "probabilities": {
+            "f1": 0.0,
+            "f2": 0.01,
+            "none": 0.99
+          },
+          "type": "choice"
+        },
+        "c1": {
+          "choice": "f2",
+          "confidence": 0.94,
+          "probabilities": {
+            "f0": 0.03,
+            "f2": 0.96,
+            "none": 0.01
+          },
+          "type": "choice"
+        },
+        "c2": {
+          "choice": "f0",
+          "confidence": 1.0,
+          "probabilities": {
+            "f0": 1.0,
+            "f1": 0.0,
+            "none": 0.0
+          },
+          "type": "choice"
+        },
+        "n0": {
+          "choice": "f2",
+          "confidence": 0.99,
+          "probabilities": {
+            "f1": 0.01,
+            "f2": 0.99,
+            "none": 0.0
+          },
+          "type": "choice"
+        },
+        "n1": {
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "f0": 0.0,
+            "f2": 0.02,
+            "none": 0.98
+          },
+          "type": "choice"
+        },
+        "n2": {
+          "choice": "f1",
+          "confidence": 0.93,
+          "probabilities": {
+            "f0": 0.0,
+            "f1": 0.95,
+            "none": 0.05
+          },
+          "type": "choice"
+        }
+      },
+      "input_tokens": 811,
       "model": "jev-1.13.0",
       "requests": 1
     },
@@ -23802,6 +24043,17 @@
         }
       },
       "input_tokens": 1087,
+      "model": "jev-1.13.0",
+      "requests": 1
+    },
+    "88d49a0ee71cd1e457be0f5301ebb0105ea3d0e25fe992f1206e56f444f63a9f": {
+      "answers": {
+        "w0": {
+          "type": "noul",
+          "yes": 0.04
+        }
+      },
+      "input_tokens": 388,
       "model": "jev-1.13.0",
       "requests": 1
     },

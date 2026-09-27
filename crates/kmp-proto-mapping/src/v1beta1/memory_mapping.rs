@@ -73,6 +73,7 @@ mod memory_lifecycle;
 mod morphology;
 mod pair_scope;
 mod partner_shortlist;
+mod paths_proposals;
 mod queries;
 mod question_anchor;
 mod question_contract;
@@ -143,13 +144,16 @@ pub use lexical_bridge::LexicalBridge;
 pub use lexical_index_cache::LexicalIndexCache;
 pub use lexical_margin::LexicalMargin;
 pub use partner_shortlist::PartnerShortlist;
+pub use paths_proposals::PathsProposals;
 pub use queries::{
     ask_query_from_proto, inspect_query_from_proto, relate_query_from_proto,
     temporal_query_from_move_proto, temporal_query_from_near_proto, trace_query_from_proto,
     wake_query_from_proto,
 };
 pub use relabel::{relabel_command_from_proto, relabel_response_from_outcome};
-pub use relate::{curate_reading_from_result, relate_response_from_result};
+pub use relate::{
+    curate_paths_reading_from_result, curate_reading_from_result, relate_response_from_result,
+};
 pub use rerank_candidate_ranking::RerankCandidateRanking;
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
