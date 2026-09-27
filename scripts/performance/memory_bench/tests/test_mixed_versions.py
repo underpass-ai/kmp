@@ -442,6 +442,12 @@ class SidecarTest(unittest.TestCase):
 
 
 class BookTest(unittest.TestCase):
+    def test_the_book_store_turns_the_rerank_margin_gate_off(self):
+        """With the gate on, a `High` lead sends no judgement and the warm-up has nothing to record."""
+        rerank = json.loads(cli.JEV_STORE_FILES['rerank.json'])
+        self.assertEqual(rerank, {'pool_size': 40, 'margin_tenths': None})
+        self.assertIn('typesafe.json', cli.JEV_STORE_FILES)
+
     def test_skipped_without_the_capability_or_a_jev_setup(self):
         world = FakeWorld(self)
         self.assertEqual(mv.book_first_wins(world.env(), SETTINGS).reason, 'not in this binary')

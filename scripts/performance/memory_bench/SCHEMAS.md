@@ -1387,7 +1387,9 @@ scenario never stops the others. The command exits 1 when any scenario failed.
 | `results[]` | `scenario` (`write_then_read`, `concurrent_writers`, `reads_during_writes`, `sidecar_catch_up`, `book_first_wins`), `case` (e.g. `reference->candidate`), `status`, `reason`, `checks[]` (`name`, `ok`, `detail`, `gating`: a non-gating check is reported and never fails the scenario), `latency_ms[name]` (`n`, `p50`, `p95`, `max` of wall ms; p95 indicative below n = 20), `facts` (format stamps, the path taken: `direct` or `bundle`, conflict retries…) |
 
 `book_first_wins` runs when the candidate names `judgements.sqlite3`. Its store gets
-`typesafe.json`, `rerank.json` (`pool_size` 40) and a stand-in cassette in replay mode,
+`typesafe.json`, `rerank.json` (`pool_size` 40, `margin_tenths` null: the rerank margin
+gate off, so a `High` lead still sends its judgement and the warm-up has something to
+record) and a stand-in cassette in replay mode,
 filled from a warm-up process on a fork (`runtime/jev_stand_in.py`): the scenario's
 processes judge offline, behind the book, and the network-blocked replay must answer
 every judgement from the book (`http_requests` 0).

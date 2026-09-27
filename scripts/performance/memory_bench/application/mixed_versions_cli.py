@@ -26,11 +26,16 @@ from . import mixed_versions as mv
 
 DEFAULT_STORE_LABEL = 'synth-v1 seed 7 mono 1000 B1000'
 RUN_DIR = 'bt18'
-# The book scenario's store: Jev on (replayed, never the network) and ask re-ranking on.
+# The book scenario's store: Jev on (replayed, never the network) and ask re-ranking on,
+# with the margin gate off (`margin_tenths: null`, DESIGN L4 4c). With the gate at its
+# measured default, an ask whose first lexical candidate leads with `High` confidence sends
+# no request, which on the synth store is every warm-up question: the warm-up judged
+# nothing and the scenario never reached the book. The scenario tests the book, not the gate.
+RERANK_WITHOUT_MARGIN_GATE = b'{"pool_size":40,"margin_tenths":null}'
 JEV_STORE_FILES = {
     'typesafe.json': b'{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"'
                      + jev_fixture.DEFAULT_MODEL.encode() + b'","timeout_ms":20000}',
-    'rerank.json': b'{"pool_size":40}',
+    'rerank.json': RERANK_WITHOUT_MARGIN_GATE,
 }
 STAND_IN = 'stand-in.cassette.json'
 LEXICAL_INDEX_ENV = 'KMP_LEXICAL_INDEX'
