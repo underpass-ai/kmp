@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use kmp_embedded::SUPPORTED_FORMAT_VERSION;
+
 use crate::lifecycle::domain::store_facts::StoreFacts;
 use crate::lifecycle::domain::store_size::StoreSize;
 use crate::lifecycle::domain::store_storage::StoreStorage;
@@ -58,8 +60,15 @@ fn read_trimmed(path: &Path) -> Option<String> {
 }
 
 fn storage(store: &Path) -> Option<StoreStorage> {
+    // The stamp is compared with the engine's own supported format, never a
+    // literal: a literal here outlived the move to format 4 and labelled
+    // every current store unsupported.
     let format = read_trimmed(&store.join("FORMAT_VERSION"));
-    if format.as_deref() != Some("2") {
+    if format
+        .as_deref()
+        .and_then(|stamp| stamp.parse::<u32>().ok())
+        != Some(SUPPORTED_FORMAT_VERSION)
+    {
         return Some(match format {
             Some(format) if format.chars().all(|character| character.is_ascii_digit()) => {
                 StoreStorage::UnsupportedFormat(Some(format))
@@ -138,7 +147,11 @@ mod tests {
         let base = tempfile::tempdir().expect("temp");
         let store = base.path().join("kmp/default");
         std::fs::create_dir_all(store.join("logs")).expect("logs");
-        std::fs::write(store.join("FORMAT_VERSION"), "2").expect("stamp");
+        std::fs::write(
+            store.join("FORMAT_VERSION"),
+            SUPPORTED_FORMAT_VERSION.to_string(),
+        )
+        .expect("stamp");
         std::fs::write(
             store.join("logs/kmp-mcp.log.2026-08-20"),
             "{\"timestamp\":\"2026-08-20T09:00:00Z\",\"fields\":{\"message\":\"startup succeeded\"}}\n",
@@ -154,6 +167,54 @@ mod tests {
         assert_eq!(
             catalog.store_facts(&store).last_opened.as_deref(),
             Some("2026-08-24 18:30:00")
+        );
+    }
+
+    fn stamped_store(base: &Path, stamp: &str, file: &str) -> PathBuf {
+        let store = base.join("kmp/default");
+        std::fs::create_dir_all(store.join("store")).expect("store dir");
+        std::fs::write(store.join("FORMAT_VERSION"), stamp).expect("stamp");
+        std::fs::write(store.join("store").join(file), [0_u8; 8]).expect("store file");
+        store
+    }
+
+    #[test]
+    fn a_store_stamped_with_the_supported_format_is_classified_sqlite() {
+        let base = tempfile::tempdir().expect("temp");
+        let store = stamped_store(
+            base.path(),
+            &SUPPORTED_FORMAT_VERSION.to_string(),
+            "kernel.sqlite3",
+        );
+
+        let catalog = FilesystemStoreCatalog::new(base.path());
+        assert_eq!(
+            catalog.store_facts(&store).storage,
+            Some(StoreStorage::Sqlite)
+        );
+    }
+
+    #[test]
+    fn a_format_4_sqlite_store_is_classified_sqlite() {
+        let base = tempfile::tempdir().expect("temp");
+        let store = stamped_store(base.path(), "4\n", "kernel.sqlite3");
+
+        let catalog = FilesystemStoreCatalog::new(base.path());
+        assert_eq!(
+            catalog.store_facts(&store).storage,
+            Some(StoreStorage::Sqlite)
+        );
+    }
+
+    #[test]
+    fn a_stamp_other_than_the_supported_format_is_reported_unsupported() {
+        let base = tempfile::tempdir().expect("temp");
+        let store = stamped_store(base.path(), "1", "kernel.bin");
+
+        let catalog = FilesystemStoreCatalog::new(base.path());
+        assert_eq!(
+            catalog.store_facts(&store).storage,
+            Some(StoreStorage::UnsupportedFormat(Some("1".to_string())))
         );
     }
 }
