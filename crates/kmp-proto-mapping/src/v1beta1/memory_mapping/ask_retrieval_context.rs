@@ -156,11 +156,9 @@ impl AskRetrievalContext {
             .take(super::answer_ranker::ANSWER_CORE_LIMIT)
             .cloned()
             .collect::<Vec<_>>();
-        self.margin = Some(super::lexical_margin::LexicalMargin {
-            tenths: scores.lead(),
-            high_confidence: ranker.confidence(question, &core)
-                == kmp_proto::v1beta1::MemoryConfidence::High,
-        });
+        self.margin = Some(scores.lead().with_high_confidence(
+            ranker.confidence(question, &core) == kmp_proto::v1beta1::MemoryConfidence::High,
+        ));
         self.ranked = Some(ranked);
         Ok(pool)
     }

@@ -123,7 +123,9 @@ fn anchored_band(
     let entry = match (verdict.status, verdict.reason) {
         (AnswerStatus::Unknown, UnknownReason::AttributeNotFound) => DoubtEntry::AttributeNotFound,
         (AnswerStatus::Partial, _) => DoubtEntry::Partial,
-        (AnswerStatus::Answered, _) if margin.is_some_and(|margin| margin < margin_below) => {
+        (AnswerStatus::Answered, _)
+            if margin.is_some_and(|margin| margin.is_narrow(margin_below)) =>
+        {
             DoubtEntry::NarrowMargin
         }
         _ => return None,
@@ -143,7 +145,7 @@ fn anchored_band(
         .collect::<Vec<_>>();
     (!passages.is_empty()).then_some(DoubtBand {
         entry,
-        margin,
+        margin: margin.map(|margin| margin.tenths_or_zero()),
         passages,
     })
 }
@@ -170,7 +172,7 @@ fn unanchored_band(
     let confidence = setup.ranker.confidence(asked, &core);
     if !core.is_empty() && confidence != MemoryConfidence::Low {
         let margin = scores.margin(core.iter().map(|item| item.id.as_str()));
-        if margin >= margin_below {
+        if !margin.is_narrow(margin_below) {
             return None;
         }
         let passages = core
@@ -186,7 +188,7 @@ fn unanchored_band(
             .collect::<Vec<_>>();
         return Some(DoubtBand {
             entry: DoubtEntry::NarrowMargin,
-            margin: Some(margin),
+            margin: Some(margin.tenths_or_zero()),
             passages,
         });
     }
