@@ -150,9 +150,7 @@ fn entry_from_value(value: &Value) -> Result<MemoryEntry, String> {
             "metadata",
             "memory.entries[].metadata",
         )?,
-        // kmp_ingest proposes no search expansion: kmp_write_memory reads
-        // them, and only a judge keeps one.
-        search_expansions: Vec::new(),
+        search_expansions: optional_string_list(value, "search_expansions")?,
     })
 }
 
@@ -423,6 +421,26 @@ fn provenance_with_defaults(
         )?
         .unwrap_or_default(),
     })
+}
+
+/// An optional array of strings; absent reads as empty.
+fn optional_string_list(
+    value: &serde_json::Map<String, Value>,
+    field: &str,
+) -> Result<Vec<String>, String> {
+    let Some(items) = value.get(field) else {
+        return Ok(Vec::new());
+    };
+    items
+        .as_array()
+        .ok_or_else(|| format!("memory.entries[].{field} must be an array of strings"))?
+        .iter()
+        .map(|item| {
+            item.as_str()
+                .map(str::to_string)
+                .ok_or_else(|| format!("memory.entries[].{field} must be an array of strings"))
+        })
+        .collect()
 }
 
 #[cfg(test)]

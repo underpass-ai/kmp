@@ -5,7 +5,9 @@ use crate::serving::adapters::tool_request_mapping::IngestRequestMapper;
 use crate::serving::{ToolError, tool_success_result};
 use kmp_embedded::EmbeddedMemoryService;
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernelStore};
-use kmp_proto_mapping::v1beta1::{ingest_command_from_proto, ingest_response_from_outcome};
+use kmp_proto_mapping::v1beta1::{
+    ingest_command_from_proto, ingest_response_without_judge, search_expansion_proposals_from_proto,
+};
 use serde_json::Value;
 
 /// Maps and executes one ingest, guarding canonical bundle publication when configured.
@@ -45,16 +47,21 @@ impl<'a> EmbeddedIngestTool<'a> {
     async fn ingest(&self, arguments: &Value) -> Result<Value, ToolError> {
         let request =
             IngestRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+        let expansions = search_expansion_proposals_from_proto(&request)
+            .map_err(|status| mapping_error(&status))?;
         let command =
             ingest_command_from_proto(request).map_err(|status| mapping_error(&status))?;
+        let dry_run = command.dry_run;
         let about = command.about.clone();
         let outcome = self
             .service
             .ingest(command)
             .await
             .map_err(kernel_error("ingest", &about))?;
+        // kmp_ingest is the canonical Ingest and, like the kernel's gRPC
+        // Ingest, has no judge: kmp_write_memory is the verb that judges.
         Ok(tool_success_result(ingest_from_response(
-            ingest_response_from_outcome(outcome),
+            ingest_response_without_judge(outcome, &expansions, dry_run),
         )))
     }
 }

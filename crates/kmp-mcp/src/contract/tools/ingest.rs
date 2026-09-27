@@ -66,6 +66,11 @@ pub(crate) fn definition() -> Value {
                                         "type": "object",
                                         "additionalProperties": {"type": "string"},
                                         "description": "Free string metadata stored beside the entry and searched by kmp_ask. One key is reserved: `summary_en`, an English rendering of `text` for search, searched and never cited. The kernel lints it and returns a warning for an entry whose summary leans to another language, carries fewer than two informative words, repeats `text` word for word, or drops an identifier `text` carries; such a summary is stored and carries nothing."
+                                    },
+                                    "search_expansions": {
+                                        "type": "array", "maxItems": 6,
+                                        "items": {"type": "string", "minLength": 1, "maxLength": 120},
+                                        "description": "Optional short ways a later reader may ask for this entry (questions, paraphrases, keys in the other language). Linted like kmp_write_memory's; this canonical writer has no judge, so none is stored and search_expansions in the result says why. Use kmp_write_memory to keep judged expansions."
                                     }
                                 }
                             }
@@ -185,7 +190,13 @@ fn ingest_output_schema() -> Value {
             "created_dimensions": string_array("Refs of label dimensions this ingest created, identified by about, key and value. Copy returned refs; do not construct them."),
             "resembling_labels": described("array", "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently`) and `why`.")
         })),
-        "warnings": warnings_output_schema()
+        "warnings": warnings_output_schema(),
+        "search_expansions": output_object(json!({
+            "stored": described("object", "Memory ref to the expansions kept; always empty here, since this writer has no judge."),
+            "refused": described("array", "Each refused expansion as {ref, expansion, why}: the lint's fault."),
+            "judged_by": described("string", "The judge and its bar, when one judged."),
+            "not_stored": described("string", "Why what passed the lint was not stored.")
+        }))
     }))
 }
 

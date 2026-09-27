@@ -154,7 +154,8 @@ pub use doubt_passage::DoubtPassage;
 pub use doubt_verdicts::DoubtVerdicts;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use ingest_search_expansions::{
-    search_expansion_proposals_from_proto, search_expansions_report_to_proto,
+    ingest_response_without_judge, search_expansion_proposals_from_proto,
+    search_expansions_report_to_proto,
 };
 pub use judged_selection::JudgedSelection;
 pub use language_signals::LanguageSignals;

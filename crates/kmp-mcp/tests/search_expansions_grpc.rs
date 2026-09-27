@@ -1,4 +1,4 @@
-//! Search expansions (P15) over the kernel's gRPC write, against a real
+//! Search expansions (P15) over the kernel's gRPC write and `kmp_ingest`, against a real
 //! store, and their parity with `kmp_write_memory`.
 //!
 //! `MemoryEntry.search_expansions` is additive: an older client that never
@@ -295,6 +295,116 @@ async fn more_expansions_than_a_memory_keeps_is_refused_before_anything_is_writt
         "{}",
         status.message()
     );
+    let _ = kernel.stop.send(());
+    let _ = kernel.serving.await;
+}
+
+/// Canonical `kmp_ingest` arguments for the rollout entry in `about`.
+fn kmp_ingest(about: &str, key: &str, expansions: Option<&[&str]>) -> Value {
+    let mut entry = json!({
+        "id": format!("{about}:entry:decision:rollout"), "kind": "decision", "text": ROLLOUT,
+        "coordinates": [{"dimension": "work", "scope_id": "work:main",
+            "occurred_at": "2026-09-21T10:00:00Z"}]
+    });
+    if let Some(expansions) = expansions {
+        entry["search_expansions"] = json!(expansions);
+    }
+    json!({
+        "about": about, "idempotency_key": key,
+        "provenance": {"source_kind": "agent", "source_agent": "agent:test",
+            "observed_at": "2026-09-21T10:00:00Z"},
+        "memory": {"dimensions": [{"id": "work:main", "kind": "work"}], "entries": [entry]}
+    })
+}
+
+/// The three surfaces — the kernel's gRPC Ingest, `kmp_ingest` (embedded
+/// and over gRPC) and `kmp_write_memory` — read one proposal alike: the same
+/// refusals with the same why, nothing stored, and the same reason on the
+/// two canonical writers.
+#[tokio::test]
+async fn kmp_ingest_reports_what_the_wire_and_kmp_write_memory_report() {
+    let kernel = kernel().await;
+    let remote = KernelMcpServer::grpc(kernel.endpoint.clone());
+    let dir = tempfile::tempdir().expect("dir");
+    let embedded = KernelMcpServer::embedded(dir.path()).expect("embedded");
+
+    let wire_report = wire(
+        &kernel.endpoint,
+        ingest("wire:three", ROLLOUT, &[PARAPHRASE, ECHO], false),
+    )
+    .await
+    .expect("ingest")
+    .search_expansions
+    .expect("report");
+    let written = call(
+        &remote,
+        "kmp_write_memory",
+        json!({
+            "about": MCP_ABOUT, "actor": "agent:test",
+            "memories": [{"id": "rollout", "kind": "decision", "summary": ROLLOUT,
+                "evidence": "release notes", "labels": {"work": ["main"]},
+                "search_expansions": [PARAPHRASE, ECHO]}]
+        }),
+    )
+    .await;
+
+    for (surface, server, about) in [
+        (
+            "kmp_ingest over gRPC",
+            &remote,
+            "question:paraphrase-remote",
+        ),
+        (
+            "kmp_ingest embedded",
+            &embedded,
+            "question:paraphrase-embedded",
+        ),
+    ] {
+        let ingested = call(
+            server,
+            "kmp_ingest",
+            kmp_ingest(about, "mcp:three", Some(&[PARAPHRASE, ECHO])),
+        )
+        .await;
+        let report = &ingested["search_expansions"];
+        assert_eq!(report["stored"], json!({}), "{surface}: {report}");
+        assert_eq!(
+            report["not_stored"],
+            SearchExpansionReport::NO_JUDGE_REASON,
+            "{surface}"
+        );
+        assert_eq!(report.get("judged_by"), None, "{surface}");
+        assert_eq!(
+            mcp_refusals(report),
+            wire_refusals(&wire_report),
+            "{surface}"
+        );
+        assert_eq!(
+            mcp_refusals(report),
+            mcp_refusals(&written["search_expansions"]),
+            "{surface}"
+        );
+        assert_eq!(
+            report["refused"][0]["ref"],
+            format!("{about}:entry:decision:rollout"),
+            "{surface}"
+        );
+        let inspected = call(
+            server,
+            "kmp_inspect",
+            json!({"about": about, "ref": format!("{about}:entry:decision:rollout")}),
+        )
+        .await;
+        assert!(
+            !inspected.to_string().contains("search_expansions"),
+            "{surface}: nothing is stored: {inspected}"
+        );
+
+        // An older caller that never proposes reads no report.
+        let old = call(server, "kmp_ingest", kmp_ingest(about, "mcp:old", None)).await;
+        assert_eq!(old.get("search_expansions"), None, "{surface}: {old}");
+    }
+
     let _ = kernel.stop.send(());
     let _ = kernel.serving.await;
 }

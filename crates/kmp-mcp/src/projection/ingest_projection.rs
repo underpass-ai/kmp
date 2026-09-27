@@ -5,8 +5,12 @@ use kmp_proto::v1beta1::IngestResponse;
 pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
     let memory = response.memory.as_ref();
     let accepted = memory.and_then(|memory| memory.accepted.as_ref());
+    let expansions = response
+        .search_expansions
+        .as_ref()
+        .map(search_expansions_json);
 
-    json!({
+    let mut projected = json!({
         "neighborhood": response.neighborhood.as_ref().map(|view| json!({
             "token": view.token, "eligible": view.eligible, "omitted": view.omitted,
             "omitted_conflicts": view.omitted_conflicts, "stored_abouts": view.stored_abouts,
@@ -57,7 +61,32 @@ pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
                 .unwrap_or_default()
         },
         "warnings": response.warnings
-    })
+    });
+    if let Some(expansions) = expansions {
+        projected["search_expansions"] = expansions;
+    }
+    projected
+}
+
+/// The report in the shape `kmp_write_memory` gives it: `stored` by ref,
+/// `refused` as `{ref, expansion, why}`, and `not_stored` and `judged_by`
+/// only when they say something.
+fn search_expansions_json(report: &kmp_proto::v1beta1::SearchExpansionsReport) -> Value {
+    let mut projected = json!({
+        "stored": report.stored.iter()
+            .map(|stored| (stored.r#ref.clone(), json!(stored.expansions)))
+            .collect::<serde_json::Map<String, Value>>(),
+        "refused": report.refused.iter()
+            .map(|refused| json!({"ref": refused.r#ref, "expansion": refused.expansion, "why": refused.why}))
+            .collect::<Vec<_>>(),
+    });
+    if !report.not_stored.is_empty() {
+        projected["not_stored"] = json!(report.not_stored);
+    }
+    if !report.judged_by.is_empty() {
+        projected["judged_by"] = json!(report.judged_by);
+    }
+    projected
 }
 
 fn write_clocks_json(value: &kmp_proto::v1beta1::WriteClocks) -> Value {

@@ -2,13 +2,30 @@
 //! them, on the wire. They travel beside the entries and are never part of
 //! the command that commits them.
 
-use kmp_application::{SearchExpansionProposal, SearchExpansionReport};
+use kmp_application::{MemoryIngestOutcome, SearchExpansionProposal, SearchExpansionReport};
 use kmp_domain::SearchExpansions;
 use kmp_proto::v1beta1::{
     IngestRequest, RefusedSearchExpansion, SearchExpansionsReport, StoredSearchExpansions,
 };
 
+use super::ingest::ingest_response_from_outcome;
 use super::scalars::{ProtoMappingResult, invalid_argument};
+
+/// The Ingest response of a surface without a judge (the kernel's gRPC
+/// Ingest and `kmp_ingest`): the outcome, plus what became of the entries'
+/// proposed expansions. Nothing is stored; the lint's refusals and the
+/// reason are reported, as `kmp_write_memory` reports them on a backend
+/// that cannot judge.
+pub fn ingest_response_without_judge(
+    outcome: MemoryIngestOutcome,
+    proposals: &[SearchExpansionProposal],
+    dry_run: bool,
+) -> kmp_proto::v1beta1::IngestResponse {
+    let report = SearchExpansionReport::without_judge(proposals, &outcome, dry_run);
+    let mut response = ingest_response_from_outcome(outcome);
+    response.search_expansions = report.map(search_expansions_report_to_proto);
+    response
+}
 
 /// Each entry's proposed expansions, in the writer's order. An entry may
 /// propose at most [`SearchExpansions::MAX_EXPANSIONS`]; more is the

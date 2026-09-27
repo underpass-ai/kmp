@@ -2,9 +2,7 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use kmp_application::{
-    ApplicationError, KernelMemoryApplicationService, SearchExpansionReport, TemporalMemoryResult,
-};
+use kmp_application::{ApplicationError, KernelMemoryApplicationService, TemporalMemoryResult};
 use kmp_domain::{
     ContextEventStore, DimensionScopeMode, DimensionSelection, DimensionSelectionMode,
     GraphNeighborhoodReader, KmpBundle, MemoryAboutIndexReader, MemoryDimensionIdentity,
@@ -26,11 +24,11 @@ use crate::transport::grpc_call_telemetry::GrpcCallTelemetry;
 use crate::transport::grpc_client::GrpcClient;
 use crate::transport::proto_mapping_v1beta1::{
     ask_query_from_proto, ask_response_from_result, condense_command_from_proto,
-    condense_response_from_card, ingest_command_from_proto, ingest_response_from_outcome,
-    inspect_query_from_proto, inspect_response_from_result, relabel_command_from_proto,
-    relabel_response_from_outcome, relate_query_from_proto, relate_response_from_result,
-    temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
-    trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
+    condense_response_from_card, ingest_command_from_proto, inspect_query_from_proto,
+    inspect_response_from_result, relabel_command_from_proto, relabel_response_from_outcome,
+    relate_query_from_proto, relate_response_from_result, temporal_query_from_move_proto,
+    temporal_query_from_near_proto, temporal_response_from_result, trace_query_from_proto,
+    trace_response_from_result, visual_projection_query_from_proto,
     visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use crate::transport::recall_outcome_log::RecallOutcomeLog;
@@ -40,7 +38,7 @@ use kmp_proto_mapping::v1beta1::recall_projection::{
 };
 use kmp_proto_mapping::v1beta1::{
     AskRetrievalContext, LexicalBridge, LexicalIndexCache, abouts_in_bundle,
-    search_expansion_proposals_from_proto, search_expansions_report_to_proto,
+    ingest_response_without_judge, search_expansion_proposals_from_proto,
 };
 
 pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
@@ -136,10 +134,11 @@ where
         // The kernel serves no judge, so what passes the lint is not stored
         // and the response says why, as kmp_write_memory does on a backend
         // that cannot judge.
-        let report = SearchExpansionReport::without_judge(&expansions, &outcome, dry_run);
-        let mut response = ingest_response_from_outcome(outcome);
-        response.search_expansions = report.map(search_expansions_report_to_proto);
-        Ok(Response::new(response))
+        Ok(Response::new(ingest_response_without_judge(
+            outcome,
+            &expansions,
+            dry_run,
+        )))
     }
 
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Wake"))]
