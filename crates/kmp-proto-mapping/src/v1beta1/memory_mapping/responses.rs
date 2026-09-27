@@ -1553,7 +1553,7 @@ fn distinct_relation_nodes(relationships: &[kmp_proto::v1beta1::MemoryRelation])
 pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectResponse {
     let node_ref = result.detail.node.node_id.clone();
     let node_kind = result.detail.node.node_kind.clone();
-    let metadata = persisted_memory_metadata(&result.detail.node.properties);
+    let metadata = super::bundle_views::searchable_memory_metadata(&result.detail.node.properties);
     let source = persisted_memory_source(&result.detail.node.properties)
         .unwrap_or_default()
         .to_string();

@@ -264,3 +264,21 @@ fn a_strict_focus_the_expansions_do_not_answer_rescues_nothing() {
         "{response:?}"
     );
 }
+
+#[test]
+fn readers_are_shown_the_memory_without_its_expansions_and_audits_with_them() {
+    let properties = BTreeMap::from([(
+        "metadata".to_string(),
+        serde_json::json!({
+            SearchExpansions::METADATA_KEY: "Why was the launch postponed?",
+            SearchExpansions::SOURCE_FINGERPRINT_METADATA_KEY: "sha256:x",
+            "summary_en": "The rollout slipped."
+        })
+        .to_string(),
+    )]);
+    let shown = super::bundle_views::persisted_memory_metadata(&properties);
+    assert_eq!(shown.len(), 1, "{shown:?}");
+    assert!(shown.contains_key("summary_en"));
+    let stored = super::bundle_views::searchable_memory_metadata(&properties);
+    assert_eq!(stored.len(), 3);
+}

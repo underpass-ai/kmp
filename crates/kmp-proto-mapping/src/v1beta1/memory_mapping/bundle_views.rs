@@ -93,7 +93,7 @@ pub(super) fn answer_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
             continue;
         }
         let properties = node.properties();
-        let mut metadata = persisted_memory_metadata(properties);
+        let mut metadata = searchable_memory_metadata(properties);
         metadata.insert("proof_role".to_string(), "entry_text".to_string());
         candidates.push(MemoryEvidence {
             support_clocks: None,
@@ -262,7 +262,20 @@ fn evidence_from_detail(
     }
 }
 
+/// A memory's metadata as a reader is shown it: without its judged search
+/// expansions, which are a search surface and would otherwise ride along
+/// every wake, trace and temporal page that shows the memory.
 pub(super) fn persisted_memory_metadata(
+    properties: &BTreeMap<String, String>,
+) -> HashMap<String, String> {
+    let mut metadata = searchable_memory_metadata(properties);
+    metadata.retain(|key, _| !kmp_domain::SearchExpansions::is_metadata_key(key));
+    metadata
+}
+
+/// A memory's metadata as stored, expansions included: what ask searches
+/// (and strips once ranked) and what inspect audits.
+pub(super) fn searchable_memory_metadata(
     properties: &BTreeMap<String, String>,
 ) -> HashMap<String, String> {
     properties

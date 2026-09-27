@@ -138,6 +138,28 @@ async fn judged_expansions_are_stored_and_reach_a_paraphrase_outside_the_core() 
         !after.to_string().contains("search_expansions"),
         "expansions are never shown: {after}"
     );
+    let reference = stored.keys().next().expect("ref").clone();
+    let wake = structured(&call(&server, "kmp_wake", json!({"about": ABOUT})).await).clone();
+    assert!(wake.to_string().contains("rollout slipped"), "{wake}");
+    assert!(
+        !wake.to_string().contains("search_expansions"),
+        "a wake shows the memory, not its expansions: {wake}"
+    );
+    let inspected = structured(
+        &call(
+            &server,
+            "kmp_inspect",
+            json!({"about": ABOUT, "ref": reference}),
+        )
+        .await,
+    )
+    .clone();
+    assert!(
+        inspected
+            .to_string()
+            .contains("search_expansions_source_sha256"),
+        "an audit reads them: {inspected}"
+    );
 }
 
 #[tokio::test]
