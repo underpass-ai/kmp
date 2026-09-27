@@ -78,3 +78,40 @@ impl QualityTelemetryObservation {
         self.detail_coverage
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use kmp_domain::{BundleQualityMetrics, QualityObservationContext};
+
+    use super::QualityTelemetryObservation;
+
+    #[test]
+    fn a_capture_keeps_the_metrics_and_context_it_was_given_and_round_trips() {
+        let metrics = BundleQualityMetrics::new(1_200, 3.5, 0.4, 0.1, 0.75).expect("metrics");
+        let context = QualityObservationContext {
+            rpc: "Wake".into(),
+            root_node_id: "project:kmp".into(),
+            role: "implementer".into(),
+            revision: Some(7),
+        };
+        let observation = QualityTelemetryObservation::capture(&metrics, &context);
+
+        assert!(observation.observed_at_millis() > 0);
+        assert_eq!(observation.rpc(), "Wake");
+        assert_eq!(observation.root_node_id(), "project:kmp");
+        assert_eq!(observation.role(), "implementer");
+        assert_eq!(observation.revision(), Some(7));
+        assert_eq!(observation.raw_equivalent_tokens(), 1_200);
+        assert_eq!(observation.compression_ratio(), 3.5);
+        assert_eq!(observation.causal_density(), 0.4);
+        assert_eq!(observation.noise_ratio(), 0.1);
+        assert_eq!(observation.detail_coverage(), 0.75);
+
+        let json = serde_json::to_string(&observation).expect("serialize");
+        let back: QualityTelemetryObservation = serde_json::from_str(&json).expect("parse");
+        assert_eq!(back, observation);
+        let legacy = json.replace(",\"revision\":7", "");
+        let without: QualityTelemetryObservation = serde_json::from_str(&legacy).expect("legacy");
+        assert_eq!(without.revision(), None);
+    }
+}

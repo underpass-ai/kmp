@@ -30,9 +30,10 @@ The optional `kmp-mcp-http` gateway:
 - requires mutual TLS from the gateway to the kernel in the chart.
 - keeps what each legacy-dialect host negotiated (client name, MCP Apps) under
   an `Mcp-Session-Id` it mints on `initialize`, bound to the token subject and
-  bounded to 4096 sessions; another subject, an unknown id or no id is served
-  as a fresh session. A stateless-dialect request declares its own in
-  `params._meta`. One session never reads another's host.
+  bounded to 4096 sessions; another subject, an unknown or forgotten id or no
+  id is answered 404, and the client initializes again (MCP Streamable HTTP).
+  A stateless-dialect request declares its own in `params._meta`. One session
+  never reads another's host.
 
 The relevant token claims are `scope`, `kmp_abouts`, `kmp_scope_ids` and
 `kmp_ref_prefixes`. Issuing those claims correctly belongs to the operator's
@@ -47,10 +48,11 @@ identity system.
   does not configure client-certificate authentication.
 - Credentials and certificate material belong in Kubernetes Secrets, not in
   committed values files.
-- `KMP_TELEMETRY_SALT_PATH` points the kernel at a writable file for the
-  random salt that keys Ask and Wake log fingerprints (created with mode 0600
-  on first use, never logged). Unset, the API logs no fingerprint. It is not
-  memory: losing it only makes new fingerprints incomparable with old ones.
+- The kernel keys its Ask and Wake log fingerprints with a random salt,
+  `telemetry-salt` in its data directory (`KMP_DATA_DIR`, on the chart's
+  `serverData` volume; `KMP_TELEMETRY_SALT_PATH` overrides). It is created with
+  mode 0600 on first use and never logged. It is not memory: losing it only
+  makes new fingerprints incomparable with old ones.
 
 ## Pod defaults
 

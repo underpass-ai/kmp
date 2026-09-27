@@ -1094,10 +1094,11 @@ directory logs no fingerprint (one `kmp_telemetry_salt` WARN line says so).
 
 The gRPC API's `kernel memory grpc response` lines for `KernelMemoryService.Ask`/`Wake`
 carry the same outcome fields, `is_continuation` (`page.cursor` set), `client_name`
-(`kmp-client-name` metadata, else the `user-agent`), `client_version` (`kmp-client-version`)
-and `subject_fingerprint`, keyed by the server's salt at `KMP_TELEMETRY_SALT_PATH` (same
-creation rules; unset, no fingerprint). The API has no guidance context, so no
-`context_fingerprint`.
+(`kmp-client-name` metadata, which an MCP server on a gRPC backend fills with its own
+session's host; else the `user-agent`), `client_version` (`kmp-client-version`) and
+`subject_fingerprint`, keyed by the server's salt: `KMP_TELEMETRY_SALT_PATH`, else
+`telemetry-salt` in `KMP_DATA_DIR`, else in `$XDG_DATA_HOME/kmp/server` (same creation
+rules). The API has no guidance context, so no `context_fingerprint`.
 
 Counting calls: `is_continuation = false` counts calls, `true` counts pages; group by
 `client_name` to separate hosts from the harnesses (`kmp-guide`, `kmp-lifecycle`, the bench).

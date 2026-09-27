@@ -1,5 +1,6 @@
 mod nats_tls;
 mod projection_nats_runtime;
+mod telemetry_salt_location;
 
 use std::process::ExitCode;
 use std::sync::{Arc, Once};
@@ -120,11 +121,10 @@ where
         ctx.quality_observer,
     )
     // The served store is remote; its fingerprint salt stays on this server,
-    // where the operator points it. Unset, the API logs no fingerprint.
+    // in its own data directory unless the operator names a file.
     .with_telemetry_salt_path(
-        std::env::var_os("KMP_TELEMETRY_SALT_PATH")
-            .filter(|path| !path.is_empty())
-            .map(std::path::PathBuf::from),
+        telemetry_salt_location::TelemetrySaltLocation::resolve(|key| std::env::var(key).ok())
+            .map(telemetry_salt_location::TelemetrySaltLocation::prepare),
     );
     let events_consumer = NatsProjectionConsumer::new(ctx.config.events_subject_prefix.clone());
     let projection_runtime = connect_projection_runtime(

@@ -22,6 +22,7 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 999
   runAsGroup: 999
+  fsGroup: 999
   seccompProfile:
     type: RuntimeDefault
 
@@ -148,6 +149,21 @@ secrets:
 development:
   allowMutableImageTags: false
   allowInlineConnections: false
+
+# The server's own data directory (KMP_DATA_DIR). It holds only
+# `telemetry-salt`, the random key of the Ask and Wake log fingerprints,
+# created on first use with mode 0600 and never logged. The memory itself
+# lives in Neo4j, Valkey and NATS. On a persistent volume the fingerprints
+# stay comparable across restarts; on an emptyDir each pod starts a new salt.
+# Rotating the salt is deleting the file. With replicaCount > 1 use a
+# ReadWriteMany class, or every replica needs its own volume.
+serverData:
+  mountPath: /var/lib/kmp
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 64Mi
 
 resources: {}
 

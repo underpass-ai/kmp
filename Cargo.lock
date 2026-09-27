@@ -1814,6 +1814,7 @@ dependencies = [
  "kmp-observability",
  "kmp-transport-grpc",
  "opentelemetry",
+ "tempfile",
  "tokio",
  "tokio-rustls",
  "tracing",

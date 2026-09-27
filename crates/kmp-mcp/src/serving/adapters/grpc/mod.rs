@@ -1,3 +1,4 @@
+mod caller_metadata;
 mod channel;
 mod temporal;
 mod tools;
@@ -39,8 +40,17 @@ impl KernelMcpToolBackend for GrpcKernelMcpBackend {
     }
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
+        self.call_tool_for(name, arguments, None)
+    }
+
+    fn call_tool_for<'a>(
+        &'a self,
+        name: &'a str,
+        arguments: &'a Value,
+        caller: Option<(&'a str, &'a str)>,
+    ) -> KernelMcpToolFuture<'a> {
         Box::pin(async move {
-            tools::grpc_tool_result(&self.endpoint, &self.tls, name, arguments).await
+            tools::grpc_tool_result(&self.endpoint, &self.tls, caller, name, arguments).await
         })
     }
 }

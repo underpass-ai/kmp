@@ -31,9 +31,21 @@ unauthorized_status="$(curl --silent --output "${SCRATCH_DIR}/unauthorized.json"
   "${KMP_MCP_HTTP_URL}")"
 [[ "${unauthorized_status}" == "401" ]]
 
+# A legacy-dialect call lives in the session its initialize opened; outside
+# one the gateway answers 404 and the client initializes again.
+curl --fail --silent --show-error \
+  --dump-header "${SCRATCH_DIR}/initialize.headers" \
+  --header 'Content-Type: application/json' \
+  --header "Authorization: Bearer ${KMP_MCP_HTTP_TOKEN}" \
+  --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"kmp-mcp-http-live-smoke","version":"1"}}}' \
+  "${KMP_MCP_HTTP_URL}" >"${SCRATCH_DIR}/initialize.json"
+SESSION_ID="$(awk 'tolower($1) == "mcp-session-id:" {print $2}' "${SCRATCH_DIR}/initialize.headers" | tr -d '\r')"
+[[ -n "${SESSION_ID}" ]]
+
 curl --fail --silent --show-error \
   --header 'Content-Type: application/json' \
   --header "Authorization: Bearer ${KMP_MCP_HTTP_TOKEN}" \
+  --header "Mcp-Session-Id: ${SESSION_ID}" \
   --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
   "${KMP_MCP_HTTP_URL}" >"${SCRATCH_DIR}/tools.json"
 jq -e '.result.tools | length == 13' "${SCRATCH_DIR}/tools.json" >/dev/null
@@ -44,6 +56,7 @@ jq -cn --arg about "${KMP_MCP_SMOKE_ABOUT}" \
 curl --fail --silent --show-error \
   --header 'Content-Type: application/json' \
   --header "Authorization: Bearer ${KMP_MCP_HTTP_TOKEN}" \
+  --header "Mcp-Session-Id: ${SESSION_ID}" \
   --data-binary "@${SCRATCH_DIR}/wake.request.json" \
   "${KMP_MCP_HTTP_URL}" >"${SCRATCH_DIR}/wake.http.json"
 

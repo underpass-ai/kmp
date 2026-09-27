@@ -1,0 +1,17 @@
+{{- if .Values.serverData.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kmp.fullname" . }}-server-data
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.serverData.persistence.accessMode }}
+  {{- with .Values.serverData.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.serverData.persistence.size }}
+{{- end }}

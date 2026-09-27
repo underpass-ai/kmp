@@ -21,6 +21,19 @@ pub trait KernelMcpToolBackend: Send + Sync {
     }
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a>;
+
+    /// The same call made for `caller`, the MCP host (client name, version)
+    /// of the session asking. A backend that forwards to a remote kernel
+    /// names it there; the others need not know.
+    fn call_tool_for<'a>(
+        &'a self,
+        name: &'a str,
+        arguments: &'a Value,
+        caller: Option<(&'a str, &'a str)>,
+    ) -> KernelMcpToolFuture<'a> {
+        let _ = caller;
+        self.call_tool(name, arguments)
+    }
 }
 
 impl<T> KernelMcpToolBackend for Arc<T>
@@ -41,5 +54,14 @@ where
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         self.as_ref().call_tool(name, arguments)
+    }
+
+    fn call_tool_for<'a>(
+        &'a self,
+        name: &'a str,
+        arguments: &'a Value,
+        caller: Option<(&'a str, &'a str)>,
+    ) -> KernelMcpToolFuture<'a> {
+        self.as_ref().call_tool_for(name, arguments, caller)
     }
 }

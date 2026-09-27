@@ -183,7 +183,8 @@ async fn handle_mcp(State(state): State<AppState>, headers: HeaderMap, body: Byt
     };
     // What the host negotiated, for this request only: the stateless
     // dialect declares it in `_meta`; the legacy one in `initialize`, kept
-    // under the session id minted then.
+    // under the session id minted then. A legacy request outside a live
+    // session is 404, so its client initializes again.
     let (session, minted) = match dialect {
         RequestDialect::Current => (Arc::new(McpSession::from_request_meta(&request)), None),
         RequestDialect::Legacy if request["method"] == "initialize" => {
@@ -193,10 +194,22 @@ async fn handle_mcp(State(state): State<AppState>, headers: HeaderMap, body: Byt
             }
         }
         RequestDialect::Legacy => {
-            let id = headers
+            let session_id = headers
                 .get(SESSION_HEADER)
                 .and_then(|value| value.to_str().ok());
-            (state.sessions.resume(id, &identity.subject), None)
+            match state.sessions.resume(session_id, &identity.subject) {
+                Some(session) => (session, None),
+                None => {
+                    return json_response(
+                        StatusCode::NOT_FOUND,
+                        jsonrpc_error(
+                            id.clone(),
+                            -32001,
+                            "MCP session not found; send initialize again",
+                        ),
+                    );
+                }
+            }
         }
     };
     let result = tokio::time::timeout(
@@ -460,6 +473,23 @@ mod tests {
             .expect("request")
     }
 
+    /// `body` sent inside a legacy session this router just opened.
+    async fn in_session(app: &Router, body: Value) -> Response {
+        let initialize = json!({"jsonrpc":"2.0","id":0,"method":"initialize","params":{
+            "protocolVersion":"2025-06-18","capabilities":{},
+            "clientInfo":{"name":"gateway-test","version":"1"}}});
+        let opened = app
+            .clone()
+            .oneshot(request(initialize))
+            .await
+            .expect("initialize");
+        assert_eq!(opened.status(), StatusCode::OK);
+        let id = opened.headers()[SESSION_HEADER].clone();
+        let mut request = request(body);
+        request.headers_mut().insert(SESSION_HEADER, id);
+        app.clone().oneshot(request).await.expect("response")
+    }
+
     async fn response_json(response: Response) -> Value {
         let body = to_bytes(response.into_body(), 2 * 1024 * 1024)
             .await
@@ -470,15 +500,23 @@ mod tests {
     #[tokio::test]
     async fn lists_the_same_surface_over_legacy_http() {
         let calls = Arc::new(AtomicUsize::new(0));
-        let response = app_with(Ok(identity(&[])), calls)
-            .oneshot(request(
-                json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}),
-            ))
-            .await
-            .expect("response");
+        let app = app_with(Ok(identity(&[])), calls);
+        let list = json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}});
+        let response = in_session(&app, list.clone()).await;
         assert_eq!(response.status(), StatusCode::OK);
         let body = response_json(response).await;
         assert_eq!(body["result"], kmp_mcp::kmp_mcp_tools_list_result());
+
+        // Outside a live session the client is told to initialize again.
+        let mut foreign = request(list.clone());
+        foreign
+            .headers_mut()
+            .insert(SESSION_HEADER, HeaderValue::from_static("0123"));
+        for orphan in [request(list), foreign] {
+            let response = app.clone().oneshot(orphan).await.expect("response");
+            assert_eq!(response.status(), StatusCode::NOT_FOUND);
+            assert_eq!(response_json(response).await["id"], 1);
+        }
     }
 
     #[tokio::test]
@@ -521,12 +559,12 @@ mod tests {
     #[tokio::test]
     async fn notifications_are_acknowledged_without_a_response_body() {
         let calls = Arc::new(AtomicUsize::new(0));
-        let response = app_with(Ok(identity(&[])), calls)
-            .oneshot(request(json!({
-                "jsonrpc":"2.0", "method":"notifications/initialized", "params":{}
-            })))
-            .await
-            .expect("response");
+        let app = app_with(Ok(identity(&[])), calls);
+        let response = in_session(
+            &app,
+            json!({"jsonrpc":"2.0", "method":"notifications/initialized", "params":{}}),
+        )
+        .await;
         assert_eq!(response.status(), StatusCode::ACCEPTED);
     }
 
@@ -543,7 +581,7 @@ mod tests {
             "jsonrpc":"2.0","id":2,"method":"tools/call",
             "params":{"name":"kmp_wake","arguments":{"about":"project:kmp"}}
         });
-        let response = app.oneshot(request(call)).await.expect("response");
+        let response = in_session(&app, call).await;
         assert_eq!(response.status(), StatusCode::GATEWAY_TIMEOUT);
     }
 
@@ -639,10 +677,8 @@ mod tests {
             "jsonrpc":"2.0","id":2,"method":"tools/call",
             "params":{"name":"kmp_wake","arguments":{"about":"project:kmp"}}
         });
-        let response = app_with(Ok(identity(&[authorization::READ_SCOPE])), calls.clone())
-            .oneshot(request(call))
-            .await
-            .expect("response");
+        let app = app_with(Ok(identity(&[authorization::READ_SCOPE])), calls.clone());
+        let response = in_session(&app, call).await;
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(calls.load(Ordering::SeqCst), 1);
     }

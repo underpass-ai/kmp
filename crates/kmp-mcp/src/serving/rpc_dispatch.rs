@@ -285,7 +285,11 @@ impl KernelMcpServer {
                 .await;
         }
 
-        match self.backend.call_tool(name, arguments).await {
+        let caller = origin
+            .client
+            .as_ref()
+            .map(|client| (client.name.as_str(), client.version.as_str()));
+        match self.backend.call_tool_for(name, arguments, caller).await {
             Ok(result) => {
                 // A wake or an ask that answered is the first moment the
                 // store surely exists: its salt may be created then.

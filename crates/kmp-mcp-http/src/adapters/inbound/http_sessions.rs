@@ -2,7 +2,8 @@
 //! this gateway mints on `initialize`. Each keeps what its host negotiated
 //! (client and MCP Apps), so concurrent hosts never read each other's. A
 //! session belongs to the subject that opened it; any other subject, an
-//! unknown id or no id reads a fresh, un-negotiated session.
+//! unknown or forgotten id, or no id is no session: the gateway answers 404
+//! and the client initializes again (MCP Streamable HTTP).
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
@@ -47,14 +48,11 @@ impl HttpSessions {
         Some((id, session))
     }
 
-    /// The session `id` names if `subject` opened it; a fresh one otherwise.
-    pub fn resume(&self, id: Option<&str>, subject: &str) -> Arc<McpSession> {
-        id.and_then(|id| {
-            let registry = self.inner.lock().ok()?;
-            let (owner, session) = registry.sessions.get(id)?;
-            (owner == subject).then(|| Arc::clone(session))
-        })
-        .unwrap_or_default()
+    /// The session `id` names if `subject` opened it; `None` otherwise.
+    pub fn resume(&self, id: Option<&str>, subject: &str) -> Option<Arc<McpSession>> {
+        let registry = self.inner.lock().ok()?;
+        let (owner, session) = registry.sessions.get(id?)?;
+        (owner == subject).then(|| Arc::clone(session))
     }
 }
 
@@ -71,14 +69,11 @@ mod tests {
         assert_eq!(id.len(), 32);
         session.initialize(&json!({"params": {"clientInfo": {"name": "codex"}}}));
 
-        let resumed = sessions.resume(Some(&id), "alice");
+        let resumed = sessions.resume(Some(&id), "alice").expect("resumed");
         assert_eq!(resumed.client_name().as_deref(), Some("codex"));
-        assert_eq!(sessions.resume(Some(&id), "mallory").client_name(), None);
-        assert_eq!(
-            sessions.resume(Some("unknown"), "alice").client_name(),
-            None
-        );
-        assert_eq!(sessions.resume(None, "alice").client_name(), None);
+        assert!(sessions.resume(Some(&id), "mallory").is_none());
+        assert!(sessions.resume(Some("unknown"), "alice").is_none());
+        assert!(sessions.resume(None, "alice").is_none());
     }
 
     #[test]
@@ -89,6 +84,6 @@ mod tests {
         for _ in 0..MAX_SESSIONS {
             sessions.open("alice").expect("session");
         }
-        assert_eq!(sessions.resume(Some(&first), "alice").client_name(), None);
+        assert!(sessions.resume(Some(&first), "alice").is_none());
     }
 }

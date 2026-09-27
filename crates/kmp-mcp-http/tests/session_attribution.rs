@@ -150,11 +150,21 @@ async fn two_concurrent_legacy_sessions_are_attributed_to_their_own_host() {
     let (a, b, c) = tokio::join!(
         app.clone().oneshot(request(call(2), Some(&ids[0]))),
         app.clone().oneshot(request(call(3), Some(&ids[1]))),
-        app.clone().oneshot(request(call(4), None)),
+        app.clone().oneshot(request(call(4), Some(&ids[0]))),
     );
     for response in [a, b, c] {
         assert_eq!(response.expect("call").status(), StatusCode::OK);
     }
+    let orphan = app
+        .clone()
+        .oneshot(request(call(5), None))
+        .await
+        .expect("orphan");
+    assert_eq!(
+        orphan.status(),
+        StatusCode::NOT_FOUND,
+        "no session, no call"
+    );
     let text = String::from_utf8(log.0.lock().expect("log").clone()).expect("utf8");
     let clients: Vec<Value> = text
         .lines()
@@ -163,9 +173,14 @@ async fn two_concurrent_legacy_sessions_are_attributed_to_their_own_host() {
         .map(|line| line["fields"]["client_name"].clone())
         .collect();
     assert_eq!(clients.len(), 3, "{text}");
-    assert!(clients.contains(&json!("codex")));
-    assert!(clients.contains(&json!("claude-code")));
-    assert!(clients.contains(&Value::Null), "no session id, no client");
+    assert_eq!(clients.iter().filter(|c| **c == json!("codex")).count(), 2);
+    assert_eq!(
+        clients
+            .iter()
+            .filter(|c| **c == json!("claude-code"))
+            .count(),
+        1
+    );
 
     let list = json!({"jsonrpc": "2.0", "id": 5, "method": "tools/list", "params": {}});
     let with_apps = response_json(

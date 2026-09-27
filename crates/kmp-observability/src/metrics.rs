@@ -54,8 +54,11 @@ impl KernelMetrics {
     }
 }
 
-pub(crate) fn init_otel_metrics(service_name: &str) -> Option<SdkMeterProvider> {
-    let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok()?;
+pub(crate) fn init_otel_metrics(
+    service_name: &str,
+    env: super::EnvLookup<'_>,
+) -> Option<SdkMeterProvider> {
+    let endpoint = env("OTEL_EXPORTER_OTLP_ENDPOINT")?;
     if endpoint.trim().is_empty() {
         return None;
     }
@@ -63,7 +66,7 @@ pub(crate) fn init_otel_metrics(service_name: &str) -> Option<SdkMeterProvider> 
     let mut builder = opentelemetry_otlp::MetricExporter::builder()
         .with_tonic()
         .with_endpoint(endpoint);
-    if let Some(tls_config) = super::build_otlp_tls_config() {
+    if let Some(tls_config) = super::build_otlp_tls_config(env) {
         builder = builder.with_tls_config(tls_config);
     }
     let exporter = builder.build().ok()?;
