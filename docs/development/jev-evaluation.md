@@ -260,13 +260,14 @@ review of a fact on the 318-fact about takes about 535 ms of Jev (at most
 Recording the three samples cost 916,442 Jev input tokens ($0.038), and the
 latency recording 448,759 more ($0.019).
 
-**Partner cap of the review without `focus`.** Past 60 current facts in an
-about, the review asks Jev for no orphan's partner. Caps of 60, 120 and 240
+**Partner cap of the review without `focus`.** Past the cap, the review
+asks Jev for no orphan's partner in an about. Caps of 60, 120 and 240
 were compared on payments (abouts under 60, the same request at every cap)
 and on two deterministic subsets of the atlas case, 120 and 240 facts, that
 keep every fact of its gold (3 recorded samples each, measured in replay; the
 cap-60 arm read the verdict book of the same sample). The registered rule
-kept 60:
+kept 60; Tirso then set the default to 120 (27 Sept 2026) and allowed 512
+by configuration:
 
 | | cap 60 | cap 120 | cap 240 |
 |---|---|---|---|
@@ -284,6 +285,51 @@ At 240 the partner request (about 104 KB) is refused with
 `max_tokens_exceeded` in every sample, so the review falls back to kernel
 pairs with a "Jev unavailable" warning. Recording cost about 306k Jev input
 tokens ($0.013).
+
+**Partner cap 512 by configuration (27 Sept 2026).** A store's
+`curate.json` `{"partner_facts": 512}` raises the cap; past 255 facts the
+round reads the about in windows of at most 240 options, one winner per
+window, and a final choice between two or more winners. Every request now
+carries at most 24k estimated tokens (1.5 bytes a token, the worst density of
+108 recorded requests; median 2.65). Pre-registered in
+`artifacts/kmp-bench-private/2026-09-26/eval-p9/PREREG-partner-cap-512.md`,
+recorded with the real Jev (3 samples, a fresh cassette and verdict book
+each), measured in replay; the 60/120 figures are the ones above, and the
+316-fact atlas case at 60/120 (no round) comes from the verdict book of the
+512 recording. Path edges are relations of the gold paths the kernel never
+pairs (5 possible). Payments and the 118-fact subset ask the same requests at
+120 and 512.
+
+| | 60 / 120 | 512 |
+|---|---|---|
+| Gold missing, atlas 238 / 316 | 3/3 / 3/3 | 3/3 / 3/3 in every sample |
+| Path edges found, atlas 238 / 316 | 0 / 0 | 2 / 2 in every sample |
+| Precision, atlas 238 | 0.50, 0.43, 0.50 | 0.36, 0.36, 0.33 |
+| Precision, atlas 316 | 0.43 in each | 0.42, 0.36, 0.36 |
+| Template pairs (noise–noise), atlas 238 / 316 | 3 / 4 | 9 / 7–9 |
+| Jev tokens a review, atlas 238 | about 36k | about 130k (10 requests, 2.1–2.3 s) |
+| Jev tokens a review, atlas 316 | about 48k | about 160k (12–13 requests, 2.6–3.2 s) |
+
+At 512 the round finds the price rise → price list and loyalty discount →
+churn relations in both abouts, and adds template pairs such as two people
+changing the alert routing of the same service (typed `supersedes`, which a
+reader may accept; the gold does not). Recording cost 871k Jev input tokens
+($0.037) and the confirming filter 14k more ($0.0006).
+
+Two cheap filters of the round's pairs were measured as variants
+(`curate.json` `partner_filter`), with a registered bar (+0.15 precision and
+at most half the template pairs on both atlas abouts, no gold pair lost, at
+most one path edge lost, payments' precision kept):
+
+| | atlas 238 precision | atlas 316 precision | path edges | payments gold |
+|---|---|---|---|---|
+| none | 0.33–0.36 | 0.36–0.42 | 2 / 2 | 8/8 |
+| `rare_term` (the pair shares a term of at most 2 % of the about) | 0.50–0.57 | 0.50 | 1 / 1 | 6/8 |
+| `confirm` (a yes/no per pair, through the book; about 2k tokens) | 0.39–0.42 | 0.42–0.50 | 2 / 2 | 8/8 |
+
+`rare_term` drops two of payments' gold pairs that share no rare word and
+one true path edge; `confirm` withdraws only two template pairs of seven to
+nine. Neither met the bar; both stay off.
 
 ## First result (2026-09-25, `jev-1.13.0`, payments case only)
 

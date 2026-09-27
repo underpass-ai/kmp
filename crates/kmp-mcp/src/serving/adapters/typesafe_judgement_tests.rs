@@ -7,6 +7,7 @@ use super::typesafe_api_key::TypeSafeApiKey;
 use super::typesafe_fixture::{Reply, serve};
 use super::typesafe_judgement::TypeSafeJudgement;
 use crate::serving::judgement_answer::JudgementAnswer;
+use crate::serving::judgement_failure::JudgementFailure;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
 use crate::serving::ports::judgement_model::JudgementModel;
@@ -91,6 +92,50 @@ async fn a_rejected_key_fails_without_echoing_key_or_body() {
     fixture.join().expect("fixture");
     assert!(error.contains("401"));
     assert!(!error.contains(KEY));
+}
+
+#[tokio::test]
+async fn a_request_refused_as_too_large_names_its_reason_not_unavailability() {
+    let (url, fixture) = serve(vec![Reply {
+        body: r#"{"error":{"code":"max_tokens_exceeded","message":"echo apikey_fixture_secret The cat"}}"#
+            .into(),
+        ..status(400, Vec::new())
+    }]);
+    let error = adapter(url, Duration::from_secs(5))
+        .evaluate(&request())
+        .await
+        .expect_err("refused");
+    fixture.join().expect("fixture");
+    assert_eq!(
+        JudgementFailure::read(&error),
+        JudgementFailure::Refused("TypeSafe HTTP 400 max_tokens_exceeded")
+    );
+    assert!(!error.contains(KEY) && !error.contains("cat"), "{error}");
+    let warning = JudgementFailure::warning(&error, "using kernel pairs only");
+    assert!(warning.contains("max_tokens_exceeded"), "{warning}");
+    assert!(!warning.contains("unavailable"), "{warning}");
+}
+
+#[tokio::test]
+async fn a_question_that_cannot_fit_is_refused_before_anything_is_sent() {
+    let (url, fixture) = serve(Vec::new());
+    let error = adapter(url, Duration::from_secs(5))
+        .evaluate(&JudgementRequest {
+            state: json!("s"),
+            questions: BTreeMap::from([(
+                "huge".into(),
+                JudgementQuestion::Noul {
+                    instructions: json!("word ".repeat(8_000)),
+                },
+            )]),
+        })
+        .await
+        .expect_err("over budget");
+    assert!(fixture.join().expect("fixture").is_empty(), "nothing sent");
+    assert!(matches!(
+        JudgementFailure::read(&error),
+        JudgementFailure::Refused(reason) if reason.contains("`huge`")
+    ));
 }
 
 #[tokio::test]
@@ -298,13 +343,13 @@ async fn concurrent_provider(
 async fn batches_go_out_in_parallel_within_the_concurrency_limit() {
     use std::sync::atomic::Ordering;
     let (url, peak, served) = concurrent_provider(Duration::from_millis(150)).await;
-    // Twenty ~40 KB questions: five batches under the 60k-token budget.
+    // Twenty ~8.5 KB questions: five batches of four under the 24k-token budget.
     let questions = (0..20)
         .map(|n| {
             (
                 format!("q{n:02}"),
                 JudgementQuestion::Noul {
-                    instructions: json!(format!("{n} {}", "word ".repeat(8_000))),
+                    instructions: json!(format!("{n} {}", "word ".repeat(1_700))),
                 },
             )
         })

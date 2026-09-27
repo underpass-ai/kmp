@@ -19,7 +19,8 @@ pub const TYPESAFE_API_KEY_ENV: &str = "TYPESAFE_API_KEY";
 pub const TYPESAFE_CASSETTE_ENV: &str = "KMP_TYPESAFE_CASSETTE";
 pub const TYPESAFE_CASSETTE_MODE_ENV: &str = "KMP_TYPESAFE_CASSETTE_MODE";
 /// Evaluation only: the largest about a review without `focus` asks Jev for
-/// its orphans' partners in (2–255 facts). Unset, the measured default.
+/// its orphans' partners in (2–512 facts). Unset, the store's
+/// `curate.json` or the default (120).
 pub const EVAL_PARTNER_FACTS_ENV: &str = "KMP_EVAL_PARTNER_FACTS";
 
 /// `off` lifts the deadlines a first ask or wake page waits for Jev

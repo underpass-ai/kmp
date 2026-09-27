@@ -23,7 +23,9 @@ use crate::curate::domain::curate_finding::CurateFinding;
 use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::curate::domain::partner_cap::PartnerCap;
+use crate::curate::domain::partner_filter::PartnerFilter;
 use crate::serving::adapters::tool_request_mapping::RelateRequestMapper;
+use crate::serving::judgement_failure::JudgementFailure;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::{ToolError, tool_success_result};
 use kmp_embedded::EmbeddedMemoryService;
@@ -49,6 +51,7 @@ pub(crate) struct EmbeddedCurateTool<'a> {
     doubts: &'a CurateDoubtCache,
     lifecycle: LifecycleMode,
     partner_cap: PartnerCap,
+    partner_filter: PartnerFilter,
 }
 
 impl<'a> EmbeddedCurateTool<'a> {
@@ -71,12 +74,19 @@ impl<'a> EmbeddedCurateTool<'a> {
             doubts,
             lifecycle: LifecycleMode::Off,
             partner_cap: PartnerCap::DEFAULT,
+            partner_filter: PartnerFilter::Off,
         }
     }
 
-    /// The largest about a review without `focus` pairs orphans in.
-    pub(crate) fn with_partner_cap(mut self, partner_cap: PartnerCap) -> Self {
+    /// The largest about a review without `focus` pairs orphans in, and
+    /// what its pairs must pass before they are typed.
+    pub(crate) fn with_partners(
+        mut self,
+        partner_cap: PartnerCap,
+        partner_filter: PartnerFilter,
+    ) -> Self {
         self.partner_cap = partner_cap;
+        self.partner_filter = partner_filter;
         self
     }
 
@@ -151,6 +161,7 @@ impl<'a> EmbeddedCurateTool<'a> {
             ReviewRelations {
                 judgement: self.judgement,
                 partner_cap: self.partner_cap,
+                partner_filter: self.partner_filter,
             }
             .run(material.clone(), max_pairs)
             .await
@@ -264,7 +275,11 @@ impl<'a> EmbeddedCurateTool<'a> {
             .await
         {
             Ok((proposed, usage)) => (proposed, Some(usage), Vec::new()),
-            Err(error) => (Vec::new(), None, vec![format!("Jev unavailable: {error}")]),
+            Err(error) => (
+                Vec::new(),
+                None,
+                vec![JudgementFailure::warning(&error, "no labels proposed")],
+            ),
         };
         Ok(tool_success_result(serde_json::json!({
             "summary": format!("{} labels proposed for {} facts", proposed.len(), focus.len()),

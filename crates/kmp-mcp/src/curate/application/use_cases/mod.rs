@@ -1,3 +1,4 @@
+pub(crate) mod find_partners;
 pub(crate) mod find_paths;
 pub(crate) mod prepare_apply;
 pub(crate) mod propose_labels;

@@ -128,6 +128,26 @@ keeps the gate and answers UNKNOWN wherever it would have answered PARTIAL.
 The engine reports the file in its `kmp_store_config` log line; one it cannot
 read or does not recognise is reported and the default applies.
 
+## How a review without focus pairs orphans
+
+`kmp_curate` in `review` mode without `focus` asks Jev, for up to 30 facts
+of an about that no pair or declared relation touches, which other fact of
+the about relates to each. It does so in abouts of at most 120 current facts;
+past that the review says so and names the focused review. A store raises
+the cap, to at most 512, with a `curate.json` in the data directory:
+
+```json
+{"partner_facts": 512}
+```
+
+An about of more than 255 facts is then read in windows of at most 240
+options and a final choice between their winners. On the judged atlas case
+(316 facts) that review costs about 160k Jev tokens instead of 48k and
+proposes more pairs of notes written from one template
+(`docs/development/jev-evaluation.md`). `"partner_filter"` (`off`,
+`rare_term`, `confirm`) is measured but left off. A `curate.json` that
+cannot apply is reported and the defaults stand.
+
 ## Durability and recovery
 
 - writes are committed durably before success is returned;

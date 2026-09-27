@@ -6,15 +6,14 @@ use serde_json::json;
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::prepared_relation::PreparedRelation;
 use crate::curate::domain::candidate_pair::CandidatePair;
-use crate::curate::domain::curate_fact::CurateFact;
 use crate::curate::domain::curate_thresholds::{NONE, SYMMETRIC};
-use crate::curate::domain::partner_cap::PartnerCap;
 use crate::serving::judgement_question::JudgementQuestion;
 use crate::serving::judgement_request::JudgementRequest;
 
 const SENT_CHARS: usize = 2_000;
-const PARTNER_CHARS: usize = 400;
-const PARTNER_ORPHANS: usize = 30;
+/// Chars of each text a confirming question reads, as the partner round
+/// read them.
+const CONFIRM_CHARS: usize = 400;
 
 pub(crate) fn excerpt(text: &str, chars: usize) -> String {
     text.chars().take(chars).collect()
@@ -94,54 +93,42 @@ pub(crate) fn text_of(material: &CurateMaterial, reference: &str) -> String {
         .unwrap_or_default()
 }
 
-/// One request per about: its facts as the state, one choice per orphan over
-/// the others. Keys `f<n>` map back to refs. None when the about is larger
-/// than `cap` or has nothing to pair.
-pub(crate) fn partner_request(
-    facts: &[&CurateFact],
-    orphans: &[&CurateFact],
-    cap: PartnerCap,
-) -> Option<(JudgementRequest, BTreeMap<String, String>)> {
-    if facts.len() < 2 || !cap.admits(facts.len()) || orphans.is_empty() {
-        return None;
-    }
-    let keys = facts
-        .iter()
-        .enumerate()
-        .map(|(n, fact)| (format!("f{n}"), fact.reference.clone()))
-        .collect::<BTreeMap<_, _>>();
-    let key_of = |reference: &str| {
-        keys.iter()
-            .find(|(_, r)| r.as_str() == reference)
-            .map(|(k, _)| k.clone())
-    };
-    let state = json!({ "facts": facts.iter().enumerate()
-        .map(|(n, fact)| (format!("f{n}"), json!(excerpt(&fact.text, PARTNER_CHARS))))
-        .collect::<serde_json::Map<_, _>>() });
+/// Whether each pair Jev's partner round found holds (`c<n>`), asked as a
+/// yes/no of its own over the two texts: the confirming filter of a review
+/// without `focus` ([`PartnerFilter::Confirm`]). Notes written from one
+/// template about different people or things are named as not holding.
+///
+/// [`PartnerFilter::Confirm`]: crate::curate::domain::partner_filter::PartnerFilter::Confirm
+pub(crate) fn confirm_request(
+    material: &CurateMaterial,
+    pairs: &[CandidatePair],
+) -> JudgementRequest {
+    let mut shown = serde_json::Map::new();
     let mut questions = BTreeMap::new();
-    for orphan in orphans.iter().take(PARTNER_ORPHANS) {
-        let Some(own) = key_of(&orphan.reference) else {
-            continue;
-        };
-        let options = keys
-            .keys()
-            .filter(|key| **key != own)
-            .cloned()
-            .chain(std::iter::once(NONE.to_string()))
-            .collect();
+    for (n, pair) in pairs.iter().enumerate() {
+        shown.insert(
+            format!("c{n}"),
+            json!({
+                "a": excerpt(&text_of(material, &pair.from), CONFIRM_CHARS),
+                "b": excerpt(&text_of(material, &pair.to), CONFIRM_CHARS),
+            }),
+        );
         questions.insert(
-            own.clone(),
-            JudgementQuestion::Choice {
+            format!("c{n}"),
+            JudgementQuestion::Noul {
                 instructions: json!(format!(
-                    "Which fact in `facts` has the most direct relation to `facts.{own}`: \
-                     it causes, explains, supports, contradicts, answers or repeats it? \
-                     Answer none when no fact does."
+                    "Are `pairs.c{n}.a` and `pairs.c{n}.b` about the same event, thing or \
+                     decision, so that one causes, explains, supports, contradicts, answers \
+                     or repeats the other? Two notes that follow the same template about \
+                     different people, teams or things are not."
                 )),
-                options,
             },
         );
     }
-    Some((JudgementRequest { state, questions }, keys))
+    JudgementRequest {
+        state: json!({ "pairs": shown }),
+        questions,
+    }
 }
 
 /// For each pair, its best relation type (`t<n>`). A contradiction is one of

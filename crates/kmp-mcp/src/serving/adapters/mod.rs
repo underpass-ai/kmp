@@ -3,6 +3,7 @@ mod cassette_judgement;
 #[cfg(test)]
 mod cassette_judgement_tests;
 mod cassette_mode;
+mod curate_config;
 pub(crate) mod curate_doubt_cache;
 pub(crate) mod curate_review_cache;
 mod embedded;

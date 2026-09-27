@@ -14,6 +14,7 @@ use crate::curate::domain::found_path::FoundPath;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::curate::domain::path_hop::PathHop;
 use crate::serving::judgement_answer::JudgementAnswer;
+use crate::serving::judgement_failure::JudgementFailure;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 const MAX_PATHS: usize = 3;
@@ -93,7 +94,7 @@ impl FindPaths<'_> {
         {
             search
                 .warnings
-                .push(format!("Jev unavailable; declared relations only: {error}"));
+                .push(JudgementFailure::warning(&error, "declared relations only"));
         }
         // Declared hops come first in `edges`, in the order of
         // `material.declared`.
@@ -110,8 +111,9 @@ impl FindPaths<'_> {
             let doubted = match audit(model, material, &fresh, &mut usage).await {
                 Ok(doubted) => doubted,
                 Err(error) => {
-                    search.warnings.push(format!(
-                        "Jev unavailable; declared relations were walked unaudited: {error}"
+                    search.warnings.push(JudgementFailure::warning(
+                        &error,
+                        "declared relations were walked unaudited",
                     ));
                     break;
                 }

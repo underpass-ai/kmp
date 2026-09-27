@@ -217,9 +217,12 @@ This generalises the client from `feat/jev-rerank`
   `deny_unknown_fields`: `endpoint` (HTTPS, host `api.typesafe.ai`), a pinned
   `model`, and `timeout_ms`. The key is read from `TYPESAFE_API_KEY` only and
   never logged, echoed or shown by `Debug`.
-- **Budget.** Requests are split so that `state` plus the longest question
-  stays within the provider's 32k tokens and each request within 64k. Fact
-  text is cut to 2,000 characters. A 60-pair review is one to three requests.
+- **Budget.** Requests are split so that each carries at most 24k estimated
+  tokens, `state` included (1.5 bytes a token, the worst density measured on
+  the cassettes; decided 27 Sept 2026 after a 104 KB request was refused).
+  When `state` and one question cannot share a request, the state's texts
+  are cut to the longest length that fits. Fact text is cut to 2,000
+  characters. A 60-pair review is one to three requests.
 - **Degradation.** With no config, no key or a failed call, `review` returns
   the kernel pairs without types, and `suspect` and `tensions` come back
   empty. A warning names the cause. The review never fails because of Jev.

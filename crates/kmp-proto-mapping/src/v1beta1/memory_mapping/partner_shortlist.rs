@@ -112,6 +112,23 @@ impl PartnerShortlist {
         }
     }
 
+    /// How many facts of the about carry the rarest term that the facts
+    /// `left` and `right` both carry; None when they share no informative
+    /// term, or when either is not in the about.
+    pub fn rarest_shared_term(&self, left: &str, right: &str) -> Option<usize> {
+        let terms = |reference: &str| {
+            self.facts
+                .iter()
+                .find(|(other, _)| other == reference)
+                .map(|(_, terms)| terms)
+        };
+        let (left, right) = (terms(left)?, terms(right)?);
+        left.terms()
+            .filter(|term| right.count(term) > 0)
+            .map(|term| self.field.document_frequency(term))
+            .min()
+    }
+
     /// The other facts whose terms carry `term`, in the about's order.
     fn named_by(&self, reference: &str, term: &str) -> Vec<String> {
         self.facts
@@ -158,6 +175,21 @@ mod tests {
         assert!(partners.lexical.is_empty());
         assert_eq!(partners.principal_anchor.as_deref(), Some("INC-4711"));
         assert_eq!(partners.sharing_principal, vec!["a".to_string()]);
+    }
+
+    #[test]
+    fn the_rarest_shared_term_counts_the_facts_that_carry_it() {
+        let facts = [
+            ("a", "Hugo approved the budget for the mobile offsite."),
+            ("b", "Carmen approved the budget for the mobile offsite."),
+            ("c", "Irene approved the budget for the billing offsite."),
+            ("d", "Invoices are generated as PDF."),
+        ];
+        let shortlist = shortlist(&facts);
+        assert_eq!(shortlist.rarest_shared_term("a", "b"), Some(2), "mobile");
+        assert_eq!(shortlist.rarest_shared_term("a", "c"), Some(3), "offsite");
+        assert_eq!(shortlist.rarest_shared_term("a", "d"), None);
+        assert_eq!(shortlist.rarest_shared_term("a", "missing"), None);
     }
 
     #[test]

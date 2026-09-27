@@ -8,6 +8,7 @@ pub(crate) mod label_plan;
 pub(crate) mod lifecycle_plan;
 pub(crate) mod mappers;
 pub(crate) mod on_the_way;
+pub(crate) mod partner_plan;
 pub(crate) mod path_search;
 pub(crate) mod prepared_apply;
 pub(crate) mod prepared_relation;

@@ -17,12 +17,31 @@ Detailed notes from the early release cycle remain available in the
   318-fact about costs 4.8k Jev tokens instead of 26.4k, with the same
   partners found (11/11) and no distractor proposed, in three samples; an
   about of at most 40 other facts is read as before.
-- A `kmp_curate` review without `focus` over an about of more than 60 facts
-  says that Jev looked for no orphan's partner there, instead of going
-  quiet. The cap stays at 60: at 120, on a 118-fact about, the partner round
-  found three true relations the kernel misses but also proposed eight
-  pairs of routine notes (6 of 14 proposals right, against 3 of 3), for
-  3.7 times the Jev tokens; at 240 the provider refuses the request.
+- A `kmp_curate` review without `focus` asks Jev for orphans' partners in
+  abouts of up to 120 current facts (was 60), and past that says so instead
+  of going quiet. At 120, on a 118-fact about, the partner round found three
+  true relations the kernel misses but also proposed eight pairs of routine
+  notes (6 of 14 proposals right, against 3 of 3), for 3.7 times the Jev
+  tokens. A store raises the cap to at most 512 in a new `curate.json`
+  beside it (`{"partner_facts": 512}`); an about of more than 255 facts is
+  then read in two stages, windows of at most 240 options and a final choice
+  between their winners, every answer through the verdict book. Measured at
+  512 on 238- and 316-fact abouts (3 samples each): the same gold pairs
+  (3/3), 2 of 5 relations of the gold paths the kernel never pairs, and 3–6
+  more pairs of template notes (precision 0.33–0.42 against 0.43–0.50), for
+  3.3–3.6 times the Jev tokens (about 130k and 160k a review, $0.005–0.007)
+  and 2.1–3.2 s. `curate.json` `partner_filter` (`rare_term` or `confirm`,
+  off by default) measures two filters of the round's pairs; neither met its
+  registered bar, so neither is on.
+- Jev requests carry at most 24,000 tokens each, the state included,
+  estimated at the worst density measured on the recorded cassettes (1.5
+  bytes a token; a 104 KB request under the former 60k budget was refused
+  with `max_tokens_exceeded`). When a state and one question cannot share a
+  request, the state's texts are cut to the longest length that fits, the
+  same way every time; a question that fits no request is refused before
+  anything is sent. A request the provider refuses as too large is reported
+  as "Jev refused the request as too large (…max_tokens_exceeded)", no
+  longer as "Jev unavailable".
 - **Breaking: the anchored ask gate is the default.** Every store reads
   `kmp_ask` with it (`AskGate::STORE_DEFAULT`), in `kmp-mcp` and in the gRPC
   `KernelMemoryService.Ask`, so an ask is no longer byte for byte what

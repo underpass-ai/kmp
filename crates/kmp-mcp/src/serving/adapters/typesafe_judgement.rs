@@ -4,7 +4,7 @@ use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
 use super::typesafe_api_key::TypeSafeApiKey;
-use super::typesafe_batches::typesafe_batches;
+use super::typesafe_batches::TypeSafeBatches;
 use super::typesafe_config::TypeSafeConfig;
 use super::typesafe_request_body::typesafe_request_body;
 use super::typesafe_transport::TypeSafeTransport;
@@ -115,11 +115,10 @@ impl JudgementModel for TypeSafeJudgement {
         Box::pin(async move {
             let mut merged = JudgementResponse::empty(&self.model);
             let mut sent = JoinSet::new();
-            let batches = typesafe_batches(request)?;
+            let TypeSafeBatches { state, batches, .. } = TypeSafeBatches::plan(request)?;
             for (index, batch) in batches.iter().enumerate() {
-                let body =
-                    serde_json::to_vec(&typesafe_request_body(&self.model, &request.state, batch))
-                        .map_err(|_| "cannot encode TypeSafe request")?;
+                let body = serde_json::to_vec(&typesafe_request_body(&self.model, &state, batch))
+                    .map_err(|_| "cannot encode TypeSafe request")?;
                 let transport = Arc::clone(&self.transport);
                 let permits = Arc::clone(&self.permits);
                 sent.spawn(async move {

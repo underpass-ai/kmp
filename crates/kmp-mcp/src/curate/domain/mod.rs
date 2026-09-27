@@ -14,5 +14,6 @@ pub(crate) mod jev_verdict;
 pub(crate) mod lifecycle_mode;
 pub(crate) mod pair_origin;
 pub(crate) mod partner_cap;
+pub(crate) mod partner_filter;
 pub(crate) mod path_hop;
 pub(crate) mod proposed_label;

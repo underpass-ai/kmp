@@ -4,8 +4,9 @@
 //! item of every page, the suspects, the warnings, Jev's usage and the wall
 //! milliseconds of the review, for a scorer that reads the corpus's gold.
 //!
-//! Made to compare review settings such as `KMP_EVAL_PARTNER_FACTS`
-//! (`docs/development/jev-evaluation.md`) without recording every other arm
+//! Made to compare review settings such as `KMP_EVAL_PARTNER_FACTS`, or a
+//! store's `curate.json` given whole in `JEV_PROBE_CURATE`
+//! (`docs/development/jev-evaluation.md`), without recording every other arm
 //! of the scorecard. Jev answers as in the scorecard: set
 //! `KMP_TYPESAFE_CASSETTE` (replay by default). Each case's store lives in
 //! `$JEV_PROBE_ROOT/<case id>` (a temporary directory by default); a verdict
@@ -79,6 +80,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let mut line = json!({
             "case": case.id,
             "partner_facts": std::env::var("KMP_EVAL_PARTNER_FACTS").ok(),
+            "curate": std::env::var("JEV_PROBE_CURATE").ok(),
             "missing": [], "suspect": [], "warnings": [],
         });
         let started = Instant::now();
@@ -113,6 +115,9 @@ async fn seeded(
         fs::write(data_dir.join(name), bytes)?;
     }
     fs::write(data_dir.join("typesafe.json"), TYPESAFE)?;
+    if let Ok(curate) = std::env::var("JEV_PROBE_CURATE") {
+        fs::write(data_dir.join("curate.json"), curate)?;
+    }
     let server = KernelMcpServer::embedded(data_dir)?;
     for seeded in &case.memories {
         let receipt = tool(

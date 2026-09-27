@@ -15,6 +15,7 @@ mod guide_dispatch;
 mod guide_repair;
 pub(crate) mod json_rpc;
 pub(crate) mod judgement_answer;
+pub(crate) mod judgement_failure;
 pub(crate) mod judgement_origin;
 pub(crate) mod judgement_question;
 pub(crate) mod judgement_request;

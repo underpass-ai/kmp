@@ -13,6 +13,7 @@ use crate::curate::domain::jev_verdict::JevVerdict;
 use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::serving::judgement_answer::JudgementAnswer;
+use crate::serving::judgement_failure::JudgementFailure;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 /// Most partners Jev proposes for one focused fact.
@@ -218,7 +219,7 @@ impl ReviewFocus<'_> {
                 }
                 Err(error) => review
                     .warnings
-                    .push(format!("Jev unavailable; kernel pairs only: {error}")),
+                    .push(JudgementFailure::warning(&error, "kernel pairs only")),
             }
         }
         if !pairs.is_empty() {
