@@ -37,7 +37,10 @@ pub(super) struct AskSetup<'a> {
 
 impl<'a> AskSetup<'a> {
     /// `gated` reads every memory with the alias terms it spells and the
-    /// question through its contract.
+    /// question through its contract. `indexed` is the whole about as the
+    /// lexical index holds it, when `result` holds only the candidates its
+    /// postings reached (DESIGN L6, P13).
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn read(
         result: &'a GetContextResult,
         question: &str,

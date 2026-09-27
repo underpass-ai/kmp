@@ -19,7 +19,7 @@ const MAX_SHARE_TWENTIETHS: u64 = 7;
 
 /// Why `count` candidates of an about of `documents` are too many for the
 /// index to save anything over reading the about, if they are.
-pub(super) fn too_many(count: usize, documents: u64) -> Option<Declined> {
+pub(super) fn too_many(count: usize, documents: u64) -> Option<&'static str> {
     (count as u64 * 20 > documents * MAX_SHARE_TWENTIETHS)
         .then_some("the candidates cover too much of the about")
 }
@@ -35,9 +35,6 @@ pub(super) struct IndexedPlan {
     pub(super) indexed: IndexedAsk,
 }
 
-/// Why an ask is not answered from the index; it then reads the about.
-pub(super) type Declined = &'static str;
-
 impl IndexedPlan {
     /// The plan for `question` over `about`, or why the index does not
     /// answer it. `bounded` declines a question whose candidates are too
@@ -50,7 +47,7 @@ impl IndexedPlan {
         bridge: &LexicalBridge,
         bounded: bool,
         deeper: bool,
-    ) -> Result<Result<Self, Declined>, String> {
+    ) -> Result<Result<Self, &'static str>, String> {
         let Some(stats) = sidecar.stats(about)? else {
             return Ok(Err("about not built"));
         };

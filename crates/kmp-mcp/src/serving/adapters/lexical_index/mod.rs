@@ -11,6 +11,7 @@ mod about_rebuild;
 mod about_refresh;
 mod about_stats;
 pub(crate) mod catch_up_report;
+mod change_writer;
 mod indexed_parts;
 mod indexed_plan;
 pub(crate) mod indexed_read;
