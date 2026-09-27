@@ -25,6 +25,7 @@ use std::time::Duration;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
+use axum::middleware::map_request;
 use kmp_mcp::{GrpcKernelMcpBackend, KernelMcpServer, KernelMcpToolBackend};
 use kmp_mcp_http::auth::{Identity, TokenVerifier, VerifyFuture};
 use kmp_mcp_http::config::HttpGatewayConfig;
@@ -38,6 +39,8 @@ use tower::ServiceExt;
 use url::Url;
 
 use crate::support::seeded_kernel_fixture::SeededKernelFixture;
+
+const SESSION_HEADER: &str = "mcp-session-id";
 
 #[derive(Clone)]
 struct ParityVerifier;
@@ -71,7 +74,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         kmp_mcp::KernelMcpGrpcTlsConfig::disabled(),
     );
     let stdio = KernelMcpServer::grpc(endpoint.clone());
-    let http = parity_http_app(KernelMcpServer::grpc(endpoint));
+    let http = parity_http_app(KernelMcpServer::grpc(endpoint)).await;
     let embedded_dir = tempfile::tempdir()?;
     let embedded = KernelMcpServer::embedded(embedded_dir.path()).map_err(std::io::Error::other)?;
     direct
@@ -280,7 +283,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         kmp_mcp::KernelMcpGrpcTlsConfig::disabled(),
     );
     let unavailable_stdio = KernelMcpServer::grpc(unavailable_endpoint.clone());
-    let unavailable_http = parity_http_app(KernelMcpServer::grpc(unavailable_endpoint));
+    let unavailable_http = parity_http_app(KernelMcpServer::grpc(unavailable_endpoint)).await;
     assert_remote_error_code_parity(
         &unavailable_direct,
         &unavailable_stdio,
@@ -670,7 +673,7 @@ fn parity_seed_arguments() -> Value {
     arguments
 }
 
-fn parity_http_app(server: KernelMcpServer) -> Router {
+async fn parity_http_app(server: KernelMcpServer) -> Router {
     let config = HttpGatewayConfig {
         bind_addr: "127.0.0.1:0".parse().expect("address"),
         public_url: Url::parse("https://kmp.example/mcp").expect("public URL"),
@@ -682,7 +685,35 @@ fn parity_http_app(server: KernelMcpServer) -> Router {
         max_body_bytes: 1024 * 1024,
         require_grpc_mtls: false,
     };
-    router(AppState::new(config, server, Arc::new(ParityVerifier)))
+    let app = router(AppState::new(config, server, Arc::new(ParityVerifier)));
+    // The legacy HTTP dialect answers 404 outside a live session, so the
+    // parity client initializes once and sends that session on every call.
+    let initialize = json!({"jsonrpc":"2.0","id":0,"method":"initialize","params":{
+        "protocolVersion":"2025-06-18","capabilities":{},
+        "clientInfo":{"name":"kmp-parity","version":"1"}}});
+    let opened = app
+        .clone()
+        .oneshot(
+            Request::post("/mcp")
+                .header("content-type", "application/json")
+                .header("authorization", "Bearer parity-token")
+                .body(Body::from(initialize.to_string()))
+                .expect("HTTP initialize request"),
+        )
+        .await
+        .expect("HTTP initialize response");
+    assert_eq!(opened.status(), StatusCode::OK, "HTTP initialize failed");
+    let session = opened.headers()[SESSION_HEADER].clone();
+    app.layer(map_request(move |mut request: Request<Body>| {
+        let session = session.clone();
+        async move {
+            request
+                .headers_mut()
+                .entry(SESSION_HEADER)
+                .or_insert(session);
+            request
+        }
+    }))
 }
 
 async fn call_http_tool(app: &Router, id: u64, name: &str, arguments: Value) -> Value {
