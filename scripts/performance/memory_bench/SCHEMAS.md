@@ -1059,11 +1059,11 @@ line and only when they apply (an absent field means "does not apply", never zer
 
 | Field | Type | Present on | Meaning |
 |---|---|---|---|
-| `client_name` | string | reads, `kmp_write_memory` and argument refusals after an `initialize` that named one | `clientInfo.name`, printable ASCII, ≤ 64 chars |
+| `client_name` | string | every tool call of a session whose host named itself (stdio `initialize`; HTTP: the session's `initialize` under its `Mcp-Session-Id`, or the request's `_meta` `io.modelcontextprotocol/clientInfo`) | `clientInfo.name`, printable ASCII, ≤ 64 chars |
 | `client_version` | string | with `client_name` | `clientInfo.version`, ≤ 32 chars (empty when not a string) |
-| `is_continuation` | bool | `kmp_wake`, `kmp_ask`, `kmp_inspect`, `kmp_trace`, `kmp_relate`, `kmp_time` | the call pages an earlier one (`continuation` handle or `page.cursor`) instead of starting a new call |
-| `subject_fingerprint` | hex16 | `kmp_ask` (question), `kmp_wake` (intent) | HMAC-SHA256 under the store salt of the question or intent, lower-cased and whitespace-collapsed; a page carries its first call's |
-| `context_fingerprint` | hex16 | `kmp_ask`, `kmp_wake` with `context_id` | HMAC-SHA256 of the guidance `context_id` |
+| `is_continuation` | bool | every tool call | the call pages an earlier one (`continuation` handle or `page.cursor`) instead of starting a new call; always `false` for tools that do not page |
+| `subject_fingerprint` | hex64 | `kmp_ask` (question), `kmp_wake` (intent) | the whole HMAC-SHA256 under the store salt of the question or intent after Unicode NFC, lower case and whitespace collapsed to one space (punctuation kept); a page carries its first call's |
+| `context_fingerprint` | hex64 | any call with a `context_id` (reads and writes) | HMAC-SHA256 of the guidance `context_id` |
 | `answer_status` | `answered`, `partial`, `unknown` | successful `kmp_ask` the anchored gate settled | as returned |
 | `unknown_reason` | enum | with `answer_status = unknown` | as returned (`no_candidates`, `no_bearing`, `out_of_window`, `anchor_absent_in_selection`, `attribute_not_found`) |
 | `confidence` | enum | successful `kmp_ask`, `kmp_wake` with a proof | `proof.confidence` as returned |
@@ -1075,13 +1075,22 @@ line and only when they apply (an absent field means "does not apply", never zer
 
 Error lines (`status = "error"`) carry the origin fields and the fingerprints when the
 salt already exists, never the outcome fields. Fingerprints are keyed by
-`<data dir>/telemetry-salt` (32 random bytes, mode 0600, created on the first successful
-wake or ask; for a gRPC backend, `<user data home>/agent-users/<endpoint hash>.telemetry-salt`
-on the MCP host). They compare only within one store; nothing else can recompute them.
-A fixture backend or an unwritable directory logs no fingerprint (one `kmp_telemetry_salt`
-WARN line says so). The gRPC API's `kernel memory grpc response` lines for
-`KernelMemoryService.Ask`/`Wake` carry the same outcome fields and `is_continuation`
-(`page.cursor` set), without client or fingerprints.
+`<data dir>/telemetry-salt` (32 random bytes, mode 0600, created on the first wake, ask or
+write that succeeds; for an MCP server on a gRPC backend,
+`<user data home>/agent-users/<endpoint hash>.telemetry-salt` on the MCP host). They compare
+only within one store; nothing else can recompute them. Rotating the salt is deleting the
+file: the next successful call creates a new one, and fingerprints before and after stop
+comparing. `kmp-mcp doctor` reports whether it exists (never its bytes) and `kmp-mcp
+uninstall` removes it with its store (and the remote-kernel salts under `agent-users/`;
+`--keep-memory` keeps each kept store's salt with it). A fixture backend or an unwritable
+directory logs no fingerprint (one `kmp_telemetry_salt` WARN line says so).
+
+The gRPC API's `kernel memory grpc response` lines for `KernelMemoryService.Ask`/`Wake`
+carry the same outcome fields, `is_continuation` (`page.cursor` set), `client_name`
+(`kmp-client-name` metadata, else the `user-agent`), `client_version` (`kmp-client-version`)
+and `subject_fingerprint`, keyed by the server's salt at `KMP_TELEMETRY_SALT_PATH` (same
+creation rules; unset, no fingerprint). The API has no guidance context, so no
+`context_fingerprint`.
 
 Counting calls: `is_continuation = false` counts calls, `true` counts pages; group by
 `client_name` to separate hosts from the harnesses (`kmp-guide`, `kmp-lifecycle`, the bench).

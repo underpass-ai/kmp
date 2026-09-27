@@ -311,19 +311,24 @@ zero-quality read.
 
 Each tool call leaves one `kmp_mcp_tool` line in those logs: counts, durations
 and labels, never stored text, a question or an answer. A line also names the
-host as it introduced itself in `initialize` (`clientInfo` name and version
-only) and, for reads that page, whether the call is a page of an earlier one.
-A `kmp_ask` or `kmp_wake` line adds how it came out (answer status, UNKNOWN
-reason, stated confidence, whether the anchored gate decided, and cited
-passages per `reached_by`) and keyed fingerprints of its question or intent
-and of its guidance `context_id`: HMAC-SHA256 under `telemetry-salt`, 32
-random bytes created with mode `0600` beside the store on the first wake or
-ask that succeeds. A refused call lists the validation codes and field paths
-its `feedback` named (`LABELS_REQUIRED@labels`), never their reasons or values.
-The salt never enters a log, a bundle or a request, so a
-fingerprint compares only within its store; deleting the file only makes new
-fingerprints incomparable with old ones. The fields are listed in
-`scripts/performance/memory_bench/SCHEMAS.md` (`kmp_mcp_tool`).
+host as it introduced itself (`clientInfo` name and version only; over HTTP,
+the host of that session, never another's) and whether the call is a page of
+an earlier one. A `kmp_ask` or `kmp_wake` line adds how it came out (answer
+status, UNKNOWN reason, stated confidence, whether the anchored gate decided,
+and cited passages per `reached_by`) and a keyed fingerprint of its question or
+intent; any call with a guidance `context_id` adds one of that id. A
+fingerprint is the whole HMAC-SHA256 under `telemetry-salt`, 32 random bytes
+created with mode `0600` beside the store on the first wake, ask or write that
+succeeds, over the text in Unicode NFC, lower case and single spaces. A refused
+call lists the validation codes and field paths its `feedback` named
+(`LABELS_REQUIRED@labels`), never their reasons or values.
+
+The salt never enters a log, a bundle or a request, so a fingerprint compares
+only within its store. There is no rotate command: delete `telemetry-salt` and
+the next successful call creates a new one; fingerprints from before stop being
+comparable with those after. `kmp-mcp doctor` says whether the salt exists
+(never its bytes) and `kmp-mcp uninstall` removes it with its store. The fields
+are listed in `scripts/performance/memory_bench/SCHEMAS.md` (`kmp_mcp_tool`).
 
 ## Maintenance commands
 
