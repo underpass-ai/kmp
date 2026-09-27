@@ -60,6 +60,7 @@ class DeclaredGraphTest(unittest.TestCase):
         self.assertEqual(len(diamond.accept_edges), 6)  # both 3-hop routes, never 3-6
         self.assertEqual(far_pairs(graph, FarTraceSpec(4, 10), seed=7)[0].hops, 4)
         self.assertEqual(far_pairs(graph, FarTraceSpec(5, 10), seed=7), ())
+        self.assertEqual(far_pairs(graph, FarTraceSpec(3, 'all'), seed=7), pairs)
 
     def test_the_choice_is_fixed_by_content_and_seed(self):
         graph = declared_graph(RELATIONS, NODES)
@@ -69,7 +70,7 @@ class DeclaredGraphTest(unittest.TestCase):
         self.assertEqual(len(one), 2)
 
     def test_the_spec_needs_k_of_two_or_more_and_some_pairs(self):
-        for bad in ((1, 4), (3, 0), (True, 4), (3, '4')):
+        for bad in ((1, 4), (3, 0), (True, 4), (3, '4'), (3, 'every')):
             with self.assertRaises(FarTraceInvalid):
                 FarTraceSpec(*bad)
 
@@ -132,7 +133,7 @@ class ScaleModeTest(unittest.TestCase):
         self.assertEqual((scale.timeout_s, scale.sections, scale.synth.levels, scale.synth.per_type),
                          (120.0, ('synth',), (1000, 10000, 100000), 2))
         self.assertEqual(scale.synth.exclude_types, ('wake_resume',))
-        self.assertEqual(scale.synth.far_trace, FarTraceSpec(3, 16))
+        self.assertEqual(scale.synth.far_trace, FarTraceSpec(3, 'all'))
         self.assertEqual((modes.get('scale-aa').replica_of, modes.get('scale-aa').synth), ('scale', scale.synth))
         self.assertIsNone(modes.get('full').synth.far_trace)
         self.assertEqual(modes.get('quick-a').synth.exclude_types, ())
@@ -141,8 +142,8 @@ class ScaleModeTest(unittest.TestCase):
         text = modes_module.MODES_PATH.read_text()
         for old, new in (('exclude_types = ["wake_resume"]', 'exclude_types = ["no_such_type"]'),
                          ('exclude_types = ["wake_resume"]', 'exclude_types = ["wake_resume", "wake_resume"]'),
-                         ('min_hops = 3\n', 'min_hops = 1\n'), ('pairs = 16', 'pairs = 0'),
-                         ('pairs = 16', 'pairs = 16\nhops = 3')):
+                         ('min_hops = 3\n', 'min_hops = 1\n'), ('pairs = "all"', 'pairs = 0'), ('pairs = "all"', 'pairs = "some"'),
+                         ('pairs = "all"', 'pairs = "all"\nhops = 3')):
             with self.subTest(new=new), self.assertRaises(modes_module.ModeInvalid):
                 modes_module.parse_modes(text.replace(old, new, 1))
 

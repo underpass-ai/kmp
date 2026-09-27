@@ -9,7 +9,7 @@ are traced at every level and the latency they show is the latency of a longer s
 not of a different question.
 
 Which pairs are taken is fixed by their content alone: every candidate is ranked by
-the SHA-256 of `seed|from|to` and the first `pairs` are kept. Each pair carries one
+the SHA-256 of `seed|from|to` and the first `pairs` are kept (`pairs = ALL`: every one). Each pair carries one
 reference route (the lexicographically smallest shortest route) and every declared
 edge that lies on some shortest route, so any shortest declared route is accepted.
 Reverse adjacency (`reverse(graph)`) gives the hop counts to a destination.
@@ -21,6 +21,9 @@ from . import cachekey
 from .errors import BenchError
 
 
+ALL = 'all'  # pairs: every far pair of the rung
+
+
 class FarTraceInvalid(BenchError):
     code = 'FAR_TRACE_INVALID'
 
@@ -28,13 +31,14 @@ class FarTraceInvalid(BenchError):
 @dataclass(frozen=True)
 class FarTraceSpec:
     min_hops: int  # k: shortest declared route of at least k hops
-    pairs: int  # how many pairs a topology traces
+    pairs: int | str  # how many pairs a topology traces, or ALL
 
     def __post_init__(self):
         if isinstance(self.min_hops, bool) or not isinstance(self.min_hops, int) or self.min_hops < 2:
             raise FarTraceInvalid('far_trace.min_hops: an integer >= 2 (1 hop is a neighbour)')
-        if isinstance(self.pairs, bool) or not isinstance(self.pairs, int) or self.pairs < 1:
-            raise FarTraceInvalid('far_trace.pairs: an integer >= 1')
+        if self.pairs != ALL and (isinstance(self.pairs, bool) or not isinstance(self.pairs, int)
+                                  or self.pairs < 1):
+            raise FarTraceInvalid(f'far_trace.pairs: an integer >= 1 or "{ALL}"')
 
 
 @dataclass(frozen=True)
@@ -110,7 +114,8 @@ def _route(adjacency, start, end, from_start, to_end):
 
 
 def far_pairs(graph, spec, seed):
-    """The `spec.pairs` far pairs of `graph`, in rank order; fewer when the graph has fewer."""
+    """The `spec.pairs` far pairs of `graph` (all of them for ALL), in rank order; fewer when
+    the graph has fewer."""
     ranked = []
     for about in sorted(graph):
         adjacency = graph[about]
@@ -120,7 +125,7 @@ def far_pairs(graph, spec, seed):
                     rank = cachekey.sha256_hex(f'{seed}|{start}|{end}'.encode('utf-8'))
                     ranked.append((rank, about, start, end))
     chosen = []
-    for _, about, start, end in sorted(ranked)[:spec.pairs]:
+    for _, about, start, end in sorted(ranked)[:None if spec.pairs == ALL else spec.pairs]:
         adjacency = graph[about]
         from_start, to_end = distances(adjacency, start), distances(reverse(adjacency), end)
         steps, edges = _route(adjacency, start, end, from_start, to_end)

@@ -119,10 +119,11 @@ exclude_types = ["wake_resume"]
 # relations from -> to), traced with kmp_trace {from, to} at every rung. min_hops = 3 is the
 # directed declared diameter of the 10^3 rung in synth-v1 1.2.0 seed 7 (ordered pairs by hops:
 # mono 302/100/23 and multi 324/101/20 at 1/2/3 hops) and it is the same at 10^4 and 10^5:
-# later blocks add no shorter route between 10^3 entries.
+# later blocks add no shorter route between 10^3 entries. All of them are traced
+# (23 mono, 20 multi), so the P11 p95 is taken over all 3-hop pairs (DISENO 13).
 [modes.scale.synth.far_trace]
 min_hops = 3
-pairs = 16
+pairs = "all"
 
 [modes.scale-aa]
 description = "A/A of scale: the variant's scale runs against a fresh replica of the same variant. The quality deltas must be 0; the latency band is the noise of the far trace and ask timings at each rung."

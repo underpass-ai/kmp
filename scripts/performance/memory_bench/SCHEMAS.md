@@ -1297,10 +1297,10 @@ section, no network, no key; `scripts/ci/memory-bench-quick.sh`). A mode with th
 `public` section names its corpora in `[modes.<mode>.public]` (`corpora`, `sizes`,
 `per_type`, `abstention`, `setup`, `max_calls`). A synth ladder
 (`[modes.<mode>.synth]`) may also name `exclude_types` (question types it never asks,
-at any level) and a `far_trace` table (`min_hops` ≥ 2, `pairs` ≥ 1: the `trace_far`
+at any level) and a `far_trace` table (`min_hops` ≥ 2, `pairs` ≥ 1 or `"all"`: the `trace_far`
 questions it adds per topology). `scale` (and its A/A `scale-aa`) is the scale
 verification: synth 10^3–10^5 on both topologies, 2 questions per type, `timeout_s`
-120, `wake_resume` excluded (`full` measures it up to 10^4) and 16 far pairs at
+120, `wake_resume` excluded (`full` measures it up to 10^4) and every far pair (`pairs = "all"`) at
 `min_hops = 3`. Each run section is one
 `report.json` (section 5); what ties them together is the mode summary.
 

@@ -350,7 +350,7 @@ Detailed notes from the early release cycle remain available in the
   trace cut: `trace_far` questions, `kmp_trace` between two 10^3 entries the world
   joins only through at least 3 declared hops, followed in their declared
   direction (the directed declared diameter of the 10^3 rung, unchanged at 10^4
-  and 10^5), 16 per topology and the same at every rung.
+  and 10^5), every such pair (23 mono, 20 multi) and the same at every rung.
   `report.json` gains `scale.far_trace` (pairs, `path_found`, wall p50/p95 per rung
   and the P11 objective, p95 ≤ 30 ms at 10^5). A synth ladder may name
   `exclude_types` and `far_trace` in `modes.toml`. Existing modes ask the same
