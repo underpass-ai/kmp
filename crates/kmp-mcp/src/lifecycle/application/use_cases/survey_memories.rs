@@ -72,6 +72,8 @@ impl<'a> SurveyMemories<'a> {
 mod tests {
     use std::path::Path;
 
+    use kmp_embedded::SUPPORTED_FORMAT_VERSION;
+
     use super::*;
     use crate::lifecycle::adapters::filesystem_store_catalog::FilesystemStoreCatalog;
     use crate::lifecycle::adapters::jsonl_store_index::JsonlStoreIndex;
@@ -98,9 +100,10 @@ mod tests {
     fn a_store_under_the_data_home_that_no_rule_reaches_is_listed_and_labelled() {
         let base = tempfile::tempdir().expect("temp");
         let data_home = base.path();
-        store_at(&data_home.join("kmp/default"), "2", "sqlite3");
+        let supported = SUPPORTED_FORMAT_VERSION.to_string();
+        store_at(&data_home.join("kmp/default"), &supported, "sqlite3");
         store_at(&data_home.join("kmp/retired-2026-08-17"), "1", "bin");
-        store_at(&data_home.join("kmp/shared"), "2", "sqlite3");
+        store_at(&data_home.join("kmp/shared"), &supported, "sqlite3");
 
         let memories = survey(data_home);
         assert_eq!(memories.len(), 3, "{memories:?}");
@@ -117,6 +120,11 @@ mod tests {
                 .iter()
                 .any(|memory| memory.reach == StoreReach::User
                     && memory.storage == Some(StoreStorage::Sqlite))
+        );
+        assert!(
+            memories.iter().any(|memory| memory.storage
+                == Some(StoreStorage::UnsupportedFormat(Some("1".to_string())))),
+            "the format-1 backup stays labelled unsupported: {memories:?}"
         );
     }
 
