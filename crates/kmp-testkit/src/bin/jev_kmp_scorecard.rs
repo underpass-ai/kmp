@@ -1524,6 +1524,22 @@ fn write_baseline(
          # a plain ask whose question names an identifier ranks the memories that name it, and\n\
          # ask_mrr_plain rose 0.1875 -> 0.2500, ask_top5_plain 0.2500 -> 0.3125. The re-ranked arms\n\
          # do not move.\n\
+         # P9 (2026-09-27): write-relations and focused reviews read shortlisted partners, so the\n\
+         # 318-fact case's focused requests are new; they were recorded into this cassette with the\n\
+         # real Jev, nothing else re-recorded. Every floor holds unchanged; the margin gate (tau = 0)\n\
+         # settles 2 of the 16 re-ranked asks without moving ask_*_rerank or ask_*_wide.\n\
+         # P11 (2026-09-27): a path search with a goal asks about its corridor (at most 22 facts within\n\
+         # four hops of either end, DESIGN L7) and offers each next step among at most 8 neighbours. Its\n\
+         # new requests were recorded into this cassette with the real Jev (sample 1 of 3). The goal\n\
+         # searches cost 3.4k Jev tokens on average instead of 8.2k (g30 -> g32: 22.4k -> 3.5k) and find\n\
+         # the same paths (path_found_with_jev 0.8 in all three samples). proposed_hops_right lowers from\n\
+         # 0.9500 to 0.9411 for one reason: in two samples of three the corridor judged g31 at 0.49,\n\
+         # under the 0.5 line, so g30 -> g32 returns one path instead of two and its three right hops\n\
+         # leave the count (16/17 instead of 19/20). The one wrong hop is the same b02 -> b03 as before.\n\
+         # Reviewed change (2026-09-28): the corridor is ON by default by decision of the maintainer,\n\
+         # who accepted that cost, so proposed_hops_right is gated at 0.9411 (was 0.9500 while the\n\
+         # corridor was opt-in) and the informative proposed_hops_right_corridor_info row is gone.\n\
+         # KMP_EVAL_PATHS_CORRIDOR=off still measures the previous filter (0.9500) for reference.\n\
          # Refresh with: JEV_BASELINE=write bash scripts/ci/jev-baseline.sh\n\
          metric\tfloor\n",
     );
