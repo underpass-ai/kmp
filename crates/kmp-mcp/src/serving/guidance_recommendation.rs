@@ -29,6 +29,11 @@ impl GuidanceRecommendation {
                     false,
                 ));
             }
+            // A validation refusal is the caller's to repair: its feedback
+            // names each field. Only failures no argument can fix stop.
+            if body["error"]["code"] == "invalid_argument" {
+                return Some(repair_refused_arguments(body));
+            }
             return Some(
                 json!({"reason_code":"operation_refused","reason":"Keep the original error and feedback; do not infer a repair from wording.","basis":{"error_code":body["error"]["code"]},"stop":true}),
             );
@@ -174,6 +179,23 @@ impl GuidanceRecommendation {
             }
         }
         None
+    }
+}
+
+/// Repair, not stop: the refused fields are typed in `feedback`, or, without
+/// feedback, named by the error of a call that cannot succeed unchanged.
+fn repair_refused_arguments(body: &Value) -> Value {
+    let listed = body["feedback"]
+        .as_array()
+        .is_some_and(|feedback| !feedback.is_empty());
+    if listed {
+        json!({"reason_code":"repair_listed_fields",
+            "reason":"Repair every field listed in feedback and retry the whole call. Fix each from the source; never remove a required field or invent evidence to pass.",
+            "basis":{"error_code":body["error"]["code"],"feedback_pointer":"/feedback"}})
+    } else {
+        json!({"reason_code":"repair_arguments",
+            "reason":"Repair the arguments the error names and retry; the same call unchanged cannot succeed.",
+            "basis":{"error_code":body["error"]["code"]}})
     }
 }
 
