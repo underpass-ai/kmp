@@ -28,11 +28,23 @@ pub const EVAL_PARTNER_FACTS_ENV: &str = "KMP_EVAL_PARTNER_FACTS";
 /// must be kept, not degraded). Any other value, or none, keeps them.
 pub const JUDGEMENT_DEADLINES_ENV: &str = "KMP_JUDGEMENT_DEADLINES";
 
-/// The lexical sidecar (`lexical-index.sqlite3`, DESIGN L6): `shadow`
-/// maintains it beside the store and compares it with every ask, never
-/// answering one; `off`, none or any other value keeps it closed
+/// The lexical sidecar (`lexical-index.sqlite3`, DESIGN L6): `on` (the
+/// default) answers every ask it can hold from its postings; `shadow` only
+/// compares it with every ask; `verify` answers both ways and logs whether
+/// they agree; `off` keeps it closed. Any other value keeps the default
 /// ([`crate::serving::lexical_index_mode::LexicalIndexMode`]).
 pub const LEXICAL_INDEX_ENV: &str = "KMP_LEXICAL_INDEX";
+
+/// MaxScore against the floor (DESIGN L6, P14): an ask the lexical index
+/// answers leaves unread the candidates no reading of the question lets
+/// clear the floor. On by default; `off` reads every candidate the postings
+/// reach, as P13 did. Any other value keeps it on.
+pub const LEXICAL_MAXSCORE_ENV: &str = "KMP_LEXICAL_MAXSCORE";
+
+/// Whether MaxScore prunes (`KMP_LEXICAL_MAXSCORE`, on unless `off`).
+pub(crate) fn lexical_maxscore() -> bool {
+    optional_env_string(LEXICAL_MAXSCORE_ENV).is_none_or(|value| !value.eq_ignore_ascii_case("off"))
+}
 
 /// How long `site` waits for Jev on a first page, unless the operator
 /// lifted the deadlines.

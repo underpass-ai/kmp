@@ -15,6 +15,9 @@ pub(crate) enum FrozenRecall {
     Ask {
         response: Box<AskResponse>,
         rendered: Value,
+        /// How many tail items the read carries (P14): a continuation that
+        /// needs more reads the ranking again.
+        depth: usize,
     },
 }
 
@@ -25,7 +28,9 @@ impl FrozenRecall {
     pub(crate) fn approximate_bytes(&self) -> usize {
         let (encoded, rendered) = match self {
             Self::Wake { response, rendered } => (response.encoded_len(), rendered),
-            Self::Ask { response, rendered } => (response.encoded_len(), rendered),
+            Self::Ask {
+                response, rendered, ..
+            } => (response.encoded_len(), rendered),
         };
         let serialized = serde_json::to_vec(rendered).map_or(0, |bytes| bytes.len());
         encoded + 2 * serialized
@@ -42,6 +47,7 @@ mod tests {
         let small = FrozenRecall::Ask {
             response: Box::default(),
             rendered: Value::Null,
+            depth: 0,
         };
         let large = FrozenRecall::Ask {
             response: Box::new(AskResponse {
@@ -49,6 +55,7 @@ mod tests {
                 ..AskResponse::default()
             }),
             rendered: json!({"summary": "x".repeat(4096)}),
+            depth: 0,
         };
         assert!(large.approximate_bytes() >= 3 * 4096);
         assert!(small.approximate_bytes() < large.approximate_bytes());

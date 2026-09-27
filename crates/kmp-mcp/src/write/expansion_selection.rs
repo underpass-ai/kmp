@@ -8,7 +8,7 @@
 
 use std::collections::BTreeMap;
 
-use kmp_domain::{SearchExpansionFault, SearchExpansions, SearchSummary};
+use kmp_domain::{SearchExpansions, SearchSummary};
 use serde_json::{Map, Value, json};
 
 use super::json_value_type::JsonValueType;
@@ -76,17 +76,10 @@ impl ExpansionSelection {
     pub(crate) fn lint(proposals: impl IntoIterator<Item = (String, String, Vec<String>)>) -> Self {
         let mut selection = Self::default();
         for (reference, text, proposed) in proposals {
-            let mut linted = Vec::new();
-            for expansion in proposed {
-                match SearchExpansions::lint(&text, &expansion, &linted) {
-                    Ok(kept) => linted.push(kept),
-                    Err(faults) => selection.refused.push(json!({
-                        "ref": reference,
-                        "expansion": expansion,
-                        "why": SearchExpansionFault::describe(&faults),
-                    })),
-                }
-            }
+            let (linted, refused) = SearchExpansions::lint_proposal(&text, &proposed);
+            selection.refused.extend(refused.into_iter().map(
+                |(expansion, why)| json!({"ref": reference, "expansion": expansion, "why": why}),
+            ));
             selection.proposals.push(Proposal {
                 reference,
                 text,

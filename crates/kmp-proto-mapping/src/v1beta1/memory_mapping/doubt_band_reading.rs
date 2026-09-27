@@ -16,6 +16,7 @@ use super::doubt_entry::DoubtEntry;
 use super::doubt_passage::DoubtPassage;
 use super::gate_verdict::GateVerdict;
 use super::lexical_bridge::LexicalBridge;
+use super::ranked_evidence::RankedEvidence;
 use super::ranked_selection::RankedSelection;
 use super::scalars::ProtoMappingResult;
 
@@ -63,7 +64,11 @@ pub(super) fn read_doubt_band(
         retrieval.lexical_cache.as_deref(),
         true,
         retrieval.witness.as_deref(),
-    )?;
+        retrieval.indexed.as_ref(),
+    )?
+    .with_gate(retrieval.gate)
+    .with_head_window(retrieval.head_window)
+    .with_prepared_cache(&retrieval.prepared, true);
     let asked = setup.asked(question);
     let candidates = setup.candidate_evidence.clone();
     let anchored = setup
@@ -101,13 +106,16 @@ pub(super) fn read_doubt_band(
             policy,
             temporal,
             bridge,
-            reading.evidence,
+            RankedEvidence {
+                evidence: reading.evidence,
+                head: reading.head,
+            },
             reading.verdict,
         );
         return Ok((band, Some(decided), None));
     }
-    let (ranked, scores) = setup.ranker.rank_scored(asked, policy, candidates);
-    let band = unanchored_band(&setup, asked, &ranked, &scores, margin_below);
+    let (ranked, scores) = setup.ranker.rank_split(asked, policy, candidates);
+    let band = unanchored_band(&setup, asked, &ranked.evidence, &scores, margin_below);
     let ranked = RankedSelection::new(asked, policy, temporal, bridge, ranked);
     Ok((band, None, Some(ranked)))
 }

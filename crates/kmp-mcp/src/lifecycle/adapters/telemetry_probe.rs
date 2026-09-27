@@ -4,6 +4,24 @@ use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
 
 pub(crate) fn telemetry_finding(resolved: &ResolvedDataDir) -> LifecycleFinding {
+    quality_finding(resolved).with_detail(salt_detail(resolved.path()))
+}
+
+/// Whether the store's call-fingerprint salt exists — never what it holds.
+fn salt_detail(data_dir: &std::path::Path) -> String {
+    let path = data_dir.join(kmp_observability::TELEMETRY_SALT_FILE);
+    if path.is_file() {
+        format!(
+            "call fingerprint salt present at {} (delete it to rotate; older fingerprints stop comparing)",
+            path.display()
+        )
+    } else {
+        "call fingerprint salt not created yet — the first wake or ask that succeeds creates it"
+            .to_string()
+    }
+}
+
+fn quality_finding(resolved: &ResolvedDataDir) -> LifecycleFinding {
     let path = kmp_embedded::quality_telemetry_path(resolved.path());
     if !path.exists() {
         return LifecycleFinding::new(DiagnosticSeverity::Warn, "no quality telemetry journal yet")
@@ -35,5 +53,21 @@ pub(crate) fn telemetry_finding(resolved: &ResolvedDataDir) -> LifecycleFinding 
             };
             LifecycleFinding::new(DiagnosticSeverity::Warn, headline).with_detail(raw)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::salt_detail;
+
+    #[test]
+    fn the_salt_is_reported_by_presence_never_by_content() {
+        let dir = tempfile::tempdir().expect("dir");
+        assert!(salt_detail(dir.path()).contains("not created yet"));
+        let path = dir.path().join(kmp_observability::TELEMETRY_SALT_FILE);
+        std::fs::write(&path, [0xabu8; 32]).expect("salt");
+        let detail = salt_detail(dir.path());
+        assert!(detail.contains("present"));
+        assert!(!detail.contains("abab"));
     }
 }

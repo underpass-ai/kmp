@@ -595,7 +595,7 @@ fn normalize_optional_member_ref(
         .transpose()
 }
 
-fn normalize_coordinate(
+pub(super) fn normalize_coordinate(
     coordinate: &MemoryCoordinateData,
     field: &str,
     label: &str,

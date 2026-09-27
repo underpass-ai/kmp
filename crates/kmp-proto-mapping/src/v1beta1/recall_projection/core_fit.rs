@@ -13,6 +13,9 @@ use super::plan::{ProjectionItem, ProjectionPlan};
 use super::serialized_size::serialized_size;
 use super::text_shortening::{max_text_chars, truncate_json_text};
 
+/// How many of the first items the core reserves room for the largest of.
+const RESERVED_WINDOW: usize = 64;
+
 pub(super) fn fit_core(
     plan: &ProjectionPlan,
     eligible: &[ProjectionItem],
@@ -27,7 +30,9 @@ pub(super) fn fit_core(
     // and produce returned=0, has_more=true, and the same cursor forever.
     // Choosing from the complete canonical plan keeps this core identical
     // across detail levels and page offsets.
-    let reserved_item = eligible.iter().max_by_key(|item| {
+    // Only the first items are read (P14): they are the same at every depth
+    // a lazy reading carries, so the core fits the same way.
+    let reserved_item = eligible.iter().take(RESERVED_WINDOW).max_by_key(|item| {
         item.stable_key.len()
             + usize::from(plan.core_lengths.get(&item.section).copied().unwrap_or(0) > 0)
     });

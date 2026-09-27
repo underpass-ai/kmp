@@ -106,6 +106,14 @@ message MemoryEntry {
   string text = 3;
   repeated TemporalCoordinate coordinates = 4;
   map<string, string> metadata = 5;
+  // Optional short ways a later reader may ask for this entry: questions it
+  // answers, paraphrases, keys in the other language (Spanish or English); at
+  // most 6, of at most 120 characters each. They are proposals and never part
+  // of the entry: one is stored only after a judge accepted it against the
+  // stored text, and a server without a judge stores none.
+  // IngestResponse.search_expansions says what became of them. Empty (an older
+  // client) proposes nothing and changes nothing.
+  repeated string search_expansions = 6;
 }
 
 message TemporalCoordinate {
@@ -195,6 +203,34 @@ message IngestResponse {
   IngestedMemory memory = 2;
   repeated string warnings = 3;
   WriteNeighborhood neighborhood = 4;
+  // What became of the entries' proposed search expansions. Absent when no
+  // entry proposed one, or when the write is held for review.
+  SearchExpansionsReport search_expansions = 5;
+}
+
+// The search expansions of one write: what was kept, what was refused and
+// why, and why nothing was stored when that is so.
+message SearchExpansionsReport {
+  // Kept expansions, one element per entry.
+  repeated StoredSearchExpansions stored = 1;
+  // What the lint or the judge refused, in the writer's order.
+  repeated RefusedSearchExpansion refused = 2;
+  // Why what passed the lint was not stored. Empty when nothing awaited a
+  // judge or when the judge answered.
+  string not_stored = 3;
+  // Which judge accepted what was kept, and at what bar. Empty when none did.
+  string judged_by = 4;
+}
+
+message StoredSearchExpansions {
+  string ref = 1;
+  repeated string expansions = 2;
+}
+
+message RefusedSearchExpansion {
+  string ref = 1;
+  string expansion = 2;
+  string why = 3;
 }
 
 message WriteNeighborhood {
@@ -483,6 +519,15 @@ message AskResponse {
   // Why an unknown answer is unknown, when the gate settled it; UNSPECIFIED
   // otherwise.
   UnknownReason unknown_reason = 10;
+  // The ranking holds more evidence than this reading carries (P14, kmp2
+  // lazy pages): `proof.evidence` is its head and the first part of its
+  // tail, and a continuation reads deeper. False on a reading carried to
+  // the end.
+  bool more_ranked = 11;
+  // The counts a page of this reading reports (page.total, sections.*.remaining,
+  // more_on_request) are lower bounds: the ranking holds more than the
+  // reading carries (P14). Set with more_ranked.
+  bool total_is_lower_bound = 12;
 }
 
 enum AnswerStatus {
@@ -1549,9 +1594,14 @@ message RecallProjectionPage {
   uint64 returned = 2;
   uint64 total = 3;
   bool has_more = 4;
+  // Opaque. `kmp2` (P14) binds the selection and the item the page ended
+  // on; a continuation resumes only after that item.
   optional string next_cursor = 5;
   // A sufficient byte allowance for unshortened core and expansion progress.
   optional uint64 minimum_progress_bytes = 6;
+  // total, and each section's remaining, count only what this reading carries;
+  // the ranking holds more (P14, kmp2 lazy pages). has_more is then true.
+  bool total_is_lower_bound = 7;
 }
 
 // Only counts a caller cannot derive. core and excluded_by_detail are static:
@@ -1573,7 +1623,7 @@ message RecallProjectionSection {
 }
 
 // Machine-readable detail for a Wake/Ask continuation failure: ABORTED for
-// a changed selection, INVALID_ARGUMENT for malformed or out-of-range cursors. Tonic serializes this message directly
+// a changed selection or an outdated cursor, INVALID_ARGUMENT for malformed or out-of-range cursors. Tonic serializes this message directly
 // into grpc-status-details-bin; clients can branch on `reason` without parsing
 // the human diagnostic.
 message RecallCursorError {
@@ -1586,8 +1636,13 @@ message RecallCursorError {
 enum RecallCursorErrorReason {
   RECALL_CURSOR_ERROR_REASON_UNSPECIFIED = 0;
   RECALL_CURSOR_ERROR_REASON_MALFORMED = 1;
+  // The selection changed, or the reading no longer resumes after the item
+  // the cursor's page ended on: restart.
   RECALL_CURSOR_ERROR_REASON_SELECTION_CHANGED = 2;
   RECALL_CURSOR_ERROR_REASON_OFFSET_OUT_OF_RANGE = 3;
+  // A cursor of a retired format (`kmp1`, before `kmp2`): ABORTED; restart
+  // the read without page.cursor.
+  RECALL_CURSOR_ERROR_REASON_OUTDATED = 4;
 }
 
 message DimensionSelection {

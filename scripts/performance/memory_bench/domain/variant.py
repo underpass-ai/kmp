@@ -27,7 +27,8 @@ STORES = ('shared', 'own')
 JEV_MODES = ('off', 'replay', 'record')
 DIRECTIONS = ('up', 'down')
 # KMP_JUDGEMENT_DEADLINES=off keeps a slow real verdict when recording (P5);
-# KMP_LEXICAL_INDEX=shadow opens the lexical sidecar (P12), which is off by default.
+# KMP_LEXICAL_INDEX chooses what the lexical sidecar does: on (the default since P13), shadow,
+# verify or off.
 ENV_ALLOWLIST = ('KMP_LEXICAL_BRIDGE', 'KMP_MCP_ENGINE', 'KMP_TYPESAFE_CASSETTE',
                  'KMP_TYPESAFE_CASSETTE_MODE', 'RUST_LOG', 'KMP_JUDGEMENT_DEADLINES',
                  'KMP_LEXICAL_INDEX')

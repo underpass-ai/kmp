@@ -2,20 +2,26 @@ use std::fs;
 use std::sync::Once;
 
 use kmp_proto::v1beta1::kernel_memory_service_client::KernelMemoryServiceClient;
+use tonic::service::interceptor::InterceptedService;
 use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint, Identity};
+
+use super::caller_metadata::CallerMetadata;
 
 use crate::serving::{
     GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_KEY_PATH_ENV,
     GRPC_TLS_MODE_ENV, KernelMcpGrpcTlsConfig, KernelMcpGrpcTlsMode, endpoint_uri_for_tls_mode,
 };
 
+/// A client whose every request names `caller`, the MCP host of the
+/// session this call belongs to (`kmp-client-name`, `kmp-client-version`).
 pub(super) async fn connect_memory_client(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
-) -> Result<KernelMemoryServiceClient<tonic::transport::Channel>, String> {
-    connect_channel(endpoint, tls)
-        .await
-        .map(KernelMemoryServiceClient::new)
+    caller: Option<(&str, &str)>,
+) -> Result<KernelMemoryServiceClient<InterceptedService<Channel, CallerMetadata>>, String> {
+    connect_channel(endpoint, tls).await.map(|channel| {
+        KernelMemoryServiceClient::with_interceptor(channel, CallerMetadata::new(caller))
+    })
 }
 
 async fn connect_channel(endpoint: &str, tls: &KernelMcpGrpcTlsConfig) -> Result<Channel, String> {

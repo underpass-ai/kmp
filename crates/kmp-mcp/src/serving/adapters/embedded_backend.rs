@@ -13,6 +13,7 @@ use super::judgement_reranker::JudgementReranker;
 use super::judgement_source::load_judgement;
 use super::lexical_bridge_file::{lexical_bridge_path, load_lexical_bridge};
 use super::lexical_index::lexical_sidecar::LexicalSidecar;
+use super::lexical_index_config::{LEXICAL_INDEX_CONFIG_FILE, LexicalIndexConfig};
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
 use super::observed_judgement::ObservedJudgement;
 use super::process_frozen_recalls::ProcessFrozenRecalls;
@@ -99,10 +100,10 @@ pub struct EmbeddedKernelMcpBackend {
     ask_gate: Option<AskGate>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
-    /// The lexical index beside the store (`lexical-index.sqlite3`), closed
-    /// by default. `KMP_LEXICAL_INDEX=shadow` opens it in shadow: followed
-    /// after writes and before asks, compared with every ask, answering
-    /// none.
+    /// The lexical index beside the store (`lexical-index.sqlite3`),
+    /// followed after writes and before asks and, by default, answering every
+    /// ask it can hold (P13); `KMP_LEXICAL_INDEX` chooses (`off`, `shadow`,
+    /// `verify`).
     lexical: LexicalSidecar,
 }
 
@@ -165,6 +166,7 @@ impl EmbeddedKernelMcpBackend {
         let semantic = LoopbackSemanticRetriever::load(data_dir);
         let ask_gate = AskGateConfig::load(data_dir);
         let curate = CurateConfig::load(data_dir);
+        let index_limits = LexicalIndexConfig::load(data_dir);
         acknowledge_store_config(data_dir, &judgement, &rerank, &wake_focus, &semantic)
             .beside_store(
                 VERDICT_BOOK_CONFIG_FILE,
@@ -177,6 +179,10 @@ impl EmbeddedKernelMcpBackend {
             .beside_store(
                 CURATE_FILE,
                 curate.as_ref().map(|_| ()).map_err(Clone::clone),
+            )
+            .beside_store(
+                LEXICAL_INDEX_CONFIG_FILE,
+                index_limits.as_ref().map(|_| ()).map_err(Clone::clone),
             )
             .beside_store(
                 WRITE_EXPANSIONS_FILE,
@@ -207,7 +213,11 @@ impl EmbeddedKernelMcpBackend {
             .emit();
         let (partner_cap, partner_filter, paths_corridor) =
             curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::On));
-        let lexical = LexicalSidecar::open(data_dir, LexicalIndexMode::from_env());
+        let lexical = LexicalSidecar::open(
+            data_dir,
+            LexicalIndexMode::from_env(),
+            index_limits.unwrap_or_default(),
+        );
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -264,7 +274,9 @@ impl EmbeddedKernelMcpBackend {
     /// environment.
     #[cfg(test)]
     pub(crate) fn with_lexical_index(mut self, mode: LexicalIndexMode) -> Self {
-        self.lexical = LexicalSidecar::open(std::path::Path::new(&self.data_dir), mode);
+        let data_dir = std::path::Path::new(&self.data_dir);
+        let limits = LexicalIndexConfig::load(data_dir).unwrap_or_default();
+        self.lexical = LexicalSidecar::open(data_dir, mode, limits);
         self
     }
 

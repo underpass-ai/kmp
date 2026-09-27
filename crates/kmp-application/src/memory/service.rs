@@ -58,6 +58,10 @@ pub struct KernelMemoryApplicationService<G, D, S, E, W> {
     node_cards: Option<Arc<dyn NodeCardStore>>,
     temporal_index_cache: Arc<std::sync::Mutex<temporal_index_cache::TemporalIndexCache>>,
     visual_projection_cache: Arc<std::sync::Mutex<visual_projection_cache::VisualProjectionCache>>,
+    /// Coordinate frontiers this process's own writes left, at the about
+    /// revision each holds for.
+    sequence_frontiers:
+        Arc<std::sync::Mutex<super::sequence_frontier_cache::SequenceFrontierCache>>,
 }
 
 impl<G, D, S, E, W> KernelMemoryApplicationService<G, D, S, E, W> {
@@ -70,6 +74,7 @@ impl<G, D, S, E, W> KernelMemoryApplicationService<G, D, S, E, W> {
             command_application,
             node_cards: None,
             temporal_index_cache: Arc::new(std::sync::Mutex::new(Default::default())),
+            sequence_frontiers: Arc::new(std::sync::Mutex::new(Default::default())),
             visual_projection_cache: Arc::new(std::sync::Mutex::new(Default::default())),
         }
     }
@@ -135,15 +140,33 @@ where
                     .await?,
             );
         }
-        let mut bundles = self
-            .existing_memory_bundle(&command.about)
-            .await?
-            .into_iter()
-            .collect::<Vec<_>>();
-        let mut existing = bundles
-            .first()
-            .map(existing_refs_from_bundle)
-            .unwrap_or_default();
+        // A write that reads no neighbourhood for review asks the store only
+        // what its translation will ask (DESIGN L6, write in O(delta)); a
+        // store that cannot answer that way, and a reviewed write, read the
+        // about's depth-1 neighbourhood as before.
+        let pointed = if consistent_read {
+            None
+        } else {
+            self.existing_memory_refs_for_write(&command).await?
+        };
+        let mut bundles = match pointed {
+            Some(_) => Vec::new(),
+            None => self
+                .existing_memory_bundle(&command.about)
+                .await?
+                .into_iter()
+                .collect::<Vec<_>>(),
+        };
+        let (mut existing, pointed) = match pointed {
+            Some(pointed) => (pointed.existing.clone(), Some(pointed)),
+            None => (
+                bundles
+                    .first()
+                    .map(existing_refs_from_bundle)
+                    .unwrap_or_default(),
+                None,
+            ),
+        };
         // A relation that declares an equivalence across abouts must land
         // on a ref that exists somewhere; the translation refuses it unless
         // this read found it, and reads nothing for any other relation.
@@ -235,6 +258,24 @@ where
             .command_application
             .update_context_after_read(update_context, &revisions)
             .await?;
+        // Nobody wrote between the frontiers' read and this commit when it
+        // moved the about exactly one revision: what it assigned is the
+        // about's frontier now.
+        if let Some(pointed) = &pointed
+            && !accepted.replayed
+            && accepted.accepted_version.revision == pointed.revision + 1
+            && !pointed.frontiers.is_empty()
+        {
+            let frontiers =
+                super::write_catalogue::advanced(&command, &pointed.existing, &pointed.frontiers);
+            if let Ok(mut cache) = self.sequence_frontiers.lock() {
+                cache.remember(
+                    &command.about,
+                    &frontiers,
+                    accepted.accepted_version.revision,
+                );
+            }
+        }
         outcome.read_after_write_ready = true;
         outcome.replayed = accepted.replayed;
         if accepted.replayed {
@@ -412,6 +453,35 @@ where
             .unwrap_or(self)
             .ask_snapshot(query, demand)
             .await
+    }
+
+    /// An ask's recall context built from the part of the about the caller
+    /// read point by point (DESIGN L6, P13), assembled as [`Self::ask_on_demand`]
+    /// assembles the whole about. The caller answers for `parts` holding
+    /// every candidate the ask can rank and the neighbourhood its rescues
+    /// walk.
+    pub async fn ask_from_parts(
+        &self,
+        query: &AskMemoryQuery,
+        parts: super::RecallParts,
+        demand: RenderDemand,
+    ) -> Result<GetContextResult, ApplicationError> {
+        let render_options = memory_render_options(
+            query.token_budget,
+            query.max_tier,
+            KmpMode::ReasonPreserving,
+            EndpointHint::Neighborhood,
+        );
+        let dimensions = query.dimensions.resolve_current_about(&query.about);
+        self.recall_context_from_parts(
+            &query.about,
+            "answerer",
+            &dimensions,
+            &render_options,
+            demand,
+            parts,
+        )
+        .await
     }
 
     async fn ask_snapshot(
@@ -905,6 +975,62 @@ where
             .as_ref()
             .map(existing_refs_from_bundle)
             .unwrap_or_default())
+    }
+
+    /// What the translation of `command` reads of its about, point by
+    /// point: the catalogue first, then the refs and coordinates the
+    /// translation will ask about against it, the frontiers this process
+    /// already holds at the about's revision taken from memory. `None` when
+    /// the store cannot answer this way.
+    async fn existing_memory_refs_for_write(
+        &self,
+        command: &MemoryIngestCommand,
+    ) -> Result<Option<super::pointed_write::PointedWrite>, ApplicationError> {
+        let about = command.about.as_str();
+        let revision = self.command_application.memory_revision(about).await?;
+        let first = kmp_domain::MemoryWriteFactsRequest::new(about);
+        let Some(facts) = self.query_application.memory_write_facts(&first).await? else {
+            return Ok(None);
+        };
+        let existing = super::write_catalogue::catalogue(about, &facts);
+        let mut pointed = super::pointed_write::PointedWrite {
+            existing,
+            revision,
+            frontiers: BTreeMap::new(),
+        };
+        if !facts.exists {
+            return Ok(Some(pointed));
+        }
+        let mut request = super::write_catalogue::request(command, &pointed.existing);
+        if let Ok(cache) = self.sequence_frontiers.lock() {
+            request
+                .sequence_keys
+                .retain(|key| match cache.lookup(about, key, revision) {
+                    Some(frontier) => {
+                        pointed.frontiers.insert(key.clone(), frontier);
+                        false
+                    }
+                    None => true,
+                });
+        }
+        if !request.refs.is_empty() || !request.sequence_keys.is_empty() {
+            let Some(answered) = self.query_application.memory_write_facts(&request).await? else {
+                return Ok(None);
+            };
+            pointed
+                .frontiers
+                .extend(answered.sequence_frontiers.clone());
+            pointed.existing = super::write_catalogue::answered(pointed.existing, &answered);
+        }
+        for (key, frontier) in &pointed.frontiers {
+            if *frontier > 0 {
+                pointed
+                    .existing
+                    .max_sequences
+                    .insert(key.clone(), *frontier);
+            }
+        }
+        Ok(Some(pointed))
     }
 
     async fn existing_memory_bundle(

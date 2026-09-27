@@ -62,6 +62,23 @@ class JourneyRun:
         return statuses
 
 
+def next_read(structured):
+    """A read's next call: `projection.next_action` (ask, wake), or, for a
+    Trace/Relate page that returned no item because the next one is larger
+    than `budget.max_bytes`, its `next_actions[0]`, which repeats the cursor
+    with `budget.max_bytes` at least `page.required_bytes`. Without it the
+    journey stopped on that 0-item page as if the path had ended."""
+    action = (structured.get('projection') or {}).get('next_action')
+    if action:
+        return action['tool'], action['arguments']
+    page = structured.get('page') or {}
+    if page.get('returned') == 0 and page.get('has_more') and page.get('required_bytes'):
+        action = (structured.get('next_actions') or [None])[0]
+        if action:
+            return action['tool'], action['arguments']
+    return None
+
+
 def drive(process, plan, warmup=False):
     """Run one journey; a warm-up journey keeps its frames in the process trace."""
     tool, arguments = plan.question.first_call(plan.max_bytes, plan.default_budget)
@@ -73,7 +90,7 @@ def drive(process, plan, warmup=False):
     else:
         startup, absent = None, f'process {process.index} already served {process.journeys_served} journey(s)'
     with process.journey(None if warmup else plan.name) as tap:
-        outcome = run_journey(tap, CallSpec(tool, arguments), None, plan.max_calls)
+        outcome = run_journey(tap, CallSpec(tool, arguments), None, plan.max_calls, next_read)
     return JourneyRun(plan, process.index, outcome, tuple(tap.attempts), startup, absent, warmup)
 
 

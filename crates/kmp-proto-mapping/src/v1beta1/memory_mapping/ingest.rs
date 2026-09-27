@@ -70,6 +70,7 @@ pub fn ingest_command_from_proto(
 
 pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestResponse {
     IngestResponse {
+        search_expansions: None,
         neighborhood: outcome
             .neighborhood
             .map(|view| kmp_proto::v1beta1::WriteNeighborhood {

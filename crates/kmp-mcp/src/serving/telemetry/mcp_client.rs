@@ -4,8 +4,7 @@
 
 use serde_json::Value;
 
-const NAME_CHARS: usize = 64;
-const VERSION_CHARS: usize = 32;
+use kmp_observability::{CLIENT_NAME_CHARS as NAME_CHARS, CLIENT_VERSION_CHARS as VERSION_CHARS};
 
 /// `clientInfo.name` and `clientInfo.version`, reduced to printable ASCII
 /// and bounded, so a host cannot put arbitrary text into the log.
@@ -16,33 +15,27 @@ pub(crate) struct McpClient {
 }
 
 impl McpClient {
-    /// The client an `initialize` request declares; `None` when it names
+    /// The client a `clientInfo` object declares; `None` when it names
     /// none that survives sanitizing.
-    pub(crate) fn from_initialize(request: &Value) -> Option<Self> {
-        let info = request.pointer("/params/clientInfo")?;
-        let name = sanitized(info.get("name").and_then(Value::as_str)?, NAME_CHARS);
+    pub(crate) fn from_client_info(info: &Value) -> Option<Self> {
+        let name =
+            kmp_observability::client_label(info.get("name").and_then(Value::as_str)?, NAME_CHARS);
         if name.is_empty() {
             return None;
         }
         let version = info
             .get("version")
             .and_then(Value::as_str)
-            .map(|version| sanitized(version, VERSION_CHARS))
+            .map(|version| kmp_observability::client_label(version, VERSION_CHARS))
             .unwrap_or_default();
         Some(Self { name, version })
     }
-}
 
-fn sanitized(text: &str, limit: usize) -> String {
-    text.trim()
-        .chars()
-        .filter(|c| {
-            c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '/' | '@' | '+' | ' ' | ':')
-        })
-        .take(limit)
-        .collect::<String>()
-        .trim()
-        .to_string()
+    /// The client an `initialize` request declares.
+    #[cfg(test)]
+    pub(crate) fn from_initialize(request: &Value) -> Option<Self> {
+        Self::from_client_info(request.pointer("/params/clientInfo")?)
+    }
 }
 
 #[cfg(test)]

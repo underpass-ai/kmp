@@ -59,26 +59,31 @@ fn grpc_error(operation: &str, subject: &str) -> impl FnOnce(tonic::Status) -> T
 pub(super) async fn grpc_tool_result(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     name: &str,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     match name {
         "kmp_ingest" | "kernel_remember" | "kernel_ingest_context" => {
-            grpc_ingest(endpoint, tls, arguments).await
+            grpc_ingest(endpoint, tls, caller, arguments).await
         }
-        "kmp_wake" => grpc_wake(endpoint, tls, arguments).await,
-        "kmp_ask" => grpc_ask(endpoint, tls, arguments).await,
+        "kmp_wake" => grpc_wake(endpoint, tls, caller, arguments).await,
+        "kmp_ask" => grpc_ask(endpoint, tls, caller, arguments).await,
         TIME_TOOL => match TimeMove::from_arguments(arguments)? {
-            TimeMove::Near => grpc_temporal_near(endpoint, tls, arguments).await,
-            movement => grpc_temporal_move(endpoint, tls, movement.as_str(), arguments).await,
+            TimeMove::Near => grpc_temporal_near(endpoint, tls, caller, arguments).await,
+            movement => {
+                grpc_temporal_move(endpoint, tls, caller, movement.as_str(), arguments).await
+            }
         },
-        "kmp_relate" => grpc_relate(endpoint, tls, arguments).await,
-        "kmp_trace" => grpc_trace(endpoint, tls, arguments).await,
-        "kmp_inspect" => grpc_inspect(endpoint, tls, arguments).await,
-        "kmp_relabel" => grpc_relabel(endpoint, tls, arguments).await,
-        "kmp_condense" => grpc_condense(endpoint, tls, arguments).await,
-        "kmp_view_read_nodes" => grpc_memory_nodes(endpoint, tls, arguments).await,
-        "kmp_view_read_projection" => grpc_visual_projection(endpoint, tls, arguments).await,
+        "kmp_relate" => grpc_relate(endpoint, tls, caller, arguments).await,
+        "kmp_trace" => grpc_trace(endpoint, tls, caller, arguments).await,
+        "kmp_inspect" => grpc_inspect(endpoint, tls, caller, arguments).await,
+        "kmp_relabel" => grpc_relabel(endpoint, tls, caller, arguments).await,
+        "kmp_condense" => grpc_condense(endpoint, tls, caller, arguments).await,
+        "kmp_view_read_nodes" => grpc_memory_nodes(endpoint, tls, caller, arguments).await,
+        "kmp_view_read_projection" => {
+            grpc_visual_projection(endpoint, tls, caller, arguments).await
+        }
         // The audit is read off the store's own event log, including the
         // earlier revisions of every entry, and the kernel's gRPC surface
         // exposes no such stream. Saying so is honest; answering from the
@@ -104,12 +109,13 @@ pub(super) async fn grpc_tool_result(
 async fn grpc_visual_projection(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = VisualProjectionRequestMapper::from_arguments(arguments)
         .map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -125,13 +131,14 @@ async fn grpc_visual_projection(
 async fn grpc_ingest(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         IngestRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
 
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -146,12 +153,13 @@ async fn grpc_ingest(
 async fn grpc_relabel(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         RelabelRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let subject = format!("{}/{}", request.about, request.r#ref);
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -170,12 +178,13 @@ async fn grpc_relabel(
 async fn grpc_condense(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         CondenseRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let subject = format!("{}/{}", request.about, request.r#ref);
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -189,12 +198,13 @@ async fn grpc_condense(
 async fn grpc_wake(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         WakeRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -209,12 +219,13 @@ async fn grpc_wake(
 async fn grpc_ask(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         AskRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -229,13 +240,14 @@ async fn grpc_ask(
 async fn grpc_temporal_move(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     direction: &str,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = TemporalMoveRequestMapper::from_arguments(arguments, direction)
         .map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = match direction {
@@ -268,12 +280,13 @@ async fn grpc_temporal_move(
 async fn grpc_temporal_near(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         NearRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -291,12 +304,13 @@ async fn grpc_temporal_near(
 async fn grpc_relate(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         RelateRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -316,13 +330,14 @@ async fn grpc_relate(
 async fn grpc_trace(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         TraceRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let from = request.from.clone();
     let to = request.to.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -342,12 +357,13 @@ async fn grpc_trace(
 async fn grpc_inspect(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
         InspectRequestMapper::from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let ref_id = request.r#ref.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client
@@ -365,6 +381,7 @@ async fn grpc_inspect(
 async fn grpc_memory_nodes(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
+    caller: Option<(&str, &str)>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request =
@@ -373,7 +390,7 @@ async fn grpc_memory_nodes(
         )
         .map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls)
+    let mut client = connect_memory_client(endpoint, tls, caller)
         .await
         .map_err(ToolError::unavailable)?;
     let response = client

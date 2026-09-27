@@ -82,6 +82,24 @@ impl SearchExpansions {
         }
     }
 
+    /// Reads one memory's proposal with [`Self::lint`], in the writer's
+    /// order: what passes, trimmed, awaits a judge; what fails is returned
+    /// with the sentence that says why. Every writing surface reads a
+    /// proposal this one way.
+    pub fn lint_proposal(text: &str, proposed: &[String]) -> (Vec<String>, Vec<(String, String)>) {
+        let mut linted = Vec::new();
+        let mut refused = Vec::new();
+        for expansion in proposed {
+            match Self::lint(text, expansion, &linted) {
+                Ok(kept) => linted.push(kept),
+                Err(faults) => {
+                    refused.push((expansion.clone(), SearchExpansionFault::describe(&faults)))
+                }
+            }
+        }
+        (linted, refused)
+    }
+
     /// The metadata value of kept expansions: one per line.
     pub fn render(expansions: &[String]) -> String {
         expansions.join("\n")
@@ -152,6 +170,32 @@ mod tests {
             faults(&long, &[])[0],
             SearchExpansionFault::TooLong { .. }
         ));
+    }
+
+    #[test]
+    fn a_proposal_is_linted_in_order_and_each_refusal_says_why() {
+        let (linted, refused) = SearchExpansions::lint_proposal(
+            TEXT,
+            &[
+                " Why was the launch postponed? ".into(),
+                "the rollout slipped".into(),
+                "why was the launch postponed?".into(),
+            ],
+        );
+        assert_eq!(linted, ["Why was the launch postponed?"]);
+        assert_eq!(
+            refused,
+            [
+                (
+                    "the rollout slipped".to_string(),
+                    SearchExpansionFault::RepeatsText.to_string()
+                ),
+                (
+                    "why was the launch postponed?".to_string(),
+                    SearchExpansionFault::Duplicate.to_string()
+                ),
+            ]
+        );
     }
 
     #[test]

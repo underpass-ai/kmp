@@ -102,16 +102,17 @@ unsupported store, stop its writers and preserve the directory. Use an explicitl
 archived compatible exporter to create a portable bundle, then import it into
 an empty current store. The recovery runbook defines that external contract.
 
-### The lexical index beside the store (shadow)
+### The lexical index beside the store
 
 `lexical-index.sqlite3` sits beside `store/` (not inside it: the format gate
 refuses files it does not know there). It is a derived index of what `kmp_ask`
 reads (DESIGN L6): for each about, every candidate's terms with their counts
 (`LexFwd`), postings of each term in blocks of 128 (`LexPost`), document
-frequencies (`LexKeyDf`) and the about's totals and language signals
-(`LexStats`), under both readings an ask can take (with the alias terms the
-anchored gate reads, and plain for `best_effort`). It records the event of the
-store's log it has followed and the derivation that wrote it.
+frequencies (`LexKeyDf`), the about's totals and language signals
+(`LexStats`), the clocks of its relations and the words of its texts, under
+both readings an ask can take (with the alias terms the anchored gate reads,
+and plain for `best_effort`). It records the event of the store's log it has
+followed and the derivation that wrote it.
 
 An about is indexed the first time it is asked about. From then on every write
 this binary makes is followed at once, and every ask first follows whatever
@@ -121,15 +122,22 @@ following an event twice changes nothing. A sidecar of another derivation, or
 behind a log that was replaced, is emptied and built again. Older binaries
 never open it.
 
-It answers no ask yet. Each ask compares it with what the ranker measured over
-the same candidates (N, the field lengths, df of every weighted term, tf and
-length of every candidate, and that the postings of the question's terms reach
-every candidate that could score) and logs one `kmp_lexical_shadow` line with
-the differences; an about that differs is forgotten and indexed again on its
-next ask. It is closed by default and opened only with
-`KMP_LEXICAL_INDEX=shadow`: while it answers nothing it costs about 5 % per ask
-and a build on each about's first ask. It can be deleted at any time: the next
-ask builds what it needs again. It is not part of a bundle.
+An ask of one about at the frontier, with no dimensions and no remote channel
+that reads the whole pool (semantic retrieval, re-ranking, the doubt band), is
+answered from it: only the memories that carry a word the question weighs (its
+own words, their associations in this memory, the words the lexical bridge
+finds for them) are read, with their neighbourhood, and ranked against the
+whole about as the index describes it; the response is the one reading the
+whole about gives, byte for byte. When those memories are more than a third of
+the about, the about has fewer than 2,250 entries (never indexed), or the ask is
+any other kind, it reads the about as before; `lexical-index.json` beside the
+store tunes both limits. It is on by default; `KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares it with
+every ask, and `verify` answers both ways and logs whether they agree. Among
+the memories the postings reach, those that cannot clear the ranker's floor
+under any reading of the question are not read at all (MaxScore, P14; on by
+default, `KMP_LEXICAL_MAXSCORE=off` reads them all). It can be
+deleted at any time: the next ask builds what it needs again. It is not part of
+a bundle.
 
 ## How Ask decides
 
@@ -165,6 +173,13 @@ is off by default because `high` has not been certified yet: on 170 labeled
 questions the table leaves 20 `high` answers, 19 of them right, and the
 one-sided Clopper-Pearson bound (δ = 0.1) is 0.82, short of the 0.95 it must
 reach before it is turned on.
+
+Two measured variants are off by default. `"attribute_check":true` holds a
+`high` the gate did not decide (no anchor) to a citation that states, in its
+own words, the attribute the question asks for (the word after «quién» /
+«who»); otherwise it reads `medium`. `"expansion_rescue_focus":false` lets a
+memory reached only through its judged search expansions be rescued without
+answering the ⌈2/3⌉ focus of a strict policy.
 
 ### The doubt band (opt-in, sends text to TypeSafe)
 
@@ -226,6 +241,15 @@ judged against; the rest are listed in the result as refused. Without the
 file, a working Jev or an answer, nothing is stored and the result says why
 (`search_expansions.not_stored`). A memories write commits the memories
 first and attaches the kept expansions as a second, metadata-only write.
+
+The gRPC write carries the same proposal: `MemoryEntry.search_expansions`
+(field 6), optional and additive, so an older client that never sets it
+writes exactly as before. Ingest reads it with the same lint and reports what
+became of it in `IngestResponse.search_expansions` (field 5,
+`SearchExpansionsReport`: `stored`, `refused`, `not_stored`, `judged_by`).
+The kernel serves no judge, so over gRPC nothing is stored and `not_stored`
+says why, the same outcome `kmp_write_memory` reports on a backend that
+cannot judge. More than six expansions for one entry is `INVALID_ARGUMENT`.
 
 Ask searches the expansions as a field of their own and never as the
 memory's words. A memory the question reaches only through them comes back
@@ -311,19 +335,24 @@ zero-quality read.
 
 Each tool call leaves one `kmp_mcp_tool` line in those logs: counts, durations
 and labels, never stored text, a question or an answer. A line also names the
-host as it introduced itself in `initialize` (`clientInfo` name and version
-only) and, for reads that page, whether the call is a page of an earlier one.
-A `kmp_ask` or `kmp_wake` line adds how it came out (answer status, UNKNOWN
-reason, stated confidence, whether the anchored gate decided, and cited
-passages per `reached_by`) and keyed fingerprints of its question or intent
-and of its guidance `context_id`: HMAC-SHA256 under `telemetry-salt`, 32
-random bytes created with mode `0600` beside the store on the first wake or
-ask that succeeds. A refused call lists the validation codes and field paths
-its `feedback` named (`LABELS_REQUIRED@labels`), never their reasons or values.
-The salt never enters a log, a bundle or a request, so a
-fingerprint compares only within its store; deleting the file only makes new
-fingerprints incomparable with old ones. The fields are listed in
-`scripts/performance/memory_bench/SCHEMAS.md` (`kmp_mcp_tool`).
+host as it introduced itself (`clientInfo` name and version only; over HTTP,
+the host of that session, never another's) and whether the call is a page of
+an earlier one. A `kmp_ask` or `kmp_wake` line adds how it came out (answer
+status, UNKNOWN reason, stated confidence, whether the anchored gate decided,
+and cited passages per `reached_by`) and a keyed fingerprint of its question or
+intent; any call with a guidance `context_id` adds one of that id. A
+fingerprint is the whole HMAC-SHA256 under `telemetry-salt`, 32 random bytes
+created with mode `0600` beside the store on the first wake, ask or write that
+succeeds, over the text in Unicode NFC, lower case and single spaces. A refused
+call lists the validation codes and field paths its `feedback` named
+(`LABELS_REQUIRED@labels`), never their reasons or values.
+
+The salt never enters a log, a bundle or a request, so a fingerprint compares
+only within its store. There is no rotate command: delete `telemetry-salt` and
+the next successful call creates a new one; fingerprints from before stop being
+comparable with those after. `kmp-mcp doctor` says whether the salt exists
+(never its bytes) and `kmp-mcp uninstall` removes it with its store. The fields
+are listed in `scripts/performance/memory_bench/SCHEMAS.md` (`kmp_mcp_tool`).
 
 ## Maintenance commands
 

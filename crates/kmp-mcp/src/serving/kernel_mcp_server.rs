@@ -37,9 +37,9 @@ pub struct KernelMcpServer {
     pub(super) orphaned_bundle: Option<kmp_embedded::OrphanedProjectBundle>,
     /// The durability loss is actionable once and noisy thereafter.
     pub(super) orphaned_bundle_offered: AtomicBool,
-    pub(super) apps_negotiated: AtomicBool,
-    /// The host as its last `initialize` named itself, for the call log.
-    pub(super) mcp_client: std::sync::RwLock<Option<crate::serving::telemetry::McpClient>>,
+    /// This process's own session (stdio). The HTTP gateway passes its own
+    /// per request instead.
+    pub(super) session: crate::serving::mcp_session::McpSession,
     /// Where this store keeps the salt its call fingerprints are keyed
     /// with; `None` (fixtures) fingerprints nothing.
     pub(super) telemetry_salt_path: Option<std::path::PathBuf>,
@@ -119,8 +119,7 @@ impl KernelMcpServer {
             viewer_offered: AtomicBool::new(false),
             orphaned_bundle: None,
             orphaned_bundle_offered: AtomicBool::new(false),
-            apps_negotiated: AtomicBool::new(false),
-            mcp_client: std::sync::RwLock::new(None),
+            session: crate::serving::mcp_session::McpSession::new(),
             telemetry_salt_path: None,
             telemetry_salt: std::sync::OnceLock::new(),
         }

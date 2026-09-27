@@ -68,6 +68,32 @@ impl LexicalField {
         }
     }
 
+    /// The field as the lexical sidecar measured it over the whole about
+    /// (DESIGN L6, P13): N, Σ length and df of the terms an ask can meet.
+    /// The average is the same division [`Self::build`] makes, so equal
+    /// integers give equal scores to the bit.
+    pub(super) fn from_stats(
+        documents: u64,
+        total_length: i64,
+        document_frequency: &BTreeMap<String, u64>,
+    ) -> Self {
+        let count = documents as usize;
+        let total_length = total_length.max(0) as usize;
+        Self {
+            documents: count,
+            document_frequency: document_frequency
+                .iter()
+                .filter(|(_, frequency)| **frequency > 0)
+                .map(|(term, frequency)| (term.clone(), *frequency as usize))
+                .collect(),
+            average_length: if count == 0 {
+                0.0
+            } else {
+                total_length as f64 / count as f64
+            },
+        }
+    }
+
     /// How many candidates the field was measured over.
     pub(super) fn documents(&self) -> usize {
         self.documents

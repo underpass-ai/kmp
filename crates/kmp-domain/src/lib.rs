@@ -84,6 +84,7 @@ pub use model::{
 pub use projection::NodeBodyDescriptor;
 pub use repositories::GraphPointReads;
 pub use repositories::TraceSnapshotReader;
+pub use repositories::{MemoryWriteFacts, MemoryWriteFactsRequest};
 pub use repositories::{NodeCardStore, NodeCardWriteFuture};
 pub use value_objects::{
     NodeCard, NodeCardEvent, NodeCardPresentation, NodeCardStamp, NodeCardStatus,

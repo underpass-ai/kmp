@@ -42,6 +42,8 @@ spec:
               containerPort: {{ .Values.service.grpcPort }}
               protocol: TCP
           env:
+            - name: KMP_DATA_DIR
+              value: {{ .Values.serverData.mountPath | quote }}
             - name: KMP_SERVICE_NAME
               value: {{ .Values.config.serviceName | quote }}
             - name: KMP_GRPC_BIND
@@ -146,6 +148,8 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: server-data
+              mountPath: {{ .Values.serverData.mountPath | quote }}
             {{- if ne .Values.tls.mode "disabled" }}
             - name: grpc-tls
               mountPath: {{ .Values.tls.mountPath | quote }}
@@ -176,6 +180,13 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+        - name: server-data
+          {{- if .Values.serverData.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "kmp.fullname" . }}-server-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         {{- if ne .Values.tls.mode "disabled" }}
         - name: grpc-tls
           secret:

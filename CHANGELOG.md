@@ -35,8 +35,83 @@ Detailed notes from the early release cycle remain available in the
   (index version `lexical-index-2`). **Off by default**:
   `KMP_LEXICAL_INDEX=shadow` opens it; in shadow it costs about 5 % per ask
   and a build on each about's first ask (31 s at 10^5 entries).
+- `kmp_ask` answers from the lexical index (P13, DESIGN L6), **on by
+  default** (`KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares,
+  `verify` answers both ways and logs whether they agree). An ask of one
+  about at the frontier, with no dimensions and no semantic retrieval,
+  re-ranking or doubt band, reads only the memories its postings reach (the
+  question's words, their associations in the memory, the words the lexical
+  bridge finds in the about's vocabulary) and their two-hop neighbourhood, and
+  ranks them against the whole about as the index holds it. Responses are
+  byte-identical to reading the whole about on every corpus measured
+  (1,047 asks on the frozen real store, with and without the machine's bridge; synth 10^3/10^4/10^5; the judged retrieval corpus; FactConsolidation 32k; LongMemEval-S); an ask whose words reach more than 35 % of the about, or of any
+  other kind, reads the about as before. Ask p50 197 → 177 ms on the real
+  store, 2.8 → 1.6 s at 10^4, 28 → 17 s at 10^5 (p95 unchanged: the asks it
+  does not answer); the first ask of an about builds its index (0.36 s at 10^3,
+  31 s at 10^5 entries). Abouts with fewer than 2,250 entries are never
+  indexed (their build costs more than their asks save; measured), and both
+  limits are per store in `lexical-index.json`
+  (`{"max_candidate_share_percent":35,"min_about_entries":2250}`).
+
+- MaxScore against the eligibility floor (P14, DESIGN L6), **on by
+  default** (`KMP_LEXICAL_MAXSCORE=off` turns it off): an ask the lexical
+  index answers leaves unread every candidate no reading of the question lets
+  clear the floor and that carries no association or bridged word, and the
+  35 % cost bound applies to what is left. Byte-identical answers by
+  construction (the bound is `Σ idf·tf < floor`, sound for both readings,
+  every form of the question and the bridge); not pruned when the gate
+  requires an anchor. Implemented without a bench campaign: **not measured at
+  scale** (Tirso's decision). `kmp_lexical_answer`/`kmp_lexical_verify` log
+  `reached` beside `candidates`.
+- Two measured variants in `ask-gate.json`, both off: `"attribute_check":
+  true` holds an unanchored `high` to a citation that states the attribute
+  the question asks for (`¿quién aprobó …?` → *aprobó*), else `medium`
+  (finding `breal-997250f158ea`); `"expansion_rescue_focus": false` lets P15's
+  expansion rescue skip the ⌈2/3⌉ focus.
 
 ### Changed
+
+- **Breaking (continuations):** Wake/Ask cursors are `kmp2` (P14): they carry
+  a digest of the item the page ended on and resume only after it, and bind
+  the core and what earlier pages delivered, not what follows. A `kmp1`
+  cursor is refused with the new reason `RECALL_CURSOR_ERROR_REASON_OUTDATED`
+  (gRPC `ABORTED`, MCP `READ_CURSOR_OUTDATED`) and a restart call.
+- **Breaking (answer semantics): top-k with lazy pages** (P14, on by default,
+  not measured at scale). An ask's ranking is a head (the best 64 eligible
+  candidates, diversified, repeated claims at the end of that window, then
+  every rescue walked from them) and a tail (the other eligible candidates in
+  rank order). A first page reads the head; a `kmp2` continuation reads 64
+  tail items past its offset, so pages concatenate to the exhaustive ranking.
+  Changed: repeated claims and rescues are placed after the head window, not
+  after the whole list; `proof.path`, supersessions and conflicts are the
+  head's; the UNKNOWN summary counts the head; a lazy page pages evidence
+  only and sets `AskResponse.more_ranked` (new field 11); `page.total`,
+  `sections.*.remaining` and `more_on_request` count what the reading carries.
+  The lexical index reads only the candidates whose exact rank prefix can
+  reach the page (plus what a rescue needs, and under the anchored gate
+  every candidate naming an anchor) and certifies the answer, else reads
+  more. Semantic retrieval, re-ranking, the doubt band and `max_entries`
+  read the whole ranking. The head window and the continuation chunk are 64
+  each and per store in `lexical-index.json` (`head_window`,
+  `continuation_chunk`), read with one rule by MCP and by the gRPC server
+  (from `KMP_DATA_DIR`). Lower-bound counts say so explicitly:
+  `page.total_is_lower_bound` and `AskResponse.total_is_lower_bound`
+  (additive fields).
+- «quién» and «con» are stop words, as «who» and «with» are. Lexical index
+  version `lexical-index-4`: every sidecar is rebuilt on its next ask.
+- The doubt band no longer reads every candidate's terms twice: the answer
+  takes back the terms the band's reading read (P10; with a warm verdict book
+  the band cost +100–190 ms per ask on the real store; not re-measured).
+- The memory bench follows a Trace page's `page.required_bytes`
+  continuation (a relation larger than `budget.max_bytes`) instead of
+  stopping on its 0-item page. Trace itself still returns whole items.
+- Writes in O(delta) (P13, DESIGN L6). An ingest or `kmp_write_memory` that
+  reads no neighbourhood for review asks the store point by point for what its
+  translation needs instead of reading the about's neighbourhood, and the
+  commit-native guard of a project store checks and publishes from the tail
+  this process left (the committed file unmoved, the log ending on the same
+  event) instead of exporting and comparing the whole stream; anything else
+  moved sends a write to the full check. One-entry `kmp_write_memory` p50: 218 → 13 ms at 10^4 and 2,681 → 2.6 ms at 10^5; commit-native 756 → 36 ms and 8,442 → 442 ms (a process's first write still checks in full); responses unchanged.
 
 - A `kmp_curate` path search with a goal asks Jev about its corridor
   instead of the whole selection, **on by default** (decided on 28 Sept 2026,
@@ -344,6 +419,17 @@ Detailed notes from the early release cycle remain available in the
   precision and one wrong PARTIAL fewer (a withheld source whose slug spelled
   a covered facet no longer reads as missing). With `{"mode":"off"}` every
   response is byte for byte what it was.
+- `memory_bench scale` (and `scale-aa`): the scale verification of the synth
+  ladder 10^3–10^5 on both topologies, 2 questions per type, `timeout_s` 120 and
+  `wake_resume` left out (`full` still measures it up to 10^4). It adds a far
+  trace cut: `trace_far` questions, `kmp_trace` between two 10^3 entries the world
+  joins only through at least 3 declared hops, followed in their declared
+  direction (the directed declared diameter of the 10^3 rung, unchanged at 10^4
+  and 10^5), every such pair (23 mono, 20 multi) and the same at every rung.
+  `report.json` gains `scale.far_trace` (pairs, `path_found`, wall p50/p95 per rung
+  and the P11 objective, p95 ≤ 30 ms at 10^5). A synth ladder may name
+  `exclude_types` and `far_trace` in `modes.toml`. Existing modes ask the same
+  questions as before, so their cached runs stay valid; `BENCH_VERSION` is unchanged.
 - `memory_bench` synth-v1 `1.2.0`: the `negated_anchor` gold forbids only the
   entries whose only anchor is the excluded one. An entry of the subject that
   also names the excluded anchor may be cited; it is neither an answer nor

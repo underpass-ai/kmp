@@ -36,6 +36,7 @@ use super::morphology::Morphology;
 use super::question_contract::QuestionContract;
 use super::question_intent::QuestionIntent;
 use super::question_time::QuestionTime;
+use super::ranked_evidence::{HEAD_WINDOW, RankedEvidence};
 use super::ranking_focus::RankingFocus;
 use super::search_terms::{
     concept_count, informative_term_counts, informative_terms, informative_tokens, matching_terms,
@@ -84,6 +85,28 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// Where the first collection this ranker builds is recorded for the
     /// lexical sidecar's shadow comparison, when an ask asked for it.
     witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
+    /// The whole about's collection, when the candidates are only those the
+    /// lexical index reached (DESIGN L6, P13).
+    indexed_collection: Option<std::sync::Arc<super::lexical_collection::LexicalCollection>>,
+    /// The whole about's vocabulary the lexical bridge reads, when the
+    /// candidates are only those the lexical index reached (DESIGN L6, P13).
+    indexed_vocabulary: Option<std::sync::Arc<Vec<String>>>,
+    /// The direct field of every candidate that carries a word of the
+    /// question, under the reading this ranker reads, when the candidates
+    /// are only those the lexical index read (DESIGN L6, P14): what the
+    /// store's associations are counted over, however many candidates the
+    /// floor bound left unread.
+    indexed_seed_documents: Option<std::sync::Arc<Vec<super::term_counts::TermCounts>>>,
+    /// Whether an expansion rescue must answer the strict focus (P15; the
+    /// store's `expansion_rescue_focus`, on by default).
+    expansion_focus: bool,
+    /// Where the readings of one ask share the terms they read their
+    /// candidates with (P10: a doubt band's reading, then the answer's), and
+    /// whether this reading keeps them there (the band) or only takes them
+    /// back (the answer).
+    prepared_cache: Option<(&'a super::prepared_terms_cache::PreparedTermsCache, bool)>,
+    /// How many eligible candidates make the head (P14, [`RankedEvidence`]).
+    head_window: usize,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -94,6 +117,12 @@ impl Default for AnswerEvidenceRanker<'_> {
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
+            indexed_seed_documents: None,
+            expansion_focus: true,
+            prepared_cache: None,
+            head_window: HEAD_WINDOW,
         }
     }
 }
@@ -180,12 +209,39 @@ impl<'a> AnswerEvidenceRanker<'a> {
         bridge: &'a LexicalBridge,
         lifecycle: MemoryLifecycle,
     ) -> Self {
+        Self::standing_on(
+            AnswerRecallContext::from_bundle_with_lifecycle(bundle, lifecycle),
+            bridge,
+        )
+    }
+
+    /// A ranker over the candidates the lexical index reached, standing on
+    /// the whole about's language (DESIGN L6, P13).
+    pub(super) fn from_indexed_bundle(
+        bundle: &KmpBundle,
+        bridge: &'a LexicalBridge,
+        lifecycle: MemoryLifecycle,
+        language: Option<String>,
+    ) -> Self {
+        Self::standing_on(
+            AnswerRecallContext::from_bundle_in(bundle, lifecycle, language),
+            bridge,
+        )
+    }
+
+    fn standing_on(context: AnswerRecallContext, bridge: &'a LexicalBridge) -> Self {
         Self {
-            context: AnswerRecallContext::from_bundle_with_lifecycle(bundle, lifecycle),
+            context,
             bridge,
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
+            indexed_seed_documents: None,
+            expansion_focus: true,
+            prepared_cache: None,
+            head_window: HEAD_WINDOW,
         }
     }
 
@@ -229,6 +285,60 @@ impl<'a> AnswerEvidenceRanker<'a> {
         self
     }
 
+    /// Measures every candidate against the whole about's collection, as
+    /// the lexical index holds it, instead of the candidates it is given.
+    pub(super) fn with_indexed_collection(
+        mut self,
+        collection: std::sync::Arc<super::lexical_collection::LexicalCollection>,
+    ) -> Self {
+        self.indexed_collection = Some(collection);
+        self
+    }
+
+    /// Bridges the question to the whole about's vocabulary, as the lexical
+    /// index holds it, instead of the candidates' texts.
+    pub(super) fn with_indexed_vocabulary(
+        mut self,
+        vocabulary: std::sync::Arc<Vec<String>>,
+    ) -> Self {
+        self.indexed_vocabulary = Some(vocabulary);
+        self
+    }
+
+    /// Counts the store's associations over these candidates' direct
+    /// fields instead of the candidates it is given (DESIGN L6, P14).
+    pub(super) fn with_indexed_seed_documents(
+        mut self,
+        documents: std::sync::Arc<Vec<super::term_counts::TermCounts>>,
+    ) -> Self {
+        self.indexed_seed_documents = Some(documents);
+        self
+    }
+
+    /// Lets an expansion rescue skip the strict focus (the measured variant
+    /// of P15, off unless a store asks for it).
+    pub(super) fn with_expansion_focus(mut self, required: bool) -> Self {
+        self.expansion_focus = required;
+        self
+    }
+
+    /// Whether a candidate states every one of these terms in its own words:
+    /// its text or its search summary, never its refs or metadata.
+    pub(super) fn memory_states_all(
+        &self,
+        item: &MemoryEvidence,
+        terms: &BTreeSet<String>,
+    ) -> bool {
+        let read = AnswerCandidateTerms::from_evidence(item, &self.context);
+        terms.iter().all(|term| read.content_counts.count(term) > 0)
+    }
+
+    /// Ranks with a head of `window` eligible candidates (P14).
+    pub(super) fn with_head_window(mut self, window: usize) -> Self {
+        self.head_window = window.max(1);
+        self
+    }
+
     /// Reads every candidate with the alias terms it spells (`corte 10` as
     /// `c10`), as the anchored gate compares them with a question's anchors.
     pub(super) fn with_identifier_aliases(mut self) -> Self {
@@ -260,12 +370,24 @@ impl<'a> AnswerEvidenceRanker<'a> {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> (Vec<MemoryEvidence>, ContentScores) {
+        let (ranked, scores) = self.rank_split(question, policy, evidence);
+        (ranked.evidence, scores)
+    }
+
+    /// [`Self::rank_scored`], with where its head ends (P14,
+    /// [`RankedEvidence`]).
+    pub(super) fn rank_split(
+        &self,
+        question: &str,
+        policy: MemoryAnswerPolicy,
+        evidence: Vec<MemoryEvidence>,
+    ) -> (RankedEvidence, ContentScores) {
         let morphology = &self.context.morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
             evidence.sort_by_key(stable_evidence_key);
-            return (evidence, ContentScores::default());
+            return (RankedEvidence::whole(evidence), ContentScores::default());
         }
         let strict_focus = self.strict_focus(question, policy);
         let prepared = self.prepare(evidence);
@@ -276,6 +398,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
             &prepared,
             self.bridge,
             std::sync::Arc::clone(&collection),
+            self.indexed_vocabulary.as_deref().map(Vec::as_slice),
+            self.indexed_seed_documents.as_deref().map(Vec::as_slice),
         );
         self.observe(&prepared, &collection, &lexicon);
         self.rank_prepared(
@@ -307,6 +431,20 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// Every candidate's terms, read once, up front: BM25 needs a collection
     /// before it can weigh anything.
     fn prepare(&self, evidence: Vec<MemoryEvidence>) -> Vec<ReadCandidate> {
+        let aliased = self.context.identifier_aliases;
+        if let Some((cache, keep)) = self.prepared_cache {
+            if let Some(terms) = cache.get(&evidence, aliased, keep) {
+                return evidence.into_iter().zip(terms).collect();
+            }
+            if keep {
+                let terms = evidence
+                    .iter()
+                    .map(|item| AnswerCandidateTerms::from_evidence(item, &self.context))
+                    .collect::<Vec<_>>();
+                cache.put(evidence.clone(), aliased, terms.clone());
+                return evidence.into_iter().zip(terms).collect();
+            }
+        }
         evidence
             .into_iter()
             .map(|item| {
@@ -316,6 +454,17 @@ impl<'a> AnswerEvidenceRanker<'a> {
             .collect()
     }
 
+    /// Reads the candidates' terms from `cache` when an earlier reading of
+    /// the same ask kept them; with `keep`, keeps what it reads there.
+    pub(super) fn with_prepared_cache(
+        mut self,
+        cache: &'a super::prepared_terms_cache::PreparedTermsCache,
+        keep: bool,
+    ) -> Self {
+        self.prepared_cache = Some((cache, keep));
+        self
+    }
+
     /// The collection is this question's own candidates: inside an about
     /// where every entry says `deploy`, that word earns nothing, and only a
     /// measurement taken here can know it.
@@ -323,6 +472,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
         &self,
         prepared: &[ReadCandidate],
     ) -> std::sync::Arc<super::lexical_collection::LexicalCollection> {
+        if let Some(collection) = &self.indexed_collection {
+            return std::sync::Arc::clone(collection);
+        }
         match self.lexical_cache {
             Some(cache) => cache.collection(self.lexical_identity.as_ref(), prepared),
             None => std::sync::Arc::new(super::lexical_collection::LexicalCollection::build(
@@ -343,7 +495,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         anchored: Option<(&BTreeSet<String>, &BTreeSet<String>)>,
         prepared: Vec<ReadCandidate>,
         lexicon: &Lexicon,
-    ) -> (Vec<MemoryEvidence>, ContentScores) {
+    ) -> (RankedEvidence, ContentScores) {
         let morphology = &self.context.morphology;
         let diversity_focus_terms = strict_focus
             .as_ref()
@@ -386,6 +538,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 candidate.relevance.content_score,
             )
         }));
+        // The head is the best window, diversified, its repeated claims at
+        // its end; the rest follows in rank order (P14): the head never
+        // depends on the tail, so any depth of the tail is a prefix.
+        let tail = if candidates.len() > self.head_window {
+            candidates.split_off(self.head_window)
+        } else {
+            Vec::new()
+        };
         let ranked = diversify_candidates(question_terms, &diversity_focus_terms, candidates);
         let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
@@ -410,7 +570,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             context: &self.context,
             question,
             question_terms,
-            strict: strict_focus.as_ref(),
+            strict: strict_focus.as_ref().filter(|_| self.expansion_focus),
         }
         .rescue(rejected);
         let (associated, rejected) = self.associated_candidates(rejected, lexicon);
@@ -423,12 +583,23 @@ impl<'a> AnswerEvidenceRanker<'a> {
         answer.extend(reached);
         answer.extend(associated);
         answer.extend(bridged);
+        let head = answer.len();
+        answer.extend(
+            tail.into_iter()
+                .map(|candidate| candidate.into_item(question, morphology)),
+        );
         // The expansions were a search surface; a reader is shown the memory.
         for item in &mut answer {
             item.metadata
                 .retain(|key, _| !SearchExpansions::is_metadata_key(key));
         }
-        (answer, scores)
+        (
+            RankedEvidence {
+                evidence: answer,
+                head,
+            },
+            scores,
+        )
     }
 
     /// Reads a question that names an identifier through the anchored gate.
@@ -455,7 +626,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             return AnchoredReading::unanchored(
-                self.rank(question, policy, evidence),
+                self.rank_split(question, policy, evidence).0,
                 ContentScores::default(),
             );
         }
@@ -476,6 +647,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     &prepared,
                     self.bridge,
                     std::sync::Arc::clone(&collection),
+                    self.indexed_vocabulary.as_deref().map(Vec::as_slice),
+                    self.indexed_seed_documents.as_deref().map(Vec::as_slice),
                 );
                 self.observe(&prepared, &collection, &lexicon);
                 let (evidence, scores) = self.rank_prepared(
@@ -505,6 +678,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
             &prepared,
             self.bridge,
             std::sync::Arc::clone(&collection),
+            self.indexed_vocabulary.as_deref().map(Vec::as_slice),
+            self.indexed_seed_documents.as_deref().map(Vec::as_slice),
         );
         self.observe(&prepared, &collection, &lexicon);
         let unfiltered = self
@@ -542,6 +717,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             BTreeMap::new()
         };
         let successors = ranked
+            .evidence
             .iter()
             .filter(|item| !was_reached_indirectly(item) || was_reached_along_a_lifecycle(item))
             .filter_map(|item| {
@@ -552,6 +728,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             })
             .collect::<BTreeMap<_, _>>();
         let direct = ranked
+            .evidence
             .iter()
             .filter(|item| !was_reached_indirectly(item) || successors.contains_key(&item.id))
             .map(|item| {
@@ -625,6 +802,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .map(|(item, _)| item.id.clone())
                 .chain(
                     ranked
+                        .evidence
                         .iter()
                         .filter(|item| lifecycle_anchors.reached_from_an_anchor(item))
                         .map(|item| item.id.clone()),
@@ -635,22 +813,26 @@ impl<'a> AnswerEvidenceRanker<'a> {
         // (or, in the lifecycle variant, a replacement) says so, and says
         // which memory named the anchor.
         let cited = verdict.cited();
-        let ranked = ranked
-            .into_iter()
-            .filter(|item| {
-                about_anchors.as_ref().is_none_or(|about| {
-                    about.contains(&item.id) || cited.contains(item.id.as_str())
+        let ranked = ranked.retain(|item| {
+            about_anchors
+                .as_ref()
+                .is_none_or(|about| about.contains(&item.id) || cited.contains(item.id.as_str()))
+        });
+        let ranked = RankedEvidence {
+            evidence: ranked
+                .evidence
+                .into_iter()
+                .map(|item| match rescue.standing_in_for(&item.id) {
+                    Some((from, via)) if cited.contains(item.id.as_str()) => {
+                        let from = from.to_string();
+                        mark_anchor_rescued(item, &from, via)
+                    }
+                    _ => item,
                 })
-            })
-            .map(|item| match rescue.standing_in_for(&item.id) {
-                Some((from, via)) if cited.contains(item.id.as_str()) => {
-                    let from = from.to_string();
-                    mark_anchor_rescued(item, &from, via)
-                }
-                _ => item,
-            })
-            .map(|item| judged.mark(item))
-            .collect::<Vec<_>>();
+                .map(|item| judged.mark(item))
+                .collect(),
+            head: ranked.head,
+        };
         AnchoredReading::decided(ranked, verdict)
             .with_scores(scores)
             .with_promotable(promotable)
@@ -1090,6 +1272,12 @@ mod tests {
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
+            indexed_seed_documents: None,
+            expansion_focus: true,
+            prepared_cache: None,
+            head_window: HEAD_WINDOW,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1805,6 +1993,12 @@ mod tests {
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
+            indexed_seed_documents: None,
+            expansion_focus: true,
+            prepared_cache: None,
+            head_window: HEAD_WINDOW,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -2235,6 +2429,12 @@ mod tests {
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
+            indexed_seed_documents: None,
+            expansion_focus: true,
+            prepared_cache: None,
+            head_window: HEAD_WINDOW,
             context: AnswerRecallContext::default(),
             bridge,
         }

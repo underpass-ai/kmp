@@ -21,4 +21,13 @@ where
             .list_memory_abouts_by_dimensions(dimension_ids)
             .await?)
     }
+
+    /// The facts a memory write reads of its about, point by point, when the
+    /// store can answer them that way (DESIGN L6, write in O(delta)).
+    pub async fn memory_write_facts(
+        &self,
+        request: &kmp_domain::MemoryWriteFactsRequest,
+    ) -> Result<Option<kmp_domain::MemoryWriteFacts>, ApplicationError> {
+        Ok(self.graph_reader.memory_write_facts(request).await?)
+    }
 }

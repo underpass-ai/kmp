@@ -80,6 +80,19 @@ local event bundle, plan canonical ingest, verify about coverage, temporal
 ordering, relations and evidence in the deployed kernel, and retain the source
 until the migration is accepted.
 
+## Server data directory
+
+The kernel keeps one file of its own: `telemetry-salt`, the random key of the
+Ask and Wake log fingerprints, in `KMP_DATA_DIR` (the chart mounts
+`serverData.mountPath`, `/var/lib/kmp`). It is created on first use with mode
+0600, is never logged and is not memory: the memory stays in Neo4j, Valkey and
+NATS. `serverData.persistence` (on by default, 64Mi, `ReadWriteOnce`) keeps it
+across restarts so fingerprints stay comparable; with it off, each pod starts a
+new salt. With `replicaCount > 1`, give it a `ReadWriteMany` class. Rotating the
+salt is deleting the file; fingerprints before and after stop comparing.
+`KMP_TELEMETRY_SALT_PATH` overrides the location. Outside the chart the default
+is `$XDG_DATA_HOME/kmp/server` (`~/.local/share/kmp/server`).
+
 ## Upgrades and rollback
 
 Pin releases, render the exact values, and use Helm's atomic upgrade behavior

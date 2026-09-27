@@ -72,7 +72,8 @@ def store_factory(entry, work_dir, out_dir):
     def new_store(label, seeded=True, jev=False, lexical=False):
         folder = out_dir / f'{next(counter):02d}-{label}'
         template = entry.template if seeded else None
-        # The lexical sidecar is off by default; `lexical` opens it in shadow.
+        # The lexical index answers by default (P13); `lexical` puts it in shadow, so
+        # every ask compares it with the ranker.
         lexical_env = {LEXICAL_INDEX_ENV: 'shadow'} if lexical else {}
         if not jev:
             return shared_store.SharedStore(work_dir, folder, label, template=template,

@@ -69,6 +69,10 @@ async fn point_reads_answer_nodes_bodies_edges_and_the_log_from_one_snapshot() {
             let summary = reads.node("entry")?.map(|node| node.summary);
             let detail = reads.detail("entry")?.map(|detail| detail.detail);
             let out = reads.outgoing("about", Some("records"))?.len();
+            // Counted in the index, without reading an edge.
+            assert_eq!(reads.outgoing_count("about", "records")?, out as u64);
+            assert_eq!(reads.outgoing_count("about", "contains_entry")?, 0);
+            assert_eq!(reads.outgoing_count("label", "contains_entry")?, 1);
             let into = reads
                 .incoming("entry", None)?
                 .into_iter()

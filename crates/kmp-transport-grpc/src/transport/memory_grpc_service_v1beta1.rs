@@ -20,13 +20,15 @@ use opentelemetry::KeyValue;
 use prost::Message;
 use tonic::{Code, Request, Response, Status};
 
+use crate::transport::grpc_call_telemetry::GrpcCallTelemetry;
+use crate::transport::grpc_client::GrpcClient;
 use crate::transport::proto_mapping_v1beta1::{
     ask_query_from_proto, ask_response_from_result, condense_command_from_proto,
-    condense_response_from_card, ingest_command_from_proto, ingest_response_from_outcome,
-    inspect_query_from_proto, inspect_response_from_result, relabel_command_from_proto,
-    relabel_response_from_outcome, relate_query_from_proto, relate_response_from_result,
-    temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
-    trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
+    condense_response_from_card, ingest_command_from_proto, inspect_query_from_proto,
+    inspect_response_from_result, relabel_command_from_proto, relabel_response_from_outcome,
+    relate_query_from_proto, relate_response_from_result, temporal_query_from_move_proto,
+    temporal_query_from_near_proto, temporal_response_from_result, trace_query_from_proto,
+    trace_response_from_result, visual_projection_query_from_proto,
     visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use crate::transport::recall_outcome_log::RecallOutcomeLog;
@@ -36,6 +38,7 @@ use kmp_proto_mapping::v1beta1::recall_projection::{
 };
 use kmp_proto_mapping::v1beta1::{
     AskRetrievalContext, LexicalBridge, LexicalIndexCache, abouts_in_bundle,
+    ingest_response_without_judge, search_expansion_proposals_from_proto,
 };
 
 pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
@@ -45,6 +48,10 @@ pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     /// the default.
     lexical_bridge: Arc<LexicalBridge>,
     lexical_cache: Arc<LexicalIndexCache>,
+    /// The store's fingerprint salt for the Ask and Wake log lines.
+    telemetry: Arc<GrpcCallTelemetry>,
+    /// The store's lazy-page sizes (P14), as MCP reads them.
+    rank_pages: kmp_proto_mapping::v1beta1::recall_projection::RankPages,
 }
 
 impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
@@ -53,7 +60,26 @@ impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
             application,
             lexical_bridge: Arc::new(LexicalBridge::none()),
             lexical_cache: Arc::default(),
+            telemetry: Arc::default(),
+            rank_pages: Default::default(),
         }
+    }
+
+    /// Answers asks with the store's head window and continuation chunk
+    /// (P14, `lexical-index.json`), as MCP does.
+    pub fn with_rank_pages(
+        mut self,
+        rank_pages: kmp_proto_mapping::v1beta1::recall_projection::RankPages,
+    ) -> Self {
+        self.rank_pages = rank_pages;
+        self
+    }
+
+    /// Keys Ask and Wake fingerprints with the salt at `path`, kept beside
+    /// the store this API serves (created on first use, mode 0600).
+    pub fn with_telemetry_salt(mut self, path: std::path::PathBuf) -> Self {
+        self.telemetry = Arc::new(GrpcCallTelemetry::with_salt_path(path));
+        self
     }
 
     pub fn with_lexical_bridge(mut self, lexical_bridge: Arc<LexicalBridge>) -> Self {
@@ -82,8 +108,14 @@ where
         request: Request<IngestRequest>,
     ) -> Result<Response<IngestResponse>, Status> {
         let start = Instant::now();
-        let command = ingest_command_from_proto(request.into_inner())
+        let request = request.into_inner();
+        // Proposed search expansions are read off the wire before the
+        // command, which never carries them: they are not part of the memory.
+        let expansions = search_expansion_proposals_from_proto(&request)
             .map_err(|status| map_proto_error("KernelMemoryService.Ingest", &start, *status))?;
+        let command = ingest_command_from_proto(request)
+            .map_err(|status| map_proto_error("KernelMemoryService.Ingest", &start, *status))?;
+        let dry_run = command.dry_run;
         tracing::info!(
             rpc = "KernelMemoryService.Ingest",
             about = %command.about,
@@ -112,18 +144,27 @@ where
             start.elapsed(),
         );
 
-        Ok(Response::new(ingest_response_from_outcome(outcome)))
+        // The kernel serves no judge, so what passes the lint is not stored
+        // and the response says why, as kmp_write_memory does on a backend
+        // that cannot judge.
+        Ok(Response::new(ingest_response_without_judge(
+            outcome,
+            &expansions,
+            dry_run,
+        )))
     }
 
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Wake"))]
     async fn wake(&self, request: Request<WakeRequest>) -> Result<Response<WakeResponse>, Status> {
         let start = Instant::now();
+        let client = GrpcClient::from_metadata(request.metadata());
         let request = request.into_inner();
         let projection_request = request.clone();
         let page_request = request.page.clone();
         let query = wake_query_from_proto(request.clone())
             .map_err(|status| map_proto_error("KernelMemoryService.Wake", &start, *status))?;
         let intent = query.intent.clone();
+        let asked_intent = request.intent.clone();
         let max_entries = query.max_entries;
         let temporal = query.temporal.clone();
         log_dimensioned_request("KernelMemoryService.Wake", &query.about, &query.dimensions);
@@ -158,6 +199,9 @@ where
             confidence = outcome.confidence.as_deref(),
             citations = outcome.citations,
             citations_reached_by = outcome.reached_by.as_str(),
+            client_name = client.name.as_deref(),
+            client_version = client.version.as_deref(),
+            subject_fingerprint = self.telemetry.fingerprint_text("intent", &asked_intent).as_deref(),
             "kernel memory grpc response"
         );
         record_kmp_grpc_rpc(
@@ -173,6 +217,7 @@ where
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Ask"))]
     async fn ask(&self, request: Request<AskRequest>) -> Result<Response<AskResponse>, Status> {
         let start = Instant::now();
+        let client = GrpcClient::from_metadata(request.metadata());
         let request = request.into_inner();
         let projection_request = request.clone();
         let page_request = request.page.clone();
@@ -196,7 +241,14 @@ where
                 max_entries,
                 AskRetrievalContext::from(result)
                     .with_lexical_cache(Arc::clone(&self.lexical_cache))
-                    .with_default_gate(),
+                    .with_default_gate()
+                    .with_rank_window(self.rank_pages.head_window)
+                    .with_rank_depth(
+                        kmp_proto_mapping::v1beta1::recall_projection::ask_rank_depth(
+                            page_request.as_ref().map(|page| page.cursor.as_str()),
+                            self.rank_pages.continuation_chunk,
+                        ),
+                    ),
                 &self.lexical_bridge,
                 &temporal,
             )
@@ -224,6 +276,9 @@ where
             anchored = outcome.anchored,
             citations = outcome.citations,
             citations_reached_by = outcome.reached_by.as_str(),
+            client_name = client.name.as_deref(),
+            client_version = client.version.as_deref(),
+            subject_fingerprint = self.telemetry.fingerprint_text("question", &question).as_deref(),
             "kernel memory grpc response"
         );
         record_kmp_grpc_rpc(
@@ -908,6 +963,7 @@ fn recall_projection_status(error: RecallProjectionError) -> Status {
     match error.cursor_detail() {
         Some(detail) => Status::with_details(
             if detail.reason == kmp_proto::v1beta1::RecallCursorErrorReason::SelectionChanged as i32
+                || detail.reason == kmp_proto::v1beta1::RecallCursorErrorReason::Outdated as i32
             {
                 Code::Aborted
             } else {

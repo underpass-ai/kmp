@@ -71,4 +71,55 @@ where
             timing: Some(timing),
         })
     }
+
+    /// The recall context of `about` built from nodes the caller already
+    /// read (DESIGN L6, P13): the candidates the lexical index reached and
+    /// the neighbourhood the ranker walks from them, assembled, selected and
+    /// given their bodies exactly as [`Self::selected_recall_context`] does
+    /// for the whole about.
+    pub(super) async fn recall_context_from_parts(
+        &self,
+        about: &str,
+        role: &str,
+        dimensions: &DimensionSelection,
+        options: &ContextRenderOptions,
+        demand: crate::queries::RenderDemand,
+        parts: crate::memory::RecallParts,
+    ) -> Result<GetContextResult, ApplicationError> {
+        let roots = self.memory_context_roots(about, dimensions).await?;
+        let requested_scopes = requested_dimension_scopes(about, dimensions, &roots);
+        let crate::memory::RecallParts {
+            neighborhood,
+            details,
+            read_revision,
+        } = parts;
+        let catalogue =
+            crate::queries::node_centric_projection_reader::catalogue_from_neighborhood(
+                about,
+                role,
+                self.query_application.generator_version,
+                neighborhood,
+            )?
+            .ok_or_else(|| ApplicationError::NotFound(format!("node '{about}' not found")))?;
+        let catalogue = crate::memory::merge_memory_bundles::merge(vec![catalogue])?;
+        let selected = filter_bundle_by_memory_dimensions(&catalogue, dimensions)?;
+        let ids = bundle_node_ids(&selected);
+        let details = std::iter::once(selected.root_node())
+            .chain(selected.neighbor_nodes())
+            .map(|node| node.node_id())
+            .filter(|id| ids.contains(*id))
+            .filter_map(|id| details.get(id))
+            .map(kmp_domain::BundleNodeDetail::from_projection)
+            .collect();
+        let bundle = selected.with_node_details(details)?;
+        let rendered = crate::queries::render_graph_bundle_on_demand(&bundle, options, demand);
+        Ok(GetContextResult {
+            bundle,
+            read_revision,
+            rendered,
+            requested_scopes,
+            served_at: std::time::SystemTime::now(),
+            timing: None,
+        })
+    }
 }

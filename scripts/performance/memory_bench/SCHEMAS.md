@@ -358,6 +358,7 @@ Structural rules enforced by `domain/question_rules.py`:
 | `interval_scoped` | ask | question `interval` (`nearest_outside` allowed) |
 | `path_between` | trace or curate | `path` with `to` |
 | `path_open` | trace or curate | `path` without `to` |
+| `trace_far` | trace | `path` with `to`: two 10^3-rung entries joined only through ≥ `min_hops` declared hops, in their declared direction (`application/far_trace.py`; added by a ladder with `far_trace`, never by the generator) |
 | `wake_resume` | wake | `wake_required` |
 | `repeat_and_determinism` | any | — (a control: the runner repeats it) |
 
@@ -813,6 +814,12 @@ this key order, compact, no NaN):
   `moved` (metrics whose Δ ≠ 0, raw token counts excluded), `raw_moved` (raw token
   counts whose Δ ≠ 0: the handles are minted at random per process, so these may move)
   and `holds` (`moved` is empty: quality, pages and normalized tokens all exactly 0).
+- `scale`: `exponents`, `calibration` and `far_trace` (`application/far_trace.py`): one
+  row per arm and run that asked `trace_far` questions (a run is a rung), `{arm, run_id,
+  level, topology, pairs, min_hops, hops, path_found: {value, n}, calls, censored,
+  wall_ms_p50, wall_ms_p95, target: {statistic: "wall_ms_p95", max_ms: 30.0, level:
+  100000}, within_target}`. Wall times are the ok, uncensored `kmp_trace` calls of repeat
+  0; `within_target` is null except at the target level. `[]` when no question was far.
 - `power[]`: targets and guards, then headline rates; a single-arm report gives
   `mde_at_reference_d` for d = 0.08 and 0.30 instead.
 - `verdict`: also `deltas` (`tokens_journey`, `jev_usd`, `useful_rate` when measured).
@@ -1059,11 +1066,11 @@ line and only when they apply (an absent field means "does not apply", never zer
 
 | Field | Type | Present on | Meaning |
 |---|---|---|---|
-| `client_name` | string | reads, `kmp_write_memory` and argument refusals after an `initialize` that named one | `clientInfo.name`, printable ASCII, ≤ 64 chars |
+| `client_name` | string | every tool call of a session whose host named itself (stdio `initialize`; HTTP: the session's `initialize` under its `Mcp-Session-Id`, or the request's `_meta` `io.modelcontextprotocol/clientInfo`) | `clientInfo.name`, printable ASCII, ≤ 64 chars |
 | `client_version` | string | with `client_name` | `clientInfo.version`, ≤ 32 chars (empty when not a string) |
-| `is_continuation` | bool | `kmp_wake`, `kmp_ask`, `kmp_inspect`, `kmp_trace`, `kmp_relate`, `kmp_time` | the call pages an earlier one (`continuation` handle or `page.cursor`) instead of starting a new call |
-| `subject_fingerprint` | hex16 | `kmp_ask` (question), `kmp_wake` (intent) | HMAC-SHA256 under the store salt of the question or intent, lower-cased and whitespace-collapsed; a page carries its first call's |
-| `context_fingerprint` | hex16 | `kmp_ask`, `kmp_wake` with `context_id` | HMAC-SHA256 of the guidance `context_id` |
+| `is_continuation` | bool | every tool call | the call pages an earlier one (`continuation` handle or `page.cursor`) instead of starting a new call; always `false` for tools that do not page |
+| `subject_fingerprint` | hex64 | `kmp_ask` (question), `kmp_wake` (intent) | the whole HMAC-SHA256 under the store salt of the question or intent after Unicode NFC, lower case and whitespace collapsed to one space (punctuation kept); a page carries its first call's |
+| `context_fingerprint` | hex64 | any call with a `context_id` (reads and writes) | HMAC-SHA256 of the guidance `context_id` |
 | `answer_status` | `answered`, `partial`, `unknown` | successful `kmp_ask` the anchored gate settled | as returned |
 | `unknown_reason` | enum | with `answer_status = unknown` | as returned (`no_candidates`, `no_bearing`, `out_of_window`, `anchor_absent_in_selection`, `attribute_not_found`) |
 | `confidence` | enum | successful `kmp_ask`, `kmp_wake` with a proof | `proof.confidence` as returned |
@@ -1075,13 +1082,23 @@ line and only when they apply (an absent field means "does not apply", never zer
 
 Error lines (`status = "error"`) carry the origin fields and the fingerprints when the
 salt already exists, never the outcome fields. Fingerprints are keyed by
-`<data dir>/telemetry-salt` (32 random bytes, mode 0600, created on the first successful
-wake or ask; for a gRPC backend, `<user data home>/agent-users/<endpoint hash>.telemetry-salt`
-on the MCP host). They compare only within one store; nothing else can recompute them.
-A fixture backend or an unwritable directory logs no fingerprint (one `kmp_telemetry_salt`
-WARN line says so). The gRPC API's `kernel memory grpc response` lines for
-`KernelMemoryService.Ask`/`Wake` carry the same outcome fields and `is_continuation`
-(`page.cursor` set), without client or fingerprints.
+`<data dir>/telemetry-salt` (32 random bytes, mode 0600, created on the first wake, ask or
+write that succeeds; for an MCP server on a gRPC backend,
+`<user data home>/agent-users/<endpoint hash>.telemetry-salt` on the MCP host). They compare
+only within one store; nothing else can recompute them. Rotating the salt is deleting the
+file: the next successful call creates a new one, and fingerprints before and after stop
+comparing. `kmp-mcp doctor` reports whether it exists (never its bytes) and `kmp-mcp
+uninstall` removes it with its store (and the remote-kernel salts under `agent-users/`;
+`--keep-memory` keeps each kept store's salt with it). A fixture backend or an unwritable
+directory logs no fingerprint (one `kmp_telemetry_salt` WARN line says so).
+
+The gRPC API's `kernel memory grpc response` lines for `KernelMemoryService.Ask`/`Wake`
+carry the same outcome fields, `is_continuation` (`page.cursor` set), `client_name`
+(`kmp-client-name` metadata, which an MCP server on a gRPC backend fills with its own
+session's host; else the `user-agent`), `client_version` (`kmp-client-version`) and
+`subject_fingerprint`, keyed by the server's salt: `KMP_TELEMETRY_SALT_PATH`, else
+`telemetry-salt` in `KMP_DATA_DIR`, else in `$XDG_DATA_HOME/kmp/server` (same creation
+rules). The API has no guidance context, so no `context_fingerprint`.
 
 Counting calls: `is_continuation = false` counts calls, `true` counts pages; group by
 `client_name` to separate hosts from the harnesses (`kmp-guide`, `kmp-lifecycle`, the bench).
@@ -1201,7 +1218,8 @@ store file is then `not_applied` with reason "binary predates store_config telem
 ### `kmp_lexical_shadow` (every ask, P12)
 
 Target `kmp_mcp::lexical_index`, level info: one line per first-page ask while the
-lexical sidecar (`<data dir>/lexical-index.sqlite3`) is on. `comparable` says whether the
+lexical sidecar (`<data dir>/lexical-index.sqlite3`) is in shadow
+(`KMP_LEXICAL_INDEX=shadow`). `comparable` says whether the
 ask read what the sidecar indexes (one about at the frontier, no dimensions, the
 default depth or deeper while nothing lies past it, a store that did not move while it
 asked); `reason` is `compared`, `selection` (narrowed by dimensions: only
@@ -1217,6 +1235,24 @@ informative. `sidecar_catch_up` (BT18) sums `differences` over every line with
 At debug, `kmp_lexical_catch_up` reports each time the sidecar follows the log:
 `position`, `events`, `abouts_refreshed`, `abouts_rebuilt`, `rows`, `reset`,
 `committed`, `elapsed_us`.
+
+### `kmp_lexical_answer` and `kmp_lexical_verify` (P13)
+
+Target `kmp_mcp::lexical_index`. With `KMP_LEXICAL_INDEX=on` (the default) or
+`verify`, every ask of one about at the frontier with no dimensions and no remote
+channel logs `kmp_lexical_answer` at debug: `answered = true` with `candidates`
+(how many the postings reached), `documents` (the about's), `plan_us` (choosing
+the candidates), `parts_us` (reading them and their neighbourhood from the store
+and assembling them) and `elapsed_us` (to the finished response); or
+`answered = false` with `reason` (`the about is below the index's size threshold`,
+`the candidates cover too much of the about`,
+`nodes lie past the indexed depth`, `the about holds search expansions`,
+`the index did not follow the log`, `the store moved`, `about not built`), and the
+ask reads the about. A failure to read the index is a warning and the ask reads
+the about. `verify` answers from the about and also from the index with no cost
+bound, and logs `kmp_lexical_verify` at info: `equal` (the two responses, field
+for field), `candidates`, `documents`, `plan_us`, `parts_us`, `index_elapsed_us`,
+`about_elapsed_us`.
 
 ## Search probe (`kmp.bench.search_probe.v1`)
 
@@ -1274,12 +1310,18 @@ lines; lines before the error have already been written.
 
 ## Mode runs (BT12)
 
-`quick-a`, `full`, `jev`, `aa` and `ci` (`application/mode_run.py`) run the sections their
+`quick-a`, `full`, `scale`, `jev`, `aa`, `scale-aa` and `ci` (`application/mode_run.py`) run the sections their
 mode in `config/modes.toml` (`kmp.bench.modes.v1`) names. `aa` replicates `quick-a`
 and `ci` replicates `quick-public` (the judged corpora and synth 10^3 mono: no private
 section, no network, no key; `scripts/ci/memory-bench-quick.sh`). A mode with the
 `public` section names its corpora in `[modes.<mode>.public]` (`corpora`, `sizes`,
-`per_type`, `abstention`, `setup`, `max_calls`). Each run section is one
+`per_type`, `abstention`, `setup`, `max_calls`). A synth ladder
+(`[modes.<mode>.synth]`) may also name `exclude_types` (question types it never asks,
+at any level) and a `far_trace` table (`min_hops` ≥ 2, `pairs` ≥ 1 or `"all"`: the `trace_far`
+questions it adds per topology). `scale` (and its A/A `scale-aa`) is the scale
+verification: synth 10^3–10^5 on both topologies, 2 questions per type, `timeout_s`
+120, `wake_resume` excluded (`full` measures it up to 10^4) and every far pair (`pairs = "all"`) at
+`min_hops = 3`. Each run section is one
 `report.json` (section 5); what ties them together is the mode summary.
 
 - **`kmp.bench.mode_summary.v1`** (`reports/<summary_key>/summary.json` and the

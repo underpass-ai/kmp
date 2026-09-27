@@ -25,7 +25,7 @@ async fn send(
             result: Ok(identity),
         }),
     ));
-    app.oneshot(request(json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":action["tool"],"arguments":action["arguments"]}}))).await.expect("HTTP response")
+    in_session(&app, json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":action["tool"],"arguments":action["arguments"]}})).await
 }
 
 #[tokio::test]

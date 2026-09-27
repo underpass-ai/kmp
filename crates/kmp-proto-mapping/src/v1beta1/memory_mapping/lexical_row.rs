@@ -24,6 +24,11 @@ pub struct LexicalRow {
     alias_content_length: i64,
     alias_extra_length: i64,
     expansion_length: i64,
+    /// The words of its text as the lexical bridge reads a candidate's
+    /// vocabulary (DESIGN L6, P13): folded, informative, each once,
+    /// ascending. They count for nothing in BM25; an ask answered from the
+    /// index bridges the question against the whole about's words.
+    words: Vec<String>,
 }
 
 /// FNV-1a, 64 bits: a fingerprint that must not move between processes or
@@ -32,7 +37,7 @@ const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
 const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
 
 /// The layout of an encoded row; a different one is refused.
-const ROW_LAYOUT: u64 = 3;
+const ROW_LAYOUT: u64 = 4;
 
 /// A candidate's fields as the ranker counts them: content and direct.
 type Fields<'a> = (&'a TermCounts, &'a TermCounts);
@@ -60,6 +65,18 @@ impl LexicalRow {
             aliased: (&aliased_content, &aliased_direct),
             expansion: &expansion,
         })
+        .with_words(bridge_words(&item.text))
+    }
+
+    /// The same row carrying `words` as its text's vocabulary.
+    pub(super) fn with_words(mut self, words: Vec<String>) -> Self {
+        self.words = words;
+        self
+    }
+
+    /// The words of its text the lexical bridge reads, ascending.
+    pub fn words(&self) -> &[String] {
+        &self.words
     }
 
     pub(super) fn from_counts(surfaces: Surfaces<'_>) -> Self {
@@ -108,7 +125,32 @@ impl LexicalRow {
             alias_extra_length: (length(aliased_direct) - length(aliased_content))
                 - (length(direct) - length(content)),
             expansion_length: length(expansion),
+            words: Vec::new(),
         }
+    }
+
+    /// Its direct field under one reading, as the ranker counts it.
+    pub(super) fn direct_counts(&self, aliased: bool) -> TermCounts {
+        TermCounts::from_counts(
+            self.terms
+                .iter()
+                .filter(|term| term.direct(aliased) > 0)
+                .map(|term| (term.term.clone(), term.direct(aliased) as u32))
+                .collect(),
+            self.direct_length(aliased).max(0) as usize,
+        )
+    }
+
+    /// Its content field under one reading, as the ranker counts it.
+    pub(super) fn content_counts(&self, aliased: bool) -> TermCounts {
+        TermCounts::from_counts(
+            self.terms
+                .iter()
+                .filter(|term| term.content(aliased) > 0)
+                .map(|term| (term.term.clone(), term.content(aliased) as u32))
+                .collect(),
+            self.content_length(aliased).max(0) as usize,
+        )
     }
 
     /// Every term, ascending.
@@ -233,6 +275,10 @@ impl LexicalRow {
                 push_signed(&mut buffer, count);
             }
         }
+        push_unsigned(&mut buffer, self.words.len() as u64);
+        for word in &self.words {
+            push_bytes(&mut buffer, word.as_bytes());
+        }
         buffer
     }
 
@@ -262,6 +308,15 @@ impl LexicalRow {
                 expansion: reader.signed()?,
             });
         }
+        let count = reader.unsigned()?;
+        let mut words = Vec::with_capacity(count.min(4096) as usize);
+        for _ in 0..count {
+            words.push(
+                std::str::from_utf8(reader.bytes()?)
+                    .map_err(|error| error.to_string())?
+                    .to_string(),
+            );
+        }
         if !reader.finished() {
             return Err("trailing bytes after a lexical row".into());
         }
@@ -281,8 +336,19 @@ impl LexicalRow {
             alias_content_length,
             alias_extra_length,
             expansion_length,
+            words,
         })
     }
+}
+
+/// The vocabulary the lexical bridge reads in a candidate's text
+/// ([`super::bridged_key::BridgedKey::read`]): its informative tokens, each
+/// once, ascending.
+fn bridge_words(text: &str) -> Vec<String> {
+    super::search_terms::informative_tokens(text)
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect()
 }
 
 /// Folds `(term, [content, direct, expansion])` and the three lengths. A row
@@ -338,6 +404,7 @@ mod tests {
             aliased: (&aliased_content, &aliased_direct),
             expansion: &counts(&["freezing", "valve"]),
         })
+        .with_words(vec!["froze".into(), "valve".into()])
     }
 
     #[test]
@@ -365,6 +432,20 @@ mod tests {
         assert!(freezing.is_expanded() && freezing.is_held());
         assert_eq!(valve.expansion, 1);
         assert_eq!(row.expansion_length(), 2);
+    }
+
+    #[test]
+    fn the_words_the_bridge_reads_are_the_texts_own_and_weigh_nothing() {
+        let item = MemoryEvidence {
+            text: "The reserve valve froze; the valve crew came.".into(),
+            ..MemoryEvidence::default()
+        };
+        let row = LexicalRow::read(&item, &LexicalProfile::new(None));
+        assert_eq!(row.words(), ["crew", "froze", "reserve", "valve"]);
+        let bare = row.clone().with_words(Vec::new());
+        assert_eq!(row.fingerprint(false), bare.fingerprint(false));
+        assert_eq!(row.fingerprint(true), bare.fingerprint(true));
+        assert_ne!(row.encode(), bare.encode());
     }
 
     #[test]

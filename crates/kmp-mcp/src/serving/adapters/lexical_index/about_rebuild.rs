@@ -5,6 +5,7 @@ use kmp_proto_mapping::v1beta1::{LanguageSignals, LexicalProfile, LexicalReading
 
 use super::about_change::AboutChange;
 use super::about_reader::AboutReader;
+use super::kept_relation::KeptRelation;
 use super::node_state::NodeState;
 use super::relation_key::RelationKey;
 
@@ -137,9 +138,9 @@ impl<'r> AboutRebuild<'r> {
         let relations = kept
             .iter()
             .map(|(key, edge)| {
-                let relation_signals = LanguageSignals::of_explanation(&edge.explanation);
-                signals.add(&relation_signals);
-                (key.clone(), Some(relation_signals))
+                let kept = KeptRelation::of(edge);
+                signals.add(&kept.signals);
+                (key.clone(), Some(kept))
             })
             .collect::<Vec<_>>();
         let language = LexicalProfile::decide_language(&signals, summaries);

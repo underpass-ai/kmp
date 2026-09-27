@@ -49,7 +49,11 @@ pub use snapshot_store::SnapshotStore;
 pub use token_estimator::TokenEstimator;
 
 mod graph_point_reads;
+mod memory_write_facts;
+mod memory_write_facts_request;
 pub use graph_point_reads::GraphPointReads;
+pub use memory_write_facts::MemoryWriteFacts;
+pub use memory_write_facts_request::MemoryWriteFactsRequest;
 mod trace_snapshot_reader;
 pub use trace_snapshot_reader::TraceSnapshotReader;
 pub mod read_snapshot_provider;

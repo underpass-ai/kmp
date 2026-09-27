@@ -37,7 +37,10 @@ pub(super) struct AskSetup<'a> {
 
 impl<'a> AskSetup<'a> {
     /// `gated` reads every memory with the alias terms it spells and the
-    /// question through its contract.
+    /// question through its contract. `indexed` is the whole about as the
+    /// lexical index holds it, when `result` holds only the candidates its
+    /// postings reached (DESIGN L6, P13).
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn read(
         result: &'a GetContextResult,
         question: &str,
@@ -46,19 +49,54 @@ impl<'a> AskSetup<'a> {
         cache: Option<&'a LexicalIndexCache>,
         gated: bool,
         witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
+        indexed: Option<&'a super::indexed_ask::IndexedAsk>,
     ) -> ProtoMappingResult<Self> {
         let lexical_identity = LexicalIndexIdentity::read(result, temporal);
         let admission = TemporalAdmission::read(&result.bundle, temporal)?;
         let bounded = admission.bound(&result.bundle);
         let lifecycle = lifecycle_for(&bounded, &admission);
+        // Candidates the lexical index reached stand on the whole about:
+        // its frontier and expiries, its language and its collection.
+        let lifecycle = match indexed {
+            Some(indexed) => lifecycle.with_indexed(&indexed.lifecycle),
+            None => lifecycle,
+        };
         let superseded_refs = lifecycle.superseded_refs().clone();
-        let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
-            .with_lexical_cache(cache, lexical_identity)
-            .with_lexical_witness(witness);
+        let ranker = match indexed {
+            Some(indexed) => AnswerEvidenceRanker::from_indexed_bundle(
+                &bounded,
+                bridge,
+                lifecycle,
+                indexed.language.clone(),
+            ),
+            None => AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
+                .with_lexical_cache(cache, lexical_identity)
+                .with_lexical_witness(witness),
+        };
         let ranker = if gated {
             ranker.with_identifier_aliases()
         } else {
             ranker
+        };
+        let ranker = match indexed {
+            Some(indexed) => {
+                let ranker = ranker.with_indexed_collection(std::sync::Arc::new(
+                    super::lexical_collection::LexicalCollection::from_indexed(
+                        indexed.stats(gated),
+                    ),
+                ));
+                let ranker = match indexed.seed_documents(gated) {
+                    Some(documents) => ranker.with_indexed_seed_documents(documents),
+                    None => ranker,
+                };
+                match &indexed.vocabulary {
+                    Some(vocabulary) => {
+                        ranker.with_indexed_vocabulary(std::sync::Arc::clone(vocabulary))
+                    }
+                    None => ranker,
+                }
+            }
+            None => ranker,
         };
         // What the selection admits is decided before the ranker weighs a
         // word, so the collection its statistics read is the selection's
@@ -91,6 +129,35 @@ impl<'a> AskSetup<'a> {
             negated,
             asked_anchors,
         })
+    }
+
+    /// Ranks with a head of `window` eligible candidates (P14).
+    pub(super) fn with_head_window(mut self, window: usize) -> Self {
+        self.ranker = self.ranker.with_head_window(window);
+        self
+    }
+
+    /// Applies the store's measured variants to the ranker (P15's expansion
+    /// focus); without a gate the defaults stand.
+    pub(super) fn with_gate(mut self, gate: Option<super::ask_gate::AskGate>) -> Self {
+        if let Some(gate) = gate {
+            self.ranker = self
+                .ranker
+                .with_expansion_focus(gate.requires_expansion_focus());
+        }
+        self
+    }
+
+    /// Reads the candidates' terms through `cache`, shared by the readings
+    /// of one ask (P10): the doubt band keeps them (`keep`), the answer
+    /// takes them back.
+    pub(super) fn with_prepared_cache(
+        mut self,
+        cache: &'a super::prepared_terms_cache::PreparedTermsCache,
+        keep: bool,
+    ) -> Self {
+        self.ranker = self.ranker.with_prepared_cache(cache, keep);
+        self
     }
 
     /// What the ranker reads: the question, or under the gate the question

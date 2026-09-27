@@ -2,7 +2,7 @@
 //!
 //! Every optional file the embedded backend consults beside a store —
 //! `typesafe.json`, `rerank.json`, `wake-focus.json`, `write-relations.json`,
-//! `curate.json`, `ask-gate.json`, `judgement-book.json`,
+//! `curate.json`, `ask-gate.json`, `judgement-book.json`, `lexical-index.json`,
 //! `semantic-retrieval.json`, the lexical bridge and the
 //! judgement cassette —
 //! is reported on target `kmp_mcp::store_config` with its sha256: at debug

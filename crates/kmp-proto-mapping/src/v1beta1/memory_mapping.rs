@@ -19,6 +19,7 @@ mod answer_selection;
 mod ask_gate;
 mod ask_retrieval_context;
 mod ask_setup;
+mod asked_attribute;
 mod association_index;
 #[cfg(test)]
 mod association_index_parity_tests;
@@ -49,13 +50,19 @@ mod doubt_verdicts;
 mod expansion_rescue;
 #[cfg(test)]
 mod expansion_rescue_tests;
+mod floor_bound;
 mod gate_doubt;
 mod gate_verdict;
 mod hybrid_evidence;
 mod identifier_alias;
 mod identifier_aliases;
 mod identifier_binding;
+mod indexed_ask;
+mod indexed_field_stats;
+mod indexed_lifecycle;
+mod indexed_question;
 mod ingest;
+mod ingest_search_expansions;
 mod judged_core;
 mod judged_selection;
 mod language_signals;
@@ -86,6 +93,7 @@ mod partner_shortlist;
 mod paths_proposals;
 mod posting;
 mod posting_block;
+mod prepared_terms_cache;
 mod queries;
 mod question_anchor;
 mod question_contract;
@@ -94,6 +102,8 @@ mod question_form;
 mod question_intent;
 mod question_time;
 mod question_vocabulary;
+mod rank_prefixes;
+mod ranked_evidence;
 mod ranked_selection;
 mod ranking_focus;
 mod reach_graph;
@@ -101,6 +111,7 @@ mod read_selection_fingerprint;
 mod relabel;
 mod relate;
 mod relate_proposals;
+mod relation_clock;
 mod relation_direction;
 mod relation_feature;
 mod relation_reach;
@@ -151,7 +162,16 @@ pub use doubt_entry::DoubtEntry;
 pub use doubt_judgement::DoubtJudgement;
 pub use doubt_passage::DoubtPassage;
 pub use doubt_verdicts::DoubtVerdicts;
+pub use floor_bound::FloorBound;
+pub use indexed_ask::IndexedAsk;
+pub use indexed_field_stats::IndexedFieldStats;
+pub use indexed_lifecycle::IndexedLifecycle;
+pub use indexed_question::IndexedQuestion;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
+pub use ingest_search_expansions::{
+    ingest_response_without_judge, search_expansion_proposals_from_proto,
+    search_expansions_report_to_proto,
+};
 pub use judged_selection::JudgedSelection;
 pub use language_signals::LanguageSignals;
 pub use lexical_bridge::LexicalBridge;
@@ -172,10 +192,12 @@ pub use queries::{
     temporal_query_from_move_proto, temporal_query_from_near_proto, trace_query_from_proto,
     wake_query_from_proto,
 };
+pub use rank_prefixes::{RankPrefix, RankPrefixes};
 pub use relabel::{relabel_command_from_proto, relabel_response_from_outcome};
 pub use relate::{
     curate_paths_reading_from_result, curate_reading_from_result, relate_response_from_result,
 };
+pub use relation_clock::RelationClock;
 pub use rerank_candidate_ranking::RerankCandidateRanking;
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,

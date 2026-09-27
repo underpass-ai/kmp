@@ -2,6 +2,8 @@ pub mod command_grpc_service_v1beta1;
 pub mod grpc_server;
 pub mod memory_grpc_service_v1beta1;
 pub use kmp_proto_mapping::v1beta1 as proto_mapping_v1beta1;
+mod grpc_call_telemetry;
+mod grpc_client;
 pub mod query_grpc_service_v1beta1;
 mod recall_outcome_log;
 pub mod support;

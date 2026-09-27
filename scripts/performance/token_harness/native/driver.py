@@ -66,8 +66,10 @@ def _next_write(structured):
     return (action['tool'], action['arguments']) if action else None
 
 
-def run_journey(session, spec, budget, max_calls=MAX_CALLS):
-    follow = _next_write if spec.tool == 'kmp_write_memory' else _next_read
+def run_journey(session, spec, budget, max_calls=MAX_CALLS, follow_read=None):
+    """`follow_read` replaces how a read's next call is chosen (the default
+    follows `projection.next_action` only); writes always follow review."""
+    follow = _next_write if spec.tool == 'kmp_write_memory' else (follow_read or _next_read)
     outcome = JourneyOutcome(max_calls=check_max_calls(max_calls))
     step = (spec.tool, first_arguments(spec, budget))
     try:

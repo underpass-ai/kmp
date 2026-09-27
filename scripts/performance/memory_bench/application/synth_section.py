@@ -9,7 +9,9 @@ cached; with the base cached, a candidate pays one import per level.
 
 Every level asks the same questions, those of the lowest level
 (`min_level <= levels[0]`), so the higher levels are extra runs of one question
-set: headlines per level and the latency scale exponent. A world missing from
+set: headlines per level and the latency scale exponent. A ladder may leave out
+question types (`exclude_types`) and add far trace pairs (`far_trace`,
+`application/far_trace.py`); both apply to every level alike. A world missing from
 the cache is generated first (with the kmp_search_probe oracles when the probe is
 built, otherwise without them, which the world manifest records).
 """
@@ -20,7 +22,7 @@ from ..generator import world as synth
 from ..generator.probe import ProbeUnavailable, SearchProbe
 from ..runtime import binaries
 from ..runtime.layout import public_layout
-from . import build, sections
+from . import build, far_trace, sections
 from .run_questions import StoreRef
 from .world import build as build_world
 
@@ -59,8 +61,10 @@ def stores_at(specs, ladder, topology, level, layout):
 
 
 def select(questions, ladder):
-    """The questions of the lowest level; with `per_type`, the first ones (by id) of each type."""
-    chosen = sorted((q for q in questions if q.min_level <= ladder.levels[0]), key=lambda q: q.id)
+    """The questions of the lowest level but the excluded types; with `per_type`, the first
+    ones (by id) of each type."""
+    chosen = sorted((q for q in questions if q.min_level <= ladder.levels[0]
+                     and q.type not in ladder.exclude_types), key=lambda q: q.id)
     if not ladder.per_type:
         return tuple(chosen)
     by_type = {}
@@ -75,7 +79,7 @@ def run_topology(specs, mode, topology, layout, replica_nonce=None):
     try:
         ensure_world(layout, ladder, topology)
         stores, loaded = stores_at(specs, ladder, topology, ladder.levels[0], layout)
-        questions = select(synth.load_questions(loaded), ladder)
+        questions = select(synth.load_questions(loaded), ladder) + far_trace.questions(loaded, ladder, topology)
         results = sections.measure(specs, stores, questions, mode, layout, replica_nonce=replica_nonce)
         extras = []
         for max_bytes in ladder.max_bytes_sweep:

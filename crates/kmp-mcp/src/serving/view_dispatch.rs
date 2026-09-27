@@ -15,7 +15,9 @@ use serde_json::Value;
 
 use crate::serving::json_rpc::jsonrpc_result;
 use crate::serving::kernel_mcp_server::KernelMcpServer;
-use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
+use crate::serving::telemetry::{
+    CallOrigin, ToolErrorKind, record_call_error, record_call_success,
+};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 
@@ -29,6 +31,7 @@ impl KernelMcpServer {
         name: &str,
         arguments: &Value,
         start: Instant,
+        origin: &CallOrigin,
     ) -> String {
         let outcome = match name {
             "kmp_view_get_state" => {
@@ -74,7 +77,8 @@ impl KernelMcpServer {
         match outcome {
             Ok(result) => {
                 let payload = tool_success_result(result);
-                record_tool_success(
+                record_call_success(
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     name,
@@ -85,13 +89,15 @@ impl KernelMcpServer {
                 jsonrpc_result(id, payload)
             }
             Err(error) => {
-                record_tool_error(
+                record_call_error(
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     name,
                     arguments,
                     ToolErrorKind::Validation,
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 jsonrpc_result(id, tool_error_result(name, arguments, &error))

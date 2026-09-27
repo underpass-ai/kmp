@@ -36,6 +36,11 @@ pub trait GraphPointReads {
         relation_type: Option<&str>,
     ) -> Result<Vec<NodeRelationProjection>, PortError>;
 
+    /// How many edges of one type leave a node, without reading them.
+    fn outgoing_count(&self, node_id: &str, relation_type: &str) -> Result<u64, PortError> {
+        Ok(self.outgoing(node_id, Some(relation_type))?.len() as u64)
+    }
+
     /// Every edge into a node, of one type when named, ascending by source.
     fn incoming(
         &self,

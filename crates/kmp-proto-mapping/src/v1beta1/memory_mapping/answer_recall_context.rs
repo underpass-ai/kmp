@@ -55,7 +55,16 @@ impl AnswerRecallContext {
         bundle: &KmpBundle,
         lifecycle: MemoryLifecycle,
     ) -> Self {
-        let language = search_language(bundle);
+        Self::from_bundle_in(bundle, lifecycle, search_language(bundle))
+    }
+
+    /// The same, in a language decided elsewhere: the whole about's, when
+    /// the bundle holds only the candidates an ask read (DESIGN L6, P13).
+    pub(super) fn from_bundle_in(
+        bundle: &KmpBundle,
+        lifecycle: MemoryLifecycle,
+        language: Option<String>,
+    ) -> Self {
         let morphology = Morphology::for_language(language.as_deref());
         let details_by_ref = bundle
             .node_details()

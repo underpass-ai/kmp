@@ -358,7 +358,20 @@ pub(super) fn proof(
     missing: Vec<String>,
     confidence: MemoryConfidence,
 ) -> Proof {
-    let path = normalize_proof_path(path, &evidence);
+    let head = evidence.len();
+    proof_of_head(path, evidence, head, missing, confidence)
+}
+
+/// [`proof`], its path joined to the first `head` evidence items only (P14:
+/// an ask's head, whatever depth of its tail the reading carries).
+pub(super) fn proof_of_head(
+    path: Vec<MemoryRelation>,
+    evidence: Vec<MemoryEvidence>,
+    head: usize,
+    missing: Vec<String>,
+    confidence: MemoryConfidence,
+) -> Proof {
+    let path = normalize_proof_path(path, &evidence[..head.min(evidence.len())]);
     let superseded = superseded_from_relations(&path);
     let conflicts = conflicts_from_relations(
         &path,

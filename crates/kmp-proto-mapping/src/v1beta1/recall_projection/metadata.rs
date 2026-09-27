@@ -13,7 +13,7 @@ use serde_json::{Map, Value, json};
 
 use super::actions;
 use super::budget::{DEFAULT_MAX_BYTES, ProjectionBudget};
-use super::cursor::make_cursor;
+use super::cursor::{boundary_after, make_cursor, prefix_hash, widest_cursor};
 use super::plan::{ProjectionItem, ProjectionPlan, Section};
 use super::proof_on_request::{MORE_ON_REQUEST, MORE_ON_REQUEST_KEY, withholds};
 use super::reused_core::reuses_core;
@@ -47,12 +47,16 @@ pub(super) fn attach_metadata<E, S>(
     // first page left on request (`proof_on_request`).
     let paged = eligible.len().saturating_sub(more_on_request);
     let next_offset = offset.saturating_add(selected.len());
-    let has_more = next_offset < paged;
+    let has_more = next_offset < paged || (plan.more_ranked && more_on_request == 0);
     let reported_offset = if planning { usize::MAX } else { offset };
     let cursor = if planning {
-        make_cursor(usize::MAX, &"f".repeat(64))
+        widest_cursor()
     } else if has_more {
-        make_cursor(next_offset, selection_hash)
+        make_cursor(
+            next_offset,
+            &boundary_after(eligible, next_offset),
+            &prefix_hash(selection_hash, eligible, next_offset),
+        )
     } else {
         String::new()
     };
@@ -169,7 +173,8 @@ pub(super) fn attach_metadata<E, S>(
             "total": paged,
             "has_more": planning || has_more,
             "next_cursor": if cursor.is_empty() { Value::Null } else { json!(cursor) },
-            "minimum_progress_bytes": if planning { Some(usize::MAX) } else if stalled || core_text_shortened { Some(plan.progress_bytes) } else { None }
+            "minimum_progress_bytes": if planning { Some(usize::MAX) } else if stalled || core_text_shortened { Some(plan.progress_bytes) } else { None },
+            "total_is_lower_bound": !planning && plan.more_ranked
         },
         "sections": sections,
         "excluded_by_detail": excluded_by_detail,

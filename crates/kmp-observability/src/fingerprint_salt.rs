@@ -1,5 +1,6 @@
 //! The random key a store fingerprints questions and contexts with, kept
-//! beside the store and nowhere else.
+//! beside the store and nowhere else. Shared by the MCP server and the gRPC
+//! API so both log comparable fingerprints for one store.
 
 use std::fmt;
 use std::io::{ErrorKind, Read, Write};
@@ -8,19 +9,16 @@ use std::path::{Path, PathBuf};
 use super::hmac_sha256::hmac_sha256;
 
 const SALT_BYTES: usize = 32;
-/// Hex digits a fingerprint keeps: 64 bits, enough to tell repeated
-/// questions of one store apart and too few to be worth brute-forcing.
-const FINGERPRINT_HEX: usize = 16;
 
 /// The file beside a store's configuration, outside `store/` like the
 /// verdict book: 32 random bytes, mode 0600, created on first use. It never
 /// enters a log, a bundle or a network request; deleting it only makes new
 /// fingerprints incomparable with old ones.
-pub(crate) const TELEMETRY_SALT_FILE: &str = "telemetry-salt";
+pub const TELEMETRY_SALT_FILE: &str = "telemetry-salt";
 
 /// A per-store HMAC-SHA256 key. Fingerprints under it compare within the
 /// store and with nothing else: not across stores, not across machines.
-pub(crate) struct FingerprintSalt {
+pub struct FingerprintSalt {
     key: [u8; SALT_BYTES],
 }
 
@@ -28,7 +26,7 @@ impl FingerprintSalt {
     /// Reads the salt at `path`, or creates it there when absent. The
     /// directory must exist: a salt never creates a store. Concurrent first
     /// uses agree on one salt — the file appears whole or not at all.
-    pub(crate) fn load_or_create(path: &Path) -> Result<Self, String> {
+    pub fn load_or_create(path: &Path) -> Result<Self, String> {
         match Self::load(path) {
             Err(error) if error.kind() == ErrorKind::NotFound => {}
             other => return other.map_err(|error| salt_error("read", &error)),
@@ -62,17 +60,21 @@ impl FingerprintSalt {
         Ok(Self { key })
     }
 
-    /// The keyed fingerprint of `text` under `domain`, which separates what
-    /// was fingerprinted: a question and a context id with the same bytes
-    /// never share a fingerprint.
-    pub(crate) fn fingerprint(&self, domain: &str, text: &str) -> String {
+    /// The keyed fingerprint of `text` under `domain`, the whole
+    /// HMAC-SHA256 as 64 lower-case hex digits. `domain` separates what was
+    /// fingerprinted: a question and a context id with the same bytes never
+    /// share a fingerprint.
+    pub fn fingerprint(&self, domain: &str, text: &str) -> String {
         let digest = hmac_sha256(&self.key, &[domain.as_bytes(), b"\0", text.as_bytes()]);
-        digest
-            .iter()
-            .flat_map(|byte| [byte >> 4, byte & 0x0f])
-            .take(FINGERPRINT_HEX)
-            .map(|nibble| char::from_digit(u32::from(nibble), 16).expect("nibble"))
-            .collect()
+        digest.iter().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    /// The fingerprint of a question or an intent as a person would repeat
+    /// it: Unicode NFC, lower case and runs of whitespace as one space;
+    /// punctuation is kept.
+    pub fn fingerprint_text(&self, domain: &str, text: &str) -> Option<String> {
+        let normalized = normalized_text(text);
+        (!normalized.is_empty()).then(|| self.fingerprint(domain, &normalized))
     }
 }
 
@@ -80,6 +82,16 @@ impl fmt::Debug for FingerprintSalt {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("FingerprintSalt(<redacted>)")
     }
+}
+
+fn normalized_text(text: &str) -> String {
+    use unicode_normalization::UnicodeNormalization;
+    text.nfc()
+        .collect::<String>()
+        .to_lowercase()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 fn random_key() -> Result<[u8; SALT_BYTES], String> {
@@ -161,7 +173,7 @@ mod tests {
         let b = FingerprintSalt::load_or_create(&two.path().join(TELEMETRY_SALT_FILE)).expect("b");
 
         let print = a.fingerprint("question", "who approved the rollback");
-        assert_eq!(print.len(), 16);
+        assert_eq!(print.len(), 64);
         assert!(print.chars().all(|c| c.is_ascii_hexdigit()));
         assert_ne!(print, a.fingerprint("context", "who approved the rollback"));
         assert_ne!(
@@ -169,6 +181,23 @@ mod tests {
             b.fingerprint("question", "who approved the rollback")
         );
         assert!(!format!("{a:?}").contains(&print));
+    }
+
+    #[test]
+    fn text_fingerprints_ignore_case_spacing_and_composition_but_not_punctuation() {
+        let dir = tempfile::tempdir().expect("dir");
+        let salt =
+            FingerprintSalt::load_or_create(&dir.path().join(TELEMETRY_SALT_FILE)).expect("salt");
+        let composed = salt.fingerprint_text("question", "¿Quién aprobó el cambio?");
+        let decomposed =
+            salt.fingerprint_text("question", "  ¿QUIE\u{301}N  aprobo\u{301}\tel cambio? ");
+        assert_eq!(composed, decomposed);
+        assert!(composed.is_some());
+        assert_ne!(
+            composed,
+            salt.fingerprint_text("question", "Quién aprobó el cambio")
+        );
+        assert_eq!(salt.fingerprint_text("question", " \n "), None);
     }
 
     #[test]

@@ -230,6 +230,38 @@ pub(crate) trait ReadTx {
         relation_type: Option<&str>,
     ) -> Result<Vec<Str3Row>, PortError>;
 
+    /// How many rows of a `Str3`-keyed adjacency index have `first` as the
+    /// node and `relation_type` as the edge type, without reading a value.
+    /// The default pages through the rows; an engine counts in its index.
+    fn count_str3_of_kind(
+        &self,
+        table: Table,
+        first: &str,
+        relation_type: &str,
+    ) -> Result<u64, PortError> {
+        const PAGE: u32 = 1024;
+        let mut counted = 0u64;
+        let mut after: Option<(String, String)> = None;
+        loop {
+            let page = self.scan_str3_page(
+                table,
+                first,
+                after
+                    .as_ref()
+                    .map(|(second, third)| (second.as_str(), third.as_str())),
+                PAGE,
+                Some(relation_type),
+            )?;
+            counted += page.len() as u64;
+            match page.last() {
+                Some(((_, second, third), _)) if page.len() == PAGE as usize => {
+                    after = Some((second.clone(), third.clone()));
+                }
+                _ => return Ok(counted),
+            }
+        }
+    }
+
     /// Last row in a two-component prefix, at or before the third-key bound.
     /// Uses the key index and returns at most one value.
     fn last_str3_before(

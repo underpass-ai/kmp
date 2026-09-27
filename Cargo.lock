@@ -1668,6 +1668,7 @@ dependencies = [
  "kmp-application",
  "kmp-domain",
  "kmp-embedded",
+ "kmp-observability",
  "kmp-proto",
  "kmp-proto-mapping",
  "kmp-transport-grpc",
@@ -1699,6 +1700,7 @@ version = "0.23.0"
 dependencies = [
  "axum 0.8.9",
  "base64 0.22.1",
+ "getrandom 0.2.17",
  "jsonwebtoken",
  "kmp-domain",
  "kmp-mcp",
@@ -1725,6 +1727,7 @@ dependencies = [
 name = "kmp-observability"
 version = "0.23.0"
 dependencies = [
+ "getrandom 0.2.17",
  "kmp-application",
  "kmp-domain",
  "opentelemetry",
@@ -1732,11 +1735,14 @@ dependencies = [
  "opentelemetry_sdk",
  "serde",
  "serde_json",
+ "sha2",
+ "tempfile",
  "tokio",
  "tonic 0.12.3",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -1808,6 +1814,7 @@ dependencies = [
  "kmp-observability",
  "kmp-transport-grpc",
  "opentelemetry",
+ "tempfile",
  "tokio",
  "tokio-rustls",
  "tracing",
@@ -1936,6 +1943,7 @@ dependencies = [
  "tokio-stream",
  "tonic 0.12.3",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

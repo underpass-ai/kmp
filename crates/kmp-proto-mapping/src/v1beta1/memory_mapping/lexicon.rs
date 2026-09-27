@@ -39,14 +39,22 @@ impl Lexicon {
         prepared: &[(MemoryEvidence, AnswerCandidateTerms)],
         bridge: &LexicalBridge,
         collection: Arc<LexicalCollection>,
+        vocabulary: Option<&[String]>,
+        association_documents: Option<&[TermCounts]>,
     ) -> Self {
         let question_counts = informative_term_counts(question, morphology);
-        let bridged = BridgedKey::read(
-            question,
-            morphology,
-            prepared.iter().map(|(item, _)| item.text.as_str()),
-            bridge,
-        );
+        // The table bridges the question to the words of every candidate:
+        // those given, or the whole about's when the lexical index gave only
+        // the candidates its postings reached (DESIGN L6, P13).
+        let bridged = match vocabulary {
+            Some(vocabulary) => BridgedKey::read_words(question, morphology, vocabulary, bridge),
+            None => BridgedKey::read(
+                question,
+                morphology,
+                prepared.iter().map(|(item, _)| item.text.as_str()),
+                bridge,
+            ),
+        };
         // The bar stays what the reader asked for — in the store's words
         // where the table had to supply them. Expansion may help a candidate
         // clear it; it may not lower it.
@@ -60,12 +68,20 @@ impl Lexicon {
             }
         }
         let floor = collection.direct.eligibility_floor(&asked_for);
-        let associated = AssociationIndex::for_question(
-            &question_counts,
-            &collection.direct,
-            prepared.iter().map(|(_, terms)| &terms.direct_counts),
-        )
-        .expand(&question_counts);
+        // Associations are counted over every candidate that carries a word
+        // of the question: those given, or, when the lexical index left the
+        // ones below the floor unread (P14), the ones its postings reached.
+        let associations = match association_documents {
+            Some(documents) => {
+                AssociationIndex::for_question(&question_counts, &collection.direct, documents)
+            }
+            None => AssociationIndex::for_question(
+                &question_counts,
+                &collection.direct,
+                prepared.iter().map(|(_, terms)| &terms.direct_counts),
+            ),
+        };
+        let associated = associations.expand(&question_counts);
         let mut asked = associated.clone();
         for pair in &bridged {
             let weight = asked.entry(pair.candidate_key.clone()).or_insert(0.0);
@@ -169,18 +185,21 @@ impl Lexicon {
     }
 
     pub(super) fn content_score(&self, terms: &AnswerCandidateTerms) -> i64 {
-        ranked_score(
-            self.collection
-                .content
-                .score_weighted(&self.asked, &terms.content_counts),
-        )
+        self.content_score_of(&terms.content_counts)
     }
 
     pub(super) fn direct_score(&self, terms: &AnswerCandidateTerms) -> i64 {
-        ranked_score(
-            self.collection
-                .direct
-                .score_weighted(&self.asked, &terms.direct_counts),
-        )
+        self.direct_score_of(&terms.direct_counts)
+    }
+
+    /// [`Self::content_score`] over counts read elsewhere (the lexical
+    /// index's rows, P14).
+    pub(super) fn content_score_of(&self, content: &TermCounts) -> i64 {
+        ranked_score(self.collection.content.score_weighted(&self.asked, content))
+    }
+
+    /// [`Self::direct_score`] over counts read elsewhere.
+    pub(super) fn direct_score_of(&self, direct: &TermCounts) -> i64 {
+        ranked_score(self.collection.direct.score_weighted(&self.asked, direct))
     }
 }

@@ -86,6 +86,19 @@ impl MemoryLifecycle {
         }
     }
 
+    /// The lifecycle read from the candidates an ask read, standing on the
+    /// frontier and the expiries the whole about declares (DESIGN L6, P13):
+    /// what was replaced is read from the relations the ask read, which
+    /// hold every replacement of a memory it read.
+    pub(super) fn with_indexed(
+        mut self,
+        indexed: &super::indexed_lifecycle::IndexedLifecycle,
+    ) -> Self {
+        self.frontier = indexed.frontier();
+        self.expired = indexed.expired();
+        self
+    }
+
     /// The lifecycles as they stood at one instant rather than at the
     /// memory's frontier: an entry is replaced only if its replacement
     /// already existed then, on the clock the recall reads, and expired only

@@ -1,8 +1,9 @@
 //! The lexical index kept beside the store (DESIGN L6, option (a)): a
 //! SQLite sidecar derived from the store's event log, maintained after every
 //! write and before every ask, and compared in shadow with what each ask's
-//! ranker measures. It does not answer asks yet (P13 does, through
-//! [`crate::serving::ports::lexical_candidates::LexicalCandidates`]).
+//! ranker measures. With `KMP_LEXICAL_INDEX=on` an ask it can hold is
+//! answered from the candidates its postings reach (P13, [`indexed_plan`]
+//! and [`indexed_parts`]); every other ask reads the about.
 
 mod about_change;
 mod about_reader;
@@ -10,6 +11,12 @@ mod about_rebuild;
 mod about_refresh;
 mod about_stats;
 pub(crate) mod catch_up_report;
+mod change_writer;
+pub(crate) mod index_limits;
+mod indexed_parts;
+mod indexed_plan;
+pub(crate) mod indexed_read;
+mod kept_relation;
 mod lexical_maintainer;
 pub(crate) mod lexical_sidecar;
 mod node_state;
@@ -37,3 +44,9 @@ mod expansion_shadow_tests;
 
 #[cfg(test)]
 mod derivation_golden_tests;
+
+#[cfg(test)]
+mod indexed_ask_tests;
+
+#[cfg(test)]
+mod maxscore_parity_tests;

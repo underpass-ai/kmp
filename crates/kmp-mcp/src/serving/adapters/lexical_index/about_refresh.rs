@@ -6,6 +6,7 @@ use super::about_change::AboutChange;
 use super::about_reader::AboutReader;
 use super::about_rebuild::ASK_DEPTH;
 use super::about_stats::AboutStats;
+use super::kept_relation::KeptRelation;
 use super::node_state::NodeState;
 pub(super) use super::refreshed::Refreshed;
 use super::relation_key::{CONTAINS_ENTRY, RelationKey, SUPPORTS};
@@ -319,10 +320,8 @@ impl<'r, 's> AboutRefresh<'r, 's> {
                     .update_node(&key.target, |state| step(&mut state.selected_in))?;
             }
         }
-        let signals = edge
-            .filter(|_| kept)
-            .map(|edge| LanguageSignals::of_explanation(&edge.explanation));
-        self.set.set_relation(key, signals)
+        let kept = edge.filter(|_| kept).map(|edge| KeptRelation::of(&edge));
+        self.set.set_relation(key, kept)
     }
 
     /// Counts a node's kept `contains_entry` edges again from what is kept.
@@ -382,10 +381,8 @@ impl<'r, 's> AboutRefresh<'r, 's> {
         let kept = edge.is_some()
             && self.set.node(&key.source)?.is_some_and(|s| s.included())
             && self.set.node(&key.target)?.is_some_and(|s| s.included());
-        let signals = edge
-            .filter(|_| kept)
-            .map(|edge| LanguageSignals::of_explanation(&edge.explanation));
-        self.set.set_relation(key, signals)
+        let kept = edge.filter(|_| kept).map(|edge| KeptRelation::of(&edge));
+        self.set.set_relation(key, kept)
     }
 
     /// What a node adds to the language while kept; nothing otherwise.

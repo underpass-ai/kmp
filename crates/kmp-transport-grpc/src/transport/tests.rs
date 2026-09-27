@@ -1573,6 +1573,53 @@ async fn memory_service_ask_indexes_entry_text_and_explicit_evidence_not_anchor_
     }));
 }
 
+/// API↔MCP parity (P14): the gRPC server reads the store's head window from
+/// `lexical-index.json` with the rule MCP reads it with, and its asks carry
+/// the same lazy pages: a head of one leaves the second citation in a tail
+/// the first page does not carry.
+#[tokio::test]
+async fn memory_service_ask_reads_the_stores_head_window_as_mcp_does() {
+    use kmp_proto_mapping::v1beta1::recall_projection::{RANK_PAGES_FILE, RankPages};
+    let directory = tempfile::tempdir().expect("store");
+    std::fs::write(
+        directory.path().join(RANK_PAGES_FILE),
+        r#"{"head_window":1}"#,
+    )
+    .expect("config");
+    let text = std::fs::read_to_string(directory.path().join(RANK_PAGES_FILE)).expect("read");
+    let pages = RankPages::from_json(&text).expect("pages");
+    let request = || AskRequest {
+        about: "question:evidence-answer".to_string(),
+        question: "What is the explicit answer?".to_string(),
+        answer_policy: AnswerPolicy::BestEffort as i32,
+        budget: Some(MemoryBudget {
+            tokens: 1024,
+            detail: MemoryDetailLevel::Full as i32,
+            depth: 3,
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let whole = memory_service(SeededGraphNeighborhoodReader, SeededNodeDetailReader)
+        .ask(Request::new(request()))
+        .await
+        .expect("ask")
+        .into_inner();
+    assert!(!whole.more_ranked && !whole.total_is_lower_bound);
+    let lazy = memory_service(SeededGraphNeighborhoodReader, SeededNodeDetailReader)
+        .with_rank_pages(pages)
+        .ask(Request::new(request()))
+        .await
+        .expect("ask")
+        .into_inner();
+    assert!(lazy.more_ranked && lazy.total_is_lower_bound, "{lazy:?}");
+    assert!(
+        lazy.projection
+            .and_then(|projection| projection.page)
+            .is_some_and(|page| page.has_more && page.total_is_lower_bound)
+    );
+}
+
 #[tokio::test]
 async fn memory_service_ask_strict_policies_require_the_requested_subject() {
     let service = memory_service(SeededGraphNeighborhoodReader, SeededNodeDetailReader);
@@ -2451,6 +2498,7 @@ fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
                     ..Default::default()
                 }],
                 metadata: Default::default(),
+                search_expansions: Vec::new(),
             }],
             relations: vec![MemoryRelation {
                 source_ref: "conversation:rachel-2026-04-12".to_string(),

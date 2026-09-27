@@ -1,7 +1,6 @@
 //! JSON-RPC method routing: one newline-delimited message in, at most one
 //! response out. Tool calls validate before anything reads the arguments.
 
-use std::sync::atomic::Ordering;
 use std::time::Instant;
 
 use serde_json::Value;
@@ -12,25 +11,23 @@ use crate::contract::{
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
+use crate::serving::mcp_session::McpSession;
 use crate::serving::telemetry::{
-    CallOrigin, CallSource, ToolErrorKind, record_call_error, record_call_success,
+    CallOrigin, ToolErrorKind, record_call_error, record_call_success,
 };
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::tool_error_result;
 
-fn client_supports_apps(request: &Value) -> bool {
-    request
-        .pointer("/params/capabilities/extensions/io.modelcontextprotocol~1ui/mimeTypes")
-        .and_then(Value::as_array)
-        .is_some_and(|types| {
-            types
-                .iter()
-                .any(|value| value.as_str() == Some(crate::contract::MCP_APP_MIME))
-        })
-}
-
 impl KernelMcpServer {
+    /// One message of this process's own session (stdio).
     pub async fn handle_json_line(&self, line: &str) -> Option<String> {
+        self.handle_json_line_in(line, &self.session).await
+    }
+
+    /// One message of `session`: what it negotiated decides the tool
+    /// surface and names the host in the call log. The HTTP gateway passes
+    /// the session of the request it serves.
+    pub async fn handle_json_line_in(&self, line: &str, session: &McpSession) -> Option<String> {
         let request = match serde_json::from_str::<Value>(line) {
             Ok(request) => request,
             Err(error) => {
@@ -47,9 +44,8 @@ impl KernelMcpServer {
 
         match method {
             Some("initialize") => id.map(|id| {
-                let apps = client_supports_apps(&request);
-                self.remember_client(&request);
-                self.apps_negotiated.store(apps, Ordering::SeqCst);
+                session.initialize(&request);
+                let apps = session.apps();
                 jsonrpc_result(
                     id,
                     self.passage_initialize(initialize_result_with_apps(
@@ -64,15 +60,15 @@ impl KernelMcpServer {
             Some("tools/list") => id.map(|id| {
                 jsonrpc_result(
                     id,
-                    self.output_schema_tools(self.passage_tools(tools_list_result_with_apps(
-                        self.apps_negotiated.load(Ordering::SeqCst),
-                    ))),
+                    self.output_schema_tools(
+                        self.passage_tools(tools_list_result_with_apps(session.apps())),
+                    ),
                 )
             }),
-            Some("resources/list") if self.apps_negotiated.load(Ordering::SeqCst) => {
+            Some("resources/list") if session.apps() => {
                 id.map(|id| jsonrpc_result(id, resources_list_result()))
             }
-            Some("resources/read") if self.apps_negotiated.load(Ordering::SeqCst) => id.map(|id| {
+            Some("resources/read") if session.apps() => id.map(|id| {
                 let uri = request
                     .get("params")
                     .and_then(|params| params.get("uri"))
@@ -86,7 +82,10 @@ impl KernelMcpServer {
                 }
             }),
             Some("tools/call") => match id {
-                Some(id) => Some(self.handle_tool_call(id, request.get("params")).await),
+                Some(id) => Some(
+                    self.handle_tool_call(id, request.get("params"), session)
+                        .await,
+                ),
                 None => None,
             },
             Some(other) => id.map(|id| {
@@ -118,7 +117,12 @@ impl KernelMcpServer {
         }
     }
 
-    async fn handle_tool_call(&self, id: Value, params: Option<&Value>) -> String {
+    async fn handle_tool_call(
+        &self,
+        id: Value,
+        params: Option<&Value>,
+        session: &McpSession,
+    ) -> String {
         let Some(params) = params.and_then(Value::as_object) else {
             return jsonrpc_error(id, -32602, "tools/call requires object params");
         };
@@ -128,7 +132,7 @@ impl KernelMcpServer {
         let name = canonical_tool_name(requested_name);
         let arguments = params.get("arguments").unwrap_or(&Value::Null);
         let start = Instant::now();
-        let origin = self.call_origin(name, arguments);
+        let origin = CallOrigin::read(arguments, session.client());
 
         if matches!(
             name,
@@ -136,7 +140,7 @@ impl KernelMcpServer {
                 | "kmp_view_read_nodes"
                 | "kmp_view_undo"
                 | "kmp_view_take_control"
-        ) && !self.apps_negotiated.load(Ordering::SeqCst)
+        ) && !session.apps()
         {
             return jsonrpc_result(
                 id,
@@ -173,10 +177,7 @@ impl KernelMcpServer {
         // is refused here rather than dropped and answered anyway.
         if let Err(error) = reject_unknown_arguments(name, arguments) {
             record_call_error(
-                CallSource {
-                    origin: &origin,
-                    salt: self.telemetry_salt(false),
-                },
+                self.call_source(&origin, false),
                 self.backend_name(),
                 self.grpc_tls_mode_name(),
                 name,
@@ -190,7 +191,7 @@ impl KernelMcpServer {
         }
 
         if name == "kmp_guide" {
-            return self.handle_kmp_guide(id, arguments, start).await;
+            return self.handle_kmp_guide(id, arguments, start, &origin).await;
         }
 
         let resolved = match self.resolve_read_arguments(name, arguments) {
@@ -242,13 +243,15 @@ impl KernelMcpServer {
         // is planned from the caller's pairs and committed through the
         // backend's own relabel, never through ingest.
         if name == "kmp_relabel" {
-            return self.handle_kmp_relabel(id, arguments, start).await;
+            return self.handle_kmp_relabel(id, arguments, start, origin).await;
         }
 
         // Curation reviews on the backend; applying writes, so it goes
         // through the writer's own commit path from here.
         if name == "kmp_curate" && arguments.get("mode").and_then(Value::as_str) == Some("apply") {
-            return self.handle_kmp_curate_apply(id, arguments, start).await;
+            return self
+                .handle_kmp_curate_apply(id, arguments, start, origin)
+                .await;
         }
 
         // Raw ingest keeps the about boundary whole. The kernel admits one
@@ -261,10 +264,7 @@ impl KernelMcpServer {
         {
             let error = ToolError::invalid_argument(message);
             record_call_error(
-                CallSource {
-                    origin,
-                    salt: self.telemetry_salt(false),
-                },
+                self.call_source(origin, false),
                 self.backend_name(),
                 self.grpc_tls_mode_name(),
                 name,
@@ -280,19 +280,22 @@ impl KernelMcpServer {
         // The view tools never reach the backend's write path — they hold a
         // view registry and a read-only existence check, and nothing else.
         if crate::serving::view_tools::is_view_tool(name) {
-            return self.handle_view_tool(id, name, arguments, start).await;
+            return self
+                .handle_view_tool(id, name, arguments, start, origin)
+                .await;
         }
 
-        match self.backend.call_tool(name, arguments).await {
+        let caller = origin
+            .client
+            .as_ref()
+            .map(|client| (client.name.as_str(), client.version.as_str()));
+        match self.backend.call_tool_for(name, arguments, caller).await {
             Ok(result) => {
                 // A wake or an ask that answered is the first moment the
                 // store surely exists: its salt may be created then.
                 let recall = matches!(name, "kmp_ask" | "kmp_wake");
                 record_call_success(
-                    CallSource {
-                        origin,
-                        salt: self.telemetry_salt(recall),
-                    },
+                    self.call_source(origin, recall),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     name,
@@ -304,10 +307,7 @@ impl KernelMcpServer {
             }
             Err(error) => {
                 record_call_error(
-                    CallSource {
-                        origin,
-                        salt: self.telemetry_salt(false),
-                    },
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     name,

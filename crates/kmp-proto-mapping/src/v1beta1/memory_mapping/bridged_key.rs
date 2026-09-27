@@ -35,15 +35,30 @@ impl BridgedKey {
         if bridge.is_silent() {
             return Vec::new();
         }
-        let question_words = informative_tokens(question).collect::<Vec<_>>();
         let vocabulary = candidate_texts
             .into_iter()
             .flat_map(informative_tokens)
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect::<Vec<_>>();
+        Self::read_words(question, morphology, &vocabulary, bridge)
+    }
+
+    /// The same over a vocabulary already read: the words of every
+    /// candidate's text, each once, ascending, as the lexical index holds
+    /// them for a whole about (DESIGN L6, P13).
+    pub(super) fn read_words(
+        question: &str,
+        morphology: &Morphology,
+        vocabulary: &[String],
+        bridge: &LexicalBridge,
+    ) -> Vec<Self> {
+        if bridge.is_silent() {
+            return Vec::new();
+        }
+        let question_words = informative_tokens(question).collect::<Vec<_>>();
         bridge
-            .bridge(&question_words, &vocabulary)
+            .bridge(&question_words, vocabulary)
             .into_iter()
             .map(|term| Self {
                 question_key: search_key(&term.question, morphology),

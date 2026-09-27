@@ -155,3 +155,43 @@ fn cursor_identity_uses_the_canonical_ordered_selection() {
     assert_eq!(second["projection"]["page"]["offset"], 4);
     assert!(second["projection"]["page"]["returned"].as_u64() > Some(0));
 }
+
+/// kmp2 (P14): a continuation resumes only after the item its page ended
+/// on, and a kmp1 cursor from the contract before is refused with a restart.
+#[test]
+fn a_kmp2_cursor_resumes_only_after_its_boundary_and_kmp1_is_refused() {
+    let estimator = Cl100kEstimator::new();
+    let packet = fixture();
+    let arguments = json!({
+        "about": "project:kmp",
+        "question": "What is current?",
+        "budget": {"tokens": 900, "max_bytes": 4_000, "detail": "full"},
+        "page": {"entries": 1}
+    });
+    let first = project_recall_output(packet.clone(), &arguments, 2_400, &estimator)
+        .expect("first page")
+        .projected();
+    let cursor = first
+        .pointer("/projection/page/next_cursor")
+        .and_then(Value::as_str)
+        .expect("continuation cursor")
+        .to_string();
+    let parts = cursor.split(':').collect::<Vec<_>>();
+    assert_eq!(parts[0], "kmp2");
+    assert_eq!(parts[2].len(), 16);
+    let resumed = |cursor: &str| {
+        let mut next = arguments.clone();
+        next["page"]["cursor"] = json!(cursor);
+        project_recall_output(packet.clone(), &next, 2_400, &estimator)
+    };
+    assert!(resumed(&cursor).is_ok());
+    let moved = format!("kmp2:{}:{}:{}", parts[1], "0".repeat(16), parts[3]);
+    let error = resumed(&moved).expect_err("another boundary is another reading");
+    assert!(error.contains("resumes after"), "{error}");
+    let retired = format!("kmp1:{}:{}", parts[1], parts[3]);
+    let error = resumed(&retired).expect_err("kmp1 is retired");
+    assert!(
+        error.contains("kmp1") && error.contains("restart"),
+        "{error}"
+    );
+}

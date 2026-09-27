@@ -9,6 +9,7 @@ use super::question_contract_vocabulary::QuestionContractVocabulary;
 use super::search_terms::{informative_term_counts, informative_terms};
 use super::term_counts::TermCounts;
 
+#[derive(Debug, Clone)]
 pub(super) struct AnswerCandidateTerms {
     /// What the candidate says: its text, and the writer's English rendering
     /// of it when one passed the lint. They are one content for ranking — a

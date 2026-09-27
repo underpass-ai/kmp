@@ -132,7 +132,22 @@ def _scale(section):
     lines = table(['arm', 'topology', 'metric', 'b', '95% CI', 'points', 'levels'], rows) if rows else \
         ['No run spans two ladder levels: no exponent.']
     lines += ['', f'- Calibration against the real store: {"present" if section["calibration"] else "not given"}']
-    return lines
+    return lines + _far_trace(section.get('far_trace') or [])
+
+
+def _far_trace(rows):
+    if not rows:
+        return []
+    target = rows[0]['target']
+    body = [[r['arm'], num(r['topology']), num(r['level']), num(r['pairs']), num(r['min_hops']),
+             num(r['path_found']['value']), num(r['calls']), num(r['censored']),
+             num(r['wall_ms_p50'], 2), num(r['wall_ms_p95'], 2), num(r['within_target'])]
+            for r in sorted(rows, key=lambda r: (r['arm'], str(r['topology']), r['level'] or 0, r['run_id']))]
+    return ['', '### Far trace', '',
+            f'Pairs joined only through at least `min_hops` declared hops; objective: '
+            f'{target["statistic"]} <= {num(target["max_ms"], 0)} ms at {target["level"]}.', ''] + \
+        table(['arm', 'topology', 'level', 'pairs', 'min_hops', 'path_found', 'calls', 'censored',
+               'wall p50 ms', 'wall p95 ms', 'within target'], rows=body)
 
 
 def _latency(section):

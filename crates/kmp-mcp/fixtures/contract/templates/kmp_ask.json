@@ -33,7 +33,8 @@
         "next_cursor": "null",
         "offset": "integer",
         "returned": "integer",
-        "total": "integer"
+        "total": "integer",
+        "total_is_lower_bound": "boolean"
       },
       "sections": {
         "proof.evidence": {

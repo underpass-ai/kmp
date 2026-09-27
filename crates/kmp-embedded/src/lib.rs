@@ -3,14 +3,22 @@
 //! resolves the data directory per the ADR-012 contract and the storage
 //! engine per ADR-018. No transport, no infrastructure clients.
 
+mod bundle_file;
 mod commit_bundle;
+mod committed_tail;
+#[cfg(test)]
+mod committed_tail_tests;
 mod data_dir;
 mod engine;
+mod file_stamp;
 mod kernel;
+mod log_tail;
 mod memory_api;
 pub mod memory_selection;
 mod memory_selection_refusal;
 mod migration;
+mod read_head;
+mod tail_memo;
 pub mod user_config_file;
 
 pub use commit_bundle::{

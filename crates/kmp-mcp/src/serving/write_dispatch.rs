@@ -11,7 +11,7 @@ use crate::serving::existing_entry_read::read_existing_entry;
 use crate::serving::json_rpc::jsonrpc_result;
 use crate::serving::kernel_mcp_server::KernelMcpServer;
 use crate::serving::telemetry::{
-    CallOrigin, CallSource, ToolErrorKind, record_call_error, record_call_success,
+    CallOrigin, ToolErrorKind, record_call_error, record_call_success,
 };
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
@@ -30,7 +30,6 @@ impl KernelMcpServer {
         start: Instant,
         origin: &CallOrigin,
     ) -> String {
-        let source = CallSource { origin, salt: None };
         // Three shapes, one envelope. `relations` is the shape a writer
         // reaches for when both memories already exist and only the link is
         // new; without it, saying "J01 supports J03" cost J01 its prose
@@ -68,7 +67,7 @@ impl KernelMcpServer {
                 // Compiler refusals carry field feedback. A failed source read
                 // keeps the category reported by the store (#586).
                 record_call_error(
-                    source,
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -101,7 +100,8 @@ impl KernelMcpServer {
                 self.propose_write_relations(&plan, &mut value).await;
                 let result = tool_success_result(value);
                 record_call_success(
-                    source,
+                    // A write that landed is proof the store exists.
+                    self.call_source(origin, true),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -113,7 +113,7 @@ impl KernelMcpServer {
             }
             Err(error) => {
                 record_call_error(
-                    source,
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -130,10 +130,36 @@ impl KernelMcpServer {
 
     /// Read every target before committing the packet. A rendering changes only
     /// search metadata; the authoritative text, kind and clocks come from storage.
+    /// A packet that would store nothing is refused whole, naming what was
+    /// refused.
     pub(super) async fn plan_search_summary_packet(
         &self,
         arguments: &Value,
     ) -> Result<(crate::write::plan::KernelWritePlan, Option<Value>), ToolError> {
+        match self.plan_search_summary_records(arguments).await? {
+            (Some(plan), report) => Ok((plan, report)),
+            (None, report) => {
+                let report = report.unwrap_or_default();
+                let reason = report["not_stored"]
+                    .as_str()
+                    .unwrap_or("every proposed expansion was refused");
+                Err(WriteValidationError::new(format!(
+                    "no search expansion was stored, so nothing was written: {reason}; refused: {}",
+                    report["refused"]
+                ))
+                .at("search_summaries")
+                .code("EXPANSIONS_NOT_STORED")
+                .into())
+            }
+        }
+    }
+
+    /// The packet's plan, `None` when nothing is left to write, and the
+    /// report of its search expansions.
+    pub(super) async fn plan_search_summary_records(
+        &self,
+        arguments: &Value,
+    ) -> Result<(Option<crate::write::plan::KernelWritePlan>, Option<Value>), ToolError> {
         use crate::write::validated_arguments::{required_map_string, required_string};
         let object = arguments
             .as_object()
@@ -305,17 +331,7 @@ impl KernelMcpServer {
         }
         let report = (!selection.is_empty()).then(|| selection.report());
         if plans.is_empty() {
-            let report = report.unwrap_or_default();
-            let reason = report["not_stored"]
-                .as_str()
-                .unwrap_or("every proposed expansion was refused");
-            return Err(WriteValidationError::new(format!(
-                "no search expansion was stored, so nothing was written: {reason}; refused: {}",
-                report["refused"]
-            ))
-            .at("search_summaries")
-            .code("EXPANSIONS_NOT_STORED")
-            .into());
+            return Ok((None, report));
         }
         let mut result = plans.remove(0);
         for plan in plans {
@@ -331,7 +347,7 @@ impl KernelMcpServer {
                 .next_suggested_reads
                 .extend(plan.next_suggested_reads);
         }
-        Ok((result, report))
+        Ok((Some(result), report))
     }
 }
 
