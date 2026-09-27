@@ -50,17 +50,17 @@ fn chain(n: usize) -> Value {
 async fn a_single_destination_trace_is_bounded_and_partial_beyond_its_limits() {
     let dir = tempfile::tempdir().expect("dir");
     let server = KernelMcpServer::embedded(dir.path()).expect("server");
-    call(&server, "kmp_ingest", chain(300)).await;
+    call(&server, "kmp_ingest", chain(600)).await;
 
     let near = call(
         &server,
         "kmp_trace",
-        json!({"about": ABOUT, "from": entry(299), "to": entry(279), "page": {"entries": 50}}),
+        json!({"about": ABOUT, "from": entry(599), "to": entry(579), "page": {"entries": 50}}),
     )
     .await;
     assert_eq!(near["trace"].as_array().map(Vec::len), Some(20), "{near}");
-    assert_eq!(near["trace"][0]["from"], entry(299));
-    assert_eq!(near["trace"][19]["to"], entry(279));
+    assert_eq!(near["trace"][0]["from"], entry(599));
+    assert_eq!(near["trace"][19]["to"], entry(579));
     assert!(
         near.get("search").is_none(),
         "a found path keeps its shape: {near}"
@@ -69,7 +69,7 @@ async fn a_single_destination_trace_is_bounded_and_partial_beyond_its_limits() {
     let far = call(
         &server,
         "kmp_trace",
-        json!({"about": ABOUT, "from": entry(299), "to": entry(0)}),
+        json!({"about": ABOUT, "from": entry(599), "to": entry(0)}),
     )
     .await;
     assert_eq!(far["trace"], json!([]), "{far}");
@@ -77,19 +77,47 @@ async fn a_single_destination_trace_is_bounded_and_partial_beyond_its_limits() {
     assert_eq!(search["direction"], "bidirectional", "{far}");
     assert_eq!(search["stop_reason"], "depth_budget", "{far}");
     assert_eq!(search["unreached_targets"], json!([entry(0)]));
-    assert_eq!(search["from"], entry(299));
+    assert_eq!(search["from"], entry(599));
     let warnings = far["warnings"].to_string();
     assert!(warnings.contains("not proof"), "{warnings}");
     let widen = &search["widen"];
     assert_eq!(widen["tool"], "kmp_trace");
-    assert_eq!(widen["arguments"]["to"], json!([entry(0)]));
+    assert_eq!(widen["arguments"]["to"], json!(entry(0)));
+    assert_eq!(widen["arguments"]["search"]["direction"], "bidirectional");
+    assert_eq!(widen["arguments"]["search"]["max_depth"], 1024);
 
     let widened = call(&server, "kmp_trace", widen["arguments"].clone()).await;
-    assert_eq!(
-        widened["search"]["stop_reason"], "targets_reached",
-        "the largest allowance reaches the far end: {widened}"
+    assert!(
+        widened.get("search").is_none(),
+        "the largest allowance reaches the far end as a path: {widened}"
     );
-    assert_eq!(widened["page"]["total"], 299);
+    assert_eq!(widened["page"]["total"], 599, "{widened}");
+    assert_eq!(widened["trace"][0]["from"], entry(599));
+
+    // search.widen follows every stored relation, structural links
+    // included, like the trace it widens: from the about anchor through its
+    // structural link, where a bounded target search cannot even start.
+    let widened_from_about = call(
+        &server,
+        "kmp_trace",
+        json!({"about": ABOUT, "from": ABOUT, "to": entry(300),
+            "search": {"direction": "bidirectional", "max_nodes": 4096}}),
+    )
+    .await;
+    let plain_from_about = call(
+        &server,
+        "kmp_trace",
+        json!({"about": ABOUT, "from": ABOUT, "to": entry(300)}),
+    )
+    .await;
+    assert_eq!(widened_from_about, plain_from_about);
+    assert!(
+        !plain_from_about["trace"]
+            .as_array()
+            .expect("trace")
+            .is_empty(),
+        "{plain_from_about}"
+    );
 
     let reverse = call(
         &server,

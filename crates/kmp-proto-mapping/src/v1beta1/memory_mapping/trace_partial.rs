@@ -30,8 +30,8 @@ impl TracePartial {
     pub(super) fn warning(search: &ContextPathSearch, from: &str, to: &str) -> String {
         format!(
             "trace search stopped at {} before reaching `{to}` from `{from}`; this is not \
-             proof that no directed path exists. search.widen repeats it as a bounded \
-             search with a larger allowance",
+             proof that no directed path exists. search.widen repeats the same trace over \
+             every relation with the largest allowance",
             search.stop.as_str()
         )
     }

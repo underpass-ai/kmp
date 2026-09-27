@@ -60,18 +60,27 @@ Detailed notes from the early release cycle remain available in the
   ref with no `search` or time options used to walk everything the source
   reaches (O(reachable): 390 ms at 16k entries and 2.8 s at 10^5 on the
   scale probe's chain). It is now a bidirectional breadth-first search from
-  both ends over every stored relation, under the bounded search's default
-  allowance (256 refs, 2048 adjacency rows, 128 hops, 4096 states): 5 ms
-  for the same far destination at 10^5. Where the search meets, the answer
-  is byte for byte the one the unbounded walk gave (all 362 pairs whose
-  unbounded walk stayed within that allowance, on synth 10^3/10^4/10^5, the
-  chain stores and the frozen real store). When an allowance runs out first,
+  both ends over every stored relation, under its own allowance (1024 refs,
+  8192 adjacency rows, 512 hops, 16384 states; four times the bounded
+  search's default, decided on 28 Sept 2026): 9–10 ms for the same far
+  destination at 16k and 10^5, with a peak RSS of 52–56 MiB instead of
+  73–245 MiB. Where the search meets, the answer is byte for byte the one
+  the unbounded walk gave (all 365 pairs whose unbounded walk stayed within
+  that allowance, on synth 10^3/10^4/10^5, the chain stores and the frozen
+  real store, apart from the random continuation handle; a 74-hop
+  destination on the chain, partial under the first 256-ref allowance, is
+  now found). When an allowance runs out first,
   the answer is partial instead of a path: `trace` is empty, `search` says
   `direction: "bidirectional"`, the stop (`node_budget`, `edge_budget`,
   `depth_budget` or `state_budget`) and the destination in
   `unreached_targets`, a warning says it is not proof of absence, and
-  `search.widen` is an optional bounded target search with the largest
-  allowance. A search that exhausts a side still answers "no directed trace
+  `search.widen` is the same trace — every stored relation, from both
+  ends, without filtering by why or evidence — with the largest allowance
+  (4096/32768/1024/32768): `to` one ref and `search` with only
+  `direction: "bidirectional"` and the four limits, which `kmp_trace` and
+  the gRPC `Trace` now accept. A widened trace that stops again offers no
+  further widen (on the chain it stops past about 2000 hops, in 28–51 ms).
+  A search that exhausts a side still answers "no directed trace
   reaches" as before. The gRPC `KernelMemoryService.Trace` does the same;
   `KernelQueryService.GetContextPath` keeps the unbounded read.
 - Relations proposed after a write, and every focused `kmp_curate` review,

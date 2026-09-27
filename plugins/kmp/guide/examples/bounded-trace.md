@@ -63,14 +63,16 @@ group. Use temporal verbs to discover entries and Inspect for their full sources
 ## One destination without search options
 
 `{"about":"about","from":"ref-A","to":"ref-C"}` walks every stored relation
-from A and back from C at once, under the same default allowance (256 refs,
-2048 rows, 128 hops). When the two searches meet, `trace` is the shortest
+from A and back from C at once, under its own allowance (1024 refs, 8192
+rows, 512 hops). When the two searches meet, `trace` is the shortest
 directed path. When an allowance runs out first, `trace` is empty, `search`
 reports the stop, `direction:"bidirectional"` and C under `unreached_targets`,
-and a warning says this is not proof. `search.widen` holds a complete bounded
-call with the largest allowance. Run it only if the connection still matters:
-it walks outgoing, source-backed, non-structural links, starts a new selection
-and costs a new read.
+and a warning says this is not proof. `search.widen` holds the same trace
+with the largest allowance (`search.direction:"bidirectional"` and the four
+limits, 4096 refs up to 1024 hops): it follows every stored relation, as this
+trace does. Run it only if the connection still matters: it starts a new
+selection and costs a new read, and a widened trace that stops again offers
+no further widen.
 
 
 ## Alternative paths and mixed directions

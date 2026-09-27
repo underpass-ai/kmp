@@ -508,6 +508,7 @@ pub async fn trace_resolves_path_between_anchor_and_entry(
             role: "memory".to_string(),
             token_budget: 4096,
             page: TracePageRequest::default(),
+            limits: None,
         })
         .await
         .expect("trace between anchor and entry must resolve");
@@ -525,6 +526,7 @@ pub async fn trace_resolves_path_between_anchor_and_entry(
             role: "memory".to_string(),
             token_budget: 4096,
             page: TracePageRequest::default(),
+            limits: None,
         })
         .await;
     assert!(

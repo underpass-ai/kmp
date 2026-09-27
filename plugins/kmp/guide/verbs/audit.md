@@ -9,11 +9,12 @@ Choose one Trace mode:
   relation and direction. Do not combine `seek` with `to` or destination options.
 
 A single `to` string with no search or time options follows every stored
-relation with a bounded search from both ends (256 refs, 2048 rows, 128 hops).
+relation with a bounded search from both ends (1024 refs, 8192 rows, 512 hops).
 A path it returns is the shortest one. When a limit stops it first, `trace`
 is empty and `search` names the stop, `direction:"bidirectional"` and the
-destination in `unreached_targets`. That is not absence. `search.widen` is an
-optional larger search you may run instead; it is not a page continuation.
+destination in `unreached_targets`. That is not absence. `search.widen` is the
+same trace over every relation with the largest allowance, which you may run
+instead; it is not a page continuation.
 
 Set the task's clock and cut explicitly for historical questions. Unknown
 clocks, missing obligations and `review_required` survive a successful search.

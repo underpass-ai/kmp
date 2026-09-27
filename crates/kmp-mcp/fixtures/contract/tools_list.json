@@ -2920,10 +2920,11 @@
               },
               "direction": {
                 "default": "outgoing",
-                "description": "Destination mode only; not with seek. Traversal direction; stored source/target and meaning are preserved.",
+                "description": "Destination mode only; not with seek. Traversal direction; stored source/target and meaning are preserved. bidirectional takes one to and work limits only: the single-destination trace over every relation under that allowance, as search.widen offers it.",
                 "enum": [
                   "outgoing",
-                  "incoming"
+                  "incoming",
+                  "bidirectional"
                 ],
                 "type": "string"
               },
