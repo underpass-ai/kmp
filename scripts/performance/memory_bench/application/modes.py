@@ -12,6 +12,8 @@ import tomllib
 
 from ..domain import cachekey
 from ..domain.errors import BenchError
+from ..domain.far_trace import FarTraceInvalid, FarTraceSpec
+from ..domain.question_rules import TYPES as QUESTION_TYPES
 from ..domain.run_record import MAX_CALLS_LIMIT
 from .verdict import VERDICTS
 
@@ -43,6 +45,8 @@ class SynthLadder:
     batch_size: int
     max_bytes_sweep: tuple = ()
     per_type: int = 0  # the first per_type questions (by id) of each type; 0 = every question
+    exclude_types: tuple = ()  # question types this ladder does not ask (at any of its levels)
+    far_trace: FarTraceSpec | None = None  # the trace_far pairs it adds (application/far_trace.py)
 
 
 @dataclass(frozen=True)
@@ -136,9 +140,24 @@ def _synth(table, where):
     sweep = tuple(table.get('max_bytes_sweep', ()))
     if any(isinstance(v, bool) or not isinstance(v, int) or v < 1 for v in sweep):
         raise ModeInvalid(f'{where}.max_bytes_sweep: positive integers')
+    excluded = tuple(table.get('exclude_types', ()))
+    if set(excluded) - set(QUESTION_TYPES) or len(set(excluded)) != len(excluded):
+        raise ModeInvalid(f'{where}.exclude_types: distinct question types')
     return SynthLadder(_int(table, 'seed', where), topologies, levels,
                        _int(table, 'batch_size', where, minimum=1), sweep,
-                       _int(table, 'per_type', where, default=0))
+                       _int(table, 'per_type', where, default=0), excluded,
+                       _far_trace(table.get('far_trace'), where + '.far_trace'))
+
+
+def _far_trace(table, where):
+    if table is None:
+        return None
+    if not isinstance(table, dict) or set(table) - {'min_hops', 'pairs'}:
+        raise ModeInvalid(f'{where}: a table of min_hops and pairs')
+    try:
+        return FarTraceSpec(table.get('min_hops'), table.get('pairs'))
+    except FarTraceInvalid as error:
+        raise ModeInvalid(f'{where}: {error}') from error
 
 
 def _judged(table, where):

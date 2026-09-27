@@ -358,6 +358,7 @@ Structural rules enforced by `domain/question_rules.py`:
 | `interval_scoped` | ask | question `interval` (`nearest_outside` allowed) |
 | `path_between` | trace or curate | `path` with `to` |
 | `path_open` | trace or curate | `path` without `to` |
+| `trace_far` | trace | `path` with `to`: two 10^3-rung entries joined only through ≥ `min_hops` declared hops, in their declared direction (`application/far_trace.py`; added by a ladder with `far_trace`, never by the generator) |
 | `wake_resume` | wake | `wake_required` |
 | `repeat_and_determinism` | any | — (a control: the runner repeats it) |
 
@@ -813,6 +814,12 @@ this key order, compact, no NaN):
   `moved` (metrics whose Δ ≠ 0, raw token counts excluded), `raw_moved` (raw token
   counts whose Δ ≠ 0: the handles are minted at random per process, so these may move)
   and `holds` (`moved` is empty: quality, pages and normalized tokens all exactly 0).
+- `scale`: `exponents`, `calibration` and `far_trace` (`application/far_trace.py`): one
+  row per arm and run that asked `trace_far` questions (a run is a rung), `{arm, run_id,
+  level, topology, pairs, min_hops, hops, path_found: {value, n}, calls, censored,
+  wall_ms_p50, wall_ms_p95, target: {statistic: "wall_ms_p95", max_ms: 30.0, level:
+  100000}, within_target}`. Wall times are the ok, uncensored `kmp_trace` calls of repeat
+  0; `within_target` is null except at the target level. `[]` when no question was far.
 - `power[]`: targets and guards, then headline rates; a single-arm report gives
   `mde_at_reference_d` for d = 0.08 and 0.30 instead.
 - `verdict`: also `deltas` (`tokens_journey`, `jev_usd`, `useful_rate` when measured).
@@ -1283,12 +1290,18 @@ lines; lines before the error have already been written.
 
 ## Mode runs (BT12)
 
-`quick-a`, `full`, `jev`, `aa` and `ci` (`application/mode_run.py`) run the sections their
+`quick-a`, `full`, `scale`, `jev`, `aa`, `scale-aa` and `ci` (`application/mode_run.py`) run the sections their
 mode in `config/modes.toml` (`kmp.bench.modes.v1`) names. `aa` replicates `quick-a`
 and `ci` replicates `quick-public` (the judged corpora and synth 10^3 mono: no private
 section, no network, no key; `scripts/ci/memory-bench-quick.sh`). A mode with the
 `public` section names its corpora in `[modes.<mode>.public]` (`corpora`, `sizes`,
-`per_type`, `abstention`, `setup`, `max_calls`). Each run section is one
+`per_type`, `abstention`, `setup`, `max_calls`). A synth ladder
+(`[modes.<mode>.synth]`) may also name `exclude_types` (question types it never asks,
+at any level) and a `far_trace` table (`min_hops` ≥ 2, `pairs` ≥ 1: the `trace_far`
+questions it adds per topology). `scale` (and its A/A `scale-aa`) is the scale
+verification: synth 10^3–10^5 on both topologies, 2 questions per type, `timeout_s`
+120, `wake_resume` excluded (`full` measures it up to 10^4) and 16 far pairs at
+`min_hops = 3`. Each run section is one
 `report.json` (section 5); what ties them together is the mode summary.
 
 - **`kmp.bench.mode_summary.v1`** (`reports/<summary_key>/summary.json` and the

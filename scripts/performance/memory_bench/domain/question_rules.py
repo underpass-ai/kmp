@@ -1,7 +1,8 @@
 """Type rules of kmp.bench.question.v1: which gold each question type must carry.
 
 The types are BENCH_SPEC section 5 plus `evidence_recall` (section 4.6: R@k
-without a reader). A rule here is a structural promise a generator or a
+without a reader) and `trace_far` (a `kmp_trace` between two entries the world joins
+only through several declared hops, `application/far_trace.py`). A rule here is a structural promise a generator or a
 labeler makes; scoring (BT10) relies on it instead of re-checking.
 """
 
@@ -13,16 +14,18 @@ TYPES = (
     'crosslang_es_en', 'crosslang_en_es', 'hard_distractor', 'multihop_why_k',
     'path_between', 'path_open', 'current_after_supersession',
     'as_of_historical', 'interval_scoped', 'hub_adjacent', 'multi_about',
-    'wake_resume', 'repeat_and_determinism', 'evidence_recall',
+    'wake_resume', 'repeat_and_determinism', 'evidence_recall', 'trace_far',
 )
 # Hard negatives (section 4.2): the right answer is UNKNOWN, generated with a known cause.
 NEGATIVE_TYPES = ('anchor_neighbor_existing', 'anchor_absent', 'near_miss_attribute',
                   'singular_anchored_twin', 'cross_about_anchor')
 ANCHORED_TYPES = ('enumerative_anchored', 'singular_anchored', 'negated_anchor',
                   'rare_identifier', 'identifier_guard') + NEGATIVE_TYPES
-PATH_TYPES = ('path_between', 'path_open')
+PATH_TYPES = ('path_between', 'path_open', 'trace_far')
+# A path question with a destination; path_open alone searches without one.
+DESTINATION_TYPES = ('path_between', 'trace_far')
 TOOL_BY_TYPE = {'wake_resume': ('kmp_wake',), 'path_between': ('kmp_trace', 'kmp_curate'),
-                'path_open': ('kmp_trace', 'kmp_curate'),
+                'path_open': ('kmp_trace', 'kmp_curate'), 'trace_far': ('kmp_trace',),
                 'repeat_and_determinism': ('kmp_ask', 'kmp_wake', 'kmp_trace', 'kmp_curate')}
 SHAPE_BY_TYPE = {'enumerative_anchored': 'enumerative', 'singular_anchored': 'singular',
                  'singular_anchored_twin': 'singular'}
@@ -77,8 +80,8 @@ def _check_path(question, fields):
     path = question.gold.path
     if path is None:
         fields.fail('gold', f'{question.type} carries its path')
-    if (question.type == 'path_between') != (path.end is not None):
-        fields.fail('gold', 'path_between has a destination; path_open has none')
+    if (question.type in DESTINATION_TYPES) != (path.end is not None):
+        fields.fail('gold', 'path_between and trace_far have a destination; path_open has none')
     arguments = question.arguments
     if arguments.get('from') not in (None, path.start):
         fields.fail('arguments', 'from differs from gold.path.from')

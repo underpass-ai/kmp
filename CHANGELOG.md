@@ -344,6 +344,17 @@ Detailed notes from the early release cycle remain available in the
   precision and one wrong PARTIAL fewer (a withheld source whose slug spelled
   a covered facet no longer reads as missing). With `{"mode":"off"}` every
   response is byte for byte what it was.
+- `memory_bench scale` (and `scale-aa`): the scale verification of the synth
+  ladder 10^3–10^5 on both topologies, 2 questions per type, `timeout_s` 120 and
+  `wake_resume` left out (`full` still measures it up to 10^4). It adds a far
+  trace cut: `trace_far` questions, `kmp_trace` between two 10^3 entries the world
+  joins only through at least 3 declared hops, followed in their declared
+  direction (the directed declared diameter of the 10^3 rung, unchanged at 10^4
+  and 10^5), 16 per topology and the same at every rung.
+  `report.json` gains `scale.far_trace` (pairs, `path_found`, wall p50/p95 per rung
+  and the P11 objective, p95 ≤ 30 ms at 10^5). A synth ladder may name
+  `exclude_types` and `far_trace` in `modes.toml`. Existing modes ask the same
+  questions as before, so their cached runs stay valid; `BENCH_VERSION` is unchanged.
 - `memory_bench` synth-v1 `1.2.0`: the `negated_anchor` gold forbids only the
   entries whose only anchor is the excluded one. An entry of the subject that
   also names the excluded anchor may be cited; it is neither an answer nor

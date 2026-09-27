@@ -92,6 +92,42 @@ abstention = 30         # LongMemEval _abs items
 setup = "subset"        # MuSiQue/2Wiki: 200 questions, internal deltas only
 max_calls = 1           # the first answer page, as the Rust runners read it
 
+[modes.scale]
+description = "Scale verification (DISENO 13, 27 Sept 2026): the synth ladder 10^3-10^5 on both topologies, 2 questions per type and the far trace cut (P11: far trace p95 <= 30 ms at 10^5). wake_resume is left out: at 10^5 a resume pages ~23 s per wake, and `full` measures it up to 10^4."
+budget_s = 0            # no budget: 10^5 asks take seconds each before P13
+max_calls = 256
+samples = 1
+repeats = 1
+max_bytes = 4096
+timeout_s = 120.0       # a 10^5 ask p95 was ~35 s on integration/p9-p10; 60 s would censor
+warmup = 1
+block = 10
+cpus = "5-9"
+bootstrap_b = 2000
+sections = ["synth"]
+
+[modes.scale.synth]
+seed = 7
+topologies = ["mono", "multi"]
+levels = [1000, 10000, 100000]
+batch_size = 5000
+per_type = 2
+exclude_types = ["wake_resume"]
+
+# Far trace pairs (application/far_trace.py): two entries of the 10^3 rung the world joins
+# only through >= min_hops declared hops in their declared direction (kmp_trace follows
+# relations from -> to), traced with kmp_trace {from, to} at every rung. min_hops = 3 is the
+# directed declared diameter of the 10^3 rung in synth-v1 1.2.0 seed 7 (ordered pairs by hops:
+# mono 302/100/23 and multi 324/101/20 at 1/2/3 hops) and it is the same at 10^4 and 10^5:
+# later blocks add no shorter route between 10^3 entries.
+[modes.scale.synth.far_trace]
+min_hops = 3
+pairs = 16
+
+[modes.scale-aa]
+description = "A/A of scale: the variant's scale runs against a fresh replica of the same variant. The quality deltas must be 0; the latency band is the noise of the far trace and ask timings at each rung."
+replica_of = "scale"
+
 [modes.jev]
 description = "Jev arms: three samples, each with its own fresh cassette or book (BENCH_SPEC 9), on the quick strata."
 budget_s = 0

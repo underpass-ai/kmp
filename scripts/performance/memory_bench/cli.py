@@ -11,6 +11,7 @@
   $TT full --candidate variants/X.toml
   $TT jev --candidate variants/X.toml --samples 3 [--record]
   $TT aa --variant variants/baseline.toml
+  $TT scale --candidate variants/X.toml | scale-aa --variant variants/baseline.toml
   $B  ci --variant variants/baseline.toml   A/A on quick-public (scripts/ci/memory-bench-quick.sh)
   $B  mixed --reference PATH [--candidate PATH] [--old PATH]   mixed versions, multiprocess (BT18)
   $B  jev-tail [--self-check] [--concurrency 2,3,4]   Jev tail through a local fault proxy (BT19)
@@ -28,11 +29,12 @@ from ..token_harness.domain.errors import HarnessError
 from .domain.errors import NotImplementedYet
 from .domain.jsonl import REPO_ROOT
 
-REPLICA_COMMANDS = ('aa', 'ci')  # a variant against a fresh replica of itself
+REPLICA_COMMANDS = ('aa', 'ci', 'scale-aa')  # a variant against a fresh replica of itself
 DEFAULT_BASELINE = REPO_ROOT / 'scripts/performance/memory_bench/variants/baseline.toml'
 # Command -> task that implements it (bench_tasks.json).
 OWNERS = {'prepare': 'BT12', 'fetch': 'BT17', 'build': 'BT14',
           'materialize': 'BT14', 'quick-a': 'BT12', 'full': 'BT12', 'jev': 'BT11', 'aa': 'BT12',
+          'scale': 'P11', 'scale-aa': 'P11',
           'compare': 'BT10', 'render': 'BT10', 'real': 'BT07', 'cache': 'BT14'}
 
 
@@ -175,6 +177,8 @@ def build_parser():
     materialize.set_defaults(action=run_store_command)
     for name, help_text in (('quick-a', 'phase A quick run (<= 10 min with the base cached)'),
                             ('full', 'every private question, the synth ladder, the judged corpora'),
+                            ('scale', 'synth ladder 10^3-10^5 with the far trace cut (P11 objective)'),
+                            ('scale-aa', 'A/A of scale: one binary against a fresh replica of itself'),
                             ('jev', 'Jev arms: samples with a fresh cassette or book each'),
                             ('aa', 'A/A control: a variant against a fresh replica of itself'),
                             ('ci', 'informative CI run: A/A on the public part of quick-a, no network, no key')):

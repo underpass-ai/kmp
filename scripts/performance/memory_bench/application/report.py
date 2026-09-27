@@ -21,7 +21,7 @@ from .. import BENCH_VERSION
 from ..domain import cachekey, jsonl, power, scoring_rules, stats
 from ..domain.metric_catalog import BY_NAME
 from ..domain.question import PRIVATE_CORPORA, questions_digest
-from . import aggregate, controls, jev_cost, latency
+from . import aggregate, controls, far_trace, jev_cost, latency
 from .compare import Pairing, delta, drift
 from .score import ScoringRefused, score_run
 from .tokens import ENCODINGS, PRIMARY_ENCODING, measure_run, unavailable
@@ -273,7 +273,7 @@ def _scale(states, calibration):
             fit = latency.scale_exponent(points)
             if fit is not None:
                 exponents.append({'arm': state.arm.name, 'topology': topology, **fit})
-    return {'exponents': exponents, 'calibration': calibration}
+    return {'exponents': exponents, 'calibration': calibration, 'far_trace': far_trace.rows(states)}
 
 
 def _latency(states, b):
