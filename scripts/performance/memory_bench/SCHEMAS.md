@@ -50,12 +50,18 @@ checks files against these contracts.
   (`cachekey.digest(value)` = SHA-256 of the canonical JSON). KMP's own bundle
   `content_digest` keeps its `sha256:` prefix verbatim.
 - **Refs.** Gold and records hold canonical refs: what `refs.normalize` returns, a
-  port of `strip_prefix` in `crates/kmp-testkit/src/bin/retrieval_kmp_scorecard.rs`
-  (lines 334-340 at v0.23.0): strip one leading `entry:`, else one leading `detail:`,
-  else keep. A reader judges the memory, not the envelope it arrived in.
+  port of `normalize` in `crates/kmp-testkit/src/memory_ref.rs`, the rule
+  `retrieval_kmp_scorecard.rs` reads answers with. First the envelope: strip one leading
+  `entry:`, else one leading `detail:`, else keep. Then the evidence node: a remainder
+  `evidence:<entry>` cites `<entry>`, without its `:current` or `:relation:<n>` suffix
+  (`<n>` decimal, or 16 lowercase hex digits); guide evidence has no suffix. A reader
+  judges the memory, not the envelope it arrived in. `metric_parity.json` (`refs`) pins
+  both ports to one table. Since `kmp.memory_bench.v3` (28 Sept 2026); under v2 an
+  evidence citation was a ref of its own and never matched a judged entry.
 - **Reading an answer** (ports of the same scorecard, `domain/refs.py`):
   - retrieved = `refs.evidence_refs(structured)`: `proof.evidence[].id`, normalized, in
-    response order (the pool, R@k and nDCG read this);
+    response order, each memory once at its first occurrence (an entry and its evidence
+    node are one memory; v3) (the pool, R@k and nDCG read this);
   - core = `refs.cited_refs(structured)`: `because[].ref`, normalized, sorted unique (the
     "núcleo": citations and core precision read this);
   - UNKNOWN = `answer == "UNKNOWN"`; `proof.missing` lists what was sought and not found.
@@ -196,7 +202,7 @@ relations and writes are the bytes 1.1.0 wrote.
 
 ```json world-manifest
 {"schema": "kmp.bench.world.v1", "generator": "synth-v1", "generator_version": "1.0.0",
- "bench_version": "kmp.memory_bench.v2",
+ "bench_version": "kmp.memory_bench.v3",
  "world_key": "5b0c6f1e3d2a4b8c9e7f6a5d4c3b2a1908f7e6d5c4b3a29180f7e6d5c4b3a291",
  "seed": 7, "topology": "mono", "block_size": 1000, "levels": [1000, 10000, 100000],
  "zipf_s": null, "time_origin": "2026-01-01T00:00:00Z", "abouts": 1,
@@ -536,12 +542,12 @@ process-<n>.stderr                 that process's server stderr, store root reda
 
 ```json run
 {"schema": "kmp.bench.run.v1",
- "run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733",
+ "run_id": "222aebf31f03415929cc209f1a5f125db47517550a33aa956631dbe66f916668",
  "key": {"binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
          "config_digest": "2222222222222222222222222222222222222222222222222222222222222222",
          "store_key": "3333333333333333333333333333333333333333333333333333333333333333",
          "questions_digest": "4444444444444444444444444444444444444444444444444444444444444444",
-         "mode": "quick-a", "bench_version": "kmp.memory_bench.v2", "nonce": null},
+         "mode": "quick-a", "bench_version": "kmp.memory_bench.v3", "nonce": null},
  "variant": {"name": "baseline", "path": "scripts/performance/memory_bench/variants/baseline.toml",
              "preregistration_digest": "5555555555555555555555555555555555555555555555555555555555555555",
              "config_digest": "2222222222222222222222222222222222222222222222222222222222222222"},
@@ -623,7 +629,7 @@ points at its response.
 
 ```json call
 {"schema": "kmp.bench.call.v1",
- "run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733",
+ "run_id": "222aebf31f03415929cc209f1a5f125db47517550a33aa956631dbe66f916668",
  "question_id": "synth7-mono-enum-0001", "variant": "baseline", "sample": 0, "repeat": 0,
  "journey": "synth7-mono-enum-0001~s0~r0", "call_index": 0, "process_call_index": 0,
  "phase": "first",
@@ -653,7 +659,7 @@ the journey that started the process (null with a reason otherwise).
 
 ```json journey
 {"schema": "kmp.bench.journey.v1",
- "run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733",
+ "run_id": "222aebf31f03415929cc209f1a5f125db47517550a33aa956631dbe66f916668",
  "question_id": "synth7-mono-enum-0001", "variant": "baseline", "sample": 0, "repeat": 0,
  "journey": "synth7-mono-enum-0001~s0~r0", "tool": "kmp_ask", "status": "completed",
  "calls": 2, "max_calls": 256, "censored": false, "censor_reason": null,
@@ -809,11 +815,11 @@ this key order, compact, no NaN):
 - `verdict`: also `deltas` (`tokens_journey`, `jev_usd`, `useful_rate` when measured).
 
 ```json report
-{"schema": "kmp.bench.report.v1", "bench_version": "kmp.memory_bench.v2",
+{"schema": "kmp.bench.report.v1", "bench_version": "kmp.memory_bench.v3",
  "report_key": "8888888888888888888888888888888888888888888888888888888888888888",
  "mode": "quick-a", "generated_by": {"code_sha256": "9999999999999999999999999999999999999999999999999999999999999999", "python": "3.12.3"},
  "provenance": {
-   "baseline": {"variant": "baseline", "run_ids": ["a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733"],
+   "baseline": {"variant": "baseline", "run_ids": ["222aebf31f03415929cc209f1a5f125db47517550a33aa956631dbe66f916668"],
                 "binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
                 "binary_version": "0.23.0", "config_digest": "2222222222222222222222222222222222222222222222222222222222222222",
                 "preregistration_digest": "5555555555555555555555555555555555555555555555555555555555555555"},
@@ -940,7 +946,7 @@ re-reads the about it lands in, so a build is O(N²/B), not O(B·N); hence
 
 ```json store
 {"schema": "kmp.bench.store.v1",
- "store_key": "b619dfe61f0daf961039bcf5f6b38ad9ce826df1c3e187e9276dec59be78f741",
+ "store_key": "9aabdaf43a9f8e61e8bfe970f1245c896848c946962e2c6700b3c3d8f0e633aa",
  "material": {"source": {"kind": "synth", "generator": "synth-v1", "generator_version": "1.1.0",
                          "seed": 7, "topology": "mono",
                          "world_digest": "c2c0c20d5d0469133fb0d0c169201f63c3751500273b7b13697502de47211f0e"},
@@ -1338,7 +1344,7 @@ Strata are `all`, `type:<question type>` and the tags `hops:`, `qtype:`, `catego
             "notes": {"comparable_with_published": false, "policy": "best_effort", "types": {"multihop_why_k": 200}}},
  "binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
  "variant": "scripts/performance/memory_bench/variants/baseline.toml", "max_calls": 1,
- "run": {"run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733", "cached": false,
+ "run": {"run_id": "222aebf31f03415929cc209f1a5f125db47517550a33aa956631dbe66f916668", "cached": false,
          "dir": "tmp/memory-bench/runs/d695...", "elapsed_s": 412.3,
          "journey_wall": {"n": 200, "mean_ms": 2010.4, "p50_ms": 1998.2, "max_ms": 2511.0, "total_s": 402.1},
          "failures": []},
@@ -1348,7 +1354,7 @@ Strata are `all`, `type:<question type>` and the tags `hops:`, `qtype:`, `catego
           "ingest_key": "910277431f55e5c1a39df8ab6d25fa799c1985c5b5aef1e275b25f728d5a500d",
           "import_key": "8c84c5792eec3a03ce1884f7ea1f8dd45bfdc8ce2b5c83553b3b3575a043d4bc"},
  "load_elapsed_s": 0.9,
- "recall": {"run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733",
+ "recall": {"run_id": "222aebf31f03415929cc209f1a5f125db47517550a33aa956631dbe66f916668",
             "statuses": {"completed": 200}, "not_run": [],
             "corpora": {"musique": {"all": {"questions": 200,
                 "recall_at_5": {"value": 0.41, "n": 200},
@@ -1411,7 +1417,7 @@ client mirrors the binary's retry policy; `limitations` says so.
 | `elapsed_s`, `limitations` | |
 
 ```json jev-tail
-{"schema": "kmp.bench.jev_tail.v1", "bench_version": "kmp.memory_bench.v2", "status": "skipped",
+{"schema": "kmp.bench.jev_tail.v1", "bench_version": "kmp.memory_bench.v3", "status": "skipped",
  "reason": "TYPESAFE_API_KEY is not set: the Jev tail test runs only in real mode (BENCH_SPEC 9); run it with the key exported, or `--self-check` against the loopback stand-in",
  "settings": {"concurrency": [2, 3, 4], "requests": 40, "sites": ["rerank", "wake_focus", "paths", "labels"],
               "deadlines_ms": {"labels": 20000, "paths": 20000, "rerank": 20000, "wake_focus": 20000},

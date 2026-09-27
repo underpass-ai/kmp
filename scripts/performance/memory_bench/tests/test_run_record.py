@@ -39,7 +39,7 @@ def journey(**overrides):
 def manifest(**overrides):
     record = {'schema': 'kmp.bench.run.v1', 'run_id': RUN,
               'key': {'binary_sha256': '1' * 64, 'config_digest': '2' * 64, 'store_key': '3' * 64,
-                      'questions_digest': '4' * 64, 'mode': 'quick-a', 'bench_version': 'kmp.memory_bench.v2',
+                      'questions_digest': '4' * 64, 'mode': 'quick-a', 'bench_version': 'kmp.memory_bench.v3',
                       'nonce': None},
               'variant': {'name': 'baseline', 'path': 'v.toml', 'preregistration_digest': '5' * 64,
                           'config_digest': '2' * 64},
@@ -137,7 +137,7 @@ class RunManifestTest(unittest.TestCase):
         self.assertEqual(parsed.run_id, RUN)
         self.assertEqual(parsed.comparability(),
                          {'questions_digest': '4' * 64, 'driver_version': 'kmp.native_driver.v1',
-                          'encoders': [('o200k_base', 'a' * 64)], 'bench_version': 'kmp.memory_bench.v2'})
+                          'encoders': [('o200k_base', 'a' * 64)], 'bench_version': 'kmp.memory_bench.v3'})
 
     def test_key_coherence(self):
         edited = copy.deepcopy(manifest())

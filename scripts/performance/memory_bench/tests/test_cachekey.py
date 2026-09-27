@@ -46,12 +46,12 @@ class CanonicalTest(unittest.TestCase):
 
 class KeysTest(unittest.TestCase):
     def test_result_key_pinned_vector(self):
-        self.assertEqual(BENCH_VERSION, 'kmp.memory_bench.v2')
-        self.assertEqual(_result(), 'a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733')
+        self.assertEqual(BENCH_VERSION, 'kmp.memory_bench.v3')
+        self.assertEqual(_result(), '222aebf31f03415929cc209f1a5f125db47517550a33aa956631dbe66f916668')
 
     def test_every_component_changes_the_result_key(self):
         base = _result()
-        variants = [_result(mode='full'), _result(bench_version='kmp.memory_bench.v3'),
+        variants = [_result(mode='full'), _result(bench_version='kmp.memory_bench.v4'),
                     _result(nonce='2026-09-26T08:00:00Z')]
         for name in ('binary_sha256', 'config_digest', 'store_key', 'questions_digest'):
             variants.append(_result(**{name: H['reader']}))

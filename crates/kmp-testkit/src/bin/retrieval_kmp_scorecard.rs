@@ -14,6 +14,7 @@ use std::time::Instant;
 
 use kmp_mcp::KernelMcpServer;
 use kmp_testkit::WriteReceipt;
+use kmp_testkit::memory_ref::{self, normalize};
 use kmp_testkit::retrieval_scorecard::{
     AskVerdict, BaselineBound, BaselineRow, GuardedDecision, GuardedScorecard, RetrievalOutcome,
     RetrievalScorecard, baseline_failures, baseline_rows, render_baseline,
@@ -405,7 +406,7 @@ async fn run_case(
             .unwrap_or_default();
         let stop = items
             .iter()
-            .position(|item| memory_ref(item).is_some_and(|r| case.judged.contains(&r)))
+            .position(|item| evidence_memory(item).is_some_and(|r| case.judged.contains(&r)))
             .map_or(items.len(), |index| index + 1);
         items[..stop]
             .iter()
@@ -450,14 +451,14 @@ async fn run_case(
 
     let retrieved = answer["proof"]["evidence"]
         .as_array()
-        .map(|items| items.iter().filter_map(memory_ref).collect::<Vec<_>>())
+        .map(|items| memory_ref::retrieved(items.iter().filter_map(|item| item["id"].as_str())))
         .unwrap_or_default();
     let cited = answer["because"]
         .as_array()
         .map(|items| {
             items
                 .iter()
-                .filter_map(|item| item["ref"].as_str().map(strip_prefix))
+                .filter_map(|item| item["ref"].as_str().map(normalize))
                 .collect::<BTreeSet<_>>()
         })
         .unwrap_or_default();
@@ -480,20 +481,9 @@ async fn run_case(
     })
 }
 
-/// The memory a returned citation stands for.
-///
-/// A response addresses evidence as `entry:<ref>` or `detail:<ref>`; a reader
-/// judges the memory, not the envelope it arrived in.
-fn memory_ref(item: &Value) -> Option<String> {
-    item["id"].as_str().map(strip_prefix)
-}
-
-fn strip_prefix(value: &str) -> String {
-    value
-        .strip_prefix("entry:")
-        .or_else(|| value.strip_prefix("detail:"))
-        .unwrap_or(value)
-        .to_string()
+/// The memory a returned citation stands for: `kmp_testkit::memory_ref`.
+fn evidence_memory(item: &Value) -> Option<String> {
+    item["id"].as_str().map(normalize)
 }
 
 /// Commits a judged case's write, resolving a review the kernel asks for.

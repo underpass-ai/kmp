@@ -1,7 +1,8 @@
 """Regenerate crates/kmp-testkit/judged/metric_parity.json from the Python port.
 
 The fixture pins `domain/metrics.py` and `crates/kmp-testkit/src/retrieval_scorecard.rs`
-to the same numbers (`cargo test -p kmp-testkit --test metric_parity` and
+to the same numbers, and `domain/refs.py` and `crates/kmp-testkit/src/memory_ref.rs` to the
+same normalized refs (`refs`) (`cargo test -p kmp-testkit --test metric_parity` and
 `tests/test_metrics.py` both read it). Run it from anywhere:
 
     python3 scripts/performance/memory_bench/tools/gen_metric_parity.py [--out PATH]
@@ -17,13 +18,16 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from scripts.performance.memory_bench.domain import refs  # noqa: E402
 from scripts.performance.memory_bench.domain.metrics import (  # noqa: E402
     RetrievalOutcome, RetrievalScorecard)
 
 DEFAULT_OUT = REPO_ROOT / 'crates' / 'kmp-testkit' / 'judged' / 'metric_parity.json'
 ABOUT = ('Shared fixture: the same ranking outcomes scored by crates/kmp-testkit/src/retrieval_scorecard.rs '
          'and scripts/performance/memory_bench/domain/metrics.py must give these numbers. Floats compare '
-         'within `tolerance`.')
+         'within `tolerance`. Every `refs` value normalizes to its `normalized` in both '
+         'crates/kmp-testkit/src/memory_ref.rs and scripts/performance/memory_bench/domain/refs.py, '
+         'and every `retrieved` list of ids reads as its `retrieved` memories in both.')
 TWELVE = [f'j{i:02d}' for i in range(12)]
 SEVEN = [f'j{i:02d}' for i in range(7)]
 
@@ -53,6 +57,33 @@ CASES = (
     ('duplicate_judged_counts_once', ['a', 'a', 'b'], ['a', 'b'], ['a'], False, 16, 1),
     ('duplicate_judged_half_found', ['b', 'a', 'b'], ['x', 'b'], [], False, 8, 1),
 )
+# Returned refs as `kmp_ask` spells them (the evidence forms read from cached runs, 28 Sept
+# 2026) and the edges of the rule. The expected value is what refs.normalize returns.
+REF_VALUES = (
+    'entry:project:x:e1', 'detail:project:x:e1', 'project:x:e1',
+    'entry:detail:project:x:e1', 'detail:entry:project:x:e1', 'entry:entry:x',
+    'entry:', 'detail:', '', 'Entry:x', ' entry:x',
+    'detail:evidence:project:made:entry:decision:x:current',
+    'detail:evidence:project:made:entry:decision:x:relation:1',
+    'detail:evidence:project:made:entry:decision:x:relation:12',
+    'detail:evidence:fixture:lab:entry:observation:y:relation:d115992883596a55',
+    'detail:evidence:guide:kmp-agent:verb:time',
+    'evidence:project:made:entry:decision:x:current',
+    'entry:evidence:project:made:entry:decision:x:current',
+    'detail:detail:evidence:project:made:entry:decision:x:current',
+    'detail:evidence:x:relation:D115992883596A55', 'detail:evidence:x:relation:abc',
+    'detail:evidence:x:relation:', 'detail:evidence::current', 'detail:evidence:',
+    'detail:evidence:x:current:relation:1', 'detail:evidence:x:relation:1:current',
+    'project:x:entry:relation:1',
+)
+# `proof.evidence[].id` lists and the memories a reader retrieves from them.
+RETRIEVED_LISTS = (
+    ['entry:p:x:entry:decision:a', 'detail:evidence:p:x:entry:decision:b:current',
+     'detail:evidence:p:x:entry:decision:a:current', 'entry:p:x:entry:decision:b',
+     'detail:evidence:p:x:entry:decision:a:relation:2'],
+    ['detail:p:x:e1', 'entry:p:x:e1', 'p:x:e1', 'p:x:e2'],
+    [],
+)
 SCORECARD_FIELDS = ('cases', 'recall_at_1', 'recall_at_5', 'recall_at_10', 'mean_reciprocal_rank',
                     'ndcg_at_10', 'answer_core_precision', 'false_unknown_rate', 'mean_used_bytes',
                     'mean_elapsed_millis')
@@ -75,8 +106,10 @@ def fixture():
                       'unknown': unknown, 'used_bytes': used, 'elapsed_millis': elapsed,
                       'expected': expected(outcome)})
     card = RetrievalScorecard.score(outcomes)
-    return {'schema': 'kmp.bench.metric_parity.v1', 'about': ABOUT, 'tolerance': 1e-12, 'cases': cases,
-            'scorecard': {name: getattr(card, name) for name in SCORECARD_FIELDS}}
+    return {'schema': 'kmp.bench.metric_parity.v2', 'about': ABOUT, 'tolerance': 1e-12, 'cases': cases,
+            'scorecard': {name: getattr(card, name) for name in SCORECARD_FIELDS},
+            'refs': [{'value': value, 'normalized': refs.normalize(value)} for value in REF_VALUES],
+            'retrieved': [{'ids': ids, 'retrieved': refs.retrieved(ids)} for ids in RETRIEVED_LISTS]}
 
 
 def render():

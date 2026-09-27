@@ -9,6 +9,7 @@ pub mod llm_evaluator;
 mod llm_graph;
 pub mod longmemeval;
 pub mod longmemeval_smart_writer;
+pub mod memory_ref;
 pub mod memoryagentbench;
 pub mod memoryarena;
 pub mod memoryarena_scorecard;

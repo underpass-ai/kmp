@@ -345,6 +345,11 @@ Detailed notes from the early release cycle remain available in the
   `anchor_absent_in_selection` (the bench's `anchor_in_other_about` is
   scored as a wrong reason); telling the two apart is deferred to L6, the
   lexical index, which can read an anchor's postings outside the selection.
+- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v3`. `refs.normalize`
+  (and the Rust scorecards, through the new `kmp_testkit::memory_ref`) read
+  `detail:evidence:<entry>:current`, `…:relation:<n>` and suffix-less guide
+  evidence as citations of `<entry>`; before, they never matched a judged
+  entry. Every v2 cache entry, stores included, is invalidated.
 - `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v2` (the PARTIAL
   scoring rules changed meaning); every cache entry of v1 is invalidated.
 
