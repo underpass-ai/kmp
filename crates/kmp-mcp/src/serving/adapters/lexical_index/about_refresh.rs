@@ -171,7 +171,10 @@ impl<'r, 's> AboutRefresh<'r, 's> {
         let profile = LexicalProfile::new(language.clone());
         let mut rows = Vec::with_capacity(due.len() * 2);
         for id in &due {
-            rows.extend(self.rows_of(id, &profile)?);
+            rows.extend(
+                self.rows_of(id, &profile)?
+                    .map(|(doc, row)| (doc, row.map(|row| row.encode()))),
+            );
         }
         Ok(Refreshed::Changed(AboutChange {
             about: self.about,

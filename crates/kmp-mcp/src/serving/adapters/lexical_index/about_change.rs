@@ -1,4 +1,4 @@
-use kmp_proto_mapping::v1beta1::{LanguageSignals, LexicalRow};
+use kmp_proto_mapping::v1beta1::LanguageSignals;
 
 use super::node_state::NodeState;
 use super::relation_key::RelationKey;
@@ -15,7 +15,9 @@ pub(super) struct AboutChange {
     pub(super) rebuilt: bool,
     pub(super) nodes: Vec<(String, Option<NodeState>)>,
     pub(super) relations: Vec<(RelationKey, Option<LanguageSignals>)>,
-    pub(super) rows: Vec<(String, Option<LexicalRow>)>,
+    /// Candidate rows, encoded (`LexicalRow::encode`): a build holds one per
+    /// candidate of the about, and encoded they take a fraction of the room.
+    pub(super) rows: Vec<(String, Option<Vec<u8>>)>,
     /// Nodes one hop past the ask's depth that came (`true`) or went.
     pub(super) far: Vec<(String, bool)>,
     pub(super) signals: LanguageSignals,

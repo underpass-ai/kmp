@@ -160,10 +160,10 @@ impl<'r> AboutRebuild<'r> {
             if state.selected_entry()
                 && let Some(row) = AboutReader::entry_row(node, &profile)
             {
-                rows.push((format!("entry:{id}"), Some(row)));
+                rows.push((format!("entry:{id}"), Some(row.encode())));
             }
             if let Some(row) = evidence_row(node, state, &details, &supported, &profile) {
-                rows.push((format!("detail:{id}"), Some(row)));
+                rows.push((format!("detail:{id}"), Some(row.encode())));
             }
         }
         Ok(AboutChange {

@@ -34,12 +34,13 @@ impl<'t> RowWriter<'t> {
         }
     }
 
-    /// Replaces, adds or (with `None`) removes each row, updating `stats`.
-    /// Returns how many rows actually changed.
+    /// Replaces, adds or (with `None`) removes each row (encoded, as
+    /// `LexicalRow::encode` writes it), updating `stats`. Returns how many
+    /// rows actually changed.
     pub(super) fn apply(
         mut self,
         stats: &mut AboutStats,
-        rows: &[(String, Option<LexicalRow>)],
+        rows: &[(String, Option<Vec<u8>>)],
     ) -> Result<usize, String> {
         let mut changed = 0;
         for (index, (doc, new)) in rows.iter().enumerate() {
@@ -47,7 +48,7 @@ impl<'t> RowWriter<'t> {
                 self.flush()?;
             }
             let held = self.held(doc)?;
-            if held.as_ref().map(|(_, row)| row) == new.as_ref() {
+            if held.as_ref().map(|(_, bytes)| bytes) == new.as_ref() {
                 continue;
             }
             changed += 1;
@@ -60,11 +61,12 @@ impl<'t> RowWriter<'t> {
                 }
             };
             if let Some((_, old)) = &held {
-                self.withdraw(stats, ordinal, old)?;
+                self.withdraw(stats, ordinal, &LexicalRow::decode(old)?)?;
             }
             match new {
-                Some(row) => {
-                    self.contribute(stats, ordinal, row);
+                Some(bytes) => {
+                    let row = LexicalRow::decode(bytes)?;
+                    self.contribute(stats, ordinal, &row);
                     self.tx
                         .execute(
                             "INSERT OR REPLACE INTO lex_fwd(about, doc, ordinal, fingerprint, row) \
@@ -74,7 +76,7 @@ impl<'t> RowWriter<'t> {
                                 doc,
                                 ordinal as i64,
                                 row.fingerprint(true) as i64,
-                                row.encode()
+                                bytes
                             ],
                         )
                         .map_err(storage)?;
@@ -93,7 +95,7 @@ impl<'t> RowWriter<'t> {
         Ok(changed)
     }
 
-    fn held(&self, doc: &str) -> Result<Option<(u64, LexicalRow)>, String> {
+    fn held(&self, doc: &str) -> Result<Option<(u64, Vec<u8>)>, String> {
         let held = self
             .tx
             .query_row(
@@ -103,8 +105,7 @@ impl<'t> RowWriter<'t> {
             )
             .optional()
             .map_err(storage)?;
-        held.map(|(ordinal, bytes)| Ok((ordinal as u64, LexicalRow::decode(&bytes)?)))
-            .transpose()
+        Ok(held.map(|(ordinal, bytes)| (ordinal as u64, bytes)))
     }
 
     fn withdraw(

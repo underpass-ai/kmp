@@ -27,7 +27,10 @@ fn change(rebuilt: bool, rows: Vec<(String, Option<LexicalRow>)>) -> AboutChange
     AboutChange {
         about: "about".into(),
         rebuilt,
-        rows,
+        rows: rows
+            .into_iter()
+            .map(|(doc, row)| (doc, row.map(|row| row.encode())))
+            .collect(),
         ..AboutChange::default()
     }
 }
