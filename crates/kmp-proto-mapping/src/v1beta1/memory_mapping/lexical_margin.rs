@@ -3,17 +3,15 @@
 /// (DESIGN L4 4c, after AgentIR 2605.25092), and whether the answer standing
 /// on them is of `High` confidence.
 ///
-/// It is the one margin Ask reads, always from [`ContentScores::margin`]
+/// It is the one margin Ask reads, always from `ContentScores::margin`
 /// (`content_scores.rs`), and each reader keeps its own rule:
 ///
 /// - the re-ranking gate ([`Self::is_decisive`]) sends no judgement when the
 ///   ranking's first eligible candidate leads by at least the store's `τ`
 ///   and the confidence is `High`: a remote judge adds nothing to an answer
 ///   the text already settles;
-/// - the doubt band ([`Self::is_narrow`]) asks its judge about an answer
+/// - the doubt band (`is_narrow`) asks its judge about an answer
 ///   whose first citation leads the second by less than `τ_m`.
-///
-/// [`ContentScores::margin`]: super::content_scores::ContentScores::margin
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LexicalMargin {
     /// `None` when nothing was cited or eligible. A lone one leads by its
