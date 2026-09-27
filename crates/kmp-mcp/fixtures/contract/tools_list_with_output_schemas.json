@@ -1227,6 +1227,16 @@
                   "minLength": 1,
                   "type": "string"
                 },
+                "search_expansions": {
+                  "description": "Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
+                  "items": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 6,
+                  "type": "array"
+                },
                 "summary": {
                   "description": "Literal memory text, in the language of the work. Ask cites this text byte for byte.",
                   "minLength": 1,
@@ -1546,14 +1556,36 @@
             "type": "string"
           },
           "search_summaries": {
-            "description": "Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
+            "description": "Attach English search renderings or judged search expansions to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
             "items": {
               "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "summary_en"
+                  ]
+                },
+                {
+                  "required": [
+                    "search_expansions"
+                  ]
+                }
+              ],
               "properties": {
                 "ref": {
                   "description": "Existing memory in this about. The stored source is not replaced.",
                   "minLength": 1,
                   "type": "string"
+                },
+                "search_expansions": {
+                  "description": "Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
+                  "items": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 6,
+                  "type": "array"
                 },
                 "summary_en": {
                   "description": "English search rendering of the stored source, retaining its numbers, identifiers and acronyms.",
@@ -1562,8 +1594,7 @@
                 }
               },
               "required": [
-                "ref",
-                "summary_en"
+                "ref"
               ],
               "type": "object"
             },
@@ -2053,6 +2084,32 @@
               "memories": {
                 "description": "Memories this packet wrote at a ref the caller supplied, each with the evidence this write put on it and the observation it now carries. A supplied ref replaces whatever that entry held; use relations to add a link without replacing a source.",
                 "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "search_expansions": {
+            "additionalProperties": false,
+            "properties": {
+              "jev": {
+                "description": "Jev usage for the judgement.",
+                "type": "object"
+              },
+              "judged_by": {
+                "description": "The judge and its bar.",
+                "type": "string"
+              },
+              "not_stored": {
+                "description": "Why no expansion could be judged or kept: nothing is stored unjudged.",
+                "type": "string"
+              },
+              "refused": {
+                "description": "Each refused expansion as {ref, expansion, why}: the lint's fault or Jev's reading.",
+                "type": "array"
+              },
+              "stored": {
+                "description": "Memory ref to the expansions kept, each read by Jev as belonging to it at the store's bar.",
+                "type": "object"
               }
             },
             "type": "object"
@@ -7311,6 +7368,32 @@
           "review_token": {
             "description": "review: the frozen review's token; pass it back to page or apply this review.",
             "type": "string"
+          },
+          "search_expansions": {
+            "additionalProperties": false,
+            "properties": {
+              "jev": {
+                "description": "Jev usage for the judgement.",
+                "type": "object"
+              },
+              "judged_by": {
+                "description": "The judge and its bar.",
+                "type": "string"
+              },
+              "not_stored": {
+                "description": "Why no expansion could be judged or kept: nothing is stored unjudged.",
+                "type": "string"
+              },
+              "refused": {
+                "description": "Each refused expansion as {ref, expansion, why}: the lint's fault or Jev's reading.",
+                "type": "array"
+              },
+              "stored": {
+                "description": "Memory ref to the expansions kept, each read by Jev as belonging to it at the store's bar.",
+                "type": "object"
+              }
+            },
+            "type": "object"
           },
           "status": {
             "description": "committed appended a command; replayed returned its earlier acceptance; validated is a preview; needs_review has applied nothing and returns context to review; rejected failed validation. unconfirmed cannot establish persistence: retain the logical key when resolving a transport failure.",

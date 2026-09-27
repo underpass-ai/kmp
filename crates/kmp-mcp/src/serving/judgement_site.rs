@@ -27,12 +27,14 @@ pub(crate) enum JudgementSite {
     Summaries,
     /// `kmp_ask` in the doubt band (`ask-judge.json`).
     DoubtBand,
+    /// Search expansions proposed at write (`write-expansions.json`).
+    Expansions,
 }
 
 impl JudgementSite {
     /// Every site, for what must cover them all (the verdict book retiring
     /// superseded templates).
-    pub(crate) const ALL: [Self; 10] = [
+    pub(crate) const ALL: [Self; 11] = [
         Self::Rerank,
         Self::WakeFocus,
         Self::CurateReview,
@@ -43,6 +45,7 @@ impl JudgementSite {
         Self::Labels,
         Self::Summaries,
         Self::DoubtBand,
+        Self::Expansions,
     ];
 
     pub(crate) fn as_str(self) -> &'static str {
@@ -57,6 +60,7 @@ impl JudgementSite {
             Self::Labels => "labels",
             Self::Summaries => "summaries",
             Self::DoubtBand => "doubt_band",
+            Self::Expansions => "expansions",
         }
     }
 
@@ -95,6 +99,7 @@ impl JudgementSite {
             Some("prepare_apply") => Self::Precheck,
             Some("paths") => Self::Paths,
             Some("labels") => Self::Labels,
+            Some("judge_expansions") => Self::Expansions,
             _ if focused => Self::CurateFocus,
             _ => Self::CurateReview,
         }
@@ -126,6 +131,7 @@ mod tests {
         assert_eq!(site(json!({"mode": "prepare_apply"})), "precheck");
         assert_eq!(site(json!({"mode": "paths"})), "paths");
         assert_eq!(site(json!({"mode": "labels", "focus": ["a"]})), "labels");
+        assert_eq!(site(json!({"mode": "judge_expansions"})), "expansions");
     }
 
     #[test]

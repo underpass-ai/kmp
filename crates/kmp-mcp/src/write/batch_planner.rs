@@ -80,6 +80,10 @@ pub(crate) fn build_batch_plan(
         let kind = required_map_string(memory, "kind", &format!("memories[{index}].kind"))?;
         let summary =
             required_map_string(memory, "summary", &format!("memories[{index}].summary"))?;
+        super::expansion_selection::ExpansionSelection::proposed(
+            memory.get("search_expansions"),
+            &format!("memories[{index}].search_expansions"),
+        )?;
         let reference = if let Some(reference) = optional_string(memory.get("ref")) {
             kmp_application::validate_supplied_entry_ref(
                 &about,

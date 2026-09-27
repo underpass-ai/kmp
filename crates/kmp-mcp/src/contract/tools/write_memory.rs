@@ -49,6 +49,11 @@ pub(crate) fn write_memory_schema() -> Value {
             "confidence":{"type":"string","enum":["high","medium","low","unknown"]}
         }
     });
+    let search_expansions = json!({
+        "type":"array","maxItems":6,
+        "description":"Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
+        "items":{"type":"string","minLength":1,"maxLength":120}
+    });
     let memories = json!({
         "type":"array","minItems":1,
         "description":"One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
@@ -61,6 +66,7 @@ pub(crate) fn write_memory_schema() -> Value {
                 "kind":{"type":"string","enum":WRITER_MEMORY_KINDS,"description":"What this memory records. No separate writer intent is needed."},
                 "summary":string_schema("Literal memory text, in the language of the work. Ask cites this text byte for byte."),
                 "summary_en":string_schema("Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples."),
+                "search_expansions":search_expansions.clone(),
                 "evidence":string_schema("Concrete source or observation supporting this memory. Required unless options.strict is explicitly false."),
                 "labels":labels,
                 "observed_at":observed,
@@ -113,10 +119,13 @@ pub(crate) fn write_memory_schema() -> Value {
             "relations":relations,
             "search_summaries":{
                 "type":"array","minItems":1,
-                "description":"Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
-                "items":{"type":"object","additionalProperties":false,"required":["ref","summary_en"],"properties":{
+                "description":"Attach English search renderings or judged search expansions to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
+                "items":{"type":"object","additionalProperties":false,"required":["ref"],
+                    "anyOf":[{"required":["summary_en"]},{"required":["search_expansions"]}],
+                    "properties":{
                     "ref":string_schema("Existing memory in this about. The stored source is not replaced."),
-                    "summary_en":string_schema("English search rendering of the stored source, retaining its numbers, identifiers and acronyms.")
+                    "summary_en":string_schema("English search rendering of the stored source, retaining its numbers, identifiers and acronyms."),
+                    "search_expansions":search_expansions
                 }}
             },
             "read_context":read_context_schema(),
@@ -310,6 +319,13 @@ pub(crate) fn write_memory_output_schema() -> Value {
         "relation_quality_metrics": described("object", "Preview counts and prior-context coverage; stored in the receipt after commit."),
         "ingest_preview": described("object", "Canonical kmp_ingest arguments. Present only on dry-run."),
         "diagnostics": described("array", "Planner diagnostics that qualify the write."),
+        "search_expansions": output_object(json!({
+            "stored": described("object", "Memory ref to the expansions kept, each read by Jev as belonging to it at the store's bar."),
+            "refused": described("array", "Each refused expansion as {ref, expansion, why}: the lint's fault or Jev's reading."),
+            "judged_by": described("string", "The judge and its bar."),
+            "jev": described("object", "Jev usage for the judgement."),
+            "not_stored": described("string", "Why no expansion could be judged or kept: nothing is stored unjudged.")
+        })),
         "proposed_relations": described("object", "Committed memories on a store with write-relations.json: relations Jev reads as missing from them, as `review_token`, `items` ({`item_id`, `from`, `to`, `rel`, `confidence`, `to_excerpt`}) and `jev`. Nothing is written: declare the ones you confirm with kmp_curate apply, in your own why and evidence."),
         "next_suggested_reads": described("array", "Optional preview reading suggestions. Accepted writes need no routine verification; receipt.action retrieves audit detail on demand."),
         "viewer": output_object(json!({

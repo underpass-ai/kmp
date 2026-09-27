@@ -10,6 +10,8 @@ mod batch_planner;
 pub(crate) mod coordinates;
 mod coverage;
 pub(crate) mod existing_entry;
+pub(crate) mod expansion_planner;
+pub(crate) mod expansion_selection;
 pub(crate) mod generated_ref;
 pub(crate) mod ingest_arguments;
 pub(crate) mod ingest_change;

@@ -50,6 +50,7 @@ pub(crate) mod view_tools;
 pub(crate) mod wake_focus_outcome;
 mod write_commit;
 mod write_dispatch;
+mod write_expansions;
 mod write_proposals;
 mod write_review_result;
 

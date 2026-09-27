@@ -977,6 +977,16 @@
                   "minLength": 1,
                   "type": "string"
                 },
+                "search_expansions": {
+                  "description": "Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
+                  "items": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 6,
+                  "type": "array"
+                },
                 "summary": {
                   "description": "Literal memory text, in the language of the work. Ask cites this text byte for byte.",
                   "minLength": 1,
@@ -1296,14 +1306,36 @@
             "type": "string"
           },
           "search_summaries": {
-            "description": "Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
+            "description": "Attach English search renderings or judged search expansions to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
             "items": {
               "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "summary_en"
+                  ]
+                },
+                {
+                  "required": [
+                    "search_expansions"
+                  ]
+                }
+              ],
               "properties": {
                 "ref": {
                   "description": "Existing memory in this about. The stored source is not replaced.",
                   "minLength": 1,
                   "type": "string"
+                },
+                "search_expansions": {
+                  "description": "Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
+                  "items": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 6,
+                  "type": "array"
                 },
                 "summary_en": {
                   "description": "English search rendering of the stored source, retaining its numbers, identifiers and acronyms.",
@@ -1312,8 +1344,7 @@
                 }
               },
               "required": [
-                "ref",
-                "summary_en"
+                "ref"
               ],
               "type": "object"
             },

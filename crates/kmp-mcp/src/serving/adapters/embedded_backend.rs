@@ -19,6 +19,7 @@ use super::store_config_report::StoreConfigReport;
 use super::verdict_book_config::VERDICT_BOOK_CONFIG_FILE;
 use super::verdict_ledger::VerdictLedger;
 use super::wake_focus_judge::WakeFocusJudge;
+use super::write_expansions_config::{WRITE_EXPANSIONS_FILE, WriteExpansionsConfig};
 use super::write_relations_config::WriteRelationsConfig;
 use crate::contract::{TIME_TOOL, TimeMove};
 use crate::curate::domain::lifecycle_mode::LifecycleMode;
@@ -73,6 +74,10 @@ pub struct EmbeddedKernelMcpBackend {
     /// Relations proposed after each write, opted into by
     /// `write-relations.json` beside `typesafe.json`.
     write_relations: bool,
+    /// Search expansions judged at write (`write-expansions.json` beside
+    /// `typesafe.json`): off without the file; an error names why a present
+    /// file cannot apply.
+    write_expansions: Result<Option<WriteExpansionsConfig>, String>,
     /// Whether and how focused reviews propose write-time lifecycle pairs
     /// (`write-relations.json` `lifecycle`).
     lifecycle: LifecycleMode,
@@ -148,6 +153,7 @@ impl EmbeddedKernelMcpBackend {
             .map(WriteRelationsConfig::lifecycle)
             .unwrap_or_default();
         let write_relations = write_relations.is_some();
+        let write_expansions = WriteExpansionsConfig::load(data_dir);
         let lexical_bridge = load_lexical_bridge(data_dir);
         let semantic = LoopbackSemanticRetriever::load(data_dir);
         let ask_gate = AskGateConfig::load(data_dir);
@@ -164,6 +170,15 @@ impl EmbeddedKernelMcpBackend {
             .beside_store(
                 CURATE_FILE,
                 curate.as_ref().map(|_| ()).map_err(Clone::clone),
+            )
+            .beside_store(
+                WRITE_EXPANSIONS_FILE,
+                match (&write_expansions, &judgement) {
+                    (Ok(Some(_)), Ok(Some(_))) => Ok(()),
+                    (Ok(Some(_)), _) => Err("write expansions need a working typesafe.json".into()),
+                    (Ok(None), _) => Err("not loaded".into()),
+                    (Err(error), _) => Err(error.clone()),
+                },
             )
             .beside_store(
                 "ask-judge.json",
@@ -199,6 +214,7 @@ impl EmbeddedKernelMcpBackend {
             wake_focus,
             doubt_band,
             write_relations,
+            write_expansions,
             lifecycle,
             partner_cap: optional_env_string(EVAL_PARTNER_FACTS_ENV)
                 .as_deref()
@@ -348,6 +364,25 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 }
                 "kmp_curate" => {
                     let observed = self.observed(JudgementSite::of_curate(arguments));
+                    // Internal: the write dispatcher asks which proposed
+                    // search expansions belong to their memories. Nothing
+                    // is kept without the store's opt-in and a working Jev.
+                    if arguments.get("mode").and_then(Value::as_str) == Some("judge_expansions") {
+                        let answer = match (&self.write_expansions, &observed, &self.judgement) {
+                            (Ok(Some(config)), Some(model), _) => {
+                                super::expansion_judge::judge_expansions(model, config, arguments)
+                                    .await
+                            }
+                            (Ok(None), _, _) => json!({"enabled": false,
+                                "reason": "the store has not opted in (write-expansions.json beside typesafe.json)"}),
+                            (Err(error), _, _) => json!({"enabled": false, "reason": error}),
+                            (_, None, Err(error)) => json!({"enabled": false,
+                                "reason": format!("Jev cannot run: {error}")}),
+                            (_, None, Ok(_)) => json!({"enabled": false,
+                                "reason": "write expansions need typesafe.json beside the store"}),
+                        };
+                        return Ok(tool_success_result(answer));
+                    }
                     let (judgement, warning) = match (&observed, &self.judgement) {
                         (Some(model), _) => (Some(model as &dyn JudgementModel), None),
                         (None, Err(error)) => (None, Some(error.as_str())),

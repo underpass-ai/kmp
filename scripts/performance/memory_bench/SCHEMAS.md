@@ -1088,6 +1088,7 @@ Sites (stable words; new ones may be added):
 | `labels` | `kmp_curate` `mode: labels` | `typesafe.json` | t |
 | `summaries` | `kmp_summaries_audit` meaning check | `typesafe.json` | s/b |
 | `doubt_band` | `kmp_ask` in the doubt band (B1 veto, B2 promotion) | `ask-judge.json` | p |
+| `expansions` | search expansions proposed at write (`kmp_write_memory` `search_expansions`), P15 | `write-expansions.json` | r |
 
 Call record mapping (`domain/run_record.py` `JevEvaluation`): `site`, `questions`,
 `requests`, `input_tokens`, `source` copied; `us = elapsed_us`. Lines are attributed to
