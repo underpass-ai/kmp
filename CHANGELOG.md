@@ -79,9 +79,9 @@ Detailed notes from the early release cycle remain available in the
 - The doubt band no longer reads every candidate's terms twice: the answer
   takes back the terms the band's reading read (P10; with a warm verdict book
   the band cost +100–190 ms per ask on the real store; not re-measured).
-- A Trace page whose next item is larger than `budget.max_bytes` returns
-  it with its prose shortened (`…`) and advances, instead of an empty page;
-  `page.required_bytes` and a warning say how to read it whole.
+- The memory bench follows a Trace page's `page.required_bytes`
+  continuation (a relation larger than `budget.max_bytes`) instead of
+  stopping on its 0-item page. Trace itself still returns whole items.
 - Writes in O(delta) (P13, DESIGN L6). An ingest or `kmp_write_memory` that
   reads no neighbourhood for review asks the store point by point for what its
   translation needs instead of reading the about's neighbourhood, and the

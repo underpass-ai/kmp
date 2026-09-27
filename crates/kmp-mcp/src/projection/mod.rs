@@ -14,11 +14,8 @@ pub(crate) mod relabel_projection;
 pub(crate) mod relate_projection;
 pub(crate) mod relation_cursor;
 pub(crate) mod relation_page_budget;
-#[cfg(test)]
-mod relation_page_budget_tests;
 mod rendering;
 mod serialized_size;
-mod shortened_prose;
 pub(crate) mod summaries_audit_page;
 mod summaries_audit_projection;
 mod temporal_entry_projection;

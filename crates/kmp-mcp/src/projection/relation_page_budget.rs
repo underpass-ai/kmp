@@ -8,11 +8,7 @@ use serde_json::{Value, json};
 
 use super::relation_cursor::RelationCursor;
 use super::serialized_size::serialized_len;
-use super::shortened_prose::{longest_prose, shorten_prose};
 use crate::serving::ToolError;
-
-/// Said on a page whose one item was shortened to fit the allowance.
-const SHORTENED: &str = "the next item is larger than budget.max_bytes; it is returned with its prose shortened (…) so the page advances — repeat this page's cursor with budget.max_bytes at least page.required_bytes to read it whole";
 
 pub(crate) enum RelationPageBudget {
     Trace,
@@ -93,22 +89,6 @@ impl RelationPageBudget {
                 }
                 required = measured;
             }
-            // The next item is returned with its prose shortened, so the
-            // page advances at this allowance; the warning says how to read
-            // it whole.
-            if let Some(mut shortened) = matches!(self, Self::Trace)
-                .then(|| self.shortened(&value, &cursor, limit))
-                .flatten()
-            {
-                shortened["page"]["required_bytes"] = json!(required);
-                shortened["warnings"]
-                    .as_array_mut()
-                    .expect("Trace/Relate mapper emits array sections")
-                    .push(json!(SHORTENED));
-                if serialized_len(&shortened) <= limit {
-                    return Ok(shortened);
-                }
-            }
             best["page"]["required_bytes"] = json!(required);
             best["next_actions"] = json!([cursor.with_budget(required).action(cursor.offset)]);
             best["warnings"].as_array_mut().expect("Trace/Relate mapper emits array sections").push(json!(
@@ -136,40 +116,6 @@ impl RelationPageBudget {
             }
         }
         Ok(best)
-    }
-
-    /// The page with one item, its prose shortened as little as fits
-    /// `limit`, or `None` when even no prose at all does not fit.
-    fn shortened(&self, original: &Value, cursor: &RelationCursor, limit: usize) -> Option<Value> {
-        let page = self.render(original, cursor, 1);
-        let section = self.sections(original).iter().find(|section| {
-            page[**section]
-                .as_array()
-                .is_some_and(|items| !items.is_empty())
-        })?;
-        let item = page[*section][0].clone();
-        let with = |chars: usize| {
-            let mut page = page.clone();
-            let mut item = item.clone();
-            shorten_prose(&mut item, chars);
-            page[*section][0] = item;
-            page
-        };
-        // Room for the warning and `page.required_bytes` the page will carry.
-        let limit = limit.saturating_sub(SHORTENED.len() + 64);
-        if serialized_len(&with(0)) > limit {
-            return None;
-        }
-        let (mut low, mut high) = (0, longest_prose(&item));
-        while low < high {
-            let middle = low + (high - low).div_ceil(2);
-            if serialized_len(&with(middle)) <= limit {
-                low = middle;
-            } else {
-                high = middle - 1;
-            }
-        }
-        Some(with(low))
     }
 
     fn render(&self, original: &Value, cursor: &RelationCursor, count: usize) -> Value {
