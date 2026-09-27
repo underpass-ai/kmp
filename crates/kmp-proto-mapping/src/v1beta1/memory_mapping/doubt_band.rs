@@ -6,7 +6,7 @@ pub(super) const MAX_DOUBT_PASSAGES: usize = 8;
 
 /// An ask the deterministic reading settled in doubt, and the passages a
 /// judge is asked about: the cited core first, then the admitted memories
-/// that could be cited, in rank order, at most [`MAX_DOUBT_PASSAGES`].
+/// that could be cited, in rank order, at most eight (`MAX_DOUBT_PASSAGES`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DoubtBand {
     pub entry: DoubtEntry,

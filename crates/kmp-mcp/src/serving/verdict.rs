@@ -154,7 +154,9 @@ impl Verdict {
                 }
                 let top = (levels.len() - 1) as f64;
                 Some(JudgementAnswer::Score {
-                    score: (dequantize(*score) * top * 10_000.0).round() / 10_000.0,
+                    // Scaled before rounding: rounding the share first and then
+                    // scaling would read 2.03 back as 2.0301.
+                    score: (f64::from(*score) / Q16 * top * 10_000.0).round() / 10_000.0,
                     probabilities: probabilities.iter().map(|q| dequantize(*q)).collect(),
                     confidence: dequantize(*confidence),
                 })

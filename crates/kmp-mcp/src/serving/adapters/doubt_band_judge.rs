@@ -19,6 +19,9 @@ use crate::serving::ports::judgement_model::JudgementModel;
 
 const TARGET: &str = "kmp_mcp::doubt_band";
 
+/// A passage's verdict, if judged, with a graded question's expected grade.
+type JudgedPassage = Option<(DoubtJudgement, Option<u16>)>;
+
 /// The ask doubt band's judge (DESIGN L4 4f, option B), behind its own
 /// opt-in, `ask-judge.json`, on top of `typesafe.json`.
 ///
@@ -232,12 +235,7 @@ fn unavailable(error: String) -> DoubtOutcome {
 /// is cited and the judged thousandths (answering/not, and for a graded
 /// question the expected grade), so the bench can score the judge against
 /// gold refs without the log carrying stored words.
-fn report(
-    band: &DoubtBand,
-    judged: Option<&[Option<(DoubtJudgement, Option<u16>)>]>,
-    status: &str,
-    started: Instant,
-) {
+fn report(band: &DoubtBand, judged: Option<&[JudgedPassage]>, status: &str, started: Instant) {
     if !tracing::enabled!(target: TARGET, tracing::Level::DEBUG) {
         return;
     }
