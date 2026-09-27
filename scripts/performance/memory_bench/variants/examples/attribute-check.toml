@@ -1,0 +1,23 @@
+# The measured variant of the unanchored branch (finding breal-997250f158ea):
+# with `ask-gate.json` `{"mode":"anchored","attribute_check":true}`, a `high`
+# the gate did not decide (no anchor) needs a retained citation that states,
+# in its own words, the attribute the question asks for (the word after
+# «quién» / «who»); otherwise it reads `medium`. Status and citations never
+# change. Run it against `baseline.toml` (the same binary, the variant off).
+#
+# Pre-registered: no wrong `high` left where the gold is UNKNOWN; useful
+# answers unchanged by construction. Off by default until measured.
+name = "attribute-check"
+description = "The default binary with the unanchored attribute check: an unanchored high needs a citation stating the asked attribute."
+claim = "quality"
+targets = [{ metric = "false_answer_rate", direction = "down", effect = 0.01 }]
+guards = ["useful_rate", "false_unknown_rate", "core_precision"]
+n = 100
+store = "shared"
+jev = "off"
+
+[binary]
+path = "target/release/kmp-mcp"
+
+[store_files]
+"ask-gate.json" = { json = { mode = "anchored", partial = true, attribute_check = true } }

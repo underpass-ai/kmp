@@ -96,6 +96,9 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// store's associations are counted over, however many candidates the
     /// floor bound left unread.
     indexed_seed_documents: Option<std::sync::Arc<Vec<super::term_counts::TermCounts>>>,
+    /// Whether an expansion rescue must answer the strict focus (P15; the
+    /// store's `expansion_rescue_focus`, on by default).
+    expansion_focus: bool,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -109,6 +112,7 @@ impl Default for AnswerEvidenceRanker<'_> {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            expansion_focus: true,
         }
     }
 }
@@ -225,6 +229,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            expansion_focus: true,
         }
     }
 
@@ -296,6 +301,24 @@ impl<'a> AnswerEvidenceRanker<'a> {
     ) -> Self {
         self.indexed_seed_documents = Some(documents);
         self
+    }
+
+    /// Lets an expansion rescue skip the strict focus (the measured variant
+    /// of P15, off unless a store asks for it).
+    pub(super) fn with_expansion_focus(mut self, required: bool) -> Self {
+        self.expansion_focus = required;
+        self
+    }
+
+    /// Whether a candidate states every one of these terms in its own words:
+    /// its text or its search summary, never its refs or metadata.
+    pub(super) fn memory_states_all(
+        &self,
+        item: &MemoryEvidence,
+        terms: &BTreeSet<String>,
+    ) -> bool {
+        let read = AnswerCandidateTerms::from_evidence(item, &self.context);
+        terms.iter().all(|term| read.content_counts.count(term) > 0)
     }
 
     /// Reads every candidate with the alias terms it spells (`corte 10` as
@@ -484,7 +507,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             context: &self.context,
             question,
             question_terms,
-            strict: strict_focus.as_ref(),
+            strict: strict_focus.as_ref().filter(|_| self.expansion_focus),
         }
         .rescue(rejected);
         let (associated, rejected) = self.associated_candidates(rejected, lexicon);
@@ -1171,6 +1194,7 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            expansion_focus: true,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1889,6 +1913,7 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            expansion_focus: true,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -2322,6 +2347,7 @@ mod tests {
             indexed_collection: None,
             indexed_vocabulary: None,
             indexed_seed_documents: None,
+            expansion_focus: true,
             context: AnswerRecallContext::default(),
             bridge,
         }

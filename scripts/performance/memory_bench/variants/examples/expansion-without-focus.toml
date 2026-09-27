@@ -1,0 +1,22 @@
+# The measured variant of P15's expansion rescue: with `ask-gate.json`
+# `{"mode":"anchored","expansion_rescue_focus":false}`, a memory reached only
+# through its judged expansions is rescued (outside the core, `reached_by:
+# expansion`) without answering the ⌈2/3⌉ focus of a strict policy.
+# Run it against `baseline.toml` on a store written with expansions.
+#
+# Pre-registered (Tirso, 28 Sept 2026): adopted only if false answers do not
+# rise. Off by default.
+name = "expansion-without-focus"
+description = "The default binary with P15's expansion rescue freed of the strict focus."
+claim = "quality"
+targets = [{ metric = "useful_rate", direction = "up", effect = 0.02 }]
+guards = ["false_answer_rate", "false_unknown_rate", "core_precision"]
+n = 100
+store = "shared"
+jev = "off"
+
+[binary]
+path = "target/release/kmp-mcp"
+
+[store_files]
+"ask-gate.json" = { json = { mode = "anchored", partial = true, expansion_rescue_focus = false } }

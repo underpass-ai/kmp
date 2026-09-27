@@ -131,6 +131,17 @@ impl<'a> AskSetup<'a> {
         })
     }
 
+    /// Applies the store's measured variants to the ranker (P15's expansion
+    /// focus); without a gate the defaults stand.
+    pub(super) fn with_gate(mut self, gate: Option<super::ask_gate::AskGate>) -> Self {
+        if let Some(gate) = gate {
+            self.ranker = self
+                .ranker
+                .with_expansion_focus(gate.requires_expansion_focus());
+        }
+        self
+    }
+
     /// What the ranker reads: the question, or under the gate the question
     /// without what it excluded and with its anchors' alias terms.
     pub(super) fn asked<'q>(&'q self, question: &'q str) -> &'q str {

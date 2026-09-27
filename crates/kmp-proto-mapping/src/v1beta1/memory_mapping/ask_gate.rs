@@ -13,6 +13,8 @@ pub struct AskGate {
     partial: bool,
     successor_core: bool,
     calibration: Option<&'static ConfidenceCalibration>,
+    attribute_check: bool,
+    expansion_focus: bool,
 }
 
 impl AskGate {
@@ -32,7 +34,35 @@ impl AskGate {
             partial,
             successor_core: false,
             calibration: None,
+            attribute_check: false,
+            expansion_focus: true,
         }
+    }
+
+    /// The measured variant of the unanchored branch (off by default): a
+    /// `high` without an anchor needs a retained citation that states, in
+    /// its own words, the attribute the question asks for (`AskedAttribute`,
+    /// «quién aprobó» → *aprobó*); otherwise it reads `medium`. Status and
+    /// citations never change.
+    pub const fn with_attribute_check(mut self, on: bool) -> Self {
+        self.attribute_check = on;
+        self
+    }
+
+    /// Whether an expansion rescue (P15) must answer the ⌈2/3⌉ focus of a
+    /// strict policy. On by default; a store may turn it off to measure the
+    /// variant without it.
+    pub const fn with_expansion_focus(mut self, required: bool) -> Self {
+        self.expansion_focus = required;
+        self
+    }
+
+    pub fn checks_attribute(&self) -> bool {
+        self.attribute_check
+    }
+
+    pub fn requires_expansion_focus(&self) -> bool {
+        self.expansion_focus
     }
 
     /// The measured variant of the lifecycle rescue (P7): the current head

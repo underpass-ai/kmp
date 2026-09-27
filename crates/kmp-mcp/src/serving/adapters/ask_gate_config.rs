@@ -13,7 +13,10 @@ pub(super) const ASK_GATE_FILE: &str = "ask-gate.json";
 /// memory that named the principal anchor may be cited for it.
 /// `"confidence_calibration":"shipped"` states `proof.confidence` through the
 /// shipped calibration table (P16), and an inline table object measures a
-/// candidate one; off without the key. Absent, the store gets
+/// candidate one; off without the key. `"attribute_check":true` holds an
+/// unanchored `high` to a citation that states the asked attribute (off by
+/// default); `"expansion_rescue_focus":false` measures P15's expansion rescue
+/// without the strict focus (on by default). Absent, the store gets
 /// [`AskGate::STORE_DEFAULT`] (the gate, with PARTIAL); unreadable or
 /// unknown, it is ignored and reported so, and the default applies.
 #[derive(Debug, Deserialize)]
@@ -31,6 +34,18 @@ pub(super) struct AskGateConfig {
     /// `"shipped"`, or an inline calibration table. Off by default.
     #[serde(default)]
     confidence_calibration: Option<serde_json::Value>,
+    /// Whether an unanchored `high` needs a citation stating the asked
+    /// attribute. Off by default.
+    #[serde(default)]
+    attribute_check: bool,
+    /// Whether an expansion rescue must answer the strict focus. On by
+    /// default.
+    #[serde(default = "focus_by_default")]
+    expansion_rescue_focus: bool,
+}
+
+fn focus_by_default() -> bool {
+    true
 }
 
 fn partial_by_default() -> bool {
@@ -58,6 +73,8 @@ impl AskGateConfig {
             "anchored" => Ok(Some(
                 AskGate::anchored(config.partial)
                     .with_successor_core(config.successor_core)
+                    .with_attribute_check(config.attribute_check)
+                    .with_expansion_focus(config.expansion_rescue_focus)
                     .with_confidence_calibration(calibration(
                         config.confidence_calibration.as_ref(),
                     )?),

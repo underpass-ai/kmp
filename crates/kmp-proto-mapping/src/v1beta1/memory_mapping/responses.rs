@@ -450,7 +450,8 @@ pub fn ask_response_from_result(
         gated,
         retrieval.witness.as_deref(),
         retrieval.indexed.as_ref(),
-    )?;
+    )?
+    .with_gate(retrieval.gate);
     let doubt = retrieval.doubt.as_ref();
     let ranker = &setup.ranker;
     let candidate_evidence = setup.candidate_evidence.clone();
@@ -587,6 +588,23 @@ pub fn ask_response_from_result(
         MemoryConfidence::Medium
     } else {
         confidence
+    };
+    // A store that asked for it (`attribute_check`) holds an unanchored
+    // `high` to a citation that states the asked attribute itself.
+    let confidence = match (retrieval.gate, &verdict) {
+        (Some(gate), None) if gate.checks_attribute() && confidence == MemoryConfidence::High => {
+            match super::asked_attribute::AskedAttribute::read(question, ranker.morphology()) {
+                Some(attribute)
+                    if !retained_evidence
+                        .iter()
+                        .any(|item| ranker.memory_states_all(item, attribute.terms())) =>
+                {
+                    MemoryConfidence::Medium
+                }
+                _ => confidence,
+            }
+        }
+        _ => confidence,
     };
     // A store that asked for it states confidence through the calibration
     // table (P16): a `high` its rules do not stand behind reads `medium`.

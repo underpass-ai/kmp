@@ -19,6 +19,7 @@ mod answer_selection;
 mod ask_gate;
 mod ask_retrieval_context;
 mod ask_setup;
+mod asked_attribute;
 mod association_index;
 #[cfg(test)]
 mod association_index_parity_tests;

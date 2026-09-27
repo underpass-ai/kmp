@@ -64,7 +64,8 @@ pub(super) fn read_doubt_band(
         true,
         retrieval.witness.as_deref(),
         retrieval.indexed.as_ref(),
-    )?;
+    )?
+    .with_gate(retrieval.gate);
     let asked = setup.asked(question);
     let candidates = setup.candidate_evidence.clone();
     let anchored = setup
