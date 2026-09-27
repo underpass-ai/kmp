@@ -69,15 +69,13 @@ impl LexicalSidecar {
         store: &EmbeddedKernelStore,
         ensure: Option<&str>,
     ) -> Option<CatchUpReport> {
-        let maintainer = Arc::clone(self.maintainer.as_ref()?);
-        let ensure = ensure.map(str::to_string);
-        let outcome = store
-            .read_points(move |reads| {
-                maintainer
-                    .catch_up(reads, ensure.as_deref())
-                    .map_err(PortError::Unavailable)
-            })
-            .await;
+        self.maintainer.as_ref()?;
+        let mut outcome = self.follow(store, ensure).await;
+        // Another call or process moved the sidecar first: what it wrote is
+        // read, and what is left to follow is followed, once.
+        if matches!(&outcome, Ok(report) if !report.committed) {
+            outcome = self.follow(store, ensure).await;
+        }
         match outcome {
             Ok(report) => {
                 tracing::debug!(
@@ -100,6 +98,24 @@ impl LexicalSidecar {
                 None
             }
         }
+    }
+
+    async fn follow(
+        &self,
+        store: &EmbeddedKernelStore,
+        ensure: Option<&str>,
+    ) -> Result<CatchUpReport, PortError> {
+        let Some(maintainer) = self.maintainer.as_ref().map(Arc::clone) else {
+            return Err(PortError::Unavailable("lexical index is off".into()));
+        };
+        let ensure = ensure.map(str::to_string);
+        store
+            .read_points(move |reads| {
+                maintainer
+                    .catch_up(reads, ensure.as_deref())
+                    .map_err(PortError::Unavailable)
+            })
+            .await
     }
 
     /// Where an ask's ranker leaves what it measured, while the sidecar is on.
