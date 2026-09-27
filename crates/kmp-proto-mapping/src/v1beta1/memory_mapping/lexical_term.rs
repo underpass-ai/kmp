@@ -12,6 +12,10 @@
 /// - plain: content = text + summary, direct = content + extra;
 /// - aliased: content = text + summary + alias_content,
 ///   direct = content + extra + alias_extra.
+///
+/// `expansion` counts the memory's judged search expansions (P15, field X),
+/// a surface of its own that is part of neither field and reads the same
+/// under both readings.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LexicalTerm {
     pub term: String,
@@ -20,6 +24,7 @@ pub struct LexicalTerm {
     pub extra: i64,
     pub alias_content: i64,
     pub alias_extra: i64,
+    pub expansion: i64,
 }
 
 impl LexicalTerm {
@@ -38,8 +43,15 @@ impl LexicalTerm {
         self.content(aliased) != 0 || self.direct(aliased) != 0
     }
 
-    /// Whether some reading carries the term: what a posting is kept for.
+    /// Whether the judged expansions carry the term.
+    pub fn is_expanded(&self) -> bool {
+        self.expansion != 0
+    }
+
+    /// Whether some reading or the expansions carry the term: what a posting
+    /// is kept for, so the postings reach every candidate an ask can score
+    /// or rescue through its expansions.
     pub fn is_held(&self) -> bool {
-        self.is_searchable(false) || self.is_searchable(true)
+        self.is_searchable(false) || self.is_searchable(true) || self.is_expanded()
     }
 }

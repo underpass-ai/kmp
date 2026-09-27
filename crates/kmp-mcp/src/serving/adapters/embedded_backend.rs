@@ -32,6 +32,7 @@ use crate::serving::environment::{
     TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
 };
 use crate::serving::judgement_site::JudgementSite;
+use crate::serving::lexical_index_mode::LexicalIndexMode;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use crate::serving::tool_success_result;
@@ -98,9 +99,10 @@ pub struct EmbeddedKernelMcpBackend {
     ask_gate: Option<AskGate>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
-    /// The lexical index beside the store (`lexical-index.sqlite3`), in
-    /// shadow: followed after writes and before asks, compared with every
-    /// ask, answering none. `KMP_LEXICAL_INDEX=off` leaves it closed.
+    /// The lexical index beside the store (`lexical-index.sqlite3`), closed
+    /// by default. `KMP_LEXICAL_INDEX=shadow` opens it in shadow: followed
+    /// after writes and before asks, compared with every ask, answering
+    /// none.
     lexical: LexicalSidecar,
 }
 
@@ -205,7 +207,7 @@ impl EmbeddedKernelMcpBackend {
             .emit();
         let (partner_cap, partner_filter, paths_corridor) =
             curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::Off));
-        let lexical = LexicalSidecar::open(data_dir);
+        let lexical = LexicalSidecar::open(data_dir, LexicalIndexMode::from_env());
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -255,6 +257,15 @@ impl EmbeddedKernelMcpBackend {
     /// The storage engine this session's store is on.
     pub fn engine(&self) -> kmp_embedded::StorageEngine {
         self.kernel.engine()
+    }
+
+    /// The same backend with the lexical sidecar in `mode`, whatever
+    /// `KMP_LEXICAL_INDEX` says: for tests that must not share one process
+    /// environment.
+    #[cfg(test)]
+    pub(crate) fn with_lexical_index(mut self, mode: LexicalIndexMode) -> Self {
+        self.lexical = LexicalSidecar::open(std::path::Path::new(&self.data_dir), mode);
+        self
     }
 
     pub fn data_dir(&self) -> &str {

@@ -7,7 +7,7 @@ use crate::serving::ports::lexical_candidates::LexicalCandidates;
 /// Compares the sidecar's view of one about with what an ask's ranker
 /// measured over the same candidates: the integers BM25 reads (N, Σlen per
 /// field, df of every weighted term, tf and length of every candidate, by
-/// fingerprint) and whether the postings of the weighted terms reach every
+/// fingerprint, its judged expansions included) and whether the postings of the weighted terms reach every
 /// candidate that could score. The ranker's answer is never touched.
 pub(super) struct ShadowComparison<'s> {
     sidecar: &'s SqliteLexicalSidecar,
@@ -53,6 +53,7 @@ impl<'s> ShadowComparison<'s> {
             totals.content_length != content,
             totals.direct_length != direct,
             totals.language.as_deref() != observation.language(),
+            (stats.expanded, stats.expansion_length) != observation.expansions(),
         ]
         .into_iter()
         .map(u64::from)

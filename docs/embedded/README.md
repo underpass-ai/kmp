@@ -126,8 +126,10 @@ the same candidates (N, the field lengths, df of every weighted term, tf and
 length of every candidate, and that the postings of the question's terms reach
 every candidate that could score) and logs one `kmp_lexical_shadow` line with
 the differences; an about that differs is forgotten and indexed again on its
-next ask. `KMP_LEXICAL_INDEX=off` keeps the file closed. It can be deleted at
-any time: the next ask builds what it needs again. It is not part of a bundle.
+next ask. It is closed by default and opened only with
+`KMP_LEXICAL_INDEX=shadow`: while it answers nothing it costs about 5 % per ask
+and a build on each about's first ask. It can be deleted at any time: the next
+ask builds what it needs again. It is not part of a bundle.
 
 ## How Ask decides
 

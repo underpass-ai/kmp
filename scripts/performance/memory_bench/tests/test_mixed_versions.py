@@ -242,7 +242,8 @@ class FakeWorld:
         self.root = Path(tempfile.mkdtemp(prefix='bt18-fake-'))
         test.addCleanup(shutil.rmtree, self.root, True)
 
-    def new_store(self, label, seeded=True, jev=False):
+    def new_store(self, label, seeded=True, jev=False, lexical=False):
+        self.lexical_stores = getattr(self, 'lexical_stores', []) + ([label] if lexical else [])
         return FakeStore(tempfile.mkdtemp(prefix=label + '-', dir=self.root) + '/data', seeded, jev)
 
     def env(self, reference=None, candidate=None, old=None, jev=False):
@@ -426,6 +427,11 @@ class SidecarTest(unittest.TestCase):
         self.assertEqual(result.status, mv.PASS, result)
         self.assertTrue(result.facts['writer_ignores_sidecar'])
         self.assertGreater(result.facts['shadow_lines'], 0)
+
+    def test_the_scenario_opens_the_sidecar_it_measures(self):
+        world = FakeWorld(self)
+        mv.sidecar_catch_up(world.env(candidate=binary('candidate', sidecar=True)), SETTINGS)
+        self.assertEqual(world.lexical_stores, ['sidecar'])
 
     def test_a_sidecar_that_does_not_catch_up_fails(self):
         env = FakeWorld(self).env(candidate=binary('candidate', sidecar=True, catch_up_bug=True))

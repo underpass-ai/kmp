@@ -19,6 +19,8 @@ pub struct LexicalObservation {
     documents: u64,
     content_length: i64,
     direct_length: i64,
+    expanded: u64,
+    expansion_length: i64,
     rows_digest: u64,
     fingerprints: BTreeMap<String, u64>,
     frequencies: BTreeMap<String, (u64, u64)>,
@@ -42,8 +44,16 @@ impl LexicalObservation {
         for (item, terms) in prepared {
             observation.content_length += terms.content_counts.length() as i64;
             observation.direct_length += terms.direct_counts.length() as i64;
-            let fingerprint =
-                LexicalRow::fingerprint_of_counts(&terms.content_counts, &terms.direct_counts);
+            let expansion = terms.expansion_counts.length() as i64;
+            if expansion > 0 {
+                observation.expanded += 1;
+                observation.expansion_length += expansion;
+            }
+            let fingerprint = LexicalRow::fingerprint_of_counts(
+                &terms.content_counts,
+                &terms.direct_counts,
+                &terms.expansion_counts,
+            );
             observation.rows_digest = observation.rows_digest.wrapping_add(fingerprint);
             observation
                 .fingerprints
@@ -51,8 +61,12 @@ impl LexicalObservation {
         }
         let weighted = weighted.into_iter().collect::<BTreeSet<_>>();
         for (item, terms) in prepared {
+            // A candidate its expansions alone carry to the question can be
+            // rescued (P15), so a generator must reach it too.
             if weighted.iter().any(|term| {
-                terms.direct_counts.count(term) > 0 || terms.content_counts.count(term) > 0
+                terms.direct_counts.count(term) > 0
+                    || terms.content_counts.count(term) > 0
+                    || terms.expansion_counts.count(term) > 0
             }) {
                 observation.scored.insert(item.id.clone());
             }
@@ -90,6 +104,11 @@ impl LexicalObservation {
         (self.content_length, self.direct_length)
     }
 
+    /// How many candidates carry judged expansions, and Σ their length.
+    pub fn expansions(&self) -> (u64, i64) {
+        (self.expanded, self.expansion_length)
+    }
+
     /// The wrapping sum of every candidate's row fingerprint: equal digests
     /// mean equal tf and length for every candidate, up to a collision.
     pub fn rows_digest(&self) -> u64 {
@@ -107,8 +126,9 @@ impl LexicalObservation {
         &self.frequencies
     }
 
-    /// The candidates that carry a weighted term, so could score above zero:
-    /// the ones a candidate generator must never miss.
+    /// The candidates that carry a weighted term in a field or in their
+    /// expansions, so could score above zero or be rescued: the ones a
+    /// candidate generator must never miss.
     pub fn scored(&self) -> &BTreeSet<String> {
         &self.scored
     }

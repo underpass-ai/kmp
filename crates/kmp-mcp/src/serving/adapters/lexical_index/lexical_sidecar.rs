@@ -11,7 +11,7 @@ use super::shadow_comparison::ShadowComparison;
 use super::shadow_report::ShadowReport;
 pub(crate) use super::shadow_scope::ShadowScope;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
-use crate::serving::environment::{LEXICAL_INDEX_ENV, optional_env_string};
+use crate::serving::lexical_index_mode::LexicalIndexMode;
 
 /// The file the sidecar lives in, beside the store and outside `store/`,
 /// whose format gate refuses files it does not know.
@@ -35,9 +35,9 @@ pub(crate) fn lexical_index_path(data_dir: &Path) -> PathBuf {
 }
 
 impl LexicalSidecar {
-    /// Opens the sidecar beside the store unless the operator turned it off.
-    pub(crate) fn open(data_dir: &Path) -> Self {
-        if optional_env_string(LEXICAL_INDEX_ENV).as_deref() == Some("off") {
+    /// Opens the sidecar beside the store when `mode` asks for it.
+    pub(crate) fn open(data_dir: &Path, mode: LexicalIndexMode) -> Self {
+        if !mode.is_open() {
             return Self::disabled();
         }
         match SqliteLexicalSidecar::open(&lexical_index_path(data_dir)) {

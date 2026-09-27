@@ -130,7 +130,11 @@ impl<'t> RowWriter<'t> {
     /// Adds (`sign` 1) or takes away (-1) a row's lengths, fingerprints, df
     /// and postings.
     fn account(&mut self, stats: &mut AboutStats, ordinal: u64, row: &LexicalRow, sign: i64) {
-        let [text, summary, extra, alias_content, alias_extra] = row.lengths();
+        let [text, summary, extra, alias_content, alias_extra, expansion] = row.lengths();
+        if expansion != 0 {
+            stats.expanded = stats.expanded.wrapping_add_signed(sign);
+            stats.expansion_length += sign * expansion;
+        }
         stats.text_length += sign * text;
         stats.summary_length += sign * summary;
         stats.extra_length += sign * extra;

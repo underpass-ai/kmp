@@ -7,6 +7,15 @@ the ranker on every ask. It answers nothing yet; P13 generates candidates from
 its postings through `LexicalCandidates`
 (`crates/kmp-mcp/src/serving/ports/lexical_candidates.rs`).
 
+## Off by default
+
+The sidecar is closed unless `KMP_LEXICAL_INDEX=shadow`: `off`, no value or any
+other value keep it closed (an unknown value is logged). In shadow it answers
+nothing and costs about +5 % per ask at 10^3 and 10^4 and a build on each
+about's first ask (31 s at 10^5), so it stays off until P13 answers from it.
+BT18 `sidecar_catch_up` opens it explicitly; so do the tests that exercise it
+(`EmbeddedKernelMcpBackend::with_lexical_index`).
+
 ## Where and what
 
 `<data dir>/lexical-index.sqlite3` (WAL), beside `store/`: the format gate
@@ -15,15 +24,25 @@ refuses unknown files inside `store/` (the same place the verdict book took).
 | Table | Holds |
 |---|---|
 | `meta` | `index_version`, `profile`, `position` (last event followed), `tail` (a witness of that event) |
-| `lex_fwd` (`LexFwd`) | per about and candidate (`entry:<node>`, `detail:<node>`): ordinal, aliased fingerprint, the row: per term `text`, `summary`, `extra`, `alias_content`, `alias_extra`, and the part lengths |
-| `lex_post` (`LexPost`) | per about, term and block: up to 128 postings, varint deltas of the ordinal and the content/direct counts under both readings |
+| `lex_fwd` (`LexFwd`) | per about and candidate (`entry:<node>`, `detail:<node>`): ordinal, aliased fingerprint, the row: per term `text`, `summary`, `extra`, `alias_content`, `alias_extra`, `expansion`, and the part lengths |
+| `lex_post` (`LexPost`) | per about, term and block: up to 128 postings, varint deltas of the ordinal and the content/direct counts under both readings; a term only a candidate's judged expansions carry is posted with zero counts, so the postings reach it |
 | `lex_key_df` (`LexKeyDf`) | per about and term: df in content and direct, plain and aliased |
-| `lex_stats` (`LexStats`) | per about: N, Σ of every part length, one digest of all rows per reading, the next ordinal, the function-word counts and linted summaries that decide the language, the language the rows were read in, and how many nodes lie one hop past the default depth |
+| `lex_stats` (`LexStats`) | per about: N, Σ of every part length, how many candidates carry judged expansions and Σ their length, one digest of all rows per reading, the next ordinal, the function-word counts and linted summaries that decide the language, the language the rows were read in, and how many nodes lie one hop past the default depth |
 | `lex_node`, `lex_relation`, `lex_far` | what follows the ask's selection one write at a time: each reached node's hop and selection counters and language contribution, each kept relation's language contribution, the nodes one hop past the default depth |
 
 Every part is a residual of the ranker's own counts (`surface_counts`, shared by
 the ranker and the index), so content = text + summary (+ alias content) and
 direct = content + extra (+ alias extra) hold exactly under both readings.
+
+Judged search expansions (P15, `search_expansions` in the reserved metadata)
+are field X: part of neither content nor direct, as the ranker reads them, and
+counted apart per term (`expansion`) with their length. A row's fingerprint
+covers them only when it has some, so rows without expansions fingerprint as
+before; the index version is `lexical-index-2`, which rebuilds sidecars
+written by `lexical-index-1`. The shadow also compares how many candidates
+carry expansions and Σ their length, and counts a candidate its expansions
+alone carry to a weighted term among those the postings must reach
+(`expansion_shadow_tests.rs`).
 
 ## What is indexed
 
@@ -49,7 +68,7 @@ reads the same while no node lies one hop past depth 2 (`lex_far` empty).
   `index_version`, or whose `tail` no longer matches the log, is emptied.
 - Every write is one transaction that first checks the position it read; a
   writer that lost the race writes nothing and follows again.
-- `KMP_LEXICAL_INDEX=off` keeps the file closed. It can be deleted any time.
+- Closed unless `KMP_LEXICAL_INDEX=shadow`. It can be deleted any time.
 
 ## Shadow comparison
 
@@ -102,7 +121,7 @@ Peak RSS of the first ask at 10^5: 4.25 GB against 3.84 GB without the sidecar
 
 Write cost: the time the sidecar takes to follow one write, per entry (median
 of 3 repetitions, one at 10^5; p95 of the single-entry writes in brackets). The
-wall-clock difference against `KMP_LEXICAL_INDEX=off` stays inside the noise of
+wall-clock difference against the sidecar closed stays inside the noise of
 the write itself.
 
 | Store | 1 entry per write | 50 entries per write |

@@ -21,12 +21,23 @@ use super::lexical_maintainer::LexicalMaintainer;
 use super::shadow_comparison::ShadowComparison;
 use super::shadow_report::ShadowReport;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
-use crate::KernelMcpServer;
+use crate::serving::lexical_index_mode::LexicalIndexMode;
+use crate::{EmbeddedKernelMcpBackend, KernelMcpServer};
 
-const ABOUT: &str = "project:lexical-upkeep";
-const AT: &str = "2026-09-01T10:00:00Z";
+pub(super) const ABOUT: &str = "project:lexical-upkeep";
+pub(super) const AT: &str = "2026-09-01T10:00:00Z";
 
-async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
+/// A server over `path` with the lexical sidecar in shadow, which is off by
+/// default.
+pub(super) fn shadowed(path: &Path) -> KernelMcpServer {
+    KernelMcpServer::with_backend(
+        EmbeddedKernelMcpBackend::open(path)
+            .expect("store")
+            .with_lexical_index(LexicalIndexMode::Shadow),
+    )
+}
+
+pub(super) async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
     let request = json!({"jsonrpc":"2.0","id":1,"method":"tools/call",
         "params":{"name":tool,"arguments":arguments}});
     let wire = server
@@ -38,7 +49,7 @@ async fn call(server: &KernelMcpServer, tool: &str, arguments: Value) -> Value {
     result["structuredContent"].clone()
 }
 
-async fn write(server: &KernelMcpServer, arguments: Value) -> Value {
+pub(super) async fn write(server: &KernelMcpServer, arguments: Value) -> Value {
     let result = call(server, "kmp_write_memory", arguments).await;
     if result["status"] != "needs_review" {
         assert_eq!(result["status"], "committed", "{result}");
@@ -53,18 +64,18 @@ async fn write(server: &KernelMcpServer, arguments: Value) -> Value {
     .await
 }
 
-fn memories(key: &str, labels: Value, memories: Value) -> Value {
+pub(super) fn memories(key: &str, labels: Value, memories: Value) -> Value {
     json!({"about":ABOUT,"actor":"fixture","source_kind":"human","idempotency_key":key,
         "occurred_at":AT,"observed_at":AT,"labels":labels,"options":{"strict":false},
         "memories":memories})
 }
 
-fn memory(id: &str, summary: &str, evidence: &str) -> Value {
+pub(super) fn memory(id: &str, summary: &str, evidence: &str) -> Value {
     json!({"id":id,"kind":"observation","summary":summary,"evidence":evidence})
 }
 
 /// What the ranker measures over the about, compared with `sidecar`.
-async fn shadow(
+pub(super) async fn shadow(
     kernel: &EmbeddedKernel,
     sidecar: &SqliteLexicalSidecar,
     question: &str,
@@ -80,7 +91,7 @@ async fn shadow(
 
 /// The same under a policy: `best_effort` reads without the anchored gate,
 /// so without alias terms.
-async fn shadow_under(
+pub(super) async fn shadow_under(
     kernel: &EmbeddedKernel,
     sidecar: &SqliteLexicalSidecar,
     question: &str,
@@ -126,7 +137,7 @@ async fn shadow_under(
 /// Everything the sidecar holds for the about, with candidates named by id
 /// rather than ordinal: two sidecars built in different orders number their
 /// candidates differently and must hold the same thing.
-fn dump(path: &Path) -> BTreeMap<String, Vec<String>> {
+pub(super) fn dump(path: &Path) -> BTreeMap<String, Vec<String>> {
     let connection = Connection::open(path).expect("sidecar");
     let rows = |sql: &str| -> Vec<Vec<String>> {
         let mut statement = connection.prepare(sql).expect("query");
@@ -213,7 +224,7 @@ fn dump(path: &Path) -> BTreeMap<String, Vec<String>> {
 }
 
 /// Builds the about from nothing in a sidecar of its own.
-async fn rebuilt(kernel: &EmbeddedKernel, at: &Path) -> BTreeMap<String, Vec<String>> {
+pub(super) async fn rebuilt(kernel: &EmbeddedKernel, at: &Path) -> BTreeMap<String, Vec<String>> {
     let sidecar = Arc::new(SqliteLexicalSidecar::open(at).expect("fresh sidecar"));
     let maintainer = LexicalMaintainer::new(Arc::clone(&sidecar));
     kernel
@@ -228,7 +239,10 @@ async fn rebuilt(kernel: &EmbeddedKernel, at: &Path) -> BTreeMap<String, Vec<Str
     dump(at)
 }
 
-fn assert_same(followed: &BTreeMap<String, Vec<String>>, built: &BTreeMap<String, Vec<String>>) {
+pub(super) fn assert_same(
+    followed: &BTreeMap<String, Vec<String>>,
+    built: &BTreeMap<String, Vec<String>>,
+) {
     for (part, rows) in built {
         assert_eq!(
             &followed[part], rows,
@@ -241,7 +255,7 @@ fn assert_same(followed: &BTreeMap<String, Vec<String>>, built: &BTreeMap<String
 async fn a_sidecar_followed_write_by_write_equals_one_built_from_nothing() {
     let directory = tempfile::tempdir().expect("store");
     let scratch = tempfile::tempdir().expect("scratch");
-    let server = KernelMcpServer::embedded(directory.path()).expect("server");
+    let server = shadowed(directory.path());
     let first = write(
         &server,
         memories(
@@ -385,7 +399,7 @@ async fn a_sidecar_followed_write_by_write_equals_one_built_from_nothing() {
 async fn an_about_whose_language_moves_is_read_again_in_the_new_one() {
     let directory = tempfile::tempdir().expect("store");
     let scratch = tempfile::tempdir().expect("scratch");
-    let server = KernelMcpServer::embedded(directory.path()).expect("server");
+    let server = shadowed(directory.path());
     // Two short memories read as no language: nothing is stemmed.
     write(
         &server,
@@ -448,7 +462,7 @@ async fn an_about_whose_language_moves_is_read_again_in_the_new_one() {
 #[tokio::test]
 async fn writes_to_abouts_nobody_asked_about_only_move_the_position() {
     let directory = tempfile::tempdir().expect("store");
-    let server = KernelMcpServer::embedded(directory.path()).expect("server");
+    let server = shadowed(directory.path());
     write(
         &server,
         memories(

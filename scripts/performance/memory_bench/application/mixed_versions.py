@@ -158,7 +158,8 @@ def summary(values):
 
 @dataclass(frozen=True)
 class Environment:
-    """What the scenarios run against; `new_store(label, seeded=True, jev=False)` makes a Store."""
+    """What the scenarios run against; `new_store(label, seeded=True, jev=False, lexical=False)`
+    makes a Store (`lexical` opens the lexical sidecar in shadow)."""
     new_store: object
     reference: BinaryRef
     candidate: BinaryRef
@@ -545,7 +546,8 @@ def sidecar_catch_up(env, settings):
     case = f'{writer.role} writes behind {candidate.role} sidecar'
     if SIDECAR not in candidate.capabilities:
         return skipped('sidecar_catch_up', case, NOT_IN_BINARY)
-    store = env.new_store('sidecar', seeded=True)
+    # The sidecar is off by default (P12); this scenario opens it in shadow.
+    store = env.new_store('sidecar', seeded=True, lexical=True)
     checks, latency = [], {'ask_after_catch_up': [], 'ask_after_rebuild': []}
     facts = {'writer_ignores_sidecar': SIDECAR not in writer.capabilities}
     rebuilt = None

@@ -30,8 +30,11 @@ Detailed notes from the early release cycle remain available in the
   the store's event log, whoever wrote it. Asks do not read it yet: each ask
   compares it with its ranker and logs `kmp_lexical_shadow`. Measured with 0
   differences on the frozen real store, synth 10^3/10^4/10^5, the judged
-  retrieval corpus and FactConsolidation/LongMemEval.
-  `KMP_LEXICAL_INDEX=off` keeps it closed.
+  retrieval corpus and FactConsolidation/LongMemEval. It indexes a memory's
+  judged search expansions as their own field, as the ranker reads them
+  (index version `lexical-index-2`). **Off by default**:
+  `KMP_LEXICAL_INDEX=shadow` opens it; in shadow it costs about 5 % per ask
+  and a build on each about's first ask (31 s at 10^5 entries).
 
 ### Changed
 

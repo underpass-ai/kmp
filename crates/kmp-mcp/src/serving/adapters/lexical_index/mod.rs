@@ -33,4 +33,7 @@ fn storage(error: impl std::fmt::Display) -> String {
 mod upkeep_tests;
 
 #[cfg(test)]
+mod expansion_shadow_tests;
+
+#[cfg(test)]
 mod derivation_golden_tests;

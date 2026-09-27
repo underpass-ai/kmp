@@ -9,7 +9,8 @@ use super::varint::{Reader, push_bytes, push_signed, push_unsigned};
 /// One candidate's row in the lexical sidecar (DESIGN L6 `LexFwd`): every
 /// term it carries with its count in each part of its surface
 /// ([`LexicalTerm`]), and the length of each part, under both readings an ask
-/// can take (plain, and with the alias terms the anchored gate reads).
+/// can take (plain, and with the alias terms the anchored gate reads), and
+/// its judged search expansions (P15, field X) apart.
 ///
 /// The ranker depends on nothing else about a candidate: BM25 reads tf and
 /// the length in the content and the direct field, and both are sums of the
@@ -22,6 +23,7 @@ pub struct LexicalRow {
     extra_length: i64,
     alias_content_length: i64,
     alias_extra_length: i64,
+    expansion_length: i64,
 }
 
 /// FNV-1a, 64 bits: a fingerprint that must not move between processes or
@@ -30,35 +32,50 @@ const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
 const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
 
 /// The layout of an encoded row; a different one is refused.
-const ROW_LAYOUT: u64 = 2;
+const ROW_LAYOUT: u64 = 3;
 
 /// A candidate's fields as the ranker counts them: content and direct.
 type Fields<'a> = (&'a TermCounts, &'a TermCounts);
+
+/// A candidate's surfaces as the ranker counts them: its text alone, both
+/// fields plainly and with aliases, and its judged expansions.
+pub(super) struct Surfaces<'a> {
+    pub(super) text: &'a TermCounts,
+    pub(super) plain: Fields<'a>,
+    pub(super) aliased: Fields<'a>,
+    pub(super) expansion: &'a TermCounts,
+}
 
 impl LexicalRow {
     /// Reads one candidate the way the ranker reads it, in `profile`'s
     /// language, under both readings.
     pub fn read(item: &MemoryEvidence, profile: &LexicalProfile) -> Self {
         let morphology = profile.morphology();
-        let (content, direct, _) = surface_counts(item, &morphology, false);
+        let (content, direct, expansion) = surface_counts(item, &morphology, false);
         let (aliased_content, aliased_direct, _) = surface_counts(item, &morphology, true);
         let text = text_counts(item, &morphology, false);
-        Self::from_counts(
-            &text,
-            (&content, &direct),
-            (&aliased_content, &aliased_direct),
-        )
+        Self::from_counts(Surfaces {
+            text: &text,
+            plain: (&content, &direct),
+            aliased: (&aliased_content, &aliased_direct),
+            expansion: &expansion,
+        })
     }
 
-    pub(super) fn from_counts(text: &TermCounts, plain: Fields<'_>, aliased: Fields<'_>) -> Self {
-        let (content, direct) = plain;
-        let (aliased_content, aliased_direct) = aliased;
+    pub(super) fn from_counts(surfaces: Surfaces<'_>) -> Self {
+        let Surfaces {
+            text,
+            plain: (content, direct),
+            aliased: (aliased_content, aliased_direct),
+            expansion,
+        } = surfaces;
         let mut names = text
             .terms()
             .chain(content.terms())
             .chain(direct.terms())
             .chain(aliased_content.terms())
             .chain(aliased_direct.terms())
+            .chain(expansion.terms())
             .collect::<Vec<_>>();
         names.sort();
         names.dedup();
@@ -77,6 +94,7 @@ impl LexicalRow {
                     alias_content: in_aliased_content - in_content,
                     alias_extra: (in_aliased_direct - in_aliased_content)
                         - (in_direct - in_content),
+                    expansion: count(expansion),
                 }
             })
             .collect();
@@ -89,6 +107,7 @@ impl LexicalRow {
             alias_content_length: length(aliased_content) - length(content),
             alias_extra_length: (length(aliased_direct) - length(aliased_content))
                 - (length(direct) - length(content)),
+            expansion_length: length(expansion),
         }
     }
 
@@ -104,15 +123,22 @@ impl LexicalRow {
             .map(|index| &self.terms[index])
     }
 
-    /// The part lengths: text, summary, extra, alias content, alias extra.
-    pub fn lengths(&self) -> [i64; 5] {
+    /// The part lengths: text, summary, extra, alias content, alias extra
+    /// and expansion.
+    pub fn lengths(&self) -> [i64; 6] {
         [
             self.text_length,
             self.summary_length,
             self.extra_length,
             self.alias_content_length,
             self.alias_extra_length,
+            self.expansion_length,
         ]
+    }
+
+    /// The length of the judged expansions (field X); zero without them.
+    pub fn expansion_length(&self) -> i64 {
+        self.expansion_length
     }
 
     pub fn content_length(&self, aliased: bool) -> i64 {
@@ -131,42 +157,59 @@ impl LexicalRow {
             + if aliased { self.alias_extra_length } else { 0 }
     }
 
-    /// The two fields BM25 reads under a reading, term by term, and their
-    /// lengths, folded into 64 bits. The ranker computes the same fingerprint
+    /// The two fields BM25 reads under a reading and the expansions, term by
+    /// term, and their lengths, folded into 64 bits. The ranker computes the same fingerprint
     /// from its own counts (`fingerprint_of_counts`), so equal
     /// fingerprints mean the index and the ranker read this candidate alike.
     pub fn fingerprint(&self, aliased: bool) -> u64 {
         fingerprint(
             self.terms
                 .iter()
-                .filter(|term| term.is_searchable(aliased))
+                .filter(|term| term.is_searchable(aliased) || term.is_expanded())
                 .map(|term| {
                     (
                         term.term.as_str(),
-                        term.content(aliased),
-                        term.direct(aliased),
+                        [term.content(aliased), term.direct(aliased), term.expansion],
                     )
                 }),
-            self.content_length(aliased),
-            self.direct_length(aliased),
+            [
+                self.content_length(aliased),
+                self.direct_length(aliased),
+                self.expansion_length,
+            ],
         )
     }
 
     /// The fingerprint of a candidate the ranker counted.
-    pub(super) fn fingerprint_of_counts(content: &TermCounts, direct: &TermCounts) -> u64 {
-        let mut names = content.terms().chain(direct.terms()).collect::<Vec<_>>();
+    pub(super) fn fingerprint_of_counts(
+        content: &TermCounts,
+        direct: &TermCounts,
+        expansion: &TermCounts,
+    ) -> u64 {
+        let mut names = content
+            .terms()
+            .chain(direct.terms())
+            .chain(expansion.terms())
+            .collect::<Vec<_>>();
         names.sort();
         names.dedup();
+        let count = |counts: &TermCounts, term: &String| i64::from(counts.count(term));
         fingerprint(
             names.into_iter().map(|term| {
                 (
                     term.as_str(),
-                    i64::from(content.count(term)),
-                    i64::from(direct.count(term)),
+                    [
+                        count(content, term),
+                        count(direct, term),
+                        count(expansion, term),
+                    ],
                 )
             }),
-            content.length() as i64,
-            direct.length() as i64,
+            [
+                content.length() as i64,
+                direct.length() as i64,
+                expansion.length() as i64,
+            ],
         )
     }
 
@@ -185,6 +228,7 @@ impl LexicalRow {
                 term.extra,
                 term.alias_content,
                 term.alias_extra,
+                term.expansion,
             ] {
                 push_signed(&mut buffer, count);
             }
@@ -198,7 +242,7 @@ impl LexicalRow {
         if layout != ROW_LAYOUT {
             return Err(format!("lexical row layout {layout} is not {ROW_LAYOUT}"));
         }
-        let mut lengths = [0i64; 5];
+        let mut lengths = [0i64; 6];
         for length in &mut lengths {
             *length = reader.signed()?;
         }
@@ -215,6 +259,7 @@ impl LexicalRow {
                 extra: reader.signed()?,
                 alias_content: reader.signed()?,
                 alias_extra: reader.signed()?,
+                expansion: reader.signed()?,
             });
         }
         if !reader.finished() {
@@ -226,6 +271,7 @@ impl LexicalRow {
             extra_length,
             alias_content_length,
             alias_extra_length,
+            expansion_length,
         ] = lengths;
         Ok(Self {
             terms,
@@ -234,15 +280,15 @@ impl LexicalRow {
             extra_length,
             alias_content_length,
             alias_extra_length,
+            expansion_length,
         })
     }
 }
 
-fn fingerprint<'a>(
-    terms: impl Iterator<Item = (&'a str, i64, i64)>,
-    content_length: i64,
-    direct_length: i64,
-) -> u64 {
+/// Folds `(term, [content, direct, expansion])` and the three lengths. A row
+/// without expansions feeds nothing for them, so its fingerprint is the one
+/// of the two fields alone.
+fn fingerprint<'a>(terms: impl Iterator<Item = (&'a str, [i64; 3])>, lengths: [i64; 3]) -> u64 {
     let mut hash = FNV_OFFSET;
     let mut feed = |bytes: &[u8]| {
         for byte in bytes {
@@ -250,15 +296,24 @@ fn fingerprint<'a>(
             hash = hash.wrapping_mul(FNV_PRIME);
         }
     };
-    for (term, content, direct) in terms {
+    let [content_length, direct_length, expansion_length] = lengths;
+    for (term, [content, direct, expansion]) in terms {
         feed(term.as_bytes());
         feed(&[0xff]);
         feed(&content.to_le_bytes());
         feed(&direct.to_le_bytes());
+        if expansion != 0 {
+            feed(&[0xfd]);
+            feed(&expansion.to_le_bytes());
+        }
     }
     feed(&[0xfe]);
     feed(&content_length.to_le_bytes());
     feed(&direct_length.to_le_bytes());
+    if expansion_length != 0 {
+        feed(&[0xfd]);
+        feed(&expansion_length.to_le_bytes());
+    }
     hash
 }
 
@@ -277,11 +332,12 @@ mod tests {
         let aliased_direct = counts(&[
             "valve", "froze", "valve", "night", "c10", "operator", "log", "adr18",
         ]);
-        LexicalRow::from_counts(
-            &counts(&["valve", "froze"]),
-            (&content, &direct),
-            (&aliased_content, &aliased_direct),
-        )
+        LexicalRow::from_counts(Surfaces {
+            text: &counts(&["valve", "froze"]),
+            plain: (&content, &direct),
+            aliased: (&aliased_content, &aliased_direct),
+            expansion: &counts(&["freezing", "valve"]),
+        })
     }
 
     #[test]
@@ -303,6 +359,12 @@ mod tests {
             (4, 6)
         );
         assert_eq!((row.content_length(true), row.direct_length(true)), (5, 8));
+        // The expansions are their own surface, in neither field.
+        let freezing = row.term("freezing").expect("fixture");
+        assert_eq!((freezing.content(true), freezing.direct(true)), (0, 0));
+        assert!(freezing.is_expanded() && freezing.is_held());
+        assert_eq!(valve.expansion, 1);
+        assert_eq!(row.expansion_length(), 2);
     }
 
     #[test]
@@ -315,19 +377,29 @@ mod tests {
     #[test]
     fn the_index_and_the_ranker_fingerprint_alike_under_each_reading() {
         let row = row();
+        let expansion = counts(&["freezing", "valve"]);
         let plain = LexicalRow::fingerprint_of_counts(
             &counts(&["valve", "froze", "valve", "night"]),
             &counts(&["valve", "froze", "valve", "night", "operator", "log"]),
+            &expansion,
         );
         let aliased = LexicalRow::fingerprint_of_counts(
             &counts(&["valve", "froze", "valve", "night", "c10"]),
             &counts(&[
                 "valve", "froze", "valve", "night", "c10", "operator", "log", "adr18",
             ]),
+            &expansion,
         );
         assert_eq!(row.fingerprint(false), plain);
         assert_eq!(row.fingerprint(true), aliased);
         assert_ne!(plain, aliased);
+        // Without its expansions the ranker would read another candidate.
+        let unexpanded = LexicalRow::fingerprint_of_counts(
+            &counts(&["valve", "froze", "valve", "night"]),
+            &counts(&["valve", "froze", "valve", "night", "operator", "log"]),
+            &TermCounts::default(),
+        );
+        assert_ne!(plain, unexpanded);
     }
 
     /// A seam the tokenizer read differently in the text alone than in the
@@ -335,17 +407,19 @@ mod tests {
     #[test]
     fn a_term_only_the_text_reading_saw_does_not_change_the_fields() {
         let valve = counts(&["valve"]);
-        let row = LexicalRow::from_counts(
-            &counts(&["c10", "valve"]),
-            (&valve, &valve),
-            (&valve, &valve),
-        );
+        let none = TermCounts::default();
+        let row = LexicalRow::from_counts(Surfaces {
+            text: &counts(&["c10", "valve"]),
+            plain: (&valve, &valve),
+            aliased: (&valve, &valve),
+            expansion: &none,
+        });
         let seam = row.term("c10").expect("fixture");
         assert_eq!((seam.content(false), seam.direct(false)), (0, 0));
         assert!(!seam.is_held());
         assert_eq!(
             row.fingerprint(false),
-            LexicalRow::fingerprint_of_counts(&valve, &valve)
+            LexicalRow::fingerprint_of_counts(&valve, &valve, &none)
         );
     }
 }

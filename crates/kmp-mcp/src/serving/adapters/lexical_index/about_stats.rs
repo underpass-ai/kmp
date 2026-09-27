@@ -7,7 +7,10 @@ use kmp_proto_mapping::v1beta1::LanguageSignals;
 /// wrapping sum of every row's fingerprint, under each reading (plain, and
 /// with the alias terms the anchored gate reads). `signals` and
 /// `summaries` decide the about's language as the ranker would, and
-/// `language` is the one its rows were read in. `next_ordinal` numbers the
+/// `language` is the one its rows were read in. `expanded` and
+/// `expansion_length` count the candidates that carry judged search
+/// expansions (P15, field X) and Σ their length: while `expanded` is zero no
+/// ask of the about can rescue anything through them. `next_ordinal` numbers the
 /// next candidate for the postings.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub(super) struct AboutStats {
@@ -17,6 +20,8 @@ pub(super) struct AboutStats {
     pub(super) extra_length: i64,
     pub(super) alias_content_length: i64,
     pub(super) alias_extra_length: i64,
+    pub(super) expanded: u64,
+    pub(super) expansion_length: i64,
     pub(super) rows_digest: u64,
     pub(super) aliased_digest: u64,
     pub(super) next_ordinal: u64,
@@ -28,7 +33,7 @@ pub(super) struct AboutStats {
     pub(super) far: u64,
 }
 
-const STATS_LAYOUT: &str = "1";
+const STATS_LAYOUT: &str = "2";
 
 impl AboutStats {
     pub(super) fn content_length(&self, aliased: bool) -> i64 {
@@ -65,6 +70,8 @@ impl AboutStats {
             "extra_length": self.extra_length,
             "alias_content_length": self.alias_content_length,
             "alias_extra_length": self.alias_extra_length,
+            "expanded": self.expanded,
+            "expansion_length": self.expansion_length,
             "rows_digest": self.rows_digest.to_string(),
             "aliased_digest": self.aliased_digest.to_string(),
             "next_ordinal": self.next_ordinal,
@@ -107,6 +114,8 @@ impl AboutStats {
             extra_length: signed("extra_length")?,
             alias_content_length: signed("alias_content_length")?,
             alias_extra_length: signed("alias_extra_length")?,
+            expanded: unsigned("expanded")?,
+            expansion_length: signed("expansion_length")?,
             rows_digest: digest("rows_digest")?,
             aliased_digest: digest("aliased_digest")?,
             next_ordinal: unsigned("next_ordinal")?,
@@ -153,6 +162,8 @@ mod tests {
             extra_length: 12,
             alias_content_length: 2,
             alias_extra_length: 1,
+            expanded: 1,
+            expansion_length: 4,
             rows_digest: u64::MAX - 7,
             aliased_digest: 5,
             next_ordinal: 9,
