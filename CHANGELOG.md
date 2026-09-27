@@ -53,8 +53,35 @@ Detailed notes from the early release cycle remain available in the
   limits are per store in `lexical-index.json`
   (`{"max_candidate_share_percent":35,"min_about_entries":2250}`).
 
+- MaxScore against the eligibility floor (P14, DESIGN L6), **on by
+  default** (`KMP_LEXICAL_MAXSCORE=off` turns it off): an ask the lexical
+  index answers leaves unread every candidate no reading of the question lets
+  clear the floor and that carries no association or bridged word, and the
+  35 % cost bound applies to what is left. Byte-identical answers by
+  construction (the bound is `Σ idf·tf < floor`, sound for both readings,
+  every form of the question and the bridge); not pruned when the gate
+  requires an anchor. Implemented without a bench campaign: **not measured at
+  scale** (Tirso's decision). `kmp_lexical_answer`/`kmp_lexical_verify` log
+  `reached` beside `candidates`.
+- Two measured variants in `ask-gate.json`, both off: `"attribute_check":
+  true` holds an unanchored `high` to a citation that states the attribute
+  the question asks for (`¿quién aprobó …?` → *aprobó*), else `medium`
+  (finding `breal-997250f158ea`); `"expansion_rescue_focus": false` lets P15's
+  expansion rescue skip the ⌈2/3⌉ focus.
+
 ### Changed
 
+- **Breaking (continuations):** Wake/Ask cursors are `kmp2` (P14): they carry
+  a digest of the item the page ended on and resume only after it. A `kmp1`
+  cursor is refused as `SELECTION_CHANGED` with a restart call.
+- «quién» and «con» are stop words, as «who» and «with» are. Lexical index
+  version `lexical-index-4`: every sidecar is rebuilt on its next ask.
+- The doubt band no longer reads every candidate's terms twice: the answer
+  takes back the terms the band's reading read (P10; with a warm verdict book
+  the band cost +100–190 ms per ask on the real store; not re-measured).
+- A Trace/Relate page whose next item is larger than `budget.max_bytes` returns
+  it with its prose shortened (`…`) and advances, instead of an empty page;
+  `page.required_bytes` and a warning say how to read it whole.
 - Writes in O(delta) (P13, DESIGN L6). An ingest or `kmp_write_memory` that
   reads no neighbourhood for review asks the store point by point for what its
   translation needs instead of reading the about's neighbourhood, and the

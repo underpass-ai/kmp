@@ -1,4 +1,4 @@
-# Lexical index beside the store (P12, P13, DESIGN L6)
+# Lexical index beside the store (P12, P13, P14, DESIGN L6)
 
 Without an index every `kmp_ask` reads the about's neighbourhood, prepares
 every candidate's terms and measures BM25 over all of them. P12 added the
@@ -78,8 +78,9 @@ reads the same while no node lies one hop past depth 2 (`lex_far` empty).
 - Every write is one transaction that first checks the position it read; a
   writer that lost the race writes nothing and follows again.
 - Opened unless `KMP_LEXICAL_INDEX=off`. It can be deleted any time: the next
-  ask of an about builds it again. The index version is `lexical-index-3`
-  (P13's clocks and vocabulary); a sidecar of another version is emptied.
+  ask of an about builds it again. The index version is `lexical-index-4`
+  (P13's clocks and vocabulary; `-4` since «quién» and «con» became stop
+  words); a sidecar of another version is emptied.
 
 ## Shadow comparison
 
@@ -226,6 +227,84 @@ abouts, dimensions, a shallower depth, nodes past the indexed depth, a store
 that moved during the read, an about with judged search expansions (field X is
 measured over every expanded candidate), or the cost bound.
 
+## MaxScore against the floor (P14)
+
+**On by default** (`KMP_LEXICAL_MAXSCORE=off` reads every candidate the
+postings reach, as P13 did). Implemented without a measurement campaign
+(decision of Tirso, 28 Sept 2026): **not measured at scale**. Exactness is
+tested (a randomized parity test, below) and observable in `verify`.
+
+KMP's ask returns every candidate that clears the eligibility floor, ranked,
+so the threshold MaxScore prunes against is the floor, not a k-th score: a
+candidate that cannot clear it is ranked by nobody and rescued by nobody, and
+is left unread (`floor_bound.rs`, `FloorBound`). The plan still reads every
+reached row from the sidecar (cheap); what it saves is the point-by-point read
+of the candidate and its two-hop neighbourhood (about 0.5 ms a candidate at
+10^4), and the cost bound (35 %) now applies to what is left to read.
+
+Why the bound is sound for the whole `RelevanceKey`:
+
+- `clears_floor` asks `Σ w·idf·sat(tf, L) ≥ floor · sat(1, L)` on the direct
+  field, with `sat(tf, L) = tf(k1+1)/(tf + k1·n(L))`. For every `tf ≥ 1` and
+  every length, `sat(tf, L)/sat(1, L) ≤ tf`, so a candidate whose
+  `Σ idf·tf` over the question's words stays below the floor cannot clear it
+  whatever its length. The question's own words weigh one. A margin of 1e-9
+  covers float drift.
+- Content is part of direct, so the content score, the focus count and every
+  lower key only order what cleared the floor.
+- Both readings (plain; aliased, as the anchored gate reads) are bounded with
+  their own idf and floor; a candidate is left unread only when both refuse.
+- Every form the ranker may read the question in (as asked; under the gate
+  without its negated stretches, with its alias terms) counts its words, and
+  the lowest floor of any form is compared.
+- Lexical bridge: the floor carries the bridged words exactly as the lexicon
+  builds it, and a candidate carrying a bridged word is always read.
+- Associations: a candidate carrying one is always read (it may be rescued
+  through it). The associations are now counted over the rows of every
+  candidate that carries a word of the question (`IndexedAsk::seed_rows`),
+  never over the candidates read, so pruning changes no weight.
+- A node at the edge of the walk also has its lifecycle edges read, so which
+  conflicts on the proof path are live does not depend on what was pruned.
+
+MaxScore's partition makes the common case cheap: words sorted by the most
+they can add (`idf · max tf`); those whose running sum stays under the floor
+are non-essential, and a candidate carrying only those is refused unsummed.
+
+Where no sound bound exists, the ask is **not pruned** (it is still answered
+from the postings as in P13):
+
+- a question whose anchors the gate requires (the gate ranks without the
+  focus filter and cites by anchor);
+- a form of the question with no informative word (the ranker then returns
+  every candidate).
+
+Not held by the index at all, so they read the about as before: judged search
+expansions in the about (field X is measured over every expanded candidate),
+time-scoped asks (`as_of`, `interval`: idf is local to the selection),
+several abouts, dimensions, a shallower depth, semantic retrieval, remote
+re-ranking and the doubt band. The ⌈2/3⌉ focus of a strict policy is not used
+to prune: it also counts words a candidate's relations and supported claims
+carry, which its row does not hold.
+
+`kmp_lexical_answer` and `kmp_lexical_verify` log `reached` (what the postings
+reached) beside `candidates` (what was read).
+
+Top-k proper (reading only the first page's candidates) is not done: the ask
+response lists every eligible candidate across its pages, reorders the whole
+list (repeated claims last), appends rescues after it and carries totals, so
+page one depends on the tail. The `kmp2` cursor below is the continuation
+contract such a reading would resume from.
+
+## Continuations: the `kmp2` cursor (P14)
+
+Every Wake/Ask continuation cursor is now `kmp2:<offset>:<boundary>:<hash>`:
+`boundary` is a 16-hex digest of the last item the page returned, and `hash`
+still binds the selection. A continuation resumes only after that exact item;
+anything else is `SELECTION_CHANGED` with a restart call, never a shifted
+page. A `kmp1` cursor (the contract before) is refused the same way, with a
+message saying to restart without `page.cursor`. Contract break accepted
+(Tirso, 27 Sept 2026).
+
 ## Write in O(delta) (P13)
 
 - A write that reads no neighbourhood for review asks the store only what its
@@ -290,8 +369,7 @@ with it off).
 - An ask narrowed by dimensions reads a subset of the about: its rows match the
   about's, but N, Σlen, df and possibly the language are the subset's own.
 - Time-scoped asks, several abouts, and asks shallower than depth 2.
-- A question whose words reach more than 35 % of the about: most synth questions
-  at 10^5, where a common word is in tens of thousands of rows. Top-k (MaxScore,
-  P14) is what bounds those.
+- A question whose words leave more than 35 % of the about to read once
+  MaxScore has left out what cannot clear the floor (P14).
 - A change to what a row reads fails `derivation_golden_tests` until
   `INDEX_VERSION` is bumped, which rebuilds every sidecar.
