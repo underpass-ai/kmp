@@ -60,7 +60,7 @@ impl IndexedQuestion {
     }
 
     /// The words the store associates with those of the question under one
-    /// reading: what [`AssociationIndex::for_question`] finds over
+    /// reading: what `AssociationIndex::for_question` finds over
     /// `documents`, which must hold every candidate that carries a word of
     /// the question, with `stats` the whole about's direct field.
     pub fn associations(

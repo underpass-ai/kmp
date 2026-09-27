@@ -9,8 +9,7 @@ use super::scalars::timestamp_from_sort_or_rfc3339;
 ///
 /// The lexical sidecar keeps one per relation, so an ask that reads only its
 /// candidates still stands on the frontier and the expiries the whole about
-/// declares, exactly as [`super::memory_lifecycle::MemoryLifecycle::read`]
-/// reads them.
+/// declares, exactly as `MemoryLifecycle::read` reads them.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RelationClock {
     pub latest: Option<(i64, i32)>,
