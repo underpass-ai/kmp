@@ -67,3 +67,43 @@ impl PreparedTermsCache {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::answer_recall_context::AnswerRecallContext;
+    use super::*;
+
+    fn evidence(text: &str) -> MemoryEvidence {
+        MemoryEvidence {
+            id: format!("detail:{text}"),
+            text: text.to_string(),
+            ..MemoryEvidence::default()
+        }
+    }
+
+    #[test]
+    fn the_band_keeps_the_terms_and_the_answer_takes_them_back_once() {
+        let context = AnswerRecallContext::default();
+        let pool = vec![evidence("the valve froze"), evidence("the pump started")];
+        let terms = pool
+            .iter()
+            .map(|item| AnswerCandidateTerms::from_evidence(item, &context))
+            .collect::<Vec<_>>();
+        let cache = PreparedTermsCache::default();
+        assert!(cache.get(&pool, false, true).is_none());
+        cache.put(pool.clone(), false, terms);
+        // Another reading, or other candidates, read their own.
+        assert!(cache.get(&pool, true, true).is_none());
+        assert!(cache.get(&pool[..1], false, true).is_none());
+        // The band reads them again; the answer takes them, once.
+        assert_eq!(
+            cache.get(&pool, false, true).map(|terms| terms.len()),
+            Some(2)
+        );
+        assert_eq!(
+            cache.get(&pool, false, false).map(|terms| terms.len()),
+            Some(2)
+        );
+        assert!(cache.get(&pool, false, false).is_none());
+    }
+}

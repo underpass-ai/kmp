@@ -144,6 +144,22 @@ mod tests {
     }
 
     #[test]
+    fn the_attribute_check_and_the_expansion_focus_variants_are_off_by_default() {
+        let plain = AskGateConfig::parse(r#"{"mode":"anchored"}"#)
+            .expect("parses")
+            .expect("a gate");
+        assert!(!plain.checks_attribute());
+        assert!(plain.requires_expansion_focus());
+        let variant = AskGateConfig::parse(
+            r#"{"mode":"anchored","attribute_check":true,"expansion_rescue_focus":false}"#,
+        )
+        .expect("parses")
+        .expect("a gate");
+        assert!(variant.checks_attribute());
+        assert!(!variant.requires_expansion_focus());
+    }
+
+    #[test]
     fn confidence_calibration_is_off_unless_named() {
         let plain = AskGateConfig::parse(r#"{"mode":"anchored"}"#)
             .expect("parses")

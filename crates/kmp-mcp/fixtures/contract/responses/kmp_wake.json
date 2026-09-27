@@ -27,7 +27,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9423
+        "used_bytes": 9440
       },
       "contract": "kmp.recall.projection.v3",
       "core_text_shortened": false,
@@ -42,7 +42,7 @@
       "page": {
         "has_more": true,
         "minimum_progress_bytes": "<stamped at call time>",
-        "next_cursor": "kmp1:11:<stamped at call time>",
+        "next_cursor": "kmp2:11:<stamped at call time>",
         "offset": 0,
         "returned": 11,
         "total": 41

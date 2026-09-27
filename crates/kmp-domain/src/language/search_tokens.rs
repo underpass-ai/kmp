@@ -76,6 +76,15 @@ mod tests {
     }
 
     #[test]
+    fn quien_and_con_are_stop_words_as_who_and_with_are() {
+        let tokens =
+            informative_tokens("¿Quién aprobó el cambio con Ana? Who approved it with Ana?")
+                .collect::<Vec<_>>();
+
+        assert_eq!(tokens, ["aprobo", "cambio", "ana", "approved", "ana"]);
+    }
+
+    #[test]
     fn identifiers_are_yielded_whole_after_their_parts() {
         let tokens =
             informative_tokens("C6.24 cites C6.8+C6.9, v0.7.0 and #188.").collect::<Vec<_>>();
