@@ -89,8 +89,7 @@ impl FindPaths<'_> {
         if let Err(error) = propose(
             model,
             material,
-            from,
-            to,
+            (from, to),
             (self.corridor, max_hops),
             &mut edges,
             &mut search,
@@ -201,8 +200,7 @@ async fn audit(
 async fn propose(
     model: &dyn JudgementModel,
     material: &CurateMaterial,
-    from: &str,
-    to: Option<&str>,
+    (from, to): (&str, Option<&str>),
     (corridor, max_hops): (bool, usize),
     edges: &mut Vec<PathHop>,
     search: &mut PathSearch,
