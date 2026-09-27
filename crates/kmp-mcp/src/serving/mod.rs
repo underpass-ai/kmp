@@ -2,9 +2,11 @@
 //! the transport server and its dispatch, the backend port and its
 //! adapters, the tool error vocabulary, and result envelopes.
 
+mod about_label_keys;
 pub(crate) mod adapters;
 pub(crate) mod backend_choice;
 mod curate_dispatch;
+pub(crate) mod doubt_outcome;
 pub(crate) mod environment;
 mod existing_entry_read;
 pub(crate) mod frozen_recall;
@@ -15,12 +17,15 @@ mod guide_dispatch;
 mod guide_repair;
 pub(crate) mod json_rpc;
 pub(crate) mod judgement_answer;
+pub(crate) mod judgement_failure;
 pub(crate) mod judgement_origin;
 pub(crate) mod judgement_question;
 pub(crate) mod judgement_request;
 pub(crate) mod judgement_response;
 pub(crate) mod judgement_site;
 pub(crate) mod kernel_mcp_server;
+pub(crate) mod lexical_index_mode;
+pub(crate) mod lexical_totals;
 mod output_schema_projection;
 mod passage_projection;
 pub(crate) mod ports;
@@ -48,6 +53,7 @@ pub(crate) mod view_tools;
 pub(crate) mod wake_focus_outcome;
 mod write_commit;
 mod write_dispatch;
+mod write_expansions;
 mod write_proposals;
 mod write_review_result;
 
@@ -72,5 +78,6 @@ pub use tool_error_code::ToolErrorCode;
 pub(crate) use tool_result::{app_data_success_result, tool_success_result};
 
 mod call_guidance;
+mod call_telemetry;
 mod guidance_recommendation;
 mod work_guidance;

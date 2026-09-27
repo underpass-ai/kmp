@@ -115,6 +115,37 @@ pub trait GraphNeighborhoodReader {
         target_node_id: &str,
         subtree_depth: u32,
     ) -> impl Future<Output = Result<Option<ContextPathNeighborhood>, PortError>> + Send;
+
+    /// The single-destination path under work limits (DESIGN L7): a bounded
+    /// bidirectional search whose report says whether a missing path was
+    /// exhausted or cut by a budget. The default is the unbounded read with
+    /// no report, which enterprise adapters keep.
+    fn load_bounded_context_path(
+        &self,
+        root_node_id: &str,
+        target_node_id: &str,
+        subtree_depth: u32,
+        _limits: crate::TraceSearchLimits,
+    ) -> impl Future<
+        Output = Result<
+            (
+                Option<ContextPathNeighborhood>,
+                Option<crate::ContextPathSearch>,
+            ),
+            PortError,
+        >,
+    > + Send
+    where
+        Self: Sync,
+    {
+        async move {
+            Ok((
+                self.load_context_path(root_node_id, target_node_id, subtree_depth)
+                    .await?,
+                None,
+            ))
+        }
+    }
 }
 
 impl<T> GraphNeighborhoodReader for Arc<T>
@@ -185,6 +216,24 @@ where
             .load_context_path(root_node_id, target_node_id, subtree_depth)
             .await
     }
+
+    async fn load_bounded_context_path(
+        &self,
+        root_node_id: &str,
+        target_node_id: &str,
+        subtree_depth: u32,
+        limits: crate::TraceSearchLimits,
+    ) -> Result<
+        (
+            Option<ContextPathNeighborhood>,
+            Option<crate::ContextPathSearch>,
+        ),
+        PortError,
+    > {
+        self.as_ref()
+            .load_bounded_context_path(root_node_id, target_node_id, subtree_depth, limits)
+            .await
+    }
 }
 
 impl<T> GraphNeighborhoodReader for &T
@@ -247,5 +296,23 @@ where
         (*self)
             .load_context_path(root_node_id, target_node_id, subtree_depth)
             .await
+    }
+
+    fn load_bounded_context_path(
+        &self,
+        root_node_id: &str,
+        target_node_id: &str,
+        subtree_depth: u32,
+        limits: crate::TraceSearchLimits,
+    ) -> impl Future<
+        Output = Result<
+            (
+                Option<ContextPathNeighborhood>,
+                Option<crate::ContextPathSearch>,
+            ),
+            PortError,
+        >,
+    > + Send {
+        (*self).load_bounded_context_path(root_node_id, target_node_id, subtree_depth, limits)
     }
 }

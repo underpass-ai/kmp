@@ -1,13 +1,20 @@
 mod ask_gate_config;
+mod ask_judge_config;
+mod ask_judge_question;
 mod cassette_judgement;
 #[cfg(test)]
 mod cassette_judgement_tests;
 mod cassette_mode;
+mod curate_config;
 pub(crate) mod curate_doubt_cache;
 pub(crate) mod curate_review_cache;
+mod doubt_band_judge;
+#[cfg(test)]
+mod doubt_band_judge_tests;
 mod embedded;
 pub(crate) mod embedded_backend;
 pub(crate) mod embedded_errors;
+pub(crate) mod expansion_judge;
 pub(crate) mod fixture_backend;
 pub(crate) mod grpc;
 mod judgement_reranker;
@@ -16,6 +23,7 @@ mod judgement_reranker_tests;
 mod judgement_source;
 mod ledgered_judgement;
 pub(crate) mod lexical_bridge_file;
+pub(crate) mod lexical_index;
 mod loopback_semantic_retriever;
 mod observed_judgement;
 #[cfg(test)]
@@ -47,3 +55,5 @@ mod typesafe_wire_response;
 mod verdict_book_config;
 mod verdict_ledger;
 mod wake_focus_judge;
+pub(crate) mod write_expansions_config;
+mod write_relations_config;

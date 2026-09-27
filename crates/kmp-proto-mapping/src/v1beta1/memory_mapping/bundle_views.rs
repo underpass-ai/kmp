@@ -89,25 +89,11 @@ pub(super) fn answer_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
         .map(|relationship| relationship.target_node_id())
         .collect::<BTreeSet<_>>();
     for node in std::iter::once(bundle.root_node()).chain(bundle.neighbor_nodes()) {
-        if !entry_refs.contains(node.node_id()) || node.summary().trim().is_empty() {
-            continue;
+        if entry_refs.contains(node.node_id())
+            && let Some(candidate) = entry_candidate(node)
+        {
+            candidates.push(candidate);
         }
-        let properties = node.properties();
-        let mut metadata = persisted_memory_metadata(properties);
-        metadata.insert("proof_role".to_string(), "entry_text".to_string());
-        candidates.push(MemoryEvidence {
-            support_clocks: None,
-            id: format!("entry:{}", node.node_id()),
-            supports: vec![node.node_id().to_string()],
-            text: node.summary().to_string(),
-            source: persisted_memory_source(properties)
-                .unwrap_or(node.node_id())
-                .to_string(),
-            time: timestamp_from_sort_or_rfc3339(
-                properties.get("payload_time").map(String::as_str),
-            ),
-            metadata,
-        });
     }
     candidates
 }
@@ -230,12 +216,42 @@ pub(super) fn temporal_evidence_from_bundle(
         .collect()
 }
 
+/// The candidate an entry's own text makes, when it has one: the claim the
+/// memory records, marked apart from the evidence that supports it.
+pub(super) fn entry_candidate(node: &kmp_domain::BundleNode) -> Option<MemoryEvidence> {
+    if node.summary().trim().is_empty() {
+        return None;
+    }
+    let properties = node.properties();
+    let mut metadata = searchable_memory_metadata(properties);
+    metadata.insert("proof_role".to_string(), "entry_text".to_string());
+    Some(MemoryEvidence {
+        support_clocks: None,
+        id: format!("entry:{}", node.node_id()),
+        supports: vec![node.node_id().to_string()],
+        text: node.summary().to_string(),
+        source: persisted_memory_source(properties)
+            .unwrap_or(node.node_id())
+            .to_string(),
+        time: timestamp_from_sort_or_rfc3339(properties.get("payload_time").map(String::as_str)),
+        metadata,
+    })
+}
+
 fn evidence_from_detail(
     nodes: &BundleNodeIndex<'_>,
     detail: &BundleNodeDetail,
     supports: Vec<String>,
 ) -> MemoryEvidence {
-    let properties = nodes.properties(detail.node_id());
+    evidence_candidate(nodes.properties(detail.node_id()), detail, supports)
+}
+
+/// The candidate a stored detail makes, read with its node's properties.
+pub(super) fn evidence_candidate(
+    properties: Option<&BTreeMap<String, String>>,
+    detail: &BundleNodeDetail,
+    supports: Vec<String>,
+) -> MemoryEvidence {
     let mut metadata = properties
         .map(persisted_memory_metadata)
         .unwrap_or_default();
@@ -262,7 +278,20 @@ fn evidence_from_detail(
     }
 }
 
+/// A memory's metadata as a reader is shown it: without its judged search
+/// expansions, which are a search surface and would otherwise ride along
+/// every wake, trace and temporal page that shows the memory.
 pub(super) fn persisted_memory_metadata(
+    properties: &BTreeMap<String, String>,
+) -> HashMap<String, String> {
+    let mut metadata = searchable_memory_metadata(properties);
+    metadata.retain(|key, _| !kmp_domain::SearchExpansions::is_metadata_key(key));
+    metadata
+}
+
+/// A memory's metadata as stored, expansions included: what ask searches
+/// (and strips once ranked) and what inspect audits.
+pub(super) fn searchable_memory_metadata(
     properties: &BTreeMap<String, String>,
 ) -> HashMap<String, String> {
     properties
@@ -319,7 +348,7 @@ fn support_targets_by_source(bundle: &KmpBundle) -> BTreeMap<&str, Vec<String>> 
     supports
 }
 
-fn is_memory_evidence_kind(kind: &str) -> bool {
+pub(super) fn is_memory_evidence_kind(kind: &str) -> bool {
     matches!(kind, "memory_evidence" | "evidence")
 }
 

@@ -20,6 +20,17 @@ pub struct AskRetrievalContext {
     pub(super) ranked: Option<RankedSelection>,
     /// The anchored decision gate, unless the store opted out of it.
     pub(super) gate: Option<super::ask_gate::AskGate>,
+    /// How decisively the lexical ranking a judge's pool was built from
+    /// leads, once that pool was built.
+    pub(super) margin: Option<super::lexical_margin::LexicalMargin>,
+    /// The anchored reading a doubt band took before asking its judge,
+    /// which the answer reuses when no verdict came back.
+    pub(super) decided: Option<super::decided_selection::DecidedSelection>,
+    /// A doubt band judge's verdicts, applied to the core by the answer.
+    pub(super) doubt: Option<super::doubt_verdicts::DoubtVerdicts>,
+    /// Where the answer's ranker records what it measured, for the lexical
+    /// sidecar's shadow comparison.
+    pub(super) witness: Option<std::sync::Arc<super::lexical_shadow_witness::LexicalShadowWitness>>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -31,6 +42,10 @@ impl From<GetContextResult> for AskRetrievalContext {
             lexical_cache: None,
             ranked: None,
             gate: None,
+            margin: None,
+            decided: None,
+            doubt: None,
+            witness: None,
         }
     }
 }
@@ -43,6 +58,16 @@ impl AskRetrievalContext {
         cache: std::sync::Arc<super::lexical_index_cache::LexicalIndexCache>,
     ) -> Self {
         self.lexical_cache = Some(cache);
+        self
+    }
+
+    /// Records what the answer's ranker measures in `witness`, for the
+    /// lexical sidecar's shadow comparison. Never changes the answer.
+    pub fn with_lexical_witness(
+        mut self,
+        witness: std::sync::Arc<super::lexical_shadow_witness::LexicalShadowWitness>,
+    ) -> Self {
+        self.witness = Some(witness);
         self
     }
 
@@ -127,7 +152,8 @@ impl AskRetrievalContext {
         let lifecycle = super::responses::lifecycle_for(&bounded, &admission);
         let ranker =
             super::answer_ranker::AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
-                .with_lexical_cache(self.lexical_cache.as_deref(), lexical_identity);
+                .with_lexical_cache(self.lexical_cache.as_deref(), lexical_identity)
+                .with_lexical_witness(self.witness.as_deref());
         let mut candidates = super::bundle_views::answer_evidence_from_bundle(&self.result.bundle)
             .into_iter()
             .filter(|item| admission.admits(item))
@@ -135,20 +161,71 @@ impl AskRetrievalContext {
         for evidence in &mut candidates {
             admission.bound_supports(evidence);
         }
-        let ranked = RankedSelection::new(
-            question,
-            policy,
-            temporal,
-            bridge,
-            ranker.rank(question, policy, candidates.clone()),
-        );
+        let (ranking, scores) = ranker.rank_scored(question, policy, candidates.clone());
+        let ranked = RankedSelection::new(question, policy, temporal, bridge, ranking);
         let pool = ranker.rerank_pool(ranked.ranked(), &candidates, limit);
+        let core = ranked
+            .ranked()
+            .iter()
+            .filter(|item| !super::answer_selection::was_reached_indirectly(item))
+            .take(super::answer_ranker::ANSWER_CORE_LIMIT)
+            .cloned()
+            .collect::<Vec<_>>();
+        self.margin = Some(scores.lead().with_high_confidence(
+            ranker.confidence(question, &core) == kmp_proto::v1beta1::MemoryConfidence::High,
+        ));
         self.ranked = Some(ranked);
         Ok(pool)
     }
 
+    /// How decisively the lexical ranking leads, once [`Self::rerank_pool`]
+    /// read it; `None` before.
+    pub fn lexical_margin(&self) -> Option<super::lexical_margin::LexicalMargin> {
+        self.margin
+    }
+
     pub fn with_rerank_candidates(mut self, ranking: RerankCandidateRanking) -> Self {
         self.rerank = Some(ranking);
+        self
+    }
+
+    /// Whether this ask falls in the doubt band (DESIGN L4 4f), and the
+    /// passages a judge would be asked about. `None` without the anchored
+    /// gate, under `best_effort`, when a required anchor is absent, and when
+    /// the deterministic reading settled clearly: answered with a first
+    /// citation leading the second by at least `margin_below` tenths of a
+    /// BM25 point, or UNKNOWN with nothing a `best_effort` reading would cite.
+    ///
+    /// The reading taken here is kept: an answer given without verdicts
+    /// stands on it instead of reading the question a second time.
+    pub fn doubt_band(
+        &mut self,
+        question: &str,
+        policy: kmp_application::MemoryAnswerPolicy,
+        temporal: &TemporalSelection,
+        bridge: &super::lexical_bridge::LexicalBridge,
+        margin_below: i64,
+    ) -> super::scalars::ProtoMappingResult<Option<super::doubt_band::DoubtBand>> {
+        let (band, decided, ranked) = super::doubt_band_reading::read_doubt_band(
+            self,
+            question,
+            policy,
+            temporal,
+            bridge,
+            margin_below,
+        )?;
+        if decided.is_some() {
+            self.decided = decided;
+        }
+        if ranked.is_some() {
+            self.ranked = ranked;
+        }
+        Ok(band)
+    }
+
+    /// The answer applies a doubt band judge's verdicts to its core.
+    pub fn with_doubt_verdicts(mut self, verdicts: super::doubt_verdicts::DoubtVerdicts) -> Self {
+        self.doubt = Some(verdicts);
         self
     }
 }

@@ -34,13 +34,18 @@ pub use temporal_memory::{
     temporal_instant_rfc3339,
 };
 
+mod bidirectional_path_search;
 mod bounded_trace_search;
+mod context_path_search;
+mod path_search_side;
 mod trace_route;
 mod trace_search_limits;
 mod trace_search_request;
 mod trace_search_result;
 mod trace_search_stop;
+pub use bidirectional_path_search::bidirectional_path_search;
 pub use bounded_trace_search::bounded_trace_search;
+pub use context_path_search::ContextPathSearch;
 pub use trace_route::TraceRoute;
 pub use trace_search_limits::TraceSearchLimits;
 pub use trace_search_request::TraceSearchRequest;

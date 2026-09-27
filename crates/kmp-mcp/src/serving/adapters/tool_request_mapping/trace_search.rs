@@ -43,10 +43,16 @@ impl TraceSearchOptionsMapper {
             .get("search")
             .map(|s| {
                 let s = JsonFieldReader::object(s, "search")?;
+                // A bidirectional single-destination trace (a `search.widen`)
+                // leaves an absent limit to its own default in the kernel.
+                let bidirectional =
+                    s.get("direction").and_then(Value::as_str) == Some("bidirectional");
                 let limit = |key: &str, default, max| -> Result<u32, String> {
-                    let value =
+                    let Some(value) =
                         JsonFieldReader::optional_u32_field(s, key, &format!("search.{key}"))?
-                            .unwrap_or(default);
+                    else {
+                        return Ok(if bidirectional { 0 } else { default });
+                    };
                     if value == 0 || value > max {
                         return Err(format!("search.{key} must be 1..{max}"));
                     }
@@ -191,6 +197,19 @@ impl TraceSearchOptionsMapper {
 mod tests {
     use super::*;
     use serde_json::json;
+    #[test]
+    fn a_bidirectional_search_leaves_absent_limits_to_the_kernel() {
+        let request = json!({"to":"t","search":{"direction":"bidirectional","max_nodes":4096}});
+        let (to, targets, options) =
+            TraceSearchOptionsMapper::from_arguments(&request).expect("parsed");
+        let options = options.expect("search");
+        assert_eq!((to.as_str(), targets.len()), ("t", 0));
+        assert_eq!(options.direction, "bidirectional");
+        assert_eq!((options.max_nodes, options.max_edges), (4096, 0));
+        let bounded = json!({"to":["t"],"search":{"direction":"outgoing"}});
+        let (_, _, options) = TraceSearchOptionsMapper::from_arguments(&bounded).expect("parsed");
+        assert_eq!(options.expect("search").max_nodes, 256);
+    }
     #[test]
     fn dimensions_use_the_common_parser_and_name_their_search_field_in_errors() {
         let request = json!({"to":["t"],"search":{"dimensions":{"mode":"only","include":["env"]},"prefer_dimensions":{"selectors":[{"key":"env","op":"in","values":["prod"]}]}}});

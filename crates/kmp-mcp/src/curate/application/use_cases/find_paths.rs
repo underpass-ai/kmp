@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap};
 
+use crate::curate::application::corridor::{Corridor, on_some_walk};
 use crate::curate::application::curate_material::CurateMaterial;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::{
@@ -14,6 +15,7 @@ use crate::curate::domain::found_path::FoundPath;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::curate::domain::path_hop::PathHop;
 use crate::serving::judgement_answer::JudgementAnswer;
+use crate::serving::judgement_failure::JudgementFailure;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 const MAX_PATHS: usize = 3;
@@ -33,6 +35,10 @@ const AUDIT_ROUNDS: usize = 3;
 /// Proposed steps are suggestions for the agent to declare, never proof.
 pub(crate) struct FindPaths<'a> {
     pub judgement: Option<&'a dyn JudgementModel>,
+    /// With a goal, ask about the corridor between the ends and offer each
+    /// fact's next step among its neighbours (DESIGN L7), instead of the
+    /// facts near the ends and every other fact.
+    pub corridor: bool,
 }
 
 impl FindPaths<'_> {
@@ -83,8 +89,8 @@ impl FindPaths<'_> {
         if let Err(error) = propose(
             model,
             material,
-            from,
-            to,
+            (from, to),
+            (self.corridor, max_hops),
             &mut edges,
             &mut search,
             &mut usage,
@@ -93,7 +99,7 @@ impl FindPaths<'_> {
         {
             search
                 .warnings
-                .push(format!("Jev unavailable; declared relations only: {error}"));
+                .push(JudgementFailure::warning(&error, "declared relations only"));
         }
         // Declared hops come first in `edges`, in the order of
         // `material.declared`.
@@ -110,8 +116,9 @@ impl FindPaths<'_> {
             let doubted = match audit(model, material, &fresh, &mut usage).await {
                 Ok(doubted) => doubted,
                 Err(error) => {
-                    search.warnings.push(format!(
-                        "Jev unavailable; declared relations were walked unaudited: {error}"
+                    search.warnings.push(JudgementFailure::warning(
+                        &error,
+                        "declared relations were walked unaudited",
                     ));
                     break;
                 }
@@ -193,13 +200,13 @@ async fn audit(
 async fn propose(
     model: &dyn JudgementModel,
     material: &CurateMaterial,
-    from: &str,
-    to: Option<&str>,
+    (from, to): (&str, Option<&str>),
+    (corridor, max_hops): (bool, usize),
     edges: &mut Vec<PathHop>,
     search: &mut PathSearch,
     usage: &mut JevUsage,
 ) -> Result<(), String> {
-    let kept = facts_on_the_way(model, material, from, to, usage).await?;
+    let kept = facts_on_the_way(model, material, from, to, corridor, usage).await?;
     search.kept = kept.len();
     let walk = std::iter::once(from.to_string())
         .chain(to.map(str::to_string))
@@ -208,7 +215,8 @@ async fn propose(
     if walk.len() < 2 {
         return Ok(());
     }
-    let (request, keys) = next_step_request(material, &walk);
+    let neighbours = (corridor && to.is_some()).then(|| Corridor::step_options(material, &walk));
+    let (request, keys) = next_step_request(material, &walk, neighbours.as_ref());
     let response = model.evaluate(&request).await?;
     usage.add(&response);
     let joined = |left: &str, right: &str| {
@@ -255,6 +263,24 @@ async fn propose(
                 }
             }
         }
+    }
+    if corridor && let Some(goal) = to {
+        // Only a step that can lie on a walk from the start to the goal can
+        // reach a returned path; typing the others pays for nothing.
+        let kept = {
+            let known = edges
+                .iter()
+                .chain(&proposed)
+                .map(|hop| (hop.from.as_str(), hop.to.as_str()))
+                .collect::<Vec<_>>();
+            let useful = on_some_walk(&known, from, goal, max_hops);
+            proposed
+                .iter()
+                .map(|hop| useful(&hop.from, &hop.to))
+                .collect::<Vec<_>>()
+        };
+        let mut kept = kept.into_iter();
+        proposed.retain(|_| kept.next().unwrap_or(false));
     }
     if !proposed.is_empty() {
         let pairs = proposed
@@ -489,6 +515,7 @@ mod tests {
         let fact = |reference: &str| CurateFact {
             reference: reference.into(),
             about: "a".into(),
+            kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
             labels: Vec::new(),
@@ -521,6 +548,7 @@ mod tests {
         };
         let search = FindPaths {
             judgement: Some(&doubting),
+            corridor: true,
         }
         .run(&material(), "a", Some("c"), 6)
         .await;
@@ -536,15 +564,19 @@ mod tests {
         };
         let search = FindPaths {
             judgement: Some(&trusting),
+            corridor: true,
         }
         .run(&material(), "a", Some("c"), 6)
         .await;
         assert_eq!(search.paths[0].hops.len(), 2);
         assert!(search.avoided.is_empty());
 
-        let plain = FindPaths { judgement: None }
-            .run(&material(), "a", None, 6)
-            .await;
+        let plain = FindPaths {
+            judgement: None,
+            corridor: true,
+        }
+        .run(&material(), "a", None, 6)
+        .await;
         assert_eq!(
             plain.paths[0].hops.len(),
             2,

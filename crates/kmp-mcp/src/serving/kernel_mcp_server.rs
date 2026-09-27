@@ -38,6 +38,15 @@ pub struct KernelMcpServer {
     /// The durability loss is actionable once and noisy thereafter.
     pub(super) orphaned_bundle_offered: AtomicBool,
     pub(super) apps_negotiated: AtomicBool,
+    /// The host as its last `initialize` named itself, for the call log.
+    pub(super) mcp_client: std::sync::RwLock<Option<crate::serving::telemetry::McpClient>>,
+    /// Where this store keeps the salt its call fingerprints are keyed
+    /// with; `None` (fixtures) fingerprints nothing.
+    pub(super) telemetry_salt_path: Option<std::path::PathBuf>,
+    /// The salt, read or created on the first wake or ask that succeeds;
+    /// `None` inside once it could not be, so no call retries it.
+    pub(super) telemetry_salt:
+        std::sync::OnceLock<Option<Arc<crate::serving::telemetry::FingerprintSalt>>>,
 }
 
 impl Default for KernelMcpServer {
@@ -62,6 +71,13 @@ impl KernelMcpServer {
         let mut server = Self::with_backend(GrpcKernelMcpBackend::new(endpoint, tls));
         server.agent_directory_path = kmp_embedded::user_data_home()
             .map(|home| home.join("agent-users").join(format!("{key}.sqlite3")));
+        // A remote store's salt stays on this machine, beside its agents.
+        server.telemetry_salt_path = kmp_embedded::user_data_home().map(|home| {
+            home.join("agent-users").join(format!(
+                "{key}.{}",
+                crate::serving::telemetry::TELEMETRY_SALT_FILE
+            ))
+        });
         server
     }
 
@@ -81,6 +97,8 @@ impl KernelMcpServer {
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(opened_engine);
         server.agent_directory_path = Some(data_dir.join("agent-users.sqlite3"));
+        server.telemetry_salt_path =
+            Some(data_dir.join(crate::serving::telemetry::TELEMETRY_SALT_FILE));
         Ok(server)
     }
 
@@ -102,6 +120,9 @@ impl KernelMcpServer {
             orphaned_bundle: None,
             orphaned_bundle_offered: AtomicBool::new(false),
             apps_negotiated: AtomicBool::new(false),
+            mcp_client: std::sync::RwLock::new(None),
+            telemetry_salt_path: None,
+            telemetry_salt: std::sync::OnceLock::new(),
         }
     }
 
@@ -109,10 +130,13 @@ impl KernelMcpServer {
     /// the viewer path, which needs the kernel handle before wrapping it.
     pub fn with_embedded_backend(backend: crate::serving::EmbeddedKernelMcpBackend) -> Self {
         let engine = backend.engine();
-        let agents = std::path::Path::new(backend.data_dir()).join("agent-users.sqlite3");
+        let data_dir = std::path::Path::new(backend.data_dir());
+        let agents = data_dir.join("agent-users.sqlite3");
+        let salt = data_dir.join(crate::serving::telemetry::TELEMETRY_SALT_FILE);
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(engine);
         server.agent_directory_path = Some(agents);
+        server.telemetry_salt_path = Some(salt);
         server
     }
 
@@ -250,6 +274,11 @@ impl KernelMcpServer {
                 // Open lazily after a guide read opened the kernel. A metadata
                 // file must not make a not-yet-created kernel look non-empty.
                 server.agent_directory_path = Some(resolved.path().join("agent-users.sqlite3"));
+                server.telemetry_salt_path = Some(
+                    resolved
+                        .path()
+                        .join(crate::serving::telemetry::TELEMETRY_SALT_FILE),
+                );
                 Ok(match lease {
                     Some(lease) => server.with_store_session_lease(lease),
                     None => server,

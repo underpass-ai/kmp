@@ -1,5 +1,6 @@
 use crate::language::{
     KERNEL_LANGUAGE, LanguageVocabulary, dropped_identifiers, informative_tokens,
+    required_identifiers,
 };
 use sha2::{Digest, Sha256};
 
@@ -122,6 +123,14 @@ impl SearchSummary {
         } else {
             Err(faults)
         }
+    }
+
+    /// The identifiers a summary of `text` has to carry, spelled as the text
+    /// writes them: exactly what [`Self::lint`] would report dropped from a
+    /// summary that carried none. A writer told to render `text` in English
+    /// is told these, so the rendering passes the first time.
+    pub fn required_identifiers(text: &str) -> Vec<String> {
+        required_identifiers(text)
     }
 
     pub fn as_str(&self) -> &str {

@@ -1,5 +1,9 @@
+use super::super::doubt_band_judge::DoubtBandJudge;
 use super::super::embedded_errors::{kernel_error, mapping_error};
 use super::super::judgement_reranker::JudgementReranker;
+use super::super::lexical_index::lexical_sidecar::{
+    LEXICAL_ASK_DEPTH, LexicalSidecar, ShadowScope,
+};
 use super::frozen_recall_reads::FrozenRecallReads;
 use super::read_telemetry::EmbeddedReadTelemetry;
 use crate::projection::ask_from_response;
@@ -28,6 +32,8 @@ pub(crate) struct EmbeddedAskTool<'a> {
     lexical_cache: &'a Arc<kmp_proto_mapping::v1beta1::LexicalIndexCache>,
     frozen: FrozenRecallReads<'a>,
     gate: Option<AskGate>,
+    doubt_band: Option<&'a Result<Option<Arc<DoubtBandJudge>>, String>>,
+    lexical: Option<(&'a LexicalSidecar, &'a kmp_embedded::EmbeddedKernelStore)>,
 }
 
 impl<'a> EmbeddedAskTool<'a> {
@@ -49,7 +55,29 @@ impl<'a> EmbeddedAskTool<'a> {
             lexical_cache,
             frozen,
             gate: None,
+            doubt_band: None,
+            lexical: None,
         }
+    }
+
+    /// Follows the lexical sidecar before the read and compares it with the
+    /// ranking after it (shadow mode); the answer never depends on it.
+    pub(crate) fn with_lexical_sidecar(
+        mut self,
+        sidecar: &'a LexicalSidecar,
+        store: &'a kmp_embedded::EmbeddedKernelStore,
+    ) -> Self {
+        self.lexical = Some((sidecar, store));
+        self
+    }
+
+    /// Ask the store's doubt band judge (`ask-judge.json`), if it opted in.
+    pub(crate) fn with_doubt_band(
+        mut self,
+        doubt_band: &'a Result<Option<Arc<DoubtBandJudge>>, String>,
+    ) -> Self {
+        self.doubt_band = Some(doubt_band);
+        self
     }
 
     /// Decide with the anchored gate the store opted into, if any.
@@ -107,6 +135,14 @@ impl<'a> EmbeddedAskTool<'a> {
         let max_entries = query.max_entries;
         let temporal = query.temporal.clone();
         let about = query.about.clone();
+        // The sidecar indexes what an ask with no depth, dimensions or clock
+        // of its own reads.
+        let read = ShadowScope::of(&query, LEXICAL_ASK_DEPTH);
+        let followed = match self.lexical {
+            Some((sidecar, store)) => sidecar.catch_up(store, Some(&about)).await,
+            None => None,
+        };
+        let witness = self.lexical.and_then(|(sidecar, _)| sidecar.witness());
         let result = self
             .service
             .ask_on_demand(query, self.telemetry.render_demand(RenderDemand::Skip))
@@ -121,6 +157,9 @@ impl<'a> EmbeddedAskTool<'a> {
             AskRetrievalContext::from(result).with_lexical_cache(Arc::clone(self.lexical_cache));
         if let Some(gate) = self.gate {
             retrieval = retrieval.with_gate(gate);
+        }
+        if let Some(witness) = &witness {
+            retrieval = retrieval.with_lexical_witness(Arc::clone(witness));
         }
         let mut warnings = Vec::new();
         let continuation = arguments
@@ -157,7 +196,8 @@ impl<'a> EmbeddedAskTool<'a> {
                         reranker.pool_size(),
                     )
                     .map_err(|status| mapping_error(&status))?;
-                if !pool.is_empty() {
+                // A lead the text settles is not sent to the judge.
+                if !pool.is_empty() && !reranker.is_settled(retrieval.lexical_margin()) {
                     let outcome = reranker
                         .rank(&question, &pool, continuation)
                         .await
@@ -171,6 +211,31 @@ impl<'a> EmbeddedAskTool<'a> {
             Err(error) => warnings.push(format!("evidence rerank disabled: {error}")),
             Ok(None) => {}
         }
+        // The doubt band asks a judge only on a first page, and only when
+        // the deterministic reading settled in doubt; its verdicts act on
+        // the core, never on anything the selection did not admit.
+        match self.doubt_band {
+            Some(Ok(Some(judge))) if !continuation => {
+                let band = retrieval
+                    .doubt_band(
+                        &question,
+                        policy,
+                        &temporal,
+                        self.bridge,
+                        judge.margin_tenths(),
+                    )
+                    .map_err(|status| mapping_error(&status))?;
+                if let Some(band) = band {
+                    let outcome = judge.judge(&question, &band).await;
+                    if let Some(verdicts) = outcome.verdicts {
+                        retrieval = retrieval.with_doubt_verdicts(verdicts);
+                    }
+                    warnings.extend(outcome.warning);
+                }
+            }
+            Some(Err(error)) => warnings.push(format!("doubt band disabled: {error}")),
+            _ => {}
+        }
         let mut response = ask_response_from_result(
             &question,
             asked_as.as_deref(),
@@ -182,6 +247,11 @@ impl<'a> EmbeddedAskTool<'a> {
         )
         .map_err(|status| mapping_error(&status))?;
         response.warnings.extend(warnings);
+        if let (Some((sidecar, store)), Some(witness)) = (self.lexical, witness) {
+            sidecar
+                .shadow(store, &about, witness.take(), read, followed)
+                .await;
+        }
         Ok((response, revision))
     }
 }

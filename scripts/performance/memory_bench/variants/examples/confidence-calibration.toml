@@ -1,0 +1,26 @@
+# The calibrated confidence of P16 (Trust or Escalate, 2407.18370), off by
+# default: `ask-gate.json` `"confidence_calibration": "shipped"` states
+# `proof.confidence` through the versioned table
+# crates/kmp-proto-mapping/language/confidence_calibration.json, whose rules
+# only move `high` down to `medium`. An inline table object instead of
+# "shipped" measures a candidate. Answers, citations and statuses do not move;
+# the word `medium` is two bytes longer than `high`, so a core text cut at the
+# byte budget may lose two characters.
+#
+# Pre-registered (eval-p16/prereg.json): `high` must certify, one-sided
+# Clopper-Pearson lower bound at delta 0.1 >= 0.95, before the table is on by
+# default. On breal-ext (2026-09-27) it did not: 19/20, lower bound 0.819.
+name = "confidence-calibration"
+description = "The default binary stating confidence through the shipped calibration table (P16)."
+claim = "quality"
+targets = [{ metric = "false_answer_rate", direction = "down", effect = 0.05 }]
+guards = ["useful_rate", "false_unknown_rate", "core_precision"]
+n = 170
+store = "shared"
+jev = "off"
+
+[binary]
+path = "target/release/kmp-mcp"
+
+[store_files]
+"ask-gate.json" = { json = { mode = "anchored", partial = true, confidence_calibration = "shipped" } }

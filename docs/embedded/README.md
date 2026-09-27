@@ -102,6 +102,35 @@ unsupported store, stop its writers and preserve the directory. Use an explicitl
 archived compatible exporter to create a portable bundle, then import it into
 an empty current store. The recovery runbook defines that external contract.
 
+### The lexical index beside the store (shadow)
+
+`lexical-index.sqlite3` sits beside `store/` (not inside it: the format gate
+refuses files it does not know there). It is a derived index of what `kmp_ask`
+reads (DESIGN L6): for each about, every candidate's terms with their counts
+(`LexFwd`), postings of each term in blocks of 128 (`LexPost`), document
+frequencies (`LexKeyDf`) and the about's totals and language signals
+(`LexStats`), under both readings an ask can take (with the alias terms the
+anchored gate reads, and plain for `best_effort`). It records the event of the
+store's log it has followed and the derivation that wrote it.
+
+An about is indexed the first time it is asked about. From then on every write
+this binary makes is followed at once, and every ask first follows whatever
+other writers (older binaries included) appended to the log: the nodes and
+edges the new events touched are read again and the difference applied, so
+following an event twice changes nothing. A sidecar of another derivation, or
+behind a log that was replaced, is emptied and built again. Older binaries
+never open it.
+
+It answers no ask yet. Each ask compares it with what the ranker measured over
+the same candidates (N, the field lengths, df of every weighted term, tf and
+length of every candidate, and that the postings of the question's terms reach
+every candidate that could score) and logs one `kmp_lexical_shadow` line with
+the differences; an about that differs is forgotten and indexed again on its
+next ask. It is closed by default and opened only with
+`KMP_LEXICAL_INDEX=shadow`: while it answers nothing it costs about 5 % per ask
+and a build on each about's first ask. It can be deleted at any time: the next
+ask builds what it needs again. It is not part of a bundle.
+
 ## How Ask decides
 
 `kmp_ask` reads with the anchored ask gate unless the store opts out. Under
@@ -127,6 +156,113 @@ That store then answers byte for byte as v0.23.0 did, without
 keeps the gate and answers UNKNOWN wherever it would have answered PARTIAL.
 The engine reports the file in its `kmp_store_config` log line; one it cannot
 read or does not recognise is reported and the default applies.
+
+`{"mode":"anchored","confidence_calibration":"shipped"}` states
+`proof.confidence` through a versioned calibration table
+(`crates/kmp-proto-mapping/language/confidence_calibration.json`): its rules
+only move `high` down to `medium`, and nothing else in the answer changes. It
+is off by default because `high` has not been certified yet: on 170 labeled
+questions the table leaves 20 `high` answers, 19 of them right, and the
+one-sided Clopper-Pearson bound (δ = 0.1) is 0.82, short of the 0.95 it must
+reach before it is turned on.
+
+### The doubt band (opt-in, sends text to TypeSafe)
+
+A store that already opted into TypeSafe Jev (`typesafe.json`) can ask it
+about the asks the gate settled in doubt. Put `ask-judge.json` beside the
+store:
+
+```json
+{}
+```
+
+The defaults are `veto_at` 0.9, `margin_tenths` 20 and `promote` false
+(`promote_at` 0.9 when promotion is turned on). They were fixed on the
+development corpora before validation and are not tuned per store.
+
+An ask enters the band only when no anchor it names is absent and it is
+UNKNOWN without an anchor while a `best_effort` reading would cite something,
+`attribute_not_found` or PARTIAL under an anchor, or answered with a first
+citation leading the second by less than `margin_tenths` tenths of a BM25
+point. One batch of at most eight admitted passages goes to Jev through the
+verdict book (`judgements.sqlite3`), with a 1.5 s deadline on the first page;
+past it the deterministic answer stands, with a warning, and the verdict lands
+in the book for the next ask. A continuation never asks.
+
+- **Veto (B1).** A cited memory Jev finds at least `veto_at` likely not to
+  answer leaves the core. It stays in `proof.evidence` with `judged_out` (the
+  model), `judged_permille` and `judged_template`. A veto only takes answers
+  away.
+- **Promotion (B2)**, off unless `"promote": true`: an admitted memory that
+  passed the anchored gate, judged at least `promote_at` likely to answer,
+  joins the core or answers an UNKNOWN whose anchor was found, marked
+  `judged_by`. Confidence stays the words' own and is never `high` for it. It
+  never admits an absent anchor or anything outside the selection, and never
+  writes text.
+
+`"question": "score"` asks a four-level grade instead of yes/no (an
+experiment). With the band on, an ask is a function of the store and the
+verdict book, not of the store alone.
+
+### Search expansions at write (opt-in, sends text to TypeSafe)
+
+A writer may propose, per memory, up to six `search_expansions` in
+`kmp_write_memory` (`memories[]`, or `search_summaries[]` for a memory that
+already exists): questions the memory answers, paraphrases and keys in the
+other language (Spanish or English), at most 120 characters each. They are
+kept only on a store that opted in with `write-expansions.json` beside
+`typesafe.json`:
+
+```json
+{}
+```
+
+Each expansion is read first by a deterministic lint (it may not name an
+identifier the memory does not state, repeat the memory's own words or repeat
+another expansion), then by Jev with one yes/no question through the verdict
+book. Those Jev reads as belonging at `accept_at` (0.5, fixed on the
+development corpora) are stored as metadata bound to the text they were
+judged against; the rest are listed in the result as refused. Without the
+file, a working Jev or an answer, nothing is stored and the result says why
+(`search_expansions.not_stored`). A memories write commits the memories
+first and attaches the kept expansions as a second, metadata-only write.
+
+Ask searches the expansions as a field of their own and never as the
+memory's words. A memory the question reaches only through them comes back
+after every memory it reached in its own words, outside the answer core,
+marked `reached_by: expansion` with `expansion_terms`, and cites its own
+text. An expansion never names an anchor, never answers and never raises
+confidence. Readers other than inspect are shown the memory without its
+expansions.
+
+Measured (P15, three Jev samples, 27 Sept 2026): on synth 10^3 the gold
+memory of 7 of the 24 paraphrase and cross-language questions enters the
+first ten proofs (0 without), all of them cross-language; none of the 12
+zero-overlap paraphrases. The retrieval case `paraphrase-gap` is reached.
+No answer, UNKNOWN or false answer changes on B-real, the hard negatives
+(seeds 7, 11, 13) or synth. Jev reads 500 to 900 input tokens per memory
+written ($0.00002–0.00004); the writer adds about 60 output tokens per
+memory.
+
+## How a review without focus pairs orphans
+
+`kmp_curate` in `review` mode without `focus` asks Jev, for up to 30 facts
+of an about that no pair or declared relation touches, which other fact of
+the about relates to each. It does so in abouts of at most 120 current facts;
+past that the review says so and names the focused review. A store raises
+the cap, to at most 512, with a `curate.json` in the data directory:
+
+```json
+{"partner_facts": 512}
+```
+
+An about of more than 255 facts is then read in windows of at most 240
+options and a final choice between their winners. On the judged atlas case
+(316 facts) that review costs about 160k Jev tokens instead of 48k and
+proposes more pairs of notes written from one template
+(`docs/development/jev-evaluation.md`). `"partner_filter"` (`off`,
+`rare_term`, `confirm`) is measured but left off. A `curate.json` that
+cannot apply is reported and the defaults stand.
 
 ## Durability and recovery
 
@@ -172,6 +308,22 @@ content. A composition that installs an active observer makes those reads
 measure again. Their MCP response quality remains computed from
 the selected entries and proof. An absent prompt-quality observation is not a
 zero-quality read.
+
+Each tool call leaves one `kmp_mcp_tool` line in those logs: counts, durations
+and labels, never stored text, a question or an answer. A line also names the
+host as it introduced itself in `initialize` (`clientInfo` name and version
+only) and, for reads that page, whether the call is a page of an earlier one.
+A `kmp_ask` or `kmp_wake` line adds how it came out (answer status, UNKNOWN
+reason, stated confidence, whether the anchored gate decided, and cited
+passages per `reached_by`) and keyed fingerprints of its question or intent
+and of its guidance `context_id`: HMAC-SHA256 under `telemetry-salt`, 32
+random bytes created with mode `0600` beside the store on the first wake or
+ask that succeeds. A refused call lists the validation codes and field paths
+its `feedback` named (`LABELS_REQUIRED@labels`), never their reasons or values.
+The salt never enters a log, a bundle or a request, so a
+fingerprint compares only within its store; deleting the file only makes new
+fingerprints incomparable with old ones. The fields are listed in
+`scripts/performance/memory_bench/SCHEMAS.md` (`kmp_mcp_tool`).
 
 ## Maintenance commands
 

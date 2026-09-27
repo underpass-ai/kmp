@@ -54,6 +54,33 @@ impl WriteValidationError {
         self
     }
 
+    /// Whether this failure is about `field` or something inside it.
+    pub(crate) fn field_is_within(&self, field: &str) -> bool {
+        self.field == field
+            || self
+                .field
+                .strip_prefix(field)
+                .is_some_and(|rest| rest.starts_with(['.', '[']))
+    }
+
+    /// The packet record this failure belongs to, `memories[1]` or
+    /// `search_summaries[0]`, when it belongs to one.
+    pub(crate) fn record(&self) -> Option<&str> {
+        let end = self.field.find(']')?;
+        let record = &self.field[..=end];
+        (record.starts_with("memories[") || record.starts_with("search_summaries["))
+            .then_some(record)
+    }
+
+    pub(crate) fn has_code(&self, code: &str) -> bool {
+        self.code == code
+    }
+
+    /// Appends a sentence to the reason, for what only the server can add.
+    pub(crate) fn append(&mut self, sentence: &str) {
+        self.message.push_str(sentence);
+    }
+
     pub(crate) fn allowed_values(
         mut self,
         values: impl IntoIterator<Item = impl AsRef<str>>,

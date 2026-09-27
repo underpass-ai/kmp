@@ -190,6 +190,7 @@ where
                     rehydration_mode: kmp_domain::KmpMode::default(),
                     endpoint_hint: EndpointHint::FocusedPath,
                 },
+                limits: None,
             })
             .await
             .map_err(map_application_error)?;

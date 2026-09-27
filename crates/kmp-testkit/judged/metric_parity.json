@@ -1,6 +1,6 @@
 {
-  "schema": "kmp.bench.metric_parity.v1",
-  "about": "Shared fixture: the same ranking outcomes scored by crates/kmp-testkit/src/retrieval_scorecard.rs and scripts/performance/memory_bench/domain/metrics.py must give these numbers. Floats compare within `tolerance`.",
+  "schema": "kmp.bench.metric_parity.v3",
+  "about": "Shared fixture: the same ranking outcomes scored by crates/kmp-testkit/src/retrieval_scorecard.rs and scripts/performance/memory_bench/domain/metrics.py must give these numbers. Floats compare within `tolerance`. Every `refs` value normalizes to its `normalized` in both crates/kmp-testkit/src/memory_ref.rs and scripts/performance/memory_bench/domain/refs.py, and every `retrieved` list of ids reads as its `retrieved` memories in both, repeats kept.",
   "tolerance": 1e-12,
   "cases": [
     {
@@ -471,5 +471,151 @@
     "false_unknown_rate": 0.0625,
     "mean_used_bytes": 1397.875,
     "mean_elapsed_millis": 22.75
-  }
+  },
+  "refs": [
+    {
+      "value": "entry:project:x:e1",
+      "normalized": "project:x:e1"
+    },
+    {
+      "value": "detail:project:x:e1",
+      "normalized": "project:x:e1"
+    },
+    {
+      "value": "project:x:e1",
+      "normalized": "project:x:e1"
+    },
+    {
+      "value": "entry:detail:project:x:e1",
+      "normalized": "detail:project:x:e1"
+    },
+    {
+      "value": "detail:entry:project:x:e1",
+      "normalized": "entry:project:x:e1"
+    },
+    {
+      "value": "entry:entry:x",
+      "normalized": "entry:x"
+    },
+    {
+      "value": "entry:",
+      "normalized": ""
+    },
+    {
+      "value": "detail:",
+      "normalized": ""
+    },
+    {
+      "value": "",
+      "normalized": ""
+    },
+    {
+      "value": "Entry:x",
+      "normalized": "Entry:x"
+    },
+    {
+      "value": " entry:x",
+      "normalized": " entry:x"
+    },
+    {
+      "value": "detail:evidence:project:made:entry:decision:x:current",
+      "normalized": "project:made:entry:decision:x"
+    },
+    {
+      "value": "detail:evidence:project:made:entry:decision:x:relation:1",
+      "normalized": "project:made:entry:decision:x"
+    },
+    {
+      "value": "detail:evidence:project:made:entry:decision:x:relation:12",
+      "normalized": "project:made:entry:decision:x"
+    },
+    {
+      "value": "detail:evidence:fixture:lab:entry:observation:y:relation:d115992883596a55",
+      "normalized": "fixture:lab:entry:observation:y"
+    },
+    {
+      "value": "detail:evidence:guide:kmp-agent:verb:time",
+      "normalized": "guide:kmp-agent:verb:time"
+    },
+    {
+      "value": "evidence:project:made:entry:decision:x:current",
+      "normalized": "project:made:entry:decision:x"
+    },
+    {
+      "value": "entry:evidence:project:made:entry:decision:x:current",
+      "normalized": "project:made:entry:decision:x"
+    },
+    {
+      "value": "detail:detail:evidence:project:made:entry:decision:x:current",
+      "normalized": "detail:evidence:project:made:entry:decision:x:current"
+    },
+    {
+      "value": "detail:evidence:x:relation:D115992883596A55",
+      "normalized": "x:relation:D115992883596A55"
+    },
+    {
+      "value": "detail:evidence:x:relation:abc",
+      "normalized": "x:relation:abc"
+    },
+    {
+      "value": "detail:evidence:x:relation:",
+      "normalized": "x:relation:"
+    },
+    {
+      "value": "detail:evidence::current",
+      "normalized": "evidence::current"
+    },
+    {
+      "value": "detail:evidence:",
+      "normalized": "evidence:"
+    },
+    {
+      "value": "detail:evidence:x:current:relation:1",
+      "normalized": "x:current"
+    },
+    {
+      "value": "detail:evidence:x:relation:1:current",
+      "normalized": "x:relation:1"
+    },
+    {
+      "value": "project:x:entry:relation:1",
+      "normalized": "project:x:entry:relation:1"
+    }
+  ],
+  "retrieved": [
+    {
+      "ids": [
+        "entry:p:x:entry:decision:a",
+        "detail:evidence:p:x:entry:decision:b:current",
+        "detail:evidence:p:x:entry:decision:a:current",
+        "entry:p:x:entry:decision:b",
+        "detail:evidence:p:x:entry:decision:a:relation:2"
+      ],
+      "retrieved": [
+        "p:x:entry:decision:a",
+        "p:x:entry:decision:b",
+        "p:x:entry:decision:a",
+        "p:x:entry:decision:b",
+        "p:x:entry:decision:a"
+      ]
+    },
+    {
+      "ids": [
+        "detail:p:x:e1",
+        "entry:p:x:e1",
+        "p:x:e1",
+        "p:x:e2"
+      ],
+      "retrieved": [
+        "p:x:e1",
+        "p:x:e1",
+        "p:x:e1",
+        "p:x:e2"
+      ]
+    },
+    {
+      "ids": [],
+      "retrieved": []
+    }
+  ]
 }

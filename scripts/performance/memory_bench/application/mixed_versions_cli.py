@@ -26,13 +26,19 @@ from . import mixed_versions as mv
 
 DEFAULT_STORE_LABEL = 'synth-v1 seed 7 mono 1000 B1000'
 RUN_DIR = 'bt18'
-# The book scenario's store: Jev on (replayed, never the network) and ask re-ranking on.
+# The book scenario's store: Jev on (replayed, never the network) and ask re-ranking on,
+# with the margin gate off (`margin_tenths: null`, DESIGN L4 4c). With the gate at its
+# measured default, an ask whose first lexical candidate leads with `High` confidence sends
+# no request, which on the synth store is every warm-up question: the warm-up judged
+# nothing and the scenario never reached the book. The scenario tests the book, not the gate.
+RERANK_WITHOUT_MARGIN_GATE = b'{"pool_size":40,"margin_tenths":null}'
 JEV_STORE_FILES = {
     'typesafe.json': b'{"endpoint":"https://api.typesafe.ai/v1/systemone","model":"'
                      + jev_fixture.DEFAULT_MODEL.encode() + b'","timeout_ms":20000}',
-    'rerank.json': b'{"pool_size":40}',
+    'rerank.json': RERANK_WITHOUT_MARGIN_GATE,
 }
 STAND_IN = 'stand-in.cassette.json'
+LEXICAL_INDEX_ENV = 'KMP_LEXICAL_INDEX'
 
 
 class MixedSetupError(BenchError):
@@ -63,18 +69,21 @@ def find_store(cache, label=DEFAULT_STORE_LABEL, key=None):
 def store_factory(entry, work_dir, out_dir):
     counter = iter(range(1, 10_000))
 
-    def new_store(label, seeded=True, jev=False):
+    def new_store(label, seeded=True, jev=False, lexical=False):
         folder = out_dir / f'{next(counter):02d}-{label}'
         template = entry.template if seeded else None
+        # The lexical sidecar is off by default; `lexical` opens it in shadow.
+        lexical_env = {LEXICAL_INDEX_ENV: 'shadow'} if lexical else {}
         if not jev:
-            return shared_store.SharedStore(work_dir, folder, label, template=template)
+            return shared_store.SharedStore(work_dir, folder, label, template=template,
+                                            env=lexical_env)
         # Jev answers from a stand-in cassette in replay mode, behind the book: it
         # starts empty and `prepare_jev` fills it from a warm-up process.
         scratch = Path(tempfile.mkdtemp(prefix='bt18-jev-', dir=work_dir))
         stand_in = scratch / STAND_IN
         jev_fixture.empty_cassette(stand_in, jev_fixture.DEFAULT_MODEL)
         env = {jev_fixture.CASSETTE_ENV: str(stand_in), jev_fixture.CASSETTE_MODE_ENV: 'replay',
-               'RUST_LOG': server_log.BENCH_LOG_FILTER}
+               'RUST_LOG': server_log.BENCH_LOG_FILTER, **lexical_env}
         try:
             store = shared_store.SharedStore(work_dir, folder, label, template=template, env=env,
                                              store_files=JEV_STORE_FILES)

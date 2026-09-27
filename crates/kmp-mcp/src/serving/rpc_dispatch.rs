@@ -12,7 +12,9 @@ use crate::contract::{
 };
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
-use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
+use crate::serving::telemetry::{
+    CallOrigin, CallSource, ToolErrorKind, record_call_error, record_call_success,
+};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::tool_error_result;
 
@@ -46,6 +48,7 @@ impl KernelMcpServer {
         match method {
             Some("initialize") => id.map(|id| {
                 let apps = client_supports_apps(&request);
+                self.remember_client(&request);
                 self.apps_negotiated.store(apps, Ordering::SeqCst);
                 jsonrpc_result(
                     id,
@@ -125,6 +128,7 @@ impl KernelMcpServer {
         let name = canonical_tool_name(requested_name);
         let arguments = params.get("arguments").unwrap_or(&Value::Null);
         let start = Instant::now();
+        let origin = self.call_origin(name, arguments);
 
         if matches!(
             name,
@@ -168,13 +172,18 @@ impl KernelMcpServer {
         // `additionalProperties: false`, so an argument the tool does not have
         // is refused here rather than dropped and answered anyway.
         if let Err(error) = reject_unknown_arguments(name, arguments) {
-            record_tool_error(
+            record_call_error(
+                CallSource {
+                    origin: &origin,
+                    salt: self.telemetry_salt(false),
+                },
                 self.backend_name(),
                 self.grpc_tls_mode_name(),
                 name,
                 arguments,
                 ToolErrorKind::Validation,
                 &error.message,
+                &error.feedback,
                 start.elapsed(),
             );
             return jsonrpc_result(id, tool_error_result(name, arguments, &error));
@@ -202,6 +211,7 @@ impl KernelMcpServer {
                 name,
                 memory_arguments.as_ref().unwrap_or(arguments),
                 start,
+                &origin,
             )
             .await;
         let result = match guidance {
@@ -220,9 +230,12 @@ impl KernelMcpServer {
         name: &str,
         arguments: &Value,
         start: Instant,
+        origin: &CallOrigin,
     ) -> String {
         if name == "kmp_write_memory" {
-            return self.handle_kmp_write_memory(id, arguments, start).await;
+            return self
+                .handle_kmp_write_memory(id, arguments, start, origin)
+                .await;
         }
 
         // A relabel is a write the kernel validates against the store, so it
@@ -247,13 +260,18 @@ impl KernelMcpServer {
             && let Err(message) = crate::write::reject_refs_outside_about(arguments)
         {
             let error = ToolError::invalid_argument(message);
-            record_tool_error(
+            record_call_error(
+                CallSource {
+                    origin,
+                    salt: self.telemetry_salt(false),
+                },
                 self.backend_name(),
                 self.grpc_tls_mode_name(),
                 name,
                 arguments,
                 ToolErrorKind::Validation,
                 &error.message,
+                &error.feedback,
                 start.elapsed(),
             );
             return jsonrpc_result(id, tool_error_result(name, arguments, &error));
@@ -267,7 +285,14 @@ impl KernelMcpServer {
 
         match self.backend.call_tool(name, arguments).await {
             Ok(result) => {
-                record_tool_success(
+                // A wake or an ask that answered is the first moment the
+                // store surely exists: its salt may be created then.
+                let recall = matches!(name, "kmp_ask" | "kmp_wake");
+                record_call_success(
+                    CallSource {
+                        origin,
+                        salt: self.telemetry_salt(recall),
+                    },
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     name,
@@ -278,13 +303,18 @@ impl KernelMcpServer {
                 jsonrpc_result(id, result)
             }
             Err(error) => {
-                record_tool_error(
+                record_call_error(
+                    CallSource {
+                        origin,
+                        salt: self.telemetry_salt(false),
+                    },
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     name,
                     arguments,
                     ToolErrorKind::Backend,
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 jsonrpc_result(id, tool_error_result(name, arguments, &error))

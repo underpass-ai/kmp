@@ -3,7 +3,9 @@
 //! `judged/metric_parity.json` holds ranking outcomes and the numbers they
 //! must score. `scripts/performance/memory_bench/tests/test_metrics.py` reads
 //! the same file, so a change to either implementation that moves a number
-//! fails on both sides until the fixture is regenerated on purpose.
+//! fails on both sides until the fixture is regenerated on purpose. Its
+//! `refs` table does the same for `memory_ref::normalize` and `refs.normalize`.
+use kmp_testkit::memory_ref::{normalize, retrieved};
 use kmp_testkit::retrieval_scorecard::{RetrievalOutcome, RetrievalScorecard};
 use serde_json::Value;
 
@@ -95,5 +97,29 @@ fn the_collection_aggregates_to_the_shared_scorecard() {
         ("mean_elapsed_millis", card.mean_elapsed_millis),
     ] {
         assert_close("scorecard", what, actual, &expected[what], tolerance);
+    }
+}
+
+#[test]
+fn every_returned_ref_normalizes_to_what_the_shared_fixture_says() {
+    let fixture: Value = serde_json::from_str(FIXTURE).expect("fixture is JSON");
+    let refs = fixture["refs"].as_array().expect("refs");
+    assert!(!refs.is_empty());
+    for case in refs {
+        let value = case["value"].as_str().expect("returned ref");
+        let expected = case["normalized"].as_str().expect("normalized ref");
+        assert_eq!(normalize(value), expected, "normalize({value:?})");
+    }
+}
+
+#[test]
+fn every_evidence_list_reads_as_the_shared_fixture_says() {
+    let fixture: Value = serde_json::from_str(FIXTURE).expect("fixture is JSON");
+    let lists = fixture["retrieved"].as_array().expect("retrieved");
+    assert!(!lists.is_empty());
+    for case in lists {
+        let ids = strings(&case["ids"]);
+        let read = retrieved(ids.iter().map(String::as_str));
+        assert_eq!(read, strings(&case["retrieved"]), "retrieved({ids:?})");
     }
 }

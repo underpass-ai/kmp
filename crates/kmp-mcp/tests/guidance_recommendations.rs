@@ -230,3 +230,88 @@ async fn trace_body_option_refusals_offer_reader_card_help_without_replacing_oth
         "guide:kmp-agent:example:evidence-seek"
     );
 }
+
+/// A refused packet is repaired in one pass: every failure of every record
+/// arrives together, in the text a text-only host reads too, the labels
+/// failure names the about's own keys, and the guidance says to repair the
+/// listed fields rather than to stop. A copy of an English summary is
+/// dropped, not refused.
+#[tokio::test]
+async fn a_refused_packet_lists_every_field_names_the_label_keys_and_asks_for_repair() {
+    let dir = tempfile::tempdir().expect("store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    let agent = open(&server, "write-repair-reader").await;
+    let written = call(&server, "kmp_write_memory", packet(&agent["context_id"])).await;
+    let written = reviewed_writer::review_authored_write(&server, written).await;
+    assert_eq!(written["isError"], false, "{written}");
+
+    let mut refused = packet(&agent["context_id"]);
+    refused.as_object_mut().expect("packet").remove("labels");
+    refused["idempotency_key"] = json!("context:source:refused");
+    refused["memories"] = json!([
+        {"id":"spanish","kind":"observation","summary":"La ruta 7 abre el martes, según el aviso #42.",
+         "evidence":"S2 anuncia la apertura.","labels":{"task":["context-check"]}},
+        {"id":"unlabelled","kind":"outcome","summary":"The route opens on Tuesday.",
+         "evidence":"S3 confirms the opening."}
+    ]);
+    let result = call(&server, "kmp_write_memory", refused).await;
+    assert_eq!(result["isError"], true, "{result}");
+    let fields = result["structuredContent"]["feedback"]
+        .as_array()
+        .expect("feedback")
+        .iter()
+        .map(|item| item["field"].as_str().expect("field").to_owned())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        fields,
+        [
+            "memories[0].summary_en",
+            "memories[1].labels",
+            "memories[1].kind"
+        ],
+        "{result}"
+    );
+    let text = result["content"][0]["text"].as_str().expect("text");
+    assert!(
+        text.starts_with("3 validation failures in 2 records;"),
+        "{text}"
+    );
+    assert!(
+        text.contains("\n- memories[0].summary_en: strict kmp_write_memory requires summary_en"),
+        "{text}"
+    );
+    assert!(
+        text.contains("keep these tokens exactly as written: #42;"),
+        "{text}"
+    );
+    assert!(text.contains("Removing summary_en never passes"), "{text}");
+    assert!(
+        text.contains("This about already uses the label keys: task."),
+        "{text}"
+    );
+    let advice = guidance(&result);
+    assert_eq!(
+        advice["recommendation"]["reason_code"], "repair_listed_fields",
+        "{advice}"
+    );
+    assert!(advice["recommendation"].get("stop").is_none(), "{advice}");
+
+    let mut copied = packet(&agent["context_id"]);
+    copied["idempotency_key"] = json!("context:source:copied");
+    copied["memories"][0]["id"] = json!("copied");
+    copied["memories"][0]["summary"] = json!("The ferry route opens on Wednesday.");
+    copied["memories"][0]["summary_en"] = json!("The ferry route opens on Wednesday.");
+    let accepted = call(&server, "kmp_write_memory", copied).await;
+    let accepted = reviewed_writer::review_authored_write(&server, accepted).await;
+    assert_eq!(accepted["isError"], false, "{accepted}");
+    assert!(
+        accepted["structuredContent"]["diagnostics"]
+            .as_array()
+            .expect("diagnostics")
+            .iter()
+            .any(|item| item
+                .as_str()
+                .is_some_and(|item| item.starts_with("summary_en omitted: identical"))),
+        "{accepted}"
+    );
+}

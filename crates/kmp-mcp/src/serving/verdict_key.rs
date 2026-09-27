@@ -49,6 +49,18 @@ impl VerdictKey {
                     field(&mut hasher, normalized(&option).as_bytes());
                 }
             }
+            JudgementQuestion::Score {
+                instructions,
+                levels,
+            } => {
+                // A scale's order is its meaning: its levels are not sorted.
+                field(&mut hasher, b"score");
+                field(&mut hasher, canonical(instructions).as_bytes());
+                field(&mut hasher, &(levels.len() as u32).to_be_bytes());
+                for level in levels {
+                    field(&mut hasher, normalized(level).as_bytes());
+                }
+            }
         }
         hasher.update(state.as_bytes());
         let mut key = [0u8; Self::BYTES];

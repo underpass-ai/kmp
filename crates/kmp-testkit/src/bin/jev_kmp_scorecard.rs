@@ -22,7 +22,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use kmp_mcp::KernelMcpServer;
-use kmp_testkit::WriteReceipt;
+use kmp_testkit::{WriteReceipt, paths_corridor_eval_arm, rerank_with_eval_margin};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -41,6 +41,18 @@ const RERANK_NARROW: &str = r#"{"pool_size":40}"#;
 const RERANK_WIDE: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 /// Wake focus: every admitted evidence entry, 300-character excerpts.
 const WRITE_RELATIONS: &str = "{}";
+/// Relation types that say one memory replaces or updates another.
+const LIFECYCLE_TYPES: [&str; 3] = ["supersedes", "updates_state", "corrects"];
+
+/// The write-time lifecycle proposals as an arm (DESIGN L4 4e):
+/// `JEV_LIFECYCLE=rule|jev` puts `write-relations.json` with that mode beside
+/// the plain, judged and writer stores. Off by default, as in a store.
+fn lifecycle_arm() -> Option<String> {
+    std::env::var("JEV_LIFECYCLE")
+        .ok()
+        .filter(|mode| mode == "rule" || mode == "jev")
+        .map(|mode| format!(r#"{{"lifecycle":"{mode}"}}"#))
+}
 const WAKE_FOCUS: &str = r#"{"pool_size":400,"excerpt_chars":300}"#;
 const ASK_TOP: usize = 5;
 /// A wake packet on this corpus ends well before this; a chain that does
@@ -212,6 +224,9 @@ struct Scores {
     ask_top_rerank: Tally,
     ask_top_wide: Tally,
     ask_ms: [u128; 3],
+    /// Asks the narrow and the wide arm sent to Jev: the rest the margin
+    /// gate settled on the lexical order (DESIGN L4 4c).
+    ask_judged: [u64; 2],
     jev_requests: u64,
     jev_input_tokens: u64,
     /// Bytes an agent reads to curate by hand: every page of kmp_relate over
@@ -245,6 +260,13 @@ struct Scores {
     write_proposals: [u64; 2],
     write_bytes: [u64; 2],
     write_reviews: u64,
+    /// Jev input tokens and milliseconds of each focused review with Jev,
+    /// by case (the milliseconds are Jev's own only when recording).
+    write_tokens: Vec<(String, u64, u64)>,
+    /// Write-time lifecycle proposals over the focused reviews, per arm
+    /// (without Jev: the deterministic rule; with Jev: read by its choice
+    /// when the arm asks for it): proposed, right, distractors proposed.
+    lifecycle: [[u64; 3]; 2],
     /// Written through kmp_write_memory: a partner proposed, and the bytes
     /// the proposals add to the write's answer.
     write_e2e: Tally,
@@ -304,6 +326,33 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "  (agent load, not gated)      paths answers: declared-only {} bytes, with Jev {} bytes",
         scores.path_bytes[0], scores.path_bytes[1]
     );
+    for case_id in scores
+        .write_tokens
+        .iter()
+        .map(|(case_id, _, _)| case_id.clone())
+        .collect::<BTreeSet<_>>()
+    {
+        let (tokens, millis): (Vec<_>, Vec<_>) = scores
+            .write_tokens
+            .iter()
+            .filter(|(id, _, _)| *id == case_id)
+            .map(|(_, tokens, millis)| (*tokens, *millis))
+            .unzip();
+        println!(
+            "  (cost, not gated)            write focus {case_id}: {} Jev tokens per focused fact (max {}), {} Jev ms (max {}), over {} reviews",
+            tokens.iter().sum::<u64>() / tokens.len().max(1) as u64,
+            tokens.iter().max().copied().unwrap_or(0),
+            millis.iter().sum::<u64>() / millis.len().max(1) as u64,
+            millis.iter().max().copied().unwrap_or(0),
+            tokens.len()
+        );
+    }
+    for (arm, name) in ["plain store", "store with Jev"].into_iter().enumerate() {
+        let [proposed, right, distractors] = scores.lifecycle[arm];
+        println!(
+            "  (not gated)                  lifecycle proposals, {name}: {proposed} proposed, {right} right, {distractors} distractors"
+        );
+    }
     let reviews = scores.write_reviews.max(1);
     println!(
         "  (agent load, not gated)      write proposals per fact: kernel {:.1} in {} bytes, with Jev {:.1} in {} bytes",
@@ -319,6 +368,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!(
         "  (cost, not gated)            labels: {} Jev tokens",
         scores.labels_tokens
+    );
+    println!(
+        "  (cost, not gated)            ask rerank: narrow judged {} of {} asks, wide {}; the margin gate settled the rest",
+        scores.ask_judged[0],
+        scores.ask_mrr_plain.len(),
+        scores.ask_judged[1]
     );
     let asks = scores.ask_mrr_plain.len().max(1) as u128;
     println!(
@@ -355,18 +410,44 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn Error>> {
-    let plain = seeded_server(case, "plain", &[]).await?;
-    let judged = seeded_server(case, "judged", &[("typesafe.json", TYPESAFE)]).await?;
+    let lifecycle = lifecycle_arm();
+    let lifecycle_files = lifecycle
+        .as_deref()
+        .map(|body| vec![("write-relations.json", body)])
+        .unwrap_or_default();
+    let plain = seeded_server(case, "plain", &lifecycle_files).await?;
+    let corridor = paths_corridor_eval_arm();
+    let corridor_files = corridor
+        .as_deref()
+        .map(|body| vec![("curate.json", body)])
+        .unwrap_or_default();
+    let judged = seeded_server(
+        case,
+        "judged",
+        &[
+            &[("typesafe.json", TYPESAFE)],
+            lifecycle_files.as_slice(),
+            corridor_files.as_slice(),
+        ]
+        .concat(),
+    )
+    .await?;
     let reranked = seeded_server(
         case,
         "reranked",
-        &[("typesafe.json", TYPESAFE), ("rerank.json", RERANK_NARROW)],
+        &[
+            ("typesafe.json", TYPESAFE),
+            ("rerank.json", &rerank_with_eval_margin(RERANK_NARROW)),
+        ],
     )
     .await?;
     let wide = seeded_server(
         case,
         "wide",
-        &[("typesafe.json", TYPESAFE), ("rerank.json", RERANK_WIDE)],
+        &[
+            ("typesafe.json", TYPESAFE),
+            ("rerank.json", &rerank_with_eval_margin(RERANK_WIDE)),
+        ],
     )
     .await?;
     let focused = seeded_server(
@@ -496,8 +577,64 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
                     scores.jev_requests += usage["requests"].as_u64().unwrap_or(0);
                     scores.jev_input_tokens += usage["input_tokens"].as_u64().unwrap_or(0);
                 }
+                scores.write_tokens.push((
+                    case.id.clone(),
+                    answer["jev"]["input_tokens"].as_u64().unwrap_or(0),
+                    answer["jev"]["elapsed_ms"].as_u64().unwrap_or(0),
+                ));
             }
-            let items = answer["missing"].as_array().cloned().unwrap_or_default();
+            // Lifecycle proposals are their own channel: scored apart, so
+            // the partner metrics keep measuring what they always did.
+            let (lifecycle, items): (Vec<_>, Vec<_>) = answer["missing"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .partition(|item| item["proposed_by"] == "lifecycle");
+            for item in &lifecycle {
+                let pair = [text(&item["from"]["ref"]), text(&item["to"]["ref"])];
+                let same = |other: &[String; 2]| {
+                    (other[0] == pair[0] && other[1] == pair[1])
+                        || (other[0] == pair[1] && other[1] == pair[0])
+                };
+                let right = expected
+                    .missing
+                    .iter()
+                    .filter(|gold| {
+                        gold.types
+                            .iter()
+                            .any(|t| LIFECYCLE_TYPES.contains(&t.as_str()))
+                    })
+                    .map(|gold| gold.pair.clone())
+                    .chain(
+                        expected
+                            .declared_good
+                            .iter()
+                            .chain(&expected.declared_bad)
+                            .filter(|d| LIFECYCLE_TYPES.contains(&d[1].as_str()))
+                            .map(|d| [d[0].clone(), d[2].clone()]),
+                    )
+                    .any(|gold| same(&gold));
+                let distractor = expected.distractors.iter().any(|d| same(&d.pair));
+                let tally = &mut scores.lifecycle[arm];
+                tally[0] += 1;
+                tally[1] += u64::from(right);
+                tally[2] += u64::from(distractor);
+                println!(
+                    "  lifecycle {} {} -> {} {} {}",
+                    if arm == 0 { "plain   " } else { "judged  " },
+                    pair[0],
+                    pair[1],
+                    text(&item["suggested_rel"]),
+                    if right {
+                        "right"
+                    } else if distractor {
+                        "DISTRACTOR"
+                    } else {
+                        "not a lifecycle pair"
+                    }
+                );
+            }
             scores.write_bytes[arm] += answer.to_string().len() as u64;
             scores.write_proposals[arm] += items.len() as u64;
             if arm == 1 {
@@ -548,7 +685,10 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             "writer",
             &[
                 ("typesafe.json", TYPESAFE),
-                ("write-relations.json", WRITE_RELATIONS),
+                (
+                    "write-relations.json",
+                    lifecycle.as_deref().unwrap_or(WRITE_RELATIONS),
+                ),
             ],
         )
         .await?;
@@ -861,6 +1001,13 @@ async fn run_case(case: &JudgedCase, scores: &mut Scores) -> Result<(), Box<dyn 
             .await?;
             scores.ask_ms[arm] += started.elapsed().as_millis();
             refuse_unrecorded(&answered)?;
+            if arm > 0
+                && answered["warnings"]
+                    .to_string()
+                    .contains("evidence rerank by")
+            {
+                scores.ask_judged[arm - 1] += 1;
+            }
             ranks[arm] = rank(&answered, &ask.gold);
         }
         let [without, with, wider] = ranks;

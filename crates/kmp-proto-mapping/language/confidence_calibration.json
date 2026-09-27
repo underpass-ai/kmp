@@ -1,0 +1,32 @@
+{
+  "version": "confidence-calibration.v1",
+  "measured": {
+    "status": "not certified: off by default, opt-in per store with ask-gate.json \"confidence_calibration\": \"shipped\"",
+    "date": "2026-09-27",
+    "kernel": "c338a30d (integration/p9-p10), ask gate on, Jev off",
+    "corpus": "breal-ext: 170 real-style questions over the frozen 2026-09-26 store, gold by two models (Claude Opus, Claude Sonnet) with Jev deciding their disagreements; no human label",
+    "criterion": "one-sided Clopper-Pearson lower bound at delta 0.1 >= 0.95 for high",
+    "before": {
+      "high": {"n": 90, "correct": 76, "precision": 0.844, "lower": 0.784},
+      "medium": {"n": 70, "correct": 38, "precision": 0.543, "lower": 0.459},
+      "low": {"n": 10, "correct": 3, "precision": 0.300, "lower": 0.116}
+    },
+    "by_branch_high": {
+      "anchored": {"n": 44, "correct": 38, "lower": 0.773},
+      "unanchored": {"n": 46, "correct": 38, "lower": 0.733},
+      "bridged": {"n": 0}
+    },
+    "rules_chosen_on": "dev half (question id last hex digit even): 0 wrong high left, most high kept",
+    "after": {
+      "high": {"n": 20, "correct": 19, "precision": 0.95, "lower": 0.819},
+      "medium": {"n": 140, "correct": 95, "precision": 0.679},
+      "dev_high": {"n": 12, "correct": 12},
+      "val_high": {"n": 8, "correct": 7}
+    },
+    "needed_to_certify": "45 correct high with 0 errors, 77 with 1, 105 with 2"
+  },
+  "demote_high": [
+    {"id": "enumerative-question", "enumerative": true},
+    {"id": "best-memory-misses-concepts", "missed_concepts_above": 1}
+  ]
+}

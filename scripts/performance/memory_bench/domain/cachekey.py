@@ -1,9 +1,11 @@
 """Canonical digests and cache keys (BENCH_SPEC section 8, SCHEMAS.md section 6).
 
 Every key is the SHA-256 of canonical JSON — sorted keys, no whitespace,
-UTF-8, no NaN — over a `kind`, the bench version and the key material, so two
-kinds of key can never collide and a bench version bump invalidates every
-cached result at once. Digests are lowercase hex without a prefix; KMP's own
+UTF-8, no NaN — over a `kind`, a version and the key material, so two kinds
+of key can never collide. Results, reports and worlds carry the bench version,
+so a bench version bump invalidates them at once. A store does not: what it
+holds depends on its source, N, format, reader, writer and batch, never on how
+answers are scored, so its key carries `STORE_KEY_VERSION` instead. Digests are lowercase hex without a prefix; KMP's own
 `content_digest` keeps its `sha256:` prefix verbatim.
 """
 import hashlib
@@ -18,6 +20,11 @@ HEX64 = re.compile(r'[0-9a-f]{64}')
 CONTENT_DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
 MODE = re.compile(r'[a-z0-9][a-z0-9-]{0,31}')
 BUILDS = ('ingest', 'import', 'copy')
+# The version inside every store key. Frozen at v1, the bench version the cached stores of
+# 25-26 Sept were built under: the v2 (scoring rules) and v3 (ref reading) bumps did not
+# change what a store holds, so those stores keep their keys. Bump it only when what a
+# store holds or how it is built changes meaning.
+STORE_KEY_VERSION = 'kmp.memory_bench.v1'
 # Run manifests must agree on these for two runs to be compared at all (section 8, anti-drift).
 COMPARABILITY_FIELDS = ('questions_digest', 'driver_version', 'encoders', 'bench_version')
 
@@ -127,8 +134,9 @@ def dataset_source(*, corpus, lock_sha256, selection_digest, adapter_version):
 
 
 def store_key(*, source, n, bundle_format, reader_sha256, build, writer_sha256=None,
-              batch_size=None, store_mode='shared', bench_version=BENCH_VERSION):
-    """BT14: generator, version, seed, topology, N, format and the reader's sha are all in."""
+              batch_size=None, store_mode='shared'):
+    """BT14: generator, version, seed, topology, N, format and the reader's sha are all in;
+    the bench version is not (`STORE_KEY_VERSION`)."""
     if not isinstance(source, dict) or source.get('kind') not in ('synth', 'bundle', 'dataset'):
         raise CacheKeyInvalid('store source must come from synth_source(), bundle_source() '
                               'or dataset_source()')
@@ -140,7 +148,7 @@ def store_key(*, source, n, bundle_format, reader_sha256, build, writer_sha256=N
                 'reader_sha256': require_hex64(reader_sha256, 'reader_sha256'), 'build': build,
                 'writer_sha256': None if writer_sha256 is None else require_hex64(writer_sha256, 'writer_sha256'),
                 'batch_size': batch_size, 'store_mode': store_mode}
-    return _key('store', material, bench_version)
+    return _key('store', material, STORE_KEY_VERSION)
 
 
 def report_key(*, result_keys, options, bench_version=BENCH_VERSION):

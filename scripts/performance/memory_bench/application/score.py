@@ -101,12 +101,12 @@ def mentioned_refs(structured):
 # --- kmp_ask ------------------------------------------------------------------------------
 
 def retrieved_across_pages(pages):
-    """Evidence refs of every page in response order, each kept once at its first rank.
+    """Evidence refs of every page in response order, repeats kept as they arrive.
 
-    A later page may repeat a ref an earlier one returned; counted twice it would push
-    other refs down (chains at k) and earn nDCG gain twice. The Rust columns never see
-    it: they read the first page only (`_score_ask`)."""
-    return list(dict.fromkeys(ref for page in pages for ref in refs.evidence_refs(page)))
+    The bench does not deduplicate what it retrieves (decision of 28 Sept 2026,
+    BENCH_VERSION v4): a memory returned again, with its evidence or on a later page,
+    counts each time. The Rust columns read the first page only (`_score_ask`)."""
+    return [ref for page in pages for ref in refs.evidence_refs(page)]
 
 
 def _first_judged_call(pages, judged):
@@ -117,7 +117,7 @@ def _first_judged_call(pages, judged):
 
 
 def _ask_values(question, pages, observed, scored, retrieved):
-    """`retrieved`: every page, de-duplicated (`retrieved_across_pages`), for the bench-only
+    """`retrieved`: every page, repeats kept (`retrieved_across_pages`), for the bench-only
     metrics. The ported scorecard columns (recall@k, MRR, nDCG@10, core precision) read the
     first page only, as retrieval_kmp_scorecard.rs reads one `kmp_ask` response."""
     gold, cited = question.gold, set(observed.cited)

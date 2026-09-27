@@ -29,6 +29,7 @@ use crate::transport::proto_mapping_v1beta1::{
     trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
     visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
+use crate::transport::recall_outcome_log::RecallOutcomeLog;
 use crate::transport::support::map_application_error;
 use kmp_proto_mapping::v1beta1::recall_projection::{
     RecallProjectionError, project_ask_response, project_wake_response,
@@ -119,6 +120,7 @@ where
         let start = Instant::now();
         let request = request.into_inner();
         let projection_request = request.clone();
+        let page_request = request.page.clone();
         let query = wake_query_from_proto(request.clone())
             .map_err(|status| map_proto_error("KernelMemoryService.Wake", &start, *status))?;
         let intent = query.intent.clone();
@@ -146,11 +148,16 @@ where
             .as_ref()
             .map(|proof| proof.path.len())
             .unwrap_or_default();
+        let outcome = RecallOutcomeLog::from_wake(page_request.as_ref(), &response);
         tracing::info!(
             rpc = "KernelMemoryService.Wake",
             selected_abouts = ?selected_abouts,
             proof_paths,
             warnings = response.warnings.len(),
+            is_continuation = outcome.is_continuation,
+            confidence = outcome.confidence.as_deref(),
+            citations = outcome.citations,
+            citations_reached_by = outcome.reached_by.as_str(),
             "kernel memory grpc response"
         );
         record_kmp_grpc_rpc(
@@ -168,6 +175,7 @@ where
         let start = Instant::now();
         let request = request.into_inner();
         let projection_request = request.clone();
+        let page_request = request.page.clone();
         let question = request.question.clone();
         let query = ask_query_from_proto(request)
             .map_err(|status| map_proto_error("KernelMemoryService.Ask", &start, *status))?;
@@ -202,12 +210,20 @@ where
                 recall_projection_status(error),
             )
         })?;
+        let outcome = RecallOutcomeLog::from_ask(page_request.as_ref(), &response);
         tracing::info!(
             rpc = "KernelMemoryService.Ask",
             selected_abouts = ?selected_abouts,
             evidence = response.because.len(),
             answer = %answer_presence_label(&response.answer),
             warnings = response.warnings.len(),
+            is_continuation = outcome.is_continuation,
+            answer_status = outcome.answer_status.as_deref(),
+            unknown_reason = outcome.unknown_reason.as_deref(),
+            confidence = outcome.confidence.as_deref(),
+            anchored = outcome.anchored,
+            citations = outcome.citations,
+            citations_reached_by = outcome.reached_by.as_str(),
             "kernel memory grpc response"
         );
         record_kmp_grpc_rpc(

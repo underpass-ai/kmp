@@ -43,6 +43,7 @@ impl RelationPageBudget {
     ) -> Result<Value, ToolError> {
         if matches!(self, Self::Trace) {
             super::trace_material_expansion::attach(&mut value, arguments);
+            super::trace_widen::attach(&mut value, arguments);
             super::trace_body_actions::attach(&mut value, arguments);
             super::evidence_seek::attach_review(&mut value, arguments);
         }

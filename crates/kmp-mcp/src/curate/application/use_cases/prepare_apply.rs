@@ -98,7 +98,7 @@ impl PrepareApply<'_> {
                         .filter(|signal| PROPOSAL_SIGNALS.contains(&signal.as_str()))
                         .cloned()
                         .collect::<Vec<_>>(),
-                    PairOrigin::Jev => Vec::new(),
+                    PairOrigin::Jev | PairOrigin::Lifecycle { .. } => Vec::new(),
                 };
                 if signals.is_empty() {
                     prepared.rejected.push(reject(
@@ -231,6 +231,7 @@ mod tests {
         CurateFact {
             reference: reference.into(),
             about: about.into(),
+            kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
             labels: Vec::new(),

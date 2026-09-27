@@ -20,13 +20,18 @@ use crate::curate::application::use_cases::review_relations::ReviewRelations;
 use crate::curate::domain::apply_item::ApplyItem;
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
+use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::pair_origin::PairOrigin;
+use crate::curate::domain::partner_cap::PartnerCap;
+use crate::curate::domain::partner_filter::PartnerFilter;
+use crate::curate::domain::paths_corridor::PathsCorridor;
 use crate::serving::adapters::tool_request_mapping::RelateRequestMapper;
+use crate::serving::judgement_failure::JudgementFailure;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::{ToolError, tool_success_result};
 use kmp_embedded::EmbeddedMemoryService;
 use kmp_proto_mapping::v1beta1::{
-    LexicalBridge, curate_reading_from_result, relate_query_from_proto,
+    LexicalBridge, PathsProposals, curate_paths_reading_from_result, relate_query_from_proto,
 };
 
 const DEFAULT_MAX_PAIRS: u64 = 12;
@@ -45,6 +50,10 @@ pub(crate) struct EmbeddedCurateTool<'a> {
     judgement_warning: Option<&'a str>,
     cache: &'a CurateReviewCache,
     doubts: &'a CurateDoubtCache,
+    lifecycle: LifecycleMode,
+    partner_cap: PartnerCap,
+    partner_filter: PartnerFilter,
+    paths_corridor: PathsCorridor,
 }
 
 impl<'a> EmbeddedCurateTool<'a> {
@@ -65,7 +74,35 @@ impl<'a> EmbeddedCurateTool<'a> {
             judgement_warning,
             cache,
             doubts,
+            lifecycle: LifecycleMode::Off,
+            partner_cap: PartnerCap::DEFAULT,
+            partner_filter: PartnerFilter::Off,
+            paths_corridor: PathsCorridor::On,
         }
+    }
+
+    /// The largest about a review without `focus` pairs orphans in, and
+    /// what its pairs must pass before they are typed.
+    pub(crate) fn with_partners(
+        mut self,
+        partner_cap: PartnerCap,
+        partner_filter: PartnerFilter,
+    ) -> Self {
+        self.partner_cap = partner_cap;
+        self.partner_filter = partner_filter;
+        self
+    }
+
+    /// Whether a goal path search reads its corridor (DESIGN L7).
+    pub(crate) fn with_paths_corridor(mut self, paths_corridor: PathsCorridor) -> Self {
+        self.paths_corridor = paths_corridor;
+        self
+    }
+
+    /// Whether and how a focused review proposes write-time lifecycle pairs.
+    pub(crate) fn with_lifecycle(mut self, lifecycle: LifecycleMode) -> Self {
+        self.lifecycle = lifecycle;
+        self
     }
 
     pub(crate) async fn call(&self, arguments: &Value) -> Result<Value, ToolError> {
@@ -132,12 +169,15 @@ impl<'a> EmbeddedCurateTool<'a> {
         let mut review = if focus.is_empty() {
             ReviewRelations {
                 judgement: self.judgement,
+                partner_cap: self.partner_cap,
+                partner_filter: self.partner_filter,
             }
             .run(material.clone(), max_pairs)
             .await
         } else {
             ReviewFocus {
                 judgement: self.judgement,
+                lifecycle: self.lifecycle,
             }
             .run(material.clone(), &focus, max_pairs)
             .await
@@ -160,6 +200,19 @@ impl<'a> EmbeddedCurateTool<'a> {
         &self,
         arguments: &Value,
         about: &str,
+    ) -> Result<crate::curate::application::curate_material::CurateMaterial, ToolError> {
+        self.read_material_proposing(arguments, about, &PathsProposals::All)
+            .await
+    }
+
+    /// The reading, with the kernel's pair proposals only among the facts
+    /// `proposals` names (DESIGN L7): comparing every pair of a large about
+    /// is quadratic, and a path search needs few of them or none.
+    async fn read_material_proposing(
+        &self,
+        arguments: &Value,
+        about: &str,
+        proposals: &PathsProposals,
     ) -> Result<crate::curate::application::curate_material::CurateMaterial, ToolError> {
         let relate_arguments = Value::Object(
             arguments
@@ -200,7 +253,7 @@ impl<'a> EmbeddedCurateTool<'a> {
             .map_err(kernel_error("curate", about))?;
         self.telemetry
             .observe("kmp_curate", &result.bundle, &result.rendered);
-        let response = curate_reading_from_result(result, &query, self.bridge)
+        let response = curate_paths_reading_from_result(result, &query, self.bridge, proposals)
             .map_err(|status| mapping_error(&status))?;
         let material = relate_material(&response);
         Ok(material)
@@ -244,7 +297,11 @@ impl<'a> EmbeddedCurateTool<'a> {
             .await
         {
             Ok((proposed, usage)) => (proposed, Some(usage), Vec::new()),
-            Err(error) => (Vec::new(), None, vec![format!("Jev unavailable: {error}")]),
+            Err(error) => (
+                Vec::new(),
+                None,
+                vec![JudgementFailure::warning(&error, "no labels proposed")],
+            ),
         };
         Ok(tool_success_result(serde_json::json!({
             "summary": format!("{} labels proposed for {} facts", proposed.len(), focus.len()),
@@ -282,9 +339,22 @@ impl<'a> EmbeddedCurateTool<'a> {
             .and_then(Value::as_u64)
             .unwrap_or(6)
             .clamp(1, 12) as usize;
-        let material = self.read_material(arguments, &about).await?;
+        // Without a judge the walk reads declared relations alone; with a
+        // goal and the corridor, only the corridor's candidates are paired.
+        let proposals = match (self.judgement, to) {
+            (None, _) => PathsProposals::Nothing,
+            (Some(_), Some(to)) if self.paths_corridor.is_on() => PathsProposals::Around {
+                from: from.to_string(),
+                to: to.to_string(),
+            },
+            (Some(_), _) => PathsProposals::All,
+        };
+        let material = self
+            .read_material_proposing(arguments, &about, &proposals)
+            .await?;
         let search = FindPaths {
             judgement: self.judgement,
+            corridor: self.paths_corridor.is_on(),
         }
         .run(&material, from, to, max_hops)
         .await;

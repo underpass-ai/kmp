@@ -1,4 +1,4 @@
-use crate::{AdjacencyPage, AdjacencyRequest, NodeProjection, PortError};
+use crate::{AdjacencyPage, AdjacencyRequest, NodeProjection, PortError, RelationDirection};
 
 /// The coordinator borrows one consistent snapshot for its entire search.
 /// Implementations must not open a new transaction per method call.
@@ -80,4 +80,27 @@ pub trait TraceSnapshotReader {
 
     fn node(&self, id: &str) -> Result<Option<NodeProjection>, PortError>;
     fn adjacency(&self, request: &AdjacencyRequest) -> Result<AdjacencyPage, PortError>;
+
+    /// At most `limit` neighbour ids of `node` in adjacency-key order (the
+    /// other endpoint, one per stored relation, so a neighbour linked by two
+    /// relation types appears twice). Structure only: no explanation is
+    /// needed, and a backend may skip decoding it.
+    fn neighbor_ids(
+        &self,
+        node: &str,
+        direction: RelationDirection,
+        limit: u32,
+    ) -> Result<Vec<String>, PortError> {
+        let request = AdjacencyRequest::new(node, direction, limit)
+            .map_err(|error| PortError::InvalidState(error.to_string()))?;
+        Ok(self
+            .adjacency(&request)?
+            .edges
+            .into_iter()
+            .map(|edge| match direction {
+                RelationDirection::Outgoing => edge.target_node_id,
+                RelationDirection::Incoming => edge.source_node_id,
+            })
+            .collect())
+    }
 }

@@ -3,26 +3,130 @@ use crate::curate::application::curate_review::CurateReview;
 use crate::curate::application::focus_plan::related_request;
 use crate::curate::application::jev_usage::JevUsage;
 use crate::curate::application::judgement_plan::pair_request;
+use crate::curate::application::lifecycle_plan::{
+    PROPOSED_REL, lifecycle_candidates, lifecycle_request, proposed_by_choice,
+};
 use crate::curate::domain::candidate_pair::CandidatePair;
 use crate::curate::domain::curate_finding::CurateFinding;
 use crate::curate::domain::curate_thresholds::{NONE, PARTNER_AT};
 use crate::curate::domain::jev_verdict::JevVerdict;
+use crate::curate::domain::lifecycle_mode::LifecycleMode;
 use crate::curate::domain::pair_origin::PairOrigin;
 use crate::serving::judgement_answer::JudgementAnswer;
+use crate::serving::judgement_failure::JudgementFailure;
 use crate::serving::ports::judgement_model::JudgementModel;
 
 /// Most partners Jev proposes for one focused fact.
 const PARTNERS_PER_FACT: usize = 3;
 
 /// The relations a few facts are missing, typically the ones just written:
-/// kernel pairs that touch them, and the facts of their about Jev reads as
-/// directly related, each typed. Undeclared pairs only. Writes nothing.
+/// kernel pairs that touch them, the shortlisted facts of their about Jev
+/// reads as directly related, each typed, and the current facts they may
+/// replace (same principal anchor and entry kind). Undeclared pairs only.
+/// Writes nothing.
 pub(crate) struct ReviewFocus<'a> {
     pub judgement: Option<&'a dyn JudgementModel>,
+    /// Whether and how lifecycle pairs are proposed
+    /// (`write-relations.json` `lifecycle`).
+    pub lifecycle: LifecycleMode,
 }
 
 impl ReviewFocus<'_> {
     pub(crate) async fn run(
+        &self,
+        material: CurateMaterial,
+        focus: &[String],
+        max_pairs: usize,
+    ) -> CurateReview {
+        if self.lifecycle == LifecycleMode::Off {
+            return self.review(material, focus, max_pairs).await;
+        }
+        let lifecycle = lifecycle_candidates(&material, focus);
+        let mut review = self.review(material.clone(), focus, max_pairs).await;
+        self.propose_lifecycle(&mut review, &material, lifecycle)
+            .await;
+        review
+    }
+
+    /// Appends the lifecycle pairs no other finding already proposes: as
+    /// `supersedes` for the writer to confirm or retype (`rule`), or as Jev
+    /// reads them (`jev`), dropping the ones it reads as novel.
+    async fn propose_lifecycle(
+        &self,
+        review: &mut CurateReview,
+        material: &CurateMaterial,
+        lifecycle: Vec<CandidatePair>,
+    ) {
+        let proposed = |pair: &CandidatePair| {
+            review.findings.iter().any(|finding| match finding {
+                CurateFinding::Missing { pair: other, .. } => {
+                    (other.from == pair.from && other.to == pair.to)
+                        || (other.from == pair.to && other.to == pair.from)
+                }
+                CurateFinding::Suspect { .. } => false,
+            })
+        };
+        let fresh = lifecycle
+            .into_iter()
+            .filter(|pair| !proposed(pair))
+            .collect::<Vec<_>>();
+        if fresh.is_empty() {
+            return;
+        }
+        let judged = match (self.lifecycle, self.judgement) {
+            (LifecycleMode::Jev, Some(model)) => {
+                match model.evaluate(&lifecycle_request(material, &fresh)).await {
+                    Ok(response) => {
+                        let mut usage = review
+                            .jev
+                            .take()
+                            .unwrap_or_else(|| JevUsage::new(model.model()));
+                        usage.add(&response);
+                        review.jev = Some(usage);
+                        Some(response)
+                    }
+                    Err(error) => {
+                        review.warnings.push(format!(
+                            "Jev could not read the lifecycle pairs; proposed unread: {error}"
+                        ));
+                        None
+                    }
+                }
+            }
+            _ => None,
+        };
+        for (n, pair) in fresh.into_iter().enumerate() {
+            let finding = match judged
+                .as_ref()
+                .and_then(|response| response.answers.get(&format!("l{n}")))
+            {
+                Some(JudgementAnswer::Choice {
+                    choice,
+                    probabilities,
+                    confidence,
+                }) => match proposed_by_choice(choice) {
+                    Some(rel) => CurateFinding::Missing {
+                        pair,
+                        suggested_rel: Some(rel.to_string()),
+                        verdict: Some(JevVerdict {
+                            choice: choice.clone(),
+                            probabilities: probabilities.clone(),
+                            confidence: *confidence,
+                        }),
+                    },
+                    None => continue,
+                },
+                _ => CurateFinding::Missing {
+                    pair,
+                    suggested_rel: Some(PROPOSED_REL.to_string()),
+                    verdict: None,
+                },
+            };
+            review.findings.push(finding);
+        }
+    }
+
+    async fn review(
         &self,
         material: CurateMaterial,
         focus: &[String],
@@ -115,7 +219,7 @@ impl ReviewFocus<'_> {
                 }
                 Err(error) => review
                     .warnings
-                    .push(format!("Jev unavailable; kernel pairs only: {error}")),
+                    .push(JudgementFailure::warning(&error, "kernel pairs only")),
             }
         }
         if !pairs.is_empty() {
@@ -172,12 +276,14 @@ mod tests {
     use std::sync::Mutex;
 
     use super::super::scripted_judgement::Scripted;
+    use crate::curate::domain::pair_origin::PairOrigin;
     use crate::curate::domain::{curate_fact::CurateFact, declared_link::DeclaredLink};
 
     fn material() -> CurateMaterial {
         let fact = |reference: &str| CurateFact {
             reference: reference.into(),
             about: "a".into(),
+            kind: String::new(),
             text: format!("text {reference}"),
             occurred: None,
             labels: Vec::new(),
@@ -215,6 +321,7 @@ mod tests {
         };
         let review = ReviewFocus {
             judgement: Some(&model),
+            lifecycle: LifecycleMode::Off,
         }
         .run(material(), &["new".to_string()], 12)
         .await;
@@ -237,14 +344,110 @@ mod tests {
 
     #[tokio::test]
     async fn without_jev_only_kernel_pairs_that_touch_the_focus_come_back() {
-        let review = ReviewFocus { judgement: None }
-            .run(material(), &["c".to_string()], 12)
-            .await;
+        let review = ReviewFocus {
+            judgement: None,
+            lifecycle: LifecycleMode::Off,
+        }
+        .run(material(), &["c".to_string()], 12)
+        .await;
         assert_eq!(review.findings.len(), 1);
         assert!(review.warnings.iter().any(|w| w.contains("Jev")));
-        let unrelated = ReviewFocus { judgement: None }
-            .run(material(), &["e".to_string()], 12)
-            .await;
+        let unrelated = ReviewFocus {
+            judgement: None,
+            lifecycle: LifecycleMode::Off,
+        }
+        .run(material(), &["e".to_string()], 12)
+        .await;
         assert!(unrelated.findings.is_empty());
+    }
+
+    fn lifecycle_material() -> CurateMaterial {
+        let fact = |reference: &str, kind: &str, text: &str| CurateFact {
+            reference: reference.into(),
+            about: "a".into(),
+            kind: kind.into(),
+            text: text.into(),
+            occurred: None,
+            labels: Vec::new(),
+        };
+        CurateMaterial {
+            facts: vec![
+                fact("old", "decision", "Deploy 2.4.1 is scheduled for Friday."),
+                fact("far", "decision", "Invoices are generated as PDF."),
+                fact("new", "decision", "Deploy 2.4.1 moves to Monday."),
+            ],
+            declared: Vec::new(),
+            pairs: Vec::new(),
+            selection: "fp".into(),
+            past: Vec::new(),
+        }
+    }
+
+    fn lifecycle_findings(review: &CurateReview) -> Vec<(String, Option<String>)> {
+        review
+            .findings
+            .iter()
+            .filter_map(|finding| match finding {
+                CurateFinding::Missing {
+                    pair,
+                    suggested_rel,
+                    ..
+                } if matches!(pair.origin, PairOrigin::Lifecycle { .. }) => {
+                    Some((pair.to.clone(), suggested_rel.clone()))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn lifecycle_pairs_are_proposed_only_when_the_store_asks() {
+        let focus = ["new".to_string()];
+        let off = ReviewFocus {
+            judgement: None,
+            lifecycle: LifecycleMode::Off,
+        }
+        .run(lifecycle_material(), &focus, 12)
+        .await;
+        assert!(lifecycle_findings(&off).is_empty());
+        let rule = ReviewFocus {
+            judgement: None,
+            lifecycle: LifecycleMode::Rule,
+        }
+        .run(lifecycle_material(), &focus, 12)
+        .await;
+        assert_eq!(
+            lifecycle_findings(&rule),
+            [("old".to_string(), Some("supersedes".to_string()))]
+        );
+    }
+
+    #[tokio::test]
+    async fn under_jev_a_lifecycle_pair_is_retyped_or_withdrawn_by_its_reading() {
+        let run = |choice: &'static str| async move {
+            let focus = ["new".to_string()];
+            let model = Scripted {
+                noul: 0.0,
+                choice,
+                confidence: 0.9,
+                calls: Mutex::new(0),
+            };
+            let review = ReviewFocus {
+                judgement: Some(&model),
+                lifecycle: LifecycleMode::Jev,
+            }
+            .run(lifecycle_material(), &focus, 12)
+            .await;
+            let calls = *model.calls.lock().expect("calls");
+            (lifecycle_findings(&review), calls)
+        };
+        let (updated, calls) = run("update_state").await;
+        assert_eq!(
+            updated,
+            [("old".to_string(), Some("updates_state".to_string()))]
+        );
+        assert_eq!(calls, 2, "the partner round and the lifecycle reading");
+        let (novel, _) = run("novel").await;
+        assert!(novel.is_empty(), "a novel pair is withdrawn");
     }
 }

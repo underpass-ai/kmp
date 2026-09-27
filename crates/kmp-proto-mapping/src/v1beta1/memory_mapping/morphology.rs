@@ -77,14 +77,23 @@ impl Morphology {
     /// Which language a body of text is written in, for a caller that decides
     /// the stemmer after reading it.
     pub(super) fn read_language<'a>(texts: impl IntoIterator<Item = &'a str>) -> Option<String> {
+        let vocabulary = LanguageVocabulary::shipped();
+        vocabulary
+            .decide(&Self::language_signals(texts))
+            .map(str::to_string)
+    }
+
+    /// The function words of each shipped language the texts carry, which is
+    /// what [`Self::read_language`] decides from. They add over texts, so
+    /// the lexical sidecar keeps them per memory and decides an about's
+    /// language without reading the about again.
+    pub(super) fn language_signals<'a>(texts: impl IntoIterator<Item = &'a str>) -> Vec<usize> {
         let tokens = texts
             .into_iter()
             .flat_map(|text| text.split(|character: char| !character.is_alphanumeric()))
             .map(fold_search_term)
             .collect::<Vec<_>>();
-        LanguageVocabulary::shipped()
-            .read(tokens.iter().map(String::as_str))
-            .map(str::to_string)
+        LanguageVocabulary::shipped().signals(tokens.iter().map(String::as_str))
     }
 
     /// The language every search comparison of an about stems in: the one its

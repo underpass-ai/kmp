@@ -9,8 +9,111 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `kmp_write_memory` accepts `search_expansions` per memory (P15,
+  Doc2Query--): up to six questions, paraphrases or other-language keys a
+  later reader may ask with. On a store with `write-expansions.json` beside
+  `typesafe.json`, each passes a deterministic lint and a Jev yes/no through
+  the verdict book at 0.5 before it is stored; nothing is stored unjudged.
+  Ask searches them as their own field and rescues a memory reached only
+  through them outside the answer core, `reached_by: expansion`, citing its
+  own text. Off without the file. Measured in three samples: synth 10^3
+  paraphrase and cross-language recall@10 from 0/24 to 7/24 (all
+  cross-language; 0/12 zero-overlap paraphrases), `paraphrase-gap` reached,
+  no answer or false answer changed on B-real, the hard negatives (seeds 7,
+  11, 13) or synth; 500–900 Jev input tokens per memory written.
+- A lexical index beside the store, in shadow (`lexical-index.sqlite3`,
+  DESIGN L6 option a): each about's candidates with their term counts,
+  postings in blocks of 128, document frequencies and totals, built on the
+  about's first ask and followed after every write and before every ask from
+  the store's event log, whoever wrote it. Asks do not read it yet: each ask
+  compares it with its ranker and logs `kmp_lexical_shadow`. Measured with 0
+  differences on the frozen real store, synth 10^3/10^4/10^5, the judged
+  retrieval corpus and FactConsolidation/LongMemEval. It indexes a memory's
+  judged search expansions as their own field, as the ranker reads them
+  (index version `lexical-index-2`). **Off by default**:
+  `KMP_LEXICAL_INDEX=shadow` opens it; in shadow it costs about 5 % per ask
+  and a build on each about's first ask (31 s at 10^5 entries).
+
 ### Changed
 
+- A `kmp_curate` path search with a goal asks Jev about its corridor
+  instead of the whole selection, **on by default** (decided on 28 Sept 2026,
+  accepting the lower `proposed_hops_right` floor below): at most 22 facts within four hops of
+  either end over kernel pairs and declared relations (nearest to both ends
+  first, then by the ends' rarer words), each fact's next step chosen among
+  at most eight neighbours, and only steps that can lie on a walk to the
+  goal typed. On the judged corpus, three samples with the real Jev: 3.4k–3.6k
+  Jev tokens per goal search on average instead of 8.2k (the largest search
+  of the corpus, 22.4k, now 3.5k–4.4k), the same paths found (0.8), no path
+  through a planted bad declaration, proposed steps right 0.94–0.95 (the floor
+  moves from 0.95 to 0.9411 because one search returns one path of two in
+  two samples; see `docs/development/jev-evaluation.md`). The kernel proposes
+  pairs for a path search only among the corridor's candidates, and none
+  when no judge is configured, since such a search walks declared relations
+  alone: at synth 10^4 a goal search without Jev went from 18.7 s and 3.6 GB
+  to 0.73 s and 0.35 GB with the same answer. A goal-less search is
+  unchanged. `curate.json` `"paths_corridor": "off"` restores the previous
+  filter.
+- **Breaking: a single-destination `kmp_trace` is bounded.** `to` as one
+  ref with no `search` or time options used to walk everything the source
+  reaches (O(reachable): 390 ms at 16k entries and 2.8 s at 10^5 on the
+  scale probe's chain). It is now a bidirectional breadth-first search from
+  both ends over every stored relation, under its own allowance (1024 refs,
+  8192 adjacency rows, 512 hops, 16384 states; four times the bounded
+  search's default, decided on 28 Sept 2026): 9–10 ms for the same far
+  destination at 16k and 10^5, with a peak RSS of 52–56 MiB instead of
+  73–245 MiB. Where the search meets, the answer is byte for byte the one
+  the unbounded walk gave (all 365 pairs whose unbounded walk stayed within
+  that allowance, on synth 10^3/10^4/10^5, the chain stores and the frozen
+  real store, apart from the random continuation handle; a 74-hop
+  destination on the chain, partial under the first 256-ref allowance, is
+  now found). When an allowance runs out first,
+  the answer is partial instead of a path: `trace` is empty, `search` says
+  `direction: "bidirectional"`, the stop (`node_budget`, `edge_budget`,
+  `depth_budget` or `state_budget`) and the destination in
+  `unreached_targets`, a warning says it is not proof of absence, and
+  `search.widen` is the same trace — every stored relation, from both
+  ends, without filtering by why or evidence — with the largest allowance
+  (4096/32768/1024/32768): `to` one ref and `search` with only
+  `direction: "bidirectional"` and the four limits, which `kmp_trace` and
+  the gRPC `Trace` now accept. A widened trace that stops again offers no
+  further widen (on the chain it stops past about 2000 hops, in 28–51 ms).
+  A search that exhausts a side still answers "no directed trace
+  reaches" as before. The gRPC `KernelMemoryService.Trace` does the same;
+  `KernelQueryService.GetContextPath` keeps the unbounded read.
+- Relations proposed after a write, and every focused `kmp_curate` review,
+  read a shortlist instead of the whole about: the facts that share a hard
+  anchor with the new one and its 40 best BM25 matches. A write on a
+  318-fact about costs 4.8k Jev tokens instead of 26.4k, with the same
+  partners found (11/11) and no distractor proposed, in three samples; an
+  about of at most 40 other facts is read as before.
+- A `kmp_curate` review without `focus` asks Jev for orphans' partners in
+  abouts of up to 120 current facts (was 60), and past that says so instead
+  of going quiet. At 120, on a 118-fact about, the partner round found three
+  true relations the kernel misses but also proposed eight pairs of routine
+  notes (6 of 14 proposals right, against 3 of 3), for 3.7 times the Jev
+  tokens. A store raises the cap to at most 512 in a new `curate.json`
+  beside it (`{"partner_facts": 512}`); an about of more than 255 facts is
+  then read in two stages, windows of at most 240 options and a final choice
+  between their winners, every answer through the verdict book. Measured at
+  512 on 238- and 316-fact abouts (3 samples each): the same gold pairs
+  (3/3), 2 of 5 relations of the gold paths the kernel never pairs, and 3–6
+  more pairs of template notes (precision 0.33–0.42 against 0.43–0.50), for
+  3.3–3.6 times the Jev tokens (about 130k and 160k a review, $0.005–0.007)
+  and 2.1–3.2 s. `curate.json` `partner_filter` (`rare_term` or `confirm`,
+  off by default) measures two filters of the round's pairs; neither met its
+  registered bar, so neither is on.
+- Jev requests carry at most 24,000 tokens each, the state included,
+  estimated at the worst density measured on the recorded cassettes (1.5
+  bytes a token; a 104 KB request under the former 60k budget was refused
+  with `max_tokens_exceeded`). When a state and one question cannot share a
+  request, the state's texts are cut to the longest length that fits, the
+  same way every time; a question that fits no request is refused before
+  anything is sent. A request the provider refuses as too large is reported
+  as "Jev refused the request as too large (…max_tokens_exceeded)", no
+  longer as "Jev unavailable".
 - **Breaking: the anchored ask gate is the default.** Every store reads
   `kmp_ask` with it (`AskGate::STORE_DEFAULT`), in `kmp-mcp` and in the gRPC
   `KernelMemoryService.Ask`, so an ask is no longer byte for byte what
@@ -97,6 +200,23 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- Calibrated confidence for `kmp_ask`, off by default (P16). A store opts in
+  with `"confidence_calibration": "shipped"` in `ask-gate.json` (or an inline
+  table, to measure a candidate). The table is versioned data,
+  `crates/kmp-proto-mapping/language/confidence_calibration.json`: rules over
+  integer counts and flags (branch, matched and missed question concepts,
+  cited count, enumerative, negated anchor) that only move `high` to `medium`.
+  It is off because `high` does not certify. On `breal-ext`, 170 real-style
+  questions labeled by two models with Jev deciding their disagreements (no
+  human label), `high` is right in 76 of 90 answers (lower bound 0.784,
+  one-sided Clopper-Pearson, δ 0.1): 38/44 anchored, 38/46 without anchors,
+  none bridged. The shipped v1 rules, chosen on half of the questions, demote
+  `high` on enumerative questions and when the best memory misses more than
+  one question concept: 19 of 20 `high` right (lower bound 0.819; 7 of 8 on
+  the held-out half), `medium` 95 of 140. Certifying needs 45 right with no
+  error. With the flag off every answer is byte for byte the same; with it
+  on, only `proof.confidence` changes, plus two characters of a core text cut
+  at the byte budget in 4 of 170 answers.
 - Declared lifecycle in `kmp_ask` (P7). `LifecycleChain` walks `supersedes`,
   `corrects` and `updates_state` both ways from a memory, at most 32 hops
   and 256 memories a side, cutting cycles and reporting forks in
@@ -127,6 +247,37 @@ Detailed notes from the early release cycle remain available in the
   `projection.more_on_request` (on FactConsolidation-6k declared, 58 of the
   217 rescued items reach the default first page; none of them comes from a
   cited memory).
+- Doubt band for `kmp_ask` (P10, DESIGN L4 4f), opt-in per store with an
+  `ask-judge.json` beside it and a store already on TypeSafe Jev. An ask
+  enters the band when no anchor it names is absent and it is UNKNOWN
+  without an anchor while a `best_effort` reading would cite something,
+  `attribute_not_found` or PARTIAL under an anchor, or answered with a
+  first citation leading the second by less than `margin_tenths` (default
+  20) tenths of a BM25 point. At most eight admitted passages go to Jev in
+  one batch through the verdict book, with a 1.5 s deadline; past it the
+  deterministic answer stands and the verdict is kept for the next ask.
+  B1 (veto, `veto_at` 0.9): a cited memory Jev finds unlikely to answer
+  leaves the core and stays in `proof.evidence` marked `judged_out`,
+  `judged_permille` and `judged_template`. On the validation corpora (B-real
+  and the negatives of seeds 11 and 13, thresholds fixed on development
+  only) B1 removed 7 false answers and lost no useful one (p = 0.016). B2
+  (promotion, `judged_by`, never `high` confidence) is measured but off
+  (`"promote": false`): n = 31 is below the n ≥ 100 it needs. The four-grade
+  `"question": "score"` is an experiment that did not beat yes/no. With the
+  band on, an ask is a function of the store and the verdict book; a book
+  hit adds about 100–190 ms to the ask.
+- Margin gate on Ask re-ranking (DESIGN L4 4c): an Ask whose first lexical
+  candidate leads the second by at least `margin_tenths` tenths of a content
+  BM25 point (`rerank.json`, default 0, `null` turns it off), with `High`
+  confidence, sends no judgement. On three recorded samples every re-ranked
+  metric held, the 35 retrieval cases judged 9 asks instead of 35 (13.6k →
+  3.8k Jev tokens) and the 16 trap asks 14 (`jev-evaluation.md`).
+- `write-relations.json` `lifecycle` (`rule` or `jev`, off by default): a
+  focused review also proposes, as `supersedes`, the current facts of the
+  same entry kind that name the new fact's principal anchor; under `jev`
+  Jev reads each pair first and withdraws the novel ones. Measured and left
+  off: 0 of 68 proposed pairs were replacements on the judged corpora, and
+  on FactConsolidation the rule finds about 1% of the declared ones.
 - Verdict book for TypeSafe Jev (P5): every judged question is kept, by a
   key of hashes (model, template, type, instructions, options, the texts of
   the state), as Q16 probabilities in `judgements.sqlite3` beside the store.
@@ -201,6 +352,21 @@ Detailed notes from the early release cycle remain available in the
   `anchor_absent_in_selection` (the bench's `anchor_in_other_about` is
   scored as a wrong reason); telling the two apart is deferred to L6, the
   lexical index, which can read an anchor's postings outside the selection.
+- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v4`. The bench no
+  longer deduplicates what it retrieves: `memory_ref::retrieved`,
+  `refs.retrieved` and `retrieved_across_pages` keep every returned ref, in
+  order, repeats included, so a memory returned with its evidence counts
+  twice (decision of 28 Sept 2026). Citations of evidence still normalize to
+  their entry. `metric_parity.json` is v3; retrieval-baseline `ndcg_at_10`
+  and the all_ rows it moves are re-recorded as a reviewed change. Every v3
+  run, report and world is invalidated; stores are kept.
+- `memory_bench`: `BENCH_VERSION` was `kmp.memory_bench.v3`. `refs.normalize`
+  (and the Rust scorecards, through the new `kmp_testkit::memory_ref`) read
+  `detail:evidence:<entry>:current`, `…:relation:<n>` and suffix-less guide
+  evidence as citations of `<entry>`; before, they never matched a judged
+  entry. Every v2 run, report and world is invalidated; stores are kept: their
+  key no longer carries `BENCH_VERSION` but `STORE_KEY_VERSION`, frozen at v1,
+  so the stores built under v1 (and orphaned by v2) are read again.
 - `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v2` (the PARTIAL
   scoring rules changed meaning); every cache entry of v1 is invalidated.
 

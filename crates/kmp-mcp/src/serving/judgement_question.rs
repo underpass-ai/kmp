@@ -12,4 +12,10 @@ pub(crate) enum JudgementQuestion {
         instructions: Value,
         options: Vec<String>,
     },
+    /// One grade of an ordered scale, best first: the answer is the expected
+    /// grade (0 is the first level) plus the distribution over every level.
+    Score {
+        instructions: Value,
+        levels: Vec<String>,
+    },
 }

@@ -26,6 +26,7 @@ mod trace_body_actions;
 mod trace_condense;
 mod trace_material_expansion;
 mod trace_projection;
+mod trace_widen;
 pub(crate) mod visual_projection;
 
 pub(crate) use condense_projection::condense_from_response;

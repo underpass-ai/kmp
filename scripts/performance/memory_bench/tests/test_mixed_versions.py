@@ -242,7 +242,8 @@ class FakeWorld:
         self.root = Path(tempfile.mkdtemp(prefix='bt18-fake-'))
         test.addCleanup(shutil.rmtree, self.root, True)
 
-    def new_store(self, label, seeded=True, jev=False):
+    def new_store(self, label, seeded=True, jev=False, lexical=False):
+        self.lexical_stores = getattr(self, 'lexical_stores', []) + ([label] if lexical else [])
         return FakeStore(tempfile.mkdtemp(prefix=label + '-', dir=self.root) + '/data', seeded, jev)
 
     def env(self, reference=None, candidate=None, old=None, jev=False):
@@ -427,6 +428,11 @@ class SidecarTest(unittest.TestCase):
         self.assertTrue(result.facts['writer_ignores_sidecar'])
         self.assertGreater(result.facts['shadow_lines'], 0)
 
+    def test_the_scenario_opens_the_sidecar_it_measures(self):
+        world = FakeWorld(self)
+        mv.sidecar_catch_up(world.env(candidate=binary('candidate', sidecar=True)), SETTINGS)
+        self.assertEqual(world.lexical_stores, ['sidecar'])
+
     def test_a_sidecar_that_does_not_catch_up_fails(self):
         env = FakeWorld(self).env(candidate=binary('candidate', sidecar=True, catch_up_bug=True))
         result = mv.sidecar_catch_up(env, SETTINGS)
@@ -436,6 +442,12 @@ class SidecarTest(unittest.TestCase):
 
 
 class BookTest(unittest.TestCase):
+    def test_the_book_store_turns_the_rerank_margin_gate_off(self):
+        """With the gate on, a `High` lead sends no judgement and the warm-up has nothing to record."""
+        rerank = json.loads(cli.JEV_STORE_FILES['rerank.json'])
+        self.assertEqual(rerank, {'pool_size': 40, 'margin_tenths': None})
+        self.assertIn('typesafe.json', cli.JEV_STORE_FILES)
+
     def test_skipped_without_the_capability_or_a_jev_setup(self):
         world = FakeWorld(self)
         self.assertEqual(mv.book_first_wins(world.env(), SETTINGS).reason, 'not in this binary')
@@ -461,7 +473,8 @@ REFERENCE_ENV = 'MEMORY_BENCH_REFERENCE_BINARY'
 
 class RealBinaryTest(unittest.TestCase):
     """The release binary on the cached 10^3 store: v0.23.0 has neither sidecar nor book; a
-    P5 build has the book, and its scenario runs offline through the CLI's Jev setup."""
+    P5 build has the book, and its scenario runs offline through the CLI's Jev setup; a P12
+    build has the lexical sidecar, which it follows behind the (same) reference writer."""
 
     def setUp(self):
         candidate =Path(os.environ.get(REFERENCE_ENV) or shared_store.binaries.DEFAULT_BINARY)
@@ -487,8 +500,9 @@ class RealBinaryTest(unittest.TestCase):
         statuses = {(r['scenario'], r['case']): r['status'] for r in report['results']}
         self.assertEqual(statuses[('write_then_read', 'reference->candidate')], mv.PASS, report)
         self.assertEqual(statuses[('concurrent_writers', 'candidate+candidate')], mv.PASS, report)
-        self.assertEqual(statuses[('sidecar_catch_up', 'reference writes behind candidate sidecar')],
-                         mv.SKIPPED)
+        sidecar = statuses[('sidecar_catch_up', 'reference writes behind candidate sidecar')]
+        self.assertEqual(sidecar, mv.PASS if mv.SIDECAR in self.binary.capabilities else mv.SKIPPED,
+                         report)
         book = statuses[('book_first_wins', 'candidate x2 on one book')]
         self.assertEqual(book, mv.PASS if mv.BOOK in self.binary.capabilities else mv.SKIPPED, report)
         self.assertTrue(all(r['reason'] == mv.NOT_IN_BINARY for r in report['results']

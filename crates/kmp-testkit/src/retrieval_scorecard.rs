@@ -456,6 +456,13 @@ pub fn render_baseline(rows: &[BaselineRow]) -> String {
          # 0.5 -> 0, guarded_false_answer_rate 0.2308 -> 0, guarded_high 0.0770 -> 0):\n\
          # an identifier no cited memory names is UNKNOWN. Measure the rule of v0.23.0\n\
          # with RETRIEVAL_ASK_GATE=off (reported, not gated).\n\
+         #\n\
+         # Reviewed change (2026-09-28): the scorecard no longer deduplicates the\n\
+         # retrieved list (memory_ref::retrieved, BENCH_VERSION v4). A memory\n\
+         # returned with its evidence node counts twice, as it arrives, so a hit\n\
+         # earns nDCG gain at each rank it appears. ndcg_at_10 rises from 0.9160\n\
+         # to 0.9323 and all_ndcg_at_10 from 0.9300 to 0.9436; recall, MRR, core\n\
+         # precision and every ceiling are unchanged.\n\
          metric\tfloor\n",
     );
     for row in rows {

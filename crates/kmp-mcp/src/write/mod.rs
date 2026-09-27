@@ -6,10 +6,16 @@
 pub(crate) mod accepted_counts;
 pub(crate) mod arguments;
 pub(crate) mod attachment_view;
+mod batch_member;
+mod batch_one_pass_audit;
 mod batch_planner;
+mod compiled_link;
 pub(crate) mod coordinates;
 mod coverage;
+mod declared_links;
 pub(crate) mod existing_entry;
+pub(crate) mod expansion_planner;
+pub(crate) mod expansion_selection;
 pub(crate) mod generated_ref;
 pub(crate) mod ingest_arguments;
 pub(crate) mod ingest_change;

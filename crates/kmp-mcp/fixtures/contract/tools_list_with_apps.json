@@ -574,6 +574,24 @@
                 ]
               },
               "then": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "labels"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "memories": {
+                        "items": {
+                          "required": [
+                            "labels"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ],
                 "if": {
                   "not": {
                     "properties": {
@@ -801,11 +819,12 @@
               "type": "array",
               "uniqueItems": true
             },
-            "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
+            "description": "Required for every record, shared here or on the record, e.g. {\"topic\":[\"write-path\"]}. Key-to-array memberships; each value is materialized. Reuse the about's keys from kmp_wake; a shared string does not prove entity identity.",
+            "minProperties": 1,
             "type": "object"
           },
           "memories": {
-            "description": "One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
+            "description": "One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership (labels here or per record). A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
             "items": {
               "additionalProperties": false,
               "properties": {
@@ -951,7 +970,8 @@
                     "type": "array",
                     "uniqueItems": true
                   },
-                  "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
+                  "description": "Required for every record, shared here or on the record, e.g. {\"topic\":[\"write-path\"]}. Key-to-array memberships; each value is materialized. Reuse the about's keys from kmp_wake; a shared string does not prove entity identity.",
+                  "minProperties": 1,
                   "type": "object"
                 },
                 "observed_at": {
@@ -977,13 +997,23 @@
                   "minLength": 1,
                   "type": "string"
                 },
+                "search_expansions": {
+                  "description": "Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
+                  "items": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 6,
+                  "type": "array"
+                },
                 "summary": {
                   "description": "Literal memory text, in the language of the work. Ask cites this text byte for byte.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "summary_en": {
-                  "description": "Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples.",
+                  "description": "Required when summary is not English; omit it when summary is English (a copy is dropped). Your English search rendering, keeping numbers, identifiers and acronyms as written. Strict mode refuses a wrong-language, thin or identifier-dropping rendering; removing it never passes. Search uses it; citations keep summary.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -1296,14 +1326,36 @@
             "type": "string"
           },
           "search_summaries": {
-            "description": "Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
+            "description": "Attach English search renderings or judged search expansions to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
             "items": {
               "additionalProperties": false,
+              "anyOf": [
+                {
+                  "required": [
+                    "summary_en"
+                  ]
+                },
+                {
+                  "required": [
+                    "search_expansions"
+                  ]
+                }
+              ],
               "properties": {
                 "ref": {
                   "description": "Existing memory in this about. The stored source is not replaced.",
                   "minLength": 1,
                   "type": "string"
+                },
+                "search_expansions": {
+                  "description": "Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
+                  "items": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 6,
+                  "type": "array"
                 },
                 "summary_en": {
                   "description": "English search rendering of the stored source, retaining its numbers, identifiers and acronyms.",
@@ -1312,8 +1364,7 @@
                 }
               },
               "required": [
-                "ref",
-                "summary_en"
+                "ref"
               ],
               "type": "object"
             },
@@ -2546,7 +2597,7 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
+      "description": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection traces equivalence-aware over every stored relation with a bounded bidirectional search; a work cutoff returns no path, the stop in search and an optional search.widen.",
       "inputSchema": {
         "additionalProperties": false,
         "else": {
@@ -2889,10 +2940,11 @@
               },
               "direction": {
                 "default": "outgoing",
-                "description": "Destination mode only; not with seek. Traversal direction; stored source/target and meaning are preserved.",
+                "description": "Destination mode only; not with seek. Traversal direction; stored source/target and meaning are preserved. bidirectional takes one to and work limits only: the single-destination trace over every relation under that allowance, as search.widen offers it.",
                 "enum": [
                   "outgoing",
-                  "incoming"
+                  "incoming",
+                  "bidirectional"
                 ],
                 "type": "string"
               },
@@ -3864,7 +3916,7 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to`, asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only.",
+      "description": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to` (with `to`, only among at most 22 facts linked within four hops of either end), asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {

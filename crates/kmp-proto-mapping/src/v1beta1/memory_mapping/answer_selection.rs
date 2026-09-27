@@ -23,6 +23,11 @@ pub(super) const REACHED_BY_BRIDGE: &str = "bridge";
 /// `updates_state`) from a memory the question matched: the current head of
 /// a replaced memory, or, for a question about history, the chain.
 pub(super) const REACHED_BY_LIFECYCLE: &str = "lifecycle";
+/// Reached only through the expansions a writer proposed and a judge
+/// accepted (questions, paraphrases, keys in the other language), with the
+/// question's words they supplied. Cited by the memory's own text.
+pub(super) const REACHED_BY_EXPANSION: &str = "expansion";
+pub(super) const EXPANSION_TERMS_KEY: &str = "expansion_terms";
 /// On a chain returned for a question about history: whether each member
 /// still stands (`current`) or was itself replaced or ran out (`replaced`),
 /// so a chain never reads as a list of current advice. A question about now
@@ -66,6 +71,11 @@ const RETRIEVAL_PROVENANCE_KEYS: &[&str] = &[
     ANCHOR_FROM_KEY,
     LIFECYCLE_STATE_KEY,
     LIFECYCLE_HEADS_KEY,
+    EXPANSION_TERMS_KEY,
+    super::doubt_verdicts::JUDGED_OUT_KEY,
+    super::doubt_verdicts::JUDGED_BY_KEY,
+    super::doubt_verdicts::JUDGED_PERMILLE_KEY,
+    super::doubt_verdicts::JUDGED_TEMPLATE_KEY,
     "semantic_model_revision",
     "retrieval_channel",
 ];

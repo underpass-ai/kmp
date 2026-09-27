@@ -14,6 +14,7 @@ pub(crate) fn relate_material(response: &RelateResponse) -> CurateMaterial {
     let to_fact = |fact: &kmp_proto::v1beta1::RelatedFact| CurateFact {
         reference: fact.r#ref.clone(),
         about: fact.about.clone(),
+        kind: fact.kind.clone(),
         text: fact.text.clone(),
         occurred: fact
             .coordinates

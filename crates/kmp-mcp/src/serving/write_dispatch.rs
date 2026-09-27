@@ -10,10 +10,14 @@ use serde_json::{Map, Value, json};
 use crate::serving::existing_entry_read::read_existing_entry;
 use crate::serving::json_rpc::jsonrpc_result;
 use crate::serving::kernel_mcp_server::KernelMcpServer;
-use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
+use crate::serving::telemetry::{
+    CallOrigin, CallSource, ToolErrorKind, record_call_error, record_call_success,
+};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 use crate::write::existing_entry::ExistingEntry;
+use crate::write::expansion_planner::{attach_expansions, build_expansion_plan};
+use crate::write::expansion_selection::ExpansionSelection;
 use crate::write::validation_error::WriteValidationError;
 use crate::write::validation_errors::WriteValidationErrors;
 use crate::write::{build_batch_plan, build_relation_plan, build_summary_plan};
@@ -24,7 +28,9 @@ impl KernelMcpServer {
         id: Value,
         arguments: &Value,
         start: Instant,
+        origin: &CallOrigin,
     ) -> String {
+        let source = CallSource { origin, salt: None };
         // Three shapes, one envelope. `relations` is the shape a writer
         // reaches for when both memories already exist and only the link is
         // new; without it, saying "J01 supports J03" cost J01 its prose
@@ -34,21 +40,35 @@ impl KernelMcpServer {
             arguments.get("search_summaries"),
             arguments.get("relations"),
         ) {
-            (Some(_), None, None) => build_batch_plan(arguments).map_err(ToolError::from),
+            (Some(_), None, None) => match build_batch_plan(arguments) {
+                Ok(plan) => Ok((plan, None)),
+                Err(mut errors) => {
+                    if errors.concern_labels()
+                        && let Some(about) = arguments.get("about").and_then(Value::as_str)
+                        && let Some(keys) = self.about_label_keys(about).await
+                    {
+                        errors.name_label_keys(&keys);
+                    }
+                    Err(ToolError::from(errors))
+                }
+            },
             (None, Some(_), None) => self.plan_search_summary_packet(arguments).await,
-            (None, None, Some(_)) => build_relation_plan(arguments).map_err(ToolError::from),
+            (None, None, Some(_)) => build_relation_plan(arguments)
+                .map(|plan| (plan, None))
+                .map_err(ToolError::from),
             _ => Err(WriteValidationError::new(
                 "provide exactly one of memories, search_summaries or relations",
             )
             .code("WRITE_OPERATION_REQUIRED")
             .into()),
         };
-        let plan = match planned {
-            Ok(plan) => plan,
+        let (plan, expansions) = match planned {
+            Ok(planned) => planned,
             Err(error) => {
                 // Compiler refusals carry field feedback. A failed source read
                 // keeps the category reported by the store (#586).
-                record_tool_error(
+                record_call_error(
+                    source,
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -59,6 +79,7 @@ impl KernelMcpServer {
                         ToolErrorKind::Backend
                     },
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 return jsonrpc_result(
@@ -70,9 +91,17 @@ impl KernelMcpServer {
 
         match self.commit_write_plan(arguments, &plan, None).await {
             Ok(mut value) => {
+                match expansions {
+                    Some(report) => value["search_expansions"] = report,
+                    None => {
+                        self.attach_written_expansions(arguments, &plan, &mut value)
+                            .await
+                    }
+                }
                 self.propose_write_relations(&plan, &mut value).await;
                 let result = tool_success_result(value);
-                record_tool_success(
+                record_call_success(
+                    source,
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -83,13 +112,15 @@ impl KernelMcpServer {
                 jsonrpc_result(id, result)
             }
             Err(error) => {
-                record_tool_error(
+                record_call_error(
+                    source,
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
                     arguments,
                     ToolErrorKind::Backend,
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 jsonrpc_result(id, tool_error_result("kmp_write_memory", arguments, &error))
@@ -99,10 +130,10 @@ impl KernelMcpServer {
 
     /// Read every target before committing the packet. A rendering changes only
     /// search metadata; the authoritative text, kind and clocks come from storage.
-    async fn plan_search_summary_packet(
+    pub(super) async fn plan_search_summary_packet(
         &self,
         arguments: &Value,
-    ) -> Result<crate::write::plan::KernelWritePlan, ToolError> {
+    ) -> Result<(crate::write::plan::KernelWritePlan, Option<Value>), ToolError> {
         use crate::write::validated_arguments::{required_map_string, required_string};
         let object = arguments
             .as_object()
@@ -147,6 +178,7 @@ impl KernelMcpServer {
         let mut targets = std::collections::BTreeSet::new();
         let mut prepared = Vec::new();
         let mut source_bindings = Vec::new();
+        let mut proposals = Vec::new();
         for (index, record) in records.iter().enumerate() {
             let record = record.as_object().ok_or_else(|| {
                 WriteValidationError::new(format!("search_summaries[{index}] must be an object"))
@@ -170,12 +202,29 @@ impl KernelMcpServer {
                 .code("DUPLICATE_TARGET")
                 .into());
             }
+            let proposed = ExpansionSelection::proposed(
+                record.get("search_expansions"),
+                &format!("search_summaries[{index}].search_expansions"),
+            )?;
+            if !record.contains_key("summary_en") && proposed.is_empty() {
+                return Err(WriteValidationError::new(format!(
+                    "search_summaries[{index}] needs summary_en, search_expansions or both"
+                ))
+                .at(format!("search_summaries[{index}]"))
+                .code("REQUIRED_FIELD")
+                .into());
+            }
             let existing =
                 read_existing_entry(self.backend.as_ref(), "search_summaries", &about, reference)
                     .await?;
             source_bindings.push(summary_source_binding(&existing));
+            if !proposed.is_empty() {
+                proposals.push((existing.reference.clone(), existing.text.clone(), proposed));
+            }
             prepared.push((index, record.clone(), existing));
         }
+        let mut selection = ExpansionSelection::lint(proposals);
+        self.judge_expansion_selection(&about, &mut selection).await;
         let explicit_identity = object
             .get("idempotency_key")
             .and_then(Value::as_str)
@@ -184,8 +233,17 @@ impl KernelMcpServer {
         let implicit_declaration = explicit_identity
             .is_none()
             .then(|| summary_packet_declaration(object));
+        // What the judge kept is part of what this packet writes, so a
+        // retry that kept something else is a different write.
+        if selection.stores_any() {
+            source_bindings
+                .push(serde_json::json!({"search_expansions": selection.report()["stored"]}));
+        }
         let implicit_identity = implicit_declaration.as_ref().map(|declaration| {
-            reusable_summary_packet_identity(object, &prepared, declaration)
+            selection
+                .is_empty()
+                .then(|| reusable_summary_packet_identity(object, &prepared, declaration))
+                .flatten()
                 .unwrap_or_else(|| derived_summary_packet_identity(object, source_bindings))
         });
         let identity = explicit_identity
@@ -195,6 +253,7 @@ impl KernelMcpServer {
         let mut plans = Vec::new();
         let mut errors = Vec::new();
         for (index, record, existing) in prepared {
+            let has_summary = record.contains_key("summary_en");
             let mut request = object.clone();
             request.remove("search_summaries");
             request.insert("current".into(), Value::Object(record));
@@ -213,7 +272,23 @@ impl KernelMcpServer {
                     ),
                 );
             }
-            let mut plan = match build_summary_plan(&Value::Object(request), &existing) {
+            let expansions = selection.metadata_for(&existing.reference);
+            let planned = match (has_summary, &expansions) {
+                (true, _) => {
+                    build_summary_plan(&Value::Object(request), &existing).map(|mut plan| {
+                        if let Some(expansions) = &expansions {
+                            attach_expansions(&mut plan, expansions);
+                        }
+                        plan
+                    })
+                }
+                (false, Some(expansions)) => {
+                    build_expansion_plan(&Value::Object(request), &existing, expansions)
+                }
+                // Every expansion of this record was refused: nothing to write.
+                (false, None) => continue,
+            };
+            let mut plan = match planned {
                 Ok(plan) => plan,
                 Err(error) => {
                     errors.push(error.within(&format!("search_summaries[{index}]")));
@@ -227,6 +302,20 @@ impl KernelMcpServer {
         }
         if let Some(errors) = WriteValidationErrors::collected(errors) {
             return Err(errors.into());
+        }
+        let report = (!selection.is_empty()).then(|| selection.report());
+        if plans.is_empty() {
+            let report = report.unwrap_or_default();
+            let reason = report["not_stored"]
+                .as_str()
+                .unwrap_or("every proposed expansion was refused");
+            return Err(WriteValidationError::new(format!(
+                "no search expansion was stored, so nothing was written: {reason}; refused: {}",
+                report["refused"]
+            ))
+            .at("search_summaries")
+            .code("EXPANSIONS_NOT_STORED")
+            .into());
         }
         let mut result = plans.remove(0);
         for plan in plans {
@@ -242,7 +331,7 @@ impl KernelMcpServer {
                 .next_suggested_reads
                 .extend(plan.next_suggested_reads);
         }
-        Ok(result)
+        Ok((result, report))
     }
 }
 

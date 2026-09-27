@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use kmp_proto_mapping::v1beta1::AskGate;
+use kmp_proto_mapping::v1beta1::{AskGate, ConfidenceCalibration};
 use serde::Deserialize;
 
 /// The file beside a store that chooses its anchored ask gate.
@@ -10,7 +10,10 @@ pub(super) const ASK_GATE_FILE: &str = "ask-gate.json";
 /// `{"mode":"anchored","partial":true}` is the gate, `{"mode":"off"}` opts
 /// out of it (ask answers as v0.23.0 did). `"successor_core":true` turns on
 /// the measured lifecycle variant (P7): the current head of a replaced
-/// memory that named the principal anchor may be cited for it. Absent, the store gets
+/// memory that named the principal anchor may be cited for it.
+/// `"confidence_calibration":"shipped"` states `proof.confidence` through the
+/// shipped calibration table (P16), and an inline table object measures a
+/// candidate one; off without the key. Absent, the store gets
 /// [`AskGate::STORE_DEFAULT`] (the gate, with PARTIAL); unreadable or
 /// unknown, it is ignored and reported so, and the default applies.
 #[derive(Debug, Deserialize)]
@@ -25,6 +28,9 @@ pub(super) struct AskGateConfig {
     /// replaced memory that named its principal anchor. Off by default.
     #[serde(default)]
     successor_core: bool,
+    /// `"shipped"`, or an inline calibration table. Off by default.
+    #[serde(default)]
+    confidence_calibration: Option<serde_json::Value>,
 }
 
 fn partial_by_default() -> bool {
@@ -50,13 +56,38 @@ impl AskGateConfig {
             .map_err(|error| format!("{ASK_GATE_FILE} is not a gate configuration: {error}"))?;
         match config.mode.as_str() {
             "anchored" => Ok(Some(
-                AskGate::anchored(config.partial).with_successor_core(config.successor_core),
+                AskGate::anchored(config.partial)
+                    .with_successor_core(config.successor_core)
+                    .with_confidence_calibration(calibration(
+                        config.confidence_calibration.as_ref(),
+                    )?),
             )),
             "off" => Ok(None),
             other => Err(format!(
                 "{ASK_GATE_FILE} names mode `{other}`; this kmp-mcp knows `anchored` and `off`"
             )),
         }
+    }
+}
+
+/// The calibration table a gate configuration names: the shipped one, or an
+/// inline table read once for the life of the process.
+fn calibration(
+    value: Option<&serde_json::Value>,
+) -> Result<Option<&'static ConfidenceCalibration>, String> {
+    match value {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(serde_json::Value::String(name)) if name == "shipped" => {
+            Ok(Some(ConfidenceCalibration::shipped()))
+        }
+        Some(table @ serde_json::Value::Object(_)) => {
+            let table = ConfidenceCalibration::parse(&table.to_string())
+                .map_err(|error| format!("{ASK_GATE_FILE} confidence_calibration: {error}"))?;
+            Ok(Some(Box::leak(Box::new(table))))
+        }
+        Some(other) => Err(format!(
+            "{ASK_GATE_FILE} confidence_calibration is `{other}`; this kmp-mcp knows \"shipped\" or an inline table"
+        )),
     }
 }
 
@@ -93,6 +124,43 @@ mod tests {
         assert!(AskGateConfig::parse(r#"{"mode":"judged"}"#).is_err());
         assert!(AskGateConfig::parse(r#"{"mode":"anchored","tau":3}"#).is_err());
         assert!(AskGateConfig::parse("not json").is_err());
+    }
+
+    #[test]
+    fn confidence_calibration_is_off_unless_named() {
+        let plain = AskGateConfig::parse(r#"{"mode":"anchored"}"#)
+            .expect("parses")
+            .expect("a gate");
+        assert!(plain.confidence_calibration().is_none());
+        let shipped =
+            AskGateConfig::parse(r#"{"mode":"anchored","confidence_calibration":"shipped"}"#)
+                .expect("parses")
+                .expect("a gate");
+        assert_eq!(
+            shipped.confidence_calibration(),
+            Some(ConfidenceCalibration::shipped())
+        );
+        let inline = AskGateConfig::parse(
+            r#"{"mode":"anchored","confidence_calibration":{"version":"t","demote_high":[{"id":"n","negated_anchor":true}]}}"#,
+        )
+        .expect("parses")
+        .expect("a gate");
+        assert_eq!(
+            inline
+                .confidence_calibration()
+                .map(ConfidenceCalibration::version),
+            Some("t")
+        );
+        assert!(
+            AskGateConfig::parse(r#"{"mode":"anchored","confidence_calibration":"fitted"}"#)
+                .is_err()
+        );
+        assert!(
+            AskGateConfig::parse(
+                r#"{"mode":"anchored","confidence_calibration":{"version":"t","demote_high":[{"id":"n","weight":1}]}}"#
+            )
+            .is_err()
+        );
     }
 
     #[test]

@@ -11,6 +11,9 @@ use crate::write::plan::KernelWritePlan;
 /// The most just-written memories one proposal review reads.
 const FOCUS_REFS: usize = 8;
 const EXCERPT_CHARS: usize = 120;
+const HOW: &str = "Relations Jev reads as missing from what you just wrote. Declare the ones you confirm with kmp_curate mode:\"apply\", this review_token and each item_id, in your own why and evidence; ignore the rest.";
+/// The same, when the store also proposes lifecycle pairs.
+const HOW_WITH_LIFECYCLE: &str = "Relations Jev reads as missing from what you just wrote, and, marked lifecycle, current memories of the same kind that name the same identifier, which it may replace (rel supersedes, or updates_state in the item). Declare the ones you confirm with kmp_curate mode:\"apply\", this review_token and each item_id, in your own why and evidence; ignore the rest.";
 
 impl KernelMcpServer {
     /// Adds `proposed_relations` to a committed memories write when the store
@@ -49,14 +52,21 @@ impl KernelMcpServer {
             .into_iter()
             .flatten()
             .map(|item| {
-                json!({
+                let mut proposal = json!({
                     "item_id": item["item_id"],
                     "from": item["from"]["ref"],
                     "to": item["to"]["ref"],
                     "rel": item["suggested_rel"],
                     "confidence": item["jev"]["confidence"],
                     "to_excerpt": excerpt(item["to"]["excerpt"].as_str().unwrap_or_default()),
-                })
+                });
+                // A lifecycle proposal says what it stands on, since no
+                // reading may stand behind it.
+                if item["proposed_by"] == "lifecycle" {
+                    proposal["proposed_by"] = json!("lifecycle");
+                    proposal["why"] = item["pairing_why"].clone();
+                }
+                proposal
             })
             .collect::<Vec<_>>();
         if let Some(warnings) = result["warnings"].as_array_mut() {
@@ -70,11 +80,16 @@ impl KernelMcpServer {
         if items.is_empty() {
             return;
         }
+        let how = if items.iter().any(|item| item["proposed_by"] == "lifecycle") {
+            HOW_WITH_LIFECYCLE
+        } else {
+            HOW
+        };
         result["proposed_relations"] = json!({
             "review_token": answer["review_token"],
             "items": items,
             "jev": answer["jev"],
-            "how": "Relations Jev reads as missing from what you just wrote. Declare the ones you confirm with kmp_curate mode:\"apply\", this review_token and each item_id, in your own why and evidence; ignore the rest.",
+            "how": how,
         });
     }
 }

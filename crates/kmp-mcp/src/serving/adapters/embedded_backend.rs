@@ -1,6 +1,8 @@
 use super::ask_gate_config::{ASK_GATE_FILE, AskGateConfig};
+use super::curate_config::{CURATE_FILE, CurateConfig};
 use super::curate_doubt_cache::CurateDoubtCache;
 use super::curate_review_cache::CurateReviewCache;
+use super::doubt_band_judge::DoubtBandJudge;
 use super::embedded::{
     EmbeddedAskTool, EmbeddedCondenseTool, EmbeddedCurateTool, EmbeddedIngestTool,
     EmbeddedInspectTool, EmbeddedNearTool, EmbeddedReadTelemetry, EmbeddedRelabelTool,
@@ -10,6 +12,7 @@ use super::embedded::{
 use super::judgement_reranker::JudgementReranker;
 use super::judgement_source::load_judgement;
 use super::lexical_bridge_file::{lexical_bridge_path, load_lexical_bridge};
+use super::lexical_index::lexical_sidecar::LexicalSidecar;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
 use super::observed_judgement::ObservedJudgement;
 use super::process_frozen_recalls::ProcessFrozenRecalls;
@@ -17,11 +20,19 @@ use super::store_config_report::StoreConfigReport;
 use super::verdict_book_config::VERDICT_BOOK_CONFIG_FILE;
 use super::verdict_ledger::VerdictLedger;
 use super::wake_focus_judge::WakeFocusJudge;
+use super::write_expansions_config::{WRITE_EXPANSIONS_FILE, WriteExpansionsConfig};
+use super::write_relations_config::WriteRelationsConfig;
 use crate::contract::{TIME_TOOL, TimeMove};
+use crate::curate::domain::lifecycle_mode::LifecycleMode;
+use crate::curate::domain::partner_cap::PartnerCap;
+use crate::curate::domain::partner_filter::PartnerFilter;
+use crate::curate::domain::paths_corridor::PathsCorridor;
 use crate::serving::environment::{
-    TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV, TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
+    EVAL_PARTNER_FACTS_ENV, TYPESAFE_API_KEY_ENV, TYPESAFE_CASSETTE_ENV,
+    TYPESAFE_CASSETTE_MODE_ENV, optional_env_string,
 };
 use crate::serving::judgement_site::JudgementSite;
+use crate::serving::lexical_index_mode::LexicalIndexMode;
 use crate::serving::ports::judgement_model::JudgementModel;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use crate::serving::tool_success_result;
@@ -32,9 +43,6 @@ use kmp_proto_mapping::v1beta1::{AskGate, LexicalBridge, LexicalIndexCache};
 use serde_json::{Value, json};
 use std::path::Path;
 use std::sync::Arc;
-
-/// Opt-in beside the store for relations proposed after each write.
-const WRITE_RELATIONS_FILE: &str = "write-relations.json";
 
 /// In-process kernel backend: the same JSON argument builders and response
 /// shapes as live mode, with the application service called directly instead
@@ -63,15 +71,39 @@ pub struct EmbeddedKernelMcpBackend {
     rerank: Result<Option<Arc<JudgementReranker>>, String>,
     /// Wake focused on its intent by the same model, its own opt-in.
     wake_focus: Result<Option<Arc<WakeFocusJudge>>, String>,
+    /// The ask doubt band judged by the same model (`ask-judge.json`).
+    doubt_band: Result<Option<Arc<DoubtBandJudge>>, String>,
     /// Relations proposed after each write, opted into by
     /// `write-relations.json` beside `typesafe.json`.
     write_relations: bool,
+    /// Search expansions judged at write (`write-expansions.json` beside
+    /// `typesafe.json`): off without the file; an error names why a present
+    /// file cannot apply.
+    write_expansions: Result<Option<WriteExpansionsConfig>, String>,
+    /// Whether and how focused reviews propose write-time lifecycle pairs
+    /// (`write-relations.json` `lifecycle`).
+    lifecycle: LifecycleMode,
+    /// The largest about a review without `focus` pairs orphans in:
+    /// `curate.json` `partner_facts`, the default without it, or what an
+    /// evaluation names.
+    partner_cap: PartnerCap,
+    /// What the pairs of that partner round must pass (`curate.json`
+    /// `partner_filter`, off by default).
+    partner_filter: PartnerFilter,
+    /// Whether a goal path search reads its corridor (`curate.json`
+    /// `paths_corridor`, on by default).
+    paths_corridor: PathsCorridor,
     /// The anchored ask gate: [`AskGate::STORE_DEFAULT`] (on) unless
     /// `ask-gate.json` beside the store says otherwise; a file that cannot
     /// apply is reported and the default stands.
     ask_gate: Option<AskGate>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
+    /// The lexical index beside the store (`lexical-index.sqlite3`), closed
+    /// by default. `KMP_LEXICAL_INDEX=shadow` opens it in shadow: followed
+    /// after writes and before asks, compared with every ask, answering
+    /// none.
+    lexical: LexicalSidecar,
 }
 
 impl EmbeddedKernelMcpBackend {
@@ -118,10 +150,21 @@ impl EmbeddedKernelMcpBackend {
             data_dir,
             &ObservedJudgement::for_site(&judgement, book, JudgementSite::WakeFocus),
         );
-        let write_relations = data_dir.join(WRITE_RELATIONS_FILE).is_file();
+        let doubt_band = DoubtBandJudge::load(
+            data_dir,
+            &ObservedJudgement::for_site(&judgement, book, JudgementSite::DoubtBand),
+        );
+        let write_relations = WriteRelationsConfig::load(data_dir);
+        let lifecycle = write_relations
+            .as_ref()
+            .map(WriteRelationsConfig::lifecycle)
+            .unwrap_or_default();
+        let write_relations = write_relations.is_some();
+        let write_expansions = WriteExpansionsConfig::load(data_dir);
         let lexical_bridge = load_lexical_bridge(data_dir);
         let semantic = LoopbackSemanticRetriever::load(data_dir);
         let ask_gate = AskGateConfig::load(data_dir);
+        let curate = CurateConfig::load(data_dir);
         acknowledge_store_config(data_dir, &judgement, &rerank, &wake_focus, &semantic)
             .beside_store(
                 VERDICT_BOOK_CONFIG_FILE,
@@ -130,6 +173,27 @@ impl EmbeddedKernelMcpBackend {
             .beside_store(
                 ASK_GATE_FILE,
                 ask_gate.as_ref().map(|_| ()).map_err(Clone::clone),
+            )
+            .beside_store(
+                CURATE_FILE,
+                curate.as_ref().map(|_| ()).map_err(Clone::clone),
+            )
+            .beside_store(
+                WRITE_EXPANSIONS_FILE,
+                match (&write_expansions, &judgement) {
+                    (Ok(Some(_)), Ok(Some(_))) => Ok(()),
+                    (Ok(Some(_)), _) => Err("write expansions need a working typesafe.json".into()),
+                    (Ok(None), _) => Err("not loaded".into()),
+                    (Err(error), _) => Err(error.clone()),
+                },
+            )
+            .beside_store(
+                "ask-judge.json",
+                match &doubt_band {
+                    Ok(Some(_)) => Ok(()),
+                    Ok(None) => Err("not loaded".into()),
+                    Err(error) => Err(error.clone()),
+                },
             )
             .at(
                 "lexical-bridge.kmpb",
@@ -141,6 +205,9 @@ impl EmbeddedKernelMcpBackend {
                 },
             )
             .emit();
+        let (partner_cap, partner_filter, paths_corridor) =
+            curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::On));
+        let lexical = LexicalSidecar::open(data_dir, LexicalIndexMode::from_env());
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -153,10 +220,20 @@ impl EmbeddedKernelMcpBackend {
             ledger: ledger.ok().flatten(),
             rerank,
             wake_focus,
+            doubt_band,
             write_relations,
+            write_expansions,
+            lifecycle,
+            partner_cap: optional_env_string(EVAL_PARTNER_FACTS_ENV)
+                .as_deref()
+                .and_then(PartnerCap::named)
+                .unwrap_or(partner_cap),
+            partner_filter,
+            paths_corridor,
             ask_gate: ask_gate.unwrap_or(AskGate::STORE_DEFAULT),
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
+            lexical,
         })
     }
 
@@ -180,6 +257,15 @@ impl EmbeddedKernelMcpBackend {
     /// The storage engine this session's store is on.
     pub fn engine(&self) -> kmp_embedded::StorageEngine {
         self.kernel.engine()
+    }
+
+    /// The same backend with the lexical sidecar in `mode`, whatever
+    /// `KMP_LEXICAL_INDEX` says: for tests that must not share one process
+    /// environment.
+    #[cfg(test)]
+    pub(crate) fn with_lexical_index(mut self, mode: LexicalIndexMode) -> Self {
+        self.lexical = LexicalSidecar::open(std::path::Path::new(&self.data_dir), mode);
+        self
     }
 
     pub fn data_dir(&self) -> &str {
@@ -220,7 +306,7 @@ fn acknowledge_store_config<A, B, C>(
         .beside_store("rerank.json", verdict(rerank))
         .beside_store("wake-focus.json", verdict(wake_focus))
         .beside_store(
-            WRITE_RELATIONS_FILE,
+            WriteRelationsConfig::FILE,
             judged
                 .map_err(|error| format!("write relations need a working typesafe.json: {error}")),
         )
@@ -237,9 +323,36 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
     }
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
+        Box::pin(async move {
+            let outcome = self.dispatch(name, arguments).await;
+            // A write the log now holds is followed by the lexical sidecar
+            // at once (DESIGN L6); asks follow whatever other writers did.
+            if outcome.is_ok() && writes_memory(name) {
+                self.lexical.catch_up(self.kernel.store(), None).await;
+            }
+            outcome
+        })
+    }
+}
+
+/// Whether a tool can append to the store's log.
+fn writes_memory(name: &str) -> bool {
+    matches!(
+        name,
+        "kmp_ingest"
+            | "kernel_remember"
+            | "kernel_ingest_context"
+            | "kmp_curate"
+            | "kmp_relabel"
+            | "kmp_condense"
+    )
+}
+
+impl EmbeddedKernelMcpBackend {
+    async fn dispatch(&self, name: &str, arguments: &Value) -> Result<Value, ToolError> {
         let service = self.kernel.service();
         let observer = self.kernel.quality_observer();
-        Box::pin(async move {
+        {
             let telemetry = EmbeddedReadTelemetry::new(observer.as_ref());
             match name {
                 "kmp_ingest" | "kernel_remember" | "kernel_ingest_context" => {
@@ -272,6 +385,8 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         FrozenRecallReads::new(&self.frozen_recalls, &service),
                     )
                     .with_gate(self.ask_gate)
+                    .with_doubt_band(&self.doubt_band)
+                    .with_lexical_sidecar(&self.lexical, self.kernel.store())
                     .call(arguments)
                     .await
                 }
@@ -295,6 +410,25 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 }
                 "kmp_curate" => {
                     let observed = self.observed(JudgementSite::of_curate(arguments));
+                    // Internal: the write dispatcher asks which proposed
+                    // search expansions belong to their memories. Nothing
+                    // is kept without the store's opt-in and a working Jev.
+                    if arguments.get("mode").and_then(Value::as_str) == Some("judge_expansions") {
+                        let answer = match (&self.write_expansions, &observed, &self.judgement) {
+                            (Ok(Some(config)), Some(model), _) => {
+                                super::expansion_judge::judge_expansions(model, config, arguments)
+                                    .await
+                            }
+                            (Ok(None), _, _) => json!({"enabled": false,
+                                "reason": "the store has not opted in (write-expansions.json beside typesafe.json)"}),
+                            (Err(error), _, _) => json!({"enabled": false, "reason": error}),
+                            (_, None, Err(error)) => json!({"enabled": false,
+                                "reason": format!("Jev cannot run: {error}")}),
+                            (_, None, Ok(_)) => json!({"enabled": false,
+                                "reason": "write expansions need typesafe.json beside the store"}),
+                        };
+                        return Ok(tool_success_result(answer));
+                    }
                     let (judgement, warning) = match (&observed, &self.judgement) {
                         (Some(model), _) => (Some(model as &dyn JudgementModel), None),
                         (None, Err(error)) => (None, Some(error.as_str())),
@@ -320,6 +454,9 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                         &self.curate_reviews,
                         &self.curate_doubts,
                     )
+                    .with_lifecycle(self.lifecycle)
+                    .with_partners(self.partner_cap, self.partner_filter)
+                    .with_paths_corridor(self.paths_corridor)
                     .call(arguments)
                     .await
                 }
@@ -363,6 +500,6 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     "unknown KMP tool `{other}`"
                 ))),
             }
-        })
+        }
     }
 }

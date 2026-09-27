@@ -68,10 +68,15 @@ pub(crate) fn build_summary_plan(
     // the ranker make: a summary that will not carry is refused here, while
     // the writer can still fix it.
     let decision = decide_search_summary(&existing.text, Some(summary), strict)?;
+    // Only a copy of an English text is dropped rather than stored. Here it
+    // would be the whole write, so it is refused for what it is.
     let Some(stored) = decision.stored else {
         return Err(WriteValidationError::new(
-            "search_summaries requires summary_en".to_string(),
-        ));
+            "summary_en is identical to an English memory, which is searched as written; \
+             there is nothing to attach",
+        )
+        .at("summary_en")
+        .code("INVALID_SEARCH_SUMMARY"));
     };
 
     let mut metadata = existing.metadata.clone();
@@ -266,5 +271,20 @@ mod tests {
             json!([{"ref": "project:kmp:x", "rel": "follows", "class": "procedural"}]);
         let error = build_summary_plan(&with_link, &existing()).expect_err("no relations");
         assert!(error.message.contains("writes no relation"), "{error}");
+    }
+
+    #[test]
+    fn a_copy_of_an_english_text_is_refused_for_what_it_is() {
+        let mut english = existing();
+        english.text = "Valkey 7.2 was adopted for the shared store (ADR-018).".to_string();
+
+        let error = build_summary_plan(
+            &request("Valkey 7.2 was adopted for the shared store (ADR-018)."),
+            &english,
+        )
+        .expect_err("a copy would be the whole write");
+
+        assert!(error.message.contains("nothing to attach"), "{error}");
+        assert!(error.field_is_within("summary_en"), "{error:?}");
     }
 }

@@ -9,6 +9,7 @@
 mod compound_identifiers;
 mod date_tokens;
 mod entities;
+mod grouped_thousands;
 mod identifiers;
 mod language_vocabulary;
 mod search_tokens;
@@ -23,6 +24,9 @@ mod decimal_separator_fidelity_tests;
 mod emphasis_fidelity_tests;
 
 #[cfg(test)]
+mod loose_notation_fidelity_tests;
+
+#[cfg(test)]
 mod partial_date_fidelity_tests;
 
 #[cfg(test)]
@@ -33,7 +37,7 @@ mod unit_adjective_fidelity_tests;
 
 pub use compound_identifiers::{compound_identifiers, identifier_terms};
 pub use entities::proper_names;
-pub(crate) use identifiers::dropped_identifiers;
+pub(crate) use identifiers::{dropped_identifiers, required_identifiers};
 pub use identifiers::{identifiers, surface_tokens};
 pub use language_vocabulary::{KERNEL_LANGUAGE, LanguageVocabulary};
 pub use search_tokens::{fold_search_term, informative_tokens};

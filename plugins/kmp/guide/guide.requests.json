@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:856f0edb1f721bfb026f",
+    "idempotency_key": "ingest:guide-sync:1:agent:53cc0946e4ec365be5f4",
     "memory": {
       "dimensions": [
         {
@@ -51,7 +51,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -82,7 +82,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Choose and continue a memory route",
             "guide_version": "1",
             "source": "editorial"
@@ -114,7 +114,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Resume known work",
             "guide_version": "1",
             "source": "editorial"
@@ -146,7 +146,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Ask a semantic question",
             "guide_version": "1",
             "source": "editorial"
@@ -178,7 +178,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Compare memories across abouts",
             "guide_version": "1",
             "source": "editorial"
@@ -210,7 +210,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Navigate and zoom in time",
             "guide_version": "1",
             "source": "editorial"
@@ -242,12 +242,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Inspect evidence and trace a connection",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Use **Inspect** to read one exact ref and its evidence. Use **Trace** to examine\nconnections. Copy returned refs; naming a foreign ref creates no connection.\n\nChoose one Trace mode:\n\n- Known destinations: `about`, `from`, `to`; destination search options can\n  choose directions, alternatives and dimensions.\n- Evidence from a seed: `about`, `from`, `search.seek`; each role names a\n  relation and direction. Do not combine `seek` with `to` or destination options.\n\nSet the task's clock and cut explicitly for historical questions. Unknown\nclocks, missing obligations and `review_required` survive a successful search.\nA route or a compatible group does not establish truth or answer completeness.\n\n**Read selected proof:** set `search.proof:true`. To see descriptors before\nloading bodies, also set `proof_refs:[]`. Finish each operation's page actions,\nthen execute its body expansion calls and join canonical text by ref under one\n`proof.manifest_id`. Body actions are new deliveries, not page continuations.\nCompare selected refs against fetched refs; no remaining action does not prove\nthat an arbitrary sequence of named batches read every body. Changed selection\nrequires a fresh read, never mixing old paths with new bodies.\n\n**Reuse a short view:** after reading a canonical body, use the Condense topic.\nIts card is derived orientation, never fetched proof. A fresh compact Trace\nuses `proof:true,compact:{language:...}` without named expansion or old cursor.\n\nExpand only the detail you need:\n\n- `guide:kmp-agent:example:reader-cards`: descriptors, byte ceilings, exact\n  expansion, Condense and compact reuse, with complete call shapes.\n- `guide:kmp-agent:example:evidence-seek`: roles, contextual discovery, identity\n  joins and historical evidence.\n- `guide:kmp-agent:example:bounded-trace`: destination alternatives, AND/OR\n  requirements, hard dimensions and soft focus.\n- `guide:kmp-agent:advanced:audit-reference`: Inspect object reuse/receipts,\n  pagination, work limits, clocks and detailed search semantics.\n"
+          "text": "Use **Inspect** to read one exact ref and its evidence. Use **Trace** to examine\nconnections. Copy returned refs; naming a foreign ref creates no connection.\n\nChoose one Trace mode:\n\n- Known destinations: `about`, `from`, `to`; destination search options can\n  choose directions, alternatives and dimensions.\n- Evidence from a seed: `about`, `from`, `search.seek`; each role names a\n  relation and direction. Do not combine `seek` with `to` or destination options.\n\nA single `to` string with no search or time options follows every stored\nrelation with a bounded search from both ends (1024 refs, 8192 rows, 512 hops).\nA path it returns is the shortest one. When a limit stops it first, `trace`\nis empty and `search` names the stop, `direction:\"bidirectional\"` and the\ndestination in `unreached_targets`. That is not absence. `search.widen` is the\nsame trace over every relation with the largest allowance, which you may run\ninstead; it is not a page continuation.\n\nSet the task's clock and cut explicitly for historical questions. Unknown\nclocks, missing obligations and `review_required` survive a successful search.\nA route or a compatible group does not establish truth or answer completeness.\n\n**Read selected proof:** set `search.proof:true`. To see descriptors before\nloading bodies, also set `proof_refs:[]`. Finish each operation's page actions,\nthen execute its body expansion calls and join canonical text by ref under one\n`proof.manifest_id`. Body actions are new deliveries, not page continuations.\nCompare selected refs against fetched refs; no remaining action does not prove\nthat an arbitrary sequence of named batches read every body. Changed selection\nrequires a fresh read, never mixing old paths with new bodies.\n\n**Reuse a short view:** after reading a canonical body, use the Condense topic.\nIts card is derived orientation, never fetched proof. A fresh compact Trace\nuses `proof:true,compact:{language:...}` without named expansion or old cursor.\n\nExpand only the detail you need:\n\n- `guide:kmp-agent:example:reader-cards`: descriptors, byte ceilings, exact\n  expansion, Condense and compact reuse, with complete call shapes.\n- `guide:kmp-agent:example:evidence-seek`: roles, contextual discovery, identity\n  joins and historical evidence.\n- `guide:kmp-agent:example:bounded-trace`: destination alternatives, AND/OR\n  requirements, hard dimensions and soft focus.\n- `guide:kmp-agent:advanced:audit-reference`: Inspect object reuse/receipts,\n  pagination, work limits, clocks and detailed search semantics.\n"
         },
         {
           "coordinates": [
@@ -274,7 +274,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Condense: write a compact card bound to one body version",
             "guide_version": "1",
             "source": "editorial"
@@ -306,12 +306,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Curate: find missing and doubtful relations with Jev, then write them yourself",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Use **Curate** to find the relations an about is missing and the declared ones\nthat do not hold, before you rely on its relations or after a batch of writes.\nA review reads the selection the way Relate does and writes nothing.\n\nThe work is split by what each reader can do. TypeSafe Jev answers only closed\nquestions: it picks one option from a list or gives a probability. It cannot\nwrite a word. So Jev suggests a type and doubts a reason, and you write every\n`why`, every `evidence` and any new label.\n\n1. Review with `mode:\"review\"`, `about`, and optionally `dimensions` to select\n   several abouts, plus `interval`, `axis` and `max_pairs` (default 12, at most 40).\n2. `missing` lists pairs of current facts with no declared relation between\n   them:\n   - `proposed_by:\"kernel\"` pairs share checkable signals: a rare identifier,\n     matching summaries, a proper name or a label. `pairing_why` says which.\n   - `proposed_by:\"jev\"` pairs were chosen by meaning for facts nothing else\n     paired. They carry no signal to check.\n   - `suggested_rel` is Jev's choice among the relation types a writer may\n     declare, or `contradicts` when the two cannot both be true. Across abouts\n     only `same_event_as` and `same_entity_as` are offered.\n3. `suspect` lists declared relations where `support`, Jev's probability that\n   the stored why and evidence hold, is low, or where Jev would choose another\n   type. They are reported only: this verb never retracts a relation.\n4. Page with the returned `review_token` and `page.cursor`. The review is frozen\n   under that token, so later pages call nothing and cannot change. A token\n   that has expired asks for a fresh review.\n5. To declare items, read both refs with Inspect and decide for yourself. Then\n   call `mode:\"apply\"` with `review_token`, `actor` and `accepted`: each item is\n   `{item_id, why, evidence}` and may add `rel`, `confidence` or `reverse`.\n   Before anything is written, Jev reads your why and evidence once more:\n   - An item it doubts comes back in `curate.doubted`, unwritten, with its\n     `reasons`: `support` (your why does not hold), `type` (another type\n     fits better) or `direction` (it reads the other way round; try\n     `reverse`). Correct it,\n     or send it again with `confirm_doubted:true`. Jev can ask for another look;\n     it cannot refuse a write.\n   - The rest goes through `kmp_write_memory`'s own plan and neighbourhood\n     review. A `needs_review` answer's next action resumes this same apply.\n   - Only items whose `from` belongs to `about` are written. Others come back\n     in `curate.rejected` with the reason.\n   - Written evidence carries `curated_by: kmp_curate` and the Jev model.\n\n6. To trace how one fact led to another, call `mode:\"paths\"` with `from` and,\n   optionally, `to` and `max_hops`, over one or several abouts. Without `to`,\n   Jev also follows consequences of consequences. Each hop says\n   whether it is `declared` or proposed by Jev, and whether it was walked\n   against its stored direction (`reversed`). A proposed hop has an `item_id`\n   you can declare with `mode:\"apply\"` and your own why and evidence. Paths\n   walk declared relations only after Jev has checked their why and evidence.\n   The ones it doubts are listed under `avoided`. Review those with\n   `mode:\"review\"`.\n\n7. To label facts that lack a value under a key their about already uses,\n   call `mode:\"labels\"` with `focus` (up to 8 refs). Jev chooses among the\n   values the about uses, shown by example, or none; they come back as\n   `proposed_labels`. Nothing is written:\n   apply the ones you confirm with `kmp_relabel`. A fact that fits no value\n   can still be given one, so read each proposal against the fact.\n\nJev is opt-in for each store: put `typesafe.json` beside it\n(`{\"endpoint\":\"https://api.typesafe.ai/v1/systemone\",\"model\":\"jev-1.13.0\",\"timeout_ms\":20000}`)\nand set `TYPESAFE_API_KEY`. The text of the selected facts, cut to 2000\ncharacters each, leaves the machine. Without the opt-in the review still returns\nkernel pairs, untyped, with a warning. It runs against the embedded store only.\n"
+          "text": "Use **Curate** to find the relations an about is missing and the declared ones\nthat do not hold, before you rely on its relations or after a batch of writes.\nA review reads the selection the way Relate does and writes nothing.\n\nThe work is split by what each reader can do. TypeSafe Jev answers only closed\nquestions: it picks one option from a list or gives a probability. It cannot\nwrite a word. So Jev suggests a type and doubts a reason, and you write every\n`why`, every `evidence` and any new label.\n\n1. Review with `mode:\"review\"`, `about`, and optionally `dimensions` to select\n   several abouts, plus `interval`, `axis` and `max_pairs` (default 12, at most 40).\n2. `missing` lists pairs of current facts with no declared relation between\n   them:\n   - `proposed_by:\"kernel\"` pairs share checkable signals: a rare identifier,\n     matching summaries, a proper name or a label. `pairing_why` says which.\n   - `proposed_by:\"jev\"` pairs were chosen by meaning for facts nothing else\n     paired. They carry no signal to check.\n   - `suggested_rel` is Jev's choice among the relation types a writer may\n     declare, or `contradicts` when the two cannot both be true. Across abouts\n     only `same_event_as` and `same_entity_as` are offered.\n3. `suspect` lists declared relations where `support`, Jev's probability that\n   the stored why and evidence hold, is low, or where Jev would choose another\n   type. They are reported only: this verb never retracts a relation.\n4. Page with the returned `review_token` and `page.cursor`. The review is frozen\n   under that token, so later pages call nothing and cannot change. A token\n   that has expired asks for a fresh review.\n5. To declare items, read both refs with Inspect and decide for yourself. Then\n   call `mode:\"apply\"` with `review_token`, `actor` and `accepted`: each item is\n   `{item_id, why, evidence}` and may add `rel`, `confidence` or `reverse`.\n   Before anything is written, Jev reads your why and evidence once more:\n   - An item it doubts comes back in `curate.doubted`, unwritten, with its\n     `reasons`: `support` (your why does not hold), `type` (another type\n     fits better) or `direction` (it reads the other way round; try\n     `reverse`). Correct it,\n     or send it again with `confirm_doubted:true`. Jev can ask for another look;\n     it cannot refuse a write.\n   - The rest goes through `kmp_write_memory`'s own plan and neighbourhood\n     review. A `needs_review` answer's next action resumes this same apply.\n   - Only items whose `from` belongs to `about` are written. Others come back\n     in `curate.rejected` with the reason.\n   - Written evidence carries `curated_by: kmp_curate` and the Jev model.\n\n6. To trace how one fact led to another, call `mode:\"paths\"` with `from` and,\n   optionally, `to` and `max_hops`, over one or several abouts. With `to`,\n   Jev reads only the corridor between the two ends: at most 22 facts within\n   four linked hops of either end, or sharing their rarer words when nothing\n   links them, and picks each step among at most eight neighbours. Without\n   `to`, Jev reads the whole selection and also follows consequences of\n   consequences. Each hop says\n   whether it is `declared` or proposed by Jev, and whether it was walked\n   against its stored direction (`reversed`). A proposed hop has an `item_id`\n   you can declare with `mode:\"apply\"` and your own why and evidence. Paths\n   walk declared relations only after Jev has checked their why and evidence.\n   The ones it doubts are listed under `avoided`. Review those with\n   `mode:\"review\"`.\n\n7. To label facts that lack a value under a key their about already uses,\n   call `mode:\"labels\"` with `focus` (up to 8 refs). Jev chooses among the\n   values the about uses, shown by example, or none; they come back as\n   `proposed_labels`. Nothing is written:\n   apply the ones you confirm with `kmp_relabel`. A fact that fits no value\n   can still be given one, so read each proposal against the fact.\n\nJev is opt-in for each store: put `typesafe.json` beside it\n(`{\"endpoint\":\"https://api.typesafe.ai/v1/systemone\",\"model\":\"jev-1.13.0\",\"timeout_ms\":20000}`)\nand set `TYPESAFE_API_KEY`. The text of the selected facts, cut to 2000\ncharacters each, leaves the machine. Without the opt-in the review still returns\nkernel pairs, untyped, with a warning. It runs against the embedded store only.\n"
         },
         {
           "coordinates": [
@@ -338,12 +338,12 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Write evidence, change labels, audit what summaries owe",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "## A semantic packet\n\nUse `memories` for one or more source-backed records in one about. Give each a\nshort local `id`, `kind`, `summary`, `evidence`, and its label arrays. A single\nrecord is a one-element packet. No `intent`, `current` or process `scope` is\nneeded in this form. The former current/intent/scope input is rejected; there is no compatibility adapter.\n\nTop-level labels are shared memberships, unioned with each record's labels.\nEvery record must have at least one membership; none is invented. Repeating a\npair in both shared and record labels is harmless; duplicates within either\narray are rejected. Every supplied label is materialized before commit. Put only memberships that\napply to every record at the top level. If S1 supports one memory and S2 another,\nput `source: [\"S1\"]` and `source: [\"S2\"]` on those respective memories. Shared\n`source: [\"S1\", \"S2\"]` attaches both to both. Aliases mentioned only in prose do\nnot create alias memberships; declare each source-supported alias explicitly.\nA source label helps navigation but never replaces its concrete evidence text.\n\nUse `connect_to.ref: \"source\"` or `\"@source\"` to address exact local id `source`,\neven if it appears later. No fuzzy matching or target creation occurs. An unknown\nlocal name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.\nLocal targets count as `current_request` context. Rich links, including local\nlinks, receive server neighborhood review before commit; cross-about\nidentity links retain the proposal rule. `read_context` is a caller-declared audit,\nnot a substitute for the served neighborhood. Do not claim to have inspected a new\nlocal target. Independent facts may be unlinked: do not invent a relation.\n\nThe containing memory is the source of each link; `connect_to.ref` is its\ntarget. Read the proposed triple aloud: approval **authorizes** action, outcome\n**verified_by** check, exclusion **excluded_from** total. A relation name alone\ndoes not describe its direction. See `guide:kmp-agent:advanced:relations` for\nendpoint examples and partial corrections. `supersedes` marks the **whole**\ntarget SUPERSEDED. If a report holds independent facts, isolate the relevant\nfact or use `corrects` with the precise correction; preserve the other facts.\n\nOmit `class` when `rel` has exactly one allowed class. For example,\n`{\"ref\":\"check\",\"rel\":\"verified_by\",\"why\":\"H verifies the deployed version.\",\"evidence\":\"H reports the expected version.\"}`\ncompiles to `evidential`. An explicit class is checked, never overwritten.\n`authorizes` and `chosen_because` require a choice of `motivational` or `causal`;\n`confirms_selection` requires `evidential` or `motivational`. Decide from the\nsource. The canonical receipt and relation-quality detail retain the resolved\nclass. This completion changes neither proof requirements nor the relation's\ndirection and does not infer whether it is true.\n\nWith `context_id`, actor defaults to the persistent agent name; an explicit\nactor overrides it. Without context, actor is required. Actor identifies the\nauthor. Omit `observed_at` or set it to null: KMP assigns the exact ingestion\ninstant to this new observation and the packet's provenance. Supply an explicit\nobservation time only when the source establishes it, with the actual UTC offset.\nKMP never chooses it from event dates or from a different record.\n\nRoot observed/occurred/valid clocks are defaults inherited by records. Each\nrecord may override them. A record's `observed_at:null` clears the root default\nand uses ingestion; `occurred_at:null` clears the root event date and remains\nunknown. Without a root event date, omitted occurrence also stays unknown.\nIngestion is assigned by the kernel; the semantic writer cannot supply it.\nEqual observed and occurred times are valid when the source supports both.\nSeveral records may share an observation time without sharing an occurrence.\nEach `connect_to` declaration also gets its own observed and ingested clocks.\nIts observation and the generated evidence support observation use the containing\nmember's effective observation: root default, member override, or exact ingestion\nfor null. The target's clocks do not date the declaration. Its occurrence and validity\nremain unknown. No extra writer arguments are needed. Separate execution and\nverification records still carry their own event times.\nIf one report says an action ran at 11:00 and its check passed at 11:05, keep\nthe action and check in separate records with event-specific summaries and\nevidence fragments. Do not put the later verified result into the earlier\naction text. A relation does not move the check backward in time. See\n`guide:kmp-agent:example:event-separation` for the native cutoff and viewer example.\nUpdating `search_summaries` preserves the original coordinates, including unknown\nhistorical observation; only the new packet provenance receives a default date. KMP\nresolves all names and validates the entire packet before one canonical ingest.\nA rejected record writes none of the packet. The transaction covers one about.\nOmit unknown validity boundaries too. Observing an existing state does not\nestablish when it began; a later report does not give an earlier writer knowledge\nof when it will end.\n\n`local_refs` maps your ids to canonical refs. A preview plans those refs;\n`accepted=true` confirms persistence. Retry the unchanged logical packet with\nthe same idempotency key. Duplicate ids, duplicate targets, self-links and\nundeclared local targets are errors. See\n`guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof\nlink, a rejected packet and temporal/ChronoLoom review. Accepted writes return a compact acknowledgment; recover the detailed receipt only when needed.\n\n## Read the acknowledgment\n\n`clock_defaults`, when present, reports `observed_at:\"ingested_at\"`, the count\nof affected memories and whether packet provenance defaulted. It describes the\nplan; `clocks` and the canonical receipt carry actual accepted values. A preview\ndoes not reserve a timestamp. An unchanged replay returns the original clocks,\nincluding after restart or import, without creating another observation.\n\n`accepted=true` confirms the submitted packet was committed. Read `warnings`,\n`diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.\nA lax write can carry `RELATION_CONTEXT_UNVERIFIED` with severity warning and\nan audit action. Acceptance does not establish an unverified causal claim.\n`relations` lists compact `{from, rel, to}` triples in canonical ingest order.\nEndpoints from this packet use `@id`, resolved by `local_refs`; stored endpoints\nkeep their canonical refs. Read their direction and scope against the source.\nThe acknowledgment exposes what was compiled; it cannot certify that an\napproval verifies execution or that a correction replaces an entire report.\n`coverage` counts declared memories, relations, evidence objects and per-memory\nlabel memberships after the shared-label union. `complete=true` applies only to\nthe submitted packet. `source_coverage=not_assessed` means KMP cannot tell whether\nthe writer omitted a source fact, alias or date. For `search_summaries`, the\ncoverage separates updated renderings from preserved memberships.\n\nThe accepted response omits repeated canonical data and per-relation diagnostics.\n`receipt.ref` identifies immutable command detail. Execute `receipt.action`\nverbatim when you need to audit the accepted write; it supplies `kmp_inspect`\nwith the about, ref and include options. No routine readback is required.\nFor example, after a packet with local ids `source` and `decision`, the action's\n`object.text` is JSON: `receipt.writer.local_refs` maps both ids, and\n`receipt.canonical_memory` preserves their actual coordinates, assigned sequences,\nsource evidence and relation proof. `receipt.writer.relation_quality` retains the\ncompiler's per-link checks. `command` gives the accepted revision and content hash.\n\nOn a store with `write-relations.json` beside `typesafe.json`, a committed\nwrite of memories can carry `proposed_relations`: facts already stored that\nJev reads as directly related to what you just wrote, at most three for each\nmemory, each with the relation type Jev would choose. Nothing is written.\nDeclare the ones you confirm with `kmp_curate` `mode:\"apply\"`, the returned\n`review_token` and each `item_id`, in your own why and evidence. Ignore the\nrest. The type is Jev's reading, not proof: check it against both texts.\n\nThis is the original accepted snapshot. A later relabel or search rendering does\nnot rewrite it; inspect the memory's own ref for its current state. Receipts survive\nrestart and bundle export/import and are not graph memories, label matches or\nWake evidence. Previews have no durable receipt and retain `ingest_preview` for\nreview. A simulated backend does not prove receipt persistence. Full receipt\ninspection costs more context than the acknowledgment; the ordinary Inspect\nstable-object floor and its warnings apply.\n\n## Repair a refused packet\n\nA refusal carries `feedback`: a stable `code`, `severity`, `field`, `reason`\nand an optional `action` with `tool` and complete `arguments`. Use the field\npath to locate the problem; do not parse the prose to choose a repair.\nRead the whole feedback array. Once the packet shape and local identities are\nusable, KMP reports the first compiler failure from each invalid record together,\nfor both memories and search_summaries. Correct all listed fields and resubmit\nthe whole packet. This is not an exhaustive source audit: another rule in the\nsame record may fail after its first error is repaired. An unusable packet shape,\nambiguous local id or failed store read can still stop the check earlier.\nFor example, `MEMORY_EVIDENCE_REQUIRED` at `memories[1].evidence` means the\nsecond record needs its real source. `SEARCH_SUMMARY_REQUIRED` at\n`memories[1].summary_en` asks for a faithful English search rendering.\n`INVALID_KIND` includes `allowed_values` from the same vocabulary as the schema.\nChoose the kind from the source's meaning; the server supplies no replacement.\n`INVALID_TYPE` reports the exact field with `expected_type` and `received_type`.\nFor example, `memories: \"[]\"` is a string: send a JSON array of record objects.\nKMP does not parse a string into memories. A non-object array member reports\n`memories[index]`, expecting `object`. `EMPTY_MEMORIES` means the array is present\nbut contains no records, and `EMPTY_RELATIONS` that a relations packet declares\nno link. Omitting all of `memories`, `search_summaries` and `relations`, or\nsending more than one of them, returns `WRITE_OPERATION_REQUIRED`; other absent\nrequired fields use `REQUIRED_FIELD`. `PRESERVED_FIELD` means a field was sent\nthat would move a memory the packet is supposed to preserve.\nFor example, an unapproved request may be recorded as an observation of the\nrequest, without `updates_state` or `supersedes` on the current decision.\nA later approval needs its own evidence. `request` and `outcome` are not kinds.\nSee the semantic-batch example for individual source labels and this distinction.\n`RELATION_CLASS_REQUIRED` means this relation has more than one possible class;\n`RELATION_CLASS_MISMATCH` means the explicit choice is incompatible. Both identify\nthe field and include `allowed_values`. Do not invent evidence or weaken a\nrelation just to make validation pass. Missing class is different from null or\nan empty string; only omission requests deterministic completion.\n\nFor `needs_review`, nothing has been written. Review `neighborhood` and the\nproposed `relations`; use each stored item's Inspect action to expand its text,\nlinks and proof. `stored` and `proposed` are distinct. Long text is omitted\nwhole instead of clipped before a negation or condition. Unknown clocks remain\nunknown. `links.from` and `links.to` index stored items in this packet only.\n`partial`, `omitted` and `omitted_conflicts` disclose excluded items; the last\ncounts omitted facts participating in explicit conflicts, not unique disputes.\n`stored_abouts` names the existing-memory owners consulted before this command,\neven when the compact `items` list omitted each stored item. `expand_context`\noffers full-detail reads only for those stored owners: a new proposed about has\nno stored context to Wake. Those reads may include broader context and pages;\nfinish relevant pages.\n\nAfter reviewing, execute `next_actions[0]` to resume the unchanged packet, or\ncorrect it and submit again. The action is a `continuation` handle: the server\nretains the packet and its `review_token` (in the agent directory with\n`context_id`, in the serving process otherwise). A corrected packet is sent\nas a new call and returns a fresh review. Do not add arguments to a\ncontinuation. Tokens bind the exact\nlogical proposal and complete selected source material, including omissions.\nA changed proposal or relevant context returns a fresh review without writing.\nA race at commit is safely retryable under the same idempotency key. An accepted\nretry returns its original receipt even if memory has changed afterwards.\n\nThe rule applies to rich relations in the kernel vocabulary (and unknown\nnon-strict relations), including same-batch links and `strict:false`. Simple\nobservations, structural links and honest `follows`/`answers`/`uses_background`\nlinks need no review round. A prior declaration of read refs cannot bypass it.\nThis is the writer's review, not a new human approval step. A token records\nacknowledgement of delivered context, never understanding or semantic truth.\n\nSelection uses explicit endpoints, their direct links and shared key/value\nlabels in the current about. Explicit conflict facts and constraints precede\nrecent facts; old constraints retain their validity clocks rather than being\nsilently declared current. Foreign scope is limited to explicitly proposed\nidentity endpoints and their surroundings. It never scans all abouts. The\ninitial target is five items in roughly 2 KiB before MCP action metadata;\na large indivisible item may exceed that target. No model summarizes the text.\nLocal reads, serialization, agent context and another interaction still cost.\n\nPlanner refusals commit none of the packet; store failures still carry their\nbackend error. A failed pre-read retains unavailable, not_found, conflict or\nbackend_error; do not treat it as a malformed source packet. Malformed successful\nstore data is a backend_error. A normal accepted write does not require routine readback.\n\n## What to write, and what never to write\n\nWrite when something is **decided, constrained, or concluded**. Decisions,\nconstraints, outcomes — each with coordinates and evidence.\n\nNever write transcripts. Memory is not a log of the conversation; it is the\ndurable shape of the work. A transcript makes later traversal worthless.\n\nLabel what you write. Every label is a `(key, value)` membership within its\nabout. Use keys such as agentic_process, task and agentic_episode when the source\nsupports those memberships. `labels` uses arrays,\neven for a single value, and may add further values under any key:\n\n```json\n\"labels\": {\n  \"alias\": [\"neb\", \"Nébula Cache\"],\n  \"component\": [\"neb\"],\n  \"environment\": [\"production\"]\n}\n```\n\nEach pair becomes its own coordinate with the memory's clocks. Two aliases\nunder `alias` are valid, as is `neb` under both `alias` and `component`.\nThe key distinguishes them. Repeating a value inside an array is an error. Shared and record labels are unioned. Values may contain spaces, punctuation and\nUnicode. The server returns canonical refs: copy them when an exact graph\naddress is needed. Do not construct refs or infer entity identity from labels.\n\nRead the `labels` catalogue in `kmp_wake` to reuse existing vocabulary.\nResponses report labels written and created. A new spelling under the same\nkey, such as `component=kmp_viewer` when `component=kmp-viewer` exists, is\nrefused in strict mode or reported in `labels.resembling` in lax mode.\nSharing a value across different keys is valid and produces no resemblance\nwarning. `options.labels_new: [\"component\"]` confirms intentional new values\nunder that key; nothing is silently renamed or merged.\n\nUse `kmp_relabel` to change memberships later. Its `add` and `remove` use the\nsame arrays. For example, `add: {\"alias\": [\"Nébula Cache\", \"NC\"]}` adds two\naliases, and `remove: {\"alias\": [\"NC\"]}` later removes only that membership.\nGive the memory's returned `ref` and a source-backed `why`. The kernel refuses\nadding an existing pair, removing an absent pair, placing a pair on both\nsides, and removing the last label. Other values under the key remain.\nAdded memberships inherit the memory's clocks; the relabel's actor, receipt\ntime and rationale are recorded separately. Read back with `kmp_inspect`\nand `include.raw` to verify the memberships and evidence.\n\nChoose keys for the routes you will need: project/source alone cannot select a\nperson, account or component. Reuse the same key for the same route over time;\n`alias: [\"@north\"]` and `account: [\"@north\"]` are distinct selectors. Separate\nfacts when one can expire or be replaced without changing the others. A person's\nrole, an account assignment and a permanent constraint need not share a lifecycle.\nSee `guide:kmp-agent:example:alias-ownership` for separate assignments and\n`guide:kmp-agent:example:semantic-batch` for a source-to-memory self-check.\n\nFilter a facet with `dimensions.selectors`, for example\n`{\"key\":\"alias\",\"op\":\"in\",\"values\":[\"neb\"]}`. To require both an alias and\nan environment, supply one selector for each key. Shared labels locate\ncandidates; only justified relations declare that two memories concern the\nsame entity or event.\n\nWrite in the language of the work, and give the memory an English rendering\nfor search: `memories[].summary_en`, plain English a reader would ask with,\nidentifiers, amounts and acronyms kept exactly as written (`v0.7.0`, `#469`,\n`kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is\n`memories[].summary`, byte for byte — so an English question reaches a memory\nwritten in Spanish, and jargon (`rollout slipped`) is found by the words\npeople ask with (`launch postponed`). A strict write requires it when the\nmemory is not written in English and refuses one that fails the lint: wrong\nlanguage, too thin, a copy of the text, a dropped identifier. Fix the summary\nthe error names; never alter the text to fit it. A cited item that was reached\nthrough its summary says so with `matched_via: summary` and `summary_terms`.\n\nMemories written before summaries existed still owe one. Read the whole\npicture with `kmp_summaries_audit`: one call per about, or a named set through\n`dimensions.scope: abouts` with `dimensions.abouts`, or every anchor through\n`all_abouts`, which is the explicit opt-in to that cost. Each memory comes back\nwith a `state` — `missing`, `refused`, `stands`, `not_required` — the stored\n`text` to render whenever there is work to do, `summary_en` and `summary_en_by`\nwhere a rendering exists, the lint's own `faults` when it refuses one, and\ndeterministic `weaknesses` when one stands and still retrieves little: `thin`,\n`repeated` across the about, `undiscriminating`, `stale` after a later rewrite.\nOn a store opted into TypeSafe Jev, a standing summary Jev does not read as\nsaying what its memory says also carries `unfaithful`: the form is fine and\nthe meaning is not, so render it again from the text. `jev` reports what the\ncheck cost. Weaknesses are warnings and never refusals. `totals` describes the whole\nselection and never the page; continue with `page.cursor` and the same bound\narguments. `budget.max_bytes` covers the complete structured response,\nincluding its cursor and next action. If the stable core or next whole memory\ncannot fit, `page.required_bytes` is the exact sufficient size of the returned\nqualified page; raise the budget to it before continuing. `kmp-mcp summaries\npending [<about>…] [--json]` prints the debt half\nof the same reading and `kmp-mcp doctor` counts it.\n\nAttach one or more with `kmp_write_memory`, using `search_summaries` records\ncontaining only `ref` and `summary_en`: the text, kind and coordinates are read from\nthe store and cannot be supplied, no relation is written, and a rendering\nthat fails the lint is refused with every fault named. Each target must belong to the declared about; all renderings are validated\nbefore one commit. An exact retry is a no-op.\n\nFor normal writing omit `options.dry_run` or set it to false. Rich links first\nreturn `needs_review`; resume after reviewing. Independent observations stay one call.\nThe relation guide documents explicit previews and validation before commit.\n\nUse one `idempotency_key` per logical write. Replaying the same accepted write\nreturns its success rather than duplicating memory. A `conflict` can also mean\nthe store advanced before this attempt committed: follow the error message,\nrebase, and retry the same logical write with the same key when it says the\nconflict is retryable. A key already accepted with different content must not\nbe reused.\n\nFor a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.\n\n## Linking memories that already exist\n\n`relations` is the third top-level shape, beside `memories` and\n`search_summaries`, and exactly one of the three belongs in a packet. Use it\nwhen both endpoints are already stored and only the link is new:\n\n```json\n{\n  \"about\": \"project:junco\",\n  \"actor\": \"agent:sol\",\n  \"observed_at\": \"2026-09-08T11:00:00Z\",\n  \"idempotency_key\": \"junco-link-j01-j03-v1\",\n  \"read_context\": {\"inspected_refs\": [\"<J01 ref>\", \"<J03 ref>\"]},\n  \"relations\": [{\n    \"from\": \"<J01 ref>\",\n    \"to\": \"<J03 ref>\",\n    \"rel\": \"supports\",\n    \"why\": \"The alias register identifies the person the notice makes responsible.\",\n    \"evidence\": \"J01 registers the alias Nora; J03 names Nora as responsible.\"\n  }]\n}\n```\n\nDo not resubmit a stored memory as a `memories` record in order to connect it.\nA record carries its text, its evidence, its coordinates, its labels and its\nmetadata, so that route replaces the source it was only meant to cite — and a\nread at the source's own observation afterwards returns prose about something\nthat had not happened yet.\n\nKMP validates the stored endpoints and atomically commits only the links and\ntheir evidence. It does not rewrite source entries, so a concurrent source\ncorrection keeps its text, coordinates, labels and metadata. An unknown endpoint\nrefuses the whole packet before any link or evidence is written. `from` must be a canonical ref of this about, never a local id and\nnever the about anchor; `to` may name another about only for `same_event_as`\nor `same_entity_as`, with the returned `kmp_relate` proposal in `read_context`.\n`why` and `evidence` are always required here, because this shape declares no\nstructural link — change memberships with `kmp_relabel` instead.\n\nThe link and the evidence generated with it carry their own observation:\n`relations[].observed_at`, else the packet's, else — for an explicit null —\nthe exact ingestion instant. An endpoint's clock never dates a link, so an\nold source linked today is linked today, and a read before that instant sees\nneither the link nor its evidence. Occurrence and validity of a link stay\nunknown, and the sources' labels and coordinates are theirs: `labels`,\n`occurred_at`, `valid_from`, `valid_until` and `rank` are refused with\n`PRESERVED_FIELD`, as are `options.sequence` and `options.labels_new`.\n\nRich links receive the same neighborhood review as `connect_to`: review the\nreturned context and resume the bound continuation. The accepted result\nseparates the two halves in `attachment`: `created.relations` and\n`created.evidence` are what this write brought into existence, and\n`unchanged_sources` the memories it left alone. Each evidence id is derived\nfrom the logical write identity and the triple, so an exact retry replays onto\nthe same node even after an endpoint is corrected or relabelled. A second,\nlater link to the same pair adds its own evidence\nbeside the first instead of overwriting it. Reusing an accepted\n`idempotency_key` with a different link is a `conflict`, not a second write.\n`coverage` counts only the declaration. `preserved_memberships` is omitted\nfor relations because this operation does not enumerate source coordinates;\n`attachment.unchanged_sources` names the untouched endpoints.\n\nA `memories` record that supplies `ref` is the other move, and the result says\nso in `replacement`: the ref, the evidence this write put on it and the\nobservation it now carries. Read it as what it is — a replacement, not an\nattachment.\n\n## A preview checks the selected store\n\nUse `options.dry_run=true` only when a preview is useful. Embedded and gRPC\npreviews run the same kernel validation as a commit, including existing refs,\nlabel policy and coordinate ownership. A missing target or backend failure is\nan error; a syntactically valid packet is not enough. A successful preview has\n`accepted=false`, `dry_run=true` and `validation.scope=current_store`. It writes\nno event. The fixture backend reports `scope=fixture` and proves no live state.\n\nThe returned `ingest_preview` is the proposed canonical packet. Previewing\nreserves neither labels nor sequences; a later commit is validated again against\nthe then-current store. Do not repeat previews before every ordinary write:\nnormal writing already validates and requests neighborhood review where required. Raw `kmp_ingest`\nwith `dry_run=true` also reaches the kernel and leaves memory uncommitted.\n\n## Restricted HTTP clients\n\nAn HTTP bearer token may restrict abouts, label values and external refs. Rich-link\nreview also requires `kmp:read` and an about grant for every external endpoint,\nincluding when resumed from a continuation. Those\ngrants apply to shared and per-record labels, each array member, explicit entry\nrefs, relation targets and search-summary refs. Relabel additions obey the same\nlabel grants. A local @id is resolved inside its packet; it does not name an\nexternal memory. A forbidden request must stop before any backend call. Do not\nremove source-supported labels or refs just to evade a permission error.\n\n### Read the outcome and stored clocks\n\n`status=committed` appended the logical command; `replayed` returns its earlier\nacceptance without another write. Both keep `accepted=true`. `validated` is a\ndry-run, `needs_review` is an unapplied context review, and `rejected` is a validation refusal. `unconfirmed` cannot establish\npersistence: retain the same idempotency key when resolving a transport error.\nDo not turn an uncertain reply into a new logical write.\n\n`clocks.scope=accepted_command` summarizes the clocks actually in that command,\nincluding on replay. Each clock counts memories once across all label memberships:\n`entries`, `distinct_values`, and an RFC3339 `single_value` when there is only one.\n`clocks.relations` separately counts semantic links and how many carry each\nclock; structural label memberships are excluded. For one ordinary link,\n`relations=1, observed=1, ingested=1, occurred=0` is normal. Read responses expose\nits own dates in `relation.clocks`; they describe the stored declaration, not\nwhen its endpoints occurred or when the claim became true. An unchanged retry\npreserves these dates. Old undated links are not assigned dates on read.\n\nZero occurred entries means no event time was recorded. One observed instant\nacross nine memories is worth comparing with the nine sources; KMP cannot decide\nwhether those sources were observed together. Missing occurrence is legitimate\nwhen its source does not supply one. Do not invent clocks to fill a count.\n\nExample: two memories with four label memberships can report two observations\nat one instant, one occurrence, and one valid_from. Inspect receipt.action only\nwhen the individual historical clocks or evidence are needed. Its receipt retains\nthose clocks even after a later write, restart or bundle import. The current graph\ncan have changed. Null clock coverage is unavailable, not zero; previews do not\nreport saved clocks. Packet coverage still cannot assess source completeness.\n\n### Calendar dates in search renderings\n\n`El 17 de agosto de 2026 se abrió la ruta.` may use\n`The route opened on 2026-08-17.` as summary_en in strict mode. The lint compares\ncomplete Spanish or English month-name dates with ISO YYYY-MM-DD dates, including\nthe month and valid Gregorian day. It leaves both stored strings unchanged.\nEnglish `August 17, 2026` and `17 August 2026` are equivalent forms here.\n\nFor `El parte llegó el 18 de agosto.`, use `The report arrived on August 18.`\nwhen the year is unknown. A full rendering such as `2026-08-18` preserves the\nknown month/day too, but this lint neither supplies nor verifies its extra year:\nthe writer must justify it from evidence. A complete source date must keep its\nyear. A missing partial date is reported as `--08-18`; repair its month/day,\nnot by adding a redundant bare `18`. Changed months or days still fail.\n\nOther formats, times, amounts, versions and acronyms remain literal. An amount\nof 17 EUR still needs its own 17; the day in a date does not preserve that amount.\nThis check does not prove the meaning of the rest of the summary. A changed or\nomitted recognized date is reported as its canonical ISO identifier.\n\n\nEvidence source time and support declaration time are separate. When a packet\nassociates evidence with a memory, KMP dates that association from the packet's\nobservation and its accepted ingestion. An old source or old target does not\nbackdate a new association. The writer supplies no additional required field.\nHistorical observed/ingested reads exclude known later support; event-time\nreads answer a different question. Inspect is the current record. Canonical\n`memory.evidence[].support_clocks` preserves declaration clocks when restoring;\nordinary writes omit it. Repeated declarations update the current edge, without\ncreating versions of its earlier associations. Old undated events stay undated\nwhen projections are rebuilt.\n"
+          "text": "## A semantic packet\n\nUse `memories` for one or more source-backed records in one about. Give each a\nshort local `id`, `kind`, `summary`, `evidence`, and its label arrays. A single\nrecord is a one-element packet. No `intent`, `current` or process `scope` is\nneeded in this form. The former current/intent/scope input is rejected; there is no compatibility adapter.\n\nTop-level labels are shared memberships, unioned with each record's labels.\n`labels` is required: every record must have at least one membership, shared or\nits own; none is invented. A labels refusal names the keys the about already uses. Repeating a\npair in both shared and record labels is harmless; duplicates within either\narray are rejected. Every supplied label is materialized before commit. Put only memberships that\napply to every record at the top level. If S1 supports one memory and S2 another,\nput `source: [\"S1\"]` and `source: [\"S2\"]` on those respective memories. Shared\n`source: [\"S1\", \"S2\"]` attaches both to both. Aliases mentioned only in prose do\nnot create alias memberships; declare each source-supported alias explicitly.\nA source label helps navigation but never replaces its concrete evidence text.\n\nUse `connect_to.ref: \"source\"` or `\"@source\"` to address exact local id `source`,\neven if it appears later. No fuzzy matching or target creation occurs. An unknown\nlocal name returns `UNKNOWN_LOCAL_REF` with declared ids in `allowed_values`.\nLocal targets count as `current_request` context. Rich links, including local\nlinks, receive server neighborhood review before commit; cross-about\nidentity links retain the proposal rule. `read_context` is a caller-declared audit,\nnot a substitute for the served neighborhood. Do not claim to have inspected a new\nlocal target. Independent facts may be unlinked: do not invent a relation.\n\nThe containing memory is the source of each link; `connect_to.ref` is its\ntarget. Read the proposed triple aloud: approval **authorizes** action, outcome\n**verified_by** check, exclusion **excluded_from** total. A relation name alone\ndoes not describe its direction. See `guide:kmp-agent:advanced:relations` for\nendpoint examples and partial corrections. `supersedes` marks the **whole**\ntarget SUPERSEDED. If a report holds independent facts, isolate the relevant\nfact or use `corrects` with the precise correction; preserve the other facts.\n\nOmit `class` when `rel` has exactly one allowed class. For example,\n`{\"ref\":\"check\",\"rel\":\"verified_by\",\"why\":\"H verifies the deployed version.\",\"evidence\":\"H reports the expected version.\"}`\ncompiles to `evidential`. An explicit class is checked, never overwritten.\n`authorizes` and `chosen_because` require a choice of `motivational` or `causal`;\n`confirms_selection` requires `evidential` or `motivational`. Decide from the\nsource. The canonical receipt and relation-quality detail retain the resolved\nclass. This completion changes neither proof requirements nor the relation's\ndirection and does not infer whether it is true.\n\nWith `context_id`, actor defaults to the persistent agent name; an explicit\nactor overrides it. Without context, actor is required. Actor identifies the\nauthor. Omit `observed_at` or set it to null: KMP assigns the exact ingestion\ninstant to this new observation and the packet's provenance. Supply an explicit\nobservation time only when the source establishes it, with the actual UTC offset.\nKMP never chooses it from event dates or from a different record.\n\nRoot observed/occurred/valid clocks are defaults inherited by records. Each\nrecord may override them. A record's `observed_at:null` clears the root default\nand uses ingestion; `occurred_at:null` clears the root event date and remains\nunknown. Without a root event date, omitted occurrence also stays unknown.\nIngestion is assigned by the kernel; the semantic writer cannot supply it.\nEqual observed and occurred times are valid when the source supports both.\nSeveral records may share an observation time without sharing an occurrence.\nEach `connect_to` declaration also gets its own observed and ingested clocks.\nIts observation and the generated evidence support observation use the containing\nmember's effective observation: root default, member override, or exact ingestion\nfor null. The target's clocks do not date the declaration. Its occurrence and validity\nremain unknown. No extra writer arguments are needed. Separate execution and\nverification records still carry their own event times.\nIf one report says an action ran at 11:00 and its check passed at 11:05, keep\nthe action and check in separate records with event-specific summaries and\nevidence fragments. Do not put the later verified result into the earlier\naction text. A relation does not move the check backward in time. See\n`guide:kmp-agent:example:event-separation` for the native cutoff and viewer example.\nUpdating `search_summaries` preserves the original coordinates, including unknown\nhistorical observation; only the new packet provenance receives a default date. KMP\nresolves all names and validates the entire packet before one canonical ingest.\nA rejected record writes none of the packet. The transaction covers one about.\nOmit unknown validity boundaries too. Observing an existing state does not\nestablish when it began; a later report does not give an earlier writer knowledge\nof when it will end.\n\n`local_refs` maps your ids to canonical refs. A preview plans those refs;\n`accepted=true` confirms persistence. Retry the unchanged logical packet with\nthe same idempotency key. Duplicate ids, duplicate targets, self-links and\nundeclared local targets are errors. See\n`guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof\nlink, a rejected packet and temporal/ChronoLoom review. Accepted writes return a compact acknowledgment; recover the detailed receipt only when needed.\n\n## Read the acknowledgment\n\n`clock_defaults`, when present, reports `observed_at:\"ingested_at\"`, the count\nof affected memories and whether packet provenance defaulted. It describes the\nplan; `clocks` and the canonical receipt carry actual accepted values. A preview\ndoes not reserve a timestamp. An unchanged replay returns the original clocks,\nincluding after restart or import, without creating another observation.\n\n`accepted=true` confirms the submitted packet was committed. Read `warnings`,\n`diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.\nA lax write can carry `RELATION_CONTEXT_UNVERIFIED` with severity warning and\nan audit action. Acceptance does not establish an unverified causal claim.\n`relations` lists compact `{from, rel, to}` triples in canonical ingest order.\nEndpoints from this packet use `@id`, resolved by `local_refs`; stored endpoints\nkeep their canonical refs. Read their direction and scope against the source.\nThe acknowledgment exposes what was compiled; it cannot certify that an\napproval verifies execution or that a correction replaces an entire report.\n`coverage` counts declared memories, relations, evidence objects and per-memory\nlabel memberships after the shared-label union. `complete=true` applies only to\nthe submitted packet. `source_coverage=not_assessed` means KMP cannot tell whether\nthe writer omitted a source fact, alias or date. For `search_summaries`, the\ncoverage separates updated renderings from preserved memberships.\n\nThe accepted response omits repeated canonical data and per-relation diagnostics.\n`receipt.ref` identifies immutable command detail. Execute `receipt.action`\nverbatim when you need to audit the accepted write; it supplies `kmp_inspect`\nwith the about, ref and include options. No routine readback is required.\nFor example, after a packet with local ids `source` and `decision`, the action's\n`object.text` is JSON: `receipt.writer.local_refs` maps both ids, and\n`receipt.canonical_memory` preserves their actual coordinates, assigned sequences,\nsource evidence and relation proof. `receipt.writer.relation_quality` retains the\ncompiler's per-link checks. `command` gives the accepted revision and content hash.\n\nOn a store with `write-relations.json` beside `typesafe.json`, a committed\nwrite of memories can carry `proposed_relations`: facts already stored that\nJev reads as directly related to what you just wrote, at most three for each\nmemory, each with the relation type Jev would choose. Nothing is written.\nDeclare the ones you confirm with `kmp_curate` `mode:\"apply\"`, the returned\n`review_token` and each `item_id`, in your own why and evidence. Ignore the\nrest. The type is Jev's reading, not proof: check it against both texts.\n\nThis is the original accepted snapshot. A later relabel or search rendering does\nnot rewrite it; inspect the memory's own ref for its current state. Receipts survive\nrestart and bundle export/import and are not graph memories, label matches or\nWake evidence. Previews have no durable receipt and retain `ingest_preview` for\nreview. A simulated backend does not prove receipt persistence. Full receipt\ninspection costs more context than the acknowledgment; the ordinary Inspect\nstable-object floor and its warnings apply.\n\n## Repair a refused packet\n\nA refusal carries `feedback`: a stable `code`, `severity`, `field`, `reason`\nand an optional `action` with `tool` and complete `arguments`. Use the field\npath to locate the problem; do not parse the prose to choose a repair.\nRead the whole feedback array; the text lists the same fields. Once the packet\nshape and local identities are usable, KMP checks every record in one pass —\nclock, labels, kind, evidence, summary_en, ref and each link — and reports every\nfailure together. Correct all listed fields and resubmit the whole packet. An\nunusable packet shape, ambiguous local id or failed store read can still stop\nthe check earlier, and commit-time checks (label resemblance, neighborhood\nreview) run only after it passes.\nFor example, `MEMORY_EVIDENCE_REQUIRED` at `memories[1].evidence` means the\nsecond record needs its real source. `SEARCH_SUMMARY_REQUIRED` at\n`memories[1].summary_en` asks for a faithful English search rendering and lists\nthe tokens to keep; removing `summary_en` never passes.\n`INVALID_KIND` includes `allowed_values` from the same vocabulary as the schema.\nChoose the kind from the source's meaning; the server supplies no replacement.\n`INVALID_TYPE` reports the exact field with `expected_type` and `received_type`.\nFor example, `memories: \"[]\"` is a string: send a JSON array of record objects.\nKMP does not parse a string into memories. A non-object array member reports\n`memories[index]`, expecting `object`. `EMPTY_MEMORIES` means the array is present\nbut contains no records, and `EMPTY_RELATIONS` that a relations packet declares\nno link. Omitting all of `memories`, `search_summaries` and `relations`, or\nsending more than one of them, returns `WRITE_OPERATION_REQUIRED`; other absent\nrequired fields use `REQUIRED_FIELD`. `PRESERVED_FIELD` means a field was sent\nthat would move a memory the packet is supposed to preserve.\nFor example, an unapproved request may be recorded as an observation of the\nrequest, without `updates_state` or `supersedes` on the current decision.\nA later approval needs its own evidence. `request` and `outcome` are not kinds.\nSee the semantic-batch example for individual source labels and this distinction.\n`RELATION_CLASS_REQUIRED` means this relation has more than one possible class;\n`RELATION_CLASS_MISMATCH` means the explicit choice is incompatible. Both identify\nthe field and include `allowed_values`. Do not invent evidence or weaken a\nrelation just to make validation pass. Missing class is different from null or\nan empty string; only omission requests deterministic completion.\n\nFor `needs_review`, nothing has been written. Review `neighborhood` and the\nproposed `relations`; use each stored item's Inspect action to expand its text,\nlinks and proof. `stored` and `proposed` are distinct. Long text is omitted\nwhole instead of clipped before a negation or condition. Unknown clocks remain\nunknown. `links.from` and `links.to` index stored items in this packet only.\n`partial`, `omitted` and `omitted_conflicts` disclose excluded items; the last\ncounts omitted facts participating in explicit conflicts, not unique disputes.\n`stored_abouts` names the existing-memory owners consulted before this command,\neven when the compact `items` list omitted each stored item. `expand_context`\noffers full-detail reads only for those stored owners: a new proposed about has\nno stored context to Wake. Those reads may include broader context and pages;\nfinish relevant pages.\n\nAfter reviewing, execute `next_actions[0]` to resume the unchanged packet, or\ncorrect it and submit again. The action is a `continuation` handle: the server\nretains the packet and its `review_token` (in the agent directory with\n`context_id`, in the serving process otherwise). A corrected packet is sent\nas a new call and returns a fresh review. Do not add arguments to a\ncontinuation. Tokens bind the exact\nlogical proposal and complete selected source material, including omissions.\nA changed proposal or relevant context returns a fresh review without writing.\nA race at commit is safely retryable under the same idempotency key. An accepted\nretry returns its original receipt even if memory has changed afterwards.\n\nThe rule applies to rich relations in the kernel vocabulary (and unknown\nnon-strict relations), including same-batch links and `strict:false`. Simple\nobservations, structural links and honest `follows`/`answers`/`uses_background`\nlinks need no review round. A prior declaration of read refs cannot bypass it.\nThis is the writer's review, not a new human approval step. A token records\nacknowledgement of delivered context, never understanding or semantic truth.\n\nSelection uses explicit endpoints, their direct links and shared key/value\nlabels in the current about. Explicit conflict facts and constraints precede\nrecent facts; old constraints retain their validity clocks rather than being\nsilently declared current. Foreign scope is limited to explicitly proposed\nidentity endpoints and their surroundings. It never scans all abouts. The\ninitial target is five items in roughly 2 KiB before MCP action metadata;\na large indivisible item may exceed that target. No model summarizes the text.\nLocal reads, serialization, agent context and another interaction still cost.\n\nPlanner refusals commit none of the packet; store failures still carry their\nbackend error. A failed pre-read retains unavailable, not_found, conflict or\nbackend_error; do not treat it as a malformed source packet. Malformed successful\nstore data is a backend_error. A normal accepted write does not require routine readback.\n\n## What to write, and what never to write\n\nWrite when something is **decided, constrained, or concluded**. Decisions,\nconstraints, outcomes — each with coordinates and evidence.\n\nNever write transcripts. Memory is not a log of the conversation; it is the\ndurable shape of the work. A transcript makes later traversal worthless.\n\nLabel what you write. Every label is a `(key, value)` membership within its\nabout. Use keys such as agentic_process, task and agentic_episode when the source\nsupports those memberships. `labels` uses arrays,\neven for a single value, and may add further values under any key:\n\n```json\n\"labels\": {\n  \"alias\": [\"neb\", \"Nébula Cache\"],\n  \"component\": [\"neb\"],\n  \"environment\": [\"production\"]\n}\n```\n\nEach pair becomes its own coordinate with the memory's clocks. Two aliases\nunder `alias` are valid, as is `neb` under both `alias` and `component`.\nThe key distinguishes them. Repeating a value inside an array is an error. Shared and record labels are unioned. Values may contain spaces, punctuation and\nUnicode. The server returns canonical refs: copy them when an exact graph\naddress is needed. Do not construct refs or infer entity identity from labels.\n\nRead the `labels` catalogue in `kmp_wake` to reuse existing vocabulary.\nResponses report labels written and created. A new spelling under the same\nkey, such as `component=kmp_viewer` when `component=kmp-viewer` exists, is\nrefused in strict mode or reported in `labels.resembling` in lax mode.\nSharing a value across different keys is valid and produces no resemblance\nwarning. `options.labels_new: [\"component\"]` confirms intentional new values\nunder that key; nothing is silently renamed or merged.\n\nUse `kmp_relabel` to change memberships later. Its `add` and `remove` use the\nsame arrays. For example, `add: {\"alias\": [\"Nébula Cache\", \"NC\"]}` adds two\naliases, and `remove: {\"alias\": [\"NC\"]}` later removes only that membership.\nGive the memory's returned `ref` and a source-backed `why`. The kernel refuses\nadding an existing pair, removing an absent pair, placing a pair on both\nsides, and removing the last label. Other values under the key remain.\nAdded memberships inherit the memory's clocks; the relabel's actor, receipt\ntime and rationale are recorded separately. Read back with `kmp_inspect`\nand `include.raw` to verify the memberships and evidence.\n\nChoose keys for the routes you will need: project/source alone cannot select a\nperson, account or component. Reuse the same key for the same route over time;\n`alias: [\"@north\"]` and `account: [\"@north\"]` are distinct selectors. Separate\nfacts when one can expire or be replaced without changing the others. A person's\nrole, an account assignment and a permanent constraint need not share a lifecycle.\nSee `guide:kmp-agent:example:alias-ownership` for separate assignments and\n`guide:kmp-agent:example:semantic-batch` for a source-to-memory self-check.\n\nFilter a facet with `dimensions.selectors`, for example\n`{\"key\":\"alias\",\"op\":\"in\",\"values\":[\"neb\"]}`. To require both an alias and\nan environment, supply one selector for each key. Shared labels locate\ncandidates; only justified relations declare that two memories concern the\nsame entity or event.\n\nWrite in the language of the work, and give the memory an English rendering\nfor search: `memories[].summary_en`, plain English a reader would ask with,\nidentifiers, amounts and acronyms kept exactly as written (`v0.7.0`, `#469`,\n`kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is\n`memories[].summary`, byte for byte — so an English question reaches a memory\nwritten in Spanish, and jargon (`rollout slipped`) is found by the words\npeople ask with (`launch postponed`). It is required when `summary` is not\nEnglish; omit it when `summary` is English, where a byte-for-byte copy is dropped\nwith a diagnostic and the write goes on. A strict write refuses a rendering that\nfails the lint: wrong language, too thin, a copy of a non-English text, a dropped\nidentifier. Fix `summary_en` as the error says; never alter `summary` to fit it,\nand never remove `summary_en` to pass. Loose notation is translated: `~300` as\n`about 300`, `1→6` as `1 to 6`, `vivos/expirados/retirados` as `live, expired\nand retired`, and in a Spanish text `50.976` as `50,976` and `0,976` as `0.976`.\nHashes, paths (`src/write/planner` too, without an extension), acronyms and\nother identifiers are copied as written. A cited item that was reached\nthrough its summary says so with `matched_via: summary` and `summary_terms`.\n\nMemories written before summaries existed still owe one. Read the whole\npicture with `kmp_summaries_audit`: one call per about, or a named set through\n`dimensions.scope: abouts` with `dimensions.abouts`, or every anchor through\n`all_abouts`, which is the explicit opt-in to that cost. Each memory comes back\nwith a `state` — `missing`, `refused`, `stands`, `not_required` — the stored\n`text` to render whenever there is work to do, `summary_en` and `summary_en_by`\nwhere a rendering exists, the lint's own `faults` when it refuses one, and\ndeterministic `weaknesses` when one stands and still retrieves little: `thin`,\n`repeated` across the about, `undiscriminating`, `stale` after a later rewrite.\nOn a store opted into TypeSafe Jev, a standing summary Jev does not read as\nsaying what its memory says also carries `unfaithful`: the form is fine and\nthe meaning is not, so render it again from the text. `jev` reports what the\ncheck cost. Weaknesses are warnings and never refusals. `totals` describes the whole\nselection and never the page; continue with `page.cursor` and the same bound\narguments. `budget.max_bytes` covers the complete structured response,\nincluding its cursor and next action. If the stable core or next whole memory\ncannot fit, `page.required_bytes` is the exact sufficient size of the returned\nqualified page; raise the budget to it before continuing. `kmp-mcp summaries\npending [<about>…] [--json]` prints the debt half\nof the same reading and `kmp-mcp doctor` counts it.\n\nAttach one or more with `kmp_write_memory`, using `search_summaries` records\ncontaining only `ref` and `summary_en`: the text, kind and coordinates are read from\nthe store and cannot be supplied, no relation is written, and a rendering\nthat fails the lint is refused with every fault named. Each target must belong to the declared about; all renderings are validated\nbefore one commit. An exact retry is a no-op.\n\nFor normal writing omit `options.dry_run` or set it to false. Rich links first\nreturn `needs_review`; resume after reviewing. Independent observations stay one call.\nThe relation guide documents explicit previews and validation before commit.\n\nUse one `idempotency_key` per logical write. Replaying the same accepted write\nreturns its success rather than duplicating memory. A `conflict` can also mean\nthe store advanced before this attempt committed: follow the error message,\nrebase, and retry the same logical write with the same key when it says the\nconflict is retryable. A key already accepted with different content must not\nbe reused.\n\nFor a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.\n\n## Linking memories that already exist\n\n`relations` is the third top-level shape, beside `memories` and\n`search_summaries`, and exactly one of the three belongs in a packet. Use it\nwhen both endpoints are already stored and only the link is new:\n\n```json\n{\n  \"about\": \"project:junco\",\n  \"actor\": \"agent:sol\",\n  \"observed_at\": \"2026-09-08T11:00:00Z\",\n  \"idempotency_key\": \"junco-link-j01-j03-v1\",\n  \"read_context\": {\"inspected_refs\": [\"<J01 ref>\", \"<J03 ref>\"]},\n  \"relations\": [{\n    \"from\": \"<J01 ref>\",\n    \"to\": \"<J03 ref>\",\n    \"rel\": \"supports\",\n    \"why\": \"The alias register identifies the person the notice makes responsible.\",\n    \"evidence\": \"J01 registers the alias Nora; J03 names Nora as responsible.\"\n  }]\n}\n```\n\nDo not resubmit a stored memory as a `memories` record in order to connect it.\nA record carries its text, its evidence, its coordinates, its labels and its\nmetadata, so that route replaces the source it was only meant to cite — and a\nread at the source's own observation afterwards returns prose about something\nthat had not happened yet.\n\nKMP validates the stored endpoints and atomically commits only the links and\ntheir evidence. It does not rewrite source entries, so a concurrent source\ncorrection keeps its text, coordinates, labels and metadata. An unknown endpoint\nrefuses the whole packet before any link or evidence is written. `from` must be a canonical ref of this about, never a local id and\nnever the about anchor; `to` may name another about only for `same_event_as`\nor `same_entity_as`, with the returned `kmp_relate` proposal in `read_context`.\n`why` and `evidence` are always required here, because this shape declares no\nstructural link — change memberships with `kmp_relabel` instead.\n\nThe link and the evidence generated with it carry their own observation:\n`relations[].observed_at`, else the packet's, else — for an explicit null —\nthe exact ingestion instant. An endpoint's clock never dates a link, so an\nold source linked today is linked today, and a read before that instant sees\nneither the link nor its evidence. Occurrence and validity of a link stay\nunknown, and the sources' labels and coordinates are theirs: `labels`,\n`occurred_at`, `valid_from`, `valid_until` and `rank` are refused with\n`PRESERVED_FIELD`, as are `options.sequence` and `options.labels_new`.\n\nRich links receive the same neighborhood review as `connect_to`: review the\nreturned context and resume the bound continuation. The accepted result\nseparates the two halves in `attachment`: `created.relations` and\n`created.evidence` are what this write brought into existence, and\n`unchanged_sources` the memories it left alone. Each evidence id is derived\nfrom the logical write identity and the triple, so an exact retry replays onto\nthe same node even after an endpoint is corrected or relabelled. A second,\nlater link to the same pair adds its own evidence\nbeside the first instead of overwriting it. Reusing an accepted\n`idempotency_key` with a different link is a `conflict`, not a second write.\n`coverage` counts only the declaration. `preserved_memberships` is omitted\nfor relations because this operation does not enumerate source coordinates;\n`attachment.unchanged_sources` names the untouched endpoints.\n\nA `memories` record that supplies `ref` is the other move, and the result says\nso in `replacement`: the ref, the evidence this write put on it and the\nobservation it now carries. Read it as what it is — a replacement, not an\nattachment.\n\n## A preview checks the selected store\n\nUse `options.dry_run=true` only when a preview is useful. Embedded and gRPC\npreviews run the same kernel validation as a commit, including existing refs,\nlabel policy and coordinate ownership. A missing target or backend failure is\nan error; a syntactically valid packet is not enough. A successful preview has\n`accepted=false`, `dry_run=true` and `validation.scope=current_store`. It writes\nno event. The fixture backend reports `scope=fixture` and proves no live state.\n\nThe returned `ingest_preview` is the proposed canonical packet. Previewing\nreserves neither labels nor sequences; a later commit is validated again against\nthe then-current store. Do not repeat previews before every ordinary write:\nnormal writing already validates and requests neighborhood review where required. Raw `kmp_ingest`\nwith `dry_run=true` also reaches the kernel and leaves memory uncommitted.\n\n## Restricted HTTP clients\n\nAn HTTP bearer token may restrict abouts, label values and external refs. Rich-link\nreview also requires `kmp:read` and an about grant for every external endpoint,\nincluding when resumed from a continuation. Those\ngrants apply to shared and per-record labels, each array member, explicit entry\nrefs, relation targets and search-summary refs. Relabel additions obey the same\nlabel grants. A local @id is resolved inside its packet; it does not name an\nexternal memory. A forbidden request must stop before any backend call. Do not\nremove source-supported labels or refs just to evade a permission error.\n\n### Read the outcome and stored clocks\n\n`status=committed` appended the logical command; `replayed` returns its earlier\nacceptance without another write. Both keep `accepted=true`. `validated` is a\ndry-run, `needs_review` is an unapplied context review, and `rejected` is a validation refusal. `unconfirmed` cannot establish\npersistence: retain the same idempotency key when resolving a transport error.\nDo not turn an uncertain reply into a new logical write.\n\n`clocks.scope=accepted_command` summarizes the clocks actually in that command,\nincluding on replay. Each clock counts memories once across all label memberships:\n`entries`, `distinct_values`, and an RFC3339 `single_value` when there is only one.\n`clocks.relations` separately counts semantic links and how many carry each\nclock; structural label memberships are excluded. For one ordinary link,\n`relations=1, observed=1, ingested=1, occurred=0` is normal. Read responses expose\nits own dates in `relation.clocks`; they describe the stored declaration, not\nwhen its endpoints occurred or when the claim became true. An unchanged retry\npreserves these dates. Old undated links are not assigned dates on read.\n\nZero occurred entries means no event time was recorded. One observed instant\nacross nine memories is worth comparing with the nine sources; KMP cannot decide\nwhether those sources were observed together. Missing occurrence is legitimate\nwhen its source does not supply one. Do not invent clocks to fill a count.\n\nExample: two memories with four label memberships can report two observations\nat one instant, one occurrence, and one valid_from. Inspect receipt.action only\nwhen the individual historical clocks or evidence are needed. Its receipt retains\nthose clocks even after a later write, restart or bundle import. The current graph\ncan have changed. Null clock coverage is unavailable, not zero; previews do not\nreport saved clocks. Packet coverage still cannot assess source completeness.\n\n### Calendar dates in search renderings\n\n`El 17 de agosto de 2026 se abrió la ruta.` may use\n`The route opened on 2026-08-17.` as summary_en in strict mode. The lint compares\ncomplete Spanish or English month-name dates with ISO YYYY-MM-DD dates, including\nthe month and valid Gregorian day. It leaves both stored strings unchanged.\nEnglish `August 17, 2026` and `17 August 2026` are equivalent forms here.\n\nFor `El parte llegó el 18 de agosto.`, use `The report arrived on August 18.`\nwhen the year is unknown. A full rendering such as `2026-08-18` preserves the\nknown month/day too, but this lint neither supplies nor verifies its extra year:\nthe writer must justify it from evidence. A complete source date must keep its\nyear. A missing partial date is reported as `--08-18`; repair its month/day,\nnot by adding a redundant bare `18`. Changed months or days still fail.\n\nOther formats, times, amounts, versions and acronyms remain literal. An amount\nof 17 EUR still needs its own 17; the day in a date does not preserve that amount.\nThis check does not prove the meaning of the rest of the summary. A changed or\nomitted recognized date is reported as its canonical ISO identifier.\n\n\nEvidence source time and support declaration time are separate. When a packet\nassociates evidence with a memory, KMP dates that association from the packet's\nobservation and its accepted ingestion. An old source or old target does not\nbackdate a new association. The writer supplies no additional required field.\nHistorical observed/ingested reads exclude known later support; event-time\nreads answer a different question. Inspect is the current record. Canonical\n`memory.evidence[].support_clocks` preserves declaration clocks when restoring;\nordinary writes omit it. Repeated declarations update the current edge, without\ncreating versions of its earlier associations. Old undated events stay undated\nwhen projections are rebuilt.\n"
         },
         {
           "coordinates": [
@@ -370,7 +370,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Frame and share ChronoLoom",
             "guide_version": "1",
             "source": "editorial"
@@ -402,7 +402,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Synchronize guide assets",
             "guide_version": "1",
             "source": "editorial"
@@ -434,7 +434,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Install an optional lexical bridge",
             "guide_version": "1",
             "source": "editorial"
@@ -466,7 +466,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Cross abouts, labels and selectors",
             "guide_version": "1",
             "source": "editorial"
@@ -498,7 +498,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Choose a relation and justify it",
             "guide_version": "1",
             "source": "editorial"
@@ -530,7 +530,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Retry one logical write",
             "guide_version": "1",
             "source": "editorial"
@@ -562,7 +562,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Complete a bounded read",
             "guide_version": "1",
             "source": "editorial"
@@ -594,7 +594,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Choose a byte ceiling",
             "guide_version": "1",
             "source": "editorial"
@@ -626,7 +626,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Replace, contradict or expire",
             "guide_version": "1",
             "source": "editorial"
@@ -658,7 +658,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Interpret retrieved proof",
             "guide_version": "1",
             "source": "editorial"
@@ -690,7 +690,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Search language and literal evidence",
             "guide_version": "1",
             "source": "editorial"
@@ -722,7 +722,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Write or repair search summaries",
             "guide_version": "1",
             "source": "editorial"
@@ -755,7 +755,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Start here: one decision and its stated reason",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -787,7 +787,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Decision history and past validity",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -818,7 +818,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -850,7 +850,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Aliases, unresolved names and account assignment",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -881,7 +881,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Repository bundles and snapshots",
             "guide_version": "1",
             "source": "editorial"
@@ -913,7 +913,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Diagnose missing tools and errors",
             "guide_version": "1",
             "source": "editorial"
@@ -946,7 +946,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Distributed incident, proposed identity and late reports",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -978,7 +978,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Four clocks, interval boundaries and zoom to proof",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1010,7 +1010,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Quantities, corrections, duplicates and exclusions",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1042,7 +1042,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Conflicting assignments and evidence received late",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1074,7 +1074,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Multiple aliases, distinct facets and late memberships",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1106,7 +1106,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Labels, synonyms and negation under explicit conditions",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1138,7 +1138,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1170,7 +1170,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Read deep paths under a body budget, then condense what you read",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1202,7 +1202,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Review two abouts' relations, page the frozen review, and declare one yourself",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1234,7 +1234,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Fresh-session handoff and shared-view revision conflicts",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1266,7 +1266,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Preference and explicit policy delta",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1298,7 +1298,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Authorization, dependency and measured constraints",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1330,7 +1330,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Structure, membership and included contributions",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1362,7 +1362,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Validated canonical ingest and exact retry",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1393,7 +1393,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Find a concrete example for a tool, kind or relation",
             "guide_version": "1",
             "source": "editorial"
@@ -1426,7 +1426,7 @@
             "audience": "agent",
             "depth": "advanced",
             "example_title": "Atomic semantic packet with local proof links",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1457,7 +1457,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1488,7 +1488,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1519,7 +1519,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1550,7 +1550,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1581,7 +1581,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1612,7 +1612,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1643,7 +1643,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1674,7 +1674,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1705,7 +1705,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Manage agent identity and guidance",
             "guide_version": "1",
             "source": "editorial"
@@ -1738,7 +1738,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "One report, separate execution and verification events",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1770,11 +1770,11 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Trace several destinations under one work budget",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "# Several destinations, one search\n\nThe source register says: artifact A requires B; B requires C; a separate\nreport V verifies A. These facts and their relation-specific why/evidence\nare already stored. Obtain their exact entry refs from the write receipt or\na read. Below `ref-A`, `ref-C`, `ref-V` and `about` stand for those returned\nvalues, not refs to construct or send literally.\n\nCall `kmp_trace` with:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\",\"ref-V\"],\n \"search\":{\"max_nodes\":128,\"max_edges\":256,\"max_depth\":100,\n           \"direction\":\"outgoing\",\"relations\":[\"depends_on\",\"verified_by\"]}}\n```\n\nExpect two routes if the stored graph reaches both destinations. Each route\nindexes the complete `trace` relation table in hop order. Shared edges appear\nonce in that table. Follow `next_actions` until all pages are retained before\nresolving the zero-based `edge_indexes`. The route A→B→C preserves two declared\ndependency statements; the route A→V preserves the report's verification\nstatement. Neither tells you that those are all the sources a question needs.\nInspect the returned entry refs when the bodies or direct source evidence matter.\n\nFor “what depends on C?”, start from C with `direction:\"incoming\"` and\ndestinations A and B. The traversal goes C←B←A; the returned statements still\nsay A depends on B and B depends on C. Never reverse their meaning.\n\nIf `search.stop_reason` is `node_budget`, `edge_budget`, `depth_budget` or `state_budget`,\nunreached destinations remain unknown. `page.has_more:false` only finishes\nthe selected relation table. There is no hidden search continuation: a larger\nsearch allowance starts a new selection. Even an exact-size final storage page\ncan leave exhaustion unknown when no allowance remains for another probe.\n\nFor “which declared paths were known at noon?”, keep the same call and add:\n\n```json\n{\"as_of\":{\"time\":\"2026-09-10T12:00:00.500Z\"},\"axis\":\"observed\"}\n```\n\nThis fragment extends the complete call above. Suppose A, B and C were observed\nat 10:00, V at 13:00, and the A→V link was also first observed at 13:00. Only\nA→B→C is eligible at noon. Even if V had existed earlier, the 13:00 link would\nstill be excluded. Occurred time answers when events happened, not when they\nbecame known. Use `interval` instead of `as_of` for a half-open span; never send\nboth. `axis` without either is rejected.\n\nAn `as_of.ref` resolves the earliest canonical coordinate of that returned entry\non the selected clock. `search.resolved_as_of` reports it. Coordinate discovery\nshares the node and edge budget with path search. If the budget cannot resolve\nthe cut, `temporal_selection_resolved:false` and the stop reason say so. A known\nsource outside the cut returns `source_outside_selection`, not a missing ref.\n`coordinate_rows` is included in `scanned_edges`; label refs also count as nodes.\n\nA selected link without a usable clock remains explicitly unknown. Its index in\n`search.clock_unknown_edges` refers to the complete relation table after pages\nare joined. It is not evidence that the link already existed at the cut.\n\nThis mode does not discover destinations from a question, evaluate supersession, or infer an AND/OR proof\ngroup. Use temporal verbs to discover entries and Inspect for their full sources.\n\n\n## Alternative paths and mixed directions\n\nA later claim R corrects old claim A; verification V verifies R. The stored\narrows are R --corrects--> A and R --verified_by--> V. To walk from A to V:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-V\"],\n \"search\":{\"follow\":[{\"rel\":\"corrects\",\"direction\":\"incoming\"},\n                     {\"rel\":\"verified_by\",\"direction\":\"outgoing\"}],\n           \"paths_per_target\":2}}\n```\n\nUse exact refs returned by a write/read. `follow` replaces `direction` and\n`relations`; do not combine them. It allows these moves wherever applicable,\nnot a required order of types. KMP preserves both stored arrows and their proof.\nStarting at `search.from`, match each endpoint to reconstruct the walk. A\ncorrection is not made true merely because a path reaches it.\n\n`paths_per_target` defaults to1. With2, the reader can compare two routes to V\nwhen stored alternatives exist. If only A←R→V exists, the result has one route,\nV in `incomplete_targets`, no `unreached_targets`, and an exhausted selected\nfrontier. With2 discovered paths, `targets_reached` means the quota is met;\nthere may be more paths. A route through a target may continue to another one.\nCycles are excluded. Source equal to target needs just its zero-hop route.\n\nTwo routes to different destinations can share a useful prefix: selecting both\nmay require less unique material than selecting separately found routes. This\ncall returns candidates, not the best joint set. Quotas can hide a better set.\n`max_states` (default4096) bounds the admitted root plus every eligible extension\nattempt, including rejected cycles and visited nodes. Completed adjacency is\nreused inside the same snapshot. N/E still count actual discovered refs/decoded\nrows, not final context size. Compare those costs separately from material read.\n\n\n## Select shared material before reading all alternatives\n\nSuppose the stored paths are A→B→C, A→D→V, A→H→C and A→H→V.\nThe reader needs C and V and already has their exact returned refs. This call\ncan select the shared paths through H under four distinct entries:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\",\"ref-V\"],\n \"search\":{\"paths_per_target\":2,\"select\":{\"max_material_nodes\":4}}}\n```\n\nWithout groups, each target is one equally weighted requirement. Source A and\nshared H count once; `search.max_nodes` still bounds all discovered refs.\n`search.material` reports original candidate indexes and the selected material.\n`routes` indexes only the selected relation table. All selected arrows, why and\nevidence remain intact. The fixed beam evaluates combinations; it does not\npromise the optimum or determine which sources are sufficient for your answer.\n\nFor “I need C AND V”, extend the select object with:\n\n```json\n{\"max_material_nodes\":4,\"groups\":[{\"alternatives\":[[\"ref-C\",\"ref-V\"]]}]}\n```\n\nFor “either C AND V, OR replacement report R”, include returned `ref-R` in `to`\nand use this select object:\n\n```json\n{\"max_material_nodes\":4,\"groups\":[{\"weight\":2,\n \"alternatives\":[[\"ref-C\",\"ref-V\"],[\"ref-R\"]]}]}\n```\n\nThese requirements are the reader's explicit choices. Do not invent replacement\nor identity equivalence from matching words. Group indexes follow input order;\nwithout explicit groups they follow sorted target refs. A group is complete only\nwhen one whole alternative is in selected path material. Partial ANDs get no\nreported benefit, even though the beam can use partial progress to explore.\n\nIf the AND example is limited to two material entries, neither complete route\nfits. Expect `candidate_count` to remain positive, no selected routes and an\nincomplete group. This does not say the evidence is absent. Execute the returned\n`search.material.expand_candidates` only if you need the full bounded catalogue.\nFollow its `next_actions` to finish that new read. Expansion retains about, time,\nsearch limits and direction, removes select and the old page cursor, and incurs\nadditional context. It is optional, separate from selected-proof pagination, and\ndoes not retain a snapshot across calls. Body reads still use Inspect; graph/body\nsnapshot consistency is not supplied by material selection.\n\n\n## Labels as a constraint or as a hint\n\nUse label values copied from memory. Suppose A and C stand in env=prod, while\nA→B→C is the only proof route and B is catalogued under a different key. A label\nhint should let the reader cross B:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\"],\n \"search\":{\"prefer_dimensions\":{\"selectors\":[\n   {\"key\":\"env\",\"op\":\"in\",\"values\":[\"prod\"]}]}}}\n```\n\nFocused order selects matching queued entries first for three turns, then uses\none FIFO turn. Each turn reads at most four raw relations or replays four cached\nadmitted rows. An unfinished parent keeps its exact page position and requeues\nafter new children. Ties prefer smaller effective depth, then enqueue order; a\nresumed parent competes at its child depth. This lets a discovered child progress\nbefore a dense parent has been read completely.\nNo admitted state is removed just for a low preference. N/E/D/S and first-visited\nbehavior still limit candidates, so this is not a shortest-path or completeness\nguarantee. `search.routing.preferred_route_entries` counts matching entries in\neach returned route, including A. A nonmatching B can still be part of the proof.\n\nOnly when every path entry must meet the label constraint, use the hard field:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\"],\n \"search\":{\"dimensions\":{\"selectors\":[\n   {\"key\":\"env\",\"op\":\"in\",\"values\":[\"prod\"]}]}}}\n```\n\nThis excludes B and can return no route despite the stored A→B→C path. It also\nfilters A itself. `dimensional_rejections` counts entries excluded by dimensions\nafter temporal admission. Do not describe exhaustion of this filtered graph as\nabsence from all memory. Both fields are optional and remain in current_about.\nAn empty prefer_dimensions has no useful hint and is rejected.\n\nWith an observed as_of cut, only memberships observed by that instant contribute.\nIf B gained env=prod tomorrow, it cannot improve yesterday's priority or satisfy\nyesterday's hard predicate. Multiple values under env stay independent. `notin`\nand `notexists` read the admitted membership set; omitted or undated memberships\nare not proof of global absence. Explicit clocks never fall back. A ref cut is\nresolved from canonical coordinates before applying the dimensional filter.\n\n`search.routing.order` identifies `dimension_focus_pages_v2`. `adjacency_pages`\nand `coordinate_pages` count actual storage calls, including empty end probes;\n`resumed_states` counts turns on a path whose expansion already started. Shared\npartial adjacency lets alternatives reuse rows without charging another disk\nread, but every path extension still spends S. A cut parent is not a leaf.\n\nA useful edge late in index order can still remain unread. Whole-label admission\nmay also exhaust N/E during one turn; four relations is not a four-row bound on\ncoordinate work. Compare total work and latency. This policy has no global\nhistogram, IDF, degree bonus or learned relevance score.\n\n\nWith `search.proof:true`, the same operation materializes the selected paths'\nentry bodies and eligible typed source attachments. Shared `objects` and\n`supports` tables preserve source provenance; `gaps` reports incomplete or\nunknown proof by ref. Complete groups concern fetched sources, not semantic\ntruth. Finish every page before resolving indexes. Discovery and materialization\nshare N/E; `body_bytes` counts bodies, while `budget.max_bytes` limits transport\nonly. Source changes invalidate a continuation even before its object is paged.\nThe same option works with `search.seek`; see the evidence-seek lesson.\n"
+          "text": "# Several destinations, one search\n\nThe source register says: artifact A requires B; B requires C; a separate\nreport V verifies A. These facts and their relation-specific why/evidence\nare already stored. Obtain their exact entry refs from the write receipt or\na read. Below `ref-A`, `ref-C`, `ref-V` and `about` stand for those returned\nvalues, not refs to construct or send literally.\n\nCall `kmp_trace` with:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\",\"ref-V\"],\n \"search\":{\"max_nodes\":128,\"max_edges\":256,\"max_depth\":100,\n           \"direction\":\"outgoing\",\"relations\":[\"depends_on\",\"verified_by\"]}}\n```\n\nExpect two routes if the stored graph reaches both destinations. Each route\nindexes the complete `trace` relation table in hop order. Shared edges appear\nonce in that table. Follow `next_actions` until all pages are retained before\nresolving the zero-based `edge_indexes`. The route A→B→C preserves two declared\ndependency statements; the route A→V preserves the report's verification\nstatement. Neither tells you that those are all the sources a question needs.\nInspect the returned entry refs when the bodies or direct source evidence matter.\n\nFor “what depends on C?”, start from C with `direction:\"incoming\"` and\ndestinations A and B. The traversal goes C←B←A; the returned statements still\nsay A depends on B and B depends on C. Never reverse their meaning.\n\nIf `search.stop_reason` is `node_budget`, `edge_budget`, `depth_budget` or `state_budget`,\nunreached destinations remain unknown. `page.has_more:false` only finishes\nthe selected relation table. There is no hidden search continuation: a larger\nsearch allowance starts a new selection. Even an exact-size final storage page\ncan leave exhaustion unknown when no allowance remains for another probe.\n\nFor “which declared paths were known at noon?”, keep the same call and add:\n\n```json\n{\"as_of\":{\"time\":\"2026-09-10T12:00:00.500Z\"},\"axis\":\"observed\"}\n```\n\nThis fragment extends the complete call above. Suppose A, B and C were observed\nat 10:00, V at 13:00, and the A→V link was also first observed at 13:00. Only\nA→B→C is eligible at noon. Even if V had existed earlier, the 13:00 link would\nstill be excluded. Occurred time answers when events happened, not when they\nbecame known. Use `interval` instead of `as_of` for a half-open span; never send\nboth. `axis` without either is rejected.\n\nAn `as_of.ref` resolves the earliest canonical coordinate of that returned entry\non the selected clock. `search.resolved_as_of` reports it. Coordinate discovery\nshares the node and edge budget with path search. If the budget cannot resolve\nthe cut, `temporal_selection_resolved:false` and the stop reason say so. A known\nsource outside the cut returns `source_outside_selection`, not a missing ref.\n`coordinate_rows` is included in `scanned_edges`; label refs also count as nodes.\n\nA selected link without a usable clock remains explicitly unknown. Its index in\n`search.clock_unknown_edges` refers to the complete relation table after pages\nare joined. It is not evidence that the link already existed at the cut.\n\nThis mode does not discover destinations from a question, evaluate supersession, or infer an AND/OR proof\ngroup. Use temporal verbs to discover entries and Inspect for their full sources.\n\n\n## One destination without search options\n\n`{\"about\":\"about\",\"from\":\"ref-A\",\"to\":\"ref-C\"}` walks every stored relation\nfrom A and back from C at once, under its own allowance (1024 refs, 8192\nrows, 512 hops). When the two searches meet, `trace` is the shortest\ndirected path. When an allowance runs out first, `trace` is empty, `search`\nreports the stop, `direction:\"bidirectional\"` and C under `unreached_targets`,\nand a warning says this is not proof. `search.widen` holds the same trace\nwith the largest allowance (`search.direction:\"bidirectional\"` and the four\nlimits, 4096 refs up to 1024 hops): it follows every stored relation, as this\ntrace does. Run it only if the connection still matters: it starts a new\nselection and costs a new read, and a widened trace that stops again offers\nno further widen.\n\n\n## Alternative paths and mixed directions\n\nA later claim R corrects old claim A; verification V verifies R. The stored\narrows are R --corrects--> A and R --verified_by--> V. To walk from A to V:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-V\"],\n \"search\":{\"follow\":[{\"rel\":\"corrects\",\"direction\":\"incoming\"},\n                     {\"rel\":\"verified_by\",\"direction\":\"outgoing\"}],\n           \"paths_per_target\":2}}\n```\n\nUse exact refs returned by a write/read. `follow` replaces `direction` and\n`relations`; do not combine them. It allows these moves wherever applicable,\nnot a required order of types. KMP preserves both stored arrows and their proof.\nStarting at `search.from`, match each endpoint to reconstruct the walk. A\ncorrection is not made true merely because a path reaches it.\n\n`paths_per_target` defaults to1. With2, the reader can compare two routes to V\nwhen stored alternatives exist. If only A←R→V exists, the result has one route,\nV in `incomplete_targets`, no `unreached_targets`, and an exhausted selected\nfrontier. With2 discovered paths, `targets_reached` means the quota is met;\nthere may be more paths. A route through a target may continue to another one.\nCycles are excluded. Source equal to target needs just its zero-hop route.\n\nTwo routes to different destinations can share a useful prefix: selecting both\nmay require less unique material than selecting separately found routes. This\ncall returns candidates, not the best joint set. Quotas can hide a better set.\n`max_states` (default4096) bounds the admitted root plus every eligible extension\nattempt, including rejected cycles and visited nodes. Completed adjacency is\nreused inside the same snapshot. N/E still count actual discovered refs/decoded\nrows, not final context size. Compare those costs separately from material read.\n\n\n## Select shared material before reading all alternatives\n\nSuppose the stored paths are A→B→C, A→D→V, A→H→C and A→H→V.\nThe reader needs C and V and already has their exact returned refs. This call\ncan select the shared paths through H under four distinct entries:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\",\"ref-V\"],\n \"search\":{\"paths_per_target\":2,\"select\":{\"max_material_nodes\":4}}}\n```\n\nWithout groups, each target is one equally weighted requirement. Source A and\nshared H count once; `search.max_nodes` still bounds all discovered refs.\n`search.material` reports original candidate indexes and the selected material.\n`routes` indexes only the selected relation table. All selected arrows, why and\nevidence remain intact. The fixed beam evaluates combinations; it does not\npromise the optimum or determine which sources are sufficient for your answer.\n\nFor “I need C AND V”, extend the select object with:\n\n```json\n{\"max_material_nodes\":4,\"groups\":[{\"alternatives\":[[\"ref-C\",\"ref-V\"]]}]}\n```\n\nFor “either C AND V, OR replacement report R”, include returned `ref-R` in `to`\nand use this select object:\n\n```json\n{\"max_material_nodes\":4,\"groups\":[{\"weight\":2,\n \"alternatives\":[[\"ref-C\",\"ref-V\"],[\"ref-R\"]]}]}\n```\n\nThese requirements are the reader's explicit choices. Do not invent replacement\nor identity equivalence from matching words. Group indexes follow input order;\nwithout explicit groups they follow sorted target refs. A group is complete only\nwhen one whole alternative is in selected path material. Partial ANDs get no\nreported benefit, even though the beam can use partial progress to explore.\n\nIf the AND example is limited to two material entries, neither complete route\nfits. Expect `candidate_count` to remain positive, no selected routes and an\nincomplete group. This does not say the evidence is absent. Execute the returned\n`search.material.expand_candidates` only if you need the full bounded catalogue.\nFollow its `next_actions` to finish that new read. Expansion retains about, time,\nsearch limits and direction, removes select and the old page cursor, and incurs\nadditional context. It is optional, separate from selected-proof pagination, and\ndoes not retain a snapshot across calls. Body reads still use Inspect; graph/body\nsnapshot consistency is not supplied by material selection.\n\n\n## Labels as a constraint or as a hint\n\nUse label values copied from memory. Suppose A and C stand in env=prod, while\nA→B→C is the only proof route and B is catalogued under a different key. A label\nhint should let the reader cross B:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\"],\n \"search\":{\"prefer_dimensions\":{\"selectors\":[\n   {\"key\":\"env\",\"op\":\"in\",\"values\":[\"prod\"]}]}}}\n```\n\nFocused order selects matching queued entries first for three turns, then uses\none FIFO turn. Each turn reads at most four raw relations or replays four cached\nadmitted rows. An unfinished parent keeps its exact page position and requeues\nafter new children. Ties prefer smaller effective depth, then enqueue order; a\nresumed parent competes at its child depth. This lets a discovered child progress\nbefore a dense parent has been read completely.\nNo admitted state is removed just for a low preference. N/E/D/S and first-visited\nbehavior still limit candidates, so this is not a shortest-path or completeness\nguarantee. `search.routing.preferred_route_entries` counts matching entries in\neach returned route, including A. A nonmatching B can still be part of the proof.\n\nOnly when every path entry must meet the label constraint, use the hard field:\n\n```json\n{\"about\":\"about\",\"from\":\"ref-A\",\"to\":[\"ref-C\"],\n \"search\":{\"dimensions\":{\"selectors\":[\n   {\"key\":\"env\",\"op\":\"in\",\"values\":[\"prod\"]}]}}}\n```\n\nThis excludes B and can return no route despite the stored A→B→C path. It also\nfilters A itself. `dimensional_rejections` counts entries excluded by dimensions\nafter temporal admission. Do not describe exhaustion of this filtered graph as\nabsence from all memory. Both fields are optional and remain in current_about.\nAn empty prefer_dimensions has no useful hint and is rejected.\n\nWith an observed as_of cut, only memberships observed by that instant contribute.\nIf B gained env=prod tomorrow, it cannot improve yesterday's priority or satisfy\nyesterday's hard predicate. Multiple values under env stay independent. `notin`\nand `notexists` read the admitted membership set; omitted or undated memberships\nare not proof of global absence. Explicit clocks never fall back. A ref cut is\nresolved from canonical coordinates before applying the dimensional filter.\n\n`search.routing.order` identifies `dimension_focus_pages_v2`. `adjacency_pages`\nand `coordinate_pages` count actual storage calls, including empty end probes;\n`resumed_states` counts turns on a path whose expansion already started. Shared\npartial adjacency lets alternatives reuse rows without charging another disk\nread, but every path extension still spends S. A cut parent is not a leaf.\n\nA useful edge late in index order can still remain unread. Whole-label admission\nmay also exhaust N/E during one turn; four relations is not a four-row bound on\ncoordinate work. Compare total work and latency. This policy has no global\nhistogram, IDF, degree bonus or learned relevance score.\n\n\nWith `search.proof:true`, the same operation materializes the selected paths'\nentry bodies and eligible typed source attachments. Shared `objects` and\n`supports` tables preserve source provenance; `gaps` reports incomplete or\nunknown proof by ref. Complete groups concern fetched sources, not semantic\ntruth. Finish every page before resolving indexes. Discovery and materialization\nshare N/E; `body_bytes` counts bodies, while `budget.max_bytes` limits transport\nonly. Source changes invalidate a continuation even before its object is paged.\nThe same option works with `search.seek`; see the evidence-seek lesson.\n"
         },
         {
           "coordinates": [
@@ -1802,7 +1802,7 @@
             "audience": "agent",
             "depth": "basic",
             "example_title": "Discover compatible evidence paths from a seed",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1833,7 +1833,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Audit reference: pagination, routes, dimensions and evidence joins",
             "guide_version": "1",
             "source": "editorial"
@@ -1865,7 +1865,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1896,7 +1896,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "basic",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "editorial"
           },
@@ -1927,7 +1927,7 @@
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_title": "Use optional consolidated memory views",
             "guide_version": "1",
             "source": "editorial"
@@ -1960,7 +1960,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:ask",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ask"
@@ -1993,7 +1993,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:condense",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_condense"
@@ -2026,12 +2026,12 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:curate",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_curate"
           },
-          "text": "LIVE TOOL kmp_curate. Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to`, asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only."
+          "text": "LIVE TOOL kmp_curate. Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to` (with `to`, only among at most 22 facts linked within four hops of either end), asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only."
         },
         {
           "coordinates": [
@@ -2059,7 +2059,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:guide",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_guide"
@@ -2092,7 +2092,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_ingest"
@@ -2125,7 +2125,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_inspect"
@@ -2158,7 +2158,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relabel"
@@ -2191,7 +2191,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:relate",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_relate"
@@ -2224,7 +2224,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_summaries_audit"
@@ -2257,7 +2257,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:time",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_time"
@@ -2290,12 +2290,12 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:audit",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_trace. Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing."
+          "text": "LIVE TOOL kmp_trace. Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection traces equivalence-aware over every stored relation with a bounded bidirectional search; a work cutoff returns no path, the stop in search and an optional search.widen."
         },
         {
           "coordinates": [
@@ -2323,7 +2323,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_apply_intent"
@@ -2356,7 +2356,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_get_state"
@@ -2389,7 +2389,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:view",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_view_open"
@@ -2422,7 +2422,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:wake",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_wake"
@@ -2455,7 +2455,7 @@
             "audience": "agent",
             "depth": "advanced",
             "guide_ref": "guide:kmp-agent:verb:write",
-            "guide_revision": "856f0edb1f721bfb026f213659720c0b62a12c4ef8e7abf74c25adb22d2f0267",
+            "guide_revision": "53cc0946e4ec365be5f4c69ffc4f2fb14f85245d3aacfb22f57e530aff2e6de6",
             "guide_version": "1",
             "source": "tools/list",
             "tool_name": "kmp_write_memory"
@@ -3280,7 +3280,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_curate"
           ],
-          "text": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to`, asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only.",
+          "text": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to` (with `to`, only among at most 22 facts linked within four hops of either end), asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -3384,7 +3384,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_trace"
           ],
-          "text": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
+          "text": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection traces equivalence-aware over every stored relation with a bounded bidirectional search; a work cutoff returns no path, the stop in search and an optional search.widen.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -3957,7 +3957,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to`, asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only.",
+          "evidence": "Review the relations of one or several abouts with the calling agent as author and TypeSafe Jev as a second reader. `mode: review` reads the selection the way kmp_relate does and writes nothing. It returns `missing`: pairs of current facts nothing declares yet — paired by the kernel from checkable signals (rare identifiers, summaries, names, shared labels), inside one about or across abouts, or picked by Jev for facts nothing else paired — each with the relation type Jev would choose, or `contradicts` when the two cannot both be true; and `suspect`: declared relations whose why and evidence Jev does not find supporting, or that Jev would type differently. Jev only chooses among offered options and judges text; it never writes a relation or a word of one, so every why and evidence you declare is yours, and a suggested type is a suggestion. Across abouts only same_event_as and same_entity_as are ever suggested. Jev is opt-in per store: `typesafe.json` beside the store and `TYPESAFE_API_KEY` in the environment; fact text of the selection is sent to TypeSafe. Without it the review returns kernel pairs untyped and audits nothing. The review is frozen under `review_token`; page it with that token and `page.cursor`. `mode: apply` takes items of a frozen review with your why and evidence; Jev reads your text once more, and which way round the relation runs, and withholds what it doubts until you correct or confirm it; the rest goes through kmp_write_memory's own plan, neighbourhood review and idempotency, and a needs_review answer resumes here. Only items whose `from` belongs to `about` are written by a call. `mode: paths` reads a whole selection — one about or several — keeps the facts Jev judges on the way from `from` to `to` (with `to`, only among at most 22 facts linked within four hops of either end), asks it for each one's direct consequence, and joins those steps to the declared relations into whole chains; proposed steps are frozen under `review_token` like missing relations. Embedded store only.",
           "from": "guide:kmp-agent:tool:kmp_curate",
           "rel": "uses_background",
           "sequence": 51,
@@ -4037,7 +4037,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
+          "evidence": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection traces equivalence-aware over every stored relation with a bounded bidirectional search; a work cutoff returns no path, the stop in search and an optional search.widen.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
           "sequence": 59,

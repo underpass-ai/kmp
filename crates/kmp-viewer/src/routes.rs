@@ -366,6 +366,7 @@ where
                     .param("cursor")
                     .and_then(|value| value.parse::<usize>().ok()),
             },
+            limits: None,
         };
         match self.service.trace(query).await {
             Ok(result) => HttpResponse::json(&views::trace_view(from, to, &result)),

@@ -88,11 +88,17 @@ def combine(modes, results):
     return value, reasons
 
 
+def used_freeze(results):
+    """The B-real freeze the mode read (`real_section.freeze_identity`), or None when no section did."""
+    return next((r.freeze for r in results if r.freeze), None)
+
+
 def summarize(request, mode, modes, specs, results, started, total_s):
     material = {'mode': mode.name, 'modes_sha256': modes.sha256,
                 'arms': [spec.identity() for spec in specs],
                 'sections': [(r.name, r.status, r.report_key,
-                              cachekey.digest(r.judged) if r.judged is not None else None) for r in results]}
+                              cachekey.digest(r.judged) if r.judged is not None else None) for r in results],
+                'freeze': used_freeze(results)}
     verdict, reasons = combine(modes, results)
     return {
         'schema': SCHEMA, 'bench_version': BENCH_VERSION,
@@ -103,6 +109,7 @@ def summarize(request, mode, modes, specs, results, started, total_s):
         'arms': {'baseline': specs[0].provenance(),
                  'candidate': None if mode.replica_of else specs[1].provenance()},
         'replica': bool(mode.replica_of),
+        'freeze': used_freeze(results),
         'parameters': {**mode.run_parameters(), 'warmup': mode.warmup, 'block': mode.block,
                        'cpus': mode.cpus, 'bootstrap_b': mode.bootstrap_b, 'run_mode': mode.run_mode},
         'sections': [r.as_dict() for r in results],

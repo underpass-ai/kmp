@@ -1,4 +1,5 @@
 """summary.md of a mode run, from its summary.json alone (deterministic, aggregates only)."""
+from .markdown import freeze_line
 
 HEADLINE = (('useful_rate', 'useful'), ('false_answer_rate', 'false answer'),
             ('false_unknown_rate', 'false UNKNOWN'), ('recall_at_5', 'R@5'), ('core_precision', 'core precision'))
@@ -45,8 +46,8 @@ def _headline_cell(section, metric):
 
 def _sections(summary):
     lines = ['| Section | Status | Verdict | Questions | ' + ' | '.join(label for _, label in HEADLINE)
-             + ' | Parity | Seconds | Report |',
-             '|---|---|---|---|' + '---|' * len(HEADLINE) + '---|---|---|']
+             + ' | Parity | Seconds | Report | Freeze |',
+             '|---|---|---|---|' + '---|' * len(HEADLINE) + '---|---|---|---|']
     for section in summary['sections']:
         questions = sum((section.get('questions') or {}).values()) or '—'
         parity = section.get('parity') or {}
@@ -55,7 +56,7 @@ def _sections(summary):
         report = f'{section["layout"]} `{short(section["report_key"])}`' if section.get('report_key') else '—'
         lines.append(f'| {section["name"]} | {section["status"]} | {section.get("verdict") or "—"} | {questions} | '
                      + ' | '.join(_headline_cell(section, metric) for metric, _ in HEADLINE)
-                     + f' | {parity_cell} | {section["seconds"]:.1f} | {report} |')
+                     + f' | {parity_cell} | {section["seconds"]:.1f} | {report} | {_freeze_cell(section)} |')
     notes = [f'- **{s["name"]}** {s["status"]}: {s["reason"]}' for s in summary['sections'] if s.get('reason')]
     for section in summary['sections']:
         aa = section.get('aa')
@@ -66,6 +67,14 @@ def _sections(summary):
                          f'{_yes(aa.get("token_delta_zero_normalized"))} with handles normalized; '
                          f'moved: {moved}')
     return lines + ([''] + notes if notes else [])
+
+
+def _freeze_cell(section):
+    freeze = section.get('freeze')
+    if not freeze:
+        return '—'
+    return (f'`{freeze["path"]}` store `{short(freeze["store_digest"].removeprefix("sha256:"))}` '
+            f'questions `{short(freeze["questions_digest"])}`')
 
 
 def _yes(value):
@@ -141,6 +150,8 @@ def render(summary):
              f'started {timings["started_at"]}', '',
              f'**Verdict: `{verdict["value"]}`** in {timings["total_s"]:.1f} s ({budget_text}).', '']
     lines += [f'- {reason}' for reason in verdict['reasons']] + ['']
+    lines += [f'B-real freeze: {freeze_line(summary.get("freeze"), "none: no section of this mode read one")}.',
+              '']
     lines += ['## Arms', '', '| Arm | Variant | Binary | Provenance | Config |', '|---|---|---|---|---|']
     lines += _arm('baseline', summary['arms']['baseline']) + _arm('candidate', summary['arms']['candidate'])
     parameters = summary['parameters']

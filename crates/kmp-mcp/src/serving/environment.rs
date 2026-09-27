@@ -18,11 +18,21 @@ pub const TYPESAFE_API_KEY_ENV: &str = "TYPESAFE_API_KEY";
 /// no key, and an unrecorded request fails instead of being guessed.
 pub const TYPESAFE_CASSETTE_ENV: &str = "KMP_TYPESAFE_CASSETTE";
 pub const TYPESAFE_CASSETTE_MODE_ENV: &str = "KMP_TYPESAFE_CASSETTE_MODE";
+/// Evaluation only: the largest about a review without `focus` asks Jev for
+/// its orphans' partners in (2–512 facts). Unset, the store's
+/// `curate.json` or the default (120).
+pub const EVAL_PARTNER_FACTS_ENV: &str = "KMP_EVAL_PARTNER_FACTS";
 
 /// `off` lifts the deadlines a first ask or wake page waits for Jev
 /// (recording a cassette against the real provider, where a slow answer
 /// must be kept, not degraded). Any other value, or none, keeps them.
 pub const JUDGEMENT_DEADLINES_ENV: &str = "KMP_JUDGEMENT_DEADLINES";
+
+/// The lexical sidecar (`lexical-index.sqlite3`, DESIGN L6): `shadow`
+/// maintains it beside the store and compares it with every ask, never
+/// answering one; `off`, none or any other value keeps it closed
+/// ([`crate::serving::lexical_index_mode::LexicalIndexMode`]).
+pub const LEXICAL_INDEX_ENV: &str = "KMP_LEXICAL_INDEX";
 
 /// How long `site` waits for Jev on a first page, unless the operator
 /// lifted the deadlines.

@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::MemoryAnswerPolicy;
-use kmp_domain::KmpBundle;
+use kmp_domain::{KmpBundle, SearchExpansions};
 use kmp_proto::v1beta1::{AnswerStatus, MemoryConfidence, MemoryEvidence, UnknownReason};
 
 use super::anchor_rescue::AnchorRescue;
@@ -20,6 +20,11 @@ use super::ask_gate::AskGate;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
+use super::concept_coverage::ConceptCoverage;
+use super::content_scores::ContentScores;
+use super::doubt_verdicts::DoubtVerdicts;
+use super::expansion_rescue::ExpansionRescue;
+use super::gate_doubt::GateDoubt;
 use super::gate_verdict::GateVerdict;
 use super::identifier_binding::IdentifierBinding;
 use super::lexical_bridge::LexicalBridge;
@@ -76,6 +81,9 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     bridge: &'a LexicalBridge,
     lexical_cache: Option<&'a super::lexical_index_cache::LexicalIndexCache>,
     lexical_identity: Option<super::lexical_index_identity::LexicalIndexIdentity>,
+    /// Where the first collection this ranker builds is recorded for the
+    /// lexical sidecar's shadow comparison, when an ask asked for it.
+    witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -85,6 +93,7 @@ impl Default for AnswerEvidenceRanker<'_> {
             bridge: &SILENT_BRIDGE,
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
         }
     }
 }
@@ -176,7 +185,38 @@ impl<'a> AnswerEvidenceRanker<'a> {
             bridge,
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
         }
+    }
+
+    /// Records what the ranker measures for the lexical sidecar's shadow
+    /// comparison. Recording never changes the ranking.
+    pub(super) fn with_lexical_witness(
+        mut self,
+        witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
+    ) -> Self {
+        self.witness = witness;
+        self
+    }
+
+    /// Leaves the collection and the question's weights in the witness, the
+    /// first time only.
+    fn observe(
+        &self,
+        prepared: &[ReadCandidate],
+        collection: &super::lexical_collection::LexicalCollection,
+        lexicon: &Lexicon,
+    ) {
+        let Some(witness) = self.witness.filter(|witness| witness.is_waiting()) else {
+            return;
+        };
+        witness.record(super::lexical_observation::LexicalObservation::read(
+            prepared,
+            collection,
+            lexicon.weighted_terms().cloned(),
+            self.context.language.clone(),
+            self.context.identifier_aliases,
+        ));
     }
 
     pub(super) fn with_lexical_cache(
@@ -208,17 +248,36 @@ impl<'a> AnswerEvidenceRanker<'a> {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> Vec<MemoryEvidence> {
+        self.rank_scored(question, policy, evidence).0
+    }
+
+    /// [`Self::rank`], with the content score each candidate the question
+    /// reached in its own words was ranked with, in rank order: what the
+    /// margin of a lead is read from ([`ContentScores::margin`]).
+    pub(super) fn rank_scored(
+        &self,
+        question: &str,
+        policy: MemoryAnswerPolicy,
+        evidence: Vec<MemoryEvidence>,
+    ) -> (Vec<MemoryEvidence>, ContentScores) {
         let morphology = &self.context.morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
             evidence.sort_by_key(stable_evidence_key);
-            return evidence;
+            return (evidence, ContentScores::default());
         }
         let strict_focus = self.strict_focus(question, policy);
         let prepared = self.prepare(evidence);
         let collection = self.collection(&prepared);
-        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+        let lexicon = Lexicon::build(
+            question,
+            morphology,
+            &prepared,
+            self.bridge,
+            std::sync::Arc::clone(&collection),
+        );
+        self.observe(&prepared, &collection, &lexicon);
         self.rank_prepared(
             question,
             &question_terms,
@@ -284,7 +343,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         anchored: Option<(&BTreeSet<String>, &BTreeSet<String>)>,
         prepared: Vec<ReadCandidate>,
         lexicon: &Lexicon,
-    ) -> Vec<MemoryEvidence> {
+    ) -> (Vec<MemoryEvidence>, ContentScores) {
         let morphology = &self.context.morphology;
         let diversity_focus_terms = strict_focus
             .as_ref()
@@ -321,6 +380,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .cmp(&left.relevance)
                 .then_with(|| left.stable_key.cmp(&right.stable_key))
         });
+        let scores = ContentScores::read(candidates.iter().map(|candidate| {
+            (
+                candidate.item.id.as_str(),
+                candidate.relevance.content_score,
+            )
+        }));
         let ranked = diversify_candidates(question_terms, &diversity_focus_terms, candidates);
         let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
@@ -341,13 +406,29 @@ impl<'a> AnswerEvidenceRanker<'a> {
         }
         .rescue(&answer, rejected);
         answer.extend(lifecycle);
+        let (expanded, rejected) = ExpansionRescue {
+            context: &self.context,
+            question,
+            question_terms,
+            strict: strict_focus.as_ref(),
+        }
+        .rescue(rejected);
         let (associated, rejected) = self.associated_candidates(rejected, lexicon);
         let (bridged, rejected) = self.bridged_candidates(rejected, lexicon);
         let rejected = rejected.into_iter().map(|(item, _)| item).collect();
-        answer.extend(self.reached_candidates(&answer, rejected));
+        // The graph walks from what the question matched in its own words,
+        // never from what an expansion carried.
+        let reached = self.reached_candidates(&answer, rejected);
+        answer.extend(expanded);
+        answer.extend(reached);
         answer.extend(associated);
         answer.extend(bridged);
-        answer
+        // The expansions were a search surface; a reader is shown the memory.
+        for item in &mut answer {
+            item.metadata
+                .retain(|key, _| !SearchExpansions::is_metadata_key(key));
+        }
+        (answer, scores)
     }
 
     /// Reads a question that names an identifier through the anchored gate.
@@ -357,7 +438,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// anchor is absent, the proof is what `rank` would have returned and the
     /// verdict UNKNOWN. Otherwise the candidates are ranked by the same key
     /// without the focus filter, facets breaking ties by entry kind, and the
-    /// cited core leads the proof.
+    /// cited core leads the proof. A doubt band's verdicts, when given, act
+    /// on the gate's core (`GateDoubt`).
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn read_anchored(
         &self,
         question: &str,
@@ -366,11 +449,15 @@ impl<'a> AnswerEvidenceRanker<'a> {
         contract: &QuestionContract,
         gate: AskGate,
         evidence: Vec<MemoryEvidence>,
+        doubt: Option<&DoubtVerdicts>,
     ) -> AnchoredReading {
         let morphology = &self.context.morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
-            return AnchoredReading::unanchored(self.rank(question, policy, evidence));
+            return AnchoredReading::unanchored(
+                self.rank(question, policy, evidence),
+                ContentScores::default(),
+            );
         }
         let prepared = self.prepare(evidence);
         let collection = self.collection(&prepared);
@@ -383,9 +470,15 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let (principal, others) = match selection {
             AnchorSelection::Anchored { principal, others } => (principal, others),
             unanchored_or_absent => {
-                let lexicon =
-                    Lexicon::build(question, morphology, &prepared, self.bridge, collection);
-                let evidence = self.rank_prepared(
+                let lexicon = Lexicon::build(
+                    question,
+                    morphology,
+                    &prepared,
+                    self.bridge,
+                    std::sync::Arc::clone(&collection),
+                );
+                self.observe(&prepared, &collection, &lexicon);
+                let (evidence, scores) = self.rank_prepared(
                     question,
                     &question_terms,
                     self.strict_focus(question, policy),
@@ -398,7 +491,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                         evidence,
                         GateVerdict::unknown(UnknownReason::AnchorAbsentInSelection, missing),
                     ),
-                    _ => AnchoredReading::unanchored(evidence),
+                    _ => AnchoredReading::unanchored(evidence, scores),
                 };
             }
         };
@@ -406,7 +499,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
         // enumerates, which break ties by entry kind and nothing more.
         let question = anchored_question;
         let question_terms = informative_terms(question, morphology);
-        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+        let lexicon = Lexicon::build(
+            question,
+            morphology,
+            &prepared,
+            self.bridge,
+            std::sync::Arc::clone(&collection),
+        );
+        self.observe(&prepared, &collection, &lexicon);
         let unfiltered = self
             .strict_focus(question, policy)
             .map(|(terms, _)| (terms, 0));
@@ -424,7 +524,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let successor_core = gate.admits_successor_to_core()
             && contract.time() != QuestionTime::History
             && !self.context.lifecycle.reads_an_instant();
-        let ranked = self.rank_prepared(
+        let (ranked, scores) = self.rank_prepared(
             question,
             &question_terms,
             unfiltered,
@@ -470,19 +570,41 @@ impl<'a> AnswerEvidenceRanker<'a> {
             }
             rescue.stand_in_along_lifecycle(id, &principal.term, from, via);
         }
-        let verdict = AnchoredGate::new(contract, gate.allows_partial()).decide(
-            &principal,
-            &others,
-            direct.iter().map(|(item, terms)| (*item, terms)),
-            &rescue,
-            |concept, terms| {
-                if concept.literal {
-                    terms.content.contains(&concept.key)
-                } else {
-                    lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms) > 0
-                }
-            },
-        );
+        let anchored_gate = AnchoredGate::new(contract, gate.allows_partial());
+        // The gate over the memories it may cite: every direct candidate, or
+        // only those a remote judge left standing.
+        let decide = |within: Option<&BTreeSet<String>>| {
+            anchored_gate.decide(
+                &principal,
+                &others,
+                direct
+                    .iter()
+                    .filter(|(item, _)| within.is_none_or(|ids| ids.contains(&item.id)))
+                    .map(|(item, terms)| (*item, terms)),
+                &rescue,
+                |concept, terms| {
+                    if concept.literal {
+                        terms.content.contains(&concept.key)
+                    } else {
+                        lexicon.content_focus_matches(&BTreeSet::from([concept.key.clone()]), terms)
+                            > 0
+                    }
+                },
+            )
+        };
+        // What the gate may cite at all: the direct candidates that name the
+        // principal anchor, in rank order. Nothing else is ever promoted.
+        let promotable = direct
+            .iter()
+            .filter(|(item, terms)| rescue.names(item, terms, &principal.term))
+            .map(|(item, _)| *item)
+            .collect::<Vec<_>>();
+        let judged = GateDoubt::judge(decide(None), doubt, &promotable, |kept| decide(Some(kept)));
+        let promotable = promotable
+            .iter()
+            .map(|item| item.id.clone())
+            .collect::<Vec<_>>();
+        let verdict = judged.verdict.clone();
         // What the gate did not answer whole is proved by the memories about
         // its anchors. The ranking above had no focus filter, so the rest of
         // it is every candidate that shares a word with the question: on the
@@ -527,8 +649,11 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 }
                 _ => item,
             })
+            .map(|item| judged.mark(item))
             .collect::<Vec<_>>();
         AnchoredReading::decided(ranked, verdict)
+            .with_scores(scores)
+            .with_promotable(promotable)
     }
 
     /// Whether the memory a candidate states or supports names any of these
@@ -540,6 +665,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
         terms
             .iter()
             .any(|term| read.direct_counts.count(term) > 0 || read.claim.contains(term))
+    }
+
+    /// Whether a memory stands as current where this ranker reads: neither
+    /// replaced nor expired.
+    pub(super) fn is_live(&self, item: &MemoryEvidence) -> bool {
+        self.context.temporal_state(item) == CandidateTemporalState::CurrentOrUnspecified
     }
 
     /// The morphology this ranker compares words in.
@@ -775,12 +906,35 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if evidence.is_empty() {
             return MemoryConfidence::Unknown;
         }
-        let question_terms = informative_terms(question, &self.context.morphology);
-        if question_terms.is_empty() {
+        let coverage = self.concept_coverage(question, evidence);
+        if coverage.asked == 0 {
             return MemoryConfidence::Low;
         }
+        let share = coverage.share();
+        if share >= 0.6 {
+            MemoryConfidence::High
+        } else if share >= 0.3 {
+            MemoryConfidence::Medium
+        } else if self.bridged_coverage(question, evidence) >= BRIDGED_COVERAGE_FOR_MEDIUM {
+            // No words in common and most of the meaning by the table's
+            // lights: found, in other words. Abstention finally has a signal
+            // that is not the one retrieval failed on.
+            MemoryConfidence::Medium
+        } else {
+            MemoryConfidence::Low
+        }
+    }
+
+    /// The most question concepts any one retained item is credited with,
+    /// beside how many the question asks: what `confidence` reads, as counts.
+    pub(super) fn concept_coverage(
+        &self,
+        question: &str,
+        evidence: &[MemoryEvidence],
+    ) -> ConceptCoverage {
+        let question_terms = informative_terms(question, &self.context.morphology);
         let binding = IdentifierBinding::read(question, &self.context.morphology);
-        let best_matches = evidence
+        let matched = evidence
             .iter()
             .map(|item| {
                 let searchable =
@@ -791,18 +945,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
             })
             .max()
             .unwrap_or_default();
-        let coverage = best_matches as f64 / concept_count(&question_terms) as f64;
-        if coverage >= 0.6 {
-            MemoryConfidence::High
-        } else if coverage >= 0.3 {
-            MemoryConfidence::Medium
-        } else if self.bridged_coverage(question, evidence) >= BRIDGED_COVERAGE_FOR_MEDIUM {
-            // No words in common and most of the meaning by the table's
-            // lights: found, in other words. Abstention finally has a signal
-            // that is not the one retrieval failed on.
-            MemoryConfidence::Medium
-        } else {
-            MemoryConfidence::Low
+        ConceptCoverage {
+            matched,
+            asked: concept_count(&question_terms),
         }
     }
 
@@ -944,6 +1089,7 @@ mod tests {
         AnswerEvidenceRanker {
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1658,6 +1804,7 @@ mod tests {
         let ranker = AnswerEvidenceRanker {
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -2087,6 +2234,7 @@ mod tests {
         AnswerEvidenceRanker {
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
             context: AnswerRecallContext::default(),
             bridge,
         }

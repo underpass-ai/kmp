@@ -49,6 +49,7 @@ class SectionResult:
     limitations: list = field(default_factory=list)
     seconds: float = 0.0
     judged: list | None = None  # judged corpora: one comparison per corpus arm (judged_section)
+    freeze: dict | None = None  # the B-real freeze the section read (real_section.freeze_identity)
     public: list | None = None  # public benchmarks: one row per corpus (public_section)
 
     def as_dict(self):
@@ -57,6 +58,7 @@ class SectionResult:
                 'verdict': self.verdict, 'reasons': self.reasons, 'applicable': self.applicable,
                 'headline': self.headline, 'parity': self.parity, 'aa': self.aa,
                 'limitations': self.limitations, 'judged': self.judged, 'public': self.public,
+                'freeze': self.freeze,
                 'seconds': round(self.seconds, 3)}
 
 
@@ -143,7 +145,7 @@ def _parity(report):
 
 
 def report_section(name, results, questions, specs, mode, layout, extras=(), level=None, topology=None,
-                   limitations=(), calibration=None):
+                   limitations=(), calibration=None, freeze=None):
     """Score and compare the arms' runs; write report.json and report.md; summarize."""
     base_runs = [reports.ArmRun(load_run(results[0].run_dir), level, topology)]
     cand_runs = [reports.ArmRun(load_run(results[1].run_dir), level, topology)]
@@ -155,7 +157,7 @@ def report_section(name, results, questions, specs, mode, layout, extras=(), lev
     counters, reason = tokens.try_load_counters()
     options = reports.ReportOptions(mode=mode.name, bootstrap_b=mode.bootstrap_b,
                                     extra_limitations=tuple(limitations), calibration=calibration,
-                                    rules={'modes_sha256': mode.sha256})
+                                    rules={'modes_sha256': mode.sha256}, freeze=freeze)
     report = reports.build_report(baseline, candidate, questions, counters, options, reason)
     directory = reports.write_report(report, layout, markdown.render(report))[0].parent
     verdict = report['verdict']
@@ -165,11 +167,12 @@ def report_section(name, results, questions, specs, mode, layout, extras=(), lev
         runs={arm: {'run_id': r.run_id, 'cached': r.cached} for arm, r in zip(('baseline', 'candidate'), results)},
         questions=report['provenance']['questions']['by_corpus'], verdict=verdict['value'],
         reasons=list(verdict['reasons']), applicable=applicable(verdict), headline=_headline(report),
-        parity=_parity(report), aa=report['controls'].get('aa'), limitations=list(report['limitations']))
+        parity=_parity(report), aa=report['controls'].get('aa'), limitations=list(report['limitations']),
+        freeze=freeze)
 
 
 def run_section(name, specs, stores, questions, mode, layout, replica_nonce=None, level=None,
-                topology=None, limitations=(), sweep=(), calibration=None):
+                topology=None, limitations=(), sweep=(), calibration=None, freeze=None):
     """measure + report_section, with the section's wall time; a bench error fails only this section."""
     started = time.perf_counter()
     try:
@@ -177,8 +180,10 @@ def run_section(name, specs, stores, questions, mode, layout, replica_nonce=None
         extras = [(level, measure(specs, stores, questions, mode, layout, max_bytes, replica_nonce))
                   for max_bytes in sweep]
         result = report_section(name, results, questions, specs, mode, layout, extras, level, topology,
-                                limitations, calibration)
+                                limitations, calibration, freeze)
     except BenchError as error:
-        return failed(name, error, time.perf_counter() - started)
+        result = failed(name, error, time.perf_counter() - started)
+        result.freeze = freeze
+        return result
     result.seconds = time.perf_counter() - started
     return result

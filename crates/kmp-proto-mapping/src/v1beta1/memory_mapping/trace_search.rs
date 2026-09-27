@@ -20,6 +20,11 @@ pub fn trace_search_request_from_proto(
             "seek requests must use the evidence path service",
         ));
     }
+    // One `to` with a bidirectional allowance is the single-destination
+    // trace under a larger allowance (its `search.widen`), not this search.
+    if super::trace_widened::WidenedTrace::requested(request) {
+        return Ok(None);
+    }
     if request.search.is_none()
         && request.targets.is_empty()
         && request.as_of.is_none()

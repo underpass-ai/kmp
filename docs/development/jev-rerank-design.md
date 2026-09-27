@@ -38,7 +38,9 @@ The request carries `state`, `model` and a map of named `questions`. The
 response carries `model`, one answer per question under the same key, and
 `usage`. A `noul` answer holds the probability of "yes" in [0, 1]. Pricing is
 per input token. Limits are 1,200 requests per minute and 64k tokens per
-request, of which 32k covers `state` plus the longest question. A `429` may
+request, of which 32k covers `state` plus the longest question; KMP sends at
+most 24k estimated tokens a request since 27 Sept 2026 (a request under the
+former 60k estimate was refused with `max_tokens_exceeded`). A `429` may
 carry `retry-after`.
 
 ## Components
@@ -79,8 +81,8 @@ Only the reranking itself is new.
    - Admitted items the ranker drops, meaning those with no lexical,
      relation or bridge link, fill the remaining slots in kernel bundle
      order. Without this step a pure paraphrase could never reach the model.
-   - Each text is cut to 2,000 characters so the request fits the provider's
-     32k budget for state plus longest question.
+   - Each text is cut to 2,000 characters so the request fits the 24k
+     budget of one request.
 3. The adapter returns an ordered list of `(entry_ref, text_sha256)`.
    `with_rerank_ranking` stores it.
 4. `ask_response_from_result` resolves the ranking against the live candidate

@@ -34,7 +34,7 @@ checks files against these contracts.
 - **Versioning.** Every record names its schema (`"schema": "kmp.bench.question.v1"`). A
   change that makes an old record invalid or changes what a field means is a new
   version (`v2`) and a bump of `BENCH_VERSION` in `__init__.py`, which invalidates every
-  cache entry. Adding a value to a closed list (a corpus, a type, a reason) leaves
+  cache entry except the stores (section 6: their key carries `STORE_KEY_VERSION`). Adding a value to a closed list (a corpus, a type, a reason) leaves
   existing records and their digests untouched: it is a reviewed edit of the tuple in
   code plus a row here, with no version bump. Changing a scoring rule or the driver is a
   `BENCH_VERSION` bump even when no schema changes.
@@ -50,12 +50,19 @@ checks files against these contracts.
   (`cachekey.digest(value)` = SHA-256 of the canonical JSON). KMP's own bundle
   `content_digest` keeps its `sha256:` prefix verbatim.
 - **Refs.** Gold and records hold canonical refs: what `refs.normalize` returns, a
-  port of `strip_prefix` in `crates/kmp-testkit/src/bin/retrieval_kmp_scorecard.rs`
-  (lines 334-340 at v0.23.0): strip one leading `entry:`, else one leading `detail:`,
-  else keep. A reader judges the memory, not the envelope it arrived in.
+  port of `normalize` in `crates/kmp-testkit/src/memory_ref.rs`, the rule
+  `retrieval_kmp_scorecard.rs` reads answers with. First the envelope: strip one leading
+  `entry:`, else one leading `detail:`, else keep. Then the evidence node: a remainder
+  `evidence:<entry>` cites `<entry>`, without its `:current` or `:relation:<n>` suffix
+  (`<n>` decimal, or 16 lowercase hex digits); guide evidence has no suffix. A reader
+  judges the memory, not the envelope it arrived in. `metric_parity.json` (`refs`) pins
+  both ports to one table. Since `kmp.memory_bench.v3` (28 Sept 2026); under v2 an
+  evidence citation was a ref of its own and never matched a judged entry.
 - **Reading an answer** (ports of the same scorecard, `domain/refs.py`):
   - retrieved = `refs.evidence_refs(structured)`: `proof.evidence[].id`, normalized, in
-    response order (the pool, R@k and nDCG read this);
+    response order, repeats kept: a memory returned with its evidence node counts twice,
+    as it arrives (v4, 28 Sept 2026; v3 kept each memory once) (the pool, R@k and nDCG
+    read this; the bench-only metrics read every page concatenated, repeats kept too);
   - core = `refs.cited_refs(structured)`: `because[].ref`, normalized, sorted unique (the
     "núcleo": citations and core precision read this);
   - UNKNOWN = `answer == "UNKNOWN"`; `proof.missing` lists what was sought and not found.
@@ -196,7 +203,7 @@ relations and writes are the bytes 1.1.0 wrote.
 
 ```json world-manifest
 {"schema": "kmp.bench.world.v1", "generator": "synth-v1", "generator_version": "1.0.0",
- "bench_version": "kmp.memory_bench.v2",
+ "bench_version": "kmp.memory_bench.v4",
  "world_key": "5b0c6f1e3d2a4b8c9e7f6a5d4c3b2a1908f7e6d5c4b3a29180f7e6d5c4b3a291",
  "seed": 7, "topology": "mono", "block_size": 1000, "levels": [1000, 10000, 100000],
  "zipf_s": null, "time_origin": "2026-01-01T00:00:00Z", "abouts": 1,
@@ -536,12 +543,12 @@ process-<n>.stderr                 that process's server stderr, store root reda
 
 ```json run
 {"schema": "kmp.bench.run.v1",
- "run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733",
+ "run_id": "d2e70c7611d187f162269d8d85af82c4489737d192baeeab6c934c33e84bdf71",
  "key": {"binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
          "config_digest": "2222222222222222222222222222222222222222222222222222222222222222",
          "store_key": "3333333333333333333333333333333333333333333333333333333333333333",
          "questions_digest": "4444444444444444444444444444444444444444444444444444444444444444",
-         "mode": "quick-a", "bench_version": "kmp.memory_bench.v2", "nonce": null},
+         "mode": "quick-a", "bench_version": "kmp.memory_bench.v4", "nonce": null},
  "variant": {"name": "baseline", "path": "scripts/performance/memory_bench/variants/baseline.toml",
              "preregistration_digest": "5555555555555555555555555555555555555555555555555555555555555555",
              "config_digest": "2222222222222222222222222222222222222222222222222222222222222222"},
@@ -623,7 +630,7 @@ points at its response.
 
 ```json call
 {"schema": "kmp.bench.call.v1",
- "run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733",
+ "run_id": "d2e70c7611d187f162269d8d85af82c4489737d192baeeab6c934c33e84bdf71",
  "question_id": "synth7-mono-enum-0001", "variant": "baseline", "sample": 0, "repeat": 0,
  "journey": "synth7-mono-enum-0001~s0~r0", "call_index": 0, "process_call_index": 0,
  "phase": "first",
@@ -653,7 +660,7 @@ the journey that started the process (null with a reason otherwise).
 
 ```json journey
 {"schema": "kmp.bench.journey.v1",
- "run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733",
+ "run_id": "d2e70c7611d187f162269d8d85af82c4489737d192baeeab6c934c33e84bdf71",
  "question_id": "synth7-mono-enum-0001", "variant": "baseline", "sample": 0, "repeat": 0,
  "journey": "synth7-mono-enum-0001~s0~r0", "tool": "kmp_ask", "status": "completed",
  "calls": 2, "max_calls": 256, "censored": false, "censor_reason": null,
@@ -678,7 +685,7 @@ the repository root.
 | `jev` | `off`, `replay`, `record` | |
 | `[binary]` | exactly one of `path`, `git_ref` | `git_ref` is built in a worktree with `cargo build --release --locked -p kmp-mcp` and provenance |
 | `[store_files]` | name → path, `{path = ...}` or `{json = {...}}` | files copied into the store data directory; names are bare `*.json`/`*.kmpb`; inline JSON is written canonically |
-| `[env]` | allowlist | `KMP_LEXICAL_BRIDGE`, `KMP_MCP_ENGINE`, `KMP_TYPESAFE_CASSETTE`, `KMP_TYPESAFE_CASSETTE_MODE` (`replay`/`record`), `RUST_LOG` |
+| `[env]` | allowlist | `KMP_LEXICAL_BRIDGE`, `KMP_MCP_ENGINE`, `KMP_TYPESAFE_CASSETTE`, `KMP_TYPESAFE_CASSETTE_MODE` (`replay`/`record`), `RUST_LOG`, `KMP_JUDGEMENT_DEADLINES` (`off` keeps slow verdicts while recording) |
 
 Rules:
 
@@ -747,7 +754,9 @@ RUST_LOG = "kmp_mcp::judgement=debug"
 deterministically. Top level: `schema`, `bench_version`, `report_key`, `mode`,
 `generated_by`, then the eleven sections of BENCH_SPEC section 12, in this order:
 `provenance`, `headlines`, `by_type`, `scale`, `latency_resources`, `tokens`,
-`jev_by_site`, `controls`, `power`, `limitations`, `verdict`.
+`jev_by_site`, `controls`, `power`, `limitations`, `verdict`. `provenance.freeze` is
+the B-real freeze the section read (`{path, store_digest, questions_digest}`, as in the
+mode summary) or null; it is part of the report key, and `report.md` prints it in full.
 
 Shared shapes:
 
@@ -809,17 +818,18 @@ this key order, compact, no NaN):
 - `verdict`: also `deltas` (`tokens_journey`, `jev_usd`, `useful_rate` when measured).
 
 ```json report
-{"schema": "kmp.bench.report.v1", "bench_version": "kmp.memory_bench.v2",
+{"schema": "kmp.bench.report.v1", "bench_version": "kmp.memory_bench.v4",
  "report_key": "8888888888888888888888888888888888888888888888888888888888888888",
  "mode": "quick-a", "generated_by": {"code_sha256": "9999999999999999999999999999999999999999999999999999999999999999", "python": "3.12.3"},
  "provenance": {
-   "baseline": {"variant": "baseline", "run_ids": ["a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733"],
+   "baseline": {"variant": "baseline", "run_ids": ["d2e70c7611d187f162269d8d85af82c4489737d192baeeab6c934c33e84bdf71"],
                 "binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
                 "binary_version": "0.23.0", "config_digest": "2222222222222222222222222222222222222222222222222222222222222222",
                 "preregistration_digest": "5555555555555555555555555555555555555555555555555555555555555555"},
    "candidate": null,
    "questions": {"digest": "4444444444444444444444444444444444444444444444444444444444444444",
                  "by_corpus": {"synth-v1": 304}},
+   "freeze": null,
    "driver_version": "kmp.native_driver.v1", "encoders": ["o200k_base", "cl100k_base"],
    "rules": {"scoring_rules_sha256": null, "negatives_sha256": null, "modes_sha256": null},
    "comparable": true, "drift": []},
@@ -841,8 +851,12 @@ this key order, compact, no NaN):
 
 ## 6. Cache keys (`domain/cachekey.py`)
 
-Every key is `digest({"kind": K, "bench_version": BENCH_VERSION, "material": M})`, so
-kinds never collide and a bench version bump invalidates every cache entry.
+Every key is `digest({"kind": K, "bench_version": V, "material": M})`, so kinds never
+collide. `V` is `BENCH_VERSION` for results, reports and worlds, so a bench version bump
+invalidates them; for stores it is `cachekey.STORE_KEY_VERSION`, frozen at
+`kmp.memory_bench.v1`: a store depends on its source, N, format, reader, writer and batch,
+not on the scoring rules, so neither the v2, the v3 nor the v4 bump (28 Sept 2026) changes a
+store key, and the stores built under v1 are found again.
 
 | Kind | Function | Material |
 |---|---|---|
@@ -940,7 +954,7 @@ re-reads the about it lands in, so a build is O(N²/B), not O(B·N); hence
 
 ```json store
 {"schema": "kmp.bench.store.v1",
- "store_key": "b619dfe61f0daf961039bcf5f6b38ad9ce826df1c3e187e9276dec59be78f741",
+ "store_key": "c9948f65469bc6463f94d367bc687352804dc7df1a4c00a5e2a9e12658839180",
  "material": {"source": {"kind": "synth", "generator": "synth-v1", "generator_version": "1.1.0",
                          "seed": 7, "topology": "mono",
                          "world_digest": "c2c0c20d5d0469133fb0d0c169201f63c3751500273b7b13697502de47211f0e"},
@@ -1040,6 +1054,38 @@ error, `fields.event = "kmp_mcp_tool"`. Pre-existing fields (`kmp_move`, `backen
 Call record mapping: `server_us = duration_us`, `server_ms = duration_ms`. A binary
 older than BT03 has no `duration_us`: `server_us = null` with an `absent` reason.
 
+The call-outcome observatory (piece A of the self-improvement study) adds, on the same
+line and only when they apply (an absent field means "does not apply", never zero):
+
+| Field | Type | Present on | Meaning |
+|---|---|---|---|
+| `client_name` | string | reads, `kmp_write_memory` and argument refusals after an `initialize` that named one | `clientInfo.name`, printable ASCII, ≤ 64 chars |
+| `client_version` | string | with `client_name` | `clientInfo.version`, ≤ 32 chars (empty when not a string) |
+| `is_continuation` | bool | `kmp_wake`, `kmp_ask`, `kmp_inspect`, `kmp_trace`, `kmp_relate`, `kmp_time` | the call pages an earlier one (`continuation` handle or `page.cursor`) instead of starting a new call |
+| `subject_fingerprint` | hex16 | `kmp_ask` (question), `kmp_wake` (intent) | HMAC-SHA256 under the store salt of the question or intent, lower-cased and whitespace-collapsed; a page carries its first call's |
+| `context_fingerprint` | hex16 | `kmp_ask`, `kmp_wake` with `context_id` | HMAC-SHA256 of the guidance `context_id` |
+| `answer_status` | `answered`, `partial`, `unknown` | successful `kmp_ask` the anchored gate settled | as returned |
+| `unknown_reason` | enum | with `answer_status = unknown` | as returned (`no_candidates`, `no_bearing`, `out_of_window`, `anchor_absent_in_selection`, `attribute_not_found`) |
+| `confidence` | enum | successful `kmp_ask`, `kmp_wake` with a proof | `proof.confidence` as returned |
+| `anchored` | bool | successful `kmp_ask` that carries its core | the anchored gate decided (exactly when `answer_status` is present); absent on a continuation page that does not restate the core |
+| `citations` | int | successful `kmp_ask`, `kmp_wake` | `proof.evidence` items on this page |
+| `citations_reached_by` | string | with `citations` | `name:count` per `reached_by`, sorted, comma-joined (`direct:3,semantic:1`); `direct` = no `reached_by` mark, `other` = a mark that is not a short snake_case label; empty with no citations |
+| `feedback_count` | int | error lines whose response carried `feedback[]` items with a `code` (a refused `kmp_write_memory`, an unknown argument, an expired continuation) | how many |
+| `feedback_codes` | string | with `feedback_count` | `CODE@field` per item in the order returned, comma-joined (`LABELS_REQUIRED@labels,SUMMARY_EN_REQUIRED@memories[2].summary_en`); `CODE` alone for a packet-wide item; a field segment that is not a lower-case name with `[n]` indexes is `?`, a code that is not `UPPER_SNAKE` is `OTHER`; at most 32 listed, then `+N`. Never the reason, action, allowed values or any argument value |
+
+Error lines (`status = "error"`) carry the origin fields and the fingerprints when the
+salt already exists, never the outcome fields. Fingerprints are keyed by
+`<data dir>/telemetry-salt` (32 random bytes, mode 0600, created on the first successful
+wake or ask; for a gRPC backend, `<user data home>/agent-users/<endpoint hash>.telemetry-salt`
+on the MCP host). They compare only within one store; nothing else can recompute them.
+A fixture backend or an unwritable directory logs no fingerprint (one `kmp_telemetry_salt`
+WARN line says so). The gRPC API's `kernel memory grpc response` lines for
+`KernelMemoryService.Ask`/`Wake` carry the same outcome fields and `is_continuation`
+(`page.cursor` set), without client or fingerprints.
+
+Counting calls: `is_continuation = false` counts calls, `true` counts pages; group by
+`client_name` to separate hosts from the harnesses (`kmp-guide`, `kmp-lifecycle`, the bench).
+
 ### `kmp_judgement` (every Jev evaluation)
 
 Target `kmp_mcp::judgement`, level `DEBUG` (off unless asked for; computing the line's
@@ -1087,6 +1133,8 @@ Sites (stable words; new ones may be added):
 | `paths` | `kmp_curate` `mode: paths` (suspects, facts on the way, pair typing) | `typesafe.json` | w/n/c |
 | `labels` | `kmp_curate` `mode: labels` | `typesafe.json` | t |
 | `summaries` | `kmp_summaries_audit` meaning check | `typesafe.json` | s/b |
+| `doubt_band` | `kmp_ask` in the doubt band (B1 veto, B2 promotion) | `ask-judge.json` | p |
+| `expansions` | search expansions proposed at write (`kmp_write_memory` `search_expansions`), P15 | `write-expansions.json` | r |
 
 Call record mapping (`domain/run_record.py` `JevEvaluation`): `site`, `questions`,
 `requests`, `input_tokens`, `source` copied; `us = elapsed_us`. Lines are attributed to
@@ -1149,6 +1197,26 @@ Variant acknowledgement (§4): a store file named `N` is applied iff a
 SHA-256 the runner copied; `status = "ignored"` or no line makes the variant
 `not_applied`, reporting `reason`. A binary older than BT03 emits no such lines: every
 store file is then `not_applied` with reason "binary predates store_config telemetry".
+
+### `kmp_lexical_shadow` (every ask, P12)
+
+Target `kmp_mcp::lexical_index`, level info: one line per first-page ask while the
+lexical sidecar (`<data dir>/lexical-index.sqlite3`) is on. `comparable` says whether the
+ask read what the sidecar indexes (one about at the frontier, no dimensions, the
+default depth or deeper while nothing lies past it, a store that did not move while it
+asked); `reason` is `compared`, `selection` (narrowed by dimensions: only
+`selection_rows` and `selection_language` are counted, and they are not differences of
+the index) or why it could not compare. `differences` is the sum of
+`stats_differences` (N, Σlen content, Σlen direct, language), `df_differences`
+(weighted terms whose df differs), `row_differences` (candidates whose tf or length
+differs, or that one side lacks) and `missing_candidates` (candidates that could score
+and no posting of a weighted term reaches). `documents` and `elapsed_us` are
+informative. `sidecar_catch_up` (BT18) sums `differences` over every line with
+`shadow` in its event.
+
+At debug, `kmp_lexical_catch_up` reports each time the sidecar follows the log:
+`position`, `events`, `abouts_refreshed`, `abouts_rebuilt`, `rows`, `reset`,
+`committed`, `elapsed_us`.
 
 ## Search probe (`kmp.bench.search_probe.v1`)
 
@@ -1217,13 +1285,19 @@ section, no network, no key; `scripts/ci/memory-bench-quick.sh`). A mode with th
 - **`kmp.bench.mode_summary.v1`** (`reports/<summary_key>/summary.json` and the
   `summary.md` rendered from it alone): `summary_key` (digest of the mode, the modes
   file, both arms' (binary sha, config digest) and every section's (name, status,
-  report key, judged-rows digest)), `mode`, `modes_sha256`, `generated_by`, `arms`
+  report key, judged-rows digest) and the freeze), `mode`, `modes_sha256`, `generated_by`, `arms`
   (`baseline`, `candidate`; null for the `aa` replica: variant, path, claim, jev,
   store, binary sha/version/provenance, config and pre-registration digests),
-  `replica`, `parameters` (the mode's run parameters), `sections[]` (name, status
+  `replica`, `freeze` (the B-real freeze the mode read, `{path, store_digest,
+  questions_digest}`: its directory relative to the private root, the frozen bundle's
+  `content_digest` and the digest of the questions the section asked; null when no
+  section read one; `summary.md` prints it in full under the verdict),
+  `parameters` (the mode's run parameters), `sections[]` (name, status
   `ran`/`skipped`/`failed`, reason, layout, report key, run ids and cache hits,
   questions by corpus, verdict and reasons, whether it voted, headline rates per arm,
-  parity counts, A/A control, limitations, judged rows, public rows, seconds), `timings`
+  parity counts, A/A control, limitations, judged rows, public rows, `freeze` (the same
+  object for the section that read it, even when it was skipped, else null; a column of
+  `summary.md`), seconds), `timings`
   (`started_at`, `total_s`, `budget_s`, `within_budget`, `by_section`) and `verdict`
   (`value`, `reasons`, `by_section`). Aggregates only; it lands in the private cache
   when a private section ran. `sections[].public` (the `public` section only, else
@@ -1316,7 +1390,7 @@ Strata are `all`, `type:<question type>` and the tags `hops:`, `qtype:`, `catego
             "notes": {"comparable_with_published": false, "policy": "best_effort", "types": {"multihop_why_k": 200}}},
  "binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
  "variant": "scripts/performance/memory_bench/variants/baseline.toml", "max_calls": 1,
- "run": {"run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733", "cached": false,
+ "run": {"run_id": "d2e70c7611d187f162269d8d85af82c4489737d192baeeab6c934c33e84bdf71", "cached": false,
          "dir": "tmp/memory-bench/runs/d695...", "elapsed_s": 412.3,
          "journey_wall": {"n": 200, "mean_ms": 2010.4, "p50_ms": 1998.2, "max_ms": 2511.0, "total_s": 402.1},
          "failures": []},
@@ -1326,7 +1400,7 @@ Strata are `all`, `type:<question type>` and the tags `hops:`, `qtype:`, `catego
           "ingest_key": "910277431f55e5c1a39df8ab6d25fa799c1985c5b5aef1e275b25f728d5a500d",
           "import_key": "8c84c5792eec3a03ce1884f7ea1f8dd45bfdc8ce2b5c83553b3b3575a043d4bc"},
  "load_elapsed_s": 0.9,
- "recall": {"run_id": "a0cb37b3be02bd2801f026044f766e9e010d3dcec792c5c6e3d248ef3b620733",
+ "recall": {"run_id": "d2e70c7611d187f162269d8d85af82c4489737d192baeeab6c934c33e84bdf71",
             "statuses": {"completed": 200}, "not_run": [],
             "corpora": {"musique": {"all": {"questions": 200,
                 "recall_at_5": {"value": 0.41, "n": 200},
@@ -1350,7 +1424,9 @@ scenario never stops the others. The command exits 1 when any scenario failed.
 | `results[]` | `scenario` (`write_then_read`, `concurrent_writers`, `reads_during_writes`, `sidecar_catch_up`, `book_first_wins`), `case` (e.g. `reference->candidate`), `status`, `reason`, `checks[]` (`name`, `ok`, `detail`, `gating`: a non-gating check is reported and never fails the scenario), `latency_ms[name]` (`n`, `p50`, `p95`, `max` of wall ms; p95 indicative below n = 20), `facts` (format stamps, the path taken: `direct` or `bundle`, conflict retries…) |
 
 `book_first_wins` runs when the candidate names `judgements.sqlite3`. Its store gets
-`typesafe.json`, `rerank.json` (`pool_size` 40) and a stand-in cassette in replay mode,
+`typesafe.json`, `rerank.json` (`pool_size` 40, `margin_tenths` null: the rerank margin
+gate off, so a `High` lead still sends its judgement and the warm-up has something to
+record) and a stand-in cassette in replay mode,
 filled from a warm-up process on a fork (`runtime/jev_stand_in.py`): the scenario's
 processes judge offline, behind the book, and the network-blocked replay must answer
 every judgement from the book (`http_requests` 0).
@@ -1389,7 +1465,7 @@ client mirrors the binary's retry policy; `limitations` says so.
 | `elapsed_s`, `limitations` | |
 
 ```json jev-tail
-{"schema": "kmp.bench.jev_tail.v1", "bench_version": "kmp.memory_bench.v2", "status": "skipped",
+{"schema": "kmp.bench.jev_tail.v1", "bench_version": "kmp.memory_bench.v4", "status": "skipped",
  "reason": "TYPESAFE_API_KEY is not set: the Jev tail test runs only in real mode (BENCH_SPEC 9); run it with the key exported, or `--self-check` against the loopback stand-in",
  "settings": {"concurrency": [2, 3, 4], "requests": 40, "sites": ["rerank", "wake_focus", "paths", "labels"],
               "deadlines_ms": {"labels": 20000, "paths": 20000, "rerank": 20000, "wake_focus": 20000},

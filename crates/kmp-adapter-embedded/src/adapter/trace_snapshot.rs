@@ -3,7 +3,10 @@ use super::{
     engine::{Key, ReadTx, Table},
     serdes::{NodeRecord, decode},
 };
-use kmp_domain::{AdjacencyPage, AdjacencyRequest, NodeProjection, PortError, TraceSnapshotReader};
+use kmp_domain::{
+    AdjacencyPage, AdjacencyRequest, NodeProjection, PortError, RelationDirection,
+    TraceSnapshotReader,
+};
 
 pub(super) struct TraceSnapshot<'a>(pub &'a dyn ReadTx);
 
@@ -55,6 +58,25 @@ impl TraceSnapshotReader for TraceSnapshot<'_> {
 
     fn adjacency(&self, request: &AdjacencyRequest) -> Result<AdjacencyPage, PortError> {
         bounded_adjacency::read_page(self.0, request)
+    }
+
+    /// Keys only: incoming rows skip the point read of each explanation.
+    fn neighbor_ids(
+        &self,
+        node: &str,
+        direction: RelationDirection,
+        limit: u32,
+    ) -> Result<Vec<String>, PortError> {
+        let table = match direction {
+            RelationDirection::Outgoing => Table::Relations,
+            RelationDirection::Incoming => Table::RelationsByTarget,
+        };
+        Ok(self
+            .0
+            .scan_str3_page(table, node, None, limit, None)?
+            .into_iter()
+            .map(|((_, neighbor, _), _)| neighbor)
+            .collect())
     }
 }
 

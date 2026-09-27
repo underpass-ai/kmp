@@ -1,3 +1,4 @@
+pub(crate) mod corridor;
 pub(crate) mod curate_material;
 pub(crate) mod curate_review;
 pub(crate) mod dto;
@@ -5,8 +6,10 @@ pub(crate) mod focus_plan;
 pub(crate) mod jev_usage;
 pub(crate) mod judgement_plan;
 pub(crate) mod label_plan;
+pub(crate) mod lifecycle_plan;
 pub(crate) mod mappers;
 pub(crate) mod on_the_way;
+pub(crate) mod partner_plan;
 pub(crate) mod path_search;
 pub(crate) mod prepared_apply;
 pub(crate) mod prepared_relation;

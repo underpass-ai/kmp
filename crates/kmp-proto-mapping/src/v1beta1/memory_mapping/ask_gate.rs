@@ -1,3 +1,5 @@
+use super::confidence_calibration::ConfidenceCalibration;
+
 /// The anchored decision gate of `kmp_ask`, on by default and opted out of
 /// per store.
 ///
@@ -10,6 +12,7 @@
 pub struct AskGate {
     partial: bool,
     successor_core: bool,
+    calibration: Option<&'static ConfidenceCalibration>,
 }
 
 impl AskGate {
@@ -28,6 +31,7 @@ impl AskGate {
         Self {
             partial,
             successor_core: false,
+            calibration: None,
         }
     }
 
@@ -39,6 +43,21 @@ impl AskGate {
     pub const fn with_successor_core(mut self, on: bool) -> Self {
         self.successor_core = on;
         self
+    }
+
+    /// States `proof.confidence` through a calibration table (P16): a
+    /// `high` the table's rules do not stand behind is stated as `medium`.
+    /// Off unless a store turns it on.
+    pub const fn with_confidence_calibration(
+        mut self,
+        calibration: Option<&'static ConfidenceCalibration>,
+    ) -> Self {
+        self.calibration = calibration;
+        self
+    }
+
+    pub fn confidence_calibration(&self) -> Option<&'static ConfidenceCalibration> {
+        self.calibration
     }
 
     pub fn allows_partial(&self) -> bool {

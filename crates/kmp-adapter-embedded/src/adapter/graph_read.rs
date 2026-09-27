@@ -247,31 +247,89 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
         self.run(move |store| {
             let tx = store.begin_read()?;
             let tx = tx.as_ref();
-
-            let Some(root) = load_node(tx, &root_node_id)? else {
-                return Ok(None);
-            };
-            if load_node(tx, &target_node_id)?.is_none() {
-                return Ok(None);
-            }
-            let Some(path_node_ids) = shortest_outward_path(tx, &root_node_id, &target_node_id)?
-            else {
-                return Ok(None);
-            };
-
-            let subtree = NeighborhoodRequest::new(&target_node_id, subtree_depth);
-            let (selected, relations) = OutwardNeighborhoodRead::new(tx, &subtree)
-                .extending(path_node_ids.iter().cloned().collect())?;
-
-            Ok(Some(ContextPathNeighborhood {
-                neighbors: selected_projections(tx, &selected, &root_node_id)?,
-                relations,
-                path_node_ids,
-                root,
-            }))
+            context_path(tx, &root_node_id, &target_node_id, subtree_depth, |tx| {
+                Ok((
+                    shortest_outward_path(tx, &root_node_id, &target_node_id)?,
+                    None,
+                ))
+            })
+            .map(|(neighborhood, _)| neighborhood)
         })
         .await
     }
+
+    async fn load_bounded_context_path(
+        &self,
+        root_node_id: &str,
+        target_node_id: &str,
+        subtree_depth: u32,
+        limits: kmp_domain::TraceSearchLimits,
+    ) -> Result<
+        (
+            Option<ContextPathNeighborhood>,
+            Option<kmp_domain::ContextPathSearch>,
+        ),
+        PortError,
+    > {
+        let root_node_id = root_node_id.to_string();
+        let target_node_id = target_node_id.to_string();
+        self.run(move |store| {
+            let tx = store.begin_read()?;
+            let tx = tx.as_ref();
+            context_path(tx, &root_node_id, &target_node_id, subtree_depth, |tx| {
+                let search = kmp_domain::bidirectional_path_search(
+                    &super::trace_snapshot::TraceSnapshot(tx),
+                    &root_node_id,
+                    &target_node_id,
+                    limits,
+                )?;
+                Ok((search.path.clone(), Some(search)))
+            })
+        })
+        .await
+    }
+}
+
+/// One snapshot: both endpoints, the path `find` returns, and the target's
+/// subtree around it. Missing endpoints read as no path, with no report.
+fn context_path(
+    tx: &dyn ReadTx,
+    root_node_id: &str,
+    target_node_id: &str,
+    subtree_depth: u32,
+    find: impl FnOnce(
+        &dyn ReadTx,
+    )
+        -> Result<(Option<Vec<String>>, Option<kmp_domain::ContextPathSearch>), PortError>,
+) -> Result<
+    (
+        Option<ContextPathNeighborhood>,
+        Option<kmp_domain::ContextPathSearch>,
+    ),
+    PortError,
+> {
+    let Some(root) = load_node(tx, root_node_id)? else {
+        return Ok((None, None));
+    };
+    if load_node(tx, target_node_id)?.is_none() {
+        return Ok((None, None));
+    }
+    let (path, search) = find(tx)?;
+    let Some(path_node_ids) = path else {
+        return Ok((None, search));
+    };
+    let subtree = NeighborhoodRequest::new(target_node_id, subtree_depth);
+    let (selected, relations) = OutwardNeighborhoodRead::new(tx, &subtree)
+        .extending(path_node_ids.iter().cloned().collect())?;
+    Ok((
+        Some(ContextPathNeighborhood {
+            neighbors: selected_projections(tx, &selected, root_node_id)?,
+            relations,
+            path_node_ids,
+            root,
+        }),
+        search,
+    ))
 }
 
 impl NodeRelationshipReader for EmbeddedKernelStore {

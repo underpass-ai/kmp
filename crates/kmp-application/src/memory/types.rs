@@ -281,6 +281,9 @@ pub struct TraceMemoryQuery {
     pub role: String,
     pub token_budget: u32,
     pub page: TracePageRequest,
+    /// The allowance of the bounded bidirectional search behind this trace;
+    /// `None` is [`kmp_domain::TraceSearchLimits::single_destination`].
+    pub limits: Option<kmp_domain::TraceSearchLimits>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

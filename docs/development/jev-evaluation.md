@@ -157,6 +157,36 @@ because it adds latency and bytes to every Ask.
   Asking for the cause as well as the consequence, and keeping a second
   choice, took paths found from 1/5 to 3/5 with no loss in step precision.
 
+  **Corridor (P11, DESIGN L7, 27 Sept 2026).** With a goal, the facts asked
+  about are now the corridor between the ends: the facts within four hops of
+  either end over kernel pairs and declared relations, nearest to both ends
+  first (d_f + d_b), then by the ends' rarer words (BM25), at most 22 besides
+  the ends; when nothing links near either end, the 22 facts sharing most of
+  the ends' words stand in. Each fact's next-step choices offer at most eight
+  neighbours (linked facts first, then shared words) instead of every other
+  fact, and a proposed step is typed only when it can lie on a walk from the
+  start to the goal within `max_hops`. The kernel proposes pairs only among
+  the corridor's candidates (four declared hops of either end and the 64 facts
+  sharing most of the ends' words), and a search without Jev proposes none,
+  since it walks declared relations alone. Three samples with the real Jev on
+  the judged corpus: the goal searches cost 3.4k–3.6k Jev tokens on average
+  (8.2k before; g30 → g32 from 22.4k to 3.5k–4.4k; the largest, b01 → p11,
+  stays at 5.2k because its corridor equals the old filter), paths found 0.8
+  in all three, paths clean 1.0, avoided bad 1.0, proposed steps right
+  0.9412, 0.9412 and 0.95: in two samples g31 scored 0.49 in the corridor
+  against 0.54 over the whole selection, so g30 → g32 returned one path and
+  not the second, which was all right hops. The goal-less search is
+  unchanged. At synth 10^4 without Jev a goal search went from 18.7 s and
+  3.6 GB to 0.73 s and 0.35 GB with the same answer. `curate.json`
+  `"paths_corridor": "off"` restores the old filter.
+
+  The corridor is **on by default** (decision of 28 Sept 2026): Jev tokens
+  −58 % per goal search and a goal search at 10^4 from 19 s to 0.73 s were
+  judged worth the cost in `proposed_hops_right`, so the baseline gates the
+  corridor arm at 0.9411 (a reviewed lowering from 0.95, written in
+  `jev-baseline.tsv`). `KMP_EVAL_PATHS_CORRIDOR=off bash
+  scripts/ci/jev-baseline.sh` still measures the old filter for reference.
+
 ### Tools behind these numbers
 
 - `bash scripts/ci/jev-baseline.sh`: the judged corpus, replayed from its
@@ -172,6 +202,164 @@ because it adds latency and bytes to every Ask.
   `retrieval_kmp_scorecard`: the independent retrieval cases with
   re-ranking. The arm reports without gating, and it is answered from
   `crates/kmp-testkit/judged/retrieval.jev.cassette.json`.
+- `KMP_EVAL_PARTNER_FACTS=n` with `jev_review_probe <cases.json>`: the
+  review without `focus` alone, seeded and called as the scorecard does it,
+  one JSON line per case with every missing item and Jev's usage. `n` is the
+  largest about whose orphans get a Jev partner choice (default 60).
+
+## The cascade (P9, 2026-09-27, three recorded samples)
+
+Hypotheses and thresholds were registered before the second and third
+samples were recorded. Sample 1 is the committed cassette, filled with what
+the new requests needed; samples 2 and 3 were recorded afresh. Every figure
+below is a replay without network.
+
+**Margin gate on Ask re-ranking (DESIGN L4 4c).** An Ask whose first eligible
+candidate leads the second by at least `margin_tenths` tenths of a content
+BM25 point, with `High` confidence, sends no request. The threshold is the
+lowest of {0, 10, 20, 30, 50, 80, 120, 200} at which every re-ranked metric
+equals the ungated arm in all three samples. Every threshold did, so it is
+0:
+
+| Corpus (arm) | Metric, gated = ungated | Asks judged, off → τ=0 | Jev tokens, off → τ=0 |
+|---|---|---|---|
+| 35 retrieval cases (narrow, wide) | MRR 0.9643, R@1 0.900, R@5 1.000 | 35 → 9 | 13,556 → 3,785 (−72%) |
+| 16 trap asks (narrow) | MRR 0.9375, top-5 1.000 | 16 → 14 | 30,962 → 27,366 (−12%) |
+| 16 trap asks (wide) | MRR 0.9375, top-5 1.000 | 16 → 14 | 125,554 → 121,958 (−3%) |
+
+Each skipped Ask also saves the judge's latency (+0.5 s on small stores,
++4.5 s on the real store, measured earlier). The trap asks are the case the
+gate cannot help: the lexical ranker misses them, so their confidence is
+rarely high. The gate does not apply to wake focus, which keeps a set rather
+than a first answer. On the real store re-ranking stays off.
+
+**Shortlisted partners after a write (4e).** Jev reads each new fact against
+the facts that share a hard anchor with it and its 40 best BM25 matches,
+instead of the whole about; an about of at most 40 other facts is still read
+whole and in the same order, so the payments case sends the same requests
+as before.
+
+| | Before | After (samples 1 / 2 / 3) |
+|---|---|---|
+| Partner found, with Jev | 11/11 | 11/11 in each |
+| Distractors proposed | 0/4 | 0/4 in each |
+| `kmp_write_memory` partner proposed | 2/2 | 2/2 in each |
+| Partner questions per fact, 318-fact about | 25,077 tokens | 3,444–3,609 |
+| Focused review per fact, 318 facts (partners and typing) | about 27k | 4,814 / 4,701 / 4,701 |
+| A write on the 318-fact about | 26,432 | 4,794 in each |
+| A write on the 33-fact about | 3,584 | 3,584 |
+| Curation Jev tokens over the corpus | 311,027 | 225,059 |
+
+The partner round meets the 3–4k estimate; the whole write stays near 4.8k
+because typing the pairs adds about 1.4k. Every other floor of the corpus
+holds in the three samples.
+
+**Lifecycle proposal in the receipt (4e).** A new fact that names the same
+principal anchor as a current fact of its about and has the same entry kind
+is proposed as `supersedes`. Measured without Jev:
+
+- On every fact of the judged corpora, taken as just written: 68 pairs, none
+  of them a replacement or a state update a reader marked (0/68); one is a
+  listed distractor (INC-4711 as a campaign code name). On a large about the
+  rule pairs routine notes that share `p95`, `Q3` or `sa-east-1`.
+- On FactConsolidation, written fact by fact with every proposal accepted:
+  6k, 2 pairs (2 right) of the 161 the declared corpus holds; 32k, 16 pairs
+  (11 right, 69%) of 837. Its facts carry almost no identifiers (6 of 455
+  and 76 of 2,310 have a digit). The accepted pairs touch 1 of the 74
+  `current_after_supersession` questions at 6k and none of the 63 at 32k,
+  so R@1 on them would stay at 0.284 (at most 0.297) and 0.381, far from
+  the 1.0 of the declared corpus.
+- With Jev reading each pair first (duplicate, update_state, supersede,
+  contradict, novel; about 470 tokens a pair): of the 4 pairs in the
+  focused reviews it withdrew 3, including the listed distractor, and kept
+  one wrong one (a deploy and an office move that share `2.4.1`, read as a
+  state update), the same in the three samples. It withdrew the false
+  `supersedes` the rule put in a real write's receipt.
+
+Both modes stay off by default (`write-relations.json` `lifecycle`:
+`rule` or `jev`). They met neither registered bar: the rule's precision is
+0 on the judged corpora and its recall about 1% on FactConsolidation, and
+the Jev reading kept a pair that shares an anchor without a relation.
+
+A fourth recording measured Jev's real latency: a judged ask adds about
+320 ms (narrow) and 400 ms (wide) on the trap asks and about 300 ms on the
+retrieval cases, which the gate saves on every ask it settles; a focused
+review of a fact on the 318-fact about takes about 535 ms of Jev (at most
+572 ms), on the 33-fact one about 590 ms.
+
+Recording the three samples cost 916,442 Jev input tokens ($0.038), and the
+latency recording 448,759 more ($0.019).
+
+**Partner cap of the review without `focus`.** Past the cap, the review
+asks Jev for no orphan's partner in an about. Caps of 60, 120 and 240
+were compared on payments (abouts under 60, the same request at every cap)
+and on two deterministic subsets of the atlas case, 120 and 240 facts, that
+keep every fact of its gold (3 recorded samples each, measured in replay; the
+cap-60 arm read the verdict book of the same sample). The registered rule
+kept 60; Tirso then set the default to 120 (27 Sept 2026) and allowed 512
+by configuration:
+
+| | cap 60 | cap 120 | cap 240 |
+|---|---|---|---|
+| Gold missing found, atlas 120 / 240 | 3/3 / 3/3 | 3/3 / 3/3 | 3/3 / 3/3 |
+| Proposed right, atlas 120 (s1/s2/s3) | 3/3 in each | 6/14, 6/14, 6/12 | as 120 |
+| Pairs of two noise facts proposed, atlas 120 | 0 | 8, 8, 6 | as 120 |
+| Jev tokens per review, atlas 120 | about 14.6k | about 54k | as 120 |
+| Atlas 240 | no partner round | no partner round | refused by the provider |
+
+At 120 the partner round found three true relations of the pricing chain
+that the kernel never pairs (price rise, price list, churn, loyalty
+discount), and proposed eight pairs of routine notes that share a template
+(two people approving the same offsite's budget, read as a contradiction).
+At 240 the partner request (about 104 KB) is refused with
+`max_tokens_exceeded` in every sample, so the review falls back to kernel
+pairs with a "Jev unavailable" warning. Recording cost about 306k Jev input
+tokens ($0.013).
+
+**Partner cap 512 by configuration (27 Sept 2026).** A store's
+`curate.json` `{"partner_facts": 512}` raises the cap; past 255 facts the
+round reads the about in windows of at most 240 options, one winner per
+window, and a final choice between two or more winners. Every request now
+carries at most 24k estimated tokens (1.5 bytes a token, the worst density of
+108 recorded requests; median 2.65). Pre-registered in
+`artifacts/kmp-bench-private/2026-09-26/eval-p9/PREREG-partner-cap-512.md`,
+recorded with the real Jev (3 samples, a fresh cassette and verdict book
+each), measured in replay; the 60/120 figures are the ones above, and the
+316-fact atlas case at 60/120 (no round) comes from the verdict book of the
+512 recording. Path edges are relations of the gold paths the kernel never
+pairs (5 possible). Payments and the 118-fact subset ask the same requests at
+120 and 512.
+
+| | 60 / 120 | 512 |
+|---|---|---|
+| Gold missing, atlas 238 / 316 | 3/3 / 3/3 | 3/3 / 3/3 in every sample |
+| Path edges found, atlas 238 / 316 | 0 / 0 | 2 / 2 in every sample |
+| Precision, atlas 238 | 0.50, 0.43, 0.50 | 0.36, 0.36, 0.33 |
+| Precision, atlas 316 | 0.43 in each | 0.42, 0.36, 0.36 |
+| Template pairs (noise–noise), atlas 238 / 316 | 3 / 4 | 9 / 7–9 |
+| Jev tokens a review, atlas 238 | about 36k | about 130k (10 requests, 2.1–2.3 s) |
+| Jev tokens a review, atlas 316 | about 48k | about 160k (12–13 requests, 2.6–3.2 s) |
+
+At 512 the round finds the price rise → price list and loyalty discount →
+churn relations in both abouts, and adds template pairs such as two people
+changing the alert routing of the same service (typed `supersedes`, which a
+reader may accept; the gold does not). Recording cost 871k Jev input tokens
+($0.037) and the confirming filter 14k more ($0.0006).
+
+Two cheap filters of the round's pairs were measured as variants
+(`curate.json` `partner_filter`), with a registered bar (+0.15 precision and
+at most half the template pairs on both atlas abouts, no gold pair lost, at
+most one path edge lost, payments' precision kept):
+
+| | atlas 238 precision | atlas 316 precision | path edges | payments gold |
+|---|---|---|---|---|
+| none | 0.33–0.36 | 0.36–0.42 | 2 / 2 | 8/8 |
+| `rare_term` (the pair shares a term of at most 2 % of the about) | 0.50–0.57 | 0.50 | 1 / 1 | 6/8 |
+| `confirm` (a yes/no per pair, through the book; about 2k tokens) | 0.39–0.42 | 0.42–0.50 | 2 / 2 | 8/8 |
+
+`rare_term` drops two of payments' gold pairs that share no rare word and
+one true path edge; `confirm` withdraws only two template pairs of seven to
+nine. Neither met the bar; both stay off.
 
 ## First result (2026-09-25, `jev-1.13.0`, payments case only)
 

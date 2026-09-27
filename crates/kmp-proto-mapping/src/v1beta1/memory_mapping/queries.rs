@@ -177,6 +177,7 @@ pub fn temporal_query_from_near_proto(
 }
 
 pub fn trace_query_from_proto(request: TraceRequest) -> ProtoMappingResult<TraceMemoryQuery> {
+    let limits = super::trace_widened::WidenedTrace::limits(&request)?;
     let budget = request.budget.unwrap_or_default();
     Ok(TraceMemoryQuery {
         about: request.about,
@@ -189,6 +190,7 @@ pub fn trace_query_from_proto(request: TraceRequest) -> ProtoMappingResult<Trace
             budget.tokens
         },
         page: trace_page_from_proto(request.page)?,
+        limits,
     })
 }
 

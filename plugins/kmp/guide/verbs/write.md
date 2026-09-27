@@ -6,7 +6,8 @@ record is a one-element packet. No `intent`, `current` or process `scope` is
 needed in this form. The former current/intent/scope input is rejected; there is no compatibility adapter.
 
 Top-level labels are shared memberships, unioned with each record's labels.
-Every record must have at least one membership; none is invented. Repeating a
+`labels` is required: every record must have at least one membership, shared or
+its own; none is invented. A labels refusal names the keys the about already uses. Repeating a
 pair in both shared and record labels is harmless; duplicates within either
 array are rejected. Every supplied label is materialized before commit. Put only memberships that
 apply to every record at the top level. If S1 supports one memory and S2 another,
@@ -135,15 +136,17 @@ stable-object floor and its warnings apply.
 A refusal carries `feedback`: a stable `code`, `severity`, `field`, `reason`
 and an optional `action` with `tool` and complete `arguments`. Use the field
 path to locate the problem; do not parse the prose to choose a repair.
-Read the whole feedback array. Once the packet shape and local identities are
-usable, KMP reports the first compiler failure from each invalid record together,
-for both memories and search_summaries. Correct all listed fields and resubmit
-the whole packet. This is not an exhaustive source audit: another rule in the
-same record may fail after its first error is repaired. An unusable packet shape,
-ambiguous local id or failed store read can still stop the check earlier.
+Read the whole feedback array; the text lists the same fields. Once the packet
+shape and local identities are usable, KMP checks every record in one pass —
+clock, labels, kind, evidence, summary_en, ref and each link — and reports every
+failure together. Correct all listed fields and resubmit the whole packet. An
+unusable packet shape, ambiguous local id or failed store read can still stop
+the check earlier, and commit-time checks (label resemblance, neighborhood
+review) run only after it passes.
 For example, `MEMORY_EVIDENCE_REQUIRED` at `memories[1].evidence` means the
 second record needs its real source. `SEARCH_SUMMARY_REQUIRED` at
-`memories[1].summary_en` asks for a faithful English search rendering.
+`memories[1].summary_en` asks for a faithful English search rendering and lists
+the tokens to keep; removing `summary_en` never passes.
 `INVALID_KIND` includes `allowed_values` from the same vocabulary as the schema.
 Choose the kind from the source's meaning; the server supplies no replacement.
 `INVALID_TYPE` reports the exact field with `expected_type` and `received_type`.
@@ -275,10 +278,16 @@ identifiers, amounts and acronyms kept exactly as written (`v0.7.0`, `#469`,
 `kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is
 `memories[].summary`, byte for byte — so an English question reaches a memory
 written in Spanish, and jargon (`rollout slipped`) is found by the words
-people ask with (`launch postponed`). A strict write requires it when the
-memory is not written in English and refuses one that fails the lint: wrong
-language, too thin, a copy of the text, a dropped identifier. Fix the summary
-the error names; never alter the text to fit it. A cited item that was reached
+people ask with (`launch postponed`). It is required when `summary` is not
+English; omit it when `summary` is English, where a byte-for-byte copy is dropped
+with a diagnostic and the write goes on. A strict write refuses a rendering that
+fails the lint: wrong language, too thin, a copy of a non-English text, a dropped
+identifier. Fix `summary_en` as the error says; never alter `summary` to fit it,
+and never remove `summary_en` to pass. Loose notation is translated: `~300` as
+`about 300`, `1→6` as `1 to 6`, `vivos/expirados/retirados` as `live, expired
+and retired`, and in a Spanish text `50.976` as `50,976` and `0,976` as `0.976`.
+Hashes, paths (`src/write/planner` too, without an extension), acronyms and
+other identifiers are copied as written. A cited item that was reached
 through its summary says so with `matched_via: summary` and `summary_terms`.
 
 Memories written before summaries existed still owe one. Read the whole

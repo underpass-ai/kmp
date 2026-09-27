@@ -727,6 +727,15 @@ where
                     rehydration_mode: KmpMode::ReasonPreserving,
                     endpoint_hint: EndpointHint::FocusedPath,
                 },
+                // A single destination is a bounded bidirectional search
+                // (DESIGN L7): it may stop on a work limit, which the answer
+                // reports as partial instead of reading everything reachable.
+                // A widened call brings its own, larger allowance.
+                limits: Some(
+                    query
+                        .limits
+                        .unwrap_or_else(kmp_domain::TraceSearchLimits::single_destination),
+                ),
             })
             .await
     }

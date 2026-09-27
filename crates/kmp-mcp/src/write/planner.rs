@@ -4,9 +4,10 @@ use serde_json::{Value, json};
 use std::collections::BTreeSet;
 
 use kmp_application::{validate_ref_token, validate_supplied_entry_ref};
-use kmp_domain::{INTENDED_NEW_LABEL_METADATA_KEY, MemoryRelationType};
+use kmp_domain::INTENDED_NEW_LABEL_METADATA_KEY;
 
 use super::coordinates::*;
+use super::declared_links::DeclaredLinks;
 use super::generated_ref::*;
 use super::plan::KernelWritePlan;
 use super::read_context::ReadContext;
@@ -28,32 +29,60 @@ pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, Wri
 /// form a new about's root. The server proves `allow_unlinked_root` by
 /// inspecting the about immediately before calling this function; keeping
 /// the storage read outside the pure compiler preserves deterministic dry
-/// runs and focused validation tests.
+/// runs and focused validation tests. The first failure stands for them all.
 #[cfg(test)]
 pub(crate) fn build_write_plan_with_root(
     arguments: &Value,
     allow_unlinked_root: bool,
 ) -> Result<KernelWritePlan, WriteValidationError> {
     build_write_plan_with_local_refs(arguments, allow_unlinked_root, &BTreeSet::new())
+        .map_err(|mut failures| failures.remove(0))
 }
 
 /// All batch entry refs are known before any member is compiled. They are
 /// current-request context, never a claim that a stored target was inspected.
+///
+/// A record is judged in one pass: its clock, labels, kind, evidence,
+/// rendering, ref and every link are each checked and every failure is
+/// returned together, so one resubmission can repair them all. Only what
+/// makes the record unreadable — the about, intent, actor, scope or read
+/// context — stops the check at once.
 pub(super) fn build_write_plan_with_local_refs(
     arguments: &Value,
     allow_unlinked_root: bool,
     batch_refs: &BTreeSet<String>,
-) -> Result<KernelWritePlan, WriteValidationError> {
-    let arguments = arguments
-        .as_object()
-        .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
-    let about = required_string(arguments, "about")?;
+) -> Result<KernelWritePlan, Vec<WriteValidationError>> {
+    let arguments = arguments.as_object().ok_or_else(|| {
+        vec![WriteValidationError::from(
+            "tool arguments must be a JSON object",
+        )]
+    })?;
+    let about = required_string(arguments, "about").map_err(|error| vec![error])?;
     validate_ref_token("about", &about)
-        .map_err(|error| WriteValidationError::new(error).at("about").global())?;
-    let intent = required_string(arguments, "intent")?;
-    validate_intent(&intent)?;
-    let actor = required_string(arguments, "actor")?;
-    let observed_at = observation_time(arguments)?;
+        .map_err(|error| vec![WriteValidationError::new(error).at("about").global()])?;
+    let intent = required_string(arguments, "intent").map_err(|error| vec![error])?;
+    validate_intent(&intent).map_err(|error| vec![error.into()])?;
+    let actor = required_string(arguments, "actor").map_err(|error| vec![error])?;
+    let scope = if batch_refs.is_empty() {
+        Some(required_object(arguments, "scope").map_err(|error| vec![error])?)
+    } else {
+        // Packet records use their explicit memberships without synthesizing
+        // a process scope. The single-current contract still requires it.
+        arguments.get("scope").and_then(Value::as_object)
+    };
+    let read_context = ReadContext::from_arguments(arguments)
+        .map_err(|error| vec![WriteValidationError::new(error).at("read_context").global()])?;
+    let process_scope = scope
+        .map(|scope| required_map_string(scope, "process", "scope.process"))
+        .transpose()
+        .map_err(|error| vec![error])?;
+    let current = required_object(arguments, "current").map_err(|error| vec![error])?;
+
+    let mut failures = Vec::new();
+    let observed_at = observation_time(arguments).unwrap_or_else(|error| {
+        failures.push(error);
+        None
+    });
     let clocks = WriterCoordinate {
         occurred_at: optional_string(arguments.get("occurred_at")),
         observed_at: observed_at.as_deref(),
@@ -65,18 +94,6 @@ pub(super) fn build_write_plan_with_local_refs(
             .and_then(|value| u32::try_from(value).ok())
             .filter(|value| *value > 0),
     };
-    let scope = if batch_refs.is_empty() {
-        Some(required_object(arguments, "scope")?)
-    } else {
-        // Packet records use their explicit memberships without synthesizing
-        // a process scope. The single-current contract still requires it.
-        arguments.get("scope").and_then(Value::as_object)
-    };
-    let read_context = ReadContext::from_arguments(arguments)
-        .map_err(|error| WriteValidationError::new(error).at("read_context").global())?;
-    let process_scope = scope
-        .map(|scope| required_map_string(scope, "process", "scope.process"))
-        .transpose()?;
     let task_scope = scope.and_then(|scope| optional_map_string(scope, "task"));
     let episode_scope = scope.and_then(|scope| optional_map_string(scope, "episode"));
     let labels = writer_labels(
@@ -85,11 +102,14 @@ pub(super) fn build_write_plan_with_local_refs(
         episode_scope,
         arguments.get("labels"),
     )
-    .map_err(|error| {
-        WriteValidationError::new(error)
-            .at("labels")
-            .code("INVALID_LABELS")
-    })?;
+    .unwrap_or_else(|error| {
+        failures.push(
+            WriteValidationError::new(error)
+                .at("labels")
+                .code("INVALID_LABELS"),
+        );
+        Vec::new()
+    });
     let options = arguments.get("options").and_then(Value::as_object);
     // A tool called write_memory commits. Previewing was the default here,
     // so every caller that did not know to pass `dry_run: false` got
@@ -110,34 +130,10 @@ pub(super) fn build_write_plan_with_local_refs(
         .and_then(|value| u32::try_from(value).ok())
         .filter(|value| *value > 0);
     let relation_sequence = sequence.unwrap_or(1);
-    // A writer that read the catalogue and still means a new label says so
-    // per key; the kernel then leaves that label out of the resemblance
-    // check instead of refusing or warning.
-    let labels_new = options
-        .and_then(|options| options.get("labels_new"))
-        .map(|value| {
-            value
-                .as_array()
-                .ok_or_else(|| "options.labels_new must be an array of label keys".to_string())
-                .and_then(|keys| {
-                    keys.iter()
-                        .map(|key| {
-                            key.as_str().map(str::to_string).ok_or_else(|| {
-                                "options.labels_new must be an array of label keys".to_string()
-                            })
-                        })
-                        .collect::<Result<BTreeSet<_>, _>>()
-                })
-        })
-        .transpose()?
-        .unwrap_or_default();
-    for key in &labels_new {
-        if !labels.iter().any(|label| label.key == *key) {
-            return Err(WriteValidationError::new(format!(
-                "options.labels_new names `{key}`, which is not a label of this write"
-            )));
-        }
-    }
+    let labels_new = intended_new_labels(options, &labels).unwrap_or_else(|error| {
+        failures.push(error);
+        BTreeSet::new()
+    });
     // The logical write identity is also the uniqueness component of every
     // generated entry ref. A readable summary slug is useful to humans, but
     // it cannot be an identity: repeated observations legitimately have the
@@ -148,44 +144,64 @@ pub(super) fn build_write_plan_with_local_refs(
         .map(ToString::to_string)
         .unwrap_or_else(|| stable_idempotency_key(arguments));
 
-    let current = required_object(arguments, "current")?;
-    let current_kind = required_map_string(current, "kind", "kind")?;
-    validate_node_kind(current_kind).map_err(|error| {
-        WriteValidationError::new(error)
-            .at("kind")
-            .code("INVALID_KIND")
-            .allowed_values(crate::contract::writer_memory_kinds::WRITER_MEMORY_KINDS)
-    })?;
-    let current_summary = required_map_string(current, "summary", "summary")?;
+    let current_kind = required_map_string(current, "kind", "kind")
+        .and_then(|kind| {
+            validate_node_kind(kind).map(|()| kind).map_err(|error| {
+                WriteValidationError::new(error)
+                    .at("kind")
+                    .code("INVALID_KIND")
+                    .allowed_values(crate::contract::writer_memory_kinds::WRITER_MEMORY_KINDS)
+            })
+        })
+        .unwrap_or_else(|error| {
+            failures.push(error);
+            ""
+        });
+    let current_summary = required_map_string(current, "summary", "summary")
+        .map(Some)
+        .unwrap_or_else(|error| {
+            failures.push(error);
+            None
+        });
     let current_evidence = optional_map_string(current, "evidence");
     if strict && current_evidence.is_none() {
-        return Err(
+        failures.push(
             WriteValidationError::new("strict kmp_write_memory requires evidence")
                 .at("evidence")
                 .code("MEMORY_EVIDENCE_REQUIRED"),
         );
     }
-    let search_summary = decide_search_summary(
-        current_summary,
-        optional_map_string(current, "summary_en"),
-        strict,
-    )?;
+    // Without a summary there is nothing to judge a rendering against.
+    let search_summary = current_summary
+        .map(|summary| {
+            decide_search_summary(summary, optional_map_string(current, "summary_en"), strict)
+        })
+        .transpose()
+        .unwrap_or_else(|error| {
+            failures.push(error);
+            None
+        })
+        .unwrap_or_default();
+    let current_summary = current_summary.unwrap_or_default();
 
-    let current_ref = if let Some(current_ref) = optional_map_string(current, "ref") {
-        validate_supplied_entry_ref(&about, "ref", current_ref).map_err(|error| {
-            WriteValidationError::new(error)
-                .at("ref")
-                .code("INVALID_REF")
-        })?;
-        current_ref.to_string()
-    } else {
-        generated_entry_ref(
+    let current_ref = match optional_map_string(current, "ref") {
+        Some(current_ref) => {
+            if let Err(error) = validate_supplied_entry_ref(&about, "ref", current_ref) {
+                failures.push(
+                    WriteValidationError::new(error)
+                        .at("ref")
+                        .code("INVALID_REF"),
+                );
+            }
+            current_ref.to_string()
+        }
+        None => generated_entry_ref(
             &about,
             current_kind,
             current_summary,
             &idempotency_key,
             "current",
-        )
+        ),
     };
     let mut generated_refs = vec![current_ref.clone()];
     let mut local_refs = std::borrow::Cow::Borrowed(batch_refs);
@@ -195,15 +211,22 @@ pub(super) fn build_write_plan_with_local_refs(
     let mut dimensions = Vec::new();
     let mut coordinates = Vec::new();
     for label in &labels {
-        let scope_id = kmp_domain::MemoryDimensionIdentity::new(&about, &label.key, &label.value)
-            .map_err(|error| error.to_string())?
-            .node_id();
-        let mut declared = dimension(&scope_id, &label.key, label.title);
-        if labels_new.contains(&label.key) {
-            declared["metadata"] = json!({ INTENDED_NEW_LABEL_METADATA_KEY: "true" });
+        match kmp_domain::MemoryDimensionIdentity::new(&about, &label.key, &label.value) {
+            Ok(identity) => {
+                let scope_id = identity.node_id();
+                let mut declared = dimension(&scope_id, &label.key, label.title);
+                if labels_new.contains(&label.key) {
+                    declared["metadata"] = json!({ INTENDED_NEW_LABEL_METADATA_KEY: "true" });
+                }
+                dimensions.push(declared);
+                coordinates.push(coordinate(&label.key, &scope_id, sequence, clocks));
+            }
+            Err(error) => failures.push(
+                WriteValidationError::new(error.to_string())
+                    .at(label.field.clone())
+                    .code("INVALID_LABELS"),
+            ),
         }
-        dimensions.push(declared);
-        coordinates.push(coordinate(&label.key, &scope_id, sequence, clocks));
     }
 
     let mut current_metadata = json!({
@@ -234,156 +257,73 @@ pub(super) fn build_write_plan_with_local_refs(
         }));
     }
 
-    let connect_to = optional_array(arguments.get("connect_to"), "connect_to")?;
+    let connect_to =
+        optional_array(arguments.get("connect_to"), "connect_to").unwrap_or_else(|error| {
+            failures.push(WriteValidationError::new(error).at("connect_to"));
+            &[]
+        });
     if strict && connect_to.is_empty() && !allow_unlinked_root {
-        return Err(WriteValidationError::new("strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
-                .to_string()));
+        failures.push(WriteValidationError::new("strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"));
     }
+    let links = DeclaredLinks {
+        about: &about,
+        from: &current_ref,
+        actor: &actor,
+        observed_at: observed_at.as_deref(),
+        strict,
+        sequence: relation_sequence,
+        read_context: &read_context,
+        local_refs: &local_refs,
+    };
     for (index, link) in connect_to.iter().enumerate() {
-        let link = link
-            .as_object()
-            .ok_or_else(|| format!("connect_to[{index}] must be an object"))?;
-        let target_ref = required_map_string(link, "ref", &format!("connect_to[{index}].ref"))?;
-        let rel_arg = required_map_string(link, "rel", &format!("connect_to[{index}].rel"))?;
-        let relation_type = MemoryRelationType::new(rel_arg)
-            .map_err(|error| format!("connect_to[{index}].rel is invalid: {error}"))?;
-        let rel = relation_type.as_str();
-        let semantic_class = resolve_class(link, rel, strict)
-            .map_err(|error| error.within(&format!("connect_to[{index}]")))?;
-        validate_semantic_class(semantic_class).map_err(|error| {
-            WriteValidationError::new(error).at(format!("connect_to[{index}].class"))
-        })?;
-        let why = required_relation_string(link, "why", semantic_class, index)?;
-        let relation_evidence = required_relation_string(link, "evidence", semantic_class, index)?;
-        let confidence = optional_map_string(link, "confidence").unwrap_or(DEFAULT_CONFIDENCE);
-        validate_confidence(confidence).map_err(|error| {
-            WriteValidationError::new(error).at(format!("connect_to[{index}].confidence"))
-        })?;
-        let quality = relation_quality_diagnostic(RelationQualityInput {
-            about: &about,
-            from: &current_ref,
-            to: target_ref,
-            rel,
-            semantic_class,
-            confidence,
-            why,
-            evidence: relation_evidence,
-            strict,
-            read_context: &read_context,
-            local_refs: &local_refs,
-        })
-        .map_err(|error| error.within(&format!("connect_to[{index}]")))?;
-
-        let mut link_value = relation(
-            &current_ref,
-            target_ref,
-            rel,
-            semantic_class,
-            confidence,
-            why,
-            relation_evidence,
-            relation_sequence,
-        );
-        // An equivalence across abouts carries the proposal it was declared
-        // from as its method, which is what the kernel admits it by.
-        let crosses_about = quality["crosses_about"] == true;
-        if crosses_about {
-            let proposal = read_context
-                .relate_proposal_for(&about, target_ref)
-                .ok_or_else(|| "cross-about equivalence without its proposal".to_string())?;
-            link_value["method"] = json!(format!(
-                "{}:{}",
-                kmp_domain::DECLARED_FROM_RELATE_METHOD,
-                proposal.proposed_by.join("+")
-            ));
-        }
-        relations.push(link_value);
-        relation_names.push(rel.to_string());
-        relation_quality.push(quality);
-        // A structural link is exempt from evidence, and an evidence item with
-        // no text is not evidence: the canonical ingest mapper requires
-        // `memory.evidence[].text`, and rightly refuses an empty one. The
-        // evidence node supports what this about owns; a ref of another
-        // about is named by the relation, never claimed by the evidence.
-        if !relation_evidence.trim().is_empty() {
-            let supports = if crosses_about {
-                json!([current_ref.clone()])
-            } else {
-                json!([current_ref.clone(), target_ref])
-            };
-            evidence.push(json!({
-                "id": format!("evidence:{}:relation:{}", current_ref, index + 1),
-                "supports": supports,
-                "text": relation_evidence,
-                "source": format!("kmp_write_memory:{actor}:relation:{rel}"),
-                "time": observed_at
-            }));
+        match links.compile(index, link) {
+            Ok(compiled) => {
+                relations.push(compiled.relation);
+                relation_names.push(compiled.name);
+                relation_quality.push(compiled.quality);
+                evidence.extend(compiled.evidence);
+            }
+            Err(error) => failures.push(error),
         }
     }
 
     if let Some(delta) = arguments.get("semantic_delta").and_then(Value::as_object) {
-        let delta_from = required_map_string(delta, "from", "semantic_delta.from")?;
-        let delta_to = required_map_string(delta, "to", "semantic_delta.to")?;
-        let delta_why = required_map_string(delta, "why", "semantic_delta.why")?;
-        let delta_evidence = required_map_string(delta, "evidence", "semantic_delta.evidence")?;
-        let delta_ref = if let Some(delta_ref) = optional_map_string(delta, "ref") {
-            validate_supplied_entry_ref(&about, "semantic_delta.ref", delta_ref)?;
-            delta_ref.to_string()
-        } else {
-            generated_entry_ref(
-                &about,
-                "semantic_delta",
-                delta_to,
-                &idempotency_key,
-                "semantic_delta",
-            )
-        };
-        reject_duplicate_ref(&mut generated_refs, &delta_ref)?;
-        local_refs.to_mut().insert(delta_ref.clone());
-        entries.push(json!({
-            "id": delta_ref.clone(),
-            "kind": "semantic_delta",
-            "text": format!("From: {delta_from}\nTo: {delta_to}\nWhy: {delta_why}"),
-            "coordinates": shifted_coordinates(&entries[0]["coordinates"], 1),
-            "metadata": {
-                "writer_intent": intent,
-                "writer_actor": actor,
-                "delta_from": delta_from,
-                "delta_to": delta_to
-            }
-        }));
-        let updates_state_quality = relation_quality_diagnostic(RelationQualityInput {
-            about: &about,
-            from: &current_ref,
-            to: &delta_ref,
-            rel: "updates_state",
-            semantic_class: "causal",
-            confidence: DEFAULT_CONFIDENCE,
-            why: delta_why,
-            evidence: delta_evidence,
-            strict,
-            read_context: &read_context,
-            local_refs: &local_refs,
-        })?;
-        relations.push(relation(
-            &current_ref,
-            &delta_ref,
-            "updates_state",
-            "causal",
-            DEFAULT_CONFIDENCE,
-            delta_why,
-            delta_evidence,
-            relation_sequence.saturating_add(1),
-        ));
-        relation_names.push("updates_state".to_string());
-        relation_quality.push(updates_state_quality);
-        if let Some(first_link) = connect_to.first().and_then(Value::as_object) {
-            let target_ref = required_map_string(first_link, "ref", "connect_to[0].ref")?;
-            let semantic_delta_quality = relation_quality_diagnostic(RelationQualityInput {
+        let delta = (|| {
+            let delta_from = required_map_string(delta, "from", "semantic_delta.from")?;
+            let delta_to = required_map_string(delta, "to", "semantic_delta.to")?;
+            let delta_why = required_map_string(delta, "why", "semantic_delta.why")?;
+            let delta_evidence = required_map_string(delta, "evidence", "semantic_delta.evidence")?;
+            let delta_ref = if let Some(delta_ref) = optional_map_string(delta, "ref") {
+                validate_supplied_entry_ref(&about, "semantic_delta.ref", delta_ref)?;
+                delta_ref.to_string()
+            } else {
+                generated_entry_ref(
+                    &about,
+                    "semantic_delta",
+                    delta_to,
+                    &idempotency_key,
+                    "semantic_delta",
+                )
+            };
+            reject_duplicate_ref(&mut generated_refs, &delta_ref)?;
+            local_refs.to_mut().insert(delta_ref.clone());
+            entries.push(json!({
+                "id": delta_ref.clone(),
+                "kind": "semantic_delta",
+                "text": format!("From: {delta_from}\nTo: {delta_to}\nWhy: {delta_why}"),
+                "coordinates": shifted_coordinates(&entries[0]["coordinates"], 1),
+                "metadata": {
+                    "writer_intent": intent,
+                    "writer_actor": actor,
+                    "delta_from": delta_from,
+                    "delta_to": delta_to
+                }
+            }));
+            let updates_state_quality = relation_quality_diagnostic(RelationQualityInput {
                 about: &about,
-                from: &delta_ref,
-                to: target_ref,
-                rel: "semantic_delta_from",
+                from: &current_ref,
+                to: &delta_ref,
+                rel: "updates_state",
                 semantic_class: "causal",
                 confidence: DEFAULT_CONFIDENCE,
                 why: delta_why,
@@ -393,25 +333,60 @@ pub(super) fn build_write_plan_with_local_refs(
                 local_refs: &local_refs,
             })?;
             relations.push(relation(
+                &current_ref,
                 &delta_ref,
-                target_ref,
-                "semantic_delta_from",
+                "updates_state",
                 "causal",
                 DEFAULT_CONFIDENCE,
                 delta_why,
                 delta_evidence,
                 relation_sequence.saturating_add(1),
             ));
-            relation_names.push("semantic_delta_from".to_string());
-            relation_quality.push(semantic_delta_quality);
+            relation_names.push("updates_state".to_string());
+            relation_quality.push(updates_state_quality);
+            if let Some(first_link) = connect_to.first().and_then(Value::as_object) {
+                let target_ref = required_map_string(first_link, "ref", "connect_to[0].ref")?;
+                let semantic_delta_quality = relation_quality_diagnostic(RelationQualityInput {
+                    about: &about,
+                    from: &delta_ref,
+                    to: target_ref,
+                    rel: "semantic_delta_from",
+                    semantic_class: "causal",
+                    confidence: DEFAULT_CONFIDENCE,
+                    why: delta_why,
+                    evidence: delta_evidence,
+                    strict,
+                    read_context: &read_context,
+                    local_refs: &local_refs,
+                })?;
+                relations.push(relation(
+                    &delta_ref,
+                    target_ref,
+                    "semantic_delta_from",
+                    "causal",
+                    DEFAULT_CONFIDENCE,
+                    delta_why,
+                    delta_evidence,
+                    relation_sequence.saturating_add(1),
+                ));
+                relation_names.push("semantic_delta_from".to_string());
+                relation_quality.push(semantic_delta_quality);
+            }
+            evidence.push(json!({
+                "id": format!("evidence:{}:semantic_delta", delta_ref),
+                "supports": [delta_ref.clone(), current_ref.clone()],
+                "text": delta_evidence,
+                "source": format!("kmp_write_memory:{actor}:semantic_delta"),
+                "time": observed_at
+            }));
+            Ok::<(), WriteValidationError>(())
+        })();
+        if let Err(error) = delta {
+            failures.push(error);
         }
-        evidence.push(json!({
-            "id": format!("evidence:{}:semantic_delta", delta_ref),
-            "supports": [delta_ref.clone(), current_ref.clone()],
-            "text": delta_evidence,
-            "source": format!("kmp_write_memory:{actor}:semantic_delta"),
-            "time": observed_at
-        }));
+    }
+    if !failures.is_empty() {
+        return Err(failures);
     }
 
     let mut ingest_arguments = json!({
@@ -460,64 +435,43 @@ pub(super) fn build_write_plan_with_local_refs(
     })
 }
 
-/// The labels a write emits, in the order the ingest has always carried
-/// them: the well-known task, process and episode scopes first, then the
-/// caller's own `labels` by key. Packet records can supply only labels;
-/// the single-current form provides the well-known process/task/episode
-/// memberships through scope. Neither path invents a label.
-fn writer_labels(
-    process: Option<&str>,
-    task: Option<&str>,
-    episode: Option<&str>,
-    labels: Option<&Value>,
-) -> Result<Vec<WriterLabel>, String> {
-    let mut emitted = Vec::new();
-    if let Some(task) = task {
-        emitted.push(WriterLabel::new(
-            "task",
-            task,
-            "scope.task",
-            "Kernel write task",
-        ));
+/// The label keys a writer who read the catalogue insists are new. The
+/// kernel then leaves those labels out of the resemblance check instead of
+/// refusing or warning. Every key must be one this write declares.
+fn intended_new_labels(
+    options: Option<&serde_json::Map<String, Value>>,
+    labels: &[WriterLabel],
+) -> Result<BTreeSet<String>, WriteValidationError> {
+    let Some(value) = options.and_then(|options| options.get("labels_new")) else {
+        return Ok(BTreeSet::new());
+    };
+    let shape = || {
+        WriteValidationError::new("options.labels_new must be an array of label keys")
+            .at("options.labels_new")
+            .code("INVALID_LABELS_NEW")
+            .global()
+    };
+    let keys = value
+        .as_array()
+        .ok_or_else(shape)?
+        .iter()
+        .map(|key| key.as_str().map(str::to_string).ok_or_else(shape))
+        .collect::<Result<BTreeSet<_>, _>>()?;
+    // Without labels the missing membership is the failure to report.
+    if labels.is_empty() {
+        return Ok(keys);
     }
-    if let Some(process) = process {
-        emitted.push(WriterLabel::new(
-            "agentic_process",
-            process,
-            "scope.process",
-            "Kernel write process",
-        ));
-    }
-    if let Some(episode) = episode {
-        emitted.push(WriterLabel::new(
-            "agentic_episode",
-            episode,
-            "scope.episode",
-            "Kernel write episode",
-        ));
-    }
-    if let Some(labels) = labels {
-        let object = labels.as_object().ok_or_else(|| {
-            "`labels` must map each key to a non-empty array of strings".to_string()
-        })?;
-        let mut own = object.iter().collect::<Vec<_>>();
-        own.sort_by(|left, right| left.0.cmp(right.0));
-        for (key, value) in own {
-            validate_label_key(key)?;
-            let field = format!("labels.{key}");
-            for value in label_values(value, &field)? {
-                emitted.push(WriterLabel::new(key, value, &field, "Kernel write label"));
-            }
+    for key in &keys {
+        if !labels.iter().any(|label| label.key == *key) {
+            return Err(WriteValidationError::new(format!(
+                "options.labels_new names `{key}`, which is not a label of this write"
+            ))
+            .at("options.labels_new")
+            .code("INVALID_LABELS_NEW")
+            .global());
         }
     }
-    validate_distinct_labels(&emitted)?;
-    if emitted.is_empty() {
-        return Err(
-            "labels must declare at least one key/value membership for temporal navigation"
-                .to_string(),
-        );
-    }
-    Ok(emitted)
+    Ok(keys)
 }
 
 fn dimension(id: &str, kind: &str, title: &str) -> Value {
