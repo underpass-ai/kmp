@@ -210,6 +210,7 @@ environment (allowlisted) and Jev mode.
 | `variants/examples/ask-gate.toml` | a quality claim configured by `ask-gate.json` beside the store (the P4 gate; the default since 26 Sept 2026, so on a current binary it only writes the default out) |
 | `variants/examples/ask-gate-off.toml` | the same binary with `ask-gate.json` `{"mode":"off"}`: how to measure without the gate now that it is the default |
 | `variants/examples/lifecycle-successor-core.toml` | the P7 lifecycle variant, `ask-gate.json` `{"successor_core":true}`: a standing successor may be cited for the anchor its replaced predecessor named (off by default) |
+| `variants/examples/confidence-calibration.toml` | the P16 calibrated confidence, `ask-gate.json` `{"confidence_calibration":"shipped"}`: `high` is stated as `medium` where the versioned table says so (off by default; not certified) |
 | `variants/examples/wake-focus.toml` | a Jev arm in replay: `typesafe.json` + `wake-focus.json` and a cassette |
 
 **Store files must be acknowledged.** Each file in `[store_files]` is written
@@ -525,6 +526,38 @@ on a fresh copy of `store/`, through `application/run_questions.run_arms`. It
 writes the run directories under `<private root>/cache/runs/`, and scoring
 reads them from there. The variant's binary must be a path. `git_ref` variants
 are built by `quick-a`.
+
+### Extending the gold with models (breal-ext)
+
+P16 needed at least 45 `high` answers to certify `high`, and the 31 real asks
+gave 3. `breal-ext` is a second freeze directory beside the dated one
+(`<private root>/breal-ext`), with the same store copy, its own
+`questions.jsonl`, pools, labels and `gold.jsonl`, so the real gold stays the
+validation gold. Its reference binary is the kernel being calibrated, so the
+pool holds that kernel's top 30. How it was built (2026-09-27):
+
+1. Transcripts re-imported: no real ask newer than the freeze.
+2. 364 real-style questions written by a model from 182 seed entries sampled
+   with seed 1616 (host `author`, split `validation`). The writer never saw a
+   kernel answer.
+3. Every question screened once on the reference binary; selected for
+   labeling: 90 `high` (of 113), 70 `medium` (of 97) and the 10 `low`, seed
+   1616. Precision is conditional on the level, so stratifying by it does not
+   bias it.
+4. Labeled blind by two models (`model-claude`, `model-b`) with the `label`
+   CLI; each disagreement decided by Jev (`jev-1.13.0`, mean of 3 samples,
+   threshold 0.5). No human label: the gold has lost its human independence,
+   and the κ it reports is between two models.
+5. A complement pass: entries the kernel cited that neither labeler had
+   judged were shown to both labelers and marked.
+
+Two caveats found on the way. `domain/refs.normalize` strips one prefix, so a
+citation of an entry's stored or relation evidence
+(`detail:evidence:<entry>:current`, `evidence:<entry>:relation:N`) never
+matches the entry's gold; the registered scoring is kept, and a sensitivity
+that maps those citations to their entry is reported beside it. And facet
+names are free text, so facet-entry κ stays low (0.25) while the answer sets
+the scoring reads agree far more.
 
 ### What is mechanical
 

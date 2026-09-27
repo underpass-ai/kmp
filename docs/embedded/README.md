@@ -128,6 +128,15 @@ keeps the gate and answers UNKNOWN wherever it would have answered PARTIAL.
 The engine reports the file in its `kmp_store_config` log line; one it cannot
 read or does not recognise is reported and the default applies.
 
+`{"mode":"anchored","confidence_calibration":"shipped"}` states
+`proof.confidence` through a versioned calibration table
+(`crates/kmp-proto-mapping/language/confidence_calibration.json`): its rules
+only move `high` down to `medium`, and nothing else in the answer changes. It
+is off by default because `high` has not been certified yet: on 170 labeled
+questions the table leaves 20 `high` answers, 19 of them right, and the
+one-sided Clopper-Pearson bound (δ = 0.1) is 0.82, short of the 0.95 it must
+reach before it is turned on.
+
 ### The doubt band (opt-in, sends text to TypeSafe)
 
 A store that already opted into TypeSafe Jev (`typesafe.json`) can ask it

@@ -128,6 +128,23 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- Calibrated confidence for `kmp_ask`, off by default (P16). A store opts in
+  with `"confidence_calibration": "shipped"` in `ask-gate.json` (or an inline
+  table, to measure a candidate). The table is versioned data,
+  `crates/kmp-proto-mapping/language/confidence_calibration.json`: rules over
+  integer counts and flags (branch, matched and missed question concepts,
+  cited count, enumerative, negated anchor) that only move `high` to `medium`.
+  It is off because `high` does not certify. On `breal-ext`, 170 real-style
+  questions labeled by two models with Jev deciding their disagreements (no
+  human label), `high` is right in 76 of 90 answers (lower bound 0.784,
+  one-sided Clopper-Pearson, δ 0.1): 38/44 anchored, 38/46 without anchors,
+  none bridged. The shipped v1 rules, chosen on half of the questions, demote
+  `high` on enumerative questions and when the best memory misses more than
+  one question concept: 19 of 20 `high` right (lower bound 0.819; 7 of 8 on
+  the held-out half), `medium` 95 of 140. Certifying needs 45 right with no
+  error. With the flag off every answer is byte for byte the same; with it
+  on, only `proof.confidence` changes, plus two characters of a core text cut
+  at the byte budget in 4 of 170 answers.
 - Declared lifecycle in `kmp_ask` (P7). `LifecycleChain` walks `supersedes`,
   `corrects` and `updates_state` both ways from a memory, at most 32 hops
   and 256 memories a side, cutting cycles and reporting forks in
