@@ -69,6 +69,187 @@ Detailed notes from the early release cycle remain available in the
   (finding `breal-997250f158ea`); `"expansion_rescue_focus": false` lets P15's
   expansion rescue skip the ⌈2/3⌉ focus.
 
+- Calibrated confidence for `kmp_ask`, off by default (P16). A store opts in
+  with `"confidence_calibration": "shipped"` in `ask-gate.json` (or an inline
+  table, to measure a candidate). The table is versioned data,
+  `crates/kmp-proto-mapping/language/confidence_calibration.json`: rules over
+  integer counts and flags (branch, matched and missed question concepts,
+  cited count, enumerative, negated anchor) that only move `high` to `medium`.
+  It is off because `high` does not certify. On `breal-ext`, 170 real-style
+  questions labeled by two models with Jev deciding their disagreements (no
+  human label), `high` is right in 76 of 90 answers (lower bound 0.784,
+  one-sided Clopper-Pearson, δ 0.1): 38/44 anchored, 38/46 without anchors,
+  none bridged. The shipped v1 rules, chosen on half of the questions, demote
+  `high` on enumerative questions and when the best memory misses more than
+  one question concept: 19 of 20 `high` right (lower bound 0.819; 7 of 8 on
+  the held-out half), `medium` 95 of 140. Certifying needs 45 right with no
+  error. With the flag off every answer is byte for byte the same; with it
+  on, only `proof.confidence` changes, plus two characters of a core text cut
+  at the byte budget in 4 of 170 answers.
+- Declared lifecycle in `kmp_ask` (P7). `LifecycleChain` walks `supersedes`,
+  `corrects` and `updates_state` both ways from a memory, at most 32 hops
+  and 256 memories a side, cutting cycles and reporting forks in
+  `(occurred, id)` order; the embedded store answers each hop from its
+  `relations_*_by_kind` index (`LifecycleChainReader`), one typed range per
+  relation, so a chain of depth D costs O(D·log N). When a question matches
+  a replaced memory, the standing head of its chain now comes back in
+  `proof.evidence` marked `reached_by: lifecycle` (`reached_from`,
+  `reached_via`), outside the answer core and at most three; a replaced
+  memory never comes back as current. A question about history (a word of
+  the lifecycle family, `historial`, `antes`, `timeline`…, or `as_of` /
+  `interval`) gets the chain instead, at most eight members, each with
+  `lifecycle_state` `current` or `replaced`. Under the anchored gate a walk
+  starts only from a memory that names an anchor, and the head of one that
+  did stays in a PARTIAL or UNKNOWN proof. The rescued memory's relations
+  stay out of `proof.path`, so nothing every page repeats grows. A bundle
+  with no lifecycle relation answers byte for byte as before. Measured
+  against P1–P6: B-real, hard negatives and guards unchanged in quality (6
+  of 124 journeys gain one lifecycle item, the core and every status
+  unchanged; +19 tokens per journey), synth-v1 10^3 byte for byte, the
+  judged retrieval and Jev corpora unchanged, ask latency unchanged (B-real
+  first page p50 177 ms both). `{"successor_core": true}` in `ask-gate.json`
+  is a measured variant, off by default: under the gate, a question about
+  now may cite that head for the anchor its predecessor named
+  (`anchor_via: supersedes`).
+  A lifecycle item is expansion like any other rescue: an answered first
+  page carries it if it fits and otherwise counts it in
+  `projection.more_on_request` (on FactConsolidation-6k declared, 58 of the
+  217 rescued items reach the default first page; none of them comes from a
+  cited memory).
+- Doubt band for `kmp_ask` (P10, DESIGN L4 4f), opt-in per store with an
+  `ask-judge.json` beside it and a store already on TypeSafe Jev. An ask
+  enters the band when no anchor it names is absent and it is UNKNOWN
+  without an anchor while a `best_effort` reading would cite something,
+  `attribute_not_found` or PARTIAL under an anchor, or answered with a
+  first citation leading the second by less than `margin_tenths` (default
+  20) tenths of a BM25 point. At most eight admitted passages go to Jev in
+  one batch through the verdict book, with a 1.5 s deadline; past it the
+  deterministic answer stands and the verdict is kept for the next ask.
+  B1 (veto, `veto_at` 0.9): a cited memory Jev finds unlikely to answer
+  leaves the core and stays in `proof.evidence` marked `judged_out`,
+  `judged_permille` and `judged_template`. On the validation corpora (B-real
+  and the negatives of seeds 11 and 13, thresholds fixed on development
+  only) B1 removed 7 false answers and lost no useful one (p = 0.016). B2
+  (promotion, `judged_by`, never `high` confidence) is measured but off
+  (`"promote": false`): n = 31 is below the n ≥ 100 it needs. The four-grade
+  `"question": "score"` is an experiment that did not beat yes/no. With the
+  band on, an ask is a function of the store and the verdict book; a book
+  hit adds about 100–190 ms to the ask.
+- Margin gate on Ask re-ranking (DESIGN L4 4c): an Ask whose first lexical
+  candidate leads the second by at least `margin_tenths` tenths of a content
+  BM25 point (`rerank.json`, default 0, `null` turns it off), with `High`
+  confidence, sends no judgement. On three recorded samples every re-ranked
+  metric held, the 35 retrieval cases judged 9 asks instead of 35 (13.6k →
+  3.8k Jev tokens) and the 16 trap asks 14 (`jev-evaluation.md`).
+- `write-relations.json` `lifecycle` (`rule` or `jev`, off by default): a
+  focused review also proposes, as `supersedes`, the current facts of the
+  same entry kind that name the new fact's principal anchor; under `jev`
+  Jev reads each pair first and withdraws the novel ones. Measured and left
+  off: 0 of 68 proposed pairs were replacements on the judged corpora, and
+  on FactConsolidation the rule finds about 1% of the declared ones.
+- Verdict book for TypeSafe Jev (P5): every judged question is kept, by a
+  key of hashes (model, template, type, instructions, options, the texts of
+  the state), as Q16 probabilities in `judgements.sqlite3` beside the store.
+  A repeated ask re-rank, focused wake, curate review or path search sends
+  no request and reads the same answer, in this process or the next: Jev is
+  frozen per key, the first verdict wins for every process on the store.
+  Created only with a working `typesafe.json`; local to the machine, never
+  in `kmp:save`, deletable; `judgement-book.json` sizes it (`max_bytes`,
+  default 64 MiB, least recently used out first) or turns it off
+  (`{"mode":"off"}`). Telemetry reports `source: book_hit`.
+- Jev calls in flight are shared: identical concurrent judgements ask once,
+  batches go out four at a time, and the first page of an ask re-rank (1.5 s)
+  or a focused wake (3 s) degrades, warned, to the ordinary read past its
+  deadline while the judgement finishes into the book
+  (`KMP_JUDGEMENT_DEADLINES=off` lifts the deadlines). Curate usage reports
+  `elapsed_ms`.
+- Anchored ask gate, chosen per store with `ask-gate.json` beside it
+  (`{"mode":"anchored","partial":true}`; the default since this release, see
+  Changed). Under `evidence_or_unknown` and `show_conflicts`, a question that names an identifier (`C6.4`, `#188`,
+  `v0.7.0`) is answered only from memories that name its rarest required
+  anchor and none it excludes (`excluding C7`), and only when what it asks
+  stands beside that anchor. An anchor no memory of the selection names is
+  `unknown_reason: anchor_absent_in_selection`; an attribute no cited memory
+  states is `attribute_not_found`; an enumerative question answered in part
+  is `answer_status: partial`, `proof.missing` naming the rest, confidence at
+  most medium. `AskResponse.answer_status` and `unknown_reason` are additive
+  and set only under the gate; a store that opts out answers as v0.23.0
+  did. The words the question contract reads live in
+  `kmp-proto-mapping/language/question_contract.json` and the `facet:*`
+  families of `question_families.json`.
+- Under the anchored gate an identifier is read the same however it is
+  spelled: a guide word binds the number after it (`corte 10`, `cut 10` and
+  `C10` are `c10`; `ADR 18` and `ADR-018` are `adr18`; `issue 185` and
+  `PR 185` are `#185`), in the question and in the memories it is compared
+  with (`identifier_aliases` in `question_contract.json`). A memory a writer
+  declared `same_entity_as` one that names the anchor may be cited for it,
+  marked `anchor_via: same_entity_as` and `anchor_from`. A memory leaves the
+  core for an excluded anchor only when that is its only anchor; the words a
+  question excludes no longer count toward the ⌈2/3⌉ rule. `proof.missing`
+  names what was not found in the reader's own words, accents included.
+  An enumerative question that found none of what it asked is UNKNOWN, not
+  PARTIAL. `ask-gate.json` also accepts `{"mode":"off"}`, and
+  `AskGate::STORE_DEFAULT` is the one switch that decides the default.
+- The anchored gate reads a memory's content and nothing else: its text
+  and its search summary. Whether a memory names the anchor (and the
+  anchor's document frequency, the core, the `same_entity_as` rescue) and
+  whether it states what the question asked of it no longer read its
+  source, refs (`entry:success_path:…`), entry kind or other metadata;
+  entry kinds still break ties between facets. A question word the stemmer
+  carries onto a concept-table word by more than an inflection is compared
+  as that stem and not through the table: `correctness` no longer matches
+  `correction`, while `fixes` still matches `fixed` (`inflectional_endings`
+  in `question_contract.json`).
+- What the anchored gate does not answer whole carries a proof its size.
+  A PARTIAL or gated UNKNOWN keeps in `proof.evidence` only the memories
+  that name one of the question's anchors (in their content, or by a
+  declared `same_entity_as`); a PARTIAL's `proof.path` keeps the relations
+  incident to what it cites and, of the rest of its proof, only
+  supersessions and conflicts; and under the gate `proof.missing` names each
+  thing once (the withheld sources were one per withheld entry). An
+  ANSWERED reading keeps its whole proof. On B-real the gated walk through
+  every page went from 46,229 to 11,655 tokens on average (10,231 without
+  the gate) and from 8 to 2.3 pages, with the same false UNKNOWNs and core
+  precision and one wrong PARTIAL fewer (a withheld source whose slug spelled
+  a covered facet no longer reads as missing). With `{"mode":"off"}` every
+  response is byte for byte what it was.
+- `memory_bench scale` (and `scale-aa`): the scale verification of the synth
+  ladder 10^3–10^5 on both topologies, 2 questions per type, `timeout_s` 120 and
+  `wake_resume` left out (`full` still measures it up to 10^4). It adds a far
+  trace cut: `trace_far` questions, `kmp_trace` between two 10^3 entries the world
+  joins only through at least 3 declared hops, followed in their declared
+  direction (the directed declared diameter of the 10^3 rung, unchanged at 10^4
+  and 10^5), every such pair (23 mono, 20 multi) and the same at every rung.
+  `report.json` gains `scale.far_trace` (pairs, `path_found`, wall p50/p95 per rung
+  and the P11 objective, p95 ≤ 30 ms at 10^5). A synth ladder may name
+  `exclude_types` and `far_trace` in `modes.toml`. Existing modes ask the same
+  questions as before, so their cached runs stay valid; `BENCH_VERSION` is unchanged.
+- `memory_bench` synth-v1 `1.2.0`: the `negated_anchor` gold forbids only the
+  entries whose only anchor is the excluded one. An entry of the subject that
+  also names the excluded anchor may be cited; it is neither an answer nor
+  forbidden. `excluded_refs` may therefore be empty. World digests regenerated.
+- An anchor that lives in another about is still reported
+  `anchor_absent_in_selection` (the bench's `anchor_in_other_about` is
+  scored as a wrong reason); telling the two apart is deferred to L6, the
+  lexical index, which can read an anchor's postings outside the selection.
+- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v4`. The bench no
+  longer deduplicates what it retrieves: `memory_ref::retrieved`,
+  `refs.retrieved` and `retrieved_across_pages` keep every returned ref, in
+  order, repeats included, so a memory returned with its evidence counts
+  twice (decision of 28 Sept 2026). Citations of evidence still normalize to
+  their entry. `metric_parity.json` is v3; retrieval-baseline `ndcg_at_10`
+  and the all_ rows it moves are re-recorded as a reviewed change. Every v3
+  run, report and world is invalidated; stores are kept.
+- `memory_bench`: `BENCH_VERSION` was `kmp.memory_bench.v3`. `refs.normalize`
+  (and the Rust scorecards, through the new `kmp_testkit::memory_ref`) read
+  `detail:evidence:<entry>:current`, `…:relation:<n>` and suffix-less guide
+  evidence as citations of `<entry>`; before, they never matched a judged
+  entry. Every v2 run, report and world is invalidated; stores are kept: their
+  key no longer carries `BENCH_VERSION` but `STORE_KEY_VERSION`, frozen at v1,
+  so the stores built under v1 (and orphaned by v2) are read again.
+- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v2` (the PARTIAL
+  scoring rules changed meaning); every cache entry of v1 is invalidated.
+
 ### Changed
 
 - **Breaking (continuations):** Wake/Ask cursors are `kmp2` (P14): they carry
@@ -272,189 +453,6 @@ Detailed notes from the early release cycle remain available in the
   entries) the first page of an ask goes from 368 ms to 194 ms at the median
   with the gate (160 ms without it; v0.23.0 took 660 ms); on synth-v1 10^3
   mono the ask p95 goes from 953 ms to 328 ms.
-
-### Added
-
-- Calibrated confidence for `kmp_ask`, off by default (P16). A store opts in
-  with `"confidence_calibration": "shipped"` in `ask-gate.json` (or an inline
-  table, to measure a candidate). The table is versioned data,
-  `crates/kmp-proto-mapping/language/confidence_calibration.json`: rules over
-  integer counts and flags (branch, matched and missed question concepts,
-  cited count, enumerative, negated anchor) that only move `high` to `medium`.
-  It is off because `high` does not certify. On `breal-ext`, 170 real-style
-  questions labeled by two models with Jev deciding their disagreements (no
-  human label), `high` is right in 76 of 90 answers (lower bound 0.784,
-  one-sided Clopper-Pearson, δ 0.1): 38/44 anchored, 38/46 without anchors,
-  none bridged. The shipped v1 rules, chosen on half of the questions, demote
-  `high` on enumerative questions and when the best memory misses more than
-  one question concept: 19 of 20 `high` right (lower bound 0.819; 7 of 8 on
-  the held-out half), `medium` 95 of 140. Certifying needs 45 right with no
-  error. With the flag off every answer is byte for byte the same; with it
-  on, only `proof.confidence` changes, plus two characters of a core text cut
-  at the byte budget in 4 of 170 answers.
-- Declared lifecycle in `kmp_ask` (P7). `LifecycleChain` walks `supersedes`,
-  `corrects` and `updates_state` both ways from a memory, at most 32 hops
-  and 256 memories a side, cutting cycles and reporting forks in
-  `(occurred, id)` order; the embedded store answers each hop from its
-  `relations_*_by_kind` index (`LifecycleChainReader`), one typed range per
-  relation, so a chain of depth D costs O(D·log N). When a question matches
-  a replaced memory, the standing head of its chain now comes back in
-  `proof.evidence` marked `reached_by: lifecycle` (`reached_from`,
-  `reached_via`), outside the answer core and at most three; a replaced
-  memory never comes back as current. A question about history (a word of
-  the lifecycle family, `historial`, `antes`, `timeline`…, or `as_of` /
-  `interval`) gets the chain instead, at most eight members, each with
-  `lifecycle_state` `current` or `replaced`. Under the anchored gate a walk
-  starts only from a memory that names an anchor, and the head of one that
-  did stays in a PARTIAL or UNKNOWN proof. The rescued memory's relations
-  stay out of `proof.path`, so nothing every page repeats grows. A bundle
-  with no lifecycle relation answers byte for byte as before. Measured
-  against P1–P6: B-real, hard negatives and guards unchanged in quality (6
-  of 124 journeys gain one lifecycle item, the core and every status
-  unchanged; +19 tokens per journey), synth-v1 10^3 byte for byte, the
-  judged retrieval and Jev corpora unchanged, ask latency unchanged (B-real
-  first page p50 177 ms both). `{"successor_core": true}` in `ask-gate.json`
-  is a measured variant, off by default: under the gate, a question about
-  now may cite that head for the anchor its predecessor named
-  (`anchor_via: supersedes`).
-  A lifecycle item is expansion like any other rescue: an answered first
-  page carries it if it fits and otherwise counts it in
-  `projection.more_on_request` (on FactConsolidation-6k declared, 58 of the
-  217 rescued items reach the default first page; none of them comes from a
-  cited memory).
-- Doubt band for `kmp_ask` (P10, DESIGN L4 4f), opt-in per store with an
-  `ask-judge.json` beside it and a store already on TypeSafe Jev. An ask
-  enters the band when no anchor it names is absent and it is UNKNOWN
-  without an anchor while a `best_effort` reading would cite something,
-  `attribute_not_found` or PARTIAL under an anchor, or answered with a
-  first citation leading the second by less than `margin_tenths` (default
-  20) tenths of a BM25 point. At most eight admitted passages go to Jev in
-  one batch through the verdict book, with a 1.5 s deadline; past it the
-  deterministic answer stands and the verdict is kept for the next ask.
-  B1 (veto, `veto_at` 0.9): a cited memory Jev finds unlikely to answer
-  leaves the core and stays in `proof.evidence` marked `judged_out`,
-  `judged_permille` and `judged_template`. On the validation corpora (B-real
-  and the negatives of seeds 11 and 13, thresholds fixed on development
-  only) B1 removed 7 false answers and lost no useful one (p = 0.016). B2
-  (promotion, `judged_by`, never `high` confidence) is measured but off
-  (`"promote": false`): n = 31 is below the n ≥ 100 it needs. The four-grade
-  `"question": "score"` is an experiment that did not beat yes/no. With the
-  band on, an ask is a function of the store and the verdict book; a book
-  hit adds about 100–190 ms to the ask.
-- Margin gate on Ask re-ranking (DESIGN L4 4c): an Ask whose first lexical
-  candidate leads the second by at least `margin_tenths` tenths of a content
-  BM25 point (`rerank.json`, default 0, `null` turns it off), with `High`
-  confidence, sends no judgement. On three recorded samples every re-ranked
-  metric held, the 35 retrieval cases judged 9 asks instead of 35 (13.6k →
-  3.8k Jev tokens) and the 16 trap asks 14 (`jev-evaluation.md`).
-- `write-relations.json` `lifecycle` (`rule` or `jev`, off by default): a
-  focused review also proposes, as `supersedes`, the current facts of the
-  same entry kind that name the new fact's principal anchor; under `jev`
-  Jev reads each pair first and withdraws the novel ones. Measured and left
-  off: 0 of 68 proposed pairs were replacements on the judged corpora, and
-  on FactConsolidation the rule finds about 1% of the declared ones.
-- Verdict book for TypeSafe Jev (P5): every judged question is kept, by a
-  key of hashes (model, template, type, instructions, options, the texts of
-  the state), as Q16 probabilities in `judgements.sqlite3` beside the store.
-  A repeated ask re-rank, focused wake, curate review or path search sends
-  no request and reads the same answer, in this process or the next: Jev is
-  frozen per key, the first verdict wins for every process on the store.
-  Created only with a working `typesafe.json`; local to the machine, never
-  in `kmp:save`, deletable; `judgement-book.json` sizes it (`max_bytes`,
-  default 64 MiB, least recently used out first) or turns it off
-  (`{"mode":"off"}`). Telemetry reports `source: book_hit`.
-- Jev calls in flight are shared: identical concurrent judgements ask once,
-  batches go out four at a time, and the first page of an ask re-rank (1.5 s)
-  or a focused wake (3 s) degrades, warned, to the ordinary read past its
-  deadline while the judgement finishes into the book
-  (`KMP_JUDGEMENT_DEADLINES=off` lifts the deadlines). Curate usage reports
-  `elapsed_ms`.
-- Anchored ask gate, chosen per store with `ask-gate.json` beside it
-  (`{"mode":"anchored","partial":true}`; the default since this release, see
-  Changed). Under `evidence_or_unknown` and `show_conflicts`, a question that names an identifier (`C6.4`, `#188`,
-  `v0.7.0`) is answered only from memories that name its rarest required
-  anchor and none it excludes (`excluding C7`), and only when what it asks
-  stands beside that anchor. An anchor no memory of the selection names is
-  `unknown_reason: anchor_absent_in_selection`; an attribute no cited memory
-  states is `attribute_not_found`; an enumerative question answered in part
-  is `answer_status: partial`, `proof.missing` naming the rest, confidence at
-  most medium. `AskResponse.answer_status` and `unknown_reason` are additive
-  and set only under the gate; a store that opts out answers as v0.23.0
-  did. The words the question contract reads live in
-  `kmp-proto-mapping/language/question_contract.json` and the `facet:*`
-  families of `question_families.json`.
-- Under the anchored gate an identifier is read the same however it is
-  spelled: a guide word binds the number after it (`corte 10`, `cut 10` and
-  `C10` are `c10`; `ADR 18` and `ADR-018` are `adr18`; `issue 185` and
-  `PR 185` are `#185`), in the question and in the memories it is compared
-  with (`identifier_aliases` in `question_contract.json`). A memory a writer
-  declared `same_entity_as` one that names the anchor may be cited for it,
-  marked `anchor_via: same_entity_as` and `anchor_from`. A memory leaves the
-  core for an excluded anchor only when that is its only anchor; the words a
-  question excludes no longer count toward the ⌈2/3⌉ rule. `proof.missing`
-  names what was not found in the reader's own words, accents included.
-  An enumerative question that found none of what it asked is UNKNOWN, not
-  PARTIAL. `ask-gate.json` also accepts `{"mode":"off"}`, and
-  `AskGate::STORE_DEFAULT` is the one switch that decides the default.
-- The anchored gate reads a memory's content and nothing else: its text
-  and its search summary. Whether a memory names the anchor (and the
-  anchor's document frequency, the core, the `same_entity_as` rescue) and
-  whether it states what the question asked of it no longer read its
-  source, refs (`entry:success_path:…`), entry kind or other metadata;
-  entry kinds still break ties between facets. A question word the stemmer
-  carries onto a concept-table word by more than an inflection is compared
-  as that stem and not through the table: `correctness` no longer matches
-  `correction`, while `fixes` still matches `fixed` (`inflectional_endings`
-  in `question_contract.json`).
-- What the anchored gate does not answer whole carries a proof its size.
-  A PARTIAL or gated UNKNOWN keeps in `proof.evidence` only the memories
-  that name one of the question's anchors (in their content, or by a
-  declared `same_entity_as`); a PARTIAL's `proof.path` keeps the relations
-  incident to what it cites and, of the rest of its proof, only
-  supersessions and conflicts; and under the gate `proof.missing` names each
-  thing once (the withheld sources were one per withheld entry). An
-  ANSWERED reading keeps its whole proof. On B-real the gated walk through
-  every page went from 46,229 to 11,655 tokens on average (10,231 without
-  the gate) and from 8 to 2.3 pages, with the same false UNKNOWNs and core
-  precision and one wrong PARTIAL fewer (a withheld source whose slug spelled
-  a covered facet no longer reads as missing). With `{"mode":"off"}` every
-  response is byte for byte what it was.
-- `memory_bench scale` (and `scale-aa`): the scale verification of the synth
-  ladder 10^3–10^5 on both topologies, 2 questions per type, `timeout_s` 120 and
-  `wake_resume` left out (`full` still measures it up to 10^4). It adds a far
-  trace cut: `trace_far` questions, `kmp_trace` between two 10^3 entries the world
-  joins only through at least 3 declared hops, followed in their declared
-  direction (the directed declared diameter of the 10^3 rung, unchanged at 10^4
-  and 10^5), every such pair (23 mono, 20 multi) and the same at every rung.
-  `report.json` gains `scale.far_trace` (pairs, `path_found`, wall p50/p95 per rung
-  and the P11 objective, p95 ≤ 30 ms at 10^5). A synth ladder may name
-  `exclude_types` and `far_trace` in `modes.toml`. Existing modes ask the same
-  questions as before, so their cached runs stay valid; `BENCH_VERSION` is unchanged.
-- `memory_bench` synth-v1 `1.2.0`: the `negated_anchor` gold forbids only the
-  entries whose only anchor is the excluded one. An entry of the subject that
-  also names the excluded anchor may be cited; it is neither an answer nor
-  forbidden. `excluded_refs` may therefore be empty. World digests regenerated.
-- An anchor that lives in another about is still reported
-  `anchor_absent_in_selection` (the bench's `anchor_in_other_about` is
-  scored as a wrong reason); telling the two apart is deferred to L6, the
-  lexical index, which can read an anchor's postings outside the selection.
-- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v4`. The bench no
-  longer deduplicates what it retrieves: `memory_ref::retrieved`,
-  `refs.retrieved` and `retrieved_across_pages` keep every returned ref, in
-  order, repeats included, so a memory returned with its evidence counts
-  twice (decision of 28 Sept 2026). Citations of evidence still normalize to
-  their entry. `metric_parity.json` is v3; retrieval-baseline `ndcg_at_10`
-  and the all_ rows it moves are re-recorded as a reviewed change. Every v3
-  run, report and world is invalidated; stores are kept.
-- `memory_bench`: `BENCH_VERSION` was `kmp.memory_bench.v3`. `refs.normalize`
-  (and the Rust scorecards, through the new `kmp_testkit::memory_ref`) read
-  `detail:evidence:<entry>:current`, `…:relation:<n>` and suffix-less guide
-  evidence as citations of `<entry>`; before, they never matched a judged
-  entry. Every v2 run, report and world is invalidated; stores are kept: their
-  key no longer carries `BENCH_VERSION` but `STORE_KEY_VERSION`, frozen at v1,
-  so the stores built under v1 (and orphaned by v2) are read again.
-- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v2` (the PARTIAL
-  scoring rules changed meaning); every cache entry of v1 is invalidated.
 
 ## [0.23.0] - 2026-09-25
 
