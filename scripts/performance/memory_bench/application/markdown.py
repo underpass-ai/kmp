@@ -46,6 +46,14 @@ def table(header, rows):
     return lines
 
 
+def freeze_line(freeze, absent='none: this section reads no B-real freeze'):
+    """The B-real freeze a section read, in full: path under the private root and both digests."""
+    if not freeze:
+        return absent
+    return (f'`{freeze["path"]}` (under the private root); store `{freeze["store_digest"]}`; '
+            f'questions `{freeze["questions_digest"]}`')
+
+
 def _provenance(section):
     lines = []
     rows = []
@@ -63,6 +71,7 @@ def _provenance(section):
     corpora = ', '.join(f'{name} {count}' for name, count in sorted(questions['by_corpus'].items()))
     rules = section['rules']
     lines += ['', f'- Questions: `{short(questions["digest"])}` ({corpora})',
+              f'- Freeze: {freeze_line(section.get("freeze"))}',
               f'- Driver: `{section["driver_version"]}`; encoders: {", ".join(section["encoders"])}',
               f'- Rules: scoring `{short(rules.get("scoring_rules_sha256"))}`, negatives '
               f'`{short(rules.get("negatives_sha256"))}`, modes `{short(rules.get("modes_sha256"))}`',

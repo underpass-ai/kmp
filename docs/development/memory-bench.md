@@ -53,7 +53,10 @@ token figure is `null` with its reason; nothing else changes.
    `target/release/kmp-mcp`); `--baseline` names another. `--freeze` picks a
    B-real freeze; by default the latest dated one under the private root is used.
 4. **Read the report.** The command prints the summary path and the verdict.
-   `summary.md` has the verdict, the arms and their provenance, one row per
+   `summary.md` has the verdict, the B-real freeze the mode read (its
+   directory under the private root, the store's content digest and the
+   questions' digest; `report.md` of the real-store section repeats it), the
+   arms and their provenance, one row per
    section (baseline → candidate on the headline rates, parity, seconds), the
    judged corpora row by row, and the limitations. Every run section also has
    its full `report.md` (the eleven sections of BENCH_SPEC section 12) beside

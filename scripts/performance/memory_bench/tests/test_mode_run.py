@@ -147,6 +147,60 @@ class RealSectionTest(unittest.TestCase):
             self.assertEqual(skipped.status, 'skipped')
 
 
+FREEZE = {'path': '2026-09-26',
+          'store_digest': 'sha256:5472b837da85d404c197965652d1fa6283912986d32046e94876ffd225d3f679',
+          'questions_digest': '7' * 64}
+
+
+class FreezeShownTest(unittest.TestCase):
+    """Every report names the B-real freeze it read: path under the private root, store, questions."""
+
+    def test_the_identity_is_the_path_under_the_private_root_and_both_digests(self):
+        with tempfile.TemporaryDirectory() as root:
+            Path(root, '2026-09-26').mkdir()
+            fd = real_section.real_freeze.FreezeDir.at(Path(root, '2026-09-26'))
+            manifest = {'bundle': {'content_digest': FREEZE['store_digest']}}
+            questions = (question('q0', 'plain'), question('q1', 'plain'))
+            identity = real_section.freeze_identity(fd, manifest, questions)
+        self.assertEqual(identity, {'path': '2026-09-26', 'store_digest': FREEZE['store_digest'],
+                                    'questions_digest': real_section.questions_digest(questions)})
+        self.assertIsNone(real_section.freeze_identity(fd, manifest, ())['questions_digest'])
+
+    def test_the_real_section_hands_its_freeze_to_the_report_and_keeps_it_when_skipped(self):
+        fd = mock.Mock(private_root=Path('/private'))
+        questions = (question('q0', 'plain'),)
+        with mock.patch.object(real_section, 'find_freeze', return_value=fd), \
+                mock.patch.object(real_section.real_freeze, 'verify', return_value={}), \
+                mock.patch.object(real_section, 'freeze_identity', return_value=FREEZE), \
+                mock.patch.object(real_section, 'store_for', return_value=None), \
+                mock.patch.object(real_section, 'select', return_value=(questions, [])), \
+                mock.patch.object(real_section.sections, 'run_section') as run_section:
+            real_section.run((mock.Mock(), mock.Mock()), MODES.get('quick-a'))
+            self.assertEqual(run_section.call_args.kwargs['freeze'], FREEZE)
+        with mock.patch.object(real_section, 'find_freeze', return_value=fd), \
+                mock.patch.object(real_section.real_freeze, 'verify', return_value={}), \
+                mock.patch.object(real_section, 'freeze_identity', return_value=FREEZE), \
+                mock.patch.object(real_section, 'select', return_value=((), ['no gold'])):
+            skipped = real_section.run((mock.Mock(), mock.Mock()), MODES.get('quick-a'))
+        self.assertEqual((skipped.status, skipped.as_dict()['freeze']), ('skipped', FREEZE))
+
+    def test_the_summary_names_the_freeze_once_in_full_and_in_every_section_row(self):
+        real = sections.SectionResult('real-store', 'ran', layout='private', report_key='f' * 64, freeze=FREEZE)
+        synth = sections.SectionResult('synth-mono', 'ran', layout='public', report_key='e' * 64)
+        self.assertEqual(mode_run.used_freeze([synth, real]), FREEZE)
+        self.assertIsNone(mode_run.used_freeze([synth]))
+        summary = SummaryTest().summary()
+        summary['freeze'] = FREEZE
+        summary['sections'] = [real.as_dict(), synth.as_dict()]
+        text = summary_markdown.render(summary)
+        self.assertIn(f"B-real freeze: `2026-09-26` (under the private root); store `{FREEZE['store_digest']}`; "
+                      f"questions `{'7' * 64}`.", text)
+        self.assertIn('| `2026-09-26` store `5472b837da85` questions `777777777777` |', text)
+        self.assertEqual(summary['sections'][1]['freeze'], None)
+        summary['freeze'] = None
+        self.assertIn('B-real freeze: none: no section of this mode read one.', summary_markdown.render(summary))
+
+
 class FakeRunner:
     """git, cargo and the built binary, as subprocess.run sees them."""
 
@@ -315,6 +369,25 @@ class SectionsTest(FakeBinaryCase):
         refused = sections.run_section('fake', specs, stores, questions, stricter, self.layout)
         self.assertEqual((refused.status, refused.verdict), ('failed', 'captura_fallida'))
         self.assertIn('repeats', refused.reason)
+
+    def test_a_section_report_names_the_freeze_it_read(self):
+        mode = dataclasses.replace(MODES.get('quick-a'), cpus=self.cpu, warmup=0, bootstrap_b=20,
+                                   timeout_s=5.0)
+        specs = (spec('base', self.binary), spec('cand', self.binary, store_files={
+            'rerank.json': {'json': {'pool_size': 40}}}))
+        stores = [StoreRef('3' * 64, None, 'fake', self.template(f't{i}', True)) for i in range(2)]
+        questions = (question('q0', 'plain'),)
+        plain = sections.run_section('fake', specs, stores, questions, mode, self.layout)
+        frozen = sections.run_section('fake', specs, stores, questions, mode, self.layout, freeze=FREEZE)
+        self.assertEqual((plain.status, frozen.status), ('ran', 'ran'), (plain.reason, frozen.reason))
+        self.assertNotEqual(plain.report_key, frozen.report_key)
+        self.assertEqual(frozen.as_dict()['freeze'], FREEZE)
+        report = json.loads((frozen.report_dir / 'report.json').read_text())
+        self.assertEqual(report['provenance']['freeze'], FREEZE)
+        self.assertIn(f"- Freeze: `2026-09-26` (under the private root); store `{FREEZE['store_digest']}`",
+                      (frozen.report_dir / 'report.md').read_text())
+        self.assertIsNone(json.loads((plain.report_dir / 'report.json').read_text())['provenance']['freeze'])
+        self.assertIn('- Freeze: none: this section reads no B-real freeze', (plain.report_dir / 'report.md').read_text())
 
     def test_an_aa_section_replays_the_baseline_under_a_nonce(self):
         mode = dataclasses.replace(MODES.get('aa'), cpus=self.cpu, warmup=0, bootstrap_b=20, timeout_s=5.0)

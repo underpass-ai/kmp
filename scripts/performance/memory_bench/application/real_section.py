@@ -22,7 +22,7 @@ import re
 from ..corpora import negative_rules, real_freeze
 from ..domain import cachekey
 from ..domain.errors import BenchError
-from ..domain.question import load_questions
+from ..domain.question import load_questions, questions_digest
 from ..runtime.layout import PRIVATE_ROOT_ENV, private_layout
 from . import sections
 from .run_questions import StoreRef
@@ -98,6 +98,14 @@ def select(fd, strata):
     return tuple(questions) + tuple(generated), notes
 
 
+def freeze_identity(fd, manifest, questions):
+    """The freeze a section read: its path under the private root, the frozen store's content
+    digest and the digest of the questions asked of it (the run manifests' questions digest)."""
+    return {'path': fd.root.relative_to(fd.private_root).as_posix(),
+            'store_digest': manifest['bundle']['content_digest'],
+            'questions_digest': questions_digest(questions) if questions else None}
+
+
 def store_for(fd, manifest, binary):
     label = f'b-real {fd.root.name}'
     source = cachekey.bundle_source(content_digest=manifest['bundle']['content_digest'], label=label)
@@ -117,9 +125,12 @@ def run(specs, mode, freeze=None, private_root=None, replica_nonce=None):
         questions, notes = select(fd, mode.real)
     except BenchError as error:
         return sections.failed(NAME, error)
+    freeze = freeze_identity(fd, manifest, questions)
     if not questions:
-        return sections.skipped(NAME, '; '.join(notes) or 'no question in the freeze')
+        result = sections.skipped(NAME, '; '.join(notes) or 'no question in the freeze')
+        result.freeze = freeze
+        return result
     layout = private_layout(fd.private_root)
     stores = [store_for(fd, manifest, spec.binary) for spec in specs]
     return sections.run_section(NAME, specs, stores, questions, mode, layout, replica_nonce,
-                                limitations=notes)
+                                limitations=notes, freeze=freeze)

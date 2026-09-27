@@ -753,7 +753,9 @@ RUST_LOG = "kmp_mcp::judgement=debug"
 deterministically. Top level: `schema`, `bench_version`, `report_key`, `mode`,
 `generated_by`, then the eleven sections of BENCH_SPEC section 12, in this order:
 `provenance`, `headlines`, `by_type`, `scale`, `latency_resources`, `tokens`,
-`jev_by_site`, `controls`, `power`, `limitations`, `verdict`.
+`jev_by_site`, `controls`, `power`, `limitations`, `verdict`. `provenance.freeze` is
+the B-real freeze the section read (`{path, store_digest, questions_digest}`, as in the
+mode summary) or null; it is part of the report key, and `report.md` prints it in full.
 
 Shared shapes:
 
@@ -826,6 +828,7 @@ this key order, compact, no NaN):
    "candidate": null,
    "questions": {"digest": "4444444444444444444444444444444444444444444444444444444444444444",
                  "by_corpus": {"synth-v1": 304}},
+   "freeze": null,
    "driver_version": "kmp.native_driver.v1", "encoders": ["o200k_base", "cl100k_base"],
    "rules": {"scoring_rules_sha256": null, "negatives_sha256": null, "modes_sha256": null},
    "comparable": true, "drift": []},
@@ -1245,13 +1248,19 @@ section, no network, no key; `scripts/ci/memory-bench-quick.sh`). A mode with th
 - **`kmp.bench.mode_summary.v1`** (`reports/<summary_key>/summary.json` and the
   `summary.md` rendered from it alone): `summary_key` (digest of the mode, the modes
   file, both arms' (binary sha, config digest) and every section's (name, status,
-  report key, judged-rows digest)), `mode`, `modes_sha256`, `generated_by`, `arms`
+  report key, judged-rows digest) and the freeze), `mode`, `modes_sha256`, `generated_by`, `arms`
   (`baseline`, `candidate`; null for the `aa` replica: variant, path, claim, jev,
   store, binary sha/version/provenance, config and pre-registration digests),
-  `replica`, `parameters` (the mode's run parameters), `sections[]` (name, status
+  `replica`, `freeze` (the B-real freeze the mode read, `{path, store_digest,
+  questions_digest}`: its directory relative to the private root, the frozen bundle's
+  `content_digest` and the digest of the questions the section asked; null when no
+  section read one; `summary.md` prints it in full under the verdict),
+  `parameters` (the mode's run parameters), `sections[]` (name, status
   `ran`/`skipped`/`failed`, reason, layout, report key, run ids and cache hits,
   questions by corpus, verdict and reasons, whether it voted, headline rates per arm,
-  parity counts, A/A control, limitations, judged rows, public rows, seconds), `timings`
+  parity counts, A/A control, limitations, judged rows, public rows, `freeze` (the same
+  object for the section that read it, even when it was skipped, else null; a column of
+  `summary.md`), seconds), `timings`
   (`started_at`, `total_s`, `budget_s`, `within_budget`, `by_section`) and `verdict`
   (`value`, `reasons`, `by_section`). Aggregates only; it lands in the private cache
   when a private section ran. `sections[].public` (the `public` section only, else

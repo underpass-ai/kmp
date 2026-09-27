@@ -77,10 +77,12 @@ class ReportOptions:
     calibration: dict | None = None  # synth-v1 world manifest `calibration`
     extra_limitations: tuple = ()
     rules: dict = field(default_factory=dict)  # {modes_sha256: ...} when a mode file pins them
+    freeze: dict | None = None  # real_section.freeze_identity of the B-real freeze the section read
 
     def key_material(self):
         return {'mode': self.mode, 'bootstrap_b': self.bootstrap_b, 'latency_b': self.latency_b,
-                'determinism': None if self.determinism is None else Path(self.determinism).name}
+                'determinism': None if self.determinism is None else Path(self.determinism).name,
+                'freeze': self.freeze}
 
 
 @dataclass
@@ -159,6 +161,7 @@ def _provenance(states, questions, digest, comparable, differing, options):
     base = states[0].arm.primary.manifest
     return {'baseline': arm_row(states[0]), 'candidate': arm_row(states[1]) if len(states) > 1 else None,
             'questions': {'digest': digest, 'by_corpus': dict(sorted(by_corpus.items()))},
+            'freeze': options.freeze,
             'driver_version': base['driver_version'],
             'encoders': [item['encoding'] for item in base['encoders']],
             'rules': {'scoring_rules_sha256': scoring_rules.rules_sha256(),
