@@ -48,7 +48,10 @@ Detailed notes from the early release cycle remain available in the
   other kind, reads the about as before. Ask p50 197 → 177 ms on the real
   store, 2.8 → 1.6 s at 10^4, 28 → 17 s at 10^5 (p95 unchanged: the asks it
   does not answer); the first ask of an about builds its index (0.36 s at 10^3,
-  31 s at 10^5 entries).
+  31 s at 10^5 entries). Abouts with fewer than 2,250 entries are never
+  indexed (their build costs more than their asks save; measured), and both
+  limits are per store in `lexical-index.json`
+  (`{"max_candidate_share_percent":35,"min_about_entries":2250}`).
 
 ### Changed
 

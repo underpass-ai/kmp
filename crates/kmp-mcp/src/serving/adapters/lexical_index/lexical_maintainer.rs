@@ -28,6 +28,8 @@ pub(super) const INDEX_VERSION: &str = "lexical-index-3";
 /// reading, or behind a log that was replaced, starts again from nothing.
 pub(super) struct LexicalMaintainer {
     sidecar: Arc<SqliteLexicalSidecar>,
+    /// An about with fewer entries is not built on its first ask.
+    min_about_entries: u64,
 }
 
 /// The readings every row carries: plain and with alias terms.
@@ -42,7 +44,29 @@ struct Touched {
 
 impl LexicalMaintainer {
     pub(super) fn new(sidecar: Arc<SqliteLexicalSidecar>) -> Self {
-        Self { sidecar }
+        Self {
+            sidecar,
+            min_about_entries: 0,
+        }
+    }
+
+    /// Builds only abouts with at least `entries` entries on their first ask.
+    pub(super) fn with_min_about_entries(mut self, entries: u64) -> Self {
+        self.min_about_entries = entries;
+        self
+    }
+
+    /// Whether `about` is too small to index: fewer entries (its `records`
+    /// edges) than the threshold. Counted only for an about not built yet.
+    fn below_threshold(&self, reads: &dyn GraphPointReads, about: &str) -> Result<bool, String> {
+        if self.min_about_entries == 0 {
+            return Ok(false);
+        }
+        let entries = reads
+            .outgoing(about, Some(super::relation_key::RECORDS))
+            .map_err(port)?
+            .len() as u64;
+        Ok(entries < self.min_about_entries)
     }
 
     fn profile(&self) -> &'static str {
@@ -68,13 +92,18 @@ impl LexicalMaintainer {
             reset = meta.position > last || tail.as_deref() != Some(meta.tail.as_str());
         }
         let position = if reset { 0 } else { meta.position };
+        let mut below_threshold = false;
         let ensure = match ensure {
-            Some(about) if reset || self.sidecar.stats(about)?.is_none() => Some(about),
+            Some(about) if reset || self.sidecar.stats(about)?.is_none() => {
+                below_threshold = self.below_threshold(reads, about)?;
+                (!below_threshold).then_some(about)
+            }
             _ => None,
         };
         let mut report = CatchUpReport {
             position: last,
             reset,
+            below_threshold,
             ..CatchUpReport::default()
         };
         if !reset && position == last && ensure.is_none() {

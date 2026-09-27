@@ -5,24 +5,9 @@ use kmp_proto_mapping::v1beta1::{
 };
 
 use super::about_stats::AboutStats;
+use super::index_limits::IndexLimits;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
 use crate::serving::ports::lexical_candidates::LexicalCandidates;
-
-/// The largest share of the about, in twentieths, an ask answered from the
-/// postings may read. Reading a candidate point by point costs about twice
-/// what reading it with the whole about does (measured: 0.5 ms against 0.27
-/// at 10^4 entries, 0.65 against 0.28 at 10^5); on the frozen real store
-/// (1,042 asks) the index answers faster below 40 % of the about and slower
-/// above it, so past 35 % the ask reads the about. P14 (top-k) bounds what
-/// an answer reads below that.
-const MAX_SHARE_TWENTIETHS: u64 = 7;
-
-/// Why `count` candidates of an about of `documents` are too many for the
-/// index to save anything over reading the about, if they are.
-pub(super) fn too_many(count: usize, documents: u64) -> Option<&'static str> {
-    (count as u64 * 20 > documents * MAX_SHARE_TWENTIETHS)
-        .then_some("the candidates cover too much of the about")
-}
 
 /// What an ask answered from the lexical index reads (DESIGN L6, P13): the
 /// candidates the postings of its words and of their associations reach,
@@ -38,14 +23,15 @@ pub(super) struct IndexedPlan {
 impl IndexedPlan {
     /// The plan for `question` over `about`, or why the index does not
     /// answer it. `bounded` declines a question whose candidates are too
-    /// many for the index to save anything ([`too_many`]); unbounded (the
-    /// `verify` mode) every ask the index can hold is planned, to measure it.
+    /// many for the index to save anything ([`IndexLimits::too_many`]);
+    /// unbounded (the `verify` mode) every ask the index can hold is planned,
+    /// to measure it.
     pub(super) fn read(
         sidecar: &SqliteLexicalSidecar,
         about: &str,
         question: &str,
         bridge: &LexicalBridge,
-        bounded: bool,
+        bounded: Option<IndexLimits>,
         deeper: bool,
     ) -> Result<Result<Self, &'static str>, String> {
         let Some(stats) = sidecar.stats(about)? else {
@@ -72,7 +58,8 @@ impl IndexedPlan {
             Some(std::sync::Arc::new(vocabulary))
         };
         let first = candidates(sidecar, about, &seeds)?;
-        if let Some(why) = too_many(first.len(), stats.documents).filter(|_| bounded) {
+        if let Some(why) = bounded.and_then(|limits| limits.too_many(first.len(), stats.documents))
+        {
             return Ok(Err(why));
         }
         let mut probed = seeds.clone();
@@ -94,7 +81,9 @@ impl IndexedPlan {
         if !extra.is_empty() {
             reached.extend(candidates(sidecar, about, &extra)?);
         }
-        if let Some(why) = too_many(reached.len(), stats.documents).filter(|_| bounded) {
+        if let Some(why) =
+            bounded.and_then(|limits| limits.too_many(reached.len(), stats.documents))
+        {
             return Ok(Err(why));
         }
         let mut terms = seeds;

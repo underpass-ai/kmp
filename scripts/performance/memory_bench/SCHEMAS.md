@@ -1244,7 +1244,8 @@ channel logs `kmp_lexical_answer` at debug: `answered = true` with `candidates`
 (how many the postings reached), `documents` (the about's), `plan_us` (choosing
 the candidates), `parts_us` (reading them and their neighbourhood from the store
 and assembling them) and `elapsed_us` (to the finished response); or
-`answered = false` with `reason` (`the candidates cover too much of the about`,
+`answered = false` with `reason` (`the about is below the index's size threshold`,
+`the candidates cover too much of the about`,
 `nodes lie past the indexed depth`, `the about holds search expansions`,
 `the index did not follow the log`, `the store moved`, `about not built`), and the
 ask reads the about. A failure to read the index is a warning and the ask reads

@@ -24,6 +24,7 @@ mod judgement_source;
 mod ledgered_judgement;
 pub(crate) mod lexical_bridge_file;
 pub(crate) mod lexical_index;
+mod lexical_index_config;
 mod loopback_semantic_retriever;
 mod observed_judgement;
 #[cfg(test)]

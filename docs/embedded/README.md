@@ -129,8 +129,9 @@ own words, their associations in this memory, the words the lexical bridge
 finds for them) are read, with their neighbourhood, and ranked against the
 whole about as the index describes it; the response is the one reading the
 whole about gives, byte for byte. When those memories are more than a third of
-the about, or the ask is any other kind, it reads the about as before. It is on
-by default; `KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares it with
+the about, the about has fewer than 2,250 entries (never indexed), or the ask is
+any other kind, it reads the about as before; `lexical-index.json` beside the
+store tunes both limits. It is on by default; `KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares it with
 every ask, and `verify` answers both ways and logs whether they agree. It can be
 deleted at any time: the next ask builds what it needs again. It is not part of
 a bundle.

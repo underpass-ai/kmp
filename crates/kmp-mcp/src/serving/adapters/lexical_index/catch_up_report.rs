@@ -14,4 +14,7 @@ pub(crate) struct CatchUpReport {
     /// False when another process moved the sidecar first; nothing written.
     pub(crate) committed: bool,
     pub(crate) elapsed_us: u64,
+    /// The about the ask asked for was not built: it has fewer entries
+    /// than the store indexes (`min_about_entries`).
+    pub(crate) below_threshold: bool,
 }

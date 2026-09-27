@@ -6,6 +6,7 @@ use kmp_embedded::EmbeddedKernelStore;
 use kmp_proto_mapping::v1beta1::{LexicalObservation, LexicalShadowWitness};
 
 use super::catch_up_report::CatchUpReport;
+use super::index_limits::IndexLimits;
 use super::indexed_parts::IndexedParts;
 use super::indexed_plan::IndexedPlan;
 pub(crate) use super::indexed_read::IndexedRead;
@@ -32,6 +33,7 @@ pub(crate) struct LexicalSidecar {
     sidecar: Option<Arc<SqliteLexicalSidecar>>,
     maintainer: Option<Arc<LexicalMaintainer>>,
     mode: LexicalIndexMode,
+    limits: IndexLimits,
 }
 
 pub(crate) fn lexical_index_path(data_dir: &Path) -> PathBuf {
@@ -39,8 +41,14 @@ pub(crate) fn lexical_index_path(data_dir: &Path) -> PathBuf {
 }
 
 impl LexicalSidecar {
-    /// Opens the sidecar beside the store when `mode` asks for it.
-    pub(crate) fn open(data_dir: &Path, mode: LexicalIndexMode) -> Self {
+    /// Opens the sidecar beside the store when `mode` asks for it. Only `on`
+    /// keeps small abouts unindexed; `shadow` and `verify` measure every about.
+    pub(crate) fn open(data_dir: &Path, mode: LexicalIndexMode, limits: IndexLimits) -> Self {
+        let limits = if mode == LexicalIndexMode::On {
+            limits
+        } else {
+            limits.every_about()
+        };
         if !mode.is_open() {
             return Self::disabled();
         }
@@ -48,9 +56,13 @@ impl LexicalSidecar {
             Ok(sidecar) => {
                 let sidecar = Arc::new(sidecar);
                 Self {
-                    maintainer: Some(Arc::new(LexicalMaintainer::new(Arc::clone(&sidecar)))),
+                    maintainer: Some(Arc::new(
+                        LexicalMaintainer::new(Arc::clone(&sidecar))
+                            .with_min_about_entries(limits.min_about_entries),
+                    )),
                     sidecar: Some(sidecar),
                     mode,
+                    limits,
                 }
             }
             Err(error) => {
@@ -65,6 +77,7 @@ impl LexicalSidecar {
             sidecar: None,
             maintainer: None,
             mode: LexicalIndexMode::Off,
+            limits: IndexLimits::DEFAULT,
         }
     }
 
@@ -156,6 +169,9 @@ impl LexicalSidecar {
         let Some(sidecar) = self.sidecar.as_ref().map(Arc::clone) else {
             return Ok(Err("the index is closed"));
         };
+        if followed.is_some_and(|report| report.below_threshold) {
+            return Ok(Err("the about is below the index's size threshold"));
+        }
         let Some(position) = followed
             .filter(|report| report.committed)
             .map(|report| report.position)
@@ -171,7 +187,7 @@ impl LexicalSidecar {
             let bridge = bridge.clone();
             // `verify` measures every ask the index can hold, however many
             // candidates it reaches; `on` answers only those it saves on.
-            let bounded = self.mode == LexicalIndexMode::On;
+            let bounded = (self.mode == LexicalIndexMode::On).then_some(self.limits);
             tokio::task::spawn_blocking(move || {
                 IndexedPlan::read(&sidecar, &about, &question, &bridge, bounded, deeper)
             })

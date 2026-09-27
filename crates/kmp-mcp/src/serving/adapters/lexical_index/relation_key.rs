@@ -36,5 +36,8 @@ impl RelationKey {
 
 /// The edge a label keeps an entry with; the ask's selection is made of them.
 pub(super) const CONTAINS_ENTRY: &str = "contains_entry";
+
+/// The edge from an about to each entry it records: how many entries it holds.
+pub(super) const RECORDS: &str = "records";
 /// The edge evidence names the entries it supports with.
 pub(super) const SUPPORTS: &str = "supports";

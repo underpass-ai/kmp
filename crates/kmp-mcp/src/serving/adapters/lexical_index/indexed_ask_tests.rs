@@ -13,6 +13,7 @@ use kmp_embedded::EmbeddedKernel;
 use kmp_proto_mapping::v1beta1::{AskRetrievalContext, LexicalBridge, ask_response_from_result};
 use serde_json::{Value, json};
 
+use super::index_limits::IndexLimits;
 use super::lexical_sidecar::LexicalSidecar;
 use super::upkeep_tests::{ABOUT, call, write};
 use crate::serving::lexical_index_mode::LexicalIndexMode;
@@ -135,7 +136,11 @@ async fn assert_index_answers_as_the_about(bridge: LexicalBridge, bridged: bool)
     let directory = tempfile::tempdir().expect("store");
     seed(&server(directory.path(), LexicalIndexMode::Off)).await;
     let kernel = EmbeddedKernel::open(directory.path()).expect("kernel");
-    let sidecar = LexicalSidecar::open(directory.path(), LexicalIndexMode::On);
+    let sidecar = LexicalSidecar::open(
+        directory.path(),
+        LexicalIndexMode::On,
+        IndexLimits::DEFAULT.every_about(),
+    );
     let service = kernel.service();
     let mut reached_by_the_bridge = false;
     let mut answered = 0;
@@ -229,7 +234,11 @@ async fn a_question_that_reaches_most_of_the_about_reads_the_about() {
     let directory = tempfile::tempdir().expect("store");
     seed(&server(directory.path(), LexicalIndexMode::Off)).await;
     let kernel = EmbeddedKernel::open(directory.path()).expect("kernel");
-    let sidecar = LexicalSidecar::open(directory.path(), LexicalIndexMode::On);
+    let sidecar = LexicalSidecar::open(
+        directory.path(),
+        LexicalIndexMode::On,
+        IndexLimits::DEFAULT.every_about(),
+    );
     let query = query(
         "which garden bed received compost and mulch?",
         MemoryAnswerPolicy::BestEffort,
@@ -292,6 +301,12 @@ async fn every_ask_gives_the_same_bytes_with_the_index_on() {
         directory.path().join("lexical-bridge.kmpb"),
     )
     .expect("store table");
+    // The about is small: index it all the same, to answer from the index.
+    std::fs::write(
+        directory.path().join("lexical-index.json"),
+        r#"{"min_about_entries":0}"#,
+    )
+    .expect("index limits");
     let off = server(directory.path(), LexicalIndexMode::Off);
     seed(&off).await;
     let on = server(directory.path(), LexicalIndexMode::On);
@@ -332,4 +347,42 @@ async fn every_ask_gives_the_same_bytes_with_the_index_on() {
         settled(&call(&on, "kmp_ask", ask.clone()).await),
         settled(&call(&off, "kmp_ask", ask).await)
     );
+}
+
+/// Whether the sidecar beside `path` holds `ABOUT`.
+fn indexed(path: &Path) -> bool {
+    super::sqlite_lexical_sidecar::SqliteLexicalSidecar::open(
+        &path.join(super::lexical_sidecar::LEXICAL_INDEX_FILE),
+    )
+    .expect("sidecar")
+    .stats(ABOUT)
+    .expect("stats")
+    .is_some()
+}
+
+#[tokio::test]
+async fn an_about_below_the_size_threshold_is_read_and_never_indexed() {
+    let directory = tempfile::tempdir().expect("store");
+    let off = server(directory.path(), LexicalIndexMode::Off);
+    seed(&off).await;
+    // 166 entries, below the default threshold.
+    let on = server(directory.path(), LexicalIndexMode::On);
+    let ask = json!({"about":ABOUT,"question":QUESTIONS[0]});
+    assert_eq!(
+        settled(&call(&on, "kmp_ask", ask.clone()).await),
+        settled(&call(&off, "kmp_ask", ask.clone()).await)
+    );
+    assert!(!indexed(directory.path()), "a small about is not built");
+    // A store that lowers the threshold indexes it on its next ask.
+    std::fs::write(
+        directory.path().join("lexical-index.json"),
+        r#"{"min_about_entries":100}"#,
+    )
+    .expect("index limits");
+    let lowered = server(directory.path(), LexicalIndexMode::On);
+    assert_eq!(
+        settled(&call(&lowered, "kmp_ask", ask.clone()).await),
+        settled(&call(&off, "kmp_ask", ask).await)
+    );
+    assert!(indexed(directory.path()));
 }

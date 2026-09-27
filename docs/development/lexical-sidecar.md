@@ -145,6 +145,50 @@ In shadow each ask pays for the comparison: +15–20 ms at 10^3 and +170–185 m
 at 10^4 (about +5 %), about 0.5 s of comparison at 10^5 (+2 %). With the index
 answering (`on`) there is no comparison.
 
+## Which abouts are indexed, and the cost bound (`lexical-index.json`)
+
+A store tunes both limits in `lexical-index.json` beside it (acknowledged on
+`kmp_mcp::store_config` like every other store file; unreadable or out of range,
+it is reported as ignored and the defaults apply):
+
+```json
+{"max_candidate_share_percent": 35, "min_about_entries": 2250}
+```
+
+- `min_about_entries` (default **2,250**): with the index `on`, an about with
+  fewer entries (its `records` edges, counted without building anything) is never
+  indexed; its asks read the about and log `the about is below the index's size
+  threshold`. `shadow` and `verify` index every about, to measure them.
+- `max_candidate_share_percent` (default **35**, 1 to 100): an ask whose
+  candidates cover more of the about reads the about instead.
+
+The threshold was chosen by a rule fixed before measuring (`eval-p13/PREREG.md`,
+second addendum): the smallest measured about size above which every measured
+about recovers its build within three asks (build ≤ 3 × mean saving per ask),
+rounded down to a multiple of 250. Build and mean saving per ask against the
+integration base, the index already built:
+
+| About | Entries | Asks | Build | Mean saving per ask |
+|---|---:|---:|---:|---:|
+| Real store, six abouts | 17–309 | 2–432 | 30–356 ms | −26 to −0.3 ms |
+| LongMemEval-S, 90 abouts | 396–616 | 1 each | 404 ms (median) | 12 ms (median) |
+| synth 10^3 | 1,000 | 198 | 452 ms | 111 ms |
+| FactConsolidation 32k | 2,310 | 184 | 306 ms | 116 ms |
+| synth 10^4 | 10,000 | 297 | 3,590 ms | 1,200 ms |
+
+Below 2,310 entries some about fails the rule (synth 10^3: 452 ms > 3 × 111 ms;
+the real store's abouts save nothing); from 2,310 up every about passes, so the
+threshold is 2,250. With it LongMemEval-S (one ask per about of ≤ 616 entries)
+builds nothing and no longer regresses.
+
+## Accepted costs
+
+- Following the log after every write costs about 6 ms per single-entry write
+  at 10^4 entries (accepted, Tirso, 27 Sept 2026).
+- In a project store (commit-native), the process keeps the head bundle it last
+  published in memory to extend it by the next write's events: about 121 MB at
+  10^5 entries (accepted).
+
 ## Answering from the index (P13)
 
 An ask is held when it reads one about at the frontier, with no dimensions, at
@@ -160,8 +204,8 @@ whole admitted pool: no semantic retrieval, no remote re-ranking, no doubt band
    finds for them in the whole about's vocabulary (`lex_vocab`, at most three per
    word). A candidate outside C carries none of the words the question weighs,
    so it cannot clear the floor (`clears_floor` asks for score > 0).
-2. **Cost bound.** When C covers more than 35 % of the about the ask reads the
-   about: reading a candidate point by point costs about twice what reading it
+2. **Cost bound.** When C covers more than 35 % of the about (configurable,
+   above) the ask reads the about: reading a candidate point by point costs about twice what reading it
    with the whole about does (0.5 ms against 0.27 at 10^4, 0.65 against 0.28 at
    10^5), and on the frozen real store the index answered faster below 40 % and
    slower above it. P14 (top-k) bounds what an answer reads below that.
