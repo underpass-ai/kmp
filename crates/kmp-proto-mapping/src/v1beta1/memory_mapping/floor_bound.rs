@@ -21,9 +21,9 @@ const FLOOR_MARGIN: f64 = 1e-9;
 ///
 /// KMP's ask returns every candidate that clears the floor, ranked, so the
 /// threshold MaxScore prunes against is the floor itself, not a k-th score.
-/// The bound is sound for the whole [`super::relevance_key::RelevanceKey`]
+/// The bound is sound for the whole `RelevanceKey`
 /// because nothing below the floor is ranked at all
-/// ([`super::answer_candidate::AnswerCandidate::eligible`] refuses it first):
+/// (`AnswerCandidate::eligible` refuses it first):
 ///
 /// - `clears_floor` asks `Σ w·idf·sat(tf, L) ≥ floor · sat(1, L)` over the
 ///   direct field, with `sat(tf, L) = tf(k1+1) / (tf + k1·n(L))`. Since
@@ -39,12 +39,12 @@ const FLOOR_MARGIN: f64 = 1e-9;
 ///   the words of all of them count, and the lowest floor any of them sets is
 ///   the one compared.
 /// - The lexical bridge: the floor carries the words the table supplies,
-///   exactly as [`super::lexicon::Lexicon`] builds it, and a candidate that
+///   exactly as `Lexicon` builds it, and a candidate that
 ///   carries a bridged word is always read.
 /// - The store's associations: a candidate that carries one is always read
 ///   (it can be rescued through it), and the associations themselves are
 ///   counted over every candidate that carries a word of the question
-///   ([`super::indexed_ask::IndexedAsk::seed_rows`]), never over the ones read.
+///   (`IndexedAsk::seed_rows`), never over the ones read.
 ///
 /// Where no sound bound exists the ask is not pruned at all ([`Self::read`]
 /// returns `None`): a question whose anchors the gate requires (it ranks
@@ -93,9 +93,7 @@ impl FloorBound {
         let mut asked = Vec::new();
         for form in question.forms() {
             let counts = informative_term_counts(form, morphology);
-            if counts.terms().next().is_none() {
-                return None;
-            }
+            counts.terms().next()?;
             // What the floor is made of: the question's words and, where
             // the table supplied one it lacks, the candidate's word.
             let bridged = match vocabulary {

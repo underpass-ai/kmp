@@ -111,7 +111,14 @@ impl IndexedPlan {
         // word, is ranked by nobody and rescued by nobody; it is left unread.
         let bound = prune
             .then(|| {
-                let mut kept = associated;
+                // The associations of the question's words include the
+                // words themselves, which the bound weighs; what else they
+                // bring, and every bridged word, keeps a candidate read.
+                let asked = question.terms();
+                let mut kept = associated
+                    .into_iter()
+                    .filter(|term| !asked.contains(term))
+                    .collect::<BTreeSet<_>>();
                 kept.extend(bridged);
                 FloorBound::read(
                     &question,
