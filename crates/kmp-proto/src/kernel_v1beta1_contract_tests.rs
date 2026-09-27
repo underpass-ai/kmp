@@ -442,6 +442,63 @@ fn v1beta1_kernel_memory_temporal_presence_fields_are_stable() {
     assert_proto3_optional(memory_file, "TemporalCursor", "sequence");
 }
 
+/// P15 parity with `kmp_write_memory`: proposed search expansions travel
+/// beside each entry and their fate comes back on the response. Both are
+/// additive — new numbers after every existing field — so an older client
+/// neither sends nor reads them and its writes do not change.
+#[test]
+fn v1beta1_search_expansions_are_additive_and_optional() {
+    use prost_types::field_descriptor_proto::{Label, Type};
+
+    let descriptor_set = decode_kernel_descriptor_set();
+    let memory_file = kernel_file(&descriptor_set, "memory.proto");
+
+    assert_eq!(
+        message_field_names(memory_file, "MemoryEntry"),
+        vec![
+            "id",
+            "kind",
+            "text",
+            "coordinates",
+            "metadata",
+            "search_expansions"
+        ]
+    );
+    let proposed = message_field(memory_file, "MemoryEntry", "search_expansions");
+    assert_eq!(proposed.number(), 6);
+    assert_eq!(proposed.label(), Label::Repeated);
+    assert_eq!(proposed.r#type(), Type::String);
+
+    assert_eq!(
+        message_field_names(memory_file, "IngestResponse"),
+        vec![
+            "summary",
+            "memory",
+            "warnings",
+            "neighborhood",
+            "search_expansions"
+        ]
+    );
+    let report = message_field(memory_file, "IngestResponse", "search_expansions");
+    assert_eq!(report.number(), 5);
+    assert_eq!(
+        stable_type_name(&report.type_name),
+        "SearchExpansionsReport"
+    );
+    assert_eq!(
+        message_field_names(memory_file, "SearchExpansionsReport"),
+        vec!["stored", "refused", "not_stored", "judged_by"]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "StoredSearchExpansions"),
+        vec!["ref", "expansions"]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "RefusedSearchExpansion"),
+        vec!["ref", "expansion", "why"]
+    );
+}
+
 #[test]
 fn v1beta1_graph_relationship_fields_are_stable() {
     let descriptor_set = decode_kernel_descriptor_set();

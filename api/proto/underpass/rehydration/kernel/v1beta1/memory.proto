@@ -106,6 +106,14 @@ message MemoryEntry {
   string text = 3;
   repeated TemporalCoordinate coordinates = 4;
   map<string, string> metadata = 5;
+  // Optional short ways a later reader may ask for this entry: questions it
+  // answers, paraphrases, keys in the other language (Spanish or English); at
+  // most 6, of at most 120 characters each. They are proposals and never part
+  // of the entry: one is stored only after a judge accepted it against the
+  // stored text, and a server without a judge stores none.
+  // IngestResponse.search_expansions says what became of them. Empty (an older
+  // client) proposes nothing and changes nothing.
+  repeated string search_expansions = 6;
 }
 
 message TemporalCoordinate {
@@ -195,6 +203,34 @@ message IngestResponse {
   IngestedMemory memory = 2;
   repeated string warnings = 3;
   WriteNeighborhood neighborhood = 4;
+  // What became of the entries' proposed search expansions. Absent when no
+  // entry proposed one, or when the write is held for review.
+  SearchExpansionsReport search_expansions = 5;
+}
+
+// The search expansions of one write: what was kept, what was refused and
+// why, and why nothing was stored when that is so.
+message SearchExpansionsReport {
+  // Kept expansions, one element per entry.
+  repeated StoredSearchExpansions stored = 1;
+  // What the lint or the judge refused, in the writer's order.
+  repeated RefusedSearchExpansion refused = 2;
+  // Why what passed the lint was not stored. Empty when nothing awaited a
+  // judge or when the judge answered.
+  string not_stored = 3;
+  // Which judge accepted what was kept, and at what bar. Empty when none did.
+  string judged_by = 4;
+}
+
+message StoredSearchExpansions {
+  string ref = 1;
+  repeated string expansions = 2;
+}
+
+message RefusedSearchExpansion {
+  string ref = 1;
+  string expansion = 2;
+  string why = 3;
 }
 
 message WriteNeighborhood {

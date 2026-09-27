@@ -150,6 +150,9 @@ fn entry_from_value(value: &Value) -> Result<MemoryEntry, String> {
             "metadata",
             "memory.entries[].metadata",
         )?,
+        // kmp_ingest proposes no search expansion: kmp_write_memory reads
+        // them, and only a judge keeps one.
+        search_expansions: Vec::new(),
     })
 }
 

@@ -56,6 +56,7 @@ mod identifier_alias;
 mod identifier_aliases;
 mod identifier_binding;
 mod ingest;
+mod ingest_search_expansions;
 mod judged_core;
 mod judged_selection;
 mod language_signals;
@@ -152,6 +153,9 @@ pub use doubt_judgement::DoubtJudgement;
 pub use doubt_passage::DoubtPassage;
 pub use doubt_verdicts::DoubtVerdicts;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
+pub use ingest_search_expansions::{
+    search_expansion_proposals_from_proto, search_expansions_report_to_proto,
+};
 pub use judged_selection::JudgedSelection;
 pub use language_signals::LanguageSignals;
 pub use lexical_bridge::LexicalBridge;

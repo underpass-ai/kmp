@@ -227,6 +227,15 @@ file, a working Jev or an answer, nothing is stored and the result says why
 (`search_expansions.not_stored`). A memories write commits the memories
 first and attaches the kept expansions as a second, metadata-only write.
 
+The gRPC write carries the same proposal: `MemoryEntry.search_expansions`
+(field 6), optional and additive, so an older client that never sets it
+writes exactly as before. Ingest reads it with the same lint and reports what
+became of it in `IngestResponse.search_expansions` (field 5,
+`SearchExpansionsReport`: `stored`, `refused`, `not_stored`, `judged_by`).
+The kernel serves no judge, so over gRPC nothing is stored and `not_stored`
+says why, the same outcome `kmp_write_memory` reports on a backend that
+cannot judge. More than six expansions for one entry is `INVALID_ARGUMENT`.
+
 Ask searches the expansions as a field of their own and never as the
 memory's words. A memory the question reaches only through them comes back
 after every memory it reached in its own words, outside the answer core,

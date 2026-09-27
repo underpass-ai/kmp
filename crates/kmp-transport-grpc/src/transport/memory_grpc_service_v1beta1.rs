@@ -2,7 +2,9 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use kmp_application::{ApplicationError, KernelMemoryApplicationService, TemporalMemoryResult};
+use kmp_application::{
+    ApplicationError, KernelMemoryApplicationService, SearchExpansionReport, TemporalMemoryResult,
+};
 use kmp_domain::{
     ContextEventStore, DimensionScopeMode, DimensionSelection, DimensionSelectionMode,
     GraphNeighborhoodReader, KmpBundle, MemoryAboutIndexReader, MemoryDimensionIdentity,
@@ -38,6 +40,7 @@ use kmp_proto_mapping::v1beta1::recall_projection::{
 };
 use kmp_proto_mapping::v1beta1::{
     AskRetrievalContext, LexicalBridge, LexicalIndexCache, abouts_in_bundle,
+    search_expansion_proposals_from_proto, search_expansions_report_to_proto,
 };
 
 pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
@@ -94,8 +97,14 @@ where
         request: Request<IngestRequest>,
     ) -> Result<Response<IngestResponse>, Status> {
         let start = Instant::now();
-        let command = ingest_command_from_proto(request.into_inner())
+        let request = request.into_inner();
+        // Proposed search expansions are read off the wire before the
+        // command, which never carries them: they are not part of the memory.
+        let expansions = search_expansion_proposals_from_proto(&request)
             .map_err(|status| map_proto_error("KernelMemoryService.Ingest", &start, *status))?;
+        let command = ingest_command_from_proto(request)
+            .map_err(|status| map_proto_error("KernelMemoryService.Ingest", &start, *status))?;
+        let dry_run = command.dry_run;
         tracing::info!(
             rpc = "KernelMemoryService.Ingest",
             about = %command.about,
@@ -124,7 +133,13 @@ where
             start.elapsed(),
         );
 
-        Ok(Response::new(ingest_response_from_outcome(outcome)))
+        // The kernel serves no judge, so what passes the lint is not stored
+        // and the response says why, as kmp_write_memory does on a backend
+        // that cannot judge.
+        let report = SearchExpansionReport::without_judge(&expansions, &outcome, dry_run);
+        let mut response = ingest_response_from_outcome(outcome);
+        response.search_expansions = report.map(search_expansions_report_to_proto);
+        Ok(Response::new(response))
     }
 
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Wake"))]

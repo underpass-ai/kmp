@@ -739,6 +739,7 @@ impl KernelMemoryService for FakeMemoryService {
 
         Ok(Response::new(IngestResponse {
             neighborhood: None,
+            search_expansions: None,
             summary: format!("Ingested memory for {}.", request.about),
             memory: Some(IngestedMemory {
                 replayed: true,

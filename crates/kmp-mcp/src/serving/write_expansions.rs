@@ -68,7 +68,8 @@ impl KernelMcpServer {
             return;
         }
         if plan.dry_run {
-            result["search_expansions"] = json!({"stored": {}, "refused": [], "not_stored": "a preview judges and stores no expansion"});
+            result["search_expansions"] = json!({"stored": {}, "refused": [],
+                "not_stored": kmp_application::SearchExpansionReport::PREVIEW_REASON});
             return;
         }
         if !matches!(result["status"].as_str(), Some("committed" | "replayed")) {
@@ -82,8 +83,11 @@ impl KernelMcpServer {
         if let Some(source_kind) = arguments.get("source_kind") {
             attach["source_kind"] = source_kind.clone();
         }
-        let report = match self.plan_search_summary_packet(&attach).await {
-            Ok((attach_plan, report)) => {
+        // Nothing left to attach is not an error here: the memories stand,
+        // and the report says what was refused and why nothing was stored.
+        let report = match self.plan_search_summary_records(&attach).await {
+            Ok((None, report)) => report.unwrap_or_default(),
+            Ok((Some(attach_plan), report)) => {
                 match self.commit_write_plan(&attach, &attach_plan, None).await {
                     Ok(_) => report.unwrap_or_default(),
                     Err(error) => json!({"stored": {}, "refused": [],

@@ -2451,6 +2451,7 @@ fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
                     ..Default::default()
                 }],
                 metadata: Default::default(),
+                search_expansions: Vec::new(),
             }],
             relations: vec![MemoryRelation {
                 source_ref: "conversation:rachel-2026-04-12".to_string(),

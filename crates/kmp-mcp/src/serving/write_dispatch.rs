@@ -130,10 +130,36 @@ impl KernelMcpServer {
 
     /// Read every target before committing the packet. A rendering changes only
     /// search metadata; the authoritative text, kind and clocks come from storage.
+    /// A packet that would store nothing is refused whole, naming what was
+    /// refused.
     pub(super) async fn plan_search_summary_packet(
         &self,
         arguments: &Value,
     ) -> Result<(crate::write::plan::KernelWritePlan, Option<Value>), ToolError> {
+        match self.plan_search_summary_records(arguments).await? {
+            (Some(plan), report) => Ok((plan, report)),
+            (None, report) => {
+                let report = report.unwrap_or_default();
+                let reason = report["not_stored"]
+                    .as_str()
+                    .unwrap_or("every proposed expansion was refused");
+                Err(WriteValidationError::new(format!(
+                    "no search expansion was stored, so nothing was written: {reason}; refused: {}",
+                    report["refused"]
+                ))
+                .at("search_summaries")
+                .code("EXPANSIONS_NOT_STORED")
+                .into())
+            }
+        }
+    }
+
+    /// The packet's plan, `None` when nothing is left to write, and the
+    /// report of its search expansions.
+    pub(super) async fn plan_search_summary_records(
+        &self,
+        arguments: &Value,
+    ) -> Result<(Option<crate::write::plan::KernelWritePlan>, Option<Value>), ToolError> {
         use crate::write::validated_arguments::{required_map_string, required_string};
         let object = arguments
             .as_object()
@@ -305,17 +331,7 @@ impl KernelMcpServer {
         }
         let report = (!selection.is_empty()).then(|| selection.report());
         if plans.is_empty() {
-            let report = report.unwrap_or_default();
-            let reason = report["not_stored"]
-                .as_str()
-                .unwrap_or("every proposed expansion was refused");
-            return Err(WriteValidationError::new(format!(
-                "no search expansion was stored, so nothing was written: {reason}; refused: {}",
-                report["refused"]
-            ))
-            .at("search_summaries")
-            .code("EXPANSIONS_NOT_STORED")
-            .into());
+            return Ok((None, report));
         }
         let mut result = plans.remove(0);
         for plan in plans {
@@ -331,7 +347,7 @@ impl KernelMcpServer {
                 .next_suggested_reads
                 .extend(plan.next_suggested_reads);
         }
-        Ok((result, report))
+        Ok((Some(result), report))
     }
 }
 
