@@ -18,6 +18,10 @@ const EMPHASIS_RUN: usize = 3;
 
 /// Identifier fidelity after folding dates and English possessives.
 pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
+    // Which separator groups thousands depends on the language that wrote
+    // the number, and only the text's own language can say it.
+    let dotted_thousands = super::LanguageVocabulary::shipped().leans_in(text)
+        == Some(super::grouped_thousands::DOTTED_THOUSANDS_LANGUAGE);
     let normalized = |text: &str| {
         super::date_tokens::canonical_dates(
             fidelity_tokens(text)
@@ -31,7 +35,7 @@ pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
     let source = normalized(text);
     let carried = normalized(rendering)
         .into_iter()
-        .flat_map(carried_forms)
+        .flat_map(|token| carried_forms(token, dotted_thousands))
         .collect::<BTreeSet<_>>();
     source
         .into_iter()
@@ -51,15 +55,69 @@ pub(crate) fn dropped_identifiers(text: &str, rendering: &str) -> Vec<String> {
         .collect()
 }
 
+/// The identifiers a rendering of `text` has to carry, spelled the way the
+/// text writes them and in the order it writes them.
+///
+/// It is what the lint would report dropped from a rendering that carried
+/// nothing, so a writer told to keep these is told exactly what the lint
+/// checks. A recognized date the text spells in words is named by its
+/// canonical form, which is how the lint compares it.
+pub(crate) fn required_identifiers(text: &str) -> Vec<String> {
+    let mut required = dropped_identifiers(text, "");
+    let mut written = Vec::new();
+    for token in fidelity_tokens(text) {
+        let folded = fold_search_term(token);
+        if let Some(position) = required.iter().position(|id| *id == folded) {
+            required.remove(position);
+            written.push(token.to_string());
+        }
+    }
+    written.extend(required);
+    written
+}
+
+/// What an arrow joins: `1→6` and `36347->23046` are two quantities and a
+/// direction, and a rendering says the direction in words (`1 to 6`). Each
+/// side is read on its own, so each number is still checked; only the arrow
+/// itself is not an identifier.
+const ARROWS: &[&str] = &["→", "->"];
+
 /// A text's tokens as fidelity reads them, in the order they were written.
 fn fidelity_tokens(text: &str) -> Vec<&str> {
-    text.split_whitespace().map(fidelity_token).collect()
+    text.split_whitespace()
+        .flat_map(arrow_sides)
+        .map(fidelity_token)
+        .filter(|token| !token.is_empty())
+        .collect()
+}
+
+/// The sides of every arrow in a token, or the token itself.
+fn arrow_sides(token: &str) -> Vec<&str> {
+    ARROWS.iter().fold(vec![token], |sides, arrow| {
+        sides
+            .into_iter()
+            .flat_map(|side| side.split(arrow))
+            .collect()
+    })
+}
+
+/// What reads as "approximately" in front of a number. `~300` is the number
+/// 300 said loosely, and a faithful rendering writes `about 300`: the number
+/// is still required, the mark is not. A mark in front of anything else
+/// (`~/.config`) is left alone.
+const APPROXIMATE_MARKS: &[char] = &['~', '≈'];
+
+fn approximate_number(token: &str) -> &str {
+    token
+        .strip_prefix(APPROXIMATE_MARKS)
+        .filter(|number| number.starts_with(|c: char| c.is_ascii_digit()))
+        .unwrap_or(token)
 }
 
 /// A terminal possessive carries its whole identifier, never a substring.
 /// Only fidelity uses this view; public tokens and stored text stay unchanged.
 fn fidelity_token(token: &str) -> &str {
-    let token = trim_edge_punctuation(token);
+    let token = approximate_number(trim_edge_punctuation(token));
     ["'s", "’s", "'S", "’S"]
         .into_iter()
         .find_map(|suffix| token.strip_suffix(suffix))
@@ -155,13 +213,13 @@ fn is_shouted_function_word(token: &str) -> bool {
 /// `kmp-mcp`, `ref_boundary.rs`, `feat/lexical-bridge`: alphanumeric runs of
 /// at least two characters joined by the punctuation identifiers are joined
 /// with. An abbreviation such as `e.g.` or `p.ej.` is not one, because a
-/// translation renders those, and neither is a slashed pair of ordinary words.
+/// translation renders those, and neither is a slashed list of ordinary words.
 fn is_compound(token: &str) -> bool {
     let inner = token.trim_matches(JOINERS);
     let Some(runs) = compound_runs(inner) else {
         return false;
     };
-    !is_slashed_word_pair(inner, &runs)
+    !is_slashed_word_list(inner, &runs, inner.len() == token.len())
 }
 
 /// The runs of a compound, or nothing when the token is not one.
@@ -177,18 +235,31 @@ fn compound_runs(inner: &str) -> Option<Vec<&str>> {
     .then_some(runs)
 }
 
-/// `entradas/salidas`, `cleanup/binding`, `input/output`, `and/or`: two
-/// ordinary words either side of a slash are prose in both shipped languages,
-/// and a faithful rendering translates them. What a translation copies says
-/// more about itself than shape alone: a third run (`feat/valkey-store`), a
-/// digit, or a run written as an acronym (`PASS/FAIL`).
-fn is_slashed_word_pair(inner: &str, runs: &[&str]) -> bool {
-    runs.len() == 2
-        && inner.contains('/')
-        && runs.iter().all(|run| {
-            run.chars().all(char::is_alphabetic)
-                && !run.chars().all(|character| character.is_ascii_uppercase())
-        })
+/// `entradas/salidas`, `cleanup/binding`, `input/output`, `and/or`: ordinary
+/// words either side of a slash are prose in both shipped languages, and a
+/// faithful rendering translates them. So is a longer list,
+/// `vivos/expirados/retirados` or `pausa/reanudación/cancelación`, which a
+/// rendering writes `live, expired and retired`.
+///
+/// What a translation copies says more about itself than shape alone: another
+/// joiner (`feat/valkey-store`, `src/lib.rs`), a digit, or a run written as an
+/// acronym (`PASS/FAIL`). A list of three or more words must also be bare: a
+/// leading or trailing slash (`/home/ana/docs`) is a path, and a path is copied.
+fn is_slashed_word_list(inner: &str, runs: &[&str], bare: bool) -> bool {
+    let words = runs.iter().all(|run| {
+        run.chars().all(char::is_alphabetic)
+            && !run.chars().all(|character| character.is_ascii_uppercase())
+    });
+    let slashes_only = inner
+        .chars()
+        .filter(|character| JOINERS.contains(character))
+        .all(|character| character == '/');
+    words
+        && slashes_only
+        && match runs.len() {
+            2 => true,
+            _ => bare,
+        }
 }
 
 /// What a rendering token carries for fidelity: itself, the number it joined
@@ -202,12 +273,19 @@ fn is_slashed_word_pair(inner: &str, runs: &[&str]) -> bool {
 /// quantity, so `1990-minute` carries `1990` and not `90`, `0,60` does not
 /// carry `0.6`, a date keeps its parts to itself, and a ticket such as
 /// `INC-42` still carries `INC-42` alone.
-fn carried_forms(token: String) -> Vec<String> {
-    let mut forms = Vec::with_capacity(3);
+///
+/// A text whose language groups thousands with a dot (`50.976` in Spanish)
+/// is also carried by the same integer written the English way, `50,976`, or
+/// with no grouping at all, `50976`. See [`super::grouped_thousands`].
+fn carried_forms(token: String, dotted_thousands: bool) -> Vec<String> {
+    let mut forms = Vec::with_capacity(4);
     if let Some(number) = unit_adjective_number(&token) {
         forms.push(number.to_string());
     }
     if let Some(spelling) = other_decimal_separator(&token) {
+        forms.push(spelling);
+    }
+    if dotted_thousands && let Some(spelling) = super::grouped_thousands::dotted(&token) {
         forms.push(spelling);
     }
     forms.push(token);
@@ -235,9 +313,9 @@ const THOUSANDS_GROUP: usize = 3;
 ///
 /// A separator followed by exactly three digits is how thousands are grouped.
 /// `1,500` is one thousand five hundred to one writer and one and a half to
-/// another, and the token cannot say which. That notation keeps its
-/// limitation rather than being guessed at, so both spellings stay distinct
-/// and a rendering that changes one into the other is still refused.
+/// another, and the token cannot say which. The token keeps that limitation
+/// rather than being guessed at, so both spellings stay distinct here. The
+/// text's language can say which: see [`super::grouped_thousands`].
 fn other_decimal_separator(token: &str) -> Option<String> {
     let number = token.strip_prefix(['-', '+', '−']).unwrap_or(token);
     let sign = &token[..token.len() - number.len()];
