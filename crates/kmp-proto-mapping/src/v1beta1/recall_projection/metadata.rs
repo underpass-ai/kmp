@@ -13,7 +13,7 @@ use serde_json::{Map, Value, json};
 
 use super::actions;
 use super::budget::{DEFAULT_MAX_BYTES, ProjectionBudget};
-use super::cursor::make_cursor;
+use super::cursor::{boundary_after, make_cursor, widest_cursor};
 use super::plan::{ProjectionItem, ProjectionPlan, Section};
 use super::proof_on_request::{MORE_ON_REQUEST, MORE_ON_REQUEST_KEY, withholds};
 use super::reused_core::reuses_core;
@@ -50,9 +50,13 @@ pub(super) fn attach_metadata<E, S>(
     let has_more = next_offset < paged;
     let reported_offset = if planning { usize::MAX } else { offset };
     let cursor = if planning {
-        make_cursor(usize::MAX, &"f".repeat(64))
+        widest_cursor()
     } else if has_more {
-        make_cursor(next_offset, selection_hash)
+        make_cursor(
+            next_offset,
+            &boundary_after(eligible, next_offset),
+            selection_hash,
+        )
     } else {
         String::new()
     };

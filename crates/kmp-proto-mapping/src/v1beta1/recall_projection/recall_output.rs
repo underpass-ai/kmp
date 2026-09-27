@@ -47,7 +47,7 @@ pub fn project_recall_output_typed(
     let offset = parse_cursor(
         arguments.pointer("/page/cursor").and_then(Value::as_str),
         &selection_hash,
-        eligible.len(),
+        &eligible,
     )
     .map_err(|mut error| {
         if let RecallProjectionError::Cursor { restart, .. } = &mut error {

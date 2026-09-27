@@ -84,7 +84,7 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
 fn projection_output_schema() -> Value {
     let mut page = page_output_schema(
         "eligible expansion items",
-        "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",
+        "Opaque recall cursor (kmp2) for page.cursor, or null: it resumes after the item this page ended on. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary. A kmp1 cursor is refused as a changed selection: restart.",
     );
     page["properties"]["offset"] = described(
         "integer",
