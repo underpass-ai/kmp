@@ -34,7 +34,7 @@ checks files against these contracts.
 - **Versioning.** Every record names its schema (`"schema": "kmp.bench.question.v1"`). A
   change that makes an old record invalid or changes what a field means is a new
   version (`v2`) and a bump of `BENCH_VERSION` in `__init__.py`, which invalidates every
-  cache entry. Adding a value to a closed list (a corpus, a type, a reason) leaves
+  cache entry except the stores (section 6: their key carries `STORE_KEY_VERSION`). Adding a value to a closed list (a corpus, a type, a reason) leaves
   existing records and their digests untouched: it is a reviewed edit of the tuple in
   code plus a row here, with no version bump. Changing a scoring rule or the driver is a
   `BENCH_VERSION` bump even when no schema changes.
@@ -850,8 +850,12 @@ this key order, compact, no NaN):
 
 ## 6. Cache keys (`domain/cachekey.py`)
 
-Every key is `digest({"kind": K, "bench_version": BENCH_VERSION, "material": M})`, so
-kinds never collide and a bench version bump invalidates every cache entry.
+Every key is `digest({"kind": K, "bench_version": V, "material": M})`, so kinds never
+collide. `V` is `BENCH_VERSION` for results, reports and worlds, so a bench version bump
+invalidates them; for stores it is `cachekey.STORE_KEY_VERSION`, frozen at
+`kmp.memory_bench.v1`: a store depends on its source, N, format, reader, writer and batch,
+not on the scoring rules, so neither the v2 nor the v3 bump (28 Sept 2026) changes a
+store key, and the stores built under v1 are found again.
 
 | Kind | Function | Material |
 |---|---|---|
@@ -949,7 +953,7 @@ re-reads the about it lands in, so a build is O(N²/B), not O(B·N); hence
 
 ```json store
 {"schema": "kmp.bench.store.v1",
- "store_key": "9aabdaf43a9f8e61e8bfe970f1245c896848c946962e2c6700b3c3d8f0e633aa",
+ "store_key": "c9948f65469bc6463f94d367bc687352804dc7df1a4c00a5e2a9e12658839180",
  "material": {"source": {"kind": "synth", "generator": "synth-v1", "generator_version": "1.1.0",
                          "seed": 7, "topology": "mono",
                          "world_digest": "c2c0c20d5d0469133fb0d0c169201f63c3751500273b7b13697502de47211f0e"},

@@ -349,7 +349,9 @@ Detailed notes from the early release cycle remain available in the
   (and the Rust scorecards, through the new `kmp_testkit::memory_ref`) read
   `detail:evidence:<entry>:current`, `…:relation:<n>` and suffix-less guide
   evidence as citations of `<entry>`; before, they never matched a judged
-  entry. Every v2 cache entry, stores included, is invalidated.
+  entry. Every v2 run, report and world is invalidated; stores are kept: their
+  key no longer carries `BENCH_VERSION` but `STORE_KEY_VERSION`, frozen at v1,
+  so the stores built under v1 (and orphaned by v2) are read again.
 - `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v2` (the PARTIAL
   scoring rules changed meaning); every cache entry of v1 is invalidated.
 

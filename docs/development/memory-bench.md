@@ -260,20 +260,26 @@ rebuild, nothing else.
 
 ### After a `BENCH_VERSION` bump
 
-`BENCH_VERSION` is part of every cache key, stores included, so a bump (v3 on 28
+`BENCH_VERSION` is part of the cache keys, so a bump (v3 on 28
 Sept 2026: `refs.normalize` reads `detail:evidence:<entry>:current` and
-`…:relation:<n>` as citations of `<entry>`) orphans every cached store, run,
-report and summary. Nothing is deleted; the old entries are just never read
-again. The recorded bases (`$MEMORY_BENCH_PRIVATE_ROOT/cache`) are re-measured
-by running the baseline again; the synth sections rebuild the stores they
-miss (the first `full` pays the 10^4 builds once):
+`…:relation:<n>` as citations of `<entry>`) orphans every cached run, report,
+summary and world. Stores are kept: their key carries `STORE_KEY_VERSION`
+(frozen at v1) instead, since what a store holds does not depend on scoring.
+A store is still keyed by its source and its reader, so what a cache gives back
+is the stores of the same world and binary: the public-dataset imports and the
+B-real copy read by v0.23.0 are found again; the synth stores of 25-26 Sept
+were written for synth-v1 1.1.0 worlds and the generator is 1.2.0, so the synth
+sections build those again (10^3 in seconds, 10^4 in minutes; 10^5 only when a
+batch measures it). Nothing is deleted. The recorded bases
+(`$MEMORY_BENCH_PRIVATE_ROOT/cache`) are re-measured by running the baseline
+again:
 
 ```sh
 cargo build --release --locked -p kmp-mcp        # the baseline binary, e.g. main
 $TT aa   --variant scripts/performance/memory_bench/variants/baseline.toml
 $TT full --baseline scripts/performance/memory_bench/variants/baseline.toml --candidate V
-$B build --seed 7 --levels 1000 --topology mono --batch-size 1000   # the store `mixed` (BT18) looks for
-$B build --seed 7 --levels 100000 --topology mono                   # only when the batch measures 10^5
+$B world --seed 7 --levels 100000 --topology mono --no-probe && \
+  $B build --seed 7 --levels 100000 --topology mono               # only when the batch measures 10^5
 bash scripts/ci/retrieval-baseline.sh             # the Rust scorecard reads refs the same way
 ```
 

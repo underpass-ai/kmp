@@ -1,6 +1,8 @@
 """Canonical digests and the section 8 cache keys."""
 import hashlib
+import inspect
 import unittest
+from unittest import mock
 
 from .. import BENCH_VERSION
 from ..domain import cachekey
@@ -91,6 +93,24 @@ class KeysTest(unittest.TestCase):
             cachekey.store_key(**{**base, 'source': {'kind': 'other'}})
         with self.assertRaises(CacheKeyInvalid):
             cachekey.bundle_source(content_digest=H['reader'], label='missing prefix')
+
+    def test_a_bench_version_bump_keeps_every_store_key(self):
+        """Stores do not depend on the scoring rules: a BENCH_VERSION bump must not orphan them."""
+        source = cachekey.synth_source(generator='synth-v1', generator_version='1.1.0', seed=7,
+                                       topology='mono', world_digest='c2c0c20d5d0469133fb0d0c169201f63c3751500273b7b13697502de47211f0e')
+        material = dict(source=source, n=1000, bundle_format={'bundle_format': 3, 'event_format': 2},
+                        reader_sha256='0358908298685e66fc4f0d37d8345fac058be6d401d2fb00ff97296634518f6f',
+                        build='import', writer_sha256='0358908298685e66fc4f0d37d8345fac058be6d401d2fb00ff97296634518f6f',
+                        batch_size=1000)
+        pinned = 'c9948f65469bc6463f94d367bc687352804dc7df1a4c00a5e2a9e12658839180'  # the cached store of 25 Sept
+        self.assertEqual(cachekey.store_key(**material), pinned)
+        with mock.patch.object(cachekey, 'BENCH_VERSION', 'kmp.memory_bench.v99'):
+            self.assertEqual(cachekey.store_key(**material), pinned)
+            self.assertNotEqual(cachekey.result_key(**{n: H[n] for n in ('binary_sha256', 'config_digest',
+                                                                          'store_key', 'questions_digest')},
+                                                    mode='quick-a', bench_version=cachekey.BENCH_VERSION),
+                                _result())
+        self.assertNotIn('bench_version', inspect.signature(cachekey.store_key).parameters)
 
     def test_report_key_ignores_result_order(self):
         a, b = _result(), _result(mode='full')
