@@ -35,7 +35,7 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9091
+        "used_bytes": 9120
       },
       "contract": "kmp.recall.projection.v3",
       "core_text_shortened": false,
@@ -49,7 +49,8 @@
         "next_cursor": null,
         "offset": 0,
         "returned": 4,
-        "total": 4
+        "total": 4,
+        "total_is_lower_bound": false
       },
       "sections": {
         "proof.evidence": {

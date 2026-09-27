@@ -2574,6 +2574,10 @@
                   "total": {
                     "description": "Total eligible expansion items in the selection.",
                     "type": "integer"
+                  },
+                  "total_is_lower_bound": {
+                    "description": "True when the ask's ranking holds more than this reading carries (kmp2 lazy pages): total and sections.*.remaining are lower bounds and has_more is true.",
+                    "type": "boolean"
                   }
                 },
                 "type": "object"
@@ -3255,6 +3259,10 @@
                   "total": {
                     "description": "Total eligible expansion items in the selection.",
                     "type": "integer"
+                  },
+                  "total_is_lower_bound": {
+                    "description": "True when the ask's ranking holds more than this reading carries (kmp2 lazy pages): total and sections.*.remaining are lower bounds and has_more is true.",
+                    "type": "boolean"
                   }
                 },
                 "type": "object"

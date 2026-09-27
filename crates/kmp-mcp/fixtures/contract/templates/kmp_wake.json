@@ -38,7 +38,8 @@
         "next_cursor": "string",
         "offset": "integer",
         "returned": "integer",
-        "total": "integer"
+        "total": "integer",
+        "total_is_lower_bound": "boolean"
       },
       "sections": {
         "labels": {
