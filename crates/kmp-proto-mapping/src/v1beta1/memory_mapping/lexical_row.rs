@@ -133,7 +133,7 @@ impl LexicalRow {
 
     /// The two fields BM25 reads under a reading, term by term, and their
     /// lengths, folded into 64 bits. The ranker computes the same fingerprint
-    /// from its own counts ([`Self::fingerprint_of_counts`]), so equal
+    /// from its own counts (`fingerprint_of_counts`), so equal
     /// fingerprints mean the index and the ranker read this candidate alike.
     pub fn fingerprint(&self, aliased: bool) -> u64 {
         fingerprint(

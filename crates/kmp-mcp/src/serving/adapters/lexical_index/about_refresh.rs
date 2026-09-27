@@ -7,6 +7,7 @@ use super::about_reader::AboutReader;
 use super::about_rebuild::ASK_DEPTH;
 use super::about_stats::AboutStats;
 use super::node_state::NodeState;
+pub(super) use super::refreshed::Refreshed;
 use super::relation_key::{CONTAINS_ENTRY, RelationKey, SUPPORTS};
 use super::working_set::WorkingSet;
 
@@ -26,13 +27,6 @@ pub(super) struct AboutRefresh<'r, 's> {
     /// Nodes whose reach changed (they came in, went out, or moved a hop),
     /// with the hop they had and the hop they have.
     hop_moves: BTreeMap<String, (Option<u8>, Option<u8>)>,
-}
-
-/// What a refresh ends with.
-pub(super) enum Refreshed {
-    Changed(AboutChange),
-    /// The about's language moved, so every row must be read again.
-    LanguageMoved,
 }
 
 impl<'r, 's> AboutRefresh<'r, 's> {

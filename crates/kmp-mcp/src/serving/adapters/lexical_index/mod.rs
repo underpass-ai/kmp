@@ -13,6 +13,7 @@ pub(crate) mod catch_up_report;
 mod lexical_maintainer;
 pub(crate) mod lexical_sidecar;
 mod node_state;
+mod refreshed;
 mod relation_key;
 mod row_writer;
 mod shadow_comparison;
