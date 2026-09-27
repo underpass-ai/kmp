@@ -41,7 +41,7 @@ impl GuidanceRecommendation {
         if tool == "kmp_write_memory" && body["status"] == "needs_review" {
             return Some(json!({"reason_code":"review_write_neighborhood",
                 "reason":"Nothing was written. Review the neighborhood, proposed directions and omissions; expand if needed. Resume the returned write only after reviewing, or correct the proposal.",
-                "basis":{"context_pointer":"/neighborhood","resume_pointer":"/next_actions/0"}, "review_required":true}));
+                "basis":{"context_pointer":"/neighborhood","resume_pointer":"/next_actions/0"}, "review_required":true, "stop":true}));
         }
         let partial = super::tool_result::packet_is_partial(body);
         let action = valid_call(&body["projection"]["next_action"])
@@ -215,4 +215,51 @@ fn proposal(
     changes_selection: bool,
 ) -> Value {
     json!({"reason_code":code,"reason":reason,"basis":{"response_pointer":pointer},"action":action,"changes_selection":changes_selection})
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn advise(tool: &str, result: Value) -> Value {
+        GuidanceRecommendation::choose(GuidancePurpose::Continue, tool, &json!({}), &result)
+            .expect("a recommendation")
+    }
+
+    #[test]
+    fn a_pending_review_stops_and_still_asks_for_the_review() {
+        let advice = advise(
+            "kmp_write_memory",
+            json!({"isError": false, "structuredContent": {"status": "needs_review"}}),
+        );
+        assert_eq!(advice["reason_code"], "review_write_neighborhood");
+        assert_eq!(advice["review_required"], true);
+        assert_eq!(advice["stop"], true);
+    }
+
+    #[test]
+    fn validation_refusals_ask_for_repair_and_other_errors_stop() {
+        let listed = advise(
+            "kmp_write_memory",
+            json!({"isError": true, "structuredContent": {"error": {"code": "invalid_argument"},
+                "feedback": [{"field": "memories[0].labels"}]}}),
+        );
+        assert_eq!(listed["reason_code"], "repair_listed_fields");
+        assert_eq!(listed["basis"]["feedback_pointer"], "/feedback");
+        assert!(listed.get("stop").is_none());
+
+        let bare = advise(
+            "kmp_ask",
+            json!({"isError": true, "structuredContent": {"error": {"code": "invalid_argument"}}}),
+        );
+        assert_eq!(bare["reason_code"], "repair_arguments");
+        assert!(bare.get("stop").is_none());
+
+        let backend = advise(
+            "kmp_ask",
+            json!({"isError": true, "structuredContent": {"error": {"code": "backend_error"}}}),
+        );
+        assert_eq!(backend["reason_code"], "operation_refused");
+        assert_eq!(backend["stop"], true);
+    }
 }

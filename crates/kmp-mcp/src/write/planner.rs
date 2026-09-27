@@ -448,6 +448,8 @@ fn intended_new_labels(
     let shape = || {
         WriteValidationError::new("options.labels_new must be an array of label keys")
             .at("options.labels_new")
+            .code("INVALID_LABELS_NEW")
+            .global()
     };
     let keys = value
         .as_array()
@@ -463,7 +465,10 @@ fn intended_new_labels(
         if !labels.iter().any(|label| label.key == *key) {
             return Err(WriteValidationError::new(format!(
                 "options.labels_new names `{key}`, which is not a label of this write"
-            )));
+            ))
+            .at("options.labels_new")
+            .code("INVALID_LABELS_NEW")
+            .global());
         }
     }
     Ok(keys)

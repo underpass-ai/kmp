@@ -135,7 +135,16 @@ fn a_record_whose_links_are_well_formed_and_labels_new_are_declared_plans() {
     arguments["options"] = json!({"labels_new": ["topic"]});
     build_batch_plan(&arguments).expect("both records plan");
 
-    arguments["options"] = json!({"labels_new": "topic"});
-    // A packet-wide option that cannot be read stops the packet.
-    assert_eq!(refused_fields(&arguments), [""]);
+    // A malformed or unknown declaration is one failure at its own field,
+    // reported with the records' failures instead of stopping the packet.
+    for labels_new in [json!("topic"), json!([7]), json!(["release"])] {
+        let mut malformed = arguments.clone();
+        malformed["options"] = json!({"labels_new": labels_new});
+        malformed["memories"][1]["kind"] = json!("outcome");
+        assert_eq!(
+            refused_fields(&malformed),
+            ["options.labels_new", "memories[1].kind"],
+            "{labels_new}"
+        );
+    }
 }

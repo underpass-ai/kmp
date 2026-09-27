@@ -137,32 +137,58 @@ pub(crate) fn build_batch_plan(
     }
 
     let mut plans = Vec::new();
+    // `options.labels_new` is judged once for the packet, with the records:
+    // a malformed declaration is one failure at its own field, and the
+    // records are compiled without it rather than each refusing it again.
+    let mut labels_new_unusable = false;
     if let Some(keys) = arguments.pointer("/options/labels_new") {
-        for key in keys
-            .as_array()
-            .ok_or("options.labels_new must be an array of label keys")?
-        {
-            let key = key
-                .as_str()
-                .ok_or("options.labels_new must contain label keys")?;
-            if !object
-                .get("labels")
-                .is_some_and(|labels| labels.get(key).is_some())
-                && !memories.iter().any(|memory| {
-                    memory
+        let shape = || {
+            WriteValidationError::new("options.labels_new must be an array of label keys")
+                .at("options.labels_new")
+                .code("INVALID_LABELS_NEW")
+                .global()
+        };
+        match keys.as_array() {
+            None => {
+                early.push(shape());
+                labels_new_unusable = true;
+            }
+            Some(keys) => {
+                for key in keys {
+                    let Some(key) = key.as_str() else {
+                        early.push(shape());
+                        labels_new_unusable = true;
+                        break;
+                    };
+                    if !object
                         .get("labels")
                         .is_some_and(|labels| labels.get(key).is_some())
-                })
-            {
-                return Err(WriteValidationError::new(format!(
-                    "options.labels_new names `{key}`, which no batch member declares"
-                ))
-                .into());
+                        && !memories.iter().any(|memory| {
+                            memory
+                                .get("labels")
+                                .is_some_and(|labels| labels.get(key).is_some())
+                        })
+                    {
+                        early.push(
+                            WriteValidationError::new(format!(
+                                "options.labels_new names `{key}`, which no batch member declares"
+                            ))
+                            .at("options.labels_new")
+                            .code("INVALID_LABELS_NEW")
+                            .global(),
+                        );
+                    }
+                }
             }
         }
     }
     let mut defaults = object.clone();
     defaults.remove("memories");
+    if labels_new_unusable
+        && let Some(options) = defaults.get_mut("options").and_then(Value::as_object_mut)
+    {
+        options.remove("labels_new");
+    }
     let mut errors = early;
     for (index, memory) in memories.iter().enumerate() {
         let at = format!("memories[{index}]");
