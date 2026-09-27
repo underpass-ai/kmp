@@ -461,7 +461,8 @@ REFERENCE_ENV = 'MEMORY_BENCH_REFERENCE_BINARY'
 
 class RealBinaryTest(unittest.TestCase):
     """The release binary on the cached 10^3 store: v0.23.0 has neither sidecar nor book; a
-    P5 build has the book, and its scenario runs offline through the CLI's Jev setup."""
+    P5 build has the book, and its scenario runs offline through the CLI's Jev setup; a P12
+    build has the lexical sidecar, which it follows behind the (same) reference writer."""
 
     def setUp(self):
         candidate =Path(os.environ.get(REFERENCE_ENV) or shared_store.binaries.DEFAULT_BINARY)
@@ -487,8 +488,9 @@ class RealBinaryTest(unittest.TestCase):
         statuses = {(r['scenario'], r['case']): r['status'] for r in report['results']}
         self.assertEqual(statuses[('write_then_read', 'reference->candidate')], mv.PASS, report)
         self.assertEqual(statuses[('concurrent_writers', 'candidate+candidate')], mv.PASS, report)
-        self.assertEqual(statuses[('sidecar_catch_up', 'reference writes behind candidate sidecar')],
-                         mv.SKIPPED)
+        sidecar = statuses[('sidecar_catch_up', 'reference writes behind candidate sidecar')]
+        self.assertEqual(sidecar, mv.PASS if mv.SIDECAR in self.binary.capabilities else mv.SKIPPED,
+                         report)
         book = statuses[('book_first_wins', 'candidate x2 on one book')]
         self.assertEqual(book, mv.PASS if mv.BOOK in self.binary.capabilities else mv.SKIPPED, report)
         self.assertTrue(all(r['reason'] == mv.NOT_IN_BINARY for r in report['results']
