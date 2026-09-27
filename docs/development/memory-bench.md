@@ -258,6 +258,29 @@ summary rebuilt from the same inputs. `$B cache ls` lists the stores and `$B
 cache gc` removes abandoned staging; deleting `work/` at any time costs a
 rebuild, nothing else.
 
+### After a `BENCH_VERSION` bump
+
+`BENCH_VERSION` is part of every cache key, stores included, so a bump (v3 on 28
+Sept 2026: `refs.normalize` reads `detail:evidence:<entry>:current` and
+`…:relation:<n>` as citations of `<entry>`) orphans every cached store, run,
+report and summary. Nothing is deleted; the old entries are just never read
+again. The recorded bases (`$MEMORY_BENCH_PRIVATE_ROOT/cache`) are re-measured
+by running the baseline again; the synth sections rebuild the stores they
+miss (the first `full` pays the 10^4 builds once):
+
+```sh
+cargo build --release --locked -p kmp-mcp        # the baseline binary, e.g. main
+$TT aa   --variant scripts/performance/memory_bench/variants/baseline.toml
+$TT full --baseline scripts/performance/memory_bench/variants/baseline.toml --candidate V
+$B build --seed 7 --levels 1000 --topology mono --batch-size 1000   # the store `mixed` (BT18) looks for
+$B build --seed 7 --levels 100000 --topology mono                   # only when the batch measures 10^5
+bash scripts/ci/retrieval-baseline.sh             # the Rust scorecard reads refs the same way
+```
+
+The `aa` summary is the new base for `quick-a`; `full`'s baseline arm, for the
+rest. Numbers under v2 and v3 are not comparable where an answer cited an
+evidence node of a judged entry: v2 counted it as a miss.
+
 ## Privacy and licences
 
 - **Private material never enters the repository**, `tmp/` included: the real
