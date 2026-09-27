@@ -10,6 +10,7 @@ mod graph_point_snapshot;
 mod graph_read;
 mod lifecycle_chain_read;
 mod memory_about_index;
+mod memory_write_facts_read;
 mod migration;
 mod node_body_descriptor;
 mod node_card;

@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use kmp_domain::{MemoryAboutIndexReader, PortError};
+use kmp_domain::{MemoryAboutIndexReader, MemoryWriteFacts, MemoryWriteFactsRequest, PortError};
 
 use super::dimension_lookup_header::DimensionLookupHeader;
 use super::engine::{LinkedJsonScan, Table};
@@ -65,6 +65,18 @@ impl MemoryAboutIndexReader for EmbeddedKernelStore {
                 }
             }
             Ok(abouts.into_iter().collect())
+        })
+        .await
+    }
+
+    async fn memory_write_facts<'a>(
+        &'a self,
+        request: &'a MemoryWriteFactsRequest,
+    ) -> Result<Option<MemoryWriteFacts>, PortError> {
+        let request = request.clone();
+        self.run(move |store| {
+            let tx = store.begin_read()?;
+            super::memory_write_facts_read::read(tx.as_ref(), &request).map(Some)
         })
         .await
     }
