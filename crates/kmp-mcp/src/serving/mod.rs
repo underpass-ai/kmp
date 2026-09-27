@@ -23,6 +23,7 @@ pub(crate) mod judgement_request;
 pub(crate) mod judgement_response;
 pub(crate) mod judgement_site;
 pub(crate) mod kernel_mcp_server;
+pub(crate) mod lexical_totals;
 mod output_schema_projection;
 mod passage_projection;
 pub(crate) mod ports;

@@ -28,6 +28,12 @@ pub const EVAL_PARTNER_FACTS_ENV: &str = "KMP_EVAL_PARTNER_FACTS";
 /// must be kept, not degraded). Any other value, or none, keeps them.
 pub const JUDGEMENT_DEADLINES_ENV: &str = "KMP_JUDGEMENT_DEADLINES";
 
+/// `off` keeps the lexical sidecar (`lexical-index.sqlite3`, DESIGN L6) from
+/// being opened, followed or compared. Any other value, or none, keeps it in
+/// shadow: maintained beside the store and compared with every ask, never
+/// answering one.
+pub const LEXICAL_INDEX_ENV: &str = "KMP_LEXICAL_INDEX";
+
 /// How long `site` waits for Jev on a first page, unless the operator
 /// lifted the deadlines.
 pub(crate) fn judgement_deadline(

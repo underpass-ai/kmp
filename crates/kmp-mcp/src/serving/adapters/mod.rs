@@ -23,6 +23,7 @@ mod judgement_reranker_tests;
 mod judgement_source;
 mod ledgered_judgement;
 pub(crate) mod lexical_bridge_file;
+pub(crate) mod lexical_index;
 mod loopback_semantic_retriever;
 mod observed_judgement;
 #[cfg(test)]

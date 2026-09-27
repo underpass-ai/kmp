@@ -12,6 +12,7 @@ use super::embedded::{
 use super::judgement_reranker::JudgementReranker;
 use super::judgement_source::load_judgement;
 use super::lexical_bridge_file::{lexical_bridge_path, load_lexical_bridge};
+use super::lexical_index::lexical_sidecar::LexicalSidecar;
 use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
 use super::observed_judgement::ObservedJudgement;
 use super::process_frozen_recalls::ProcessFrozenRecalls;
@@ -97,6 +98,10 @@ pub struct EmbeddedKernelMcpBackend {
     ask_gate: Option<AskGate>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
+    /// The lexical index beside the store (`lexical-index.sqlite3`), in
+    /// shadow: followed after writes and before asks, compared with every
+    /// ask, answering none. `KMP_LEXICAL_INDEX=off` leaves it closed.
+    lexical: LexicalSidecar,
 }
 
 impl EmbeddedKernelMcpBackend {
@@ -200,6 +205,9 @@ impl EmbeddedKernelMcpBackend {
             .emit();
         let (partner_cap, partner_filter, paths_corridor) =
             curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::Off));
+        let ask_gate = ask_gate.unwrap_or(AskGate::STORE_DEFAULT);
+        // Asks under the anchored gate read memories with their alias terms.
+        let lexical = LexicalSidecar::open(data_dir, ask_gate.is_some());
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -222,9 +230,10 @@ impl EmbeddedKernelMcpBackend {
                 .unwrap_or(partner_cap),
             partner_filter,
             paths_corridor,
-            ask_gate: ask_gate.unwrap_or(AskGate::STORE_DEFAULT),
+            ask_gate,
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
+            lexical,
         })
     }
 
@@ -305,9 +314,36 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
     }
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
+        Box::pin(async move {
+            let outcome = self.dispatch(name, arguments).await;
+            // A write the log now holds is followed by the lexical sidecar
+            // at once (DESIGN L6); asks follow whatever other writers did.
+            if outcome.is_ok() && writes_memory(name) {
+                self.lexical.catch_up(self.kernel.store(), None).await;
+            }
+            outcome
+        })
+    }
+}
+
+/// Whether a tool can append to the store's log.
+fn writes_memory(name: &str) -> bool {
+    matches!(
+        name,
+        "kmp_ingest"
+            | "kernel_remember"
+            | "kernel_ingest_context"
+            | "kmp_curate"
+            | "kmp_relabel"
+            | "kmp_condense"
+    )
+}
+
+impl EmbeddedKernelMcpBackend {
+    async fn dispatch(&self, name: &str, arguments: &Value) -> Result<Value, ToolError> {
         let service = self.kernel.service();
         let observer = self.kernel.quality_observer();
-        Box::pin(async move {
+        {
             let telemetry = EmbeddedReadTelemetry::new(observer.as_ref());
             match name {
                 "kmp_ingest" | "kernel_remember" | "kernel_ingest_context" => {
@@ -341,6 +377,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     )
                     .with_gate(self.ask_gate)
                     .with_doubt_band(&self.doubt_band)
+                    .with_lexical_sidecar(&self.lexical, self.kernel.store())
                     .call(arguments)
                     .await
                 }
@@ -454,6 +491,6 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     "unknown KMP tool `{other}`"
                 ))),
             }
-        })
+        }
     }
 }

@@ -1,6 +1,7 @@
 use super::super::doubt_band_judge::DoubtBandJudge;
 use super::super::embedded_errors::{kernel_error, mapping_error};
 use super::super::judgement_reranker::JudgementReranker;
+use super::super::lexical_index::lexical_sidecar::{LEXICAL_ASK_DEPTH, LexicalSidecar};
 use super::frozen_recall_reads::FrozenRecallReads;
 use super::read_telemetry::EmbeddedReadTelemetry;
 use crate::projection::ask_from_response;
@@ -30,6 +31,7 @@ pub(crate) struct EmbeddedAskTool<'a> {
     frozen: FrozenRecallReads<'a>,
     gate: Option<AskGate>,
     doubt_band: Option<&'a Result<Option<Arc<DoubtBandJudge>>, String>>,
+    lexical: Option<(&'a LexicalSidecar, &'a kmp_embedded::EmbeddedKernelStore)>,
 }
 
 impl<'a> EmbeddedAskTool<'a> {
@@ -52,7 +54,19 @@ impl<'a> EmbeddedAskTool<'a> {
             frozen,
             gate: None,
             doubt_band: None,
+            lexical: None,
         }
+    }
+
+    /// Follows the lexical sidecar before the read and compares it with the
+    /// ranking after it (shadow mode); the answer never depends on it.
+    pub(crate) fn with_lexical_sidecar(
+        mut self,
+        sidecar: &'a LexicalSidecar,
+        store: &'a kmp_embedded::EmbeddedKernelStore,
+    ) -> Self {
+        self.lexical = Some((sidecar, store));
+        self
     }
 
     /// Ask the store's doubt band judge (`ask-judge.json`), if it opted in.
@@ -119,6 +133,16 @@ impl<'a> EmbeddedAskTool<'a> {
         let max_entries = query.max_entries;
         let temporal = query.temporal.clone();
         let about = query.about.clone();
+        // The sidecar indexes what an ask with no depth, dimensions or clock
+        // of its own reads.
+        let indexed_read = query.depth == u32::from(LEXICAL_ASK_DEPTH)
+            && query.dimensions == kmp_domain::DimensionSelection::default()
+            && query.temporal == kmp_domain::TemporalSelection::Frontier;
+        let followed = match self.lexical {
+            Some((sidecar, store)) => sidecar.catch_up(store, Some(&about)).await,
+            None => None,
+        };
+        let witness = self.lexical.and_then(|(sidecar, _)| sidecar.witness());
         let result = self
             .service
             .ask_on_demand(query, self.telemetry.render_demand(RenderDemand::Skip))
@@ -133,6 +157,9 @@ impl<'a> EmbeddedAskTool<'a> {
             AskRetrievalContext::from(result).with_lexical_cache(Arc::clone(self.lexical_cache));
         if let Some(gate) = self.gate {
             retrieval = retrieval.with_gate(gate);
+        }
+        if let Some(witness) = &witness {
+            retrieval = retrieval.with_lexical_witness(Arc::clone(witness));
         }
         let mut warnings = Vec::new();
         let continuation = arguments
@@ -220,6 +247,11 @@ impl<'a> EmbeddedAskTool<'a> {
         )
         .map_err(|status| mapping_error(&status))?;
         response.warnings.extend(warnings);
+        if let (Some((sidecar, store)), Some(witness)) = (self.lexical, witness) {
+            sidecar
+                .shadow(store, &about, witness.take(), indexed_read, followed)
+                .await;
+        }
         Ok((response, revision))
     }
 }

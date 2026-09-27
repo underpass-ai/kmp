@@ -1,0 +1,167 @@
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+use kmp_domain::PortError;
+use kmp_embedded::EmbeddedKernelStore;
+use kmp_proto_mapping::v1beta1::{LexicalObservation, LexicalShadowWitness};
+
+use super::catch_up_report::CatchUpReport;
+use super::lexical_maintainer::LexicalMaintainer;
+use super::shadow_comparison::ShadowComparison;
+use super::shadow_report::ShadowReport;
+use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
+use crate::serving::environment::{LEXICAL_INDEX_ENV, optional_env_string};
+
+/// The file the sidecar lives in, beside the store and outside `store/`,
+/// whose format gate refuses files it does not know.
+pub(crate) const LEXICAL_INDEX_FILE: &str = "lexical-index.sqlite3";
+
+/// The depth an ask reads an about at by default, which is what the
+/// sidecar indexes.
+pub(crate) const LEXICAL_ASK_DEPTH: u8 = super::about_rebuild::ASK_DEPTH;
+
+/// The lexical index as the embedded backend holds it (DESIGN L6): in shadow,
+/// followed after every write and before every ask, compared with every ask,
+/// never answering one. Every failure is logged and leaves the ask and the
+/// write exactly as they would be without it.
+pub(crate) struct LexicalSidecar {
+    sidecar: Option<Arc<SqliteLexicalSidecar>>,
+    maintainer: Option<Arc<LexicalMaintainer>>,
+    aliased: bool,
+}
+
+pub(crate) fn lexical_index_path(data_dir: &Path) -> PathBuf {
+    data_dir.join(LEXICAL_INDEX_FILE)
+}
+
+impl LexicalSidecar {
+    /// Opens the sidecar beside the store unless the operator turned it off.
+    /// `aliased` is the reading asks use under the store's anchored gate.
+    pub(crate) fn open(data_dir: &Path, aliased: bool) -> Self {
+        if optional_env_string(LEXICAL_INDEX_ENV).as_deref() == Some("off") {
+            return Self::disabled();
+        }
+        match SqliteLexicalSidecar::open(&lexical_index_path(data_dir)) {
+            Ok(sidecar) => {
+                let sidecar = Arc::new(sidecar);
+                Self {
+                    maintainer: Some(Arc::new(LexicalMaintainer::new(
+                        Arc::clone(&sidecar),
+                        aliased,
+                    ))),
+                    sidecar: Some(sidecar),
+                    aliased,
+                }
+            }
+            Err(error) => {
+                tracing::warn!(target: "kmp_mcp::lexical_index", %error, "lexical index disabled");
+                Self::disabled()
+            }
+        }
+    }
+
+    pub(crate) fn disabled() -> Self {
+        Self {
+            sidecar: None,
+            maintainer: None,
+            aliased: false,
+        }
+    }
+
+    /// Follows the store's log to its end, building `ensure` if it is not
+    /// built. `None` when the sidecar is off or could not follow.
+    pub(crate) async fn catch_up(
+        &self,
+        store: &EmbeddedKernelStore,
+        ensure: Option<&str>,
+    ) -> Option<CatchUpReport> {
+        let maintainer = Arc::clone(self.maintainer.as_ref()?);
+        let ensure = ensure.map(str::to_string);
+        let outcome = store
+            .read_points(move |reads| {
+                maintainer
+                    .catch_up(reads, ensure.as_deref())
+                    .map_err(PortError::Unavailable)
+            })
+            .await;
+        match outcome {
+            Ok(report) => {
+                tracing::debug!(
+                    target: "kmp_mcp::lexical_index",
+                    event = "kmp_lexical_catch_up",
+                    position = report.position,
+                    events = report.events,
+                    abouts_refreshed = report.abouts_refreshed,
+                    abouts_rebuilt = report.abouts_rebuilt,
+                    rows = report.rows,
+                    reset = report.reset,
+                    committed = report.committed,
+                    elapsed_us = report.elapsed_us,
+                    "lexical index followed the log"
+                );
+                Some(report)
+            }
+            Err(error) => {
+                tracing::warn!(target: "kmp_mcp::lexical_index", %error, "lexical index could not follow the log");
+                None
+            }
+        }
+    }
+
+    /// Where an ask's ranker leaves what it measured, while the sidecar is on.
+    pub(crate) fn witness(&self) -> Option<Arc<LexicalShadowWitness>> {
+        self.sidecar.as_ref().map(|_| Arc::default())
+    }
+
+    /// Compares the sidecar with what an ask measured and logs the result.
+    /// `indexed_read` says the ask read what the sidecar indexes; `before`
+    /// is the catch-up that preceded the ask. An about found to differ is
+    /// forgotten, so the next ask builds it again.
+    pub(crate) async fn shadow(
+        &self,
+        store: &EmbeddedKernelStore,
+        about: &str,
+        observation: Option<LexicalObservation>,
+        indexed_read: bool,
+        before: Option<CatchUpReport>,
+    ) -> Option<ShadowReport> {
+        let sidecar = Arc::clone(self.sidecar.as_ref()?);
+        let report = match (indexed_read, observation, before) {
+            (false, _, _) => ShadowReport::not_comparable("not the indexed read"),
+            (_, None, _) => ShadowReport::not_comparable("no ranking"),
+            (_, _, None) => ShadowReport::not_comparable("sidecar not followed"),
+            (_, _, Some(before)) if !before.committed => {
+                ShadowReport::not_comparable("another process moved the sidecar")
+            }
+            (true, Some(observation), Some(before)) => {
+                let last = store.read_points(|reads| reads.last_event_sequence()).await;
+                if last.ok() != Some(before.position) {
+                    ShadowReport::not_comparable("the store moved")
+                } else {
+                    let about = about.to_string();
+                    let aliased = self.aliased;
+                    let compared = tokio::task::spawn_blocking(move || {
+                        let report = ShadowComparison::new(&sidecar, aliased)
+                            .compare(&about, &observation)?;
+                        if report.differences() > 0 {
+                            sidecar.forget(&about)?;
+                        }
+                        Ok::<_, String>(report)
+                    })
+                    .await
+                    .map_err(|error| error.to_string())
+                    .and_then(|compared| compared);
+                    match compared {
+                        Ok(report) => report,
+                        Err(error) => {
+                            tracing::warn!(target: "kmp_mcp::lexical_index", %error, "lexical index could not be compared");
+                            return None;
+                        }
+                    }
+                }
+            }
+        };
+        report.emit(about);
+        Some(report)
+    }
+}
