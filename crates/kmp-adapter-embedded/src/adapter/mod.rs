@@ -8,6 +8,7 @@ mod engine;
 mod format_version;
 mod graph_point_snapshot;
 mod graph_read;
+mod head_stream;
 mod lifecycle_chain_read;
 mod memory_about_index;
 mod memory_write_facts_read;
@@ -31,6 +32,7 @@ pub use format_version::{
     EVENT_FORMAT_VERSION, SUPPORTED_FORMAT_VERSION, StorageEngine, format_version_path,
     read_stamped_version, store_file_path_for, validate_store_layout,
 };
+pub use head_stream::HeadStream;
 pub use migration::StoreMigrationReceipt;
 pub use portability::{
     BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, ImportReport, bundle_excluding_abouts,

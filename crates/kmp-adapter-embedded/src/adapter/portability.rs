@@ -5,12 +5,11 @@
 //! construction.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use kmp_domain::{ContextEventStore, ContextUpdatedEvent, PortError, ProjectionMutation};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 
+use super::head_stream::{HeadStream, content_digest, event_range};
 use super::replay::ProjectionRebuildReport;
 use super::store::EmbeddedKernelStore;
 
@@ -316,7 +315,7 @@ fn validate_header(
             "bundle format 2 requires created_at_unix_ms".to_string(),
         ));
     }
-    let expected_range = event_range(events.len());
+    let expected_range = event_range(events.len() as u64);
     if header.event_range != expected_range {
         return Err(PortError::InvalidState(format!(
             "bundle event_range {:?} does not cover its {} events (expected {:?})",
@@ -346,64 +345,7 @@ fn encode_bundle(
     events: &[ContextUpdatedEvent],
     snapshot_id: Option<&str>,
 ) -> Result<String, PortError> {
-    let mut event_payload = String::new();
-    for event in events {
-        event_payload.push_str(&encode_line("bundle event", event)?);
-    }
-    let digest = content_digest(event_payload.as_bytes());
-    let named = snapshot_id.is_some();
-    let snapshot_id = snapshot_id
-        .map(str::to_string)
-        .unwrap_or_else(|| format!("content-{}", &digest[7..23]));
-    // Content-addressed head exports must be byte-identical across storage
-    // layouts and repeated exports. Their creation coordinate is
-    // therefore the newest event time. A named recovery point records when
-    // the operator created that point.
-    let created_at = if named {
-        SystemTime::now()
-    } else {
-        events
-            .iter()
-            .map(|event| event.occurred_at)
-            .max()
-            .unwrap_or(UNIX_EPOCH + Duration::from_millis(1))
-    };
-    let created_at_unix_ms = created_at
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or(Duration::ZERO)
-        .as_millis() as u64;
-    let header = BundleHeader {
-        bundle_format: BUNDLE_FORMAT_VERSION,
-        event_format: if events
-            .iter()
-            .any(|event| event.role == kmp_domain::NodeCardEvent::ROLE)
-        {
-            super::format_version::EVENT_FORMAT_VERSION
-        } else {
-            2
-        },
-        event_count: events.len() as u64,
-        kernel_version: env!("CARGO_PKG_VERSION").to_string(),
-        snapshot_id,
-        created_at_unix_ms,
-        event_range: event_range(events.len()),
-        abouts: abouts(events),
-        content_digest: digest,
-    };
-    let mut out = encode_line("bundle header", &header)?;
-    out.push_str(&event_payload);
-    Ok(out)
-}
-
-fn event_range(event_count: usize) -> BundleEventRange {
-    if event_count == 0 {
-        BundleEventRange::default()
-    } else {
-        BundleEventRange {
-            first: Some(1),
-            last: Some(event_count as u64),
-        }
-    }
+    HeadStream::of(events)?.encode_as(snapshot_id)
 }
 
 fn abouts(events: &[ContextUpdatedEvent]) -> Vec<String> {
@@ -460,10 +402,6 @@ fn filter_events_for_abouts(
         .into_iter()
         .filter(|event| requested.contains(&event.root_node_id))
         .collect())
-}
-
-fn content_digest(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
 }
 
 fn validate_revisions(events: &[ContextUpdatedEvent]) -> Result<(), PortError> {
@@ -524,13 +462,6 @@ impl EmbeddedKernelStore {
     }
 }
 
-fn encode_line<T: Serialize>(what: &str, value: &T) -> Result<String, PortError> {
-    let mut line = serde_json::to_string(value)
-        .map_err(|error| PortError::InvalidState(format!("could not encode {what}: {error}")))?;
-    line.push('\n');
-    Ok(line)
-}
-
 fn decode_line<T: for<'de> Deserialize<'de>>(what: &str, line: &str) -> Result<T, PortError> {
     serde_json::from_str(line)
         .map_err(|error| PortError::InvalidState(format!("could not decode {what}: {error}")))
@@ -539,6 +470,7 @@ fn decode_line<T: for<'de> Deserialize<'de>>(what: &str, line: &str) -> Result<T
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::{Duration, UNIX_EPOCH};
 
     fn event(root: &str, revision: u64, content_hash: &str) -> ContextUpdatedEvent {
         ContextUpdatedEvent {

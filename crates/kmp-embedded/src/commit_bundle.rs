@@ -10,20 +10,21 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use kmp_adapter_embedded::{
     BundleHeader, EmbeddedKernelStore, bundle_excluding_abouts, merge_bundles, verify_bundle,
 };
 use kmp_domain::PortError;
 
+use crate::bundle_file::{sync_parent, unique_name};
+pub use crate::bundle_file::{write_bundle_atomically, write_bundle_if_absent};
+use crate::committed_tail::CommittedTail;
+use crate::read_head::ReadHead;
+use crate::tail_memo::TailMemo;
 use crate::{ResolvedDataDir, project_bundle_path};
 
 pub const PENDING_EXPORT_DIR: &str = "bundle-export-pending";
 const EXPORT_LOCK_FILE: &str = "commit-native-bundle.lock";
-
-static UNIQUE_FILE: AtomicU64 = AtomicU64::new(0);
 
 /// The committed head bundle paired with the machine store it protects.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,6 +32,10 @@ pub struct CommitNativeBundle {
     data_dir: PathBuf,
     bundle_path: PathBuf,
     excluded_abouts: Vec<String>,
+    /// This process's last publish: while the committed file and the store
+    /// stand where it left them, the next write is checked and published
+    /// from their tails (DESIGN L6, write in O(delta)).
+    published: TailMemo,
 }
 
 impl CommitNativeBundle {
@@ -51,6 +56,7 @@ impl CommitNativeBundle {
             data_dir: resolved.path().to_path_buf(),
             bundle_path,
             excluded_abouts,
+            published: TailMemo::default(),
         })
     }
 
@@ -67,6 +73,7 @@ impl CommitNativeBundle {
             data_dir: data_dir.into(),
             bundle_path: bundle_path.into(),
             excluded_abouts,
+            published: TailMemo::default(),
         }
     }
 
@@ -122,6 +129,33 @@ impl CommitNativeBundle {
             )));
         }
 
+        // The store and the committed file where this process's last publish
+        // left them are the history it proved equal then: nothing to export.
+        let (tail, canonical_before, live_before) = match self.published.take() {
+            Some(tail) if tail.holds(store, &self.bundle_path).await? => {
+                (Some(tail), None, String::new())
+            }
+            _ => {
+                let (canonical_before, live_before) = self.prove_same_history(store).await?;
+                (None, canonical_before, live_before)
+            }
+        };
+        let marker = self.mark_pending(&pending_dir)?;
+        Ok(PendingBundleExport {
+            marker,
+            publish_lock,
+            canonical_before,
+            live_before,
+            tail: std::sync::Mutex::new(tail),
+        })
+    }
+
+    /// The full check: the live store and the committed bundle hold the same
+    /// event stream, compared event by event.
+    async fn prove_same_history(
+        &self,
+        store: &EmbeddedKernelStore,
+    ) -> Result<(Option<String>, String), PortError> {
         let live_before = self.export_authored_bundle(store).await?;
         let live_header = verify_bundle(&live_before)?;
         let canonical_before = match fs::read_to_string(&self.bundle_path) {
@@ -170,7 +204,10 @@ impl CommitNativeBundle {
                 )));
             }
         };
+        Ok((canonical_before, live_before))
+    }
 
+    fn mark_pending(&self, pending_dir: &Path) -> Result<PathBuf, PortError> {
         let marker = pending_dir.join(unique_name("write", "pending"));
         let mut file = OpenOptions::new()
             .create_new(true)
@@ -194,13 +231,8 @@ impl CommitNativeBundle {
                 marker.display()
             ))
         })?;
-        sync_parent(Some(&pending_dir))?;
-        Ok(PendingBundleExport {
-            marker,
-            publish_lock,
-            canonical_before,
-            live_before,
-        })
+        sync_parent(Some(pending_dir))?;
+        Ok(marker)
     }
 
     /// Writes the complete stream after a successful memory mutation. An
@@ -211,7 +243,16 @@ impl CommitNativeBundle {
         store: &EmbeddedKernelStore,
         pending: &PendingBundleExport,
     ) -> Result<BundleHeader, PortError> {
-        let bundle = self.export_authored_bundle(store).await?;
+        let tail = pending
+            .tail
+            .lock()
+            .map_err(|_| PortError::Unavailable("commit-native tail lock poisoned".into()))?
+            .take();
+        if let Some(tail) = tail {
+            return self.publish_from(store, tail).await;
+        }
+        let head = ReadHead::read(store, &self.excluded_abouts).await?;
+        let (bundle, _) = head.bundle()?;
         let header = verify_bundle(&bundle)?;
         merge_bundles(
             &pending.live_before,
@@ -244,6 +285,34 @@ impl CommitNativeBundle {
             )));
         }
         write_bundle_atomically(&self.bundle_path, &bundle)?;
+        self.published
+            .set(CommittedTail::published(head, &self.bundle_path));
+        Ok(header)
+    }
+
+    /// Publishes from the tail the write began on: the bundle this process
+    /// wrote, extended by the events the log holds after it.
+    async fn publish_from(
+        &self,
+        store: &EmbeddedKernelStore,
+        tail: CommittedTail,
+    ) -> Result<BundleHeader, PortError> {
+        if !tail.file_is_ours(&self.bundle_path)? {
+            return Err(PortError::Conflict(format!(
+                "committed memory bundle `{}` changed during a guarded write; the pending marker \
+                 remains for explicit recovery",
+                self.bundle_path.display()
+            )));
+        }
+        let Some(head) = tail.extended(store, &self.excluded_abouts).await? else {
+            return Err(PortError::Conflict(
+                "live memory history changed under a guarded write".to_string(),
+            ));
+        };
+        let (bundle, header) = head.bundle()?;
+        write_bundle_atomically(&self.bundle_path, &bundle)?;
+        self.published
+            .set(CommittedTail::published(head, &self.bundle_path));
         Ok(header)
     }
 
@@ -269,9 +338,18 @@ pub struct PendingBundleExport {
     publish_lock: fs::File,
     canonical_before: Option<String>,
     live_before: String,
+    /// The tail the write began on, when the full check was not needed.
+    tail: std::sync::Mutex<Option<CommittedTail>>,
 }
 
 impl PendingBundleExport {
+    /// Whether the write began on this process's last publish rather than
+    /// on the full check.
+    #[cfg(test)]
+    pub(crate) fn began_on_the_tail(&self) -> bool {
+        self.tail.lock().map(|tail| tail.is_some()).unwrap_or(false)
+    }
+
     pub fn complete(self) -> Result<(), PortError> {
         remove_marker(&self.marker)?;
         self.publish_lock.unlock().map_err(|error| {
@@ -305,100 +383,6 @@ pub fn clear_pending_bundle_exports(data_dir: &Path) -> Result<(), PortError> {
     Ok(())
 }
 
-/// Same-directory durable replacement, so a failed export leaves either the
-/// previous complete bundle or the next complete bundle, never half a JSONL
-/// stream. Unix rename replaces atomically; Windows keeps the previous file
-/// beside it until the new one has taken the canonical name.
-pub fn write_bundle_atomically(path: &Path, bundle: &str) -> Result<(), PortError> {
-    let parent = path
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty());
-    if let Some(parent) = parent {
-        fs::create_dir_all(parent).map_err(|error| {
-            PortError::Unavailable(format!(
-                "could not create bundle directory `{}`: {error}",
-                parent.display()
-            ))
-        })?;
-    }
-    let temp = path.with_file_name(unique_name("memory", "tmp"));
-    let write_result = (|| -> Result<(), PortError> {
-        let mut file = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&temp)
-            .map_err(|error| {
-                PortError::Unavailable(format!(
-                    "could not create temporary bundle `{}`: {error}",
-                    temp.display()
-                ))
-            })?;
-        file.write_all(bundle.as_bytes()).map_err(|error| {
-            PortError::Unavailable(format!(
-                "could not write temporary bundle `{}`: {error}",
-                temp.display()
-            ))
-        })?;
-        file.sync_all().map_err(|error| {
-            PortError::Unavailable(format!(
-                "could not make temporary bundle `{}` durable: {error}",
-                temp.display()
-            ))
-        })?;
-        replace_file(&temp, path).map_err(|error| {
-            PortError::Unavailable(format!(
-                "could not replace bundle `{}`: {error}",
-                path.display()
-            ))
-        })?;
-        sync_parent(parent)?;
-        Ok(())
-    })();
-    if write_result.is_err() {
-        let _ = fs::remove_file(&temp);
-    }
-    write_result
-}
-
-/// Publishes an immutable bundle without a check-then-replace race. The hard
-/// link is an atomic create-if-absent operation on the same filesystem: two
-/// snapshot creators can agree on existing content, but neither can replace
-/// the other's recovery point.
-pub fn write_bundle_if_absent(path: &Path, bundle: &str) -> Result<bool, PortError> {
-    let parent = path
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty());
-    if let Some(parent) = parent {
-        fs::create_dir_all(parent).map_err(|error| {
-            PortError::Unavailable(format!(
-                "could not create bundle directory `{}`: {error}",
-                parent.display()
-            ))
-        })?;
-    }
-    let staged = path.with_file_name(unique_name("snapshot", "tmp"));
-    write_bundle_atomically(&staged, bundle)?;
-    let linked = match fs::hard_link(&staged, path) {
-        Ok(()) => true,
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => false,
-        Err(error) => {
-            let _ = fs::remove_file(&staged);
-            return Err(PortError::Unavailable(format!(
-                "could not publish immutable bundle `{}`: {error}",
-                path.display()
-            )));
-        }
-    };
-    fs::remove_file(&staged).map_err(|error| {
-        PortError::Unavailable(format!(
-            "could not remove staged bundle `{}`: {error}",
-            staged.display()
-        ))
-    })?;
-    sync_parent(parent)?;
-    Ok(linked)
-}
-
 fn remove_marker(marker: &Path) -> Result<(), PortError> {
     match fs::remove_file(marker) {
         Ok(()) => {}
@@ -416,61 +400,6 @@ fn remove_marker(marker: &Path) -> Result<(), PortError> {
         // its parent as a second filesystem transaction.
         sync_parent(Some(parent))?;
     }
-    Ok(())
-}
-
-fn unique_name(prefix: &str, suffix: &str) -> String {
-    let time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or(Duration::ZERO)
-        .as_nanos();
-    let sequence = UNIQUE_FILE.fetch_add(1, Ordering::Relaxed);
-    format!(
-        ".{prefix}-{}-{time}-{sequence}.{suffix}",
-        std::process::id()
-    )
-}
-
-#[cfg(not(windows))]
-fn replace_file(temp: &Path, destination: &Path) -> std::io::Result<()> {
-    fs::rename(temp, destination)
-}
-
-#[cfg(windows)]
-fn replace_file(temp: &Path, destination: &Path) -> std::io::Result<()> {
-    let previous = destination.with_file_name(unique_name("memory", "previous"));
-    if destination.exists() {
-        fs::rename(destination, &previous)?;
-    }
-    match fs::rename(temp, destination) {
-        Ok(()) => {
-            let _ = fs::remove_file(previous);
-            Ok(())
-        }
-        Err(error) => {
-            let _ = fs::rename(previous, destination);
-            Err(error)
-        }
-    }
-}
-
-#[cfg(unix)]
-fn sync_parent(parent: Option<&Path>) -> Result<(), PortError> {
-    let Some(parent) = parent else {
-        return Ok(());
-    };
-    std::fs::File::open(parent)
-        .and_then(|directory| directory.sync_all())
-        .map_err(|error| {
-            PortError::Unavailable(format!(
-                "could not make bundle directory `{}` durable: {error}",
-                parent.display()
-            ))
-        })
-}
-
-#[cfg(not(unix))]
-fn sync_parent(_parent: Option<&Path>) -> Result<(), PortError> {
     Ok(())
 }
 
@@ -516,23 +445,5 @@ mod tests {
 
         assert!(matches!(error, PortError::Conflict(_)));
         assert!(pending_bundle_exports(&data_dir).is_empty());
-    }
-
-    #[test]
-    fn atomic_write_replaces_a_complete_bundle() {
-        let dir = tempfile::tempdir().expect("dir");
-        let path = dir.path().join(".kmp/memory.jsonl");
-        write_bundle_atomically(&path, "first\n").expect("first");
-        write_bundle_atomically(&path, "second\n").expect("second");
-        assert_eq!(fs::read_to_string(path).expect("read"), "second\n");
-    }
-
-    #[test]
-    fn immutable_write_never_replaces_an_existing_recovery_point() {
-        let dir = tempfile::tempdir().expect("dir");
-        let path = dir.path().join(".kmp/snapshots/release.jsonl");
-        assert!(write_bundle_if_absent(&path, "first\n").expect("created"));
-        assert!(!write_bundle_if_absent(&path, "second\n").expect("exists"));
-        assert_eq!(fs::read_to_string(path).expect("read"), "first\n");
     }
 }
