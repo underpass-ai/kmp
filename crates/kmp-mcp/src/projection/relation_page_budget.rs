@@ -96,7 +96,10 @@ impl RelationPageBudget {
             // The next item is returned with its prose shortened, so the
             // page advances at this allowance; the warning says how to read
             // it whole.
-            if let Some(mut shortened) = self.shortened(&value, &cursor, limit) {
+            if let Some(mut shortened) = matches!(self, Self::Trace)
+                .then(|| self.shortened(&value, &cursor, limit))
+                .flatten()
+            {
                 shortened["page"]["required_bytes"] = json!(required);
                 shortened["warnings"]
                     .as_array_mut()
@@ -152,8 +155,8 @@ impl RelationPageBudget {
             page[*section][0] = item;
             page
         };
-        // Room for the warning the page will carry.
-        let limit = limit.saturating_sub(SHORTENED.len() + 4);
+        // Room for the warning and `page.required_bytes` the page will carry.
+        let limit = limit.saturating_sub(SHORTENED.len() + 64);
         if serialized_len(&with(0)) > limit {
             return None;
         }

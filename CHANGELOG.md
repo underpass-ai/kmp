@@ -79,7 +79,7 @@ Detailed notes from the early release cycle remain available in the
 - The doubt band no longer reads every candidate's terms twice: the answer
   takes back the terms the band's reading read (P10; with a warm verdict book
   the band cost +100–190 ms per ask on the real store; not re-measured).
-- A Trace/Relate page whose next item is larger than `budget.max_bytes` returns
+- A Trace page whose next item is larger than `budget.max_bytes` returns
   it with its prose shortened (`…`) and advances, instead of an empty page;
   `page.required_bytes` and a warning say how to read it whole.
 - Writes in O(delta) (P13, DESIGN L6). An ingest or `kmp_write_memory` that
