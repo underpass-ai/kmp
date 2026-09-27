@@ -10,7 +10,9 @@ use serde_json::{Map, Value, json};
 use crate::serving::existing_entry_read::read_existing_entry;
 use crate::serving::json_rpc::jsonrpc_result;
 use crate::serving::kernel_mcp_server::KernelMcpServer;
-use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
+use crate::serving::telemetry::{
+    CallOrigin, CallSource, ToolErrorKind, record_call_error, record_call_success,
+};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 use crate::write::existing_entry::ExistingEntry;
@@ -26,7 +28,9 @@ impl KernelMcpServer {
         id: Value,
         arguments: &Value,
         start: Instant,
+        origin: &CallOrigin,
     ) -> String {
+        let source = CallSource { origin, salt: None };
         // Three shapes, one envelope. `relations` is the shape a writer
         // reaches for when both memories already exist and only the link is
         // new; without it, saying "J01 supports J03" cost J01 its prose
@@ -54,7 +58,8 @@ impl KernelMcpServer {
             Err(error) => {
                 // Compiler refusals carry field feedback. A failed source read
                 // keeps the category reported by the store (#586).
-                record_tool_error(
+                record_call_error(
+                    source,
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -65,6 +70,7 @@ impl KernelMcpServer {
                         ToolErrorKind::Backend
                     },
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 return jsonrpc_result(
@@ -85,7 +91,8 @@ impl KernelMcpServer {
                 }
                 self.propose_write_relations(&plan, &mut value).await;
                 let result = tool_success_result(value);
-                record_tool_success(
+                record_call_success(
+                    source,
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -96,13 +103,15 @@ impl KernelMcpServer {
                 jsonrpc_result(id, result)
             }
             Err(error) => {
-                record_tool_error(
+                record_call_error(
+                    source,
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
                     arguments,
                     ToolErrorKind::Backend,
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 jsonrpc_result(id, tool_error_result("kmp_write_memory", arguments, &error))

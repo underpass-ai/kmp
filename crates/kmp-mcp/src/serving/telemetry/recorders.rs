@@ -1,5 +1,6 @@
-//! The metrics and logs one tool call leaves behind. Counts, durations
-//! and a stable hash — the message itself never reaches telemetry.
+//! The metrics and logs one tool call leaves behind. Counts, durations,
+//! labels and keyed fingerprints — the message, the question and the stored
+//! text never reach telemetry.
 
 use std::time::Duration;
 
@@ -7,6 +8,11 @@ use opentelemetry::KeyValue;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
+use super::call_fingerprints::CallFingerprints;
+use super::call_origin::CallOrigin;
+use super::call_source::CallSource;
+use super::feedback_codes::FeedbackCodes;
+use super::recall_outcome::RecallOutcome;
 use super::tool_argument_shape::ToolArgumentShape;
 use super::tool_error_kind::ToolErrorKind;
 use super::tool_result_shape::ToolResultShape;
@@ -19,11 +25,49 @@ pub(crate) fn record_tool_success(
     result: &Value,
     duration: Duration,
 ) {
+    let origin = CallOrigin::default();
+    record_call_success(
+        CallSource {
+            origin: &origin,
+            salt: None,
+        },
+        backend,
+        grpc_tls,
+        name,
+        arguments,
+        result,
+        duration,
+    );
+}
+
+pub(crate) fn record_call_success(
+    source: CallSource<'_>,
+    backend: &str,
+    grpc_tls: &str,
+    name: &str,
+    arguments: &Value,
+    result: &Value,
+    duration: Duration,
+) {
+    let prints = source.origin.fingerprints(name, arguments, source.salt);
+    let outcome = RecallOutcome::from_tool_result(name, result);
     let arguments = ToolArgumentShape::from_tool_arguments(name, arguments);
     let result = ToolResultShape::from_tool_result(result);
     record_common_metrics(name, backend, grpc_tls, "success", "none", duration);
     record_count_metrics(name, backend, &arguments, &result);
-    log_tool_success(name, backend, grpc_tls, duration, &arguments, &result);
+    log_tool_success(
+        name,
+        backend,
+        grpc_tls,
+        duration,
+        &arguments,
+        &result,
+        &Provenance {
+            origin: source.origin,
+            prints: &prints,
+            outcome: outcome.as_ref(),
+        },
+    );
 }
 
 pub(crate) fn record_tool_error(
@@ -35,6 +79,38 @@ pub(crate) fn record_tool_error(
     message: &str,
     duration: Duration,
 ) {
+    let origin = CallOrigin::default();
+    record_call_error(
+        CallSource {
+            origin: &origin,
+            salt: None,
+        },
+        backend,
+        grpc_tls,
+        name,
+        arguments,
+        error_kind,
+        message,
+        &[],
+        duration,
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn record_call_error(
+    source: CallSource<'_>,
+    backend: &str,
+    grpc_tls: &str,
+    name: &str,
+    arguments: &Value,
+    error_kind: ToolErrorKind,
+    message: &str,
+    feedback: &[Value],
+    duration: Duration,
+) {
+    let prints = source.origin.fingerprints(name, arguments, source.salt);
+    let feedback = FeedbackCodes::from_feedback(feedback);
+    let origin = source.origin;
     let arguments = ToolArgumentShape::from_tool_arguments(name, arguments);
     record_common_metrics(
         name,
@@ -69,8 +145,23 @@ pub(crate) fn record_tool_error(
         connect_to = arguments.connect_to,
         read_context_refs = arguments.read_context_refs,
         trace_paths = arguments.trace_paths,
+        client_name = origin.client.as_ref().map(|client| client.name.as_str()),
+        client_version = origin.client.as_ref().map(|client| client.version.as_str()),
+        is_continuation = origin.is_continuation,
+        subject_fingerprint = prints.subject.as_deref(),
+        context_fingerprint = prints.context.as_deref(),
+        feedback_count = feedback.as_ref().map(|codes| codes.count),
+        feedback_codes = feedback.as_ref().map(|codes| codes.entries.as_str()),
         "kernel mcp tool error"
     );
+}
+
+/// What a success line says about its call beyond the shapes: where it
+/// came from and, for a wake or an ask, how it came out.
+struct Provenance<'a> {
+    origin: &'a CallOrigin,
+    prints: &'a CallFingerprints,
+    outcome: Option<&'a RecallOutcome>,
 }
 
 fn record_common_metrics(
@@ -161,7 +252,10 @@ fn log_tool_success(
     duration: Duration,
     arguments: &ToolArgumentShape,
     result: &ToolResultShape,
+    provenance: &Provenance<'_>,
 ) {
+    let origin = provenance.origin;
+    let outcome = provenance.outcome;
     tracing::info!(
         event = "kmp_mcp_tool",
         kmp_move = %canonical_move(name),
@@ -198,6 +292,17 @@ fn log_tool_success(
         relation_suspect = result.relation_suspect,
         prior_context_required = result.prior_context_required,
         prior_context_observed = result.prior_context_observed,
+        client_name = origin.client.as_ref().map(|client| client.name.as_str()),
+        client_version = origin.client.as_ref().map(|client| client.version.as_str()),
+        is_continuation = origin.is_continuation,
+        subject_fingerprint = provenance.prints.subject.as_deref(),
+        context_fingerprint = provenance.prints.context.as_deref(),
+        answer_status = outcome.and_then(|o| o.answer_status.as_deref()),
+        unknown_reason = outcome.and_then(|o| o.unknown_reason.as_deref()),
+        confidence = outcome.and_then(|o| o.confidence.as_deref()),
+        anchored = outcome.and_then(|o| o.anchored),
+        citations = outcome.map(|o| o.citations),
+        citations_reached_by = outcome.map(|o| o.reached_by.as_str()),
         "kernel mcp tool completed"
     );
 }
@@ -254,6 +359,114 @@ mod tests {
         for line in lines {
             assert_eq!(line["fields"]["duration_us"], 2_345);
             assert_eq!(line["fields"]["duration_ms"], 2);
+        }
+    }
+
+    #[test]
+    fn an_ask_line_says_how_it_came_out_and_where_from_without_its_text() {
+        use crate::serving::telemetry::{CallOrigin, CallSource, FingerprintSalt, McpClient};
+        use crate::serving::telemetry::{
+            TELEMETRY_SALT_FILE, record_call_error, record_call_success,
+        };
+
+        let dir = tempfile::tempdir().expect("dir");
+        let salt =
+            FingerprintSalt::load_or_create(&dir.path().join(TELEMETRY_SALT_FILE)).expect("salt");
+        let client = McpClient::from_initialize(&json!({
+            "params": {"clientInfo": {"name": "codex-mcp-client", "version": "0.154.0"}}
+        }));
+        let sent = json!({"continuation": "call-1", "context_id": "ctx-secret"});
+        let origin = CallOrigin::read("kmp_ask", &sent, client);
+        let source = CallSource {
+            origin: &origin,
+            salt: Some(&salt),
+        };
+        let resolved = json!({"about": "a", "question": "Which secret rollout failed?"});
+        let (log, _guard) = CapturedLog::start("kmp_mcp=info");
+
+        record_call_success(
+            source,
+            "embedded",
+            "off",
+            "kmp_ask",
+            &resolved,
+            &json!({"structuredContent": {
+                "answer": "the secret answer",
+                "answer_status": "partial",
+                "proof": {"confidence": "medium", "evidence": [
+                    {"id": "e", "text": "secret evidence"},
+                    {"id": "f", "text": "secret", "metadata": {"reached_by": "lifecycle"}}
+                ]}
+            }}),
+            Duration::from_micros(10),
+        );
+        record_call_error(
+            source,
+            "embedded",
+            "off",
+            "kmp_ask",
+            &resolved,
+            ToolErrorKind::Backend,
+            "secret failure",
+            &[json!({"code": "LABELS_REQUIRED", "field": "labels", "reason": "secret"})],
+            Duration::from_micros(10),
+        );
+
+        let lines = log.events("kmp_mcp_tool");
+        assert_eq!(lines.len(), 2);
+        let fields = &lines[0]["fields"];
+        assert_eq!(fields["client_name"], "codex-mcp-client");
+        assert_eq!(fields["client_version"], "0.154.0");
+        assert_eq!(fields["is_continuation"], true);
+        assert_eq!(fields["answer_status"], "partial");
+        assert_eq!(fields["confidence"], "medium");
+        assert_eq!(fields["anchored"], true);
+        assert_eq!(fields["citations"], 2);
+        assert_eq!(fields["citations_reached_by"], "direct:1,lifecycle:1");
+        assert!(fields.get("unknown_reason").is_none());
+        let subject = fields["subject_fingerprint"].as_str().expect("subject");
+        assert_eq!(
+            subject,
+            salt.fingerprint("question", "which secret rollout failed?")
+        );
+        assert_eq!(lines[1]["fields"]["subject_fingerprint"], subject);
+        assert_eq!(lines[1]["fields"]["feedback_count"], 1);
+        assert_eq!(
+            lines[1]["fields"]["feedback_codes"],
+            "LABELS_REQUIRED@labels"
+        );
+        assert_eq!(
+            fields["context_fingerprint"],
+            salt.fingerprint("context", "ctx-secret").as_str()
+        );
+        for line in &lines {
+            let text = line.to_string();
+            assert!(!text.contains("secret"), "{text}");
+            assert!(!text.contains("call-1"), "{text}");
+        }
+    }
+
+    #[test]
+    fn a_line_without_an_origin_adds_no_field() {
+        let (log, _guard) = CapturedLog::start("kmp_mcp=info");
+        record_tool_success(
+            "embedded",
+            "off",
+            "kmp_inspect",
+            &json!({}),
+            &json!({}),
+            Duration::from_micros(1),
+        );
+        let fields = &log.events("kmp_mcp_tool")[0]["fields"];
+        for absent in [
+            "client_name",
+            "is_continuation",
+            "subject_fingerprint",
+            "context_fingerprint",
+            "answer_status",
+            "citations",
+        ] {
+            assert!(fields.get(absent).is_none(), "{absent}");
         }
     }
 

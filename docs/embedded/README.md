@@ -309,6 +309,22 @@ measure again. Their MCP response quality remains computed from
 the selected entries and proof. An absent prompt-quality observation is not a
 zero-quality read.
 
+Each tool call leaves one `kmp_mcp_tool` line in those logs: counts, durations
+and labels, never stored text, a question or an answer. A line also names the
+host as it introduced itself in `initialize` (`clientInfo` name and version
+only) and, for reads that page, whether the call is a page of an earlier one.
+A `kmp_ask` or `kmp_wake` line adds how it came out (answer status, UNKNOWN
+reason, stated confidence, whether the anchored gate decided, and cited
+passages per `reached_by`) and keyed fingerprints of its question or intent
+and of its guidance `context_id`: HMAC-SHA256 under `telemetry-salt`, 32
+random bytes created with mode `0600` beside the store on the first wake or
+ask that succeeds. A refused call lists the validation codes and field paths
+its `feedback` named (`LABELS_REQUIRED@labels`), never their reasons or values.
+The salt never enters a log, a bundle or a request, so a
+fingerprint compares only within its store; deleting the file only makes new
+fingerprints incomparable with old ones. The fields are listed in
+`scripts/performance/memory_bench/SCHEMAS.md` (`kmp_mcp_tool`).
+
 ## Maintenance commands
 
 Run `kmp-mcp --help` for the live command contract.

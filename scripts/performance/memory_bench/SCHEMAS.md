@@ -1054,6 +1054,38 @@ error, `fields.event = "kmp_mcp_tool"`. Pre-existing fields (`kmp_move`, `backen
 Call record mapping: `server_us = duration_us`, `server_ms = duration_ms`. A binary
 older than BT03 has no `duration_us`: `server_us = null` with an `absent` reason.
 
+The call-outcome observatory (piece A of the self-improvement study) adds, on the same
+line and only when they apply (an absent field means "does not apply", never zero):
+
+| Field | Type | Present on | Meaning |
+|---|---|---|---|
+| `client_name` | string | reads, `kmp_write_memory` and argument refusals after an `initialize` that named one | `clientInfo.name`, printable ASCII, ≤ 64 chars |
+| `client_version` | string | with `client_name` | `clientInfo.version`, ≤ 32 chars (empty when not a string) |
+| `is_continuation` | bool | `kmp_wake`, `kmp_ask`, `kmp_inspect`, `kmp_trace`, `kmp_relate`, `kmp_time` | the call pages an earlier one (`continuation` handle or `page.cursor`) instead of starting a new call |
+| `subject_fingerprint` | hex16 | `kmp_ask` (question), `kmp_wake` (intent) | HMAC-SHA256 under the store salt of the question or intent, lower-cased and whitespace-collapsed; a page carries its first call's |
+| `context_fingerprint` | hex16 | `kmp_ask`, `kmp_wake` with `context_id` | HMAC-SHA256 of the guidance `context_id` |
+| `answer_status` | `answered`, `partial`, `unknown` | successful `kmp_ask` the anchored gate settled | as returned |
+| `unknown_reason` | enum | with `answer_status = unknown` | as returned (`no_candidates`, `no_bearing`, `out_of_window`, `anchor_absent_in_selection`, `attribute_not_found`) |
+| `confidence` | enum | successful `kmp_ask`, `kmp_wake` with a proof | `proof.confidence` as returned |
+| `anchored` | bool | successful `kmp_ask` that carries its core | the anchored gate decided (exactly when `answer_status` is present); absent on a continuation page that does not restate the core |
+| `citations` | int | successful `kmp_ask`, `kmp_wake` | `proof.evidence` items on this page |
+| `citations_reached_by` | string | with `citations` | `name:count` per `reached_by`, sorted, comma-joined (`direct:3,semantic:1`); `direct` = no `reached_by` mark, `other` = a mark that is not a short snake_case label; empty with no citations |
+| `feedback_count` | int | error lines whose response carried `feedback[]` items with a `code` (a refused `kmp_write_memory`, an unknown argument, an expired continuation) | how many |
+| `feedback_codes` | string | with `feedback_count` | `CODE@field` per item in the order returned, comma-joined (`LABELS_REQUIRED@labels,SUMMARY_EN_REQUIRED@memories[2].summary_en`); `CODE` alone for a packet-wide item; a field segment that is not a lower-case name with `[n]` indexes is `?`, a code that is not `UPPER_SNAKE` is `OTHER`; at most 32 listed, then `+N`. Never the reason, action, allowed values or any argument value |
+
+Error lines (`status = "error"`) carry the origin fields and the fingerprints when the
+salt already exists, never the outcome fields. Fingerprints are keyed by
+`<data dir>/telemetry-salt` (32 random bytes, mode 0600, created on the first successful
+wake or ask; for a gRPC backend, `<user data home>/agent-users/<endpoint hash>.telemetry-salt`
+on the MCP host). They compare only within one store; nothing else can recompute them.
+A fixture backend or an unwritable directory logs no fingerprint (one `kmp_telemetry_salt`
+WARN line says so). The gRPC API's `kernel memory grpc response` lines for
+`KernelMemoryService.Ask`/`Wake` carry the same outcome fields and `is_continuation`
+(`page.cursor` set), without client or fingerprints.
+
+Counting calls: `is_continuation = false` counts calls, `true` counts pages; group by
+`client_name` to separate hosts from the harnesses (`kmp-guide`, `kmp-lifecycle`, the bench).
+
 ### `kmp_judgement` (every Jev evaluation)
 
 Target `kmp_mcp::judgement`, level `DEBUG` (off unless asked for; computing the line's

@@ -77,5 +77,6 @@ pub use tool_error_code::ToolErrorCode;
 pub(crate) use tool_result::{app_data_success_result, tool_success_result};
 
 mod call_guidance;
+mod call_telemetry;
 mod guidance_recommendation;
 mod work_guidance;
