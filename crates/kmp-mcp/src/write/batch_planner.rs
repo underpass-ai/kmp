@@ -84,7 +84,8 @@ pub(crate) fn build_batch_plan(
         }
         // A missing kind or summary is the compiler's to report, with the
         // rest of the record; the generated ref only needs to be distinct.
-        let kind = optional_string(memory.get("kind")).unwrap_or_default();
+        // A placeholder kind keeps that ref well formed; the record fails anyway.
+        let kind = optional_string(memory.get("kind")).unwrap_or("memory");
         let summary = optional_string(memory.get("summary")).unwrap_or_default();
         if let Err(error) = super::expansion_selection::ExpansionSelection::proposed(
             memory.get("search_expansions"),

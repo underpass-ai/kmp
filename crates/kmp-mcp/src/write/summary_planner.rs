@@ -272,4 +272,19 @@ mod tests {
         let error = build_summary_plan(&with_link, &existing()).expect_err("no relations");
         assert!(error.message.contains("writes no relation"), "{error}");
     }
+
+    #[test]
+    fn a_copy_of_an_english_text_is_refused_for_what_it_is() {
+        let mut english = existing();
+        english.text = "Valkey 7.2 was adopted for the shared store (ADR-018).".to_string();
+
+        let error = build_summary_plan(
+            &request("Valkey 7.2 was adopted for the shared store (ADR-018)."),
+            &english,
+        )
+        .expect_err("a copy would be the whole write");
+
+        assert!(error.message.contains("nothing to attach"), "{error}");
+        assert!(error.field_is_within("summary_en"), "{error:?}");
+    }
 }

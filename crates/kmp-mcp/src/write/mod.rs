@@ -7,6 +7,7 @@ pub(crate) mod accepted_counts;
 pub(crate) mod arguments;
 pub(crate) mod attachment_view;
 mod batch_member;
+mod batch_one_pass_audit;
 mod batch_planner;
 mod compiled_link;
 pub(crate) mod coordinates;
