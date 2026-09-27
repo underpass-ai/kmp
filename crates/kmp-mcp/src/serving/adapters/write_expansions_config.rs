@@ -21,7 +21,10 @@ pub(crate) struct WriteExpansionsConfig {
     excerpt_chars: usize,
 }
 
-/// Fixed on development (P15 pre-registration `kmp.p15.prereg.v1`).
+/// Fixed on development (P15, `kmp.p15.prereg.v1`): 0.001, 0.3 and 0.5 tied
+/// on synth 10^3, retrieval 53 and the seed-7 negatives (7 of 24 paraphrase
+/// and cross-language questions reached, `paraphrase-gap` reached, no false
+/// answer added), and ties go to the higher bar; 0.7 reached 6 and 0.9 one.
 fn default_accept_at() -> f64 {
     0.5
 }

@@ -175,6 +175,46 @@ in the book for the next ask. A continuation never asks.
 experiment). With the band on, an ask is a function of the store and the
 verdict book, not of the store alone.
 
+### Search expansions at write (opt-in, sends text to TypeSafe)
+
+A writer may propose, per memory, up to six `search_expansions` in
+`kmp_write_memory` (`memories[]`, or `search_summaries[]` for a memory that
+already exists): questions the memory answers, paraphrases and keys in the
+other language (Spanish or English), at most 120 characters each. They are
+kept only on a store that opted in with `write-expansions.json` beside
+`typesafe.json`:
+
+```json
+{}
+```
+
+Each expansion is read first by a deterministic lint (it may not name an
+identifier the memory does not state, repeat the memory's own words or repeat
+another expansion), then by Jev with one yes/no question through the verdict
+book. Those Jev reads as belonging at `accept_at` (0.5, fixed on the
+development corpora) are stored as metadata bound to the text they were
+judged against; the rest are listed in the result as refused. Without the
+file, a working Jev or an answer, nothing is stored and the result says why
+(`search_expansions.not_stored`). A memories write commits the memories
+first and attaches the kept expansions as a second, metadata-only write.
+
+Ask searches the expansions as a field of their own and never as the
+memory's words. A memory the question reaches only through them comes back
+after every memory it reached in its own words, outside the answer core,
+marked `reached_by: expansion` with `expansion_terms`, and cites its own
+text. An expansion never names an anchor, never answers and never raises
+confidence. Readers other than inspect are shown the memory without its
+expansions.
+
+Measured (P15, three Jev samples, 27 Sept 2026): on synth 10^3 the gold
+memory of 7 of the 24 paraphrase and cross-language questions enters the
+first ten proofs (0 without), all of them cross-language; none of the 12
+zero-overlap paraphrases. The retrieval case `paraphrase-gap` is reached.
+No answer, UNKNOWN or false answer changes on B-real, the hard negatives
+(seeds 7, 11, 13) or synth. Jev reads 500 to 900 input tokens per memory
+written ($0.00002–0.00004); the writer adds about 60 output tokens per
+memory.
+
 ## How a review without focus pairs orphans
 
 `kmp_curate` in `review` mode without `focus` asks Jev, for up to 30 facts

@@ -9,6 +9,21 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `kmp_write_memory` accepts `search_expansions` per memory (P15,
+  Doc2Query--): up to six questions, paraphrases or other-language keys a
+  later reader may ask with. On a store with `write-expansions.json` beside
+  `typesafe.json`, each passes a deterministic lint and a Jev yes/no through
+  the verdict book at 0.5 before it is stored; nothing is stored unjudged.
+  Ask searches them as their own field and rescues a memory reached only
+  through them outside the answer core, `reached_by: expansion`, citing its
+  own text. Off without the file. Measured in three samples: synth 10^3
+  paraphrase and cross-language recall@10 from 0/24 to 7/24 (all
+  cross-language; 0/12 zero-overlap paraphrases), `paraphrase-gap` reached,
+  no answer or false answer changed on B-real, the hard negatives (seeds 7,
+  11, 13) or synth; 500–900 Jev input tokens per memory written.
+
 ### Changed
 
 - A `kmp_curate` path search with a goal can ask Jev about its corridor
