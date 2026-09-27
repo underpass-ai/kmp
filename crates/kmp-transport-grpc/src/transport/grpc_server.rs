@@ -42,6 +42,7 @@ pub struct GrpcServer<G, D, S, E> {
     /// Where the Ask and Wake fingerprint salt of the served store lives
     /// (`KMP_TELEMETRY_SALT_PATH`); none logs no fingerprint.
     telemetry_salt_path: Option<std::path::PathBuf>,
+    rank_pages: kmp_proto_mapping::v1beta1::recall_projection::RankPages,
 }
 
 impl<G, D, S, E> GrpcServer<G, D, S, E>
@@ -97,6 +98,7 @@ where
             quality_observer,
             capability_name: KmpApplication::capability_name(),
             telemetry_salt_path: None,
+            rank_pages: Default::default(),
         }
     }
 
@@ -143,11 +145,47 @@ where
         self
     }
 
+    /// Reads the store's lazy-page sizes (P14) from `lexical-index.json` in
+    /// `data_dir`, as MCP does beside its store; the defaults without the
+    /// file, and with a file that cannot apply (logged).
+    pub fn with_store_config_dir(mut self, data_dir: Option<&std::path::Path>) -> Self {
+        use kmp_proto_mapping::v1beta1::recall_projection::{RANK_PAGES_FILE, RankPages};
+        let Some(path) = data_dir.map(|dir| dir.join(RANK_PAGES_FILE)) else {
+            return self;
+        };
+        let text = match std::fs::read_to_string(&path) {
+            Ok(text) => text,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return self,
+            Err(error) => {
+                tracing::warn!(%error, "{RANK_PAGES_FILE} is unreadable; the defaults apply");
+                return self;
+            }
+        };
+        match RankPages::from_json(&text) {
+            Ok(pages) => {
+                tracing::info!(
+                    event = "kmp_store_config",
+                    file = RANK_PAGES_FILE,
+                    status = "loaded",
+                    head_window = pages.head_window,
+                    continuation_chunk = pages.continuation_chunk,
+                    "store configuration"
+                );
+                self.rank_pages = pages;
+            }
+            Err(error) => {
+                tracing::warn!(%error, "{RANK_PAGES_FILE} ignored; the defaults apply");
+            }
+        }
+        self
+    }
+
     pub fn memory_service(&self) -> MemoryGrpcService<G, D, S, E, ServerProjectionWriter<G, D>> {
         let service = MemoryGrpcService::new(Arc::new(ServerMemoryApplication::new(
             Arc::clone(&self.query_application),
             Arc::clone(&self.command_application),
-        )));
+        )))
+        .with_rank_pages(self.rank_pages);
         match &self.telemetry_salt_path {
             Some(path) => service.with_telemetry_salt(path.clone()),
             None => service,

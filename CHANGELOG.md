@@ -93,7 +93,8 @@ Detailed notes from the early release cycle remain available in the
   more. Semantic retrieval, re-ranking, the doubt band and `max_entries`
   read the whole ranking. The head window and the continuation chunk are 64
   each and per store in `lexical-index.json` (`head_window`,
-  `continuation_chunk`). Lower-bound counts say so explicitly:
+  `continuation_chunk`), read with one rule by MCP and by the gRPC server
+  (from `KMP_DATA_DIR`). Lower-bound counts say so explicitly:
   `page.total_is_lower_bound` and `AskResponse.total_is_lower_bound`
   (additive fields).
 - «quién» and «con» are stop words, as «who» and «with» are. Lexical index

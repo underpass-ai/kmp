@@ -49,20 +49,14 @@ impl LexicalIndexConfig {
                 "{LEXICAL_INDEX_CONFIG_FILE} max_candidate_share_percent is {share}; it must be 1 to 100"
             ));
         }
-        let head_window = config.head_window.unwrap_or(defaults.head_window);
-        let continuation_chunk = config
-            .continuation_chunk
-            .unwrap_or(defaults.continuation_chunk);
-        for (key, value) in [
-            ("head_window", head_window),
-            ("continuation_chunk", continuation_chunk),
-        ] {
-            if !(1..=4096).contains(&value) {
-                return Err(format!(
-                    "{LEXICAL_INDEX_CONFIG_FILE} {key} is {value}; it must be 1 to 4096"
-                ));
-            }
-        }
+        // The page sizes follow the rule the gRPC server reads them with.
+        let pages = kmp_proto_mapping::v1beta1::recall_projection::RankPages::new(
+            config.head_window.unwrap_or(defaults.head_window),
+            config
+                .continuation_chunk
+                .unwrap_or(defaults.continuation_chunk),
+        )?;
+        let (head_window, continuation_chunk) = (pages.head_window, pages.continuation_chunk);
         Ok(IndexLimits {
             max_candidate_share_percent: share,
             min_about_entries: config
@@ -104,6 +98,21 @@ mod tests {
             })
         );
         assert!(LexicalIndexConfig::parse(r#"{"head_window":0}"#).is_err());
+        // API↔MCP parity: the gRPC server reads the same keys with the same
+        // rule from the same file.
+        for text in [
+            r#"{"head_window":16,"continuation_chunk":8}"#,
+            r#"{"continuation_chunk":100,"min_about_entries":0}"#,
+            "{}",
+        ] {
+            let limits = LexicalIndexConfig::parse(text).expect("limits");
+            let pages = kmp_proto_mapping::v1beta1::recall_projection::RankPages::from_json(text)
+                .expect("pages");
+            assert_eq!(
+                (limits.head_window, limits.continuation_chunk),
+                (pages.head_window, pages.continuation_chunk)
+            );
+        }
     }
 
     #[test]

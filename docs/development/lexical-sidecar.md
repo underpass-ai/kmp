@@ -313,8 +313,10 @@ field) and its page offers a deeper continuation.
 
 **Per store.** `lexical-index.json` also takes `head_window` and
 `continuation_chunk` (64 each by default, 1 to 4096; decision of Tirso,
-28 Sept 2026). They shape every ask of the store, indexed or not; the gRPC
-server, which reads no such file, uses the defaults.
+28 Sept 2026). They shape every ask of the store, indexed or not. The gRPC
+server reads the same keys from `lexical-index.json` in its data directory
+(`KMP_DATA_DIR`) with the same rule (`RankPages`), so API and MCP page an ask
+alike; decision of Tirso, 28 Sept 2026.
 
 **What changed in the answer (breaking):**
 
