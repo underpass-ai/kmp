@@ -6,9 +6,11 @@
 //! identifier lint keeps every three-digit group literal. The language of the
 //! text it came from can say it, so the lint asks the text once and, when the
 //! text is Spanish, reads a rendering's `50,976` and `50976` as the `50.976`
-//! the text wrote. Nothing else changes: a leading zero (`0.976`) is never a
-//! grouping, a comma in the Spanish text (`50,976`) is still its decimal, and
-//! an English or undecided text keeps the literal comparison.
+//! the text wrote. The same reading settles the comma: in a Spanish text
+//! `50,976` is the decimal English writes `50.976`, so that rendering carries
+//! it, while `50976` or `50,976` read as English (an integer) do not. A
+//! leading zero (`0.976`) is never a grouping, and an English or undecided
+//! text keeps the literal comparison.
 
 /// The shipped language that groups thousands with a dot.
 pub(super) const DOTTED_THOUSANDS_LANGUAGE: &str = "spanish";
@@ -58,9 +60,41 @@ pub(super) fn dotted(token: &str) -> Option<String> {
     Some(spelled)
 }
 
+/// A rendering token's decimal point spelled with the Spanish comma, when it
+/// is one decimal point followed by exactly three digits: `50.976` gives
+/// `50,976` and `0.976` gives `0,976`. Every other decimal is already read by
+/// the separator swap that does not depend on language; only three digits
+/// after the point needed the text's language to say it is a decimal.
+pub(super) fn decimal_comma(token: &str) -> Option<String> {
+    let number = token.strip_prefix(['-', '+', '−']).unwrap_or(token);
+    let sign = &token[..token.len() - number.len()];
+    let (whole, fraction) = number.split_once('.')?;
+    let digits = |run: &str| !run.is_empty() && run.bytes().all(|byte| byte.is_ascii_digit());
+    (digits(whole) && digits(fraction) && fraction.len() == GROUP)
+        .then(|| format!("{sign}{whole},{fraction}"))
+}
+
 #[cfg(test)]
 mod tests {
-    use super::dotted;
+    use super::{decimal_comma, dotted};
+
+    #[test]
+    fn a_three_digit_decimal_point_is_spelled_with_the_comma() {
+        assert_eq!(decimal_comma("50.976").as_deref(), Some("50,976"));
+        assert_eq!(decimal_comma("0.976").as_deref(), Some("0,976"));
+        assert_eq!(decimal_comma("-1.500").as_deref(), Some("-1,500"));
+        for token in [
+            "50.97",
+            "50.9760",
+            "1.234.567",
+            "50,976",
+            "v1.500",
+            "50976",
+            ".976",
+        ] {
+            assert_eq!(decimal_comma(token), None, "{token}");
+        }
+    }
 
     #[test]
     fn an_integer_is_spelled_with_dot_groups() {

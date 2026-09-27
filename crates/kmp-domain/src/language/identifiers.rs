@@ -250,6 +250,9 @@ fn is_slashed_word_list(inner: &str, runs: &[&str], bare: bool) -> bool {
         run.chars().all(char::is_alphabetic)
             && !run.chars().all(|character| character.is_ascii_uppercase())
     });
+    if words && reads_as_code_path(runs) {
+        return false;
+    }
     let slashes_only = inner
         .chars()
         .filter(|character| JOINERS.contains(character))
@@ -260,6 +263,41 @@ fn is_slashed_word_list(inner: &str, runs: &[&str], bare: bool) -> bool {
             2 => true,
             _ => bare,
         }
+}
+
+/// Directory names a source tree is laid out with. A slashed list that goes
+/// through one of them is a path however plain its words are.
+const CODE_PATH_SEGMENTS: &[&str] = &[
+    "src",
+    "crates",
+    "docs",
+    "scripts",
+    "tests",
+    "test",
+    "lib",
+    "bin",
+    "plugins",
+    "fixtures",
+    "examples",
+    "benches",
+    "api",
+    "cmd",
+    "pkg",
+    "internal",
+    "target",
+    "vendor",
+    "node_modules",
+];
+
+/// `src/write/planner`, `crates/kmp/tests`: a slashed list in lowercase ASCII
+/// that passes through a directory a source tree is laid out with is a code
+/// path, and a path is copied even without its extension. A list in prose
+/// (`vivos/expirados/retirados`, `input/output`) names no such directory, and
+/// a capitalized or accented word says it is prose.
+fn reads_as_code_path(runs: &[&str]) -> bool {
+    runs.iter()
+        .all(|run| run.bytes().all(|byte| byte.is_ascii_lowercase()))
+        && runs.iter().any(|run| CODE_PATH_SEGMENTS.contains(run))
 }
 
 /// What a rendering token carries for fidelity: itself, the number it joined
@@ -276,7 +314,8 @@ fn is_slashed_word_list(inner: &str, runs: &[&str], bare: bool) -> bool {
 ///
 /// A text whose language groups thousands with a dot (`50.976` in Spanish)
 /// is also carried by the same integer written the English way, `50,976`, or
-/// with no grouping at all, `50976`. See [`super::grouped_thousands`].
+/// with no grouping at all, `50976`; and its decimal comma with three digits
+/// (`50,976`) by the English point, `50.976`. See [`super::grouped_thousands`].
 fn carried_forms(token: String, dotted_thousands: bool) -> Vec<String> {
     let mut forms = Vec::with_capacity(4);
     if let Some(number) = unit_adjective_number(&token) {
@@ -285,8 +324,9 @@ fn carried_forms(token: String, dotted_thousands: bool) -> Vec<String> {
     if let Some(spelling) = other_decimal_separator(&token) {
         forms.push(spelling);
     }
-    if dotted_thousands && let Some(spelling) = super::grouped_thousands::dotted(&token) {
-        forms.push(spelling);
+    if dotted_thousands {
+        forms.extend(super::grouped_thousands::dotted(&token));
+        forms.extend(super::grouped_thousands::decimal_comma(&token));
     }
     forms.push(token);
     forms
