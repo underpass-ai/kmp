@@ -68,10 +68,15 @@ pub(crate) fn build_summary_plan(
     // the ranker make: a summary that will not carry is refused here, while
     // the writer can still fix it.
     let decision = decide_search_summary(&existing.text, Some(summary), strict)?;
+    // Only a copy of an English text is dropped rather than stored. Here it
+    // would be the whole write, so it is refused for what it is.
     let Some(stored) = decision.stored else {
         return Err(WriteValidationError::new(
-            "search_summaries requires summary_en".to_string(),
-        ));
+            "summary_en is identical to an English memory, which is searched as written; \
+             there is nothing to attach",
+        )
+        .at("summary_en")
+        .code("INVALID_SEARCH_SUMMARY"));
     };
 
     let mut metadata = existing.metadata.clone();
