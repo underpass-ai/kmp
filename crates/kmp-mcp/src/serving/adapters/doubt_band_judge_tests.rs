@@ -254,7 +254,7 @@ fn loading_needs_ask_judge_json_and_a_working_typesafe_opt_in() {
     let judge = DoubtBandJudge::load(dir.path(), &Ok(Some(Arc::clone(&model))))
         .expect("loads")
         .expect("on");
-    assert_eq!(judge.margin_tenths(), 10);
+    assert_eq!(judge.margin_tenths(), 20);
     std::fs::write(dir.path().join("ask-judge.json"), r#"{"veto_at": 2}"#).expect("config");
     assert!(DoubtBandJudge::load(dir.path(), &Ok(Some(model))).is_err());
     std::fs::write(dir.path().join("ask-judge.json"), "{}").expect("config");

@@ -42,8 +42,10 @@ fn default_promote_at() -> f64 {
     0.9
 }
 
+/// Fixed on the development corpora (P10, `p10-prereg.v1`): J1 is highest at
+/// a 2.0-point margin with `veto_at` 0.9 (synth, retrieval 53, negatives s7).
 fn default_margin_tenths() -> i64 {
-    10
+    20
 }
 
 fn default_excerpt_chars() -> usize {
@@ -112,7 +114,7 @@ mod tests {
         let config = parse("{}").expect("defaults");
         assert_eq!(config.veto_permille(), 900);
         assert_eq!(config.promote_permille(), None);
-        assert_eq!(config.margin_tenths(), 10);
+        assert_eq!(config.margin_tenths(), 20);
         assert_eq!(config.question(), AskJudgeQuestion::Noul);
         assert_eq!(config.excerpt_chars(), 1_200);
     }

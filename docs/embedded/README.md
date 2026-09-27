@@ -128,6 +128,44 @@ keeps the gate and answers UNKNOWN wherever it would have answered PARTIAL.
 The engine reports the file in its `kmp_store_config` log line; one it cannot
 read or does not recognise is reported and the default applies.
 
+### The doubt band (opt-in, sends text to TypeSafe)
+
+A store that already opted into TypeSafe Jev (`typesafe.json`) can ask it
+about the asks the gate settled in doubt. Put `ask-judge.json` beside the
+store:
+
+```json
+{}
+```
+
+The defaults are `veto_at` 0.9, `margin_tenths` 20 and `promote` false
+(`promote_at` 0.9 when promotion is turned on). They were fixed on the
+development corpora before validation and are not tuned per store.
+
+An ask enters the band only when no anchor it names is absent and it is
+UNKNOWN without an anchor while a `best_effort` reading would cite something,
+`attribute_not_found` or PARTIAL under an anchor, or answered with a first
+citation leading the second by less than `margin_tenths` tenths of a BM25
+point. One batch of at most eight admitted passages goes to Jev through the
+verdict book (`judgements.sqlite3`), with a 1.5 s deadline on the first page;
+past it the deterministic answer stands, with a warning, and the verdict lands
+in the book for the next ask. A continuation never asks.
+
+- **Veto (B1).** A cited memory Jev finds at least `veto_at` likely not to
+  answer leaves the core. It stays in `proof.evidence` with `judged_out` (the
+  model), `judged_permille` and `judged_template`. A veto only takes answers
+  away.
+- **Promotion (B2)**, off unless `"promote": true`: an admitted memory that
+  passed the anchored gate, judged at least `promote_at` likely to answer,
+  joins the core or answers an UNKNOWN whose anchor was found, marked
+  `judged_by`. Confidence stays the words' own and is never `high` for it. It
+  never admits an absent anchor or anything outside the selection, and never
+  writes text.
+
+`"question": "score"` asks a four-level grade instead of yes/no (an
+experiment). With the band on, an ask is a function of the store and the
+verdict book, not of the store alone.
+
 ## How a review without focus pairs orphans
 
 `kmp_curate` in `review` mode without `focus` asks Jev, for up to 30 facts
