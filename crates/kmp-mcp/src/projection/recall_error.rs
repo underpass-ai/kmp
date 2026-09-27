@@ -14,7 +14,8 @@ pub(crate) fn projection(error: RecallProjectionError) -> ToolError {
 
 pub(crate) fn cursor(detail: RecallCursorError) -> ToolError {
     let changed = detail.reason == RecallCursorErrorReason::SelectionChanged as i32;
-    let error = if changed {
+    let outdated = detail.reason == RecallCursorErrorReason::Outdated as i32;
+    let error = if changed || outdated {
         ToolError::conflict(&detail.message)
     } else {
         ToolError::invalid_argument(&detail.message)
@@ -25,7 +26,13 @@ pub(crate) fn cursor(detail: RecallCursorError) -> ToolError {
             .map(|arguments| json!({"tool":call.tool,"arguments":arguments}))
     });
     error.with_feedback(json!({
-        "code":if changed { "READ_SELECTION_CHANGED" } else { "INVALID_READ_CURSOR" },
+        "code":if outdated {
+            "READ_CURSOR_OUTDATED"
+        } else if changed {
+            "READ_SELECTION_CHANGED"
+        } else {
+            "INVALID_READ_CURSOR"
+        },
         "field":"page.cursor", "message":detail.message,
         "action":action
     }))

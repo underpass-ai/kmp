@@ -943,6 +943,7 @@ fn recall_projection_status(error: RecallProjectionError) -> Status {
     match error.cursor_detail() {
         Some(detail) => Status::with_details(
             if detail.reason == kmp_proto::v1beta1::RecallCursorErrorReason::SelectionChanged as i32
+                || detail.reason == kmp_proto::v1beta1::RecallCursorErrorReason::Outdated as i32
             {
                 Code::Aborted
             } else {

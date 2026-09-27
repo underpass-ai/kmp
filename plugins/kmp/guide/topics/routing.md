@@ -86,7 +86,8 @@ Route again after every response:
   selection. Only following `projection.page.next_cursor` with every bound
   argument unchanged is a continuation, not a retry. A recall cursor (`kmp2`)
   resumes after the item its page ended on; a refused one (a changed
-  selection, or an old `kmp1` cursor) means restart without `page.cursor`.
+  selection, or an old `kmp1` cursor: `READ_CURSOR_OUTDATED`) means restart
+  without `page.cursor`.
 - When Ask returns `UNKNOWN` or irrelevant evidence after those two
   selections, reclassify the **original goal**. Current, latest or recent
   state, what changed, why now, and release or decision history move to

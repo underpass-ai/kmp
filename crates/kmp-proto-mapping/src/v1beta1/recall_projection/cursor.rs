@@ -6,8 +6,8 @@
 //! next page resumes after) and the selection hash. A page resumes only
 //! after the exact item it stopped at; anything else is a changed selection
 //! and never a silently shifted page. A `kmp1` cursor, from the contract
-//! before it, is refused with the same reason as a changed selection and a
-//! message that says to restart the reading.
+//! before it, is refused as `OUTDATED` with a message that says to restart
+//! the reading.
 
 use std::borrow::Borrow;
 
@@ -111,7 +111,7 @@ where
     let version = parts.next();
     if version == Some(RETIRED_VERSION) {
         return Err(cursor_error(
-            RecallCursorErrorReason::SelectionChanged,
+            RecallCursorErrorReason::Outdated,
             cursor,
             "invalid page.cursor: it is a kmp1 continuation from the recall contract before \
              kmp2, which cannot resume this reading; restart the recall without page.cursor",
