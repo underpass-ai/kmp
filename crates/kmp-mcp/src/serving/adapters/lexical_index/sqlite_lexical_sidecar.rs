@@ -379,6 +379,12 @@ impl SqliteLexicalSidecar {
             .map_err(storage)?;
         }
         tx.commit().map_err(storage)?;
+        if reset || changes.iter().any(|change| change.rebuilt) {
+            // A build writes the whole about in one transaction; hand the
+            // log's pages back rather than keep a WAL the size of the index.
+            // Best effort: a reader holding the log only delays it.
+            let _ = connection.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()));
+        }
         Ok(true)
     }
 }
