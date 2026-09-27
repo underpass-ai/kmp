@@ -97,6 +97,63 @@ fn concurrent_writers_leave_one_verdict_per_key() {
 }
 
 #[test]
+fn processes_opening_a_new_book_at_once_all_open_it() {
+    // Set up in place, a new file starts in rollback-journal mode and its
+    // setup pragmas upgrade a read lock to a write lock, which SQLite
+    // refuses with SQLITE_BUSY at once, without the busy handler, while
+    // another opener writes. Openers racing on a new book must all come
+    // through, the book must end up in WAL, and no staging file is left.
+    for _ in 0..20 {
+        let dir = tempfile::tempdir().expect("dir");
+        let path = dir.path().join("judgements.sqlite3");
+        let start = std::sync::Arc::new(std::sync::Barrier::new(12));
+        let handles = (0..12)
+            .map(|writer| {
+                let path = path.clone();
+                let start = std::sync::Arc::clone(&start);
+                std::thread::spawn(move || {
+                    start.wait();
+                    let book = SqliteVerdictBook::open(&path, 1024 * 1024)?;
+                    book.record(&[(key(RERANK, writer), verdict(0.5))])
+                })
+            })
+            .collect::<Vec<_>>();
+        for handle in handles {
+            handle.join().expect("opener").expect("book");
+        }
+        let journal: String = Connection::open(&path)
+            .expect("raw")
+            .query_row("PRAGMA journal_mode", [], |row| row.get(0))
+            .expect("mode");
+        assert_eq!(journal, "wal");
+        let files = std::fs::read_dir(dir.path())
+            .expect("dir")
+            .map(|entry| entry.expect("entry").file_name())
+            .filter(|name| name.to_string_lossy().contains(".new-"))
+            .collect::<Vec<_>>();
+        assert!(files.is_empty(), "staging left behind: {files:?}");
+    }
+}
+
+#[test]
+fn an_empty_file_where_the_book_goes_is_set_up_in_place() {
+    let dir = tempfile::tempdir().expect("dir");
+    let path = dir.path().join("judgements.sqlite3");
+    std::fs::write(&path, b"").expect("empty file");
+    let book = SqliteVerdictBook::open(&path, 1024 * 1024).expect("book");
+    book.record(&[(key(RERANK, 1), verdict(0.5))])
+        .expect("record");
+    let raw = Connection::open(&path).expect("raw");
+    let journal: String = raw
+        .query_row("PRAGMA journal_mode", [], |row| row.get(0))
+        .expect("mode");
+    let vacuum: i64 = raw
+        .query_row("PRAGMA auto_vacuum", [], |row| row.get(0))
+        .expect("vacuum");
+    assert_eq!((journal.as_str(), vacuum), ("wal", 2));
+}
+
+#[test]
 fn a_template_version_or_the_whole_template_can_be_dropped() {
     let dir = tempfile::tempdir().expect("dir");
     let book = open(&dir);
