@@ -93,6 +93,7 @@ mod partner_shortlist;
 mod paths_proposals;
 mod posting;
 mod posting_block;
+mod prepared_terms_cache;
 mod queries;
 mod question_anchor;
 mod question_contract;

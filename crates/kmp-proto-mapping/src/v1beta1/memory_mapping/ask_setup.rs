@@ -142,6 +142,18 @@ impl<'a> AskSetup<'a> {
         self
     }
 
+    /// Reads the candidates' terms through `cache`, shared by the readings
+    /// of one ask (P10): the doubt band keeps them (`keep`), the answer
+    /// takes them back.
+    pub(super) fn with_prepared_cache(
+        mut self,
+        cache: &'a super::prepared_terms_cache::PreparedTermsCache,
+        keep: bool,
+    ) -> Self {
+        self.ranker = self.ranker.with_prepared_cache(cache, keep);
+        self
+    }
+
     /// What the ranker reads: the question, or under the gate the question
     /// without what it excluded and with its anchors' alias terms.
     pub(super) fn asked<'q>(&'q self, question: &'q str) -> &'q str {

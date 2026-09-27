@@ -451,7 +451,8 @@ pub fn ask_response_from_result(
         retrieval.witness.as_deref(),
         retrieval.indexed.as_ref(),
     )?
-    .with_gate(retrieval.gate);
+    .with_gate(retrieval.gate)
+    .with_prepared_cache(&retrieval.prepared, false);
     let doubt = retrieval.doubt.as_ref();
     let ranker = &setup.ranker;
     let candidate_evidence = setup.candidate_evidence.clone();

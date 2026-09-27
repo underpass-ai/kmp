@@ -34,6 +34,9 @@ pub struct AskRetrievalContext {
     /// The whole about as the lexical index holds it, when `result` holds
     /// only the candidates its postings reached (DESIGN L6, P13).
     pub(super) indexed: Option<super::indexed_ask::IndexedAsk>,
+    /// The terms the doubt band's reading read the candidates with, which
+    /// the answer's reading of the same candidates takes back (P10).
+    pub(super) prepared: super::prepared_terms_cache::PreparedTermsCache,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -50,6 +53,7 @@ impl From<GetContextResult> for AskRetrievalContext {
             doubt: None,
             witness: None,
             indexed: None,
+            prepared: Default::default(),
         }
     }
 }

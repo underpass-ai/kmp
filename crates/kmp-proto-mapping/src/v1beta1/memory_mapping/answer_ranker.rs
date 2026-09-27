@@ -99,6 +99,11 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// Whether an expansion rescue must answer the strict focus (P15; the
     /// store's `expansion_rescue_focus`, on by default).
     expansion_focus: bool,
+    /// Where the readings of one ask share the terms they read their
+    /// candidates with (P10: a doubt band's reading, then the answer's), and
+    /// whether this reading keeps them there (the band) or only takes them
+    /// back (the answer).
+    prepared_cache: Option<(&'a super::prepared_terms_cache::PreparedTermsCache, bool)>,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -113,6 +118,7 @@ impl Default for AnswerEvidenceRanker<'_> {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             expansion_focus: true,
+            prepared_cache: None,
         }
     }
 }
@@ -230,6 +236,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             expansion_focus: true,
+            prepared_cache: None,
         }
     }
 
@@ -401,6 +408,20 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// Every candidate's terms, read once, up front: BM25 needs a collection
     /// before it can weigh anything.
     fn prepare(&self, evidence: Vec<MemoryEvidence>) -> Vec<ReadCandidate> {
+        let aliased = self.context.identifier_aliases;
+        if let Some((cache, keep)) = self.prepared_cache {
+            if let Some(terms) = cache.get(&evidence, aliased, keep) {
+                return evidence.into_iter().zip(terms).collect();
+            }
+            if keep {
+                let terms = evidence
+                    .iter()
+                    .map(|item| AnswerCandidateTerms::from_evidence(item, &self.context))
+                    .collect::<Vec<_>>();
+                cache.put(evidence.clone(), aliased, terms.clone());
+                return evidence.into_iter().zip(terms).collect();
+            }
+        }
         evidence
             .into_iter()
             .map(|item| {
@@ -408,6 +429,17 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 (item, terms)
             })
             .collect()
+    }
+
+    /// Reads the candidates' terms from `cache` when an earlier reading of
+    /// the same ask kept them; with `keep`, keeps what it reads there.
+    pub(super) fn with_prepared_cache(
+        mut self,
+        cache: &'a super::prepared_terms_cache::PreparedTermsCache,
+        keep: bool,
+    ) -> Self {
+        self.prepared_cache = Some((cache, keep));
+        self
     }
 
     /// The collection is this question's own candidates: inside an about
@@ -1195,6 +1227,7 @@ mod tests {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             expansion_focus: true,
+            prepared_cache: None,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1914,6 +1947,7 @@ mod tests {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             expansion_focus: true,
+            prepared_cache: None,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -2348,6 +2382,7 @@ mod tests {
             indexed_vocabulary: None,
             indexed_seed_documents: None,
             expansion_focus: true,
+            prepared_cache: None,
             context: AnswerRecallContext::default(),
             bridge,
         }
