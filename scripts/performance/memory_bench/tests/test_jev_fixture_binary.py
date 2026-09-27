@@ -80,7 +80,10 @@ class BookFixtureOnTheBinaryTest(unittest.TestCase):
         template = self.root / 'template'
         shutil.copytree(seed.data_dir, template, ignore=shutil.ignore_patterns('logs'))
         (template / 'typesafe.json').write_text(TYPESAFE)
-        (template / 'rerank.json').write_text('{"pool_size":40}')
+        # The margin gate off (as in BT18's book store): with it on, an ask whose first lexical
+        # candidate leads with `High` confidence sends no judgement, and the warm-up would
+        # record only the questions that happen to be close.
+        (template / 'rerank.json').write_text('{"pool_size":40,"margin_tenths":null}')
         return template
 
     def _stand_in(self):
