@@ -44,6 +44,8 @@ pub(super) struct AnswerRecallContext {
     /// Whether a memory's text also reads as the alias terms it spells
     /// (`corte 10` as `c10`): only under the anchored ask gate.
     pub(super) identifier_aliases: bool,
+    /// The language `morphology` stems in, as `search_language` read it.
+    pub(super) language: Option<String>,
 }
 
 impl AnswerRecallContext {
@@ -53,7 +55,8 @@ impl AnswerRecallContext {
         bundle: &KmpBundle,
         lifecycle: MemoryLifecycle,
     ) -> Self {
-        let morphology = search_morphology(bundle);
+        let language = search_language(bundle);
+        let morphology = Morphology::for_language(language.as_deref());
         let details_by_ref = bundle
             .node_details()
             .iter()
@@ -157,6 +160,7 @@ impl AnswerRecallContext {
             morphology,
             entry_kinds,
             identifier_aliases: false,
+            language,
         }
     }
 
@@ -272,11 +276,15 @@ pub(super) fn search_language(bundle: &KmpBundle) -> Option<String> {
 fn bundle_carries_search_summary(bundle: &KmpBundle) -> bool {
     std::iter::once(bundle.root_node())
         .chain(bundle.neighbor_nodes())
-        .any(|node| {
-            persisted_memory_metadata(node.properties())
-                .get(SearchSummary::METADATA_KEY)
-                .is_some_and(|summary| SearchSummary::lint(node.summary(), summary).is_ok())
-        })
+        .any(node_carries_search_summary)
+}
+
+/// Whether one memory carries an English search summary that passes the
+/// lint; the lexical sidecar counts them per about.
+pub(super) fn node_carries_search_summary(node: &kmp_domain::BundleNode) -> bool {
+    persisted_memory_metadata(node.properties())
+        .get(SearchSummary::METADATA_KEY)
+        .is_some_and(|summary| SearchSummary::lint(node.summary(), summary).is_ok())
 }
 
 pub(super) fn relationship_is_explanatory(relationship: &kmp_domain::BundleRelationship) -> bool {

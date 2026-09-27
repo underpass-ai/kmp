@@ -63,6 +63,15 @@ impl LanguageVocabulary {
     /// Returning nothing is a real answer and the common one for a small
     /// store: it leaves every word exactly as written.
     pub fn read<'a>(&self, tokens: impl IntoIterator<Item = &'a str>) -> Option<&str> {
+        self.decide(&self.signals(tokens))
+    }
+
+    /// How many function words of each shipped language the tokens carry,
+    /// in the vocabulary's order: the counts [`Self::read`] decides from.
+    ///
+    /// The counts add over texts, so a caller that keeps them per memory can
+    /// decide the language of a whole store without reading it again.
+    pub fn signals<'a>(&self, tokens: impl IntoIterator<Item = &'a str>) -> Vec<usize> {
         let mut counts = vec![0usize; self.languages.len()];
         for token in tokens {
             for (index, language) in self.languages.iter().enumerate() {
@@ -72,9 +81,17 @@ impl LanguageVocabulary {
                 }
             }
         }
+        counts
+    }
+
+    /// The language [`Self::signals`] counts read as: enough evidence and a
+    /// two-in-three majority, or none. Counts shorter than the vocabulary
+    /// read as zero for the languages they leave out.
+    pub fn decide(&self, counts: &[usize]) -> Option<&str> {
         let total = counts.iter().sum::<usize>();
         let (index, winner) = counts
             .iter()
+            .take(self.languages.len())
             .enumerate()
             .max_by_key(|(index, count)| (**count, std::cmp::Reverse(*index)))
             .map(|(index, count)| (index, *count))?;
@@ -82,6 +99,11 @@ impl LanguageVocabulary {
             return None;
         }
         Some(self.languages[index].id.as_str())
+    }
+
+    /// How many languages [`Self::signals`] counts.
+    pub fn language_count(&self) -> usize {
+        self.languages.len()
     }
 
     /// Which way a short text leans: the language with more function words

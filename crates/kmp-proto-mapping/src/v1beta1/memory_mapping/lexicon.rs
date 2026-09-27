@@ -83,6 +83,12 @@ impl Lexicon {
         }
     }
 
+    /// Every term the question weighs: its own words, their associations in
+    /// this memory and the words the table bridged them to.
+    pub(super) fn weighted_terms(&self) -> impl Iterator<Item = &String> {
+        self.asked.keys()
+    }
+
     /// Whether a candidate says enough about the question to be answering it.
     ///
     /// Measured on the raw score, not the quantized one, so a candidate is

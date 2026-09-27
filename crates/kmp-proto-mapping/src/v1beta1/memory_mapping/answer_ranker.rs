@@ -81,6 +81,9 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     bridge: &'a LexicalBridge,
     lexical_cache: Option<&'a super::lexical_index_cache::LexicalIndexCache>,
     lexical_identity: Option<super::lexical_index_identity::LexicalIndexIdentity>,
+    /// Where the first collection this ranker builds is recorded for the
+    /// lexical sidecar's shadow comparison, when an ask asked for it.
+    witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -90,6 +93,7 @@ impl Default for AnswerEvidenceRanker<'_> {
             bridge: &SILENT_BRIDGE,
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
         }
     }
 }
@@ -181,7 +185,38 @@ impl<'a> AnswerEvidenceRanker<'a> {
             bridge,
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
         }
+    }
+
+    /// Records what the ranker measures for the lexical sidecar's shadow
+    /// comparison. Recording never changes the ranking.
+    pub(super) fn with_lexical_witness(
+        mut self,
+        witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
+    ) -> Self {
+        self.witness = witness;
+        self
+    }
+
+    /// Leaves the collection and the question's weights in the witness, the
+    /// first time only.
+    fn observe(
+        &self,
+        prepared: &[ReadCandidate],
+        collection: &super::lexical_collection::LexicalCollection,
+        lexicon: &Lexicon,
+    ) {
+        let Some(witness) = self.witness.filter(|witness| witness.is_waiting()) else {
+            return;
+        };
+        witness.record(super::lexical_observation::LexicalObservation::read(
+            prepared,
+            collection,
+            lexicon.weighted_terms().cloned(),
+            self.context.language.clone(),
+            self.context.identifier_aliases,
+        ));
     }
 
     pub(super) fn with_lexical_cache(
@@ -235,7 +270,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let strict_focus = self.strict_focus(question, policy);
         let prepared = self.prepare(evidence);
         let collection = self.collection(&prepared);
-        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+        let lexicon = Lexicon::build(
+            question,
+            morphology,
+            &prepared,
+            self.bridge,
+            std::sync::Arc::clone(&collection),
+        );
+        self.observe(&prepared, &collection, &lexicon);
         self.rank_prepared(
             question,
             &question_terms,
@@ -428,8 +470,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let (principal, others) = match selection {
             AnchorSelection::Anchored { principal, others } => (principal, others),
             unanchored_or_absent => {
-                let lexicon =
-                    Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+                let lexicon = Lexicon::build(
+                    question,
+                    morphology,
+                    &prepared,
+                    self.bridge,
+                    std::sync::Arc::clone(&collection),
+                );
+                self.observe(&prepared, &collection, &lexicon);
                 let (evidence, scores) = self.rank_prepared(
                     question,
                     &question_terms,
@@ -451,7 +499,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
         // enumerates, which break ties by entry kind and nothing more.
         let question = anchored_question;
         let question_terms = informative_terms(question, morphology);
-        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge, collection);
+        let lexicon = Lexicon::build(
+            question,
+            morphology,
+            &prepared,
+            self.bridge,
+            std::sync::Arc::clone(&collection),
+        );
+        self.observe(&prepared, &collection, &lexicon);
         let unfiltered = self
             .strict_focus(question, policy)
             .map(|(terms, _)| (terms, 0));
@@ -1034,6 +1089,7 @@ mod tests {
         AnswerEvidenceRanker {
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1748,6 +1804,7 @@ mod tests {
         let ranker = AnswerEvidenceRanker {
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -2177,6 +2234,7 @@ mod tests {
         AnswerEvidenceRanker {
             lexical_cache: None,
             lexical_identity: None,
+            witness: None,
             context: AnswerRecallContext::default(),
             bridge,
         }

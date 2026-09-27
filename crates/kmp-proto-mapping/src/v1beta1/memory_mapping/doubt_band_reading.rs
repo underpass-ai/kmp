@@ -62,6 +62,7 @@ pub(super) fn read_doubt_band(
         bridge,
         retrieval.lexical_cache.as_deref(),
         true,
+        retrieval.witness.as_deref(),
     )?;
     let asked = setup.asked(question);
     let candidates = setup.candidate_evidence.clone();

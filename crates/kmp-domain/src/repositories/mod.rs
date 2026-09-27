@@ -48,6 +48,8 @@ pub use snapshot_save_options::SnapshotSaveOptions;
 pub use snapshot_store::SnapshotStore;
 pub use token_estimator::TokenEstimator;
 
+mod graph_point_reads;
+pub use graph_point_reads::GraphPointReads;
 mod trace_snapshot_reader;
 pub use trace_snapshot_reader::TraceSnapshotReader;
 pub mod read_snapshot_provider;

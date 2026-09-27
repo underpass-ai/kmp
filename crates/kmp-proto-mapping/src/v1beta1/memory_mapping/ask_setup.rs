@@ -45,6 +45,7 @@ impl<'a> AskSetup<'a> {
         bridge: &'a LexicalBridge,
         cache: Option<&'a LexicalIndexCache>,
         gated: bool,
+        witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
     ) -> ProtoMappingResult<Self> {
         let lexical_identity = LexicalIndexIdentity::read(result, temporal);
         let admission = TemporalAdmission::read(&result.bundle, temporal)?;
@@ -52,7 +53,8 @@ impl<'a> AskSetup<'a> {
         let lifecycle = lifecycle_for(&bounded, &admission);
         let superseded_refs = lifecycle.superseded_refs().clone();
         let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
-            .with_lexical_cache(cache, lexical_identity);
+            .with_lexical_cache(cache, lexical_identity)
+            .with_lexical_witness(witness);
         let ranker = if gated {
             ranker.with_identifier_aliases()
         } else {

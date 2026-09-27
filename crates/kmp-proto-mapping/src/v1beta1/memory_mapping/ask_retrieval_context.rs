@@ -28,6 +28,9 @@ pub struct AskRetrievalContext {
     pub(super) decided: Option<super::decided_selection::DecidedSelection>,
     /// A doubt band judge's verdicts, applied to the core by the answer.
     pub(super) doubt: Option<super::doubt_verdicts::DoubtVerdicts>,
+    /// Where the answer's ranker records what it measured, for the lexical
+    /// sidecar's shadow comparison.
+    pub(super) witness: Option<std::sync::Arc<super::lexical_shadow_witness::LexicalShadowWitness>>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -42,6 +45,7 @@ impl From<GetContextResult> for AskRetrievalContext {
             margin: None,
             decided: None,
             doubt: None,
+            witness: None,
         }
     }
 }
@@ -54,6 +58,16 @@ impl AskRetrievalContext {
         cache: std::sync::Arc<super::lexical_index_cache::LexicalIndexCache>,
     ) -> Self {
         self.lexical_cache = Some(cache);
+        self
+    }
+
+    /// Records what the answer's ranker measures in `witness`, for the
+    /// lexical sidecar's shadow comparison. Never changes the answer.
+    pub fn with_lexical_witness(
+        mut self,
+        witness: std::sync::Arc<super::lexical_shadow_witness::LexicalShadowWitness>,
+    ) -> Self {
+        self.witness = Some(witness);
         self
     }
 

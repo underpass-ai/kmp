@@ -82,6 +82,7 @@ pub use model::{
     trace_body_admission,
 };
 pub use projection::NodeBodyDescriptor;
+pub use repositories::GraphPointReads;
 pub use repositories::TraceSnapshotReader;
 pub use repositories::{NodeCardStore, NodeCardWriteFuture};
 pub use value_objects::{

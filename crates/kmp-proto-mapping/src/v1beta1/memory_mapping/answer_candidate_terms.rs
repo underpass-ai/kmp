@@ -43,57 +43,9 @@ impl AnswerCandidateTerms {
         let summary = summary_text
             .map(|summary| informative_terms(summary, morphology))
             .unwrap_or_default();
-        let mut content_text = match summary_text {
-            Some(summary) => format!("{} {}", item.text, summary),
-            None => item.text.clone(),
-        };
-        // Under the anchored gate `corte 10` and `ADR 18` also read as the
-        // terms `c10` and `adr18` a question's anchor names.
-        if context.identifier_aliases {
-            push_aliases(&mut content_text);
-        }
-        // A set of terms is the keys of its counts: read the text once.
-        let content_counts = informative_term_counts(&content_text, morphology);
-        let expansions =
-            SearchExpansions::stored(&item.text, |key| item.metadata.get(key).map(String::as_str));
-        let expansion_counts = if expansions.is_empty() {
-            TermCounts::default()
-        } else {
-            informative_term_counts(&expansions.join(" "), morphology)
-        };
+        let (content_counts, direct_counts, expansion_counts) =
+            surface_counts(item, morphology, context.identifier_aliases);
         let content = content_counts.terms().cloned().collect::<BTreeSet<_>>();
-        let mut direct_text = format!("{} {}", content_text, item.source);
-        direct_text.push(' ');
-        direct_text.push_str(&ref_words(&item.id));
-        for supported_ref in &item.supports {
-            direct_text.push(' ');
-            direct_text.push_str(&ref_words(supported_ref));
-        }
-        for (key, value) in &item.metadata {
-            // The summary is content, above, or nothing at all; the
-            // expansions are their own surface; the keys the ranker writes
-            // about how a candidate was retrieved are read by people and
-            // never searched.
-            if is_retrieval_provenance(key)
-                || key == SearchSummary::METADATA_KEY
-                || SearchExpansions::is_metadata_key(key)
-            {
-                continue;
-            }
-            direct_text.push(' ');
-            direct_text.push_str(key);
-            direct_text.push(' ');
-            direct_text.push_str(value);
-        }
-        if context.identifier_aliases {
-            // The content's aliases are in it already; what the source, the
-            // refs and the metadata spell is read here.
-            let beyond_content = direct_text[content_text.len()..].to_string();
-            let mut extra = beyond_content.clone();
-            push_aliases(&mut extra);
-            direct_text.push_str(&extra[beyond_content.len()..]);
-        }
-        let direct_counts = informative_term_counts(&direct_text, morphology);
         let direct = direct_counts.terms().cloned().collect::<BTreeSet<_>>();
 
         let mut claim = item
@@ -136,6 +88,89 @@ impl AnswerCandidateTerms {
             searchable,
         }
     }
+}
+
+/// What a candidate says (`content`: its text and its linted summary),
+/// everything a question may land on in it (`direct`: the content plus its
+/// source, the slugs of its refs and its searchable metadata) and its judged
+/// search expansions (`expansion`, field X, apart from both), counted as BM25
+/// reads them. `aliases` also reads the alias terms each part spells
+/// (`corte 10` as `c10`), as the anchored gate does.
+///
+/// The ranker and the lexical sidecar both read a candidate through this one
+/// function, so the index cannot count a word differently from the ranker.
+pub(super) fn surface_counts(
+    item: &MemoryEvidence,
+    morphology: &super::morphology::Morphology,
+    aliases: bool,
+) -> (TermCounts, TermCounts, TermCounts) {
+    let mut content_text = match search_summary(item) {
+        Some(summary) => format!("{} {}", item.text, summary),
+        None => item.text.clone(),
+    };
+    // Under the anchored gate `corte 10` and `ADR 18` also read as the
+    // terms `c10` and `adr18` a question's anchor names.
+    if aliases {
+        push_aliases(&mut content_text);
+    }
+    // A set of terms is the keys of its counts: read the text once.
+    let content_counts = informative_term_counts(&content_text, morphology);
+    let expansions =
+        SearchExpansions::stored(&item.text, |key| item.metadata.get(key).map(String::as_str));
+    let expansion_counts = if expansions.is_empty() {
+        TermCounts::default()
+    } else {
+        informative_term_counts(&expansions.join(" "), morphology)
+    };
+    let mut direct_text = format!("{} {}", content_text, item.source);
+    direct_text.push(' ');
+    direct_text.push_str(&ref_words(&item.id));
+    for supported_ref in &item.supports {
+        direct_text.push(' ');
+        direct_text.push_str(&ref_words(supported_ref));
+    }
+    let mut metadata = item.metadata.iter().collect::<Vec<_>>();
+    metadata.sort();
+    for (key, value) in metadata {
+        // The summary is content, above, or nothing at all; the
+        // expansions are their own surface; the keys the ranker writes
+        // about how a candidate was retrieved are read by people and
+        // never searched.
+        if is_retrieval_provenance(key)
+            || key == SearchSummary::METADATA_KEY
+            || SearchExpansions::is_metadata_key(key)
+        {
+            continue;
+        }
+        direct_text.push(' ');
+        direct_text.push_str(key);
+        direct_text.push(' ');
+        direct_text.push_str(value);
+    }
+    if aliases {
+        // The content's aliases are in it already; what the source, the
+        // refs and the metadata spell is read here.
+        let beyond_content = direct_text[content_text.len()..].to_string();
+        let mut extra = beyond_content.clone();
+        push_aliases(&mut extra);
+        direct_text.push_str(&extra[beyond_content.len()..]);
+    }
+    let direct_counts = informative_term_counts(&direct_text, morphology);
+    (content_counts, direct_counts, expansion_counts)
+}
+
+/// The text alone, with the alias terms it spells when `aliases`: the part
+/// of the content the writer wrote as the memory, apart from its summary.
+pub(super) fn text_counts(
+    item: &MemoryEvidence,
+    morphology: &super::morphology::Morphology,
+    aliases: bool,
+) -> TermCounts {
+    let mut text = item.text.clone();
+    if aliases {
+        push_aliases(&mut text);
+    }
+    informative_term_counts(&text, morphology)
 }
 
 /// Appends the alias terms a text spells, once each.
