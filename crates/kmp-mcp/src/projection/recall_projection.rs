@@ -125,6 +125,7 @@ mod tests {
             asked_as: String::new(),
             answer_status: 0,
             unknown_reason: 0,
+            more_ranked: false,
         };
 
         let value = ask_from_response(response);
@@ -216,6 +217,7 @@ mod tests {
             asked_as: String::new(),
             answer_status: 0,
             unknown_reason: 0,
+            more_ranked: false,
         };
         let legacy = json!({
             "summary": response.summary,

@@ -26,10 +26,12 @@ const RETIRED_VERSION: &str = "kmp1";
 /// Hex digits of the boundary digest.
 const BOUNDARY_HEX: usize = 16;
 
-pub(super) fn selection_hash<T>(arguments: &Value, plan: &ProjectionPlan, eligible: &[T]) -> String
-where
-    T: Borrow<ProjectionItem>,
-{
+/// What every `kmp2` cursor of one selection is bound to: the bound
+/// arguments and the canonical core. A cursor then binds the items its pages
+/// already delivered ([`prefix_hash`]), and not the ones after them: a
+/// deeper reading of the same ranking (P14) adds items to the tail and must
+/// keep the cursors of the pages before it.
+pub(super) fn selection_hash(arguments: &Value, plan: &ProjectionPlan) -> String {
     let mut bound_arguments = arguments.clone();
     if let Some(arguments) = bound_arguments.as_object_mut() {
         arguments.remove("page");
@@ -45,17 +47,21 @@ where
         serde_json::to_vec(&bound_arguments).expect("projection arguments should serialize"),
     );
     hasher.update(b"\0");
-    // Bind the cursor to the canonical projection plan, not the raw response
-    // serialization returned by a graph adapter. Storage is allowed to return
-    // equal-ranked rows in any order; ProjectionPlan gives expansion items a
-    // total semantic order before this identity is computed. Hash the stable
-    // core plus that ordered selection so identical snapshots produce the
-    // same cursor across requests and transports, while any eligible semantic
-    // change still invalidates it.
     hasher.update(
         serde_json::to_vec(&plan.core).expect("projection core should serialize canonically"),
     );
-    for item in eligible {
+    format!("{:x}", hasher.finalize())
+}
+
+/// A cursor's hash: the selection's, and the stable key of every item the
+/// pages before `offset` delivered, in order.
+pub(super) fn prefix_hash<T>(selection_hash: &str, eligible: &[T], offset: usize) -> String
+where
+    T: Borrow<ProjectionItem>,
+{
+    let mut hasher = Sha256::new();
+    hasher.update(selection_hash.as_bytes());
+    for item in eligible.iter().take(offset) {
         let item = item.borrow();
         hasher.update(b"\0");
         hasher.update(item.section.name().as_bytes());
@@ -132,13 +138,6 @@ where
             "invalid page.cursor: malformed recall continuation",
         ));
     }
-    if hash != Some(selection_hash) {
-        return Err(cursor_error(
-            RecallCursorErrorReason::SelectionChanged,
-            cursor,
-            "invalid page.cursor: it does not match this recall selection",
-        ));
-    }
     let offset = offset
         .and_then(|offset| offset.parse::<usize>().ok())
         .ok_or_else(|| {
@@ -153,6 +152,13 @@ where
             RecallCursorErrorReason::OffsetOutOfRange,
             cursor,
             "invalid page.cursor: continuation offset is out of range",
+        ));
+    }
+    if hash != Some(prefix_hash(selection_hash, eligible, offset).as_str()) {
+        return Err(cursor_error(
+            RecallCursorErrorReason::SelectionChanged,
+            cursor,
+            "invalid page.cursor: it does not match this recall selection",
         ));
     }
     if boundary != Some(boundary_after(eligible, offset).as_str()) {

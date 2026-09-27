@@ -37,6 +37,9 @@ pub struct AskRetrievalContext {
     /// The terms the doubt band's reading read the candidates with, which
     /// the answer's reading of the same candidates takes back (P10).
     pub(super) prepared: super::prepared_terms_cache::PreparedTermsCache,
+    /// How many tail items the reading carries (P14, kmp2 lazy pages);
+    /// `None` carries the whole ranking.
+    pub(super) depth: Option<usize>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -54,6 +57,7 @@ impl From<GetContextResult> for AskRetrievalContext {
             witness: None,
             indexed: None,
             prepared: Default::default(),
+            depth: None,
         }
     }
 }
@@ -85,6 +89,14 @@ impl AskRetrievalContext {
     /// neighbourhood the ranker's rescues walk from them.
     pub fn with_indexed(mut self, indexed: super::indexed_ask::IndexedAsk) -> Self {
         self.indexed = Some(indexed);
+        self
+    }
+
+    /// Carries the ranking's head and `depth` items of its tail (P14):
+    /// `recall_projection::ask_rank_depth` reads it from the
+    /// page a request asks for.
+    pub fn with_rank_depth(mut self, depth: usize) -> Self {
+        self.depth = Some(depth);
         self
     }
 
@@ -178,7 +190,7 @@ impl AskRetrievalContext {
         for evidence in &mut candidates {
             admission.bound_supports(evidence);
         }
-        let (ranking, scores) = ranker.rank_scored(question, policy, candidates.clone());
+        let (ranking, scores) = ranker.rank_split(question, policy, candidates.clone());
         let ranked = RankedSelection::new(question, policy, temporal, bridge, ranking);
         let pool = ranker.rerank_pool(ranked.ranked(), &candidates, limit);
         let core = ranked

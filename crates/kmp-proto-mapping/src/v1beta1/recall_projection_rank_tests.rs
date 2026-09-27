@@ -101,7 +101,9 @@ fn ask_cursor_binds_both_evidence_rank_and_content() {
         if change_rank {
             evidence.swap(0, 2);
         } else {
-            evidence[2].text = "Changed stored text.".into();
+            // kmp2 binds what the pages before the cursor delivered (P14):
+            // the first page delivered the best item.
+            evidence[0].text = "Changed stored text.".into();
         }
         let error = project_ask_response(changed, &request(Some(cursor.clone())))
             .expect_err("changed rank or content must invalidate the cursor");

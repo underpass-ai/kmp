@@ -75,6 +75,10 @@ pub fn ask_value(response: &AskResponse) -> Value {
     if let Some(reason) = unknown_reason_label(response.unknown_reason) {
         value["unknown_reason"] = Value::String(reason.to_string());
     }
+    // Read by the projection, which takes it out of the core (P14).
+    if response.more_ranked {
+        value["more_ranked"] = Value::Bool(true);
+    }
     attach_typed_projection(&mut value, response.projection.as_ref());
     value
 }

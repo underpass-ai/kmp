@@ -3,6 +3,7 @@ use kmp_domain::TemporalSelection;
 use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::lexical_bridge::LexicalBridge;
+use super::ranked_evidence::RankedEvidence;
 
 /// The lexical ranker's order for one question over one admitted pool.
 ///
@@ -18,7 +19,7 @@ pub(super) struct RankedSelection {
     /// Identity of the table, compared and never dereferenced: one process
     /// holds one table for its life, so the address names it.
     bridge: usize,
-    ranked: Vec<MemoryEvidence>,
+    ranked: RankedEvidence,
 }
 
 impl RankedSelection {
@@ -27,7 +28,7 @@ impl RankedSelection {
         policy: MemoryAnswerPolicy,
         temporal: &TemporalSelection,
         bridge: &LexicalBridge,
-        ranked: Vec<MemoryEvidence>,
+        ranked: RankedEvidence,
     ) -> Self {
         Self {
             question: question.to_string(),
@@ -39,7 +40,7 @@ impl RankedSelection {
     }
 
     pub(super) fn ranked(&self) -> &[MemoryEvidence] {
-        &self.ranked
+        &self.ranked.evidence
     }
 
     /// The ranking, when it was taken for exactly these inputs.
@@ -49,7 +50,7 @@ impl RankedSelection {
         policy: MemoryAnswerPolicy,
         temporal: &TemporalSelection,
         bridge: &LexicalBridge,
-    ) -> Option<Vec<MemoryEvidence>> {
+    ) -> Option<RankedEvidence> {
         (self.question == question
             && self.policy == policy
             && &self.temporal == temporal
@@ -86,13 +87,16 @@ mod tests {
                 policy,
                 &temporal,
                 &bridge,
-                vec![evidence("entry:a"), evidence("entry:b")],
+                RankedEvidence::whole(vec![evidence("entry:a"), evidence("entry:b")]),
             )
         };
         assert_eq!(selection().ranked().len(), 2);
         assert_eq!(
             selection().into_ranking_for("why did it freeze", policy, &temporal, &bridge),
-            Some(vec![evidence("entry:a"), evidence("entry:b")])
+            Some(RankedEvidence::whole(vec![
+                evidence("entry:a"),
+                evidence("entry:b")
+            ]))
         );
         assert!(
             selection()

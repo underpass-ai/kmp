@@ -515,7 +515,13 @@ pub fn ask_response_from_result(
                         candidate_evidence,
                         doubt,
                     );
-                    (reading.evidence, reading.verdict)
+                    (
+                        super::ranked_evidence::RankedEvidence {
+                            evidence: reading.evidence,
+                            head: reading.head,
+                        },
+                        reading.verdict,
+                    )
                 }
             }
         }
@@ -525,12 +531,24 @@ pub fn ask_response_from_result(
             retrieval
                 .ranked
                 .and_then(|ranked| ranked.into_ranking_for(asked, policy, temporal, bridge))
-                .unwrap_or_else(|| ranker.rank(asked, policy, candidate_evidence)),
+                .unwrap_or_else(|| ranker.rank_split(asked, policy, candidate_evidence).0),
             None,
         ),
     };
-    let relevant_evidence = super::hybrid_evidence::fuse_evidence(ranked, supplemental);
+    // A reading carries the head and `depth` items of the tail (P14, kmp2
+    // lazy pages); the rest is read by a deeper continuation. Channels that
+    // reorder the whole ranking (semantic retrieval, re-ranking) and the
+    // entries cap read it all.
+    let whole = !supplemental.is_empty() || max_entries.is_some();
+    let (ranked, more_ranked) = ranked.carried_to(if whole { None } else { retrieval.depth });
+    let head = if supplemental.is_empty() {
+        ranked.head
+    } else {
+        usize::MAX
+    };
+    let relevant_evidence = super::hybrid_evidence::fuse_evidence(ranked.evidence, supplemental);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
+    let head = head.min(evidence.len());
     let selection_projection = selection_cap_projection(withheld.len());
     // A candidate the graph reached is proof, not an answer. It travels in
     // `proof.evidence` with the hop that produced it, and the answer core is
@@ -563,6 +581,13 @@ pub fn ask_response_from_result(
             judged_pool,
         ),
         _ => (evidence, answer_core, None),
+    };
+    // A doubt band's verdicts may move what the proof carries; its reading
+    // is never lazy, and all of it is head.
+    let head = if doubt.is_some() {
+        evidence.len()
+    } else {
+        head
     };
     // `because` and the deterministic answer retain at most five citations.
     // Confidence must describe those surviving citations, not a stronger item
@@ -699,7 +724,9 @@ pub fn ask_response_from_result(
     // retrieved over a proof holding related memories is the kernel
     // contradicting its own evidence, and it is the wrong next move to
     // suggest: that memory has been written, this question just cannot cite it.
-    let evidence_retained = evidence.len();
+    // Counted over the head (P14): what a reading carries past it depends on
+    // how deep the reading went.
+    let evidence_retained = head;
     // Citations belong to an answer. Returning five of them beside UNKNOWN is
     // how an unsupported answer looked supported in the first place; what was
     // retrieved is still visible in `proof.evidence`.
@@ -736,13 +763,16 @@ pub fn ask_response_from_result(
     let path = if unknown {
         Vec::new()
     } else if status == AnswerStatus::Partial {
-        partial_answer_relations_from_bundle(&setup.bounded, &answer_core, &evidence)
+        partial_answer_relations_from_bundle(&setup.bounded, &answer_core, &evidence[..head])
     } else {
-        answer_relations_from_bundle(&setup.bounded, &evidence)
+        answer_relations_from_bundle(&setup.bounded, &evidence[..head])
     };
-    let mut answer_proof = proof(
+    // The path is the head's (P14): relations incident to the tail would
+    // change with the depth a reading carries.
+    let mut answer_proof = super::bundle_views::proof_of_head(
         path,
         evidence,
+        head,
         missing,
         if unknown && verdict.is_some() {
             MemoryConfidence::Unknown
@@ -907,6 +937,7 @@ pub fn ask_response_from_result(
         asked_as: asked_as.unwrap_or_default().to_string(),
         answer_status: answer_status as i32,
         unknown_reason: unknown_reason as i32,
+        more_ranked,
     })
 }
 

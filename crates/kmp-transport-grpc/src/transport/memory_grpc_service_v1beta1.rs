@@ -228,7 +228,12 @@ where
                 max_entries,
                 AskRetrievalContext::from(result)
                     .with_lexical_cache(Arc::clone(&self.lexical_cache))
-                    .with_default_gate(),
+                    .with_default_gate()
+                    .with_rank_depth(
+                        kmp_proto_mapping::v1beta1::recall_projection::ask_rank_depth(
+                            page_request.as_ref().map(|page| page.cursor.as_str()),
+                        ),
+                    ),
                 &self.lexical_bridge,
                 &temporal,
             )

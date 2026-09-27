@@ -37,13 +37,31 @@ pub fn project_recall_output_typed(
         .map_err(RecallProjectionError::InvalidRequest)?;
     let mut plan = ProjectionPlan::build(value, &budget);
     plan.arguments = arguments.clone();
-    let eligible = plan
+    let mut eligible = plan
         .items
         .iter()
         .filter(|item| item.min_detail <= budget.detail)
         .collect::<Vec<_>>();
-    let selection_hash = selection_hash(arguments, &plan, &eligible);
+    let selection_hash = selection_hash(arguments, &plan);
     let excluded_by_detail = plan.items.len() - eligible.len();
+    // A reading that does not carry the whole ranking (P14) pages its
+    // evidence and stops there: what sorts after it (paged supersessions,
+    // the balanced path, missing) waits for the reading that carries the
+    // ranking to its end, so every earlier page is a prefix of it. An
+    // answered first page below `full` offers no continuation either way.
+    let offset_asked = arguments
+        .pointer("/page/cursor")
+        .and_then(Value::as_str)
+        .is_some();
+    plan.more_ranked = plan.more_ranked
+        && budget.detail >= Detail::Balanced
+        && !withholds(plan.settled, budget.detail, usize::from(offset_asked));
+    if plan.more_ranked {
+        let last_evidence = eligible
+            .iter()
+            .rposition(|item| item.section == super::plan::Section::ProofEvidence);
+        eligible.truncate(last_evidence.map_or(0, |last| last + 1));
+    }
     let offset = parse_cursor(
         arguments.pointer("/page/cursor").and_then(Value::as_str),
         &selection_hash,

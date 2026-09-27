@@ -36,6 +36,7 @@ use super::morphology::Morphology;
 use super::question_contract::QuestionContract;
 use super::question_intent::QuestionIntent;
 use super::question_time::QuestionTime;
+use super::ranked_evidence::{HEAD_WINDOW, RankedEvidence};
 use super::ranking_focus::RankingFocus;
 use super::search_terms::{
     concept_count, informative_term_counts, informative_terms, informative_tokens, matching_terms,
@@ -359,12 +360,24 @@ impl<'a> AnswerEvidenceRanker<'a> {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> (Vec<MemoryEvidence>, ContentScores) {
+        let (ranked, scores) = self.rank_split(question, policy, evidence);
+        (ranked.evidence, scores)
+    }
+
+    /// [`Self::rank_scored`], with where its head ends (P14,
+    /// [`RankedEvidence`]).
+    pub(super) fn rank_split(
+        &self,
+        question: &str,
+        policy: MemoryAnswerPolicy,
+        evidence: Vec<MemoryEvidence>,
+    ) -> (RankedEvidence, ContentScores) {
         let morphology = &self.context.morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
             evidence.sort_by_key(stable_evidence_key);
-            return (evidence, ContentScores::default());
+            return (RankedEvidence::whole(evidence), ContentScores::default());
         }
         let strict_focus = self.strict_focus(question, policy);
         let prepared = self.prepare(evidence);
@@ -472,7 +485,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         anchored: Option<(&BTreeSet<String>, &BTreeSet<String>)>,
         prepared: Vec<ReadCandidate>,
         lexicon: &Lexicon,
-    ) -> (Vec<MemoryEvidence>, ContentScores) {
+    ) -> (RankedEvidence, ContentScores) {
         let morphology = &self.context.morphology;
         let diversity_focus_terms = strict_focus
             .as_ref()
@@ -515,6 +528,14 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 candidate.relevance.content_score,
             )
         }));
+        // The head is the best window, diversified, its repeated claims at
+        // its end; the rest follows in rank order (P14): the head never
+        // depends on the tail, so any depth of the tail is a prefix.
+        let tail = if candidates.len() > HEAD_WINDOW {
+            candidates.split_off(HEAD_WINDOW)
+        } else {
+            Vec::new()
+        };
         let ranked = diversify_candidates(question_terms, &diversity_focus_terms, candidates);
         let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
@@ -552,12 +573,23 @@ impl<'a> AnswerEvidenceRanker<'a> {
         answer.extend(reached);
         answer.extend(associated);
         answer.extend(bridged);
+        let head = answer.len();
+        answer.extend(
+            tail.into_iter()
+                .map(|candidate| candidate.into_item(question, morphology)),
+        );
         // The expansions were a search surface; a reader is shown the memory.
         for item in &mut answer {
             item.metadata
                 .retain(|key, _| !SearchExpansions::is_metadata_key(key));
         }
-        (answer, scores)
+        (
+            RankedEvidence {
+                evidence: answer,
+                head,
+            },
+            scores,
+        )
     }
 
     /// Reads a question that names an identifier through the anchored gate.
@@ -584,7 +616,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             return AnchoredReading::unanchored(
-                self.rank(question, policy, evidence),
+                self.rank_split(question, policy, evidence).0,
                 ContentScores::default(),
             );
         }
@@ -675,6 +707,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             BTreeMap::new()
         };
         let successors = ranked
+            .evidence
             .iter()
             .filter(|item| !was_reached_indirectly(item) || was_reached_along_a_lifecycle(item))
             .filter_map(|item| {
@@ -685,6 +718,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             })
             .collect::<BTreeMap<_, _>>();
         let direct = ranked
+            .evidence
             .iter()
             .filter(|item| !was_reached_indirectly(item) || successors.contains_key(&item.id))
             .map(|item| {
@@ -758,6 +792,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 .map(|(item, _)| item.id.clone())
                 .chain(
                     ranked
+                        .evidence
                         .iter()
                         .filter(|item| lifecycle_anchors.reached_from_an_anchor(item))
                         .map(|item| item.id.clone()),
@@ -768,22 +803,26 @@ impl<'a> AnswerEvidenceRanker<'a> {
         // (or, in the lifecycle variant, a replacement) says so, and says
         // which memory named the anchor.
         let cited = verdict.cited();
-        let ranked = ranked
-            .into_iter()
-            .filter(|item| {
-                about_anchors.as_ref().is_none_or(|about| {
-                    about.contains(&item.id) || cited.contains(item.id.as_str())
+        let ranked = ranked.retain(|item| {
+            about_anchors
+                .as_ref()
+                .is_none_or(|about| about.contains(&item.id) || cited.contains(item.id.as_str()))
+        });
+        let ranked = RankedEvidence {
+            evidence: ranked
+                .evidence
+                .into_iter()
+                .map(|item| match rescue.standing_in_for(&item.id) {
+                    Some((from, via)) if cited.contains(item.id.as_str()) => {
+                        let from = from.to_string();
+                        mark_anchor_rescued(item, &from, via)
+                    }
+                    _ => item,
                 })
-            })
-            .map(|item| match rescue.standing_in_for(&item.id) {
-                Some((from, via)) if cited.contains(item.id.as_str()) => {
-                    let from = from.to_string();
-                    mark_anchor_rescued(item, &from, via)
-                }
-                _ => item,
-            })
-            .map(|item| judged.mark(item))
-            .collect::<Vec<_>>();
+                .map(|item| judged.mark(item))
+                .collect(),
+            head: ranked.head,
+        };
         AnchoredReading::decided(ranked, verdict)
             .with_scores(scores)
             .with_promotable(promotable)

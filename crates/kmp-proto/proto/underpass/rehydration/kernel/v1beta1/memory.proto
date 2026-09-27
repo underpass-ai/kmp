@@ -519,6 +519,11 @@ message AskResponse {
   // Why an unknown answer is unknown, when the gate settled it; UNSPECIFIED
   // otherwise.
   UnknownReason unknown_reason = 10;
+  // The ranking holds more evidence than this reading carries (P14, kmp2
+  // lazy pages): `proof.evidence` is its head and the first part of its
+  // tail, and a continuation reads deeper. False on a reading carried to
+  // the end.
+  bool more_ranked = 11;
 }
 
 enum AnswerStatus {

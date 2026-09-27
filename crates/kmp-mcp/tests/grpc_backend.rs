@@ -831,6 +831,7 @@ impl KernelMemoryService for FakeMemoryService {
             asked_as: String::new(),
             answer_status: 0,
             unknown_reason: 0,
+            more_ranked: false,
         };
         Ok(Response::new(
             project_ask_response(response, &request)
