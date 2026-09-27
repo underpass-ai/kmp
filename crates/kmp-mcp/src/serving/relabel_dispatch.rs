@@ -8,7 +8,9 @@ use serde_json::Value;
 
 use crate::serving::json_rpc::jsonrpc_result;
 use crate::serving::kernel_mcp_server::KernelMcpServer;
-use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
+use crate::serving::telemetry::{
+    CallOrigin, ToolErrorKind, record_call_error, record_call_success,
+};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 use crate::write::{build_relabel_plan, relabel_result};
@@ -19,6 +21,7 @@ impl KernelMcpServer {
         id: Value,
         arguments: &Value,
         start: Instant,
+        origin: &CallOrigin,
     ) -> String {
         let plan = match build_relabel_plan(arguments) {
             Ok(plan) => plan,
@@ -26,13 +29,15 @@ impl KernelMcpServer {
                 // Everything the planner refuses is about the arguments;
                 // the caller can fix all of it, and only the caller can.
                 let error = ToolError::invalid_argument(message);
-                record_tool_error(
+                record_call_error(
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_relabel",
                     arguments,
                     ToolErrorKind::Validation,
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 return jsonrpc_result(id, tool_error_result("kmp_relabel", arguments, &error));
@@ -47,7 +52,8 @@ impl KernelMcpServer {
             Ok(result) => {
                 let kernel_result = result.get("structuredContent").cloned().unwrap_or(result);
                 let result = tool_success_result(relabel_result(&plan, kernel_result));
-                record_tool_success(
+                record_call_success(
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_relabel",
@@ -58,13 +64,15 @@ impl KernelMcpServer {
                 jsonrpc_result(id, result)
             }
             Err(error) => {
-                record_tool_error(
+                record_call_error(
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_relabel",
                     arguments,
                     ToolErrorKind::Backend,
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 jsonrpc_result(id, tool_error_result("kmp_relabel", arguments, &error))

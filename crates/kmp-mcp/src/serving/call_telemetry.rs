@@ -3,28 +3,21 @@
 
 use std::sync::Arc;
 
-use serde_json::Value;
-
 use crate::serving::kernel_mcp_server::KernelMcpServer;
-use crate::serving::telemetry::{CallOrigin, FingerprintSalt, McpClient};
+use crate::serving::telemetry::{CallOrigin, CallSource, FingerprintSalt};
 
 impl KernelMcpServer {
-    /// Remembers the client an `initialize` names (or that it named none).
-    pub(super) fn remember_client(&self, request: &Value) {
-        let client = McpClient::from_initialize(request);
-        if let Ok(mut slot) = self.mcp_client.write() {
-            *slot = client;
+    /// What a recorder needs for a call from `origin`: the salt, created
+    /// only when `create` says the store surely exists.
+    pub(super) fn call_source<'a>(
+        &'a self,
+        origin: &'a CallOrigin,
+        create: bool,
+    ) -> CallSource<'a> {
+        CallSource {
+            origin,
+            salt: self.telemetry_salt(create),
         }
-    }
-
-    /// The origin of a call, from its arguments as the host sent them.
-    pub(super) fn call_origin(&self, name: &str, arguments: &Value) -> CallOrigin {
-        let client = self
-            .mcp_client
-            .read()
-            .ok()
-            .and_then(|client| client.clone());
-        CallOrigin::read(name, arguments, client)
     }
 
     /// The store's fingerprint salt. `create` reads or creates it on first
@@ -61,16 +54,66 @@ mod tests {
     use crate::serving::kernel_mcp_server::KernelMcpServer;
     use crate::serving::telemetry::TELEMETRY_SALT_FILE;
 
-    #[test]
-    fn the_origin_carries_the_initialized_client() {
-        let server = KernelMcpServer::fixture();
-        assert!(server.call_origin("kmp_ask", &json!({})).client.is_none());
+    #[tokio::test]
+    async fn concurrent_sessions_keep_their_own_client_and_apps() {
+        use crate::serving::mcp_session::McpSession;
+        use crate::serving::telemetry::captured_log::CapturedLog;
 
+        let server = KernelMcpServer::fixture();
+        let (codex, claude) = (McpSession::new(), McpSession::new());
+        let init = |name: &str, apps: bool| {
+            let mut capabilities = json!({});
+            if apps {
+                capabilities = json!({"extensions": {"io.modelcontextprotocol/ui":
+                    {"mimeTypes": [crate::contract::MCP_APP_MIME]}}});
+            }
+            json!({"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {
+                "protocolVersion": "2025-06-18", "capabilities": capabilities,
+                "clientInfo": {"name": name, "version": "1"}}})
+            .to_string()
+        };
+        let (log, _guard) = CapturedLog::start("kmp_mcp=info");
         server
-            .remember_client(&json!({"params": {"clientInfo": {"name": "codex", "version": "1"}}}));
-        let origin = server.call_origin("kmp_ask", &json!({"continuation": "c"}));
-        assert_eq!(origin.client.expect("client").name, "codex");
-        assert_eq!(origin.is_continuation, Some(true));
+            .handle_json_line_in(&init("codex", true), &codex)
+            .await;
+        server
+            .handle_json_line_in(&init("claude-code", false), &claude)
+            .await;
+        let call = |id: u64| {
+            json!({"jsonrpc": "2.0", "id": id, "method": "tools/call", "params": {
+                "name": "kmp_ask", "arguments": {"about": "a", "question": "q"}}})
+            .to_string()
+        };
+        let (one, two) = (call(1), call(2));
+        tokio::join!(
+            server.handle_json_line_in(&one, &codex),
+            server.handle_json_line_in(&two, &claude),
+            server.handle_json_line_in(&one, &codex),
+        );
+
+        let clients: Vec<String> = log
+            .events("kmp_mcp_tool")
+            .iter()
+            .map(|line| {
+                line["fields"]["client_name"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string()
+            })
+            .collect();
+        assert_eq!(clients, ["codex", "claude-code", "codex"]);
+        assert!(codex.apps() && !claude.apps());
+        let list = json!({"jsonrpc": "2.0", "id": 3, "method": "tools/list"}).to_string();
+        let with_apps = server
+            .handle_json_line_in(&list, &codex)
+            .await
+            .expect("list");
+        let without = server
+            .handle_json_line_in(&list, &claude)
+            .await
+            .expect("list");
+        assert_ne!(with_apps, without, "Apps are negotiated per session");
+        assert_eq!(server.handle_json_line(&list).await.expect("list"), without);
     }
 
     #[test]
@@ -190,7 +233,9 @@ mod tests {
         let dir = tempfile::tempdir().expect("dir");
         let server = KernelMcpServer::embedded(dir.path()).expect("server");
         let (log, _guard) = CapturedLog::start("kmp_mcp=info");
-        server.remember_client(&json!({"params": {"clientInfo": {"name": "codex-mcp-client"}}}));
+        server
+            .session
+            .initialize(&json!({"params": {"clientInfo": {"name": "codex-mcp-client"}}}));
         let refused = call(
             &server,
             1,

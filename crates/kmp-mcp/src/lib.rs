@@ -44,6 +44,7 @@ pub fn tool_names() -> Vec<String> {
 pub use serving::FixtureKernelMcpBackend;
 pub use serving::GrpcKernelMcpBackend;
 pub use serving::KernelMcpServer;
+pub use serving::McpSession;
 pub use serving::{EmbeddedKernelMcpBackend, RetryingEmbeddedKernelMcpBackend};
 pub use serving::{ToolError, ToolErrorCode};
 

@@ -118,6 +118,13 @@ where
         ctx.snapshot_store,
         ctx.event_store,
         ctx.quality_observer,
+    )
+    // The served store is remote; its fingerprint salt stays on this server,
+    // where the operator points it. Unset, the API logs no fingerprint.
+    .with_telemetry_salt_path(
+        std::env::var_os("KMP_TELEMETRY_SALT_PATH")
+            .filter(|path| !path.is_empty())
+            .map(std::path::PathBuf::from),
     );
     let events_consumer = NatsProjectionConsumer::new(ctx.config.events_subject_prefix.clone());
     let projection_runtime = connect_projection_runtime(

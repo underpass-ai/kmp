@@ -1,5 +1,8 @@
 mod buffered_quality_metrics_observer;
+mod client_label;
 mod embedded_telemetry_guard;
+mod fingerprint_salt;
+mod hmac_sha256;
 #[cfg(feature = "otel")]
 pub mod metrics;
 mod otlp_query_adapter;
@@ -23,7 +26,9 @@ use opentelemetry_sdk::trace::SdkTracerProvider;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub use buffered_quality_metrics_observer::BufferedQualityMetricsObserver;
+pub use client_label::{CLIENT_NAME_CHARS, CLIENT_VERSION_CHARS, client_label};
 pub use embedded_telemetry_guard::EmbeddedTelemetryGuard;
+pub use fingerprint_salt::{FingerprintSalt, TELEMETRY_SALT_FILE};
 #[cfg(feature = "otel")]
 pub use metrics::KernelMetrics;
 pub use otlp_query_adapter::{

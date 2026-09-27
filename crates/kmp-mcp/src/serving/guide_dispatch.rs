@@ -1,6 +1,6 @@
 use super::guide_repair::GuideRepair;
 use super::json_rpc::jsonrpc_result;
-use super::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
+use super::telemetry::{CallOrigin, ToolErrorKind, record_call_error, record_call_success};
 use super::tool_result::tool_error_result;
 use super::{KernelMcpServer, ToolError, tool_success_result};
 use crate::contract::schema::relation_vocabulary::relation_vocabulary_lines;
@@ -47,11 +47,13 @@ impl KernelMcpServer {
         id: Value,
         arguments: &Value,
         start: Instant,
+        origin: &CallOrigin,
     ) -> String {
         let result = match self.guide_response(arguments).await {
             Ok(response) => {
                 let result = tool_success_result(response);
-                record_tool_success(
+                record_call_success(
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_guide",
@@ -62,13 +64,15 @@ impl KernelMcpServer {
                 result
             }
             Err(error) => {
-                record_tool_error(
+                record_call_error(
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_guide",
                     arguments,
                     ToolErrorKind::Backend,
                     &error.message,
+                    &error.feedback,
                     start.elapsed(),
                 );
                 tool_error_result("kmp_guide", arguments, &error)

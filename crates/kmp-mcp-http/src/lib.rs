@@ -9,6 +9,7 @@ mod protocol;
 
 use std::sync::Arc;
 
+use adapters::inbound::http_sessions::{HttpSessions, SESSION_HEADER};
 use application::use_cases::authorize_mcp_request::AuthorizeMcpRequest;
 use auth::{AuthError, TokenVerifier};
 use authorization::AuthorizationError;
@@ -20,7 +21,7 @@ use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use config::HttpGatewayConfig;
-use kmp_mcp::KernelMcpServer;
+use kmp_mcp::{KernelMcpServer, McpSession};
 use protocol::{RequestDialect, add_current_response_metadata, jsonrpc_error, validate_request};
 use serde_json::{Value, json};
 
@@ -29,6 +30,7 @@ pub struct AppState {
     config: HttpGatewayConfig,
     server: Arc<KernelMcpServer>,
     verifier: Arc<dyn TokenVerifier>,
+    sessions: Arc<HttpSessions>,
 }
 
 impl AppState {
@@ -41,6 +43,7 @@ impl AppState {
             config,
             server: Arc::new(server),
             verifier,
+            sessions: Arc::default(),
         }
     }
 }
@@ -178,9 +181,27 @@ async fn handle_mcp(State(state): State<AppState>, headers: HeaderMap, body: Byt
             );
         }
     };
+    // What the host negotiated, for this request only: the stateless
+    // dialect declares it in `_meta`; the legacy one in `initialize`, kept
+    // under the session id minted then.
+    let (session, minted) = match dialect {
+        RequestDialect::Current => (Arc::new(McpSession::from_request_meta(&request)), None),
+        RequestDialect::Legacy if request["method"] == "initialize" => {
+            match state.sessions.open(&identity.subject) {
+                Some((id, session)) => (session, Some(id)),
+                None => (Arc::default(), None),
+            }
+        }
+        RequestDialect::Legacy => {
+            let id = headers
+                .get(SESSION_HEADER)
+                .and_then(|value| value.to_str().ok());
+            (state.sessions.resume(id, &identity.subject), None)
+        }
+    };
     let result = tokio::time::timeout(
         state.config.request_timeout,
-        state.server.handle_json_line(&serialized),
+        state.server.handle_json_line_in(&serialized, &session),
     )
     .await;
     let response = match result {
@@ -208,6 +229,9 @@ async fn handle_mcp(State(state): State<AppState>, headers: HeaderMap, body: Byt
         response
     };
     let mut response = json_response(StatusCode::OK, response);
+    if let Some(id) = minted.and_then(|id| HeaderValue::from_str(&id).ok()) {
+        response.headers_mut().insert(SESSION_HEADER, id);
+    }
     if dialect == RequestDialect::Current {
         response.headers_mut().insert(
             protocol::PROTOCOL_VERSION_HEADER,

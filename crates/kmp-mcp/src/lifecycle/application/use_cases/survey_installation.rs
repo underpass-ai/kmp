@@ -4,6 +4,7 @@ use crate::lifecycle::application::use_cases::survey_engine_pieces::SurveyEngine
 use crate::lifecycle::application::use_cases::survey_holds::SurveyHolds;
 use crate::lifecycle::application::use_cases::survey_leftovers::SurveyLeftovers;
 use crate::lifecycle::application::use_cases::survey_memories::SurveyMemories;
+use crate::lifecycle::application::use_cases::survey_telemetry_salts::SurveyTelemetrySalts;
 use crate::lifecycle::domain::piece::Piece;
 use crate::lifecycle::domain::piece_hold::PieceHold;
 use crate::lifecycle::domain::piece_kind::PieceKind;
@@ -137,6 +138,7 @@ impl<'a> SurveyInstallation<'a> {
         }
 
         pieces.extend(SurveyLeftovers::new(self.installation).execute(roots));
+        pieces.extend(SurveyTelemetrySalts::new(self.installation).execute(roots));
 
         // Registrations live inside files that are not ours. This verb names
         // them and the command that removes them; it does not edit a user's

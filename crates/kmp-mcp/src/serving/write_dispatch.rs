@@ -11,7 +11,7 @@ use crate::serving::existing_entry_read::read_existing_entry;
 use crate::serving::json_rpc::jsonrpc_result;
 use crate::serving::kernel_mcp_server::KernelMcpServer;
 use crate::serving::telemetry::{
-    CallOrigin, CallSource, ToolErrorKind, record_call_error, record_call_success,
+    CallOrigin, ToolErrorKind, record_call_error, record_call_success,
 };
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
@@ -30,7 +30,6 @@ impl KernelMcpServer {
         start: Instant,
         origin: &CallOrigin,
     ) -> String {
-        let source = CallSource { origin, salt: None };
         // Three shapes, one envelope. `relations` is the shape a writer
         // reaches for when both memories already exist and only the link is
         // new; without it, saying "J01 supports J03" cost J01 its prose
@@ -68,7 +67,7 @@ impl KernelMcpServer {
                 // Compiler refusals carry field feedback. A failed source read
                 // keeps the category reported by the store (#586).
                 record_call_error(
-                    source,
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -101,7 +100,8 @@ impl KernelMcpServer {
                 self.propose_write_relations(&plan, &mut value).await;
                 let result = tool_success_result(value);
                 record_call_success(
-                    source,
+                    // A write that landed is proof the store exists.
+                    self.call_source(origin, true),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
@@ -113,7 +113,7 @@ impl KernelMcpServer {
             }
             Err(error) => {
                 record_call_error(
-                    source,
+                    self.call_source(origin, false),
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",

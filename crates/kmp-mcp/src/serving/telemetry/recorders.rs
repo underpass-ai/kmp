@@ -17,29 +17,6 @@ use super::tool_argument_shape::ToolArgumentShape;
 use super::tool_error_kind::ToolErrorKind;
 use super::tool_result_shape::ToolResultShape;
 
-pub(crate) fn record_tool_success(
-    backend: &str,
-    grpc_tls: &str,
-    name: &str,
-    arguments: &Value,
-    result: &Value,
-    duration: Duration,
-) {
-    let origin = CallOrigin::default();
-    record_call_success(
-        CallSource {
-            origin: &origin,
-            salt: None,
-        },
-        backend,
-        grpc_tls,
-        name,
-        arguments,
-        result,
-        duration,
-    );
-}
-
 pub(crate) fn record_call_success(
     source: CallSource<'_>,
     backend: &str,
@@ -67,32 +44,6 @@ pub(crate) fn record_call_success(
             prints: &prints,
             outcome: outcome.as_ref(),
         },
-    );
-}
-
-pub(crate) fn record_tool_error(
-    backend: &str,
-    grpc_tls: &str,
-    name: &str,
-    arguments: &Value,
-    error_kind: ToolErrorKind,
-    message: &str,
-    duration: Duration,
-) {
-    let origin = CallOrigin::default();
-    record_call_error(
-        CallSource {
-            origin: &origin,
-            salt: None,
-        },
-        backend,
-        grpc_tls,
-        name,
-        arguments,
-        error_kind,
-        message,
-        &[],
-        duration,
     );
 }
 
@@ -327,9 +278,52 @@ mod tests {
 
     use serde_json::json;
 
-    use super::{record_tool_error, record_tool_success, stable_hash};
+    use super::{CallOrigin, CallSource, record_call_error, record_call_success, stable_hash};
     use crate::serving::telemetry::ToolErrorKind;
     use crate::serving::telemetry::captured_log::CapturedLog;
+
+    fn record_tool_success(
+        backend: &str,
+        grpc_tls: &str,
+        name: &str,
+        arguments: &serde_json::Value,
+        result: &serde_json::Value,
+        duration: Duration,
+    ) {
+        let origin = CallOrigin::default();
+        let source = CallSource {
+            origin: &origin,
+            salt: None,
+        };
+        record_call_success(source, backend, grpc_tls, name, arguments, result, duration);
+    }
+
+    fn record_tool_error(
+        backend: &str,
+        grpc_tls: &str,
+        name: &str,
+        arguments: &serde_json::Value,
+        error_kind: ToolErrorKind,
+        message: &str,
+        duration: Duration,
+    ) {
+        let origin = CallOrigin::default();
+        let source = CallSource {
+            origin: &origin,
+            salt: None,
+        };
+        record_call_error(
+            source,
+            backend,
+            grpc_tls,
+            name,
+            arguments,
+            error_kind,
+            message,
+            &[],
+            duration,
+        );
+    }
 
     #[test]
     fn every_tool_line_carries_its_duration_in_microseconds() {
@@ -376,7 +370,7 @@ mod tests {
             "params": {"clientInfo": {"name": "codex-mcp-client", "version": "0.154.0"}}
         }));
         let sent = json!({"continuation": "call-1", "context_id": "ctx-secret"});
-        let origin = CallOrigin::read("kmp_ask", &sent, client);
+        let origin = CallOrigin::read(&sent, client);
         let source = CallSource {
             origin: &origin,
             salt: Some(&salt),
@@ -427,7 +421,8 @@ mod tests {
         let subject = fields["subject_fingerprint"].as_str().expect("subject");
         assert_eq!(
             subject,
-            salt.fingerprint("question", "which secret rollout failed?")
+            salt.fingerprint_text("question", "Which secret rollout failed?")
+                .expect("print")
         );
         assert_eq!(lines[1]["fields"]["subject_fingerprint"], subject);
         assert_eq!(lines[1]["fields"]["feedback_count"], 1);

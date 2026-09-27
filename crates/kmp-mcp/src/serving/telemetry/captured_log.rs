@@ -24,7 +24,11 @@ impl CapturedLog {
             .with_env_filter(EnvFilter::new(filter))
             .with_writer(log.clone())
             .finish();
-        (log, tracing::subscriber::set_default(subscriber))
+        let guard = tracing::subscriber::set_default(subscriber);
+        // A callsite another test thread reached first may have cached no
+        // interest; ask every callsite again now that this one listens.
+        tracing::callsite::rebuild_interest_cache();
+        (log, guard)
     }
 
     /// Every captured line whose `fields.event` is `event`.

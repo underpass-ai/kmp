@@ -19,4 +19,5 @@ pub mod survey_holds;
 pub mod survey_installation;
 pub mod survey_leftovers;
 pub mod survey_memories;
+pub mod survey_telemetry_salts;
 pub mod update_kmp;

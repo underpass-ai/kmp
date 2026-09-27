@@ -39,6 +39,9 @@ pub struct GrpcServer<G, D, S, E> {
     command_application: Arc<ServerCommandApplication<E, G, D>>,
     quality_observer: Arc<dyn QualityMetricsObserver>,
     capability_name: &'static str,
+    /// Where the Ask and Wake fingerprint salt of the served store lives
+    /// (`KMP_TELEMETRY_SALT_PATH`); none logs no fingerprint.
+    telemetry_salt_path: Option<std::path::PathBuf>,
 }
 
 impl<G, D, S, E> GrpcServer<G, D, S, E>
@@ -93,6 +96,7 @@ where
             command_application: Arc::new(CommandApplicationService::new(update_context)),
             quality_observer,
             capability_name: KmpApplication::capability_name(),
+            telemetry_salt_path: None,
         }
     }
 
@@ -132,11 +136,22 @@ where
         CommandGrpcService::new(Arc::clone(&self.command_application))
     }
 
+    /// Keys the Ask and Wake log fingerprints with the salt at `path`,
+    /// created there on first use; kept on this server, never logged.
+    pub fn with_telemetry_salt_path(mut self, path: Option<std::path::PathBuf>) -> Self {
+        self.telemetry_salt_path = path;
+        self
+    }
+
     pub fn memory_service(&self) -> MemoryGrpcService<G, D, S, E, ServerProjectionWriter<G, D>> {
-        MemoryGrpcService::new(Arc::new(ServerMemoryApplication::new(
+        let service = MemoryGrpcService::new(Arc::new(ServerMemoryApplication::new(
             Arc::clone(&self.query_application),
             Arc::clone(&self.command_application),
-        )))
+        )));
+        match &self.telemetry_salt_path {
+            Some(path) => service.with_telemetry_salt(path.clone()),
+            None => service,
+        }
     }
 
     pub fn query_application(&self) -> Arc<QueryApplicationService<G, D, S>> {

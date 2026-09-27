@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 axum.workspace = true
+getrandom.workspace = true
 jsonwebtoken.workspace = true
 kmp-mcp.workspace = true
 kmp-domain.workspace = true

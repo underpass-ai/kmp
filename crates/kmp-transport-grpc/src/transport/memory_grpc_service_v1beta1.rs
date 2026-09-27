@@ -20,6 +20,8 @@ use opentelemetry::KeyValue;
 use prost::Message;
 use tonic::{Code, Request, Response, Status};
 
+use crate::transport::grpc_call_telemetry::GrpcCallTelemetry;
+use crate::transport::grpc_client::GrpcClient;
 use crate::transport::proto_mapping_v1beta1::{
     ask_query_from_proto, ask_response_from_result, condense_command_from_proto,
     condense_response_from_card, ingest_command_from_proto, ingest_response_from_outcome,
@@ -45,6 +47,8 @@ pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     /// the default.
     lexical_bridge: Arc<LexicalBridge>,
     lexical_cache: Arc<LexicalIndexCache>,
+    /// The store's fingerprint salt for the Ask and Wake log lines.
+    telemetry: Arc<GrpcCallTelemetry>,
 }
 
 impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
@@ -53,7 +57,15 @@ impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
             application,
             lexical_bridge: Arc::new(LexicalBridge::none()),
             lexical_cache: Arc::default(),
+            telemetry: Arc::default(),
         }
+    }
+
+    /// Keys Ask and Wake fingerprints with the salt at `path`, kept beside
+    /// the store this API serves (created on first use, mode 0600).
+    pub fn with_telemetry_salt(mut self, path: std::path::PathBuf) -> Self {
+        self.telemetry = Arc::new(GrpcCallTelemetry::with_salt_path(path));
+        self
     }
 
     pub fn with_lexical_bridge(mut self, lexical_bridge: Arc<LexicalBridge>) -> Self {
@@ -118,12 +130,14 @@ where
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Wake"))]
     async fn wake(&self, request: Request<WakeRequest>) -> Result<Response<WakeResponse>, Status> {
         let start = Instant::now();
+        let client = GrpcClient::from_metadata(request.metadata());
         let request = request.into_inner();
         let projection_request = request.clone();
         let page_request = request.page.clone();
         let query = wake_query_from_proto(request.clone())
             .map_err(|status| map_proto_error("KernelMemoryService.Wake", &start, *status))?;
         let intent = query.intent.clone();
+        let asked_intent = request.intent.clone();
         let max_entries = query.max_entries;
         let temporal = query.temporal.clone();
         log_dimensioned_request("KernelMemoryService.Wake", &query.about, &query.dimensions);
@@ -158,6 +172,9 @@ where
             confidence = outcome.confidence.as_deref(),
             citations = outcome.citations,
             citations_reached_by = outcome.reached_by.as_str(),
+            client_name = client.name.as_deref(),
+            client_version = client.version.as_deref(),
+            subject_fingerprint = self.telemetry.fingerprint_text("intent", &asked_intent).as_deref(),
             "kernel memory grpc response"
         );
         record_kmp_grpc_rpc(
@@ -173,6 +190,7 @@ where
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Ask"))]
     async fn ask(&self, request: Request<AskRequest>) -> Result<Response<AskResponse>, Status> {
         let start = Instant::now();
+        let client = GrpcClient::from_metadata(request.metadata());
         let request = request.into_inner();
         let projection_request = request.clone();
         let page_request = request.page.clone();
@@ -224,6 +242,9 @@ where
             anchored = outcome.anchored,
             citations = outcome.citations,
             citations_reached_by = outcome.reached_by.as_str(),
+            client_name = client.name.as_deref(),
+            client_version = client.version.as_deref(),
+            subject_fingerprint = self.telemetry.fingerprint_text("question", &question).as_deref(),
             "kernel memory grpc response"
         );
         record_kmp_grpc_rpc(
