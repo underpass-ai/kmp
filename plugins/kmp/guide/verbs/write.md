@@ -285,7 +285,8 @@ fails the lint: wrong language, too thin, a copy of a non-English text, a droppe
 identifier. Fix `summary_en` as the error says; never alter `summary` to fit it,
 and never remove `summary_en` to pass. Loose notation is translated: `~300` as
 `about 300`, `1→6` as `1 to 6`, `vivos/expirados/retirados` as `live, expired
-and retired`, and in a Spanish text `50.976` as `50,976`. Hashes, paths and
+and retired`, and in a Spanish text `50.976` as `50,976` and `0,976` as `0.976`.
+Hashes, paths (`src/write/planner` too, without an extension), acronyms and
 other identifiers are copied as written. A cited item that was reached
 through its summary says so with `matched_via: summary` and `summary_terms`.
 
