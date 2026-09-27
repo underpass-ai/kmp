@@ -17,7 +17,7 @@ use kmp_application::RenderDemand;
 use kmp_embedded::EmbeddedMemoryService;
 use kmp_proto::v1beta1::AskResponse;
 use kmp_proto_mapping::v1beta1::recall_projection::{
-    ask_rank_depth, project_rendered_ask, render_ask,
+    RANK_DEPTH_CHUNK, RANK_HEAD_WINDOW, ask_rank_depth, project_rendered_ask, render_ask,
 };
 use kmp_proto_mapping::v1beta1::{
     AskGate, AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
@@ -96,7 +96,15 @@ impl<'a> EmbeddedAskTool<'a> {
             ask_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
         let key = FrozenRecallKey::Ask(query.clone());
         // How deep into the ranking this page reads (P14, kmp2 lazy pages).
-        let depth = ask_rank_depth(arguments.pointer("/page/cursor").and_then(Value::as_str));
+        let (window, chunk) = self
+            .lexical
+            .map_or((RANK_HEAD_WINDOW, RANK_DEPTH_CHUNK), |(sidecar, _)| {
+                sidecar.ranking()
+            });
+        let depth = ask_rank_depth(
+            arguments.pointer("/page/cursor").and_then(Value::as_str),
+            chunk,
+        );
         // A continuation of an unchanged store cuts its page from the first
         // page's read and render: same ranking, same remote verdicts, same
         // bytes; unless it needs more of the ranking than that read carries.
@@ -107,7 +115,7 @@ impl<'a> EmbeddedAskTool<'a> {
                 depth: carried,
             }) if !response.more_ranked || carried >= depth => (*response, rendered, None),
             _ => {
-                let (response, revision) = self.read(query, arguments, depth).await?;
+                let (response, revision) = self.read(query, arguments, window, depth).await?;
                 let rendered = render_ask(&response);
                 (response, rendered, revision)
             }
@@ -138,6 +146,7 @@ impl<'a> EmbeddedAskTool<'a> {
         &self,
         query: kmp_application::memory::AskMemoryQuery,
         arguments: &Value,
+        window: usize,
         depth: usize,
     ) -> Result<(AskResponse, Option<kmp_domain::GraphReadRevision>), ToolError> {
         let question = query.question.clone();
@@ -173,8 +182,9 @@ impl<'a> EmbeddedAskTool<'a> {
                 let bridge = self.bridge;
                 // What the index's candidates answer, as the about would.
                 let answer = |read: &IndexedRead| -> Result<AskResponse, String> {
-                    let mut retrieval =
-                        AskRetrievalContext::from(read.result.clone()).with_rank_depth(depth);
+                    let mut retrieval = AskRetrievalContext::from(read.result.clone())
+                        .with_rank_window(window)
+                        .with_rank_depth(depth);
                     if let Some(gate) = gate {
                         retrieval = retrieval.with_gate(gate);
                     }
@@ -278,6 +288,7 @@ impl<'a> EmbeddedAskTool<'a> {
         let revision = result.read_revision.clone();
         let mut retrieval = AskRetrievalContext::from(result)
             .with_lexical_cache(Arc::clone(self.lexical_cache))
+            .with_rank_window(window)
             .with_rank_depth(depth);
         if let Some(gate) = self.gate {
             retrieval = retrieval.with_gate(gate);

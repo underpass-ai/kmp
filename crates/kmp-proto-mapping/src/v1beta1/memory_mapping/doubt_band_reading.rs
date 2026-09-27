@@ -67,6 +67,7 @@ pub(super) fn read_doubt_band(
         retrieval.indexed.as_ref(),
     )?
     .with_gate(retrieval.gate)
+    .with_head_window(retrieval.head_window)
     .with_prepared_cache(&retrieval.prepared, true);
     let asked = setup.asked(question);
     let candidates = setup.candidate_evidence.clone();

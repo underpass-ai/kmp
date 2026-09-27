@@ -126,6 +126,7 @@ mod tests {
             answer_status: 0,
             unknown_reason: 0,
             more_ranked: false,
+            total_is_lower_bound: false,
         };
 
         let value = ask_from_response(response);
@@ -218,6 +219,7 @@ mod tests {
             answer_status: 0,
             unknown_reason: 0,
             more_ranked: false,
+            total_is_lower_bound: false,
         };
         let legacy = json!({
             "summary": response.summary,

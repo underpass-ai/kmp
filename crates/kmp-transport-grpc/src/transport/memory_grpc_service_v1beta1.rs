@@ -232,6 +232,7 @@ where
                     .with_rank_depth(
                         kmp_proto_mapping::v1beta1::recall_projection::ask_rank_depth(
                             page_request.as_ref().map(|page| page.cursor.as_str()),
+                            kmp_proto_mapping::v1beta1::recall_projection::RANK_DEPTH_CHUNK,
                         ),
                     ),
                 &self.lexical_bridge,

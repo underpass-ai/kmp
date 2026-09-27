@@ -16,7 +16,6 @@ use super::shadow_report::ShadowReport;
 pub(crate) use super::shadow_scope::ShadowScope;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
 use crate::serving::lexical_index_mode::LexicalIndexMode;
-use kmp_proto_mapping::v1beta1::recall_projection::RANK_HEAD_WINDOW as HEAD_WINDOW;
 
 /// Candidates beyond the head window and the tail depth top-k reads at
 /// first, for those the ranking will find ineligible (P14).
@@ -57,7 +56,10 @@ impl LexicalSidecar {
             limits.every_about()
         };
         if !mode.is_open() {
-            return Self::disabled();
+            return Self {
+                limits,
+                ..Self::disabled()
+            };
         }
         match SqliteLexicalSidecar::open(&lexical_index_path(data_dir)) {
             Ok(sidecar) => {
@@ -75,7 +77,10 @@ impl LexicalSidecar {
             }
             Err(error) => {
                 tracing::warn!(target: "kmp_mcp::lexical_index", %error, "lexical index disabled");
-                Self::disabled()
+                Self {
+                    limits,
+                    ..Self::disabled()
+                }
             }
         }
     }
@@ -155,6 +160,12 @@ impl LexicalSidecar {
             .map(|_| Arc::default())
     }
 
+    /// The store's head window and continuation chunk (P14), whether the
+    /// sidecar is open or not: they shape every ask.
+    pub(crate) fn ranking(&self) -> (usize, usize) {
+        (self.limits.head_window, self.limits.continuation_chunk)
+    }
+
     /// What the process does with the sidecar.
     pub(crate) fn mode(&self) -> LexicalIndexMode {
         self.mode
@@ -221,7 +232,7 @@ impl LexicalSidecar {
             Err(why) => return Ok(Err(why)),
         };
         let plan_us = started.elapsed().as_micros() as u64;
-        let mut limit = HEAD_WINDOW + depth + TOP_K_SLACK;
+        let mut limit = self.limits.head_window + depth + TOP_K_SLACK;
         loop {
             let (candidates, unread) = match plan.select(limit) {
                 Ok(selected) => selected,

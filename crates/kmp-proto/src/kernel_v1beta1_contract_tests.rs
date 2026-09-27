@@ -176,6 +176,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "answer_status",
             "unknown_reason",
             "more_ranked",
+            "total_is_lower_bound",
         ]
     );
     assert_eq!(

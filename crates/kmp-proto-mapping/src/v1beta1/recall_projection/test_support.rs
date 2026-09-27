@@ -174,6 +174,7 @@ pub(super) fn typed_ask_fixture(path_count: usize) -> AskResponse {
         answer_status: 0,
         unknown_reason: 0,
         more_ranked: false,
+        total_is_lower_bound: false,
     }
 }
 

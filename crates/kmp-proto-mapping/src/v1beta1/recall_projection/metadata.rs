@@ -173,7 +173,8 @@ pub(super) fn attach_metadata<E, S>(
             "total": paged,
             "has_more": planning || has_more,
             "next_cursor": if cursor.is_empty() { Value::Null } else { json!(cursor) },
-            "minimum_progress_bytes": if planning { Some(usize::MAX) } else if stalled || core_text_shortened { Some(plan.progress_bytes) } else { None }
+            "minimum_progress_bytes": if planning { Some(usize::MAX) } else if stalled || core_text_shortened { Some(plan.progress_bytes) } else { None },
+            "total_is_lower_bound": !planning && plan.more_ranked
         },
         "sections": sections,
         "excluded_by_detail": excluded_by_detail,

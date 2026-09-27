@@ -88,9 +88,14 @@ Detailed notes from the early release cycle remain available in the
   only and sets `AskResponse.more_ranked` (new field 11); `page.total`,
   `sections.*.remaining` and `more_on_request` count what the reading carries.
   The lexical index reads only the candidates whose exact rank prefix can
-  reach the page (plus what a rescue needs) and certifies the answer, else
-  reads more. Semantic retrieval, re-ranking, the doubt band and
-  `max_entries` read the whole ranking.
+  reach the page (plus what a rescue needs, and under the anchored gate
+  every candidate naming an anchor) and certifies the answer, else reads
+  more. Semantic retrieval, re-ranking, the doubt band and `max_entries`
+  read the whole ranking. The head window and the continuation chunk are 64
+  each and per store in `lexical-index.json` (`head_window`,
+  `continuation_chunk`). Lower-bound counts say so explicitly:
+  `page.total_is_lower_bound` and `AskResponse.total_is_lower_bound`
+  (additive fields).
 - «quién» and «con» are stop words, as «who» and «with» are. Lexical index
   version `lexical-index-4`: every sidecar is rebuilt on its next ask.
 - The doubt band no longer reads every candidate's terms twice: the answer

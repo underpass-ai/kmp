@@ -42,6 +42,8 @@ const RARE: [&str; 14] = [
     "coolant",
 ];
 const SPANISH: [&str; 4] = ["válvula", "bomba", "sensor", "junta"];
+/// Identifiers the anchored gate reads as anchors.
+const ANCHORS: [&str; 3] = ["#101", "#202", "c6.4"];
 
 /// A deterministic generator (SplitMix64), so every run is the same store.
 struct Draw(u64);
@@ -100,6 +102,9 @@ fn sentence(draw: &mut Draw, index: usize) -> String {
     }
     if draw.below(6) == 0 {
         words.push(draw.pick(&SPANISH).to_string());
+    }
+    if draw.below(4) == 0 {
+        words.push(draw.pick(&ANCHORS).to_string());
     }
     format!("Entry {index}: {}.", words.join(" "))
 }
@@ -196,8 +201,18 @@ async fn assert_pruned_asks_equal_the_about(
         LexicalSidecar::open(directory.path(), LexicalIndexMode::On, limits).with_maxscore(true);
     let service = kernel.service();
     let (mut asks, mut pruned, mut lazy) = (0, 0, 0);
-    for _ in 0..6 {
+    for round in 0..8 {
         let question = question(&mut draw);
+        // Every other question names an anchor the gate requires.
+        let question = if round % 2 == 1 {
+            format!(
+                "{} in {}?",
+                question.trim_end_matches('?'),
+                draw.pick(&ANCHORS)
+            )
+        } else {
+            question
+        };
         for (policy, depth, tail) in [
             (MemoryAnswerPolicy::EvidenceOrUnknown, 2, 0),
             (MemoryAnswerPolicy::BestEffort, 2, 0),
@@ -264,7 +279,7 @@ async fn assert_pruned_asks_equal_the_about(
             );
         }
     }
-    assert!(asks >= 12, "{asks} asks answered from the index");
+    assert!(asks >= 16, "{asks} asks answered from the index");
     (pruned, lazy)
 }
 

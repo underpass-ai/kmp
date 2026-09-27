@@ -105,6 +105,8 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// whether this reading keeps them there (the band) or only takes them
     /// back (the answer).
     prepared_cache: Option<(&'a super::prepared_terms_cache::PreparedTermsCache, bool)>,
+    /// How many eligible candidates make the head (P14, [`RankedEvidence`]).
+    head_window: usize,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -120,6 +122,7 @@ impl Default for AnswerEvidenceRanker<'_> {
             indexed_seed_documents: None,
             expansion_focus: true,
             prepared_cache: None,
+            head_window: HEAD_WINDOW,
         }
     }
 }
@@ -238,6 +241,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             indexed_seed_documents: None,
             expansion_focus: true,
             prepared_cache: None,
+            head_window: HEAD_WINDOW,
         }
     }
 
@@ -327,6 +331,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
     ) -> bool {
         let read = AnswerCandidateTerms::from_evidence(item, &self.context);
         terms.iter().all(|term| read.content_counts.count(term) > 0)
+    }
+
+    /// Ranks with a head of `window` eligible candidates (P14).
+    pub(super) fn with_head_window(mut self, window: usize) -> Self {
+        self.head_window = window.max(1);
+        self
     }
 
     /// Reads every candidate with the alias terms it spells (`corte 10` as
@@ -531,8 +541,8 @@ impl<'a> AnswerEvidenceRanker<'a> {
         // The head is the best window, diversified, its repeated claims at
         // its end; the rest follows in rank order (P14): the head never
         // depends on the tail, so any depth of the tail is a prefix.
-        let tail = if candidates.len() > HEAD_WINDOW {
-            candidates.split_off(HEAD_WINDOW)
+        let tail = if candidates.len() > self.head_window {
+            candidates.split_off(self.head_window)
         } else {
             Vec::new()
         };
@@ -1267,6 +1277,7 @@ mod tests {
             indexed_seed_documents: None,
             expansion_focus: true,
             prepared_cache: None,
+            head_window: HEAD_WINDOW,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1987,6 +1998,7 @@ mod tests {
             indexed_seed_documents: None,
             expansion_focus: true,
             prepared_cache: None,
+            head_window: HEAD_WINDOW,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -2422,6 +2434,7 @@ mod tests {
             indexed_seed_documents: None,
             expansion_focus: true,
             prepared_cache: None,
+            head_window: HEAD_WINDOW,
             context: AnswerRecallContext::default(),
             bridge,
         }

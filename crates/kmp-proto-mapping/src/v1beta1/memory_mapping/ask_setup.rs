@@ -131,6 +131,12 @@ impl<'a> AskSetup<'a> {
         })
     }
 
+    /// Ranks with a head of `window` eligible candidates (P14).
+    pub(super) fn with_head_window(mut self, window: usize) -> Self {
+        self.ranker = self.ranker.with_head_window(window);
+        self
+    }
+
     /// Applies the store's measured variants to the ranker (P15's expansion
     /// focus); without a gate the defaults stand.
     pub(super) fn with_gate(mut self, gate: Option<super::ask_gate::AskGate>) -> Self {

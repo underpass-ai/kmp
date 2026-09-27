@@ -40,6 +40,8 @@ pub struct AskRetrievalContext {
     /// How many tail items the reading carries (P14, kmp2 lazy pages);
     /// `None` carries the whole ranking.
     pub(super) depth: Option<usize>,
+    /// How many eligible candidates make the ranking's head (P14).
+    pub(super) head_window: usize,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -58,6 +60,7 @@ impl From<GetContextResult> for AskRetrievalContext {
             indexed: None,
             prepared: Default::default(),
             depth: None,
+            head_window: super::ranked_evidence::HEAD_WINDOW,
         }
     }
 }
@@ -97,6 +100,13 @@ impl AskRetrievalContext {
     /// page a request asks for.
     pub fn with_rank_depth(mut self, depth: usize) -> Self {
         self.depth = Some(depth);
+        self
+    }
+
+    /// Ranks with a head of `window` eligible candidates (a store's
+    /// `head_window`, 64 by default; P14).
+    pub fn with_rank_window(mut self, window: usize) -> Self {
+        self.head_window = window.max(1);
         self
     }
 
@@ -182,7 +192,8 @@ impl AskRetrievalContext {
         let ranker =
             super::answer_ranker::AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
                 .with_lexical_cache(self.lexical_cache.as_deref(), lexical_identity)
-                .with_lexical_witness(self.witness.as_deref());
+                .with_lexical_witness(self.witness.as_deref())
+                .with_head_window(self.head_window);
         let mut candidates = super::bundle_views::answer_evidence_from_bundle(&self.result.bundle)
             .into_iter()
             .filter(|item| admission.admits(item))

@@ -163,15 +163,16 @@ impl IndexedPlan {
         let prefixes = ask.and_then(|(policy, gated)| {
             RankPrefixes::read(asked_text, policy, gated, &indexed, bridge, read.iter())
         });
-        let must = if prefixes.is_some() {
+        let must = if let Some(prefixes) = &prefixes {
             let lifecycle = sidecar.lifecycle_docs(about)?;
+            let anchors = prefixes.anchors();
             read.iter()
                 .filter(|(doc, row)| {
                     lifecycle.contains(*doc)
-                        || row
-                            .terms()
-                            .iter()
-                            .any(|term| term.is_held() && kept.contains(&term.term))
+                        || row.terms().iter().any(|term| {
+                            term.is_held()
+                                && (kept.contains(&term.term) || anchors.contains(&term.term))
+                        })
                 })
                 .map(|(doc, _)| doc.clone())
                 .collect()

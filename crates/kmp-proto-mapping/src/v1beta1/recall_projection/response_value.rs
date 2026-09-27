@@ -131,7 +131,8 @@ fn projection_value(projection: &RecallProjection) -> Value {
             "total": page.total,
             "has_more": page.has_more,
             "next_cursor": page.next_cursor.clone().map(Value::String).unwrap_or(Value::Null),
-            "minimum_progress_bytes": page.minimum_progress_bytes
+            "minimum_progress_bytes": page.minimum_progress_bytes,
+            "total_is_lower_bound": page.total_is_lower_bound
         },
         "sections": sections,
         "excluded_by_detail": projection.excluded_by_detail,

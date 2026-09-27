@@ -7,9 +7,10 @@ use super::lexical_index::index_limits::IndexLimits;
 /// The file beside a store that tunes when its lexical index is read.
 pub(super) const LEXICAL_INDEX_CONFIG_FILE: &str = "lexical-index.json";
 
-/// Per-store limits of the lexical index (P13):
-/// `{"max_candidate_share_percent":35,"min_about_entries":2250}`, either key
-/// optional. Absent, the store gets [`IndexLimits::DEFAULT`]; unreadable or
+/// Per-store limits of the lexical index (P13) and of the ask ranking's
+/// lazy pages (P14):
+/// `{"max_candidate_share_percent":35,"min_about_entries":2250,
+/// "head_window":64,"continuation_chunk":64}`, every key optional. Absent, the store gets [`IndexLimits::DEFAULT`]; unreadable or
 /// out of range, it is ignored and reported so, and the default applies.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -18,6 +19,10 @@ pub(super) struct LexicalIndexConfig {
     max_candidate_share_percent: Option<u8>,
     #[serde(default)]
     min_about_entries: Option<u64>,
+    #[serde(default)]
+    head_window: Option<usize>,
+    #[serde(default)]
+    continuation_chunk: Option<usize>,
 }
 
 impl LexicalIndexConfig {
@@ -44,11 +49,27 @@ impl LexicalIndexConfig {
                 "{LEXICAL_INDEX_CONFIG_FILE} max_candidate_share_percent is {share}; it must be 1 to 100"
             ));
         }
+        let head_window = config.head_window.unwrap_or(defaults.head_window);
+        let continuation_chunk = config
+            .continuation_chunk
+            .unwrap_or(defaults.continuation_chunk);
+        for (key, value) in [
+            ("head_window", head_window),
+            ("continuation_chunk", continuation_chunk),
+        ] {
+            if !(1..=4096).contains(&value) {
+                return Err(format!(
+                    "{LEXICAL_INDEX_CONFIG_FILE} {key} is {value}; it must be 1 to 4096"
+                ));
+            }
+        }
         Ok(IndexLimits {
             max_candidate_share_percent: share,
             min_about_entries: config
                 .min_about_entries
                 .unwrap_or(defaults.min_about_entries),
+            head_window,
+            continuation_chunk,
         })
     }
 }
@@ -74,6 +95,15 @@ mod tests {
         assert!(LexicalIndexConfig::parse(r#"{"max_candidate_share_percent":0}"#).is_err());
         assert!(LexicalIndexConfig::parse(r#"{"max_candidate_share_percent":101}"#).is_err());
         assert!(LexicalIndexConfig::parse(r#"{"share":35}"#).is_err());
+        assert_eq!(
+            LexicalIndexConfig::parse(r#"{"head_window":16,"continuation_chunk":8}"#),
+            Ok(IndexLimits {
+                head_window: 16,
+                continuation_chunk: 8,
+                ..IndexLimits::DEFAULT
+            })
+        );
+        assert!(LexicalIndexConfig::parse(r#"{"head_window":0}"#).is_err());
     }
 
     #[test]

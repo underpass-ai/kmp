@@ -90,6 +90,10 @@ fn projection_output_schema() -> Value {
         "integer",
         "Number of eligible expansion items reconstructed by earlier pages.",
     );
+    page["properties"]["total_is_lower_bound"] = described(
+        "boolean",
+        "True when the ask's ranking holds more than this reading carries (kmp2 lazy pages): total and sections.*.remaining are lower bounds and has_more is true.",
+    );
     page["properties"]["minimum_progress_bytes"] = nullable_described(
         "integer",
         "When stalled or core_text_shortened, a sufficient byte allowance for the unshortened core and expansion progress. The returned action adds 10000 bytes for useful expansion instead of negotiating only one item.",

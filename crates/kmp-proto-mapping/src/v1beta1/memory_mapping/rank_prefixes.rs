@@ -4,6 +4,7 @@ use std::sync::Arc;
 use kmp_application::MemoryAnswerPolicy;
 use kmp_proto::v1beta1::AskResponse;
 
+use super::anchor_selection::AnchorSelection;
 use super::answer_selection::{RESTATED_FROM_KEY, was_reached_indirectly};
 use super::indexed_ask::IndexedAsk;
 use super::lexical_bridge::LexicalBridge;
@@ -30,13 +31,14 @@ pub type RankPrefix = (usize, i64, i64);
 /// them; [`Self::certifies`] says, from the ranking the read candidates gave,
 /// whether none left unread could have.
 ///
-/// Not read (`None`, every candidate is read) where the gate may decide by
-/// an anchor (it ranks without the focus filter and cites by anchor), and
-/// where the question has no informative word (the ranker then returns
+/// Under the anchored gate the prefixes are the gate's ranking's, and every
+/// candidate naming an anchor is read. Not read (`None`, every candidate is
+/// read) where the question has no informative word (the ranker then returns
 /// every candidate).
 #[derive(Debug, Clone, Default)]
 pub struct RankPrefixes {
     prefixes: BTreeMap<String, RankPrefix>,
+    anchors: BTreeSet<String>,
 }
 
 impl RankPrefixes {
@@ -53,12 +55,6 @@ impl RankPrefixes {
     ) -> Option<Self> {
         let morphology = Morphology::for_language(indexed.language.as_deref());
         let contract = gated.then(|| QuestionContract::read(question, &morphology));
-        if contract
-            .as_ref()
-            .is_some_and(QuestionContract::requires_anchors)
-        {
-            return None;
-        }
         let asked = contract
             .as_ref()
             .and_then(QuestionContract::asked)
@@ -67,6 +63,38 @@ impl RankPrefixes {
             return None;
         }
         let collection = Arc::new(LexicalCollection::from_indexed(indexed.stats(gated)));
+        // A question whose anchors the gate requires is ranked as the gate
+        // ranks it: once an anchor decides, the question without its
+        // facets, the focus counted but not required. Every candidate that
+        // names an anchor is read (`anchors`): the gate cites among them in
+        // rank order, and its proof keeps them.
+        let mut anchors = BTreeSet::new();
+        let asked = match contract
+            .as_ref()
+            .filter(|contract| contract.requires_anchors())
+        {
+            Some(contract) => {
+                anchors = contract
+                    .anchors()
+                    .iter()
+                    .map(|anchor| anchor.term.clone())
+                    .collect();
+                match AnchorSelection::read(
+                    contract,
+                    |term| collection.content.document_frequency(term),
+                    collection.content.documents(),
+                ) {
+                    AnchorSelection::Anchored { .. } => {
+                        contract.anchored_asked().unwrap_or(question)
+                    }
+                    _ => asked,
+                }
+            }
+            None => asked,
+        };
+        if informative_terms(asked, &morphology).is_empty() {
+            return None;
+        }
         let seed = indexed.seed_documents(gated);
         let lexicon = Lexicon::build(
             asked,
@@ -97,7 +125,13 @@ impl RankPrefixes {
                 (doc.clone(), prefix)
             })
             .collect();
-        Some(Self { prefixes })
+        Some(Self { prefixes, anchors })
+    }
+
+    /// The question's anchor terms, when the gate may decide by one: every
+    /// candidate carrying one is read.
+    pub fn anchors(&self) -> &BTreeSet<String> {
+        &self.anchors
     }
 
     /// A candidate's prefix.

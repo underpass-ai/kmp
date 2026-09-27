@@ -153,7 +153,8 @@ A store tunes both limits in `lexical-index.json` beside it (acknowledged on
 it is reported as ignored and the defaults apply):
 
 ```json
-{"max_candidate_share_percent": 35, "min_about_entries": 2250}
+{"max_candidate_share_percent": 35, "min_about_entries": 2250,
+ "head_window": 64, "continuation_chunk": 64}
 ```
 
 - `min_about_entries` (default **2,250**): with the index `on`, an about with
@@ -310,6 +311,11 @@ doubt band and `budget.max_entries` carry the whole ranking. A reading that
 does not carry the whole ranking sets `AskResponse.more_ranked` (new additive
 field) and its page offers a deeper continuation.
 
+**Per store.** `lexical-index.json` also takes `head_window` and
+`continuation_chunk` (64 each by default, 1 to 4096; decision of Tirso,
+28 Sept 2026). They shape every ask of the store, indexed or not; the gRPC
+server, which reads no such file, uses the defaults.
+
 **What changed in the answer (breaking):**
 
 - repeated claims move to the end of the head window, not of the whole list;
@@ -319,7 +325,8 @@ field) and its page offers a deeper continuation.
 - a lazy page pages its evidence only: paged supersessions, the balanced
   path and `missing` follow once a reading carries the ranking to its end;
 - `page.total`, `sections.*.remaining` and `more_on_request` count what the
-  reading carries (lower bounds while `has_more` comes from `more_ranked`);
+  reading carries; the page says so with `page.total_is_lower_bound` (and
+  `AskResponse.total_is_lower_bound`, set with `more_ranked`), both additive;
 - the core reserves room for the largest of its first 64 items, not of all.
 
 **Reading fewer candidates.** Each candidate's rank prefix (content focus
@@ -331,14 +338,18 @@ a declared lifecycle can rescue, `lifecycle_docs`) and the best
 and keeps the answer only when it is certified: the reading did not carry
 the whole ranking, and every eligible candidate it carried ranks strictly
 above the best prefix left unread. Otherwise it reads four times as many, up
-to every candidate. The 35 % cost bound applies to each selection. Not read
-lazily (every candidate after the floor is read): questions whose anchors the
-gate requires, questions with no informative word, and asks with
-`max_entries`. `kmp_lexical_answer`/`kmp_lexical_verify` log `planned` (left
+to every candidate. The 35 % cost bound applies to each selection. A
+question whose anchors the gate requires is ranked as the gate ranks it
+(once an anchor decides: the question without its facets, the focus counted
+but not required) and every candidate naming one of its anchors is always
+read: the gate cites among them in rank order and its proof keeps them. Not
+read lazily (every candidate after the floor is read): questions with no
+informative word, and asks with `max_entries`. `kmp_lexical_answer`/`kmp_lexical_verify` log `planned` (left
 by the floor) beside `candidates` (read by top-k).
 
 **Exactness.** `maxscore_parity_tests.rs`: randomized stores (90 and 260
-memories, with and without the shipped bridge) answered from the index with
+memories, with and without the shipped bridge, half the questions naming an
+anchor the gate requires) answered from the index with
 MaxScore and top-k at tail depths 0, 5 and 70 equal the whole about at the
 same depth, field for field; and over MCP, every lazy page equals the whole
 about's page byte for byte and the pages of one ask concatenate to the

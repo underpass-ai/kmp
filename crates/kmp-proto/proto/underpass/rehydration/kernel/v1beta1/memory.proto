@@ -524,6 +524,10 @@ message AskResponse {
   // tail, and a continuation reads deeper. False on a reading carried to
   // the end.
   bool more_ranked = 11;
+  // The counts a page of this reading reports (page.total, sections.*.remaining,
+  // more_on_request) are lower bounds: the ranking holds more than the
+  // reading carries (P14). Set with more_ranked.
+  bool total_is_lower_bound = 12;
 }
 
 enum AnswerStatus {
@@ -1595,6 +1599,9 @@ message RecallProjectionPage {
   optional string next_cursor = 5;
   // A sufficient byte allowance for unshortened core and expansion progress.
   optional uint64 minimum_progress_bytes = 6;
+  // total, and each section's remaining, count only what this reading carries;
+  // the ranking holds more (P14, kmp2 lazy pages). has_more is then true.
+  bool total_is_lower_bound = 7;
 }
 
 // Only counts a caller cannot derive. core and excluded_by_detail are static:

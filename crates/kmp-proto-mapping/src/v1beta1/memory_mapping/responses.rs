@@ -452,6 +452,7 @@ pub fn ask_response_from_result(
         retrieval.indexed.as_ref(),
     )?
     .with_gate(retrieval.gate)
+    .with_head_window(retrieval.head_window)
     .with_prepared_cache(&retrieval.prepared, false);
     let doubt = retrieval.doubt.as_ref();
     let ranker = &setup.ranker;
@@ -938,6 +939,7 @@ pub fn ask_response_from_result(
         answer_status: answer_status as i32,
         unknown_reason: unknown_reason as i32,
         more_ranked,
+        total_is_lower_bound: more_ranked,
     })
 }
 
