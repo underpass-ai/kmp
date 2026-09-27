@@ -20,6 +20,7 @@ use super::ask_gate::AskGate;
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
+use super::concept_coverage::ConceptCoverage;
 use super::content_scores::ContentScores;
 use super::doubt_verdicts::DoubtVerdicts;
 use super::gate_doubt::GateDoubt;
@@ -833,12 +834,35 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if evidence.is_empty() {
             return MemoryConfidence::Unknown;
         }
-        let question_terms = informative_terms(question, &self.context.morphology);
-        if question_terms.is_empty() {
+        let coverage = self.concept_coverage(question, evidence);
+        if coverage.asked == 0 {
             return MemoryConfidence::Low;
         }
+        let share = coverage.share();
+        if share >= 0.6 {
+            MemoryConfidence::High
+        } else if share >= 0.3 {
+            MemoryConfidence::Medium
+        } else if self.bridged_coverage(question, evidence) >= BRIDGED_COVERAGE_FOR_MEDIUM {
+            // No words in common and most of the meaning by the table's
+            // lights: found, in other words. Abstention finally has a signal
+            // that is not the one retrieval failed on.
+            MemoryConfidence::Medium
+        } else {
+            MemoryConfidence::Low
+        }
+    }
+
+    /// The most question concepts any one retained item is credited with,
+    /// beside how many the question asks: what `confidence` reads, as counts.
+    pub(super) fn concept_coverage(
+        &self,
+        question: &str,
+        evidence: &[MemoryEvidence],
+    ) -> ConceptCoverage {
+        let question_terms = informative_terms(question, &self.context.morphology);
         let binding = IdentifierBinding::read(question, &self.context.morphology);
-        let best_matches = evidence
+        let matched = evidence
             .iter()
             .map(|item| {
                 let searchable =
@@ -849,18 +873,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
             })
             .max()
             .unwrap_or_default();
-        let coverage = best_matches as f64 / concept_count(&question_terms) as f64;
-        if coverage >= 0.6 {
-            MemoryConfidence::High
-        } else if coverage >= 0.3 {
-            MemoryConfidence::Medium
-        } else if self.bridged_coverage(question, evidence) >= BRIDGED_COVERAGE_FOR_MEDIUM {
-            // No words in common and most of the meaning by the table's
-            // lights: found, in other words. Abstention finally has a signal
-            // that is not the one retrieval failed on.
-            MemoryConfidence::Medium
-        } else {
-            MemoryConfidence::Low
+        ConceptCoverage {
+            matched,
+            asked: concept_count(&question_terms),
         }
     }
 

@@ -108,6 +108,11 @@ impl<'a> AskSetup<'a> {
             && !self.ranker.memory_names_any(item, &self.asked_anchors)
     }
 
+    /// Whether the question excluded an identifier (`excluding C7`).
+    pub(super) fn excludes_an_anchor(&self) -> bool {
+        !self.negated.is_empty()
+    }
+
     pub(super) fn policy_is_strict(policy: MemoryAnswerPolicy) -> bool {
         matches!(
             policy,

@@ -586,6 +586,29 @@ pub fn ask_response_from_result(
     } else {
         confidence
     };
+    // A store that asked for it states confidence through the calibration
+    // table (P16): a `high` its rules do not stand behind reads `medium`.
+    let confidence = match retrieval
+        .gate
+        .and_then(|gate| gate.confidence_calibration())
+    {
+        Some(table) => table.apply(
+            confidence,
+            &super::confidence_traits::ConfidenceTraits {
+                branch: super::confidence_branch::ConfidenceBranch::read(
+                    verdict.is_some(),
+                    retained_evidence,
+                ),
+                coverage: ranker.concept_coverage(asked, retained_evidence),
+                negated_anchor: setup.excludes_an_anchor(),
+                cited: retained_evidence.len(),
+                enumerative: contract.is_some_and(|contract| {
+                    contract.form() == super::question_form::QuestionForm::Enumerative
+                }),
+            },
+        ),
+        None => confidence,
+    };
     let matched_terms = ranker.matched_query_terms(asked, retained_evidence);
     let matched_relations = ranker.matched_relations(asked, retained_evidence);
     let because = answer_core
