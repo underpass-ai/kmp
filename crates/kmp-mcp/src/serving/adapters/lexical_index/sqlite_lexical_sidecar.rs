@@ -134,6 +134,19 @@ impl SqliteLexicalSidecar {
         })
     }
 
+    /// Whether any about is built.
+    pub(super) fn holds_an_about(&self) -> Result<bool, String> {
+        self.with(|connection| {
+            connection
+                .prepare_cached("SELECT 1 FROM lex_stats LIMIT 1")
+                .map_err(storage)?
+                .query_row([], |_| Ok(()))
+                .optional()
+                .map(|found| found.is_some())
+                .map_err(storage)
+        })
+    }
+
     pub(super) fn node(&self, about: &str, node: &str) -> Result<Option<NodeState>, String> {
         self.with(|connection| {
             connection

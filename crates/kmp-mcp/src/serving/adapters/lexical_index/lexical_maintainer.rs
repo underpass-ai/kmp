@@ -28,6 +28,10 @@ pub(super) const INDEX_VERSION: &str = "lexical-index-3";
 /// reading, or behind a log that was replaced, starts again from nothing.
 pub(super) struct LexicalMaintainer {
     sidecar: Arc<SqliteLexicalSidecar>,
+    /// The position and tail this process last found the log and the
+    /// sidecar agreeing on: while both stand there, the tail event is not
+    /// read and decoded again.
+    verified: std::sync::Mutex<Option<(u64, String)>>,
     /// An about with fewer entries is not built on its first ask.
     min_about_entries: u64,
 }
@@ -46,6 +50,7 @@ impl LexicalMaintainer {
     pub(super) fn new(sidecar: Arc<SqliteLexicalSidecar>) -> Self {
         Self {
             sidecar,
+            verified: std::sync::Mutex::new(None),
             min_about_entries: 0,
         }
     }
@@ -63,10 +68,15 @@ impl LexicalMaintainer {
             return Ok(false);
         }
         let entries = reads
-            .outgoing(about, Some(super::relation_key::RECORDS))
-            .map_err(port)?
-            .len() as u64;
+            .outgoing_count(about, super::relation_key::RECORDS)
+            .map_err(port)?;
         Ok(entries < self.min_about_entries)
+    }
+
+    fn remember(&self, position: u64, tail: &str) {
+        if let Ok(mut verified) = self.verified.lock() {
+            *verified = Some((position, tail.to_string()));
+        }
     }
 
     fn profile(&self) -> &'static str {
@@ -84,7 +94,13 @@ impl LexicalMaintainer {
         let meta = self.sidecar.meta()?;
         let last = reads.last_event_sequence().map_err(port)?;
         let mut reset = !meta.matches(INDEX_VERSION, self.profile());
-        if !reset && meta.position > 0 {
+        let known = self
+            .verified
+            .lock()
+            .ok()
+            .and_then(|verified| verified.clone())
+            .is_some_and(|(position, tail)| position == meta.position && tail == meta.tail);
+        if !reset && meta.position > 0 && !(known && meta.position == last) {
             let tail = reads
                 .event(meta.position)
                 .map_err(port)?
@@ -108,12 +124,14 @@ impl LexicalMaintainer {
         };
         if !reset && position == last && ensure.is_none() {
             // Already at the end of the log: current, nothing to write.
+            self.remember(position, &meta.tail);
             report.committed = true;
             report.elapsed_us = started.elapsed().as_micros() as u64;
             return Ok(report);
         }
         let mut changes = Vec::new();
-        if !reset {
+        // With no about built there is nothing to follow: the position moves.
+        if !reset && self.sidecar.holds_an_about()? {
             for (about, touched) in self.touched(reads, position, last, &mut report)? {
                 if Some(about.as_str()) == ensure {
                     continue;
@@ -137,6 +155,9 @@ impl LexicalMaintainer {
             },
         };
         report.committed = self.sidecar.commit(&meta, &next, reset, &changes)?;
+        if report.committed {
+            self.remember(next.position, &next.tail);
+        }
         report.elapsed_us = started.elapsed().as_micros() as u64;
         Ok(report)
     }

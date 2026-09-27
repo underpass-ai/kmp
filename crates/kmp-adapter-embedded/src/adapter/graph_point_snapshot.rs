@@ -106,6 +106,11 @@ impl GraphPointReads for GraphPointSnapshot<'_> {
     ) -> Result<Vec<NodeRelationProjection>, PortError> {
         self.adjacency(node_id, RelationDirection::Incoming, relation_type)
     }
+
+    fn outgoing_count(&self, node_id: &str, relation_type: &str) -> Result<u64, PortError> {
+        self.0
+            .count_str3_of_kind(Table::Relations, node_id, relation_type)
+    }
 }
 
 impl EmbeddedKernelStore {

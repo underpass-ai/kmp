@@ -572,6 +572,27 @@ impl Ops<'_> {
             .map_err(|error| read_error(table, &error))
     }
 
+    pub(super) fn count_str3_of_kind(
+        &self,
+        table: Table,
+        first: &str,
+        relation_type: &str,
+    ) -> Result<u64, PortError> {
+        if table.key_shape() != KeyShape::Str3 {
+            return Err(scan_shape_mismatch(table, KeyShape::Str3));
+        }
+        let sql = format!(
+            "SELECT count(*) FROM \"{table}\" INDEXED BY \"{table}_by_kind\" WHERE k1 = ? AND k3 = ?"
+        );
+        let mut statement = self.prepare(&sql)?;
+        statement
+            .query_row(rusqlite::params![first, relation_type], |row| {
+                row.get::<_, i64>(0)
+            })
+            .map(|count| count as u64)
+            .map_err(|error| read_error(table, &error))
+    }
+
     pub(super) fn scan_str3_page(
         &self,
         table: Table,
@@ -782,6 +803,14 @@ impl ReadTx for SqliteRead<'_> {
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
     }
+    fn count_str3_of_kind(
+        &self,
+        table: Table,
+        first: &str,
+        relation_type: &str,
+    ) -> Result<u64, PortError> {
+        self.ops().count_str3_of_kind(table, first, relation_type)
+    }
     fn scan_str3_page(
         &self,
         table: Table,
@@ -858,6 +887,14 @@ impl ReadTx for SqliteWrite<'_> {
 
     fn scan_str3_by_first(&self, table: Table, first: &str) -> Result<Vec<Str3Row>, PortError> {
         self.ops().scan_str3_by_first(table, first)
+    }
+    fn count_str3_of_kind(
+        &self,
+        table: Table,
+        first: &str,
+        relation_type: &str,
+    ) -> Result<u64, PortError> {
+        self.ops().count_str3_of_kind(table, first, relation_type)
     }
     fn scan_str3_page(
         &self,
