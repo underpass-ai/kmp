@@ -53,7 +53,22 @@ whole-query performance. No new editorial CI gate is introduced.
 adapter borrows one SQLite `ReadTx` for source ownership, every adjacency page,
 every admitted endpoint's ownership and every returned relation explanation.
 Other graph adapters reject this capability explicitly rather than falling back
-to a full graph load. Ordinary single-destination Trace is unchanged.
+to a full graph load.
+
+Ordinary single-destination Trace (`to` one ref, no `search`, no time
+selection) keeps its own semantics, every stored relation walked from the
+source, but since P11 (DESIGN L7) the embedded store runs it as a bidirectional
+breadth-first search under the same default N/E/D/S (256/2048/128/4096):
+outgoing rows from the source, incoming rows into the destination, one whole
+level of the smaller frontier per turn (`kmp_domain::bidirectional_path_search`).
+When the frontiers meet after a complete level, the path is exactly the one the
+unbounded root-first walk found: every shortest path's rows were read by one
+side, and replaying the root-first walk over the shortest-path subgraph keeps
+its visiting order. A side that runs out proves no directed path, as before. A
+limit reached first returns no path and a `search` report with
+`direction: "bidirectional"` and the stop; `search.widen` offers this port's
+bounded target search at its largest allowance. The kernel query API
+`GetContextPath` and the other adapters keep the unbounded read.
 
 The coordinator is the deterministic **unit-cost baseline**, not M2:
 

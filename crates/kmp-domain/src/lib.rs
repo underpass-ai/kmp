@@ -67,6 +67,11 @@ pub use model::{
     AuthorNodeCard, NodeCardExpectation, NodeCardRejection, node_card_policy, trace_condense_policy,
 };
 pub use model::{
+    ContextPathSearch, TraceProofObject, TraceProofResult, TraceRelationStep, TraceRoute,
+    TraceSearchLimits, TraceSearchRequest, TraceSearchResult, TraceSearchStop,
+    bidirectional_path_search, bounded_trace_search,
+};
+pub use model::{
     EvidenceMissingWitness, EvidencePathBinding, EvidencePathBindings, EvidencePathCandidate,
     EvidencePathGroup, EvidencePathRequest, EvidencePathResult, EvidencePathRole,
     EvidencePathStatus, search_evidence_paths,
@@ -74,10 +79,6 @@ pub use model::{
 pub use model::{
     MAX_EXPANSION_REFS, TraceBodyAdmission, TraceBodyOptions, TraceManifestDigest,
     trace_body_admission,
-};
-pub use model::{
-    TraceProofObject, TraceProofResult, TraceRelationStep, TraceRoute, TraceSearchLimits,
-    TraceSearchRequest, TraceSearchResult, TraceSearchStop, bounded_trace_search,
 };
 pub use projection::NodeBodyDescriptor;
 pub use repositories::TraceSnapshotReader;

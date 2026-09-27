@@ -2546,7 +2546,7 @@
         "openWorldHint": false,
         "readOnlyHint": false
       },
-      "description": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection retains equivalence-aware tracing.",
+      "description": "Choose one mode: to connects known destination refs; search.seek discovers compatible evidence paths from a seed without destinations. Never combine their search options. A to array, search or temporal selection enables a bounded shared search through same-about entries. One shortest discovered route per destination by default; search can retain alternatives and follow each relation type in its chosen direction; paths do not establish answer completeness. A single to without search or temporal selection traces equivalence-aware over every stored relation with a bounded bidirectional search; a work cutoff returns no path, the stop in search and an optional search.widen.",
       "inputSchema": {
         "additionalProperties": false,
         "else": {

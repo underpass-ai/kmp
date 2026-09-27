@@ -202,15 +202,74 @@ where
         subtree_depth: u32,
     ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
         let graph_start = Instant::now();
-        let Some(path_neighborhood) = self
+        let path_neighborhood = self
             .graph_reader
             .load_context_path(
                 root_node_id,
                 target_node_id,
                 clamp_native_graph_subtree_depth(subtree_depth),
             )
-            .await?
-        else {
+            .await?;
+        self.context_path_bundle(
+            path_neighborhood,
+            root_node_id,
+            role,
+            generator_version,
+            graph_start,
+        )
+        .await
+    }
+
+    /// The same path bundle, found by the bounded bidirectional search
+    /// (DESIGN L7). The report says whether a missing path was exhausted or
+    /// cut by a work limit.
+    pub async fn load_bounded_context_path_bundle(
+        &self,
+        root_node_id: &str,
+        target_node_id: &str,
+        role: &str,
+        generator_version: &str,
+        subtree_depth: u32,
+        limits: kmp_domain::TraceSearchLimits,
+    ) -> Result<
+        (
+            Option<KmpBundle>,
+            QueryTimingBreakdown,
+            Option<kmp_domain::ContextPathSearch>,
+        ),
+        ApplicationError,
+    > {
+        let graph_start = Instant::now();
+        let (path_neighborhood, search) = self
+            .graph_reader
+            .load_bounded_context_path(
+                root_node_id,
+                target_node_id,
+                clamp_native_graph_subtree_depth(subtree_depth),
+                limits,
+            )
+            .await?;
+        let (bundle, timing) = self
+            .context_path_bundle(
+                path_neighborhood,
+                root_node_id,
+                role,
+                generator_version,
+                graph_start,
+            )
+            .await?;
+        Ok((bundle, timing, search))
+    }
+
+    async fn context_path_bundle(
+        &self,
+        path_neighborhood: Option<kmp_domain::ContextPathNeighborhood>,
+        root_node_id: &str,
+        role: &str,
+        generator_version: &str,
+        graph_start: Instant,
+    ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
+        let Some(path_neighborhood) = path_neighborhood else {
             return Ok((None, QueryTimingBreakdown::not_found(graph_start.elapsed())));
         };
 

@@ -8,6 +8,13 @@ Choose one Trace mode:
 - Evidence from a seed: `about`, `from`, `search.seek`; each role names a
   relation and direction. Do not combine `seek` with `to` or destination options.
 
+A single `to` string with no search or time options follows every stored
+relation with a bounded search from both ends (256 refs, 2048 rows, 128 hops).
+A path it returns is the shortest one. When a limit stops it first, `trace`
+is empty and `search` names the stop, `direction:"bidirectional"` and the
+destination in `unreached_targets`. That is not absence. `search.widen` is an
+optional larger search you may run instead; it is not a page continuation.
+
 Set the task's clock and cut explicitly for historical questions. Unknown
 clocks, missing obligations and `review_required` survive a successful search.
 A route or a compatible group does not establish truth or answer completeness.

@@ -60,6 +60,19 @@ This mode does not discover destinations from a question, evaluate supersession,
 group. Use temporal verbs to discover entries and Inspect for their full sources.
 
 
+## One destination without search options
+
+`{"about":"about","from":"ref-A","to":"ref-C"}` walks every stored relation
+from A and back from C at once, under the same default allowance (256 refs,
+2048 rows, 128 hops). When the two searches meet, `trace` is the shortest
+directed path. When an allowance runs out first, `trace` is empty, `search`
+reports the stop, `direction:"bidirectional"` and C under `unreached_targets`,
+and a warning says this is not proof. `search.widen` holds a complete bounded
+call with the largest allowance. Run it only if the connection still matters:
+it walks outgoing, source-backed, non-structural links, starts a new selection
+and costs a new read.
+
+
 ## Alternative paths and mixed directions
 
 A later claim R corrects old claim A; verification V verifies R. The stored

@@ -1387,7 +1387,21 @@ pub fn trace_response_from_result(
     let end = offset.saturating_add(entries).min(total);
     let has_more = end < total;
     let mut warnings = Vec::new();
-    if path.is_none() {
+    let partial = result.search().and_then(|search| {
+        super::trace_partial::TracePartial::selection(
+            search,
+            result.root_node_id(),
+            result.target_node_id(),
+        )
+        .map(|selection| (search, selection))
+    });
+    if let Some((search, _)) = &partial {
+        warnings.push(super::trace_partial::TracePartial::warning(
+            search,
+            result.root_node_id(),
+            result.target_node_id(),
+        ));
+    } else if path.is_none() {
         warnings.push(format!(
             "no directed trace reaches `{}` from `{}`; KMP does not present the explored neighborhood as proof",
             result.target_node_id(),
@@ -1416,7 +1430,7 @@ pub fn trace_response_from_result(
     let selection_fingerprint = ReadSelectionFingerprint::trace(&summary, &trace, path.is_some());
     TraceResponse {
         expansion_refusal: None,
-        search: None,
+        search: partial.map(|(_, selection)| selection),
         objects: vec![],
         supports: vec![],
         proof: None,

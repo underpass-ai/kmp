@@ -11,6 +11,24 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- **Breaking: a single-destination `kmp_trace` is bounded.** `to` as one
+  ref with no `search` or time options used to walk everything the source
+  reaches (O(reachable): 390 ms at 16k entries and 2.8 s at 10^5 on the
+  scale probe's chain). It is now a bidirectional breadth-first search from
+  both ends over every stored relation, under the bounded search's default
+  allowance (256 refs, 2048 adjacency rows, 128 hops, 4096 states): 5 ms
+  for the same far destination at 10^5. Where the search meets, the answer
+  is byte for byte the one the unbounded walk gave (all 362 pairs whose
+  unbounded walk stayed within that allowance, on synth 10^3/10^4/10^5, the
+  chain stores and the frozen real store). When an allowance runs out first,
+  the answer is partial instead of a path: `trace` is empty, `search` says
+  `direction: "bidirectional"`, the stop (`node_budget`, `edge_budget`,
+  `depth_budget` or `state_budget`) and the destination in
+  `unreached_targets`, a warning says it is not proof of absence, and
+  `search.widen` is an optional bounded target search with the largest
+  allowance. A search that exhausts a side still answers "no directed trace
+  reaches" as before. The gRPC `KernelMemoryService.Trace` does the same;
+  `KernelQueryService.GetContextPath` keeps the unbounded read.
 - Relations proposed after a write, and every focused `kmp_curate` review,
   read a shortlist instead of the whole about: the facts that share a hard
   anchor with the new one and its 40 best BM25 matches. A write on a

@@ -20,6 +20,9 @@ pub struct GetContextPathQuery {
     pub role: String,
     pub subtree_depth: Option<u32>,
     pub render_options: ContextRenderOptions,
+    /// Work limits for the bounded bidirectional path search (DESIGN L7).
+    /// `None` keeps the unbounded read the kernel query API promises.
+    pub limits: Option<kmp_domain::TraceSearchLimits>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -30,6 +33,7 @@ pub struct GetContextPathResult {
     pub timing: Option<QueryTimingBreakdown>,
     root_node_id: String,
     target_node_id: String,
+    search: Option<kmp_domain::ContextPathSearch>,
 }
 
 impl GetContextPathResult {
@@ -50,6 +54,11 @@ impl GetContextPathResult {
     pub fn target_node_id(&self) -> &str {
         &self.target_node_id
     }
+
+    /// The bounded search's report; `None` for the unbounded read.
+    pub fn search(&self) -> Option<&kmp_domain::ContextPathSearch> {
+        self.search.as_ref()
+    }
 }
 
 #[derive(Debug)]
@@ -58,6 +67,7 @@ pub struct GetContextPathUseCase<G, D, S> {
     detail_reader: D,
     snapshot_store: S,
     generator_version: &'static str,
+    limits: Option<kmp_domain::TraceSearchLimits>,
 }
 
 impl<G, D, S> GetContextPathUseCase<G, D, S>
@@ -77,7 +87,14 @@ where
             detail_reader,
             snapshot_store,
             generator_version,
+            limits: None,
         }
+    }
+
+    /// Find the path with the bounded bidirectional search under `limits`.
+    pub fn with_limits(mut self, limits: Option<kmp_domain::TraceSearchLimits>) -> Self {
+        self.limits = limits;
+        self
     }
 
     pub async fn execute(
@@ -98,8 +115,22 @@ where
         let bundle_reader =
             NodeCentricProjectionReader::new(&self.graph_reader, &self.detail_reader);
 
+        let mut search = None;
         let (bundle, timing) = match if root_node_id == target_node_id {
             (None, None)
+        } else if let Some(limits) = self.limits {
+            let (b, t, found) = bundle_reader
+                .load_bounded_context_path_bundle(
+                    &root_node_id,
+                    &target_node_id,
+                    role,
+                    self.generator_version,
+                    subtree_depth.unwrap_or(MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH),
+                    limits,
+                )
+                .await?;
+            search = found;
+            (b, Some(t))
         } else {
             let (b, t) = bundle_reader
                 .load_context_path_bundle_with_depth(
@@ -135,6 +166,7 @@ where
             timing,
             root_node_id,
             target_node_id,
+            search,
         })
     }
 }
@@ -155,6 +187,7 @@ where
             Arc::clone(&self.snapshot_store),
             self.generator_version,
         )
+        .with_limits(query.limits)
         .execute(
             &query.root_node_id,
             &query.target_node_id,
@@ -363,6 +396,39 @@ mod tests {
             vec!["root-node", "mid-node", "target-node"]
         );
         assert!(result.rendered.sections[1].content.contains("Target"));
+    }
+
+    #[tokio::test]
+    async fn limits_ask_the_reader_for_its_bounded_path_and_keep_the_same_bundle() {
+        let use_case = || {
+            GetContextPathUseCase::new(
+                SeededGraphReader,
+                SeededDetailReader,
+                NoopSnapshotStore,
+                "0.1.0",
+            )
+        };
+        let execute = |limits| async move {
+            use_case()
+                .with_limits(limits)
+                .execute(
+                    "root-node",
+                    "target-node",
+                    "developer",
+                    None,
+                    &ContextRenderOptions::default(),
+                )
+                .await
+                .expect("path context should load")
+        };
+        let unbounded = execute(None).await;
+        let bounded = execute(Some(kmp_domain::TraceSearchLimits::default())).await;
+        assert_eq!(bounded.path_bundle, unbounded.path_bundle);
+        assert!(unbounded.search().is_none());
+        assert!(
+            bounded.search().is_none(),
+            "a reader without a bounded read reports no search"
+        );
     }
 
     #[tokio::test]
