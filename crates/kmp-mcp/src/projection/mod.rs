@@ -16,6 +16,7 @@ pub(crate) mod relation_cursor;
 pub(crate) mod relation_page_budget;
 mod rendering;
 mod serialized_size;
+mod shortened_prose;
 pub(crate) mod summaries_audit_page;
 mod summaries_audit_projection;
 mod temporal_entry_projection;
