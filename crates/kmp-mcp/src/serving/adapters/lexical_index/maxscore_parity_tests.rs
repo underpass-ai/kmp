@@ -170,16 +170,21 @@ fn query(question: &str, policy: MemoryAnswerPolicy, depth: u32) -> AskMemoryQue
     }
 }
 
-/// Every randomized question answered from the index with MaxScore gives
-/// the response reading the whole about gives, field for field; and the
-/// floor did leave candidates unread.
-async fn assert_pruned_asks_equal_the_about(seed_value: u64, bridge: LexicalBridge) {
+/// Every randomized question answered from the index, with MaxScore and
+/// top-k, gives the response reading the whole about gives at the same
+/// depth, field for field; the floor left candidates unread, and top-k read
+/// fewer than the floor left.
+async fn assert_pruned_asks_equal_the_about(
+    seed_value: u64,
+    memories: usize,
+    bridge: LexicalBridge,
+) -> (usize, usize) {
     let mut draw = Draw(seed_value);
     let directory = tempfile::tempdir().expect("store");
     seed(
         &server(directory.path(), LexicalIndexMode::Off),
         &mut draw,
-        90,
+        memories,
     )
     .await;
     let kernel = EmbeddedKernel::open(directory.path()).expect("kernel");
@@ -190,17 +195,34 @@ async fn assert_pruned_asks_equal_the_about(seed_value: u64, bridge: LexicalBrid
     let sidecar =
         LexicalSidecar::open(directory.path(), LexicalIndexMode::On, limits).with_maxscore(true);
     let service = kernel.service();
-    let (mut asks, mut pruned) = (0, 0);
-    for _ in 0..8 {
+    let (mut asks, mut pruned, mut lazy) = (0, 0, 0);
+    for _ in 0..6 {
         let question = question(&mut draw);
-        for (policy, depth) in [
-            (MemoryAnswerPolicy::EvidenceOrUnknown, 2),
-            (MemoryAnswerPolicy::BestEffort, 2),
-            (MemoryAnswerPolicy::EvidenceOrUnknown, 3),
+        for (policy, depth, tail) in [
+            (MemoryAnswerPolicy::EvidenceOrUnknown, 2, 0),
+            (MemoryAnswerPolicy::BestEffort, 2, 0),
+            (MemoryAnswerPolicy::BestEffort, 2, 70),
+            (MemoryAnswerPolicy::EvidenceOrUnknown, 3, 5),
         ] {
             let query = query(&question, policy, depth);
+            let answer = |read: &super::indexed_read::IndexedRead| {
+                ask_response_from_result(
+                    &question,
+                    None,
+                    policy,
+                    None,
+                    AskRetrievalContext::from(read.result.clone())
+                        .with_default_gate()
+                        .with_rank_depth(tail)
+                        .with_indexed(read.indexed.clone()),
+                    &bridge,
+                    &TemporalSelection::Frontier,
+                )
+                .map_err(|status| status.message().to_string())
+            };
+            let gated = policy != MemoryAnswerPolicy::BestEffort;
             let followed = sidecar.catch_up(kernel.store(), Some(ABOUT)).await;
-            let Ok(read) = sidecar
+            let Ok((read, indexed)) = sidecar
                 .indexed_read(
                     kernel.store(),
                     &service,
@@ -208,6 +230,9 @@ async fn assert_pruned_asks_equal_the_about(seed_value: u64, bridge: LexicalBrid
                     followed.as_ref(),
                     &bridge,
                     depth > 2,
+                    Some((policy, gated)),
+                    tail,
+                    &answer,
                 )
                 .await
                 .expect("the index reads")
@@ -215,19 +240,8 @@ async fn assert_pruned_asks_equal_the_about(seed_value: u64, bridge: LexicalBrid
                 continue;
             };
             asks += 1;
-            pruned += usize::from(read.candidates < read.reached);
-            let indexed = ask_response_from_result(
-                &question,
-                None,
-                policy,
-                None,
-                AskRetrievalContext::from(read.result)
-                    .with_default_gate()
-                    .with_indexed(read.indexed),
-                &bridge,
-                &TemporalSelection::Frontier,
-            )
-            .expect("indexed answer");
+            pruned += usize::from(read.planned < read.reached);
+            lazy += usize::from(read.candidates < read.planned);
             let whole = service
                 .ask_on_demand(query, kmp_application::RenderDemand::Skip)
                 .await
@@ -237,26 +251,37 @@ async fn assert_pruned_asks_equal_the_about(seed_value: u64, bridge: LexicalBrid
                 None,
                 policy,
                 None,
-                AskRetrievalContext::from(whole).with_default_gate(),
+                AskRetrievalContext::from(whole)
+                    .with_default_gate()
+                    .with_rank_depth(tail),
                 &bridge,
                 &TemporalSelection::Frontier,
             )
             .expect("about answer");
-            assert_eq!(indexed, about, "{question} ({policy:?}, depth {depth})");
+            assert_eq!(
+                indexed, about,
+                "{question} ({policy:?}, depth {depth}, tail {tail})"
+            );
         }
     }
-    assert!(asks >= 16, "{asks} asks answered from the index");
-    assert!(pruned > 0, "the floor left nothing unread in {asks} asks");
+    assert!(asks >= 12, "{asks} asks answered from the index");
+    (pruned, lazy)
 }
 
 #[tokio::test]
-async fn maxscore_answers_as_the_whole_about_on_randomized_stores() {
-    for seed in [7, 11] {
-        assert_pruned_asks_equal_the_about(seed, LexicalBridge::none()).await;
+async fn maxscore_and_top_k_answer_as_the_whole_about_on_randomized_stores() {
+    let (mut pruned, mut lazy) = (0, 0);
+    for (seed, memories) in [(7, 90), (11, 260)] {
+        let (p, l) =
+            assert_pruned_asks_equal_the_about(seed, memories, LexicalBridge::none()).await;
+        pruned += p;
+        lazy += l;
     }
     let bytes = std::fs::read(shipped_bridge()).expect("the shipped table is committed");
     let bridge = LexicalBridge::from_owned_bytes(bytes).expect("table");
-    assert_pruned_asks_equal_the_about(13, bridge).await;
+    let (p, l) = assert_pruned_asks_equal_the_about(13, 90, bridge).await;
+    assert!(pruned + p > 0, "the floor left nothing unread");
+    assert!(lazy + l > 0, "top-k never read fewer than the floor left");
 }
 
 /// The MCP bytes after the continuation handle, which names a read.
@@ -277,8 +302,21 @@ fn settled(value: &Value) -> String {
     out
 }
 
+/// The evidence ids of a page, in order.
+fn evidence_ids(page: &Value) -> Vec<String> {
+    page.pointer("/proof/evidence")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|item| item["id"].as_str().map(str::to_string))
+        .collect()
+}
+
+/// Lazy kmp2 pages (P14): each page is the whole about's page byte for byte,
+/// and the pages of one ask, concatenated, are the exhaustive ranking in
+/// order (a reading that carries it whole, as the entries cap does).
 #[tokio::test]
-async fn every_page_of_a_pruned_ask_is_the_whole_abouts_page() {
+async fn lazy_pages_concatenate_to_the_exhaustive_ranking() {
     let mut draw = Draw(17);
     let directory = tempfile::tempdir().expect("store");
     std::fs::write(
@@ -287,17 +325,27 @@ async fn every_page_of_a_pruned_ask_is_the_whole_abouts_page() {
     )
     .expect("index limits");
     let off = server(directory.path(), LexicalIndexMode::Off);
-    seed(&off, &mut draw, 80).await;
+    seed(&off, &mut draw, 260).await;
     let on = server(directory.path(), LexicalIndexMode::On);
-    let mut pages = 0;
+    let (mut pages, mut deep) = (0, 0);
     for _ in 0..4 {
-        let base = json!({"about":ABOUT,"question":question(&mut draw),
-            "answer_policy":"best_effort","budget":{"max_bytes":2048,"detail":"full"}});
+        let question = question(&mut draw);
+        let base = json!({"about":ABOUT,"question":question,
+            "answer_policy":"best_effort","budget":{"max_bytes":24_000,"detail":"full"}});
+        let whole = call(
+            &off,
+            "kmp_ask",
+            json!({"about":ABOUT,"question":question,"answer_policy":"best_effort",
+                "budget":{"max_bytes":50_000_000,"detail":"full","max_entries":100_000}}),
+        )
+        .await;
         let mut arguments = base.clone();
-        for _ in 0..40 {
+        let mut concatenated = Vec::new();
+        for _ in 0..200 {
             let with_index = call(&on, "kmp_ask", arguments.clone()).await;
             let without = call(&off, "kmp_ask", arguments.clone()).await;
             assert_eq!(settled(&with_index), settled(&without), "{arguments}");
+            concatenated.extend(evidence_ids(&with_index));
             pages += 1;
             let Some(cursor) = with_index
                 .pointer("/projection/page/next_cursor")
@@ -306,9 +354,27 @@ async fn every_page_of_a_pruned_ask_is_the_whole_abouts_page() {
                 break;
             };
             assert!(cursor.starts_with("kmp2:"), "{cursor}");
+            assert_ne!(
+                with_index["projection"]["page"]["returned"], 0,
+                "a page advances"
+            );
+            deep += usize::from(concatenated.len() > 64);
             arguments = base.clone();
             arguments["page"] = json!({"cursor": cursor});
         }
+        let expected = evidence_ids(&whole);
+        let first = concatenated
+            .iter()
+            .zip(&expected)
+            .position(|(left, right)| left != right);
+        assert_eq!(
+            concatenated,
+            expected,
+            "{question}: {} paged, {} whole, first difference at {first:?}",
+            concatenated.len(),
+            expected.len()
+        );
     }
     assert!(pages > 4, "the asks paged ({pages} pages)");
+    assert!(deep > 0, "no ask paged past its head");
 }

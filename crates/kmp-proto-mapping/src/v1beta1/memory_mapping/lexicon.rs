@@ -185,18 +185,21 @@ impl Lexicon {
     }
 
     pub(super) fn content_score(&self, terms: &AnswerCandidateTerms) -> i64 {
-        ranked_score(
-            self.collection
-                .content
-                .score_weighted(&self.asked, &terms.content_counts),
-        )
+        self.content_score_of(&terms.content_counts)
     }
 
     pub(super) fn direct_score(&self, terms: &AnswerCandidateTerms) -> i64 {
-        ranked_score(
-            self.collection
-                .direct
-                .score_weighted(&self.asked, &terms.direct_counts),
-        )
+        self.direct_score_of(&terms.direct_counts)
+    }
+
+    /// [`Self::content_score`] over counts read elsewhere (the lexical
+    /// index's rows, P14).
+    pub(super) fn content_score_of(&self, content: &TermCounts) -> i64 {
+        ranked_score(self.collection.content.score_weighted(&self.asked, content))
+    }
+
+    /// [`Self::direct_score`] over counts read elsewhere.
+    pub(super) fn direct_score_of(&self, direct: &TermCounts) -> i64 {
+        ranked_score(self.collection.direct.score_weighted(&self.asked, direct))
     }
 }

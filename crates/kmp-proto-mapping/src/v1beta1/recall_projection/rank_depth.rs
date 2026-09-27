@@ -1,5 +1,9 @@
 //! How deep into an ask's ranking a page reads (P14, `kmp2` lazy pages).
 
+/// How many of the best eligible candidates make an ask's head (P14): the
+/// window novelty reorders and every rescue walks from.
+pub const RANK_HEAD_WINDOW: usize = 64;
+
 /// How many tail items a continuation reads beyond the offset it resumes
 /// at: more than a page can carry, so a page never ends for want of them.
 pub const RANK_DEPTH_CHUNK: usize = 64;

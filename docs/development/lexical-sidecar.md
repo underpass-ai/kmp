@@ -289,21 +289,72 @@ carry, which its row does not hold.
 `kmp_lexical_answer` and `kmp_lexical_verify` log `reached` (what the postings
 reached) beside `candidates` (what was read).
 
-Top-k proper (reading only the first page's candidates) is not done: the ask
-response lists every eligible candidate across its pages, reorders the whole
-list (repeated claims last), appends rescues after it and carries totals, so
-page one depends on the tail. The `kmp2` cursor below is the continuation
-contract such a reading would resume from.
+## Top-k and lazy pages (P14)
+
+**On by default**, not measured at scale (Tirso's decision). Breaking for the
+answer's semantics, as decided.
+
+**What a ranking is now.** An ask's ranking is a *head* and a *tail*
+(`RankedEvidence`). The head is the best 64 eligible candidates (the
+diversification window), diversified, with repeated claims at the end of the
+window, followed by every rescue walked from them: restatements, lifecycle
+heads, expansions, the reach graph, associations and the bridge. The tail is
+every other eligible candidate in rank order. The head never depends on the
+tail, so a reading carried to any depth of the tail is a prefix of the
+exhaustive one.
+
+**What a reading carries.** The head and `depth` tail items: none on a first
+page, and on a `kmp2` continuation the resumed offset plus 64
+(`ask_rank_depth`), in MCP and gRPC alike. Semantic retrieval, re-ranking, the
+doubt band and `budget.max_entries` carry the whole ranking. A reading that
+does not carry the whole ranking sets `AskResponse.more_ranked` (new additive
+field) and its page offers a deeper continuation.
+
+**What changed in the answer (breaking):**
+
+- repeated claims move to the end of the head window, not of the whole list;
+  rescues follow the head, not the whole list;
+- `proof.path`, its evidence normalization, `proof.superseded` and conflicts
+  are the head's; the UNKNOWN summary counts the head;
+- a lazy page pages its evidence only: paged supersessions, the balanced
+  path and `missing` follow once a reading carries the ranking to its end;
+- `page.total`, `sections.*.remaining` and `more_on_request` count what the
+  reading carries (lower bounds while `has_more` comes from `more_ranked`);
+- the core reserves room for the largest of its first 64 items, not of all.
+
+**Reading fewer candidates.** Each candidate's rank prefix (content focus
+matches, content BM25, direct BM25, in tenths) is exact from its row
+(`RankPrefixes`, the same integers and the same lexicon the ranker builds).
+The index reads what top-k must (candidates an association, a bridged word or
+a declared lifecycle can rescue, `lifecycle_docs`) and the best
+`64 + depth + 16` others by prefix, ties at the cut included, answers them,
+and keeps the answer only when it is certified: the reading did not carry
+the whole ranking, and every eligible candidate it carried ranks strictly
+above the best prefix left unread. Otherwise it reads four times as many, up
+to every candidate. The 35 % cost bound applies to each selection. Not read
+lazily (every candidate after the floor is read): questions whose anchors the
+gate requires, questions with no informative word, and asks with
+`max_entries`. `kmp_lexical_answer`/`kmp_lexical_verify` log `planned` (left
+by the floor) beside `candidates` (read by top-k).
+
+**Exactness.** `maxscore_parity_tests.rs`: randomized stores (90 and 260
+memories, with and without the shipped bridge) answered from the index with
+MaxScore and top-k at tail depths 0, 5 and 70 equal the whole about at the
+same depth, field for field; and over MCP, every lazy page equals the whole
+about's page byte for byte and the pages of one ask concatenate to the
+exhaustive ranking. `verify` still compares every ask with the about.
 
 ## Continuations: the `kmp2` cursor (P14)
 
-Every Wake/Ask continuation cursor is now `kmp2:<offset>:<boundary>:<hash>`:
+Every Wake/Ask continuation cursor is `kmp2:<offset>:<boundary>:<hash>`:
 `boundary` is a 16-hex digest of the last item the page returned, and `hash`
-still binds the selection. A continuation resumes only after that exact item;
-anything else is `SELECTION_CHANGED` with a restart call, never a shifted
-page. A `kmp1` cursor (the contract before) is refused the same way, with a
-message saying to restart without `page.cursor`. Contract break accepted
-(Tirso, 27 Sept 2026).
+binds the bound arguments, the core and every item the pages before it
+delivered (not the items after it, so a deeper reading keeps it). A
+continuation resumes only after that exact item; anything else is
+`SELECTION_CHANGED` with a restart call, never a shifted page. A `kmp1`
+cursor is refused with its own reason, `RECALL_CURSOR_ERROR_REASON_OUTDATED`
+(gRPC `ABORTED`; MCP feedback code `READ_CURSOR_OUTDATED`), and a restart
+call. Contract break accepted (Tirso, 27 Sept 2026).
 
 ## Write in O(delta) (P13)
 

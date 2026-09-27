@@ -16,6 +16,11 @@ use super::shadow_report::ShadowReport;
 pub(crate) use super::shadow_scope::ShadowScope;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
 use crate::serving::lexical_index_mode::LexicalIndexMode;
+use kmp_proto_mapping::v1beta1::recall_projection::RANK_HEAD_WINDOW as HEAD_WINDOW;
+
+/// Candidates beyond the head window and the tail depth top-k reads at
+/// first, for those the ranking will find ineligible (P14).
+const TOP_K_SLACK: usize = 16;
 
 /// The file the sidecar lives in, beside the store and outside `store/`,
 /// whose format gate refuses files it does not know.
@@ -155,12 +160,19 @@ impl LexicalSidecar {
         self.mode
     }
 
-    /// Reads the part of `query`'s about the postings of its words reach,
-    /// and the whole about's statistics to rank it against (DESIGN L6, P13).
+    /// Answers `query` from the part of its about the postings of its words
+    /// reach, ranked against the whole about's statistics (DESIGN L6, P13).
     /// `Ok(Err(why))` when the ask is not one the index can hold; it then
     /// reads the about. `followed` is the catch-up that preceded the ask:
     /// the read must stand where it left the sidecar. A `deeper` ask is
     /// held only while nothing lies past the indexed depth.
+    ///
+    /// Top-k (P14): with `ask` (the policy, and whether the anchored gate
+    /// reads the question), it reads the candidates the best rank prefixes
+    /// reach for a ranking carried `depth` tail items deep, `answer`s them,
+    /// and keeps the answer only when `RankPrefixes::certifies` it; otherwise
+    /// it reads four times as many, up to every candidate.
+    #[allow(clippy::too_many_arguments)]
     pub(crate) async fn indexed_read(
         &self,
         store: &EmbeddedKernelStore,
@@ -169,7 +181,10 @@ impl LexicalSidecar {
         followed: Option<&CatchUpReport>,
         bridge: &kmp_proto_mapping::v1beta1::LexicalBridge,
         deeper: bool,
-    ) -> Result<Result<IndexedRead, &'static str>, String> {
+        ask: Option<(kmp_application::MemoryAnswerPolicy, bool)>,
+        depth: usize,
+        answer: &(dyn Fn(&IndexedRead) -> Result<kmp_proto::v1beta1::AskResponse, String> + Sync),
+    ) -> Result<Result<(IndexedRead, kmp_proto::v1beta1::AskResponse), &'static str>, String> {
         let Some(sidecar) = self.sidecar.as_ref().map(Arc::clone) else {
             return Ok(Err("the index is closed"));
         };
@@ -194,48 +209,71 @@ impl LexicalSidecar {
             let bounded = (self.mode == LexicalIndexMode::On).then_some(self.limits);
             let prune = self.prune;
             tokio::task::spawn_blocking(move || {
-                IndexedPlan::read(&sidecar, &about, &question, &bridge, bounded, deeper, prune)
+                IndexedPlan::read(
+                    &sidecar, &about, &question, &bridge, bounded, deeper, prune, ask,
+                )
             })
             .await
             .map_err(|error| error.to_string())??
         };
         let plan = match planned {
-            Ok(plan) => plan,
+            Ok(plan) => Arc::new(plan),
             Err(why) => return Ok(Err(why)),
         };
-        let candidates = plan.candidates.clone();
         let plan_us = started.elapsed().as_micros() as u64;
-        let parts = store
-            .read_points(move |reads| {
-                if reads.last_event_sequence()? != position {
-                    return Ok(None);
-                }
-                IndexedParts::new(reads, &sidecar, &about)
-                    .read(&candidates)
-                    .map_err(PortError::Unavailable)
-            })
-            .await
-            .map_err(|error| error.to_string())?;
-        let Some(mut parts) = parts else {
-            return Ok(Err("the store moved"));
-        };
-        parts.read_revision = store
-            .graph_read_revision()
-            .await
-            .map_err(|error| error.to_string())?;
-        let result = service
-            .ask_from_parts(query, parts, kmp_application::RenderDemand::Skip)
-            .await
-            .map_err(|error| error.to_string())?;
-        Ok(Ok(IndexedRead {
-            result,
-            indexed: plan.indexed,
-            reached: plan.reached,
-            candidates: plan.candidates.len(),
-            documents: plan.documents,
-            plan_us,
-            parts_us: started.elapsed().as_micros() as u64 - plan_us,
-        }))
+        let mut limit = HEAD_WINDOW + depth + TOP_K_SLACK;
+        loop {
+            let (candidates, unread) = match plan.select(limit) {
+                Ok(selected) => selected,
+                Err(why) => return Ok(Err(why)),
+            };
+            let read = candidates.len();
+            let parts = {
+                let sidecar = Arc::clone(&sidecar);
+                let about = about.clone();
+                store
+                    .read_points(move |reads| {
+                        if reads.last_event_sequence()? != position {
+                            return Ok(None);
+                        }
+                        IndexedParts::new(reads, &sidecar, &about)
+                            .read(&candidates)
+                            .map_err(PortError::Unavailable)
+                    })
+                    .await
+                    .map_err(|error| error.to_string())?
+            };
+            let Some(mut parts) = parts else {
+                return Ok(Err("the store moved"));
+            };
+            parts.read_revision = store
+                .graph_read_revision()
+                .await
+                .map_err(|error| error.to_string())?;
+            let result = service
+                .ask_from_parts(query, parts, kmp_application::RenderDemand::Skip)
+                .await
+                .map_err(|error| error.to_string())?;
+            let indexed_read = IndexedRead {
+                result,
+                indexed: plan.indexed.clone(),
+                reached: plan.reached,
+                candidates: read,
+                planned: plan.candidates.len(),
+                documents: plan.documents,
+                plan_us,
+                parts_us: started.elapsed().as_micros() as u64 - plan_us,
+            };
+            let response = answer(&indexed_read)?;
+            let certified = plan
+                .prefixes
+                .as_ref()
+                .is_none_or(|prefixes| prefixes.certifies(&response, unread));
+            if certified {
+                return Ok(Ok((indexed_read, response)));
+            }
+            limit = limit.saturating_mul(4);
+        }
     }
 
     /// Leaves MaxScore on or off for this sidecar, whatever the environment

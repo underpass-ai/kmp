@@ -11,6 +11,9 @@ pub(crate) struct IndexedRead {
     /// read once MaxScore left out those below the floor (P14).
     pub(crate) reached: usize,
     pub(crate) candidates: usize,
+    /// How many of those the floor bound left to read; top-k (P14) read
+    /// `candidates` of them.
+    pub(crate) planned: usize,
     /// How many candidates the whole about holds.
     pub(crate) documents: u64,
     /// Microseconds spent choosing the candidates, then reading them and

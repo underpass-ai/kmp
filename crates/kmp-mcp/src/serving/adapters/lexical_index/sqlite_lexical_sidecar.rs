@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -240,6 +240,50 @@ impl SqliteLexicalSidecar {
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(storage)?;
             Ok(IndexedLifecycle::new(frontier, expiring))
+        })
+    }
+
+    /// The candidates a declared lifecycle (`supersedes`, `corrects`,
+    /// `updates_state`) touches: each end's entry, and the evidence that
+    /// supports either end (P14). A lifecycle rescue may start from any of
+    /// them, so top-k always reads them.
+    pub(super) fn lifecycle_docs(&self, about: &str) -> Result<BTreeSet<String>, String> {
+        self.with(|connection| {
+            let mut statement = connection
+                .prepare(
+                    "SELECT source, target FROM lex_relation WHERE about = ?1 \
+                     AND type IN ('supersedes', 'corrects', 'updates_state')",
+                )
+                .map_err(storage)?;
+            let ends = statement
+                .query_map([about], |row| {
+                    Ok([row.get::<_, String>(0)?, row.get::<_, String>(1)?])
+                })
+                .map_err(storage)?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(storage)?
+                .into_iter()
+                .flatten()
+                .collect::<BTreeSet<_>>();
+            let mut docs = ends
+                .iter()
+                .flat_map(|node| [format!("entry:{node}"), format!("detail:{node}")])
+                .collect::<BTreeSet<_>>();
+            let mut supports = connection
+                .prepare_cached(
+                    "SELECT source FROM lex_relation WHERE about = ?1 AND target = ?2 \
+                     AND type = 'supports'",
+                )
+                .map_err(storage)?;
+            for node in &ends {
+                let sources = supports
+                    .query_map(params![about, node], |row| row.get::<_, String>(0))
+                    .map_err(storage)?
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(storage)?;
+                docs.extend(sources.into_iter().map(|source| format!("detail:{source}")));
+            }
+            Ok(docs)
         })
     }
 

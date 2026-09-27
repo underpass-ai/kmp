@@ -102,6 +102,7 @@ mod question_form;
 mod question_intent;
 mod question_time;
 mod question_vocabulary;
+mod rank_prefixes;
 mod ranked_evidence;
 mod ranked_selection;
 mod ranking_focus;
@@ -191,6 +192,7 @@ pub use queries::{
     temporal_query_from_move_proto, temporal_query_from_near_proto, trace_query_from_proto,
     wake_query_from_proto,
 };
+pub use rank_prefixes::{RankPrefix, RankPrefixes};
 pub use relabel::{relabel_command_from_proto, relabel_response_from_outcome};
 pub use relate::{
     curate_paths_reading_from_result, curate_reading_from_result, relate_response_from_result,

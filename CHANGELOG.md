@@ -72,8 +72,25 @@ Detailed notes from the early release cycle remain available in the
 ### Changed
 
 - **Breaking (continuations):** Wake/Ask cursors are `kmp2` (P14): they carry
-  a digest of the item the page ended on and resume only after it. A `kmp1`
-  cursor is refused as `SELECTION_CHANGED` with a restart call.
+  a digest of the item the page ended on and resume only after it, and bind
+  the core and what earlier pages delivered, not what follows. A `kmp1`
+  cursor is refused with the new reason `RECALL_CURSOR_ERROR_REASON_OUTDATED`
+  (gRPC `ABORTED`, MCP `READ_CURSOR_OUTDATED`) and a restart call.
+- **Breaking (answer semantics): top-k with lazy pages** (P14, on by default,
+  not measured at scale). An ask's ranking is a head (the best 64 eligible
+  candidates, diversified, repeated claims at the end of that window, then
+  every rescue walked from them) and a tail (the other eligible candidates in
+  rank order). A first page reads the head; a `kmp2` continuation reads 64
+  tail items past its offset, so pages concatenate to the exhaustive ranking.
+  Changed: repeated claims and rescues are placed after the head window, not
+  after the whole list; `proof.path`, supersessions and conflicts are the
+  head's; the UNKNOWN summary counts the head; a lazy page pages evidence
+  only and sets `AskResponse.more_ranked` (new field 11); `page.total`,
+  `sections.*.remaining` and `more_on_request` count what the reading carries.
+  The lexical index reads only the candidates whose exact rank prefix can
+  reach the page (plus what a rescue needs) and certifies the answer, else
+  reads more. Semantic retrieval, re-ranking, the doubt band and
+  `max_entries` read the whole ranking.
 - «quién» and «con» are stop words, as «who» and «with» are. Lexical index
   version `lexical-index-4`: every sidecar is rebuilt on its next ask.
 - The doubt band no longer reads every candidate's terms twice: the answer

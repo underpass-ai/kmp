@@ -3,7 +3,7 @@ use kmp_proto::v1beta1::MemoryEvidence;
 /// How many of the best eligible candidates make an ask's head (P14): the
 /// window novelty reorders, repeated claims move to the end of, and every
 /// rescue walks from. It is the diversification window.
-pub(super) const HEAD_WINDOW: usize = 64;
+pub(super) const HEAD_WINDOW: usize = crate::v1beta1::recall_projection::RANK_HEAD_WINDOW;
 
 /// One ranking of an ask's candidates (P14, `kmp2` lazy pages).
 ///

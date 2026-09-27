@@ -1,7 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use kmp_application::MemoryAnswerPolicy;
 use kmp_proto_mapping::v1beta1::{
     FloorBound, IndexedAsk, IndexedFieldStats, IndexedQuestion, LexicalBridge, LexicalRow,
+    RankPrefix, RankPrefixes,
 };
 
 use super::about_stats::AboutStats;
@@ -18,6 +20,12 @@ pub(super) struct IndexedPlan {
     pub(super) candidates: BTreeSet<String>,
     /// How many candidates the postings reached before the floor bound.
     pub(super) reached: usize,
+    /// Every candidate's rank prefix, when top-k may read fewer (P14).
+    pub(super) prefixes: Option<RankPrefixes>,
+    /// What top-k always reads: candidates an association, a bridged word
+    /// or a declared lifecycle can rescue.
+    must: BTreeSet<String>,
+    bounded: Option<IndexLimits>,
     /// How many candidates the whole about holds.
     pub(super) documents: u64,
     pub(super) indexed: IndexedAsk,
@@ -31,6 +39,8 @@ impl IndexedPlan {
     /// to measure it. `prune` leaves unread the candidates the floor bound
     /// refuses (P14, on unless `KMP_LEXICAL_MAXSCORE=off`); the bound applies
     /// to what is left to read.
+    /// `ask` is the policy and whether the anchored gate reads the
+    /// question, for top-k (P14); `None` plans no top-k.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn read(
         sidecar: &SqliteLexicalSidecar,
@@ -40,7 +50,9 @@ impl IndexedPlan {
         bounded: Option<IndexLimits>,
         deeper: bool,
         prune: bool,
+        ask: Option<(MemoryAnswerPolicy, bool)>,
     ) -> Result<Result<Self, &'static str>, String> {
+        let asked_text = question;
         let Some(stats) = sidecar.stats(about)? else {
             return Ok(Err("about not built"));
         };
@@ -109,24 +121,27 @@ impl IndexedPlan {
         // MaxScore against the floor (P14): a candidate no reading of the
         // question lets clear it, and that carries no association or bridged
         // word, is ranked by nobody and rescued by nobody; it is left unread.
+        // The associations of the question's words include the words
+        // themselves, which the bound weighs; what else they bring, and
+        // every bridged word, keeps a candidate read.
+        let asked = question.terms();
+        let mut kept = associated
+            .into_iter()
+            .filter(|term| !asked.contains(term))
+            .collect::<BTreeSet<_>>();
+        kept.extend(bridged);
+        // MaxScore against the floor (P14): a candidate no reading of the
+        // question lets clear it, and that carries no association or bridged
+        // word, is ranked by nobody and rescued by nobody; it is left unread.
         let bound = prune
             .then(|| {
-                // The associations of the question's words include the
-                // words themselves, which the bound weighs; what else they
-                // bring, and every bridged word, keeps a candidate read.
-                let asked = question.terms();
-                let mut kept = associated
-                    .into_iter()
-                    .filter(|term| !asked.contains(term))
-                    .collect::<BTreeSet<_>>();
-                kept.extend(bridged);
                 FloorBound::read(
                     &question,
                     &plain,
                     &aliased,
                     bridge,
                     vocabulary.as_deref().map(Vec::as_slice),
-                    kept,
+                    kept.clone(),
                     reached.values(),
                 )
             })
@@ -135,11 +150,7 @@ impl IndexedPlan {
         let read = reached
             .into_iter()
             .filter(|(_, row)| !bound.as_ref().is_some_and(|bound| bound.prunes(row)))
-            .map(|(candidate, _)| candidate)
-            .collect::<BTreeSet<_>>();
-        if let Some(why) = bounded.and_then(|limits| limits.too_many(read.len(), stats.documents)) {
-            return Ok(Err(why));
-        }
+            .collect::<BTreeMap<_, _>>();
         let indexed = IndexedAsk {
             language: stats.language.clone(),
             plain,
@@ -148,12 +159,78 @@ impl IndexedPlan {
             vocabulary,
             seed_rows: Some(seed_rows),
         };
+        // Top-k (P14): each candidate's rank prefix, and what is always read.
+        let prefixes = ask.and_then(|(policy, gated)| {
+            RankPrefixes::read(asked_text, policy, gated, &indexed, bridge, read.iter())
+        });
+        let must = if prefixes.is_some() {
+            let lifecycle = sidecar.lifecycle_docs(about)?;
+            read.iter()
+                .filter(|(doc, row)| {
+                    lifecycle.contains(*doc)
+                        || row
+                            .terms()
+                            .iter()
+                            .any(|term| term.is_held() && kept.contains(&term.term))
+                })
+                .map(|(doc, _)| doc.clone())
+                .collect()
+        } else {
+            BTreeSet::new()
+        };
         Ok(Ok(Self {
-            candidates: read,
+            candidates: read.into_keys().collect(),
             reached: count,
+            prefixes,
+            must,
+            bounded,
             documents: stats.documents,
             indexed,
         }))
+    }
+
+    /// The candidates to read for a ranking carried `limit` eligible
+    /// candidates deep, and the best rank prefix left unread (`None`:
+    /// every candidate is read), or why the index does not answer.
+    ///
+    /// Without prefixes every candidate is read. With them, the ones top-k
+    /// must read and the best `limit` others by prefix, ties at the cut
+    /// included, so an unread candidate always ranks strictly below every
+    /// one read with a lower prefix.
+    pub(super) fn select(
+        &self,
+        limit: usize,
+    ) -> Result<(BTreeSet<String>, Option<RankPrefix>), &'static str> {
+        let (chosen, unread) = match &self.prefixes {
+            None => (self.candidates.clone(), None),
+            Some(prefixes) => {
+                let mut chosen = self.must.clone();
+                let mut unread = None;
+                let mut taken = 0usize;
+                let mut last = None;
+                for (prefix, doc) in prefixes.ordered() {
+                    if self.must.contains(&doc) {
+                        continue;
+                    }
+                    if taken < limit || last == Some(prefix) {
+                        chosen.insert(doc);
+                        taken += 1;
+                        last = Some(prefix);
+                    } else {
+                        unread = Some(prefix);
+                        break;
+                    }
+                }
+                (chosen, unread)
+            }
+        };
+        if let Some(why) = self
+            .bounded
+            .and_then(|limits| limits.too_many(chosen.len(), self.documents))
+        {
+            return Err(why);
+        }
+        Ok((chosen, unread))
     }
 }
 
