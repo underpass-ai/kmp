@@ -16,6 +16,8 @@ pub mod relation_signal;
 pub mod relation_type;
 pub mod resolution_tier;
 pub mod role;
+pub mod search_expansion_fault;
+pub mod search_expansions;
 pub mod search_summary;
 pub mod search_summary_fault;
 pub mod source_kind;
@@ -48,6 +50,8 @@ pub use relation_type::{
 };
 pub use resolution_tier::{ResolutionTier, TierBudget};
 pub use role::Role;
+pub use search_expansion_fault::SearchExpansionFault;
+pub use search_expansions::SearchExpansions;
 pub use search_summary::SearchSummary;
 pub use search_summary_fault::SearchSummaryFault;
 pub use source_kind::SourceKind;

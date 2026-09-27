@@ -46,6 +46,9 @@ mod doubt_entry;
 mod doubt_judgement;
 mod doubt_passage;
 mod doubt_verdicts;
+mod expansion_rescue;
+#[cfg(test)]
+mod expansion_rescue_tests;
 mod gate_doubt;
 mod gate_verdict;
 mod hybrid_evidence;

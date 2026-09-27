@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::MemoryAnswerPolicy;
-use kmp_domain::KmpBundle;
+use kmp_domain::{KmpBundle, SearchExpansions};
 use kmp_proto::v1beta1::{AnswerStatus, MemoryConfidence, MemoryEvidence, UnknownReason};
 
 use super::anchor_rescue::AnchorRescue;
@@ -23,6 +23,7 @@ use super::candidate_temporal_state::CandidateTemporalState;
 use super::concept_coverage::ConceptCoverage;
 use super::content_scores::ContentScores;
 use super::doubt_verdicts::DoubtVerdicts;
+use super::expansion_rescue::ExpansionRescue;
 use super::gate_doubt::GateDoubt;
 use super::gate_verdict::GateVerdict;
 use super::identifier_binding::IdentifierBinding;
@@ -363,12 +364,28 @@ impl<'a> AnswerEvidenceRanker<'a> {
         }
         .rescue(&answer, rejected);
         answer.extend(lifecycle);
+        let (expanded, rejected) = ExpansionRescue {
+            context: &self.context,
+            question,
+            question_terms,
+            strict: strict_focus.as_ref(),
+        }
+        .rescue(rejected);
         let (associated, rejected) = self.associated_candidates(rejected, lexicon);
         let (bridged, rejected) = self.bridged_candidates(rejected, lexicon);
         let rejected = rejected.into_iter().map(|(item, _)| item).collect();
-        answer.extend(self.reached_candidates(&answer, rejected));
+        // The graph walks from what the question matched in its own words,
+        // never from what an expansion carried.
+        let reached = self.reached_candidates(&answer, rejected);
+        answer.extend(expanded);
+        answer.extend(reached);
         answer.extend(associated);
         answer.extend(bridged);
+        // The expansions were a search surface; a reader is shown the memory.
+        for item in &mut answer {
+            item.metadata
+                .retain(|key, _| !SearchExpansions::is_metadata_key(key));
+        }
         (answer, scores)
     }
 

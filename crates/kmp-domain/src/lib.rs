@@ -59,7 +59,8 @@ pub use value_objects::{
 };
 pub use value_objects::{MAX_RELATION_SIGNAL_WEIGHT, RelationSignal};
 pub use value_objects::{
-    QuestionRendering, QuestionRenderingFault, SearchSummary, SearchSummaryFault,
+    QuestionRendering, QuestionRenderingFault, SearchExpansionFault, SearchExpansions,
+    SearchSummary, SearchSummaryFault,
 };
 pub use value_objects::{RelationExplanation, RelationSemanticClass};
 

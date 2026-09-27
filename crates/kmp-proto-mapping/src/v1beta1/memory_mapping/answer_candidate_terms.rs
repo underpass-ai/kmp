@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use kmp_domain::SearchSummary;
+use kmp_domain::{SearchExpansions, SearchSummary};
 use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::answer_recall_context::AnswerRecallContext;
@@ -22,6 +22,12 @@ pub(super) struct AnswerCandidateTerms {
     /// The writer's rendering alone; empty when there is none or it failed
     /// the lint.
     pub(super) summary: BTreeSet<String>,
+    /// The judged expansions alone: questions, paraphrases and keys in the
+    /// other language the writer proposed and a judge accepted. A surface of
+    /// its own (field X), never content: a candidate the question reaches
+    /// only here is rescued outside the core ([`super::expansion_rescue`]).
+    /// Empty when there are none or their judgement was bound to other text.
+    pub(super) expansion_counts: TermCounts,
     pub(super) direct_counts: TermCounts,
     pub(super) claim: BTreeSet<String>,
     pub(super) relation_why: BTreeSet<String>,
@@ -48,6 +54,13 @@ impl AnswerCandidateTerms {
         }
         // A set of terms is the keys of its counts: read the text once.
         let content_counts = informative_term_counts(&content_text, morphology);
+        let expansions =
+            SearchExpansions::stored(&item.text, |key| item.metadata.get(key).map(String::as_str));
+        let expansion_counts = if expansions.is_empty() {
+            TermCounts::default()
+        } else {
+            informative_term_counts(&expansions.join(" "), morphology)
+        };
         let content = content_counts.terms().cloned().collect::<BTreeSet<_>>();
         let mut direct_text = format!("{} {}", content_text, item.source);
         direct_text.push(' ');
@@ -57,10 +70,14 @@ impl AnswerCandidateTerms {
             direct_text.push_str(&ref_words(supported_ref));
         }
         for (key, value) in &item.metadata {
-            // The summary is content, above, or nothing at all; the keys the
-            // ranker writes about how a candidate was retrieved are read by
-            // people and never searched.
-            if is_retrieval_provenance(key) || key == SearchSummary::METADATA_KEY {
+            // The summary is content, above, or nothing at all; the
+            // expansions are their own surface; the keys the ranker writes
+            // about how a candidate was retrieved are read by people and
+            // never searched.
+            if is_retrieval_provenance(key)
+                || key == SearchSummary::METADATA_KEY
+                || SearchExpansions::is_metadata_key(key)
+            {
                 continue;
             }
             direct_text.push(' ');
@@ -111,6 +128,7 @@ impl AnswerCandidateTerms {
             content_counts,
             text,
             summary,
+            expansion_counts,
             direct_counts,
             claim,
             relation_why,
