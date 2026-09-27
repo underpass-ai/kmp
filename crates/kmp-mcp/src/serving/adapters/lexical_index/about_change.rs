@@ -16,6 +16,8 @@ pub(super) struct AboutChange {
     pub(super) nodes: Vec<(String, Option<NodeState>)>,
     pub(super) relations: Vec<(RelationKey, Option<LanguageSignals>)>,
     pub(super) rows: Vec<(String, Option<LexicalRow>)>,
+    /// Nodes one hop past the ask's depth that came (`true`) or went.
+    pub(super) far: Vec<(String, bool)>,
     pub(super) signals: LanguageSignals,
     pub(super) summaries: u64,
     /// The language the rows were read in.

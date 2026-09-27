@@ -152,7 +152,8 @@ impl AskRetrievalContext {
         let lifecycle = super::responses::lifecycle_for(&bounded, &admission);
         let ranker =
             super::answer_ranker::AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
-                .with_lexical_cache(self.lexical_cache.as_deref(), lexical_identity);
+                .with_lexical_cache(self.lexical_cache.as_deref(), lexical_identity)
+                .with_lexical_witness(self.witness.as_deref());
         let mut candidates = super::bundle_views::answer_evidence_from_bundle(&self.result.bundle)
             .into_iter()
             .filter(|item| admission.admits(item))

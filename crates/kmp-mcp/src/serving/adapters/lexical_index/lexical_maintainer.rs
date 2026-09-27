@@ -28,8 +28,10 @@ pub(super) const INDEX_VERSION: &str = "lexical-index-1";
 /// reading, or behind a log that was replaced, starts again from nothing.
 pub(super) struct LexicalMaintainer {
     sidecar: Arc<SqliteLexicalSidecar>,
-    aliased: bool,
 }
+
+/// The readings every row carries: plain and with alias terms.
+const PROFILE: &str = "plain+aliased";
 
 /// What the events after the sidecar's position touched, per about.
 #[derive(Default)]
@@ -39,12 +41,12 @@ struct Touched {
 }
 
 impl LexicalMaintainer {
-    pub(super) fn new(sidecar: Arc<SqliteLexicalSidecar>, aliased: bool) -> Self {
-        Self { sidecar, aliased }
+    pub(super) fn new(sidecar: Arc<SqliteLexicalSidecar>) -> Self {
+        Self { sidecar }
     }
 
     fn profile(&self) -> &'static str {
-        if self.aliased { "aliased" } else { "plain" }
+        PROFILE
     }
 
     /// Follows the log to its end over one snapshot and builds `ensure`
@@ -92,7 +94,7 @@ impl LexicalMaintainer {
         }
         if let Some(about) = ensure {
             let reader = AboutReader::new(reads, about);
-            changes.push(AboutRebuild::new(&reader, self.aliased).run()?);
+            changes.push(AboutRebuild::new(&reader).run()?);
             report.abouts_rebuilt += 1;
         }
         report.rows = changes.iter().map(|change| change.rows.len() as u64).sum();
@@ -159,14 +161,14 @@ impl LexicalMaintainer {
             .stats(about)?
             .ok_or_else(|| format!("lexical index: about `{about}` is not built"))?;
         let refresh = AboutRefresh::new(&reader, WorkingSet::new(&self.sidecar, about));
-        match refresh.run(&stats, self.aliased, &touched.nodes, &touched.relations)? {
+        match refresh.run(&stats, &touched.nodes, &touched.relations)? {
             Refreshed::Changed(change) => {
                 report.abouts_refreshed += 1;
                 Ok(change)
             }
             Refreshed::LanguageMoved => {
                 report.abouts_rebuilt += 1;
-                AboutRebuild::new(&reader, self.aliased).run()
+                AboutRebuild::new(&reader).run()
             }
         }
     }

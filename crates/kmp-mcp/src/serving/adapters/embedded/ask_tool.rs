@@ -1,7 +1,9 @@
 use super::super::doubt_band_judge::DoubtBandJudge;
 use super::super::embedded_errors::{kernel_error, mapping_error};
 use super::super::judgement_reranker::JudgementReranker;
-use super::super::lexical_index::lexical_sidecar::{LEXICAL_ASK_DEPTH, LexicalSidecar};
+use super::super::lexical_index::lexical_sidecar::{
+    LEXICAL_ASK_DEPTH, LexicalSidecar, ShadowScope,
+};
 use super::frozen_recall_reads::FrozenRecallReads;
 use super::read_telemetry::EmbeddedReadTelemetry;
 use crate::projection::ask_from_response;
@@ -135,9 +137,7 @@ impl<'a> EmbeddedAskTool<'a> {
         let about = query.about.clone();
         // The sidecar indexes what an ask with no depth, dimensions or clock
         // of its own reads.
-        let indexed_read = query.depth == u32::from(LEXICAL_ASK_DEPTH)
-            && query.dimensions == kmp_domain::DimensionSelection::default()
-            && query.temporal == kmp_domain::TemporalSelection::Frontier;
+        let read = ShadowScope::of(&query, LEXICAL_ASK_DEPTH);
         let followed = match self.lexical {
             Some((sidecar, store)) => sidecar.catch_up(store, Some(&about)).await,
             None => None,
@@ -249,7 +249,7 @@ impl<'a> EmbeddedAskTool<'a> {
         response.warnings.extend(warnings);
         if let (Some((sidecar, store)), Some(witness)) = (self.lexical, witness) {
             sidecar
-                .shadow(store, &about, witness.take(), indexed_read, followed)
+                .shadow(store, &about, witness.take(), read, followed)
                 .await;
         }
         Ok((response, revision))

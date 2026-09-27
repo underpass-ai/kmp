@@ -9,6 +9,7 @@ use super::catch_up_report::CatchUpReport;
 use super::lexical_maintainer::LexicalMaintainer;
 use super::shadow_comparison::ShadowComparison;
 use super::shadow_report::ShadowReport;
+pub(crate) use super::shadow_scope::ShadowScope;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
 use crate::serving::environment::{LEXICAL_INDEX_ENV, optional_env_string};
 
@@ -27,7 +28,6 @@ pub(crate) const LEXICAL_ASK_DEPTH: u8 = super::about_rebuild::ASK_DEPTH;
 pub(crate) struct LexicalSidecar {
     sidecar: Option<Arc<SqliteLexicalSidecar>>,
     maintainer: Option<Arc<LexicalMaintainer>>,
-    aliased: bool,
 }
 
 pub(crate) fn lexical_index_path(data_dir: &Path) -> PathBuf {
@@ -36,8 +36,7 @@ pub(crate) fn lexical_index_path(data_dir: &Path) -> PathBuf {
 
 impl LexicalSidecar {
     /// Opens the sidecar beside the store unless the operator turned it off.
-    /// `aliased` is the reading asks use under the store's anchored gate.
-    pub(crate) fn open(data_dir: &Path, aliased: bool) -> Self {
+    pub(crate) fn open(data_dir: &Path) -> Self {
         if optional_env_string(LEXICAL_INDEX_ENV).as_deref() == Some("off") {
             return Self::disabled();
         }
@@ -45,12 +44,8 @@ impl LexicalSidecar {
             Ok(sidecar) => {
                 let sidecar = Arc::new(sidecar);
                 Self {
-                    maintainer: Some(Arc::new(LexicalMaintainer::new(
-                        Arc::clone(&sidecar),
-                        aliased,
-                    ))),
+                    maintainer: Some(Arc::new(LexicalMaintainer::new(Arc::clone(&sidecar)))),
                     sidecar: Some(sidecar),
-                    aliased,
                 }
             }
             Err(error) => {
@@ -64,7 +59,6 @@ impl LexicalSidecar {
         Self {
             sidecar: None,
             maintainer: None,
-            aliased: false,
         }
     }
 
@@ -114,7 +108,7 @@ impl LexicalSidecar {
     }
 
     /// Compares the sidecar with what an ask measured and logs the result.
-    /// `indexed_read` says the ask read what the sidecar indexes; `before`
+    /// `read` says how the ask's read relates to what the sidecar indexes; `before`
     /// is the catch-up that preceded the ask. An about found to differ is
     /// forgotten, so the next ask builds it again.
     pub(crate) async fn shadow(
@@ -122,27 +116,32 @@ impl LexicalSidecar {
         store: &EmbeddedKernelStore,
         about: &str,
         observation: Option<LexicalObservation>,
-        indexed_read: bool,
+        read: ShadowScope,
         before: Option<CatchUpReport>,
     ) -> Option<ShadowReport> {
         let sidecar = Arc::clone(self.sidecar.as_ref()?);
-        let report = match (indexed_read, observation, before) {
-            (false, _, _) => ShadowReport::not_comparable("not the indexed read"),
+        let report = match (read, observation, before) {
+            (ShadowScope::Other, _, _) => ShadowReport::not_comparable("not the indexed read"),
             (_, None, _) => ShadowReport::not_comparable("no ranking"),
             (_, _, None) => ShadowReport::not_comparable("sidecar not followed"),
             (_, _, Some(before)) if !before.committed => {
                 ShadowReport::not_comparable("another process moved the sidecar")
             }
-            (true, Some(observation), Some(before)) => {
+            (read, Some(observation), Some(before)) => {
                 let last = store.read_points(|reads| reads.last_event_sequence()).await;
                 if last.ok() != Some(before.position) {
                     ShadowReport::not_comparable("the store moved")
                 } else {
                     let about = about.to_string();
-                    let aliased = self.aliased;
                     let compared = tokio::task::spawn_blocking(move || {
-                        let report = ShadowComparison::new(&sidecar, aliased)
-                            .compare(&about, &observation)?;
+                        let comparison = ShadowComparison::new(&sidecar);
+                        let report = if comparison.reads_past(&about, read.deeper())? {
+                            ShadowReport::not_comparable("the ask reads past the index")
+                        } else if matches!(read, ShadowScope::Selection { .. }) {
+                            comparison.compare_selection(&about, &observation)?
+                        } else {
+                            comparison.compare(&about, &observation)?
+                        };
                         if report.differences() > 0 {
                             sidecar.forget(&about)?;
                         }

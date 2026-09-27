@@ -1,9 +1,10 @@
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use kmp_proto_mapping::v1beta1::{LanguageSignals, LexicalProfile, LexicalReading, LexicalRow};
 
 use super::about_change::AboutChange;
 use super::about_reader::AboutReader;
+use super::about_rebuild::ASK_DEPTH;
 use super::about_stats::AboutStats;
 use super::node_state::NodeState;
 use super::relation_key::{CONTAINS_ENTRY, RelationKey, SUPPORTS};
@@ -22,8 +23,9 @@ pub(super) struct AboutRefresh<'r, 's> {
     reader: &'r AboutReader<'r>,
     set: WorkingSet<'s>,
     about: String,
-    /// Nodes whose reach changed: they came in, went out, or moved a hop.
-    reach_changed: BTreeSet<String>,
+    /// Nodes whose reach changed (they came in, went out, or moved a hop),
+    /// with the hop they had and the hop they have.
+    hop_moves: BTreeMap<String, (Option<u8>, Option<u8>)>,
 }
 
 /// What a refresh ends with.
@@ -39,14 +41,13 @@ impl<'r, 's> AboutRefresh<'r, 's> {
             about: reader.about().to_string(),
             reader,
             set,
-            reach_changed: BTreeSet::new(),
+            hop_moves: BTreeMap::new(),
         }
     }
 
     pub(super) fn run(
         mut self,
         stats: &AboutStats,
-        aliased: bool,
         touched_nodes: &BTreeSet<String>,
         touched_relations: &BTreeSet<RelationKey>,
     ) -> Result<Refreshed, String> {
@@ -69,6 +70,25 @@ impl<'r, 's> AboutRefresh<'r, 's> {
                 }
             }
         }
+        // 1b. Nodes one hop past the ask's depth: a deeper ask reads them.
+        let mut far = touched_relations
+            .iter()
+            .map(|key| key.target.clone())
+            .chain(self.hop_moves.keys().cloned())
+            .collect::<BTreeSet<_>>();
+        for (id, (held, now)) in self.hop_moves.clone() {
+            if held == Some(ASK_DEPTH) || now == Some(ASK_DEPTH) {
+                far.extend(
+                    self.reader
+                        .outgoing(&id, None)?
+                        .into_iter()
+                        .map(|edge| edge.target_node_id),
+                );
+            }
+        }
+        for id in &far {
+            self.refresh_far(id)?;
+        }
         // 2. The kind of every touched node: evidence or not.
         for id in touched_nodes {
             self.refresh_kind(id)?;
@@ -79,13 +99,13 @@ impl<'r, 's> AboutRefresh<'r, 's> {
             .filter(|key| key.is_contains_entry())
             .cloned()
             .collect::<BTreeSet<_>>();
-        for id in self.reach_changed.clone() {
+        for id in self.hop_moves.keys().cloned().collect::<Vec<_>>() {
             edges.extend(self.edges_of(&id, Some(CONTAINS_ENTRY))?);
         }
         for key in &edges {
             self.refresh_contains_entry(key)?;
         }
-        for id in self.reach_changed.clone() {
+        for id in self.hop_moves.keys().cloned().collect::<Vec<_>>() {
             self.recount_selection(&id)?;
         }
         let selected_changed = self.changed(|state| state.selected_entry())?;
@@ -95,7 +115,7 @@ impl<'r, 's> AboutRefresh<'r, 's> {
             .filter(|key| key.is_supports())
             .map(|key| key.source.clone())
             .chain(touched_nodes.iter().cloned())
-            .chain(self.reach_changed.iter().cloned())
+            .chain(self.hop_moves.keys().cloned())
             .collect::<BTreeSet<_>>();
         for id in &selected_changed {
             evidence.extend(
@@ -154,7 +174,7 @@ impl<'r, 's> AboutRefresh<'r, 's> {
                 .filter(|key| key.is_supports())
                 .map(|key| key.source.clone()),
         );
-        let profile = LexicalProfile::new(language.clone(), aliased);
+        let profile = LexicalProfile::new(language.clone());
         let mut rows = Vec::with_capacity(due.len() * 2);
         for id in &due {
             rows.extend(self.rows_of(id, &profile)?);
@@ -165,10 +185,29 @@ impl<'r, 's> AboutRefresh<'r, 's> {
             nodes,
             relations: kept_relations,
             rows,
+            far: self.set.far_changes(),
             signals,
             summaries,
             language,
         }))
+    }
+
+    /// Whether a node the about's asks do not reach lies one hop past them.
+    fn refresh_far(&mut self, id: &str) -> Result<(), String> {
+        let mut far = false;
+        if self.set.node(id)?.is_none() {
+            for edge in self.reader.incoming(id, None)? {
+                if self
+                    .set
+                    .node(&edge.source_node_id)?
+                    .is_some_and(|state| state.hop == ASK_DEPTH)
+                {
+                    far = true;
+                    break;
+                }
+            }
+        }
+        self.set.set_far(id, far)
     }
 
     /// Reads a node's hop again; true when it started or stopped being one
@@ -180,7 +219,10 @@ impl<'r, 's> AboutRefresh<'r, 's> {
         if held_hop == hop {
             return Ok(false);
         }
-        self.reach_changed.insert(id.to_string());
+        self.hop_moves
+            .entry(id.to_string())
+            .or_insert((held_hop, hop))
+            .1 = hop;
         let state = match (held, hop) {
             (_, None) => None,
             (Some(state), Some(hop)) => Some(NodeState { hop, ..state }),
@@ -271,11 +313,11 @@ impl<'r, 's> AboutRefresh<'r, 's> {
                     count.saturating_sub(1)
                 }
             };
-            if !self.reach_changed.contains(&key.source) {
+            if !self.hop_moves.contains_key(&key.source) {
                 self.set
                     .update_node(&key.source, |state| step(&mut state.selected_out))?;
             }
-            if !self.reach_changed.contains(&key.target) {
+            if !self.hop_moves.contains_key(&key.target) {
                 self.set
                     .update_node(&key.target, |state| step(&mut state.selected_in))?;
             }

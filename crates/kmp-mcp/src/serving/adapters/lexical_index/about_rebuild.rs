@@ -17,12 +17,11 @@ pub(super) const ASK_DEPTH: u8 = 2;
 /// the candidates and language of what is kept.
 pub(super) struct AboutRebuild<'r> {
     reader: &'r AboutReader<'r>,
-    aliased: bool,
 }
 
 impl<'r> AboutRebuild<'r> {
-    pub(super) fn new(reader: &'r AboutReader<'r>, aliased: bool) -> Self {
-        Self { reader, aliased }
+    pub(super) fn new(reader: &'r AboutReader<'r>) -> Self {
+        Self { reader }
     }
 
     pub(super) fn run(&self) -> Result<AboutChange, String> {
@@ -44,14 +43,17 @@ impl<'r> AboutRebuild<'r> {
             }
             level = next;
         }
-        // Edges out of the last hop count when they stay inside.
+        // Edges out of the last hop count when they stay inside; the nodes
+        // they reach outside are one hop past the ask's depth.
+        let mut far = BTreeSet::new();
         for source in &level {
-            edges.extend(
-                self.reader
-                    .outgoing(source, None)?
-                    .into_iter()
-                    .filter(|edge| hops.contains_key(&edge.target_node_id)),
-            );
+            for edge in self.reader.outgoing(source, None)? {
+                if hops.contains_key(&edge.target_node_id) {
+                    edges.push(edge);
+                } else {
+                    far.insert(edge.target_node_id);
+                }
+            }
         }
         let nodes = hops
             .keys()
@@ -141,7 +143,7 @@ impl<'r> AboutRebuild<'r> {
             })
             .collect::<Vec<_>>();
         let language = LexicalProfile::decide_language(&signals, summaries);
-        let profile = LexicalProfile::new(language.clone(), self.aliased);
+        let profile = LexicalProfile::new(language.clone());
         // Candidates: kept entries' text, kept evidence's details.
         let mut supported = BTreeMap::<&str, Vec<String>>::new();
         for key in kept.keys().filter(|key| key.is_supports()) {
@@ -173,6 +175,7 @@ impl<'r> AboutRebuild<'r> {
                 .collect(),
             relations,
             rows,
+            far: far.into_iter().map(|id| (id, true)).collect(),
             signals,
             summaries,
             language,

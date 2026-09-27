@@ -20,7 +20,8 @@ pub(super) struct RowWriter<'t> {
     tx: &'t Connection,
     about: &'t str,
     postings: BTreeMap<String, Vec<(u64, Option<Posting>)>>,
-    frequencies: BTreeMap<String, (i64, i64)>,
+    /// df deltas: content and direct, plain then aliased.
+    frequencies: BTreeMap<String, [i64; 4]>,
 }
 
 impl<'t> RowWriter<'t> {
@@ -72,7 +73,7 @@ impl<'t> RowWriter<'t> {
                                 self.about,
                                 doc,
                                 ordinal as i64,
-                                row.fingerprint() as i64,
+                                row.fingerprint(true) as i64,
                                 row.encode()
                             ],
                         )
@@ -116,65 +117,78 @@ impl<'t> RowWriter<'t> {
             .documents
             .checked_sub(1)
             .ok_or("lexical index: document count below zero")?;
-        let (text, summary, extra) = row.lengths();
-        stats.text_length -= text;
-        stats.summary_length -= summary;
-        stats.extra_length -= extra;
-        stats.rows_digest = stats.rows_digest.wrapping_sub(row.fingerprint());
-        for term in row.terms().iter().filter(|term| term.is_searchable()) {
-            let frequency = self.frequencies.entry(term.term.clone()).or_default();
-            frequency.0 -= i64::from(term.content() > 0);
-            frequency.1 -= i64::from(term.direct() > 0);
-            self.postings
-                .entry(term.term.clone())
-                .or_default()
-                .push((ordinal, None));
-        }
+        self.account(stats, ordinal, row, -1);
         Ok(())
     }
 
     fn contribute(&mut self, stats: &mut AboutStats, ordinal: u64, row: &LexicalRow) {
         stats.documents += 1;
-        let (text, summary, extra) = row.lengths();
-        stats.text_length += text;
-        stats.summary_length += summary;
-        stats.extra_length += extra;
-        stats.rows_digest = stats.rows_digest.wrapping_add(row.fingerprint());
-        for term in row.terms().iter().filter(|term| term.is_searchable()) {
+        self.account(stats, ordinal, row, 1);
+    }
+
+    /// Adds (`sign` 1) or takes away (-1) a row's lengths, fingerprints, df
+    /// and postings.
+    fn account(&mut self, stats: &mut AboutStats, ordinal: u64, row: &LexicalRow, sign: i64) {
+        let [text, summary, extra, alias_content, alias_extra] = row.lengths();
+        stats.text_length += sign * text;
+        stats.summary_length += sign * summary;
+        stats.extra_length += sign * extra;
+        stats.alias_content_length += sign * alias_content;
+        stats.alias_extra_length += sign * alias_extra;
+        let (plain, aliased) = (row.fingerprint(false), row.fingerprint(true));
+        if sign > 0 {
+            stats.rows_digest = stats.rows_digest.wrapping_add(plain);
+            stats.aliased_digest = stats.aliased_digest.wrapping_add(aliased);
+        } else {
+            stats.rows_digest = stats.rows_digest.wrapping_sub(plain);
+            stats.aliased_digest = stats.aliased_digest.wrapping_sub(aliased);
+        }
+        for term in row.terms().iter().filter(|term| term.is_held()) {
             let frequency = self.frequencies.entry(term.term.clone()).or_default();
-            frequency.0 += i64::from(term.content() > 0);
-            frequency.1 += i64::from(term.direct() > 0);
-            self.postings.entry(term.term.clone()).or_default().push((
+            for (slot, reading) in [(0, false), (2, true)] {
+                frequency[slot] += sign * i64::from(term.content(reading) > 0);
+                frequency[slot + 1] += sign * i64::from(term.direct(reading) > 0);
+            }
+            let posting = (sign > 0).then(|| Posting {
                 ordinal,
-                Some(Posting {
-                    ordinal,
-                    content: term.content().max(0) as u64,
-                    direct: term.direct().max(0) as u64,
-                }),
-            ));
+                content: term.content(false).max(0) as u64,
+                direct: term.direct(false).max(0) as u64,
+                aliased_content: term.content(true).max(0) as u64,
+                aliased_direct: term.direct(true).max(0) as u64,
+            });
+            self.postings
+                .entry(term.term.clone())
+                .or_default()
+                .push((ordinal, posting));
         }
     }
 
     fn flush(&mut self) -> Result<(), String> {
-        for (term, (content, direct)) in std::mem::take(&mut self.frequencies) {
-            if content == 0 && direct == 0 {
+        for (term, delta) in std::mem::take(&mut self.frequencies) {
+            if delta == [0; 4] {
                 continue;
             }
             let held = self
                 .tx
                 .query_row(
-                    "SELECT content, direct FROM lex_key_df WHERE about = ?1 AND term = ?2",
+                    "SELECT content, direct, aliased_content, aliased_direct FROM lex_key_df \
+                     WHERE about = ?1 AND term = ?2",
                     params![self.about, term],
-                    |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)),
+                    |row| Ok([row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?]),
                 )
                 .optional()
                 .map_err(storage)?
-                .unwrap_or((0, 0));
-            let next = (held.0 + content, held.1 + direct);
-            if next.0 < 0 || next.1 < 0 {
+                .unwrap_or([0i64; 4]);
+            let next = [
+                held[0] + delta[0],
+                held[1] + delta[1],
+                held[2] + delta[2],
+                held[3] + delta[3],
+            ];
+            if next.iter().any(|count| *count < 0) {
                 return Err(format!("lexical index: df of `{term}` below zero"));
             }
-            if next == (0, 0) {
+            if next == [0; 4] {
                 self.tx
                     .execute(
                         "DELETE FROM lex_key_df WHERE about = ?1 AND term = ?2",
@@ -184,9 +198,10 @@ impl<'t> RowWriter<'t> {
             } else {
                 self.tx
                     .execute(
-                        "INSERT OR REPLACE INTO lex_key_df(about, term, content, direct) \
-                         VALUES (?1, ?2, ?3, ?4)",
-                        params![self.about, term, next.0, next.1],
+                        "INSERT OR REPLACE INTO lex_key_df\
+                         (about, term, content, direct, aliased_content, aliased_direct) \
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                        params![self.about, term, next[0], next[1], next[2], next[3]],
                     )
                     .map_err(storage)?;
             }

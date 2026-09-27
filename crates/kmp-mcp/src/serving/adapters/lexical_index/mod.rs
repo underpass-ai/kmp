@@ -17,6 +17,7 @@ mod relation_key;
 mod row_writer;
 mod shadow_comparison;
 pub(crate) mod shadow_report;
+mod shadow_scope;
 mod sidecar_candidates;
 mod sidecar_meta;
 mod sqlite_lexical_sidecar;

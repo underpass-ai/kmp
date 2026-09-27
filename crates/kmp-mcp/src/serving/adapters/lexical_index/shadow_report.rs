@@ -19,6 +19,13 @@ pub(crate) struct ShadowReport {
     /// Candidates that could score above zero and no posting of a weighted
     /// term reaches: the one thing a candidate generator must never do.
     pub(crate) missing_candidates: u64,
+    /// An ask narrowed by dimensions reads a subset of the about, whose
+    /// statistics and language are its own: not a difference of the index,
+    /// but what P13 must know before serving such an ask from it. Candidates
+    /// whose row differs from the about's, or that the about lacks, and
+    /// whether the subset reads in another language.
+    pub(crate) selection_rows: u64,
+    pub(crate) selection_language: bool,
     pub(crate) elapsed_us: u64,
 }
 
@@ -53,6 +60,8 @@ impl ShadowReport {
             df_differences = self.df_differences,
             row_differences = self.row_differences,
             missing_candidates = self.missing_candidates,
+            selection_rows = self.selection_rows,
+            selection_language = self.selection_language,
             elapsed_us = self.elapsed_us,
             "lexical index compared in shadow"
         );

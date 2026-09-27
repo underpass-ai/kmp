@@ -11,12 +11,21 @@ use crate::serving::ports::lexical_candidates::LexicalCandidates;
 /// candidate that could score. The ranker's answer is never touched.
 pub(super) struct ShadowComparison<'s> {
     sidecar: &'s SqliteLexicalSidecar,
-    aliased: bool,
 }
 
 impl<'s> ShadowComparison<'s> {
-    pub(super) fn new(sidecar: &'s SqliteLexicalSidecar, aliased: bool) -> Self {
-        Self { sidecar, aliased }
+    pub(super) fn new(sidecar: &'s SqliteLexicalSidecar) -> Self {
+        Self { sidecar }
+    }
+
+    /// Whether a deeper ask reaches nodes the sidecar does not index: only
+    /// when something lies one hop past the default depth.
+    pub(super) fn reads_past(&self, about: &str, deeper: bool) -> Result<bool, String> {
+        Ok(deeper
+            && self
+                .sidecar
+                .stats(about)?
+                .is_some_and(|stats| stats.far > 0))
     }
 
     pub(super) fn compare(
@@ -25,11 +34,11 @@ impl<'s> ShadowComparison<'s> {
         observation: &LexicalObservation,
     ) -> Result<ShadowReport, String> {
         let started = std::time::Instant::now();
-        if observation.aliased() != self.aliased {
-            return Ok(ShadowReport::not_comparable("another reading"));
-        }
-        let (Some(totals), Some(stats)) = (self.sidecar.totals(about)?, self.sidecar.stats(about)?)
-        else {
+        let aliased = observation.aliased();
+        let (Some(totals), Some(stats)) = (
+            self.sidecar.totals(about, aliased)?,
+            self.sidecar.stats(about)?,
+        ) else {
             return Ok(ShadowReport::not_comparable("about not built"));
         };
         let mut report = ShadowReport {
@@ -55,7 +64,7 @@ impl<'s> ShadowComparison<'s> {
             .keys()
             .cloned()
             .collect::<Vec<_>>();
-        let frequencies = LexicalCandidates::frequencies(self.sidecar, about, &weighted)?;
+        let frequencies = LexicalCandidates::frequencies(self.sidecar, about, &weighted, aliased)?;
         report.df_differences = observation
             .frequencies()
             .iter()
@@ -70,15 +79,15 @@ impl<'s> ShadowComparison<'s> {
         for doc in observation.scored() {
             match candidates.get(doc) {
                 None => report.missing_candidates += 1,
-                Some(row) if seen.get(doc) != Some(&row.fingerprint()) => {
+                Some(row) if seen.get(doc) != Some(&row.fingerprint(aliased)) => {
                     report.row_differences += 1;
                 }
                 Some(_) => {}
             }
         }
         // Every other candidate, through the digest of all their rows.
-        if stats.rows_digest != observation.rows_digest() && report.row_differences == 0 {
-            let held = self.sidecar.fingerprints(about)?;
+        if stats.digest(aliased) != observation.rows_digest() && report.row_differences == 0 {
+            let held = self.sidecar.fingerprints(about, aliased)?;
             report.row_differences = held
                 .iter()
                 .filter(|(doc, fingerprint)| seen.get(*doc) != Some(*fingerprint))
@@ -87,6 +96,32 @@ impl<'s> ShadowComparison<'s> {
             // A collision of the digest alone still counts once.
             report.row_differences = report.row_differences.max(1);
         }
+        report.elapsed_us = started.elapsed().as_micros() as u64;
+        Ok(report)
+    }
+
+    /// An ask narrowed by dimensions: its candidates are a subset of the
+    /// about's, measured in the subset's own statistics and language. What
+    /// can be compared is each candidate's row and the language; the counts
+    /// are reported apart and are not differences of the index.
+    pub(super) fn compare_selection(
+        &self,
+        about: &str,
+        observation: &LexicalObservation,
+    ) -> Result<ShadowReport, String> {
+        let started = std::time::Instant::now();
+        let Some(stats) = self.sidecar.stats(about)? else {
+            return Ok(ShadowReport::not_comparable("about not built"));
+        };
+        let held = self.sidecar.fingerprints(about, observation.aliased())?;
+        let mut report = ShadowReport::not_comparable("selection");
+        report.documents = observation.documents();
+        report.selection_language = stats.language.as_deref() != observation.language();
+        report.selection_rows = observation
+            .fingerprints()
+            .iter()
+            .filter(|(doc, fingerprint)| held.get(*doc) != Some(*fingerprint))
+            .count() as u64;
         report.elapsed_us = started.elapsed().as_micros() as u64;
         Ok(report)
     }

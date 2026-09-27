@@ -9,7 +9,7 @@ pub struct PostingBlock {
 }
 
 /// The layout of an encoded block; a different one is refused.
-const BLOCK_LAYOUT: u64 = 1;
+const BLOCK_LAYOUT: u64 = 2;
 
 impl PostingBlock {
     /// How many postings a block holds before it splits.
@@ -73,8 +73,14 @@ impl PostingBlock {
         let mut previous = 0u64;
         for posting in &self.postings {
             push_unsigned(&mut buffer, posting.ordinal - previous);
-            push_unsigned(&mut buffer, posting.content);
-            push_unsigned(&mut buffer, posting.direct);
+            for count in [
+                posting.content,
+                posting.direct,
+                posting.aliased_content,
+                posting.aliased_direct,
+            ] {
+                push_unsigned(&mut buffer, count);
+            }
             previous = posting.ordinal;
         }
         buffer
@@ -103,6 +109,8 @@ impl PostingBlock {
                 ordinal,
                 content: reader.unsigned()?,
                 direct: reader.unsigned()?,
+                aliased_content: reader.unsigned()?,
+                aliased_direct: reader.unsigned()?,
             });
         }
         if !reader.finished() {
@@ -121,6 +129,8 @@ mod tests {
             ordinal,
             content: ordinal % 3,
             direct: ordinal % 3 + 1,
+            aliased_content: ordinal % 3,
+            aliased_direct: ordinal % 3 + 2,
         }
     }
 
@@ -131,9 +141,9 @@ mod tests {
             block.upsert(posting(ordinal));
         }
         block.upsert(Posting {
-            ordinal: 7,
             content: 5,
             direct: 6,
+            ..posting(7)
         });
         block.remove(40);
         block.remove(41);

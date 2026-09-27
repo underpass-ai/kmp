@@ -1152,6 +1152,26 @@ SHA-256 the runner copied; `status = "ignored"` or no line makes the variant
 `not_applied`, reporting `reason`. A binary older than BT03 emits no such lines: every
 store file is then `not_applied` with reason "binary predates store_config telemetry".
 
+### `kmp_lexical_shadow` (every ask, P12)
+
+Target `kmp_mcp::lexical_index`, level info: one line per first-page ask while the
+lexical sidecar (`<data dir>/lexical-index.sqlite3`) is on. `comparable` says whether the
+ask read what the sidecar indexes (one about at the frontier, no dimensions, the
+default depth or deeper while nothing lies past it, a store that did not move while it
+asked); `reason` is `compared`, `selection` (narrowed by dimensions: only
+`selection_rows` and `selection_language` are counted, and they are not differences of
+the index) or why it could not compare. `differences` is the sum of
+`stats_differences` (N, Σlen content, Σlen direct, language), `df_differences`
+(weighted terms whose df differs), `row_differences` (candidates whose tf or length
+differs, or that one side lacks) and `missing_candidates` (candidates that could score
+and no posting of a weighted term reaches). `documents` and `elapsed_us` are
+informative. `sidecar_catch_up` (BT18) sums `differences` over every line with
+`shadow` in its event.
+
+At debug, `kmp_lexical_catch_up` reports each time the sidecar follows the log:
+`position`, `events`, `abouts_refreshed`, `abouts_rebuilt`, `rows`, `reset`,
+`committed`, `elapsed_us`.
+
 ## Search probe (`kmp.bench.search_probe.v1`)
 
 `kmp_search_probe` shows what the kernel's tokenizer makes of a text, so the bench can

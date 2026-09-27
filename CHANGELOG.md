@@ -23,6 +23,15 @@ Detailed notes from the early release cycle remain available in the
   cross-language; 0/12 zero-overlap paraphrases), `paraphrase-gap` reached,
   no answer or false answer changed on B-real, the hard negatives (seeds 7,
   11, 13) or synth; 500–900 Jev input tokens per memory written.
+- A lexical index beside the store, in shadow (`lexical-index.sqlite3`,
+  DESIGN L6 option a): each about's candidates with their term counts,
+  postings in blocks of 128, document frequencies and totals, built on the
+  about's first ask and followed after every write and before every ask from
+  the store's event log, whoever wrote it. Asks do not read it yet: each ask
+  compares it with its ranker and logs `kmp_lexical_shadow`. Measured with 0
+  differences on the frozen real store, synth 10^3/10^4/10^5, the judged
+  retrieval corpus and FactConsolidation/LongMemEval.
+  `KMP_LEXICAL_INDEX=off` keeps it closed.
 
 ### Changed
 

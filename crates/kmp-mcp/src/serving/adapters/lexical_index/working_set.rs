@@ -15,6 +15,8 @@ pub(super) struct WorkingSet<'s> {
     about: &'s str,
     nodes: BTreeMap<String, (Option<NodeState>, Option<NodeState>)>,
     relations: BTreeMap<RelationKey, (Option<LanguageSignals>, Option<LanguageSignals>)>,
+    /// Nodes one hop past the ask's depth, as held and now.
+    far: BTreeMap<String, (bool, bool)>,
 }
 
 impl<'s> WorkingSet<'s> {
@@ -24,7 +26,29 @@ impl<'s> WorkingSet<'s> {
             about,
             nodes: BTreeMap::new(),
             relations: BTreeMap::new(),
+            far: BTreeMap::new(),
         }
+    }
+
+    /// Sets whether a node lies one hop past the ask's depth.
+    pub(super) fn set_far(&mut self, id: &str, far: bool) -> Result<(), String> {
+        if !self.far.contains_key(id) {
+            let held = self.sidecar.is_far(self.about, id)?;
+            self.far.insert(id.to_string(), (held, held));
+        }
+        if let Some(entry) = self.far.get_mut(id) {
+            entry.1 = far;
+        }
+        Ok(())
+    }
+
+    /// The nodes whose place past the ask's depth changed, and where they are.
+    pub(super) fn far_changes(&self) -> Vec<(String, bool)> {
+        self.far
+            .iter()
+            .filter(|(_, (held, now))| held != now)
+            .map(|(id, (_, now))| (id.clone(), *now))
+            .collect()
     }
 
     fn load_node(&mut self, id: &str) -> Result<(), String> {

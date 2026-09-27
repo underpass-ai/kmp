@@ -69,11 +69,28 @@ async fn shadow(
     sidecar: &SqliteLexicalSidecar,
     question: &str,
 ) -> ShadowReport {
+    shadow_under(
+        kernel,
+        sidecar,
+        question,
+        MemoryAnswerPolicy::EvidenceOrUnknown,
+    )
+    .await
+}
+
+/// The same under a policy: `best_effort` reads without the anchored gate,
+/// so without alias terms.
+async fn shadow_under(
+    kernel: &EmbeddedKernel,
+    sidecar: &SqliteLexicalSidecar,
+    question: &str,
+    policy: MemoryAnswerPolicy,
+) -> ShadowReport {
     let query = AskMemoryQuery {
         about: ABOUT.to_string(),
         question: question.to_string(),
         asked_as: None,
-        answer_policy: MemoryAnswerPolicy::EvidenceOrUnknown,
+        answer_policy: policy,
         dimensions: DimensionSelection::default(),
         token_budget: 2400,
         depth: 2,
@@ -93,7 +110,7 @@ async fn shadow(
     ask_response_from_result(
         question,
         None,
-        MemoryAnswerPolicy::EvidenceOrUnknown,
+        policy,
         None,
         retrieval,
         &LexicalBridge::none(),
@@ -101,7 +118,7 @@ async fn shadow(
     )
     .expect("answer");
     let observation = witness.take().expect("the ranker observed");
-    ShadowComparison::new(sidecar, true)
+    ShadowComparison::new(sidecar)
         .compare(ABOUT, &observation)
         .expect("compared")
 }
@@ -198,7 +215,7 @@ fn dump(path: &Path) -> BTreeMap<String, Vec<String>> {
 /// Builds the about from nothing in a sidecar of its own.
 async fn rebuilt(kernel: &EmbeddedKernel, at: &Path) -> BTreeMap<String, Vec<String>> {
     let sidecar = Arc::new(SqliteLexicalSidecar::open(at).expect("fresh sidecar"));
-    let maintainer = LexicalMaintainer::new(Arc::clone(&sidecar), true);
+    let maintainer = LexicalMaintainer::new(Arc::clone(&sidecar));
     kernel
         .store()
         .read_points(move |reads| {
@@ -326,6 +343,15 @@ async fn a_sidecar_followed_write_by_write_equals_one_built_from_nothing() {
     let report = shadow(&kernel, &reading, "why did the backup pump start?").await;
     assert!(report.comparable, "{report:?}");
     assert_eq!(report.differences(), 0, "{report:?}");
+    let plain = shadow_under(
+        &kernel,
+        &reading,
+        "why did the backup pump start after C10?",
+        MemoryAnswerPolicy::BestEffort,
+    )
+    .await;
+    assert!(plain.comparable, "{plain:?}");
+    assert_eq!(plain.differences(), 0, "{plain:?}");
     let followed = dump(&sidecar_path);
     let built = rebuilt(&kernel, &scratch.path().join("built.sqlite3")).await;
     assert_same(&followed, &built);
@@ -340,7 +366,7 @@ async fn a_sidecar_followed_write_by_write_equals_one_built_from_nothing() {
         .expect("rewind");
     drop(connection);
     let again = Arc::new(SqliteLexicalSidecar::open(&sidecar_path).expect("sidecar"));
-    let maintainer = LexicalMaintainer::new(Arc::clone(&again), true);
+    let maintainer = LexicalMaintainer::new(Arc::clone(&again));
     let report = kernel
         .store()
         .read_points(move |reads| {

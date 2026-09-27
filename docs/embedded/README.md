@@ -102,6 +102,33 @@ unsupported store, stop its writers and preserve the directory. Use an explicitl
 archived compatible exporter to create a portable bundle, then import it into
 an empty current store. The recovery runbook defines that external contract.
 
+### The lexical index beside the store (shadow)
+
+`lexical-index.sqlite3` sits beside `store/` (not inside it: the format gate
+refuses files it does not know there). It is a derived index of what `kmp_ask`
+reads (DESIGN L6): for each about, every candidate's terms with their counts
+(`LexFwd`), postings of each term in blocks of 128 (`LexPost`), document
+frequencies (`LexKeyDf`) and the about's totals and language signals
+(`LexStats`), under both readings an ask can take (with the alias terms the
+anchored gate reads, and plain for `best_effort`). It records the event of the
+store's log it has followed and the derivation that wrote it.
+
+An about is indexed the first time it is asked about. From then on every write
+this binary makes is followed at once, and every ask first follows whatever
+other writers (older binaries included) appended to the log: the nodes and
+edges the new events touched are read again and the difference applied, so
+following an event twice changes nothing. A sidecar of another derivation, or
+behind a log that was replaced, is emptied and built again. Older binaries
+never open it.
+
+It answers no ask yet. Each ask compares it with what the ranker measured over
+the same candidates (N, the field lengths, df of every weighted term, tf and
+length of every candidate, and that the postings of the question's terms reach
+every candidate that could score) and logs one `kmp_lexical_shadow` line with
+the differences; an about that differs is forgotten and indexed again on its
+next ask. `KMP_LEXICAL_INDEX=off` keeps the file closed. It can be deleted at
+any time: the next ask builds what it needs again. It is not part of a bundle.
+
 ## How Ask decides
 
 `kmp_ask` reads with the anchored ask gate unless the store opts out. Under

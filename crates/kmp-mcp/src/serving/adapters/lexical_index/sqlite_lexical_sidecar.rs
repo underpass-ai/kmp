@@ -40,15 +40,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS lex_fwd_ordinal ON lex_fwd(about, ordinal);
 CREATE TABLE IF NOT EXISTS lex_post(
     about TEXT NOT NULL, term TEXT NOT NULL, block INTEGER NOT NULL, postings BLOB NOT NULL,
     PRIMARY KEY (about, term, block)) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS lex_far(
+    about TEXT NOT NULL, node TEXT NOT NULL, PRIMARY KEY (about, node)) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS lex_key_df(
     about TEXT NOT NULL, term TEXT NOT NULL, content INTEGER NOT NULL, direct INTEGER NOT NULL,
+    aliased_content INTEGER NOT NULL, aliased_direct INTEGER NOT NULL,
     PRIMARY KEY (about, term)) WITHOUT ROWID;
 ";
 
-const TABLES: [&str; 6] = [
+const TABLES: [&str; 7] = [
     "lex_stats",
     "lex_node",
     "lex_relation",
+    "lex_far",
     "lex_fwd",
     "lex_post",
     "lex_key_df",
@@ -155,6 +159,21 @@ impl SqliteLexicalSidecar {
         })
     }
 
+    /// Whether a node lies one hop past the ask's depth.
+    pub(super) fn is_far(&self, about: &str, node: &str) -> Result<bool, String> {
+        self.with(|connection| {
+            connection
+                .query_row(
+                    "SELECT 1 FROM lex_far WHERE about = ?1 AND node = ?2",
+                    params![about, node],
+                    |_| Ok(()),
+                )
+                .optional()
+                .map(|found| found.is_some())
+                .map_err(storage)
+        })
+    }
+
     pub(super) fn row(&self, about: &str, doc: &str) -> Result<Option<LexicalRow>, String> {
         self.with(|connection| {
             connection
@@ -170,33 +189,57 @@ impl SqliteLexicalSidecar {
         })
     }
 
-    /// Every row's fingerprint, by candidate id.
-    pub(super) fn fingerprints(&self, about: &str) -> Result<BTreeMap<String, u64>, String> {
+    /// Every row's fingerprint under a reading, by candidate id.
+    pub(super) fn fingerprints(
+        &self,
+        about: &str,
+        aliased: bool,
+    ) -> Result<BTreeMap<String, u64>, String> {
+        if aliased {
+            // The aliased fingerprint is kept beside the row.
+            return self.with(|connection| {
+                let mut statement = connection
+                    .prepare("SELECT doc, fingerprint FROM lex_fwd WHERE about = ?1")
+                    .map_err(storage)?;
+                let rows = statement
+                    .query_map([about], |row| {
+                        Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)? as u64))
+                    })
+                    .map_err(storage)?;
+                rows.map(|row| row.map_err(storage)).collect()
+            });
+        }
         self.with(|connection| {
             let mut statement = connection
-                .prepare("SELECT doc, fingerprint FROM lex_fwd WHERE about = ?1")
+                .prepare("SELECT doc, row FROM lex_fwd WHERE about = ?1")
                 .map_err(storage)?;
             let rows = statement
                 .query_map([about], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)? as u64))
+                    Ok((row.get::<_, String>(0)?, row.get::<_, Vec<u8>>(1)?))
                 })
                 .map_err(storage)?;
-            rows.map(|row| row.map_err(storage)).collect()
+            rows.map(|row| {
+                let (doc, bytes) = row.map_err(storage)?;
+                Ok((doc, LexicalRow::decode(&bytes)?.fingerprint(false)))
+            })
+            .collect()
         })
     }
 
-    /// df of each term in the content and the direct field.
+    /// df of each term in the content and the direct field, under a reading.
     pub(super) fn frequencies<'a>(
         &self,
         about: &str,
         terms: impl IntoIterator<Item = &'a String>,
+        aliased: bool,
     ) -> Result<BTreeMap<String, (u64, u64)>, String> {
+        let sql = if aliased {
+            "SELECT aliased_content, aliased_direct FROM lex_key_df WHERE about = ?1 AND term = ?2"
+        } else {
+            "SELECT content, direct FROM lex_key_df WHERE about = ?1 AND term = ?2"
+        };
         self.with(|connection| {
-            let mut statement = connection
-                .prepare_cached(
-                    "SELECT content, direct FROM lex_key_df WHERE about = ?1 AND term = ?2",
-                )
-                .map_err(storage)?;
+            let mut statement = connection.prepare_cached(sql).map_err(storage)?;
             terms
                 .into_iter()
                 .map(|term| {
@@ -393,6 +436,25 @@ fn write_change(tx: &Connection, change: &AboutChange) -> Result<(), String> {
             ),
         }
         .map_err(storage)?;
+    }
+    for (node, far) in &change.far {
+        let moved = if *far {
+            tx.execute(
+                "INSERT OR IGNORE INTO lex_far(about, node) VALUES (?1, ?2)",
+                params![about, node],
+            )
+        } else {
+            tx.execute(
+                "DELETE FROM lex_far WHERE about = ?1 AND node = ?2",
+                params![about, node],
+            )
+        }
+        .map_err(storage)? as u64;
+        stats.far = if *far {
+            stats.far + moved
+        } else {
+            stats.far.saturating_sub(moved)
+        };
     }
     RowWriter::new(tx, about).apply(&mut stats, &change.rows)?;
     stats.signals = change.signals.clone();

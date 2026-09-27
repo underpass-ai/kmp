@@ -11,7 +11,7 @@ fn row(text: &str) -> LexicalRow {
         source: "log".to_string(),
         ..Default::default()
     };
-    LexicalRow::read(&item, &LexicalProfile::new(None, false))
+    LexicalRow::read(&item, &LexicalProfile::new(None))
 }
 
 fn meta(position: u64) -> SidecarMeta {
@@ -77,7 +77,7 @@ fn rows_move_the_totals_postings_and_frequencies_and_twice_is_once() {
     let built = sidecar.stats("about").expect("stats").expect("built");
     assert_eq!(built.documents, 2);
     let frequencies =
-        LexicalCandidates::frequencies(&sidecar, "about", &["valv".into(), "valve".into()])
+        LexicalCandidates::frequencies(&sidecar, "about", &["valv".into(), "valve".into()], true)
             .expect("df");
     let valve = frequencies
         .values()
@@ -108,7 +108,7 @@ fn rows_move_the_totals_postings_and_frequencies_and_twice_is_once() {
     assert_eq!(stats.documents, 1);
     assert_eq!(
         stats.rows_digest,
-        row("reserve valve froze twice").fingerprint()
+        row("reserve valve froze twice").fingerprint(false)
     );
     assert_eq!(
         stats.next_ordinal, 2,
@@ -119,14 +119,17 @@ fn rows_move_the_totals_postings_and_frequencies_and_twice_is_once() {
         .expect("candidates");
     assert_eq!(candidates.keys().collect::<Vec<_>>(), ["entry:a"]);
     assert!(
-        LexicalCandidates::frequencies(&sidecar, "about", &["replaced".into()])
+        LexicalCandidates::frequencies(&sidecar, "about", &["replaced".into()], false)
             .expect("df")
             .values()
             .all(|frequency| *frequency == (0, 0))
     );
-    let totals = sidecar.totals("about").expect("totals").expect("built");
+    let totals = sidecar
+        .totals("about", true)
+        .expect("totals")
+        .expect("built");
     assert_eq!(totals.documents, 1);
-    assert_eq!(totals.direct_length, stats.direct_length());
+    assert_eq!(totals.direct_length, stats.direct_length(true));
 }
 
 #[test]
@@ -144,12 +147,13 @@ fn a_term_held_by_many_candidates_splits_into_blocks_in_order() {
     sidecar
         .commit(&start, &meta(1), true, &[change(true, rows)])
         .expect("built");
-    let terms = LexicalCandidates::frequencies(&sidecar, "about", &["valv".into(), "valve".into()])
-        .expect("df")
-        .into_iter()
-        .find(|(_, frequency)| *frequency != (0, 0))
-        .map(|(term, _)| term)
-        .expect("valve");
+    let terms =
+        LexicalCandidates::frequencies(&sidecar, "about", &["valv".into(), "valve".into()], true)
+            .expect("df")
+            .into_iter()
+            .find(|(_, frequency)| *frequency != (0, 0))
+            .map(|(term, _)| term)
+            .expect("valve");
     let postings = sidecar.postings("about", &terms).expect("postings");
     assert_eq!(postings.len(), 300);
     assert!(

@@ -4,18 +4,16 @@ use super::language_signals::LanguageSignals;
 use super::morphology::Morphology;
 
 /// How an about's candidates are read into terms: the language they are
-/// stemmed in and whether they also read as the alias terms they spell (the
-/// anchored ask gate). Two readings under different profiles count different
-/// terms, so the sidecar keeps the profile its rows were read under.
+/// stemmed in. Rows read in another language count other terms, so the
+/// sidecar keeps the language its rows were read in.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct LexicalProfile {
     language: Option<String>,
-    aliased: bool,
 }
 
 impl LexicalProfile {
-    pub fn new(language: Option<String>, aliased: bool) -> Self {
-        Self { language, aliased }
+    pub fn new(language: Option<String>) -> Self {
+        Self { language }
     }
 
     /// The language `search_language` would read from an about whose texts
@@ -31,10 +29,6 @@ impl LexicalProfile {
 
     pub fn language(&self) -> Option<&str> {
         self.language.as_deref()
-    }
-
-    pub fn aliased(&self) -> bool {
-        self.aliased
     }
 
     pub(super) fn morphology(&self) -> Morphology {

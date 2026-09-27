@@ -7,11 +7,11 @@ use crate::serving::lexical_totals::LexicalTotals;
 use crate::serving::ports::lexical_candidates::LexicalCandidates;
 
 impl LexicalCandidates for SqliteLexicalSidecar {
-    fn totals(&self, about: &str) -> Result<Option<LexicalTotals>, String> {
+    fn totals(&self, about: &str, aliased: bool) -> Result<Option<LexicalTotals>, String> {
         Ok(self.stats(about)?.map(|stats| LexicalTotals {
             documents: stats.documents,
-            content_length: stats.content_length(),
-            direct_length: stats.direct_length(),
+            content_length: stats.content_length(aliased),
+            direct_length: stats.direct_length(aliased),
             language: stats.language,
         }))
     }
@@ -20,8 +20,9 @@ impl LexicalCandidates for SqliteLexicalSidecar {
         &self,
         about: &str,
         terms: &[String],
+        aliased: bool,
     ) -> Result<BTreeMap<String, (u64, u64)>, String> {
-        SqliteLexicalSidecar::frequencies(self, about, terms)
+        SqliteLexicalSidecar::frequencies(self, about, terms, aliased)
     }
 
     fn candidates(

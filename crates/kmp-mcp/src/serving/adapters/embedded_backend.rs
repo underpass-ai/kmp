@@ -205,9 +205,7 @@ impl EmbeddedKernelMcpBackend {
             .emit();
         let (partner_cap, partner_filter, paths_corridor) =
             curate.unwrap_or((PartnerCap::DEFAULT, PartnerFilter::Off, PathsCorridor::Off));
-        let ask_gate = ask_gate.unwrap_or(AskGate::STORE_DEFAULT);
-        // Asks under the anchored gate read memories with their alias terms.
-        let lexical = LexicalSidecar::open(data_dir, ask_gate.is_some());
+        let lexical = LexicalSidecar::open(data_dir);
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
@@ -230,7 +228,7 @@ impl EmbeddedKernelMcpBackend {
                 .unwrap_or(partner_cap),
             partner_filter,
             paths_corridor,
-            ask_gate,
+            ask_gate: ask_gate.unwrap_or(AskGate::STORE_DEFAULT),
             curate_reviews: CurateReviewCache::default(),
             curate_doubts: CurateDoubtCache::default(),
             lexical,

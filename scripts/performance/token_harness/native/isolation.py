@@ -26,7 +26,7 @@ DATA_DIR_EVENT = 'embedded backend data dir resolved'
 HARNESS_ENV = ('KMP_MCP_DATA_DIR', 'KMP_MCP_BACKEND', 'KMP_VIEWER_ADDR')
 VARIANT_ENV_ALLOWLIST = ('KMP_LEXICAL_BRIDGE', 'KMP_TYPESAFE_CASSETTE',
                          'KMP_TYPESAFE_CASSETTE_MODE', 'KMP_MCP_ENGINE', 'RUST_LOG',
-                         'KMP_JUDGEMENT_DEADLINES')
+                         'KMP_JUDGEMENT_DEADLINES', 'KMP_LEXICAL_INDEX')
 PATH_VALUED_ENV = ('KMP_LEXICAL_BRIDGE', 'KMP_TYPESAFE_CASSETTE')
 SECRET_ENV_ALLOWLIST = ('TYPESAFE_API_KEY',)
 # The binary's default filter; the store confirmation and `kmp_mcp_tool` events need it.
