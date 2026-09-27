@@ -449,6 +449,7 @@ pub fn ask_response_from_result(
         retrieval.lexical_cache.as_deref(),
         gated,
         retrieval.witness.as_deref(),
+        retrieval.indexed.as_ref(),
     )?;
     let doubt = retrieval.doubt.as_ref();
     let ranker = &setup.ranker;

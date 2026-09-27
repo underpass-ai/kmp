@@ -1,5 +1,6 @@
 use kmp_proto_mapping::v1beta1::LanguageSignals;
 
+use super::kept_relation::KeptRelation;
 use super::node_state::NodeState;
 use super::relation_key::RelationKey;
 
@@ -14,7 +15,7 @@ pub(super) struct AboutChange {
     pub(super) about: String,
     pub(super) rebuilt: bool,
     pub(super) nodes: Vec<(String, Option<NodeState>)>,
-    pub(super) relations: Vec<(RelationKey, Option<LanguageSignals>)>,
+    pub(super) relations: Vec<(RelationKey, Option<KeptRelation>)>,
     /// Candidate rows, encoded (`LexicalRow::encode`): a build holds one per
     /// candidate of the about, and encoded they take a fraction of the room.
     pub(super) rows: Vec<(String, Option<Vec<u8>>)>,

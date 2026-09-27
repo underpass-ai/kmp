@@ -455,6 +455,35 @@ where
             .await
     }
 
+    /// An ask's recall context built from the part of the about the caller
+    /// read point by point (DESIGN L6, P13), assembled as [`Self::ask_on_demand`]
+    /// assembles the whole about. The caller answers for `parts` holding
+    /// every candidate the ask can rank and the neighbourhood its rescues
+    /// walk.
+    pub async fn ask_from_parts(
+        &self,
+        query: &AskMemoryQuery,
+        parts: super::RecallParts,
+        demand: RenderDemand,
+    ) -> Result<GetContextResult, ApplicationError> {
+        let render_options = memory_render_options(
+            query.token_budget,
+            query.max_tier,
+            KmpMode::ReasonPreserving,
+            EndpointHint::Neighborhood,
+        );
+        let dimensions = query.dimensions.resolve_current_about(&query.about);
+        self.recall_context_from_parts(
+            &query.about,
+            "answerer",
+            &dimensions,
+            &render_options,
+            demand,
+            parts,
+        )
+        .await
+    }
+
     async fn ask_snapshot(
         &self,
         query: AskMemoryQuery,

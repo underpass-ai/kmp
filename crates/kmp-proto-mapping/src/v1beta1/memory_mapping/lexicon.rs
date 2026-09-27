@@ -39,14 +39,21 @@ impl Lexicon {
         prepared: &[(MemoryEvidence, AnswerCandidateTerms)],
         bridge: &LexicalBridge,
         collection: Arc<LexicalCollection>,
+        vocabulary: Option<&[String]>,
     ) -> Self {
         let question_counts = informative_term_counts(question, morphology);
-        let bridged = BridgedKey::read(
-            question,
-            morphology,
-            prepared.iter().map(|(item, _)| item.text.as_str()),
-            bridge,
-        );
+        // The table bridges the question to the words of every candidate:
+        // those given, or the whole about's when the lexical index gave only
+        // the candidates its postings reached (DESIGN L6, P13).
+        let bridged = match vocabulary {
+            Some(vocabulary) => BridgedKey::read_words(question, morphology, vocabulary, bridge),
+            None => BridgedKey::read(
+                question,
+                morphology,
+                prepared.iter().map(|(item, _)| item.text.as_str()),
+                bridge,
+            ),
+        };
         // The bar stays what the reader asked for — in the store's words
         // where the table had to supply them. Expansion may help a candidate
         // clear it; it may not lower it.

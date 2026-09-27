@@ -22,6 +22,9 @@ pub(super) struct RowWriter<'t> {
     postings: BTreeMap<String, Vec<(u64, Option<Posting>)>>,
     /// df deltas: content and direct, plain then aliased.
     frequencies: BTreeMap<String, [i64; 4]>,
+    /// How many more (or fewer) candidates' texts carry each word the
+    /// lexical bridge reads (`lex_vocab`).
+    words: BTreeMap<String, i64>,
 }
 
 impl<'t> RowWriter<'t> {
@@ -31,6 +34,7 @@ impl<'t> RowWriter<'t> {
             about,
             postings: BTreeMap::new(),
             frequencies: BTreeMap::new(),
+            words: BTreeMap::new(),
         }
     }
 
@@ -148,6 +152,9 @@ impl<'t> RowWriter<'t> {
             stats.rows_digest = stats.rows_digest.wrapping_sub(plain);
             stats.aliased_digest = stats.aliased_digest.wrapping_sub(aliased);
         }
+        for word in row.words() {
+            *self.words.entry(word.clone()).or_default() += sign;
+        }
         for term in row.terms().iter().filter(|term| term.is_held()) {
             let frequency = self.frequencies.entry(term.term.clone()).or_default();
             for (slot, reading) in [(0, false), (2, true)] {
@@ -210,6 +217,35 @@ impl<'t> RowWriter<'t> {
                     )
                     .map_err(storage)?;
             }
+        }
+        for (word, delta) in std::mem::take(&mut self.words) {
+            if delta == 0 {
+                continue;
+            }
+            let held = self
+                .tx
+                .query_row(
+                    "SELECT docs FROM lex_vocab WHERE about = ?1 AND word = ?2",
+                    params![self.about, word],
+                    |row| row.get::<_, i64>(0),
+                )
+                .optional()
+                .map_err(storage)?
+                .unwrap_or(0);
+            match held + delta {
+                next if next < 0 => {
+                    return Err(format!("lexical index: `{word}` in fewer than no texts"));
+                }
+                0 => self.tx.execute(
+                    "DELETE FROM lex_vocab WHERE about = ?1 AND word = ?2",
+                    params![self.about, word],
+                ),
+                next => self.tx.execute(
+                    "INSERT OR REPLACE INTO lex_vocab(about, word, docs) VALUES (?1, ?2, ?3)",
+                    params![self.about, word, next],
+                ),
+            }
+            .map_err(storage)?;
         }
         for (term, operations) in std::mem::take(&mut self.postings) {
             TermPostings::new(self.tx, self.about, &term).apply(&operations)?;

@@ -18,10 +18,11 @@ pub use graph_mapping::{
 };
 pub use memory_mapping::{
     AskGate, AskRetrievalContext, ConfidenceCalibration, DoubtBand, DoubtEntry, DoubtJudgement,
-    DoubtPassage, DoubtVerdicts, JudgedSelection, LanguageSignals, LexicalBridge,
-    LexicalIndexCache, LexicalMargin, LexicalObservation, LexicalProfile, LexicalReading,
-    LexicalRow, LexicalShadowWitness, LexicalTerm, PartnerShortlist, PathsProposals, Posting,
-    PostingBlock, RerankCandidateRanking, SearchProbe, SearchProbeTerms, SemanticCandidateRanking,
+    DoubtPassage, DoubtVerdicts, IndexedAsk, IndexedFieldStats, IndexedLifecycle, IndexedQuestion,
+    JudgedSelection, LanguageSignals, LexicalBridge, LexicalIndexCache, LexicalMargin,
+    LexicalObservation, LexicalProfile, LexicalReading, LexicalRow, LexicalShadowWitness,
+    LexicalTerm, PartnerShortlist, PathsProposals, Posting, PostingBlock, RelationClock,
+    RerankCandidateRanking, SearchProbe, SearchProbeTerms, SemanticCandidateRanking,
     SemanticSource, ShortlistedPartners, abouts_in_bundle, ask_query_from_proto,
     ask_response_from_result, curate_paths_reading_from_result, curate_reading_from_result,
     ingest_command_from_proto, ingest_response_from_outcome, ingest_response_without_judge,

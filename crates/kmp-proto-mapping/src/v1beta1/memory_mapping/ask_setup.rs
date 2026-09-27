@@ -46,19 +46,50 @@ impl<'a> AskSetup<'a> {
         cache: Option<&'a LexicalIndexCache>,
         gated: bool,
         witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
+        indexed: Option<&'a super::indexed_ask::IndexedAsk>,
     ) -> ProtoMappingResult<Self> {
         let lexical_identity = LexicalIndexIdentity::read(result, temporal);
         let admission = TemporalAdmission::read(&result.bundle, temporal)?;
         let bounded = admission.bound(&result.bundle);
         let lifecycle = lifecycle_for(&bounded, &admission);
+        // Candidates the lexical index reached stand on the whole about:
+        // its frontier and expiries, its language and its collection.
+        let lifecycle = match indexed {
+            Some(indexed) => lifecycle.with_indexed(&indexed.lifecycle),
+            None => lifecycle,
+        };
         let superseded_refs = lifecycle.superseded_refs().clone();
-        let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
-            .with_lexical_cache(cache, lexical_identity)
-            .with_lexical_witness(witness);
+        let ranker = match indexed {
+            Some(indexed) => AnswerEvidenceRanker::from_indexed_bundle(
+                &bounded,
+                bridge,
+                lifecycle,
+                indexed.language.clone(),
+            ),
+            None => AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle)
+                .with_lexical_cache(cache, lexical_identity)
+                .with_lexical_witness(witness),
+        };
         let ranker = if gated {
             ranker.with_identifier_aliases()
         } else {
             ranker
+        };
+        let ranker = match indexed {
+            Some(indexed) => {
+                let ranker = ranker.with_indexed_collection(std::sync::Arc::new(
+                    super::lexical_collection::LexicalCollection::from_indexed(
+                        indexed.stats(gated),
+                    ),
+                ));
+                match &indexed.vocabulary {
+                    Some(vocabulary) => {
+                        ranker.with_indexed_vocabulary(std::sync::Arc::clone(vocabulary))
+                    }
+                    None => ranker,
+                }
+            }
+            None => ranker,
         };
         // What the selection admits is decided before the ranker weighs a
         // word, so the collection its statistics read is the selection's

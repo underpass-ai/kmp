@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 
 use kmp_proto_mapping::v1beta1::LanguageSignals;
 
+use super::kept_relation::KeptRelation;
+
 use super::node_state::NodeState;
 use super::relation_key::RelationKey;
 use super::sqlite_lexical_sidecar::SqliteLexicalSidecar;
@@ -14,7 +16,7 @@ pub(super) struct WorkingSet<'s> {
     sidecar: &'s SqliteLexicalSidecar,
     about: &'s str,
     nodes: BTreeMap<String, (Option<NodeState>, Option<NodeState>)>,
-    relations: BTreeMap<RelationKey, (Option<LanguageSignals>, Option<LanguageSignals>)>,
+    relations: BTreeMap<RelationKey, (Option<KeptRelation>, Option<KeptRelation>)>,
     /// Nodes one hop past the ask's depth, as held and now.
     far: BTreeMap<String, (bool, bool)>,
 }
@@ -100,11 +102,8 @@ impl<'s> WorkingSet<'s> {
         Ok(())
     }
 
-    /// The signals of a relation the selection keeps; `None` when it does not.
-    pub(super) fn relation(
-        &mut self,
-        key: &RelationKey,
-    ) -> Result<Option<LanguageSignals>, String> {
+    /// A relation the selection keeps; `None` when it does not.
+    pub(super) fn relation(&mut self, key: &RelationKey) -> Result<Option<KeptRelation>, String> {
         self.load_relation(key)?;
         Ok(self.relations[key].1.clone())
     }
@@ -112,11 +111,11 @@ impl<'s> WorkingSet<'s> {
     pub(super) fn set_relation(
         &mut self,
         key: &RelationKey,
-        signals: Option<LanguageSignals>,
+        kept: Option<KeptRelation>,
     ) -> Result<(), String> {
         self.load_relation(key)?;
         if let Some(entry) = self.relations.get_mut(key) {
-            entry.1 = signals;
+            entry.1 = kept;
         }
         Ok(())
     }
@@ -134,7 +133,7 @@ impl<'s> WorkingSet<'s> {
         &self,
     ) -> (
         Vec<(String, Option<NodeState>)>,
-        Vec<(RelationKey, Option<LanguageSignals>)>,
+        Vec<(RelationKey, Option<KeptRelation>)>,
         LanguageSignals,
         LanguageSignals,
         (u64, u64),
@@ -163,10 +162,10 @@ impl<'s> WorkingSet<'s> {
                 continue;
             }
             if let Some(held) = held {
-                removed.add(held);
+                removed.add(&held.signals);
             }
             if let Some(now) = now {
-                added.add(now);
+                added.add(&now.signals);
             }
             relations.push((key.clone(), now.clone()));
         }

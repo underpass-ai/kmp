@@ -10,6 +10,7 @@ use crate::projection::ask_from_response;
 use crate::serving::adapters::tool_request_mapping::AskRequestMapper;
 use crate::serving::frozen_recall::FrozenRecall;
 use crate::serving::frozen_recall_key::FrozenRecallKey;
+use crate::serving::lexical_index_mode::LexicalIndexMode;
 use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use crate::serving::{ToolError, tool_success_result};
 use kmp_application::RenderDemand;
@@ -143,6 +144,86 @@ impl<'a> EmbeddedAskTool<'a> {
             None => None,
         };
         let witness = self.lexical.and_then(|(sidecar, _)| sidecar.witness());
+        // An ask the lexical index can hold is answered from the candidates
+        // its postings reach (DESIGN L6, P13): one about at the frontier
+        // with no dimensions at the indexed depth, and no channel that reads
+        // the whole admitted pool (semantic retrieval, re-ranking, the doubt
+        // band). The bridge reads the whole about's vocabulary from the index.
+        let indexed = match self.lexical {
+            Some((sidecar, store))
+                if sidecar.mode().reads_postings()
+                    && read == ShadowScope::Indexed { deeper: false }
+                    && matches!(self.semantic, Ok(None))
+                    && matches!(self.rerank, Ok(None))
+                    && !matches!(self.doubt_band, Some(Ok(Some(_)) | Err(_))) =>
+            {
+                let started = std::time::Instant::now();
+                let read = sidecar
+                    .indexed_read(store, self.service, &query, followed.as_ref(), self.bridge)
+                    .await;
+                Some((sidecar.mode(), read, started))
+            }
+            _ => None,
+        };
+        let indexed = match indexed {
+            Some((mode, Ok(Ok(read)), started)) => {
+                let revision = read.result.read_revision.clone();
+                let (plan_us, parts_us, documents) = (read.plan_us, read.parts_us, read.documents);
+                let mut retrieval = AskRetrievalContext::from(read.result);
+                if let Some(gate) = self.gate {
+                    retrieval = retrieval.with_gate(gate);
+                }
+                let answered = ask_response_from_result(
+                    &question,
+                    asked_as.as_deref(),
+                    policy,
+                    max_entries,
+                    retrieval.with_indexed(read.indexed),
+                    self.bridge,
+                    &temporal,
+                )
+                .map_err(|status| mapping_error(&status))?;
+                let elapsed_us = started.elapsed().as_micros() as u64;
+                if mode == LexicalIndexMode::On {
+                    tracing::debug!(
+                        target: "kmp_mcp::lexical_index",
+                        event = "kmp_lexical_answer",
+                        answered = true,
+                        candidates = read.candidates,
+                        documents,
+                        plan_us,
+                        parts_us,
+                        elapsed_us,
+                        "ask answered from the lexical index"
+                    );
+                    return Ok((answered, revision));
+                }
+                Some((
+                    answered,
+                    read.candidates,
+                    documents,
+                    elapsed_us,
+                    plan_us,
+                    parts_us,
+                ))
+            }
+            Some((_, Ok(Err(why)), _)) => {
+                tracing::debug!(
+                    target: "kmp_mcp::lexical_index",
+                    event = "kmp_lexical_answer",
+                    answered = false,
+                    reason = why,
+                    "ask read the about"
+                );
+                None
+            }
+            Some((_, Err(error), _)) => {
+                tracing::warn!(target: "kmp_mcp::lexical_index", %error, "lexical index could not answer; the ask reads the about");
+                None
+            }
+            None => None,
+        };
+        let started = std::time::Instant::now();
         let result = self
             .service
             .ask_on_demand(query, self.telemetry.render_demand(RenderDemand::Skip))
@@ -247,6 +328,21 @@ impl<'a> EmbeddedAskTool<'a> {
         )
         .map_err(|status| mapping_error(&status))?;
         response.warnings.extend(warnings);
+        // Verify: the index's answer beside the one the about gave.
+        if let Some((answered, candidates, documents, elapsed_us, plan_us, parts_us)) = indexed {
+            tracing::info!(
+                target: "kmp_mcp::lexical_index",
+                event = "kmp_lexical_verify",
+                equal = answered == response,
+                candidates,
+                documents,
+                plan_us,
+                parts_us,
+                index_elapsed_us = elapsed_us,
+                about_elapsed_us = started.elapsed().as_micros() as u64,
+                "lexical index answer compared"
+            );
+        }
         if let (Some((sidecar, store)), Some(witness)) = (self.lexical, witness) {
             sidecar
                 .shadow(store, &about, witness.take(), read, followed)

@@ -30,6 +30,12 @@ impl TermCounts {
     pub(super) fn length(&self) -> usize {
         self.length
     }
+
+    /// Counts read back from somewhere that already counted them (the
+    /// lexical sidecar's rows).
+    pub(super) fn from_counts(counts: BTreeMap<String, u32>, length: usize) -> Self {
+        Self { counts, length }
+    }
 }
 
 impl FromIterator<String> for TermCounts {

@@ -21,7 +21,7 @@ pub use memory::{
     MemoryAnswerPolicy, MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData,
     MemoryEvidenceData, MemoryIngestCommand, MemoryIngestOutcome, MemoryProvenanceData,
     MemoryRelabelCommand, MemoryRelabelOutcome, MemoryRelationData, RELABEL_ENTITY_KIND,
-    RELABEL_METHOD, RefusedSearchExpansion, RelateMemoryQuery, RelatePageRequest,
+    RELABEL_METHOD, RecallParts, RefusedSearchExpansion, RelateMemoryQuery, RelatePageRequest,
     ResemblingLabelData, SearchExpansionProposal, SearchExpansionReport, TemporalAxisView,
     TemporalCoordinateView, TemporalIncludeOptions, TemporalMemoryQuery, TemporalMemoryResult,
     TraceMemoryQuery, TracePageRequest, VisualBin, VisualCluster, VisualEntry, VisualLabel,

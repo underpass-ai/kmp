@@ -7,6 +7,7 @@ mod neighborhood_item;
 mod neighborhood_link;
 mod observation_defaults;
 mod pointed_write;
+mod recall_parts;
 mod receipt;
 mod ref_boundary;
 mod refused_search_expansion;
@@ -38,6 +39,7 @@ pub use write_neighborhood::WriteNeighborhood;
 pub use write_relation_clocks::WriteRelationClocks;
 
 pub use ingest::{ExistingMemoryRefs, crosses_abouts, translate_memory_ingest};
+pub use recall_parts::RecallParts;
 pub use ref_boundary::{
     validate_ref_token, validate_supplied_entry_ref, validate_supplied_evidence_ref,
     validate_supplied_member_ref,

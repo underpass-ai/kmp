@@ -41,6 +41,24 @@ impl LexicalCollection {
         }
     }
 
+    /// The collection as the lexical sidecar measured it over the whole
+    /// about, under one reading (DESIGN L6, P13).
+    pub(super) fn from_indexed(stats: &super::indexed_field_stats::IndexedFieldStats) -> Self {
+        Self {
+            content: LexicalField::from_stats(
+                stats.documents,
+                stats.content_length,
+                &stats.content_df,
+            ),
+            direct: LexicalField::from_stats(
+                stats.documents,
+                stats.direct_length,
+                &stats.direct_df,
+            ),
+            documents: Vec::new(),
+        }
+    }
+
     pub(super) fn matches(&self, prepared: &[(MemoryEvidence, AnswerCandidateTerms)]) -> bool {
         self.documents.len() == prepared.len()
             && self

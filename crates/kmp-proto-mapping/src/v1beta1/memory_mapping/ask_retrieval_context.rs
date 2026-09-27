@@ -31,6 +31,9 @@ pub struct AskRetrievalContext {
     /// Where the answer's ranker records what it measured, for the lexical
     /// sidecar's shadow comparison.
     pub(super) witness: Option<std::sync::Arc<super::lexical_shadow_witness::LexicalShadowWitness>>,
+    /// The whole about as the lexical index holds it, when `result` holds
+    /// only the candidates its postings reached (DESIGN L6, P13).
+    pub(super) indexed: Option<super::indexed_ask::IndexedAsk>,
 }
 
 impl From<GetContextResult> for AskRetrievalContext {
@@ -46,6 +49,7 @@ impl From<GetContextResult> for AskRetrievalContext {
             decided: None,
             doubt: None,
             witness: None,
+            indexed: None,
         }
     }
 }
@@ -68,6 +72,15 @@ impl AskRetrievalContext {
         witness: std::sync::Arc<super::lexical_shadow_witness::LexicalShadowWitness>,
     ) -> Self {
         self.witness = Some(witness);
+        self
+    }
+
+    /// Ranks the candidates `result` holds against the whole about the
+    /// lexical index describes (DESIGN L6, P13). `result` must hold every
+    /// candidate the postings of the question's words reach, and the
+    /// neighbourhood the ranker's rescues walk from them.
+    pub fn with_indexed(mut self, indexed: super::indexed_ask::IndexedAsk) -> Self {
+        self.indexed = Some(indexed);
         self
     }
 

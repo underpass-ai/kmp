@@ -409,6 +409,30 @@ where
         .collect())
 }
 
+/// The catalogue bundle a read of `neighborhood` makes, when the caller read
+/// the nodes itself (DESIGN L6, P13: the candidates the lexical index
+/// reached): placeholders out, nodes and relations in the reader's order,
+/// no bodies yet. `None` when the root is a placeholder.
+pub(crate) fn catalogue_from_neighborhood(
+    root_node_id: &str,
+    role: &str,
+    generator_version: &str,
+    neighborhood: NodeNeighborhood,
+) -> Result<Option<KmpBundle>, ApplicationError> {
+    if is_placeholder_projection_node(&neighborhood.root) {
+        return Ok(None);
+    }
+    let neighborhood = ordered_neighborhood(filter_placeholder_nodes(neighborhood));
+    build_bundle(
+        root_node_id,
+        role,
+        generator_version,
+        neighborhood,
+        Vec::new(),
+    )
+    .map(Some)
+}
+
 fn build_bundle(
     root_node_id: &str,
     role: &str,

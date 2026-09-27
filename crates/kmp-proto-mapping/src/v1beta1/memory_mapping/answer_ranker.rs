@@ -84,6 +84,12 @@ pub(super) struct AnswerEvidenceRanker<'a> {
     /// Where the first collection this ranker builds is recorded for the
     /// lexical sidecar's shadow comparison, when an ask asked for it.
     witness: Option<&'a super::lexical_shadow_witness::LexicalShadowWitness>,
+    /// The whole about's collection, when the candidates are only those the
+    /// lexical index reached (DESIGN L6, P13).
+    indexed_collection: Option<std::sync::Arc<super::lexical_collection::LexicalCollection>>,
+    /// The whole about's vocabulary the lexical bridge reads, when the
+    /// candidates are only those the lexical index reached (DESIGN L6, P13).
+    indexed_vocabulary: Option<std::sync::Arc<Vec<String>>>,
 }
 
 impl Default for AnswerEvidenceRanker<'_> {
@@ -94,6 +100,8 @@ impl Default for AnswerEvidenceRanker<'_> {
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
         }
     }
 }
@@ -180,12 +188,35 @@ impl<'a> AnswerEvidenceRanker<'a> {
         bridge: &'a LexicalBridge,
         lifecycle: MemoryLifecycle,
     ) -> Self {
+        Self::standing_on(
+            AnswerRecallContext::from_bundle_with_lifecycle(bundle, lifecycle),
+            bridge,
+        )
+    }
+
+    /// A ranker over the candidates the lexical index reached, standing on
+    /// the whole about's language (DESIGN L6, P13).
+    pub(super) fn from_indexed_bundle(
+        bundle: &KmpBundle,
+        bridge: &'a LexicalBridge,
+        lifecycle: MemoryLifecycle,
+        language: Option<String>,
+    ) -> Self {
+        Self::standing_on(
+            AnswerRecallContext::from_bundle_in(bundle, lifecycle, language),
+            bridge,
+        )
+    }
+
+    fn standing_on(context: AnswerRecallContext, bridge: &'a LexicalBridge) -> Self {
         Self {
-            context: AnswerRecallContext::from_bundle_with_lifecycle(bundle, lifecycle),
+            context,
             bridge,
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
         }
     }
 
@@ -226,6 +257,26 @@ impl<'a> AnswerEvidenceRanker<'a> {
     ) -> Self {
         self.lexical_cache = cache;
         self.lexical_identity = identity;
+        self
+    }
+
+    /// Measures every candidate against the whole about's collection, as
+    /// the lexical index holds it, instead of the candidates it is given.
+    pub(super) fn with_indexed_collection(
+        mut self,
+        collection: std::sync::Arc<super::lexical_collection::LexicalCollection>,
+    ) -> Self {
+        self.indexed_collection = Some(collection);
+        self
+    }
+
+    /// Bridges the question to the whole about's vocabulary, as the lexical
+    /// index holds it, instead of the candidates' texts.
+    pub(super) fn with_indexed_vocabulary(
+        mut self,
+        vocabulary: std::sync::Arc<Vec<String>>,
+    ) -> Self {
+        self.indexed_vocabulary = Some(vocabulary);
         self
     }
 
@@ -276,6 +327,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             &prepared,
             self.bridge,
             std::sync::Arc::clone(&collection),
+            self.indexed_vocabulary.as_deref().map(Vec::as_slice),
         );
         self.observe(&prepared, &collection, &lexicon);
         self.rank_prepared(
@@ -323,6 +375,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
         &self,
         prepared: &[ReadCandidate],
     ) -> std::sync::Arc<super::lexical_collection::LexicalCollection> {
+        if let Some(collection) = &self.indexed_collection {
+            return std::sync::Arc::clone(collection);
+        }
         match self.lexical_cache {
             Some(cache) => cache.collection(self.lexical_identity.as_ref(), prepared),
             None => std::sync::Arc::new(super::lexical_collection::LexicalCollection::build(
@@ -476,6 +531,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
                     &prepared,
                     self.bridge,
                     std::sync::Arc::clone(&collection),
+                    self.indexed_vocabulary.as_deref().map(Vec::as_slice),
                 );
                 self.observe(&prepared, &collection, &lexicon);
                 let (evidence, scores) = self.rank_prepared(
@@ -505,6 +561,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             &prepared,
             self.bridge,
             std::sync::Arc::clone(&collection),
+            self.indexed_vocabulary.as_deref().map(Vec::as_slice),
         );
         self.observe(&prepared, &collection, &lexicon);
         let unfiltered = self
@@ -1090,6 +1147,8 @@ mod tests {
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
                 relationships_by_ref: BTreeMap::from([(
@@ -1805,6 +1864,8 @@ mod tests {
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
             context,
             bridge: &SILENT_BRIDGE,
         };
@@ -2235,6 +2296,8 @@ mod tests {
             lexical_cache: None,
             lexical_identity: None,
             witness: None,
+            indexed_collection: None,
+            indexed_vocabulary: None,
             context: AnswerRecallContext::default(),
             bridge,
         }

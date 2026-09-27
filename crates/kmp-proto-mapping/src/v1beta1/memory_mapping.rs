@@ -55,6 +55,10 @@ mod hybrid_evidence;
 mod identifier_alias;
 mod identifier_aliases;
 mod identifier_binding;
+mod indexed_ask;
+mod indexed_field_stats;
+mod indexed_lifecycle;
+mod indexed_question;
 mod ingest;
 mod ingest_search_expansions;
 mod judged_core;
@@ -102,6 +106,7 @@ mod read_selection_fingerprint;
 mod relabel;
 mod relate;
 mod relate_proposals;
+mod relation_clock;
 mod relation_direction;
 mod relation_feature;
 mod relation_reach;
@@ -152,6 +157,10 @@ pub use doubt_entry::DoubtEntry;
 pub use doubt_judgement::DoubtJudgement;
 pub use doubt_passage::DoubtPassage;
 pub use doubt_verdicts::DoubtVerdicts;
+pub use indexed_ask::IndexedAsk;
+pub use indexed_field_stats::IndexedFieldStats;
+pub use indexed_lifecycle::IndexedLifecycle;
+pub use indexed_question::IndexedQuestion;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use ingest_search_expansions::{
     ingest_response_without_judge, search_expansion_proposals_from_proto,
@@ -181,6 +190,7 @@ pub use relabel::{relabel_command_from_proto, relabel_response_from_outcome};
 pub use relate::{
     curate_paths_reading_from_result, curate_reading_from_result, relate_response_from_result,
 };
+pub use relation_clock::RelationClock;
 pub use rerank_candidate_ranking::RerankCandidateRanking;
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,

@@ -184,6 +184,15 @@ pub(super) fn dump(path: &Path) -> BTreeMap<String, Vec<String>> {
             "df",
             "SELECT term, content, direct FROM lex_key_df WHERE about = ?1 ORDER BY term",
         ),
+        (
+            "vocabulary",
+            "SELECT word, docs FROM lex_vocab WHERE about = ?1 ORDER BY word",
+        ),
+        (
+            "clocks",
+            "SELECT source, target, type, sequence, secs, nanos, until FROM lex_clock \
+             WHERE about = ?1 ORDER BY source, target, type",
+        ),
     ] {
         held.insert(
             name.into(),

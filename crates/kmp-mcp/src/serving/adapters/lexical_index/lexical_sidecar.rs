@@ -1,11 +1,14 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use kmp_domain::PortError;
+use kmp_domain::{GraphNeighborhoodReader, PortError};
 use kmp_embedded::EmbeddedKernelStore;
 use kmp_proto_mapping::v1beta1::{LexicalObservation, LexicalShadowWitness};
 
 use super::catch_up_report::CatchUpReport;
+use super::indexed_parts::IndexedParts;
+use super::indexed_plan::IndexedPlan;
+pub(crate) use super::indexed_read::IndexedRead;
 use super::lexical_maintainer::LexicalMaintainer;
 use super::shadow_comparison::ShadowComparison;
 use super::shadow_report::ShadowReport;
@@ -28,6 +31,7 @@ pub(crate) const LEXICAL_ASK_DEPTH: u8 = super::about_rebuild::ASK_DEPTH;
 pub(crate) struct LexicalSidecar {
     sidecar: Option<Arc<SqliteLexicalSidecar>>,
     maintainer: Option<Arc<LexicalMaintainer>>,
+    mode: LexicalIndexMode,
 }
 
 pub(crate) fn lexical_index_path(data_dir: &Path) -> PathBuf {
@@ -46,6 +50,7 @@ impl LexicalSidecar {
                 Self {
                     maintainer: Some(Arc::new(LexicalMaintainer::new(Arc::clone(&sidecar)))),
                     sidecar: Some(sidecar),
+                    mode,
                 }
             }
             Err(error) => {
@@ -59,6 +64,7 @@ impl LexicalSidecar {
         Self {
             sidecar: None,
             maintainer: None,
+            mode: LexicalIndexMode::Off,
         }
     }
 
@@ -118,9 +124,94 @@ impl LexicalSidecar {
             .await
     }
 
-    /// Where an ask's ranker leaves what it measured, while the sidecar is on.
+    /// Where an ask's ranker leaves what it measured, while the sidecar is
+    /// in shadow.
     pub(crate) fn witness(&self) -> Option<Arc<LexicalShadowWitness>> {
-        self.sidecar.as_ref().map(|_| Arc::default())
+        self.sidecar
+            .as_ref()
+            .filter(|_| self.mode.shadows())
+            .map(|_| Arc::default())
+    }
+
+    /// What the process does with the sidecar.
+    pub(crate) fn mode(&self) -> LexicalIndexMode {
+        self.mode
+    }
+
+    /// Reads the part of `query`'s about the postings of its words reach,
+    /// and the whole about's statistics to rank it against (DESIGN L6, P13).
+    /// `Ok(Err(why))` when the ask is not one the index can hold; it then
+    /// reads the about. `followed` is the catch-up that preceded the ask:
+    /// the read must stand where it left the sidecar.
+    pub(crate) async fn indexed_read(
+        &self,
+        store: &EmbeddedKernelStore,
+        service: &kmp_embedded::EmbeddedMemoryService,
+        query: &kmp_application::memory::AskMemoryQuery,
+        followed: Option<&CatchUpReport>,
+        bridge: &kmp_proto_mapping::v1beta1::LexicalBridge,
+    ) -> Result<Result<IndexedRead, &'static str>, String> {
+        let Some(sidecar) = self.sidecar.as_ref().map(Arc::clone) else {
+            return Ok(Err("the index is closed"));
+        };
+        let Some(position) = followed
+            .filter(|report| report.committed)
+            .map(|report| report.position)
+        else {
+            return Ok(Err("the index did not follow the log"));
+        };
+        let about = query.about.clone();
+        let question = query.question.clone();
+        let started = std::time::Instant::now();
+        let planned = {
+            let sidecar = Arc::clone(&sidecar);
+            let about = about.clone();
+            let bridge = bridge.clone();
+            // `verify` measures every ask the index can hold, however many
+            // candidates it reaches; `on` answers only those it saves on.
+            let bounded = self.mode == LexicalIndexMode::On;
+            tokio::task::spawn_blocking(move || {
+                IndexedPlan::read(&sidecar, &about, &question, &bridge, bounded)
+            })
+            .await
+            .map_err(|error| error.to_string())??
+        };
+        let plan = match planned {
+            Ok(plan) => plan,
+            Err(why) => return Ok(Err(why)),
+        };
+        let candidates = plan.candidates.clone();
+        let plan_us = started.elapsed().as_micros() as u64;
+        let parts = store
+            .read_points(move |reads| {
+                if reads.last_event_sequence()? != position {
+                    return Ok(None);
+                }
+                IndexedParts::new(reads, &sidecar, &about)
+                    .read(&candidates)
+                    .map_err(PortError::Unavailable)
+            })
+            .await
+            .map_err(|error| error.to_string())?;
+        let Some(mut parts) = parts else {
+            return Ok(Err("the store moved"));
+        };
+        parts.read_revision = store
+            .graph_read_revision()
+            .await
+            .map_err(|error| error.to_string())?;
+        let result = service
+            .ask_from_parts(query, parts, kmp_application::RenderDemand::Skip)
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok(Ok(IndexedRead {
+            result,
+            indexed: plan.indexed,
+            candidates: plan.candidates.len(),
+            documents: plan.documents,
+            plan_us,
+            parts_us: started.elapsed().as_micros() as u64 - plan_us,
+        }))
     }
 
     /// Compares the sidecar with what an ask measured and logs the result.

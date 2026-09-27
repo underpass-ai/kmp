@@ -90,7 +90,7 @@ fn the_derivation_is_the_one_this_index_version_names() {
     ];
     assert_eq!(
         (INDEX_VERSION, measured),
-        ("lexical-index-2", GOLDEN),
+        ("lexical-index-3", GOLDEN),
         "the row derivation moved: bump INDEX_VERSION and record the new fingerprints"
     );
 }
