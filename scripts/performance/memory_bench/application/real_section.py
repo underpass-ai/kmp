@@ -17,6 +17,7 @@ the reader's SHA-256): the store is shared by content, not rebuilt.
 """
 from pathlib import Path
 import os
+import re
 
 from ..corpora import negative_rules, real_freeze
 from ..domain import cachekey
@@ -31,6 +32,7 @@ NEGATIVES = ('negatives', 'hard-negatives.jsonl')
 GUARDS = ('negatives', 'identifier-guards.jsonl')
 NEGATIVE_STRATA = ('form:',)
 GUARD_STRATA = ('family:', 'polarity:')
+DATED = re.compile(r'\d{4}-\d{2}-\d{2}')
 
 
 class RealSectionRefused(BenchError):
@@ -38,14 +40,17 @@ class RealSectionRefused(BenchError):
 
 
 def find_freeze(freeze=None, private_root=None, env=None):
-    """The freeze directory: `freeze`, else the latest dated one under the private root; None if neither."""
+    """The freeze directory: `freeze`, else the latest `YYYY-MM-DD` one under the private root; None if neither."""
     if freeze:
         return real_freeze.FreezeDir.at(freeze)
     env = os.environ if env is None else env
     root = private_root or env.get(PRIVATE_ROOT_ENV)
     if not root:
         return None
-    dated = sorted(p for p in Path(root).expanduser().iterdir() if (p / 'freeze.json').is_file()) \
+    # Only a date-named freeze is a default: a named one (`breal-ext`) sorts after
+    # every date and would silently replace the questions; pass it with --freeze.
+    dated = sorted(p for p in Path(root).expanduser().iterdir()
+                   if DATED.fullmatch(p.name) and (p / 'freeze.json').is_file()) \
         if Path(root).expanduser().is_dir() else []
     return real_freeze.FreezeDir.at(dated[-1]) if dated else None
 

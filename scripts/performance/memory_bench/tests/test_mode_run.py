@@ -130,6 +130,18 @@ class RealSectionTest(unittest.TestCase):
                 Path(root, name, 'freeze.json').write_text('{}')
             found = real_section.find_freeze(env={'MEMORY_BENCH_PRIVATE_ROOT': root})
             self.assertEqual(found.root.name, '2026-09-26')
+
+    def test_an_undated_freeze_is_never_the_default(self):
+        # A named freeze (`breal-ext`) sorts after every date; picking it by default
+        # silently swapped the real-store questions (170 B-real, no negatives).
+        with tempfile.TemporaryDirectory() as root:
+            for name in ('2026-09-26', 'breal-ext', 'cache'):
+                Path(root, name).mkdir()
+                Path(root, name, 'freeze.json').write_text('{}')
+            found = real_section.find_freeze(private_root=root)
+            self.assertEqual(found.root.name, '2026-09-26')
+            explicit = real_section.find_freeze(freeze=Path(root, 'breal-ext'))
+            self.assertEqual(explicit.root.name, 'breal-ext')
         skipped = real_section.run((None, None), MODES.get('quick-a'), None, None)
         if os.environ.get('MEMORY_BENCH_PRIVATE_ROOT') is None:
             self.assertEqual(skipped.status, 'skipped')
