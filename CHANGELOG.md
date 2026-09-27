@@ -158,6 +158,25 @@ Detailed notes from the early release cycle remain available in the
   `projection.more_on_request` (on FactConsolidation-6k declared, 58 of the
   217 rescued items reach the default first page; none of them comes from a
   cited memory).
+- Doubt band for `kmp_ask` (P10, DESIGN L4 4f), opt-in per store with an
+  `ask-judge.json` beside it and a store already on TypeSafe Jev. An ask
+  enters the band when no anchor it names is absent and it is UNKNOWN
+  without an anchor while a `best_effort` reading would cite something,
+  `attribute_not_found` or PARTIAL under an anchor, or answered with a
+  first citation leading the second by less than `margin_tenths` (default
+  20) tenths of a BM25 point. At most eight admitted passages go to Jev in
+  one batch through the verdict book, with a 1.5 s deadline; past it the
+  deterministic answer stands and the verdict is kept for the next ask.
+  B1 (veto, `veto_at` 0.9): a cited memory Jev finds unlikely to answer
+  leaves the core and stays in `proof.evidence` marked `judged_out`,
+  `judged_permille` and `judged_template`. On the validation corpora (B-real
+  and the negatives of seeds 11 and 13, thresholds fixed on development
+  only) B1 removed 7 false answers and lost no useful one (p = 0.016). B2
+  (promotion, `judged_by`, never `high` confidence) is measured but off
+  (`"promote": false`): n = 31 is below the n ≥ 100 it needs. The four-grade
+  `"question": "score"` is an experiment that did not beat yes/no. With the
+  band on, an ask is a function of the store and the verdict book; a book
+  hit adds about 100–190 ms to the ask.
 - Margin gate on Ask re-ranking (DESIGN L4 4c): an Ask whose first lexical
   candidate leads the second by at least `margin_tenths` tenths of a content
   BM25 point (`rerank.json`, default 0, `null` turns it off), with `High`
