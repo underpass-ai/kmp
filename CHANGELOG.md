@@ -352,7 +352,15 @@ Detailed notes from the early release cycle remain available in the
   `anchor_absent_in_selection` (the bench's `anchor_in_other_about` is
   scored as a wrong reason); telling the two apart is deferred to L6, the
   lexical index, which can read an anchor's postings outside the selection.
-- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v3`. `refs.normalize`
+- `memory_bench`: `BENCH_VERSION` is `kmp.memory_bench.v4`. The bench no
+  longer deduplicates what it retrieves: `memory_ref::retrieved`,
+  `refs.retrieved` and `retrieved_across_pages` keep every returned ref, in
+  order, repeats included, so a memory returned with its evidence counts
+  twice (decision of 28 Sept 2026). Citations of evidence still normalize to
+  their entry. `metric_parity.json` is v3; retrieval-baseline `ndcg_at_10`
+  and the all_ rows it moves are re-recorded as a reviewed change. Every v3
+  run, report and world is invalidated; stores are kept.
+- `memory_bench`: `BENCH_VERSION` was `kmp.memory_bench.v3`. `refs.normalize`
   (and the Rust scorecards, through the new `kmp_testkit::memory_ref`) read
   `detail:evidence:<entry>:current`, `…:relation:<n>` and suffix-less guide
   evidence as citations of `<entry>`; before, they never matched a judged

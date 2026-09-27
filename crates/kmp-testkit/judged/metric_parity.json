@@ -1,6 +1,6 @@
 {
-  "schema": "kmp.bench.metric_parity.v2",
-  "about": "Shared fixture: the same ranking outcomes scored by crates/kmp-testkit/src/retrieval_scorecard.rs and scripts/performance/memory_bench/domain/metrics.py must give these numbers. Floats compare within `tolerance`. Every `refs` value normalizes to its `normalized` in both crates/kmp-testkit/src/memory_ref.rs and scripts/performance/memory_bench/domain/refs.py, and every `retrieved` list of ids reads as its `retrieved` memories in both.",
+  "schema": "kmp.bench.metric_parity.v3",
+  "about": "Shared fixture: the same ranking outcomes scored by crates/kmp-testkit/src/retrieval_scorecard.rs and scripts/performance/memory_bench/domain/metrics.py must give these numbers. Floats compare within `tolerance`. Every `refs` value normalizes to its `normalized` in both crates/kmp-testkit/src/memory_ref.rs and scripts/performance/memory_bench/domain/refs.py, and every `retrieved` list of ids reads as its `retrieved` memories in both, repeats kept.",
   "tolerance": 1e-12,
   "cases": [
     {
@@ -593,7 +593,10 @@
       ],
       "retrieved": [
         "p:x:entry:decision:a",
-        "p:x:entry:decision:b"
+        "p:x:entry:decision:b",
+        "p:x:entry:decision:a",
+        "p:x:entry:decision:b",
+        "p:x:entry:decision:a"
       ]
     },
     {
@@ -604,6 +607,8 @@
         "p:x:e2"
       ],
       "retrieved": [
+        "p:x:e1",
+        "p:x:e1",
         "p:x:e1",
         "p:x:e2"
       ]

@@ -7,4 +7,4 @@ the data types that implement them live in `domain/`.
 
 # Part of every cache key and of the comparability check: bump it whenever the
 # driver, the scoring rules or a contract in SCHEMAS.md changes meaning.
-BENCH_VERSION = 'kmp.memory_bench.v3'
+BENCH_VERSION = 'kmp.memory_bench.v4'

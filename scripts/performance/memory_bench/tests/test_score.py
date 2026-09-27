@@ -221,7 +221,7 @@ def paged_pages(q, sample=0):
 
 
 class MultiPageTest(unittest.TestCase):
-    """The ported Rust columns read the first page; bench metrics read every page, de-duplicated."""
+    """The ported Rust columns read the first page; bench metrics read every page, repeats kept."""
 
     @classmethod
     def setUpClass(cls):
@@ -239,11 +239,12 @@ class MultiPageTest(unittest.TestCase):
         self.assertAlmostEqual(self.score.values['ndcg_at_10'], 1 / math.log2(5))
         self.assertEqual(aggregate.scorecard_port([self.score])['ndcg_at_10'], self.score.values['ndcg_at_10'])
 
-    def test_all_page_metrics_deduplicate_and_keep_the_first_rank(self):
+    def test_all_page_metrics_keep_every_repeat_in_order(self):
         self.assertEqual(retrieved_across_pages(paged_pages(CHAIN)),
-                         [ref(50), ref(51), ref(52), ref(40), ref(41)])
-        # Concatenated, the repeated 40 would push 41 to rank 6.
-        self.assertTrue(self.score.values['full_chain_recovered_at_5'])
+                         [ref(50), ref(51), ref(52), ref(40), ref(40), ref(41), ref(50), ref(40)])
+        # The repeated 40 counts again and pushes 41 to rank 6 (BENCH_VERSION v4).
+        self.assertFalse(self.score.values['full_chain_recovered_at_5'])
+        self.assertTrue(self.score.values['full_chain_recovered_at_10'])
 
 
 class ReadingTest(unittest.TestCase):

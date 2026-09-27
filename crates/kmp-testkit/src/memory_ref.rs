@@ -12,9 +12,9 @@
 //!    lowercase hex digits. Guide evidence carries no suffix.
 //!
 //! Once normalized, an entry and its evidence node are the same memory, and a
-//! response often returns both. [`retrieved`] keeps each memory where the
-//! reader first meets it: counted twice, one hit would earn nDCG twice and
-//! push it above 1.
+//! response often returns both. [`retrieved`] keeps every one as it arrives,
+//! repeats included: a memory returned with its evidence counts twice, as the
+//! reader meets it (decision of 28 Sept 2026, BENCH_VERSION v4).
 //!
 //! `scripts/performance/memory_bench/domain/refs.py` ports this line for line
 //! and `judged/metric_parity.json` (`refs`) pins both to one table.
@@ -37,14 +37,10 @@ pub fn normalize(value: &str) -> String {
     }
 }
 
-/// The memories `proof.evidence[].id` returns, normalized, each at its first
-/// occurrence in response order.
+/// The memories `proof.evidence[].id` returns, normalized, in response order
+/// and with repeats: nothing is deduplicated.
 pub fn retrieved<'a>(ids: impl IntoIterator<Item = &'a str>) -> Vec<String> {
-    let mut seen = std::collections::BTreeSet::new();
-    ids.into_iter()
-        .map(normalize)
-        .filter(|memory| seen.insert(memory.clone()))
-        .collect()
+    ids.into_iter().map(normalize).collect()
 }
 
 /// The entry an `evidence:` node is evidence of, or `None` for any other ref.
@@ -70,7 +66,7 @@ mod tests {
     use super::{normalize, retrieved};
 
     #[test]
-    fn a_memory_is_retrieved_where_it_is_first_met() {
+    fn a_memory_with_its_evidence_is_retrieved_twice() {
         assert_eq!(
             retrieved([
                 "entry:p:x:entry:decision:a",
@@ -78,7 +74,12 @@ mod tests {
                 "detail:evidence:p:x:entry:decision:a:current",
                 "entry:p:x:entry:decision:b",
             ]),
-            ["p:x:entry:decision:a", "p:x:entry:decision:b"]
+            [
+                "p:x:entry:decision:a",
+                "p:x:entry:decision:b",
+                "p:x:entry:decision:a",
+                "p:x:entry:decision:b",
+            ]
         );
     }
 

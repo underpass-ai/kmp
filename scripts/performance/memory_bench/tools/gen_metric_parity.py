@@ -27,7 +27,7 @@ ABOUT = ('Shared fixture: the same ranking outcomes scored by crates/kmp-testkit
          'and scripts/performance/memory_bench/domain/metrics.py must give these numbers. Floats compare '
          'within `tolerance`. Every `refs` value normalizes to its `normalized` in both '
          'crates/kmp-testkit/src/memory_ref.rs and scripts/performance/memory_bench/domain/refs.py, '
-         'and every `retrieved` list of ids reads as its `retrieved` memories in both.')
+         'and every `retrieved` list of ids reads as its `retrieved` memories in both, repeats kept.')
 TWELVE = [f'j{i:02d}' for i in range(12)]
 SEVEN = [f'j{i:02d}' for i in range(7)]
 
@@ -76,7 +76,7 @@ REF_VALUES = (
     'detail:evidence:x:current:relation:1', 'detail:evidence:x:relation:1:current',
     'project:x:entry:relation:1',
 )
-# `proof.evidence[].id` lists and the memories a reader retrieves from them.
+# `proof.evidence[].id` lists and the memories a reader retrieves from them, repeats kept.
 RETRIEVED_LISTS = (
     ['entry:p:x:entry:decision:a', 'detail:evidence:p:x:entry:decision:b:current',
      'detail:evidence:p:x:entry:decision:a:current', 'entry:p:x:entry:decision:b',
@@ -106,7 +106,7 @@ def fixture():
                       'unknown': unknown, 'used_bytes': used, 'elapsed_millis': elapsed,
                       'expected': expected(outcome)})
     card = RetrievalScorecard.score(outcomes)
-    return {'schema': 'kmp.bench.metric_parity.v2', 'about': ABOUT, 'tolerance': 1e-12, 'cases': cases,
+    return {'schema': 'kmp.bench.metric_parity.v3', 'about': ABOUT, 'tolerance': 1e-12, 'cases': cases,
             'scorecard': {name: getattr(card, name) for name in SCORECARD_FIELDS},
             'refs': [{'value': value, 'normalized': refs.normalize(value)} for value in REF_VALUES],
             'retrieved': [{'ids': ids, 'retrieved': refs.retrieved(ids)} for ids in RETRIEVED_LISTS]}

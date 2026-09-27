@@ -95,13 +95,14 @@ class AnswerReadingTest(unittest.TestCase):
     def test_retrieved_keeps_response_order_and_skips_non_strings(self):
         self.assertEqual(refs.evidence_refs(self.ANSWER), ['project:x:e2', 'project:x:e9', 'project:x:e1'])
 
-    def test_an_entry_and_its_evidence_are_retrieved_once_where_first_met(self):
+    def test_an_entry_and_its_evidence_are_both_retrieved_as_they_arrive(self):
         answer = {'proof': {'evidence': [{'id': 'entry:project:x:entry:decision:a'},
                                          {'id': 'detail:evidence:project:x:entry:decision:b:current'},
                                          {'id': 'detail:evidence:project:x:entry:decision:a:current'},
                                          {'id': 'entry:project:x:entry:decision:b'}]}}
         self.assertEqual(refs.evidence_refs(answer),
-                         ['project:x:entry:decision:a', 'project:x:entry:decision:b'])
+                         ['project:x:entry:decision:a', 'project:x:entry:decision:b',
+                          'project:x:entry:decision:a', 'project:x:entry:decision:b'])
 
     def test_cited_is_a_sorted_set(self):
         self.assertEqual(refs.cited_refs(self.ANSWER), ('project:x:e1', 'project:x:e2'))

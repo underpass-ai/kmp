@@ -453,7 +453,7 @@ class SummaryTest(unittest.TestCase):
             'recorded': {'baseline': {'holds': True, 'failing': [], 'not_measured': 2, 'rows': 9,
                                       'file': 'docs/x.tsv'}, 'candidate': None},
             'unverified_stores': {'baseline': 0, 'candidate': 1}, 'cached': {'baseline': True, 'candidate': False}}])
-        return {'summary_key': 'a' * 64, 'bench_version': 'kmp.memory_bench.v3', 'modes_sha256': 'b' * 64,
+        return {'summary_key': 'a' * 64, 'bench_version': 'kmp.memory_bench.v4', 'modes_sha256': 'b' * 64,
                 'mode': 'quick-a', 'generated_by': {'code_sha256': 'c' * 64},
                 'timings': {'started_at': '2026-09-26T00:00:00Z', 'total_s': 12.5, 'budget_s': 600.0,
                             'within_budget': True, 'by_section': {}},

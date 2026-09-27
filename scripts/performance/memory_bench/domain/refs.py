@@ -19,7 +19,9 @@ So `detail:evidence:project:x:entry:decision:d:current` and
 `project:x:entry:decision:d`, as `entry:project:x:entry:decision:d` does
 (decision of 28 Sept 2026; before it, BENCH_VERSION v2, evidence citations
 counted as refs of their own and never matched a judged entry).
-`retrieved` keeps each memory once, where the reader first meets it.
+`retrieved` keeps every returned memory as it arrives, repeats included: a
+memory that comes with its evidence counts twice (decision of 28 Sept 2026,
+BENCH_VERSION v4; v3 kept each memory once).
 `metric_parity.json` pins both ports to the same tables (`refs`, `retrieved`).
 
 `evidence_refs`, `cited_refs` and `is_unknown` port how the same scorecard
@@ -78,21 +80,12 @@ def memory_ref(item):
 
 
 def retrieved(ids):
-    """memory_ref.rs `retrieved`: normalized, each memory at its first occurrence.
-
-    An entry and its evidence node are one memory once normalized; counted twice, one hit
-    would earn nDCG twice and push it above 1.
-    """
-    seen, memories = set(), []
-    for memory in map(normalize, ids):
-        if memory not in seen:
-            seen.add(memory)
-            memories.append(memory)
-    return memories
+    """memory_ref.rs `retrieved`: normalized, in response order, repeats kept."""
+    return [normalize(identifier) for identifier in ids]
 
 
 def evidence_refs(structured):
-    """`proof.evidence[].id` in response order, normalized, first occurrences; non-string ids skipped."""
+    """`proof.evidence[].id` in response order, normalized, repeats kept; non-string ids skipped."""
     items = _field(_field(structured, 'proof'), 'evidence')
     if not isinstance(items, list):
         return []
