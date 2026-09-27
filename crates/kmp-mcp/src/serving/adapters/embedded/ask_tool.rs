@@ -146,20 +146,28 @@ impl<'a> EmbeddedAskTool<'a> {
         let witness = self.lexical.and_then(|(sidecar, _)| sidecar.witness());
         // An ask the lexical index can hold is answered from the candidates
         // its postings reach (DESIGN L6, P13): one about at the frontier
-        // with no dimensions at the indexed depth, and no channel that reads
+        // with no dimensions at the indexed depth (or deeper, while nothing
+        // lies past it), and no channel that reads
         // the whole admitted pool (semantic retrieval, re-ranking, the doubt
         // band). The bridge reads the whole about's vocabulary from the index.
         let indexed = match self.lexical {
             Some((sidecar, store))
                 if sidecar.mode().reads_postings()
-                    && read == ShadowScope::Indexed { deeper: false }
+                    && matches!(read, ShadowScope::Indexed { .. })
                     && matches!(self.semantic, Ok(None))
                     && matches!(self.rerank, Ok(None))
                     && !matches!(self.doubt_band, Some(Ok(Some(_)) | Err(_))) =>
             {
                 let started = std::time::Instant::now();
                 let read = sidecar
-                    .indexed_read(store, self.service, &query, followed.as_ref(), self.bridge)
+                    .indexed_read(
+                        store,
+                        self.service,
+                        &query,
+                        followed.as_ref(),
+                        self.bridge,
+                        read.deeper(),
+                    )
                     .await;
                 Some((sidecar.mode(), read, started))
             }

@@ -142,7 +142,8 @@ impl LexicalSidecar {
     /// and the whole about's statistics to rank it against (DESIGN L6, P13).
     /// `Ok(Err(why))` when the ask is not one the index can hold; it then
     /// reads the about. `followed` is the catch-up that preceded the ask:
-    /// the read must stand where it left the sidecar.
+    /// the read must stand where it left the sidecar. A `deeper` ask is
+    /// held only while nothing lies past the indexed depth.
     pub(crate) async fn indexed_read(
         &self,
         store: &EmbeddedKernelStore,
@@ -150,6 +151,7 @@ impl LexicalSidecar {
         query: &kmp_application::memory::AskMemoryQuery,
         followed: Option<&CatchUpReport>,
         bridge: &kmp_proto_mapping::v1beta1::LexicalBridge,
+        deeper: bool,
     ) -> Result<Result<IndexedRead, &'static str>, String> {
         let Some(sidecar) = self.sidecar.as_ref().map(Arc::clone) else {
             return Ok(Err("the index is closed"));
@@ -171,7 +173,7 @@ impl LexicalSidecar {
             // candidates it reaches; `on` answers only those it saves on.
             let bounded = self.mode == LexicalIndexMode::On;
             tokio::task::spawn_blocking(move || {
-                IndexedPlan::read(&sidecar, &about, &question, &bridge, bounded)
+                IndexedPlan::read(&sidecar, &about, &question, &bridge, bounded, deeper)
             })
             .await
             .map_err(|error| error.to_string())??

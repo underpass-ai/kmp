@@ -49,10 +49,15 @@ impl IndexedPlan {
         question: &str,
         bridge: &LexicalBridge,
         bounded: bool,
+        deeper: bool,
     ) -> Result<Result<Self, Declined>, String> {
         let Some(stats) = sidecar.stats(about)? else {
             return Ok(Err("about not built"));
         };
+        // A deeper read is the indexed one while nothing lies past it.
+        if deeper && stats.far > 0 {
+            return Ok(Err("nodes lie past the indexed depth"));
+        }
         // A candidate its judged expansions alone reach is rescued from a
         // field measured over every expanded candidate of the about.
         if stats.expanded > 0 {

@@ -113,7 +113,7 @@ const QUESTIONS: [&str; 7] = [
     "what replaced the heating tape?",
 ];
 
-fn query(question: &str, policy: MemoryAnswerPolicy) -> AskMemoryQuery {
+fn query(question: &str, policy: MemoryAnswerPolicy, depth: u32) -> AskMemoryQuery {
     AskMemoryQuery {
         about: ABOUT.to_string(),
         question: question.to_string(),
@@ -121,7 +121,7 @@ fn query(question: &str, policy: MemoryAnswerPolicy) -> AskMemoryQuery {
         answer_policy: policy,
         dimensions: DimensionSelection::default(),
         token_budget: 2400,
-        depth: 2,
+        depth,
         max_tier: None,
         max_entries: None,
         temporal: TemporalSelection::Frontier,
@@ -140,14 +140,23 @@ async fn assert_index_answers_as_the_about(bridge: LexicalBridge, bridged: bool)
     let mut reached_by_the_bridge = false;
     let mut answered = 0;
     for question in QUESTIONS {
-        for policy in [
-            MemoryAnswerPolicy::EvidenceOrUnknown,
-            MemoryAnswerPolicy::BestEffort,
+        for (policy, depth) in [
+            (MemoryAnswerPolicy::EvidenceOrUnknown, 2),
+            (MemoryAnswerPolicy::BestEffort, 2),
+            // Deeper, while nothing lies past the indexed depth.
+            (MemoryAnswerPolicy::EvidenceOrUnknown, 3),
         ] {
-            let query = query(question, policy);
+            let query = query(question, policy, depth);
             let followed = sidecar.catch_up(kernel.store(), Some(ABOUT)).await;
             let read = match sidecar
-                .indexed_read(kernel.store(), &service, &query, followed.as_ref(), &bridge)
+                .indexed_read(
+                    kernel.store(),
+                    &service,
+                    &query,
+                    followed.as_ref(),
+                    &bridge,
+                    depth > 2,
+                )
                 .await
                 .expect("the index reads")
             {
@@ -193,7 +202,7 @@ async fn assert_index_answers_as_the_about(bridge: LexicalBridge, bridged: bool)
                 &TemporalSelection::Frontier,
             )
             .expect("about answer");
-            assert_eq!(indexed, about, "{question} ({policy:?})");
+            assert_eq!(indexed, about, "{question} ({policy:?}, depth {depth})");
         }
     }
     assert_eq!(reached_by_the_bridge, bridged);
@@ -224,6 +233,7 @@ async fn a_question_that_reaches_most_of_the_about_reads_the_about() {
     let query = query(
         "which garden bed received compost and mulch?",
         MemoryAnswerPolicy::BestEffort,
+        2,
     );
     let followed = sidecar.catch_up(kernel.store(), Some(ABOUT)).await;
     let read = sidecar
@@ -233,6 +243,7 @@ async fn a_question_that_reaches_most_of_the_about_reads_the_about() {
             &query,
             followed.as_ref(),
             &LexicalBridge::none(),
+            false,
         )
         .await
         .expect("the index reads");
@@ -248,6 +259,7 @@ async fn a_question_that_reaches_most_of_the_about_reads_the_about() {
             &query,
             None,
             &LexicalBridge::none(),
+            false,
         )
         .await
         .expect("the index reads");
@@ -287,10 +299,12 @@ async fn every_ask_gives_the_same_bytes_with_the_index_on() {
         .iter()
         .map(|question| json!({"about":ABOUT,"question":question}))
         .collect::<Vec<_>>();
-    // Asks the index does not hold: another depth, a clock, a dimension,
+    // A deeper ask (held while nothing lies past the indexed depth), and
+    // asks the index does not hold: a shallower one, a clock, a dimension,
     // a question that reaches most of the about.
     asks.extend([
         json!({"about":ABOUT,"question":QUESTIONS[0],"depth":1}),
+        json!({"about":ABOUT,"question":QUESTIONS[2],"depth":3}),
         json!({"about":ABOUT,"question":QUESTIONS[0],"as_of":{"time":EARLY}}),
         json!({"about":ABOUT,"question":QUESTIONS[1],
             "dimensions":{"scope":"current_about","selectors":[{"key":"component","op":"in","values":["plant"]}]}}),
