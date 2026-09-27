@@ -546,7 +546,8 @@ def sidecar_catch_up(env, settings):
     case = f'{writer.role} writes behind {candidate.role} sidecar'
     if SIDECAR not in candidate.capabilities:
         return skipped('sidecar_catch_up', case, NOT_IN_BINARY)
-    # The sidecar is off by default (P12); this scenario opens it in shadow.
+    # The sidecar answers by default (P13); this scenario puts it in shadow, so every
+    # ask compares it with the ranker.
     store = env.new_store('sidecar', seeded=True, lexical=True)
     checks, latency = [], {'ask_after_catch_up': [], 'ask_after_rebuild': []}
     facts = {'writer_ignores_sidecar': SIDECAR not in writer.capabilities}

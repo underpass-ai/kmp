@@ -1218,7 +1218,8 @@ store file is then `not_applied` with reason "binary predates store_config telem
 ### `kmp_lexical_shadow` (every ask, P12)
 
 Target `kmp_mcp::lexical_index`, level info: one line per first-page ask while the
-lexical sidecar (`<data dir>/lexical-index.sqlite3`) is on. `comparable` says whether the
+lexical sidecar (`<data dir>/lexical-index.sqlite3`) is in shadow
+(`KMP_LEXICAL_INDEX=shadow`). `comparable` says whether the
 ask read what the sidecar indexes (one about at the frontier, no dimensions, the
 default depth or deeper while nothing lies past it, a store that did not move while it
 asked); `reason` is `compared`, `selection` (narrowed by dimensions: only
@@ -1234,6 +1235,23 @@ informative. `sidecar_catch_up` (BT18) sums `differences` over every line with
 At debug, `kmp_lexical_catch_up` reports each time the sidecar follows the log:
 `position`, `events`, `abouts_refreshed`, `abouts_rebuilt`, `rows`, `reset`,
 `committed`, `elapsed_us`.
+
+### `kmp_lexical_answer` and `kmp_lexical_verify` (P13)
+
+Target `kmp_mcp::lexical_index`. With `KMP_LEXICAL_INDEX=on` (the default) or
+`verify`, every ask of one about at the frontier with no dimensions and no remote
+channel logs `kmp_lexical_answer` at debug: `answered = true` with `candidates`
+(how many the postings reached), `documents` (the about's), `plan_us` (choosing
+the candidates), `parts_us` (reading them and their neighbourhood from the store
+and assembling them) and `elapsed_us` (to the finished response); or
+`answered = false` with `reason` (`the candidates cover too much of the about`,
+`nodes lie past the indexed depth`, `the about holds search expansions`,
+`the index did not follow the log`, `the store moved`, `about not built`), and the
+ask reads the about. A failure to read the index is a warning and the ask reads
+the about. `verify` answers from the about and also from the index with no cost
+bound, and logs `kmp_lexical_verify` at info: `equal` (the two responses, field
+for field), `candidates`, `documents`, `plan_us`, `parts_us`, `index_elapsed_us`,
+`about_elapsed_us`.
 
 ## Search probe (`kmp.bench.search_probe.v1`)
 

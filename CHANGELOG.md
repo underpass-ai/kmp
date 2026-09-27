@@ -35,8 +35,30 @@ Detailed notes from the early release cycle remain available in the
   (index version `lexical-index-2`). **Off by default**:
   `KMP_LEXICAL_INDEX=shadow` opens it; in shadow it costs about 5 % per ask
   and a build on each about's first ask (31 s at 10^5 entries).
+- `kmp_ask` answers from the lexical index (P13, DESIGN L6), **on by
+  default** (`KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares,
+  `verify` answers both ways and logs whether they agree). An ask of one
+  about at the frontier, with no dimensions and no semantic retrieval,
+  re-ranking or doubt band, reads only the memories its postings reach (the
+  question's words, their associations in the memory, the words the lexical
+  bridge finds in the about's vocabulary) and their two-hop neighbourhood, and
+  ranks them against the whole about as the index holds it. Responses are
+  byte-identical to reading the whole about on every corpus measured
+  (1,047 asks on the frozen real store, with and without the machine's bridge; synth 10^3/10^4/10^5; the judged retrieval corpus; FactConsolidation 32k; LongMemEval-S); an ask whose words reach more than 35 % of the about, or of any
+  other kind, reads the about as before. Ask p50 197 → 177 ms on the real
+  store, 2.8 → 1.6 s at 10^4, 28 → 17 s at 10^5 (p95 unchanged: the asks it
+  does not answer); the first ask of an about builds its index (0.36 s at 10^3,
+  31 s at 10^5 entries).
 
 ### Changed
+
+- Writes in O(delta) (P13, DESIGN L6). An ingest or `kmp_write_memory` that
+  reads no neighbourhood for review asks the store point by point for what its
+  translation needs instead of reading the about's neighbourhood, and the
+  commit-native guard of a project store checks and publishes from the tail
+  this process left (the committed file unmoved, the log ending on the same
+  event) instead of exporting and comparing the whole stream; anything else
+  moved sends a write to the full check. One-entry `kmp_write_memory` p50: 218 → 13 ms at 10^4 and 2,681 → 2.6 ms at 10^5; commit-native 756 → 36 ms and 8,442 → 442 ms (a process's first write still checks in full); responses unchanged.
 
 - A `kmp_curate` path search with a goal asks Jev about its corridor
   instead of the whole selection, **on by default** (decided on 28 Sept 2026,

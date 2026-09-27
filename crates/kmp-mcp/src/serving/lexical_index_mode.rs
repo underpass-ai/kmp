@@ -4,13 +4,13 @@ use crate::serving::environment::{LEXICAL_INDEX_ENV, optional_env_string};
 /// (`lexical-index.sqlite3`, DESIGN L6), chosen once per process by
 /// `KMP_LEXICAL_INDEX`.
 ///
-/// Off by default: in shadow the sidecar answers nothing and costs about 5 %
-/// per ask and a build on an about's first ask (31 s at 10^5 entries), so it
-/// stays closed until something reads it. `shadow` opens it, follows the
-/// store's log and compares it with every ask, never answering one. `on`
-/// answers an ask it can hold from the candidates its postings reach (P13),
-/// and every other ask as before. `verify` answers as before and also
-/// answers from the index, logging whether the two agree byte for byte.
+/// On by default (P13): an ask the sidecar can hold is answered from the
+/// candidates its postings reach, byte for byte what reading the whole about
+/// gives on every corpus measured, and every other ask as before; the first
+/// ask of an about builds its index (31 s at 10^5 entries). `shadow` follows
+/// the store's log and compares the sidecar with every ask, never answering
+/// one (P12). `verify` answers as before and also answers from the index,
+/// logging whether the two agree. `off` never opens it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum LexicalIndexMode {
     /// The sidecar is never opened, followed or compared.
@@ -27,7 +27,7 @@ pub(crate) enum LexicalIndexMode {
 impl LexicalIndexMode {
     /// What a process runs with when `KMP_LEXICAL_INDEX` names nothing it
     /// knows.
-    pub(crate) const DEFAULT: Self = Self::Off;
+    pub(crate) const DEFAULT: Self = Self::On;
 
     /// The mode a value of `KMP_LEXICAL_INDEX` names, if any.
     pub(crate) fn named(value: &str) -> Option<Self> {
@@ -50,7 +50,7 @@ impl LexicalIndexMode {
             tracing::warn!(
                 target: "kmp_mcp::lexical_index",
                 value = %value,
-                "unknown KMP_LEXICAL_INDEX; the lexical index stays off"
+                "unknown KMP_LEXICAL_INDEX; the lexical index keeps its default"
             );
             Self::DEFAULT
         })
@@ -79,9 +79,10 @@ mod tests {
     use super::LexicalIndexMode;
 
     #[test]
-    fn the_index_is_off_unless_asked_for() {
-        assert_eq!(LexicalIndexMode::DEFAULT, LexicalIndexMode::Off);
-        assert!(!LexicalIndexMode::DEFAULT.is_open());
+    fn the_index_answers_unless_turned_off() {
+        assert_eq!(LexicalIndexMode::DEFAULT, LexicalIndexMode::On);
+        assert!(LexicalIndexMode::DEFAULT.is_open() && LexicalIndexMode::DEFAULT.reads_postings());
+        assert!(!LexicalIndexMode::Off.is_open());
         assert_eq!(
             LexicalIndexMode::named(" Shadow "),
             Some(LexicalIndexMode::Shadow)

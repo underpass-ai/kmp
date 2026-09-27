@@ -99,10 +99,10 @@ pub struct EmbeddedKernelMcpBackend {
     ask_gate: Option<AskGate>,
     curate_reviews: CurateReviewCache,
     curate_doubts: CurateDoubtCache,
-    /// The lexical index beside the store (`lexical-index.sqlite3`), closed
-    /// by default. `KMP_LEXICAL_INDEX=shadow` opens it in shadow: followed
-    /// after writes and before asks, compared with every ask, answering
-    /// none.
+    /// The lexical index beside the store (`lexical-index.sqlite3`),
+    /// followed after writes and before asks and, by default, answering every
+    /// ask it can hold (P13); `KMP_LEXICAL_INDEX` chooses (`off`, `shadow`,
+    /// `verify`).
     lexical: LexicalSidecar,
 }
 

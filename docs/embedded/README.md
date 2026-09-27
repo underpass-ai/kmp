@@ -102,16 +102,17 @@ unsupported store, stop its writers and preserve the directory. Use an explicitl
 archived compatible exporter to create a portable bundle, then import it into
 an empty current store. The recovery runbook defines that external contract.
 
-### The lexical index beside the store (shadow)
+### The lexical index beside the store
 
 `lexical-index.sqlite3` sits beside `store/` (not inside it: the format gate
 refuses files it does not know there). It is a derived index of what `kmp_ask`
 reads (DESIGN L6): for each about, every candidate's terms with their counts
 (`LexFwd`), postings of each term in blocks of 128 (`LexPost`), document
-frequencies (`LexKeyDf`) and the about's totals and language signals
-(`LexStats`), under both readings an ask can take (with the alias terms the
-anchored gate reads, and plain for `best_effort`). It records the event of the
-store's log it has followed and the derivation that wrote it.
+frequencies (`LexKeyDf`), the about's totals and language signals
+(`LexStats`), the clocks of its relations and the words of its texts, under
+both readings an ask can take (with the alias terms the anchored gate reads,
+and plain for `best_effort`). It records the event of the store's log it has
+followed and the derivation that wrote it.
 
 An about is indexed the first time it is asked about. From then on every write
 this binary makes is followed at once, and every ask first follows whatever
@@ -121,15 +122,18 @@ following an event twice changes nothing. A sidecar of another derivation, or
 behind a log that was replaced, is emptied and built again. Older binaries
 never open it.
 
-It answers no ask yet. Each ask compares it with what the ranker measured over
-the same candidates (N, the field lengths, df of every weighted term, tf and
-length of every candidate, and that the postings of the question's terms reach
-every candidate that could score) and logs one `kmp_lexical_shadow` line with
-the differences; an about that differs is forgotten and indexed again on its
-next ask. It is closed by default and opened only with
-`KMP_LEXICAL_INDEX=shadow`: while it answers nothing it costs about 5 % per ask
-and a build on each about's first ask. It can be deleted at any time: the next
-ask builds what it needs again. It is not part of a bundle.
+An ask of one about at the frontier, with no dimensions and no remote channel
+that reads the whole pool (semantic retrieval, re-ranking, the doubt band), is
+answered from it: only the memories that carry a word the question weighs (its
+own words, their associations in this memory, the words the lexical bridge
+finds for them) are read, with their neighbourhood, and ranked against the
+whole about as the index describes it; the response is the one reading the
+whole about gives, byte for byte. When those memories are more than a third of
+the about, or the ask is any other kind, it reads the about as before. It is on
+by default; `KMP_LEXICAL_INDEX=off` closes it, `shadow` only compares it with
+every ask, and `verify` answers both ways and logs whether they agree. It can be
+deleted at any time: the next ask builds what it needs again. It is not part of
+a bundle.
 
 ## How Ask decides
 
