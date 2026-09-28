@@ -25,6 +25,7 @@ pub(crate) mod judgement_response;
 pub(crate) mod judgement_site;
 pub(crate) mod kernel_mcp_server;
 pub(crate) mod lexical_index_mode;
+mod lexical_order;
 pub(crate) mod lexical_totals;
 pub(crate) mod mcp_session;
 mod output_schema_projection;

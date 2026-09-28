@@ -22,7 +22,9 @@ pub(crate) use handshake::{
 };
 pub(crate) use registry::{
     advertised_tools_list, declared_tool_names, tools_list_result, tools_list_result_with_apps,
-    without_output_schemas,
+    without_output_schemas, without_server_checked_constraints,
 };
 pub(crate) use time_move::{TIME_TOOL, TimeMove};
-pub(crate) use validator::{reject_unknown_arguments, validate_required_arguments};
+pub(crate) use validator::{
+    reject_invalid_arguments, reject_unknown_arguments, validate_required_arguments,
+};

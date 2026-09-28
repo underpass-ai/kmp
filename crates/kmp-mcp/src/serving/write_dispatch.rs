@@ -61,6 +61,13 @@ impl KernelMcpServer {
             .code("WRITE_OPERATION_REQUIRED")
             .into()),
         };
+        // LexicalOrder::AfterPlanning: the planner's field-level refusals come
+        // first; an empty or repeated value it did not name is still refused
+        // before anything commits.
+        let planned = planned.and_then(|planned| {
+            crate::contract::reject_invalid_arguments("kmp_write_memory", arguments)
+                .map(|()| planned)
+        });
         let (plan, expansions) = match planned {
             Ok(planned) => planned,
             Err(error) => {

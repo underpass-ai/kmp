@@ -55,7 +55,6 @@
         "properties": {
           "about": {
             "description": "Memory anchor or root ref this memory should attach to.",
-            "minLength": 1,
             "type": "string"
           },
           "context_id": {
@@ -72,7 +71,6 @@
           },
           "idempotency_key": {
             "description": "Required stable idempotency key for replay-safe ingest.",
-            "minLength": 1,
             "type": "string"
           },
           "label_policy": {
@@ -100,12 +98,10 @@
                   "properties": {
                     "id": {
                       "description": "Dimension scope id.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "kind": {
                       "description": "Dimension kind.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "metadata": {
@@ -116,7 +112,6 @@
                     },
                     "title": {
                       "description": "Optional dimension title.",
-                      "minLength": 1,
                       "type": "string"
                     }
                   },
@@ -139,12 +134,10 @@
                         "properties": {
                           "dimension": {
                             "description": "Dimension kind for this coordinate.",
-                            "minLength": 1,
                             "type": "string"
                           },
                           "ingested_at": {
                             "description": "Optional RFC3339 ingest timestamp.",
-                            "minLength": 1,
                             "type": "string"
                           },
                           "metadata": {
@@ -155,12 +148,10 @@
                           },
                           "observed_at": {
                             "description": "Optional RFC3339 observation timestamp, in UTC.",
-                            "minLength": 1,
                             "type": "string"
                           },
                           "occurred_at": {
                             "description": "Optional RFC3339 occurrence timestamp.",
-                            "minLength": 1,
                             "type": "string"
                           },
                           "rank": {
@@ -169,7 +160,6 @@
                           },
                           "scope_id": {
                             "description": "Dimension scope id.",
-                            "minLength": 1,
                             "type": "string"
                           },
                           "sequence": {
@@ -178,12 +168,10 @@
                           },
                           "valid_from": {
                             "description": "Optional RFC3339 validity start.",
-                            "minLength": 1,
                             "type": "string"
                           },
                           "valid_until": {
                             "description": "Optional RFC3339 validity end.",
-                            "minLength": 1,
                             "type": "string"
                           }
                         },
@@ -198,12 +186,10 @@
                     },
                     "id": {
                       "description": "Memory entry id. Must be a safe descendant of the exact about, beginning with `<about>:`; the about anchor and refs owned by another about are refused.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "kind": {
                       "description": "Memory entry kind.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "metadata": {
@@ -217,7 +203,6 @@
                       "description": "Optional short ways a later reader may ask for this entry (questions, paraphrases, keys in the other language). Linted like kmp_write_memory's; this canonical writer has no judge, so none is stored and search_expansions in the result says why. Use kmp_write_memory to keep judged expansions.",
                       "items": {
                         "maxLength": 120,
-                        "minLength": 1,
                         "type": "string"
                       },
                       "maxItems": 6,
@@ -225,7 +210,6 @@
                     },
                     "text": {
                       "description": "Memory entry text.",
-                      "minLength": 1,
                       "type": "string"
                     }
                   },
@@ -245,7 +229,6 @@
                   "properties": {
                     "id": {
                       "description": "Evidence id. Must begin with `evidence:<about>:` so it cannot overwrite evidence owned by another about.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "metadata": {
@@ -256,7 +239,6 @@
                     },
                     "source": {
                       "description": "Evidence source.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "support_clocks": {
@@ -265,12 +247,10 @@
                       "properties": {
                         "ingested_at": {
                           "description": "Preserved RFC3339 ingestion for restoration; normally omit.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "observed_at": {
                           "description": "RFC3339 observation of the support declaration.",
-                          "minLength": 1,
                           "type": "string"
                         }
                       },
@@ -279,19 +259,16 @@
                     "supports": {
                       "items": {
                         "description": "About-owned memory ref supported by this evidence, the about anchor, or a declared dimension id.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "type": "array"
                     },
                     "text": {
                       "description": "Evidence text.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "time": {
                       "description": "Source evidence timestamp. Does not date when its supports associations were declared.",
-                      "minLength": 1,
                       "type": "string"
                     }
                   },
@@ -309,7 +286,6 @@
                   "properties": {
                     "caused_by_node_id": {
                       "description": "Optional about-owned causal predecessor ref.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "class": {
@@ -330,27 +306,22 @@
                       "properties": {
                         "ingested_at": {
                           "description": "Preserved RFC3339 ingestion for canonical restoration; normally omit.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "observed_at": {
                           "description": "RFC3339 observation of this declaration; never inherited from endpoints.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "occurred_at": {
                           "description": "RFC3339 event time of the relationship itself, only when known.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "valid_from": {
                           "description": "Explicit RFC3339 validity start of this relationship.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "valid_until": {
                           "description": "Explicit RFC3339 exclusive validity end, after valid_from.",
-                          "minLength": 1,
                           "type": "string"
                         }
                       },
@@ -370,12 +341,10 @@
                       "properties": {
                         "dimension": {
                           "description": "Dimension kind for this coordinate.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "ingested_at": {
                           "description": "Optional RFC3339 ingest timestamp.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "metadata": {
@@ -386,12 +355,10 @@
                         },
                         "observed_at": {
                           "description": "Optional RFC3339 observation timestamp, in UTC.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "occurred_at": {
                           "description": "Optional RFC3339 occurrence timestamp.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "rank": {
@@ -400,7 +367,6 @@
                         },
                         "scope_id": {
                           "description": "Dimension scope id.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "sequence": {
@@ -409,12 +375,10 @@
                         },
                         "valid_from": {
                           "description": "Optional RFC3339 validity start.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "valid_until": {
                           "description": "Optional RFC3339 validity end.",
-                          "minLength": 1,
                           "type": "string"
                         }
                       },
@@ -426,32 +390,26 @@
                     },
                     "decision_id": {
                       "description": "Optional about-owned decision ref associated with the relation.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "evidence": {
                       "description": "Optional concrete observation or source that supports the relation rationale.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "from": {
                       "description": "Source ref owned by the exact about, its anchor, or a declared dimension id.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "method": {
                       "description": "Optional method by which the relation holds.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "motivation": {
                       "description": "Optional motivation for the relation itself.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "rel": {
                       "description": "Relationship type. Unknown extension types are preserved but carry no writer spec; prefer the cataloged vocabulary. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types; anemic types are an honest fallback, never a default. Quality, classes and when to use each: kmp_guide topic write.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "sequence": {
@@ -460,12 +418,10 @@
                     },
                     "to": {
                       "description": "Target ref owned by the exact about, its anchor, or a declared dimension id.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "why": {
                       "description": "Optional rationale explaining why this specific semantic connection holds and what a later reader should understand when traversing it.",
-                      "minLength": 1,
                       "type": "string"
                     }
                   },
@@ -501,22 +457,18 @@
             "properties": {
               "causation_id": {
                 "description": "Optional causation id.",
-                "minLength": 1,
                 "type": "string"
               },
               "correlation_id": {
                 "description": "Optional correlation id.",
-                "minLength": 1,
                 "type": "string"
               },
               "observed_at": {
                 "description": "RFC3339 observation timestamp. Required unless default_observation_to_ingestion resolves its omission at commit.",
-                "minLength": 1,
                 "type": "string"
               },
               "source_agent": {
                 "description": "Agent or component that observed the memory.",
-                "minLength": 1,
                 "type": "string"
               },
               "source_kind": {
@@ -1070,12 +1022,10 @@
         "properties": {
           "about": {
             "description": "Exact about receiving this one transaction. Never inferred or changed by a default.",
-            "minLength": 1,
             "type": "string"
           },
           "actor": {
             "description": "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context.",
-            "minLength": 1,
             "type": "string"
           },
           "context_id": {
@@ -1088,18 +1038,15 @@
           },
           "idempotency_key": {
             "description": "One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload.",
-            "minLength": 1,
             "type": "string"
           },
           "labels": {
             "additionalProperties": {
               "items": {
-                "minLength": 1,
                 "type": "string"
               },
               "minItems": 1,
-              "type": "array",
-              "uniqueItems": true
+              "type": "array"
             },
             "description": "Required for every record, shared here or on the record, e.g. {\"topic\":[\"write-path\"]}. Key-to-array memberships; each value is materialized. Reuse the about's keys from kmp_wake; a shared string does not prove entity identity.",
             "minProperties": 1,
@@ -1152,12 +1099,10 @@
                       },
                       "evidence": {
                         "description": "The concrete observation or source supporting the relation rationale. Required for non-structural links.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "ref": {
                         "description": "Exact local id (with or without @) in this packet, or an existing canonical ref. No fuzzy matching. Rich links require the server neighborhood review, even with local targets or strict:false. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "rel": {
@@ -1199,7 +1144,6 @@
                       },
                       "why": {
                         "description": "Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links.",
-                        "minLength": 1,
                         "type": "string"
                       }
                     },
@@ -1218,7 +1162,6 @@
                 },
                 "evidence": {
                   "description": "Concrete source or observation supporting this memory. Required unless options.strict is explicitly false.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "id": {
@@ -1245,12 +1188,10 @@
                 "labels": {
                   "additionalProperties": {
                     "items": {
-                      "minLength": 1,
                       "type": "string"
                     },
                     "minItems": 1,
-                    "type": "array",
-                    "uniqueItems": true
+                    "type": "array"
                   },
                   "description": "Required for every record, shared here or on the record, e.g. {\"topic\":[\"write-path\"]}. Key-to-array memberships; each value is materialized. Reuse the about's keys from kmp_wake; a shared string does not prove entity identity.",
                   "minProperties": 1,
@@ -1276,14 +1217,12 @@
                 },
                 "ref": {
                   "description": "Omit for a new memory. An explicit canonical ref updates that exact entry and must be a safe descendant of this about, not its anchor or an internal evidence/dimension object.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "search_expansions": {
                   "description": "Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
                   "items": {
                     "maxLength": 120,
-                    "minLength": 1,
                     "type": "string"
                   },
                   "maxItems": 6,
@@ -1291,22 +1230,18 @@
                 },
                 "summary": {
                   "description": "Literal memory text, in the language of the work. Ask cites this text byte for byte.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "summary_en": {
                   "description": "Required when summary is not English; omit it when summary is English (a copy is dropped). Your English search rendering, keeping numbers, identifiers and acronyms as written. Strict mode refuses a wrong-language, thin or identifier-dropping rendering; removing it never passes. Search uses it; citations keep summary.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "valid_from": {
                   "description": "Inclusive start of the recorded state's validity, only if known. Omit an unknown start; observation time is not a substitute.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "valid_until": {
                   "description": "Exclusive end of the recorded state's validity, only if known from this source. Do not backdate knowledge from a later report.",
-                  "minLength": 1,
                   "type": "string"
                 }
               },
@@ -1380,7 +1315,6 @@
               "ask_refs": {
                 "items": {
                   "description": "Memory ref observed in deterministic kmp_ask proof/evidence before writing.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -1388,7 +1322,6 @@
               "inspected_refs": {
                 "items": {
                   "description": "Memory ref inspected with kmp_inspect before writing.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -1400,7 +1333,6 @@
                   "properties": {
                     "from": {
                       "description": "The proposal's `from`, as kmp_relate returned it.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "proposed_by": {
@@ -1417,7 +1349,6 @@
                     },
                     "to": {
                       "description": "The proposal's `to`, as kmp_relate returned it.",
-                      "minLength": 1,
                       "type": "string"
                     }
                   },
@@ -1433,7 +1364,6 @@
               "temporal_refs": {
                 "items": {
                   "description": "Memory ref observed through kmp_time before writing.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -1444,20 +1374,17 @@
                   "properties": {
                     "from": {
                       "description": "Trace source ref observed before writing.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "refs": {
                       "items": {
                         "description": "Optional intermediate ref observed in the trace path.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "type": "array"
                     },
                     "to": {
                       "description": "Trace target ref observed before writing.",
-                      "minLength": 1,
                       "type": "string"
                     }
                   },
@@ -1472,7 +1399,6 @@
               "wake_refs": {
                 "items": {
                   "description": "Memory ref observed in a kmp_wake packet before writing.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -1522,12 +1448,10 @@
                 },
                 "evidence": {
                   "description": "The concrete observation or source supporting the rationale. Stored as its own evidence node beside both memories; it never replaces the evidence they already carry.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "from": {
                   "description": "Existing memory of this about that asserts the link. Its stored text, evidence, coordinates, labels, metadata and ingestion history are preserved; a canonical ref returned by a read, never a local id.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "observed_at": {
@@ -1576,12 +1500,10 @@
                 },
                 "to": {
                   "description": "Existing target, also preserved. Only same_event_as/same_entity_as may name a ref of another about, with the returned kmp_relate proposal in read_context.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "why": {
                   "description": "Why this specific semantic connection holds and what a later reader should understand. Always required here: a relation-only write declares no structural link.",
-                  "minLength": 1,
                   "type": "string"
                 }
               },
@@ -1604,7 +1526,6 @@
           },
           "review_token": {
             "description": "Returned neighborhood token, bound to this exact packet and context. Prefer the returned continuation. Omit on a new or corrected proposal; stale tokens refresh context without writing.",
-            "minLength": 1,
             "type": "string"
           },
           "search_summaries": {
@@ -1626,14 +1547,12 @@
               "properties": {
                 "ref": {
                   "description": "Existing memory in this about. The stored source is not replaced.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "search_expansions": {
                   "description": "Optional short ways a later reader may ask for this memory, in words it does not use: questions it answers, paraphrases, keys in the other language (Spanish or English). No new facts, numbers or answers. Kept only on a store that opted in, when TypeSafe Jev reads each as belonging to the memory; searched as their own surface, never cited: a question reaching the memory only through them brings its own text back outside the answer core, marked reached_by expansion.",
                   "items": {
                     "maxLength": 120,
-                    "minLength": 1,
                     "type": "string"
                   },
                   "maxItems": 6,
@@ -1641,7 +1560,6 @@
                 },
                 "summary_en": {
                   "description": "English search rendering of the stored source, retaining its numbers, identifiers and acronyms.",
-                  "minLength": 1,
                   "type": "string"
                 }
               },
@@ -1664,12 +1582,10 @@
           },
           "valid_from": {
             "description": "Inclusive start of the recorded state's validity, only if known. Omit an unknown start; observation time is not a substitute.",
-            "minLength": 1,
             "type": "string"
           },
           "valid_until": {
             "description": "Exclusive end of the recorded state's validity, only if known from this source. Do not backdate knowledge from a later report.",
-            "minLength": 1,
             "type": "string"
           }
         },
@@ -2242,7 +2158,6 @@
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to wake from.",
-            "minLength": 1,
             "type": "string"
           },
           "as_of": {
@@ -2251,12 +2166,10 @@
             "properties": {
               "ref": {
                 "description": "Memory ref whose instant on axis selects the historical state.",
-                "minLength": 1,
                 "type": "string"
               },
               "time": {
                 "description": "ISO-8601 instant to stand at.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -2330,7 +2243,6 @@
                 "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -2338,7 +2250,6 @@
               "exclude": {
                 "items": {
                   "description": "Dimension kind to exclude.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -2346,7 +2257,6 @@
               "include": {
                 "items": {
                   "description": "Dimension kind to include.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -2371,7 +2281,6 @@
               "scope_ids": {
                 "items": {
                   "description": "Bare label value or complete label ref returned by KMP.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -2383,7 +2292,6 @@
                   "properties": {
                     "key": {
                       "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "op": {
@@ -2399,7 +2307,6 @@
                     "values": {
                       "items": {
                         "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "type": "array"
@@ -2418,7 +2325,6 @@
           },
           "intent": {
             "description": "Optional continuation intent. With wake-focus.json and TypeSafe opt-in, Jev keeps only the evidence that matters for it.",
-            "minLength": 1,
             "type": "string"
           },
           "interval": {
@@ -2427,12 +2333,10 @@
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               },
               "start": {
                 "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -2443,7 +2347,6 @@
             "properties": {
               "cursor": {
                 "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary.",
-                "minLength": 1,
                 "type": "string"
               },
               "entries": {
@@ -2469,7 +2372,6 @@
           },
           "role": {
             "description": "Optional caller role.",
-            "minLength": 1,
             "type": "string"
           }
         },
@@ -2898,7 +2800,6 @@
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to ask from.",
-            "minLength": 1,
             "type": "string"
           },
           "answer_policy": {
@@ -2916,12 +2817,10 @@
             "properties": {
               "ref": {
                 "description": "Memory ref whose instant on axis selects the historical state.",
-                "minLength": 1,
                 "type": "string"
               },
               "time": {
                 "description": "ISO-8601 instant to stand at.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -2929,7 +2828,6 @@
           },
           "asked_as": {
             "description": "The user's own words when `question` renders them in English. Optional. Searched never; echoed back as `asked_as` for the audit trail, and read against `question` the way a search summary is read against its text: a rendering that leans to another language, carries no informative word, or drops an identifier the user's words carry (`#469`, `v0.7.0`) draws a warning, while the question is still searched as given. Answer in the user's language; cite the stored text byte for byte.",
-            "minLength": 1,
             "type": "string"
           },
           "axis": {
@@ -3000,7 +2898,6 @@
                 "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3008,7 +2905,6 @@
               "exclude": {
                 "items": {
                   "description": "Dimension kind to exclude.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3016,7 +2912,6 @@
               "include": {
                 "items": {
                   "description": "Dimension kind to include.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3041,7 +2936,6 @@
               "scope_ids": {
                 "items": {
                   "description": "Bare label value or complete label ref returned by KMP.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3053,7 +2947,6 @@
                   "properties": {
                     "key": {
                       "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "op": {
@@ -3069,7 +2962,6 @@
                     "values": {
                       "items": {
                         "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "type": "array"
@@ -3092,12 +2984,10 @@
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               },
               "start": {
                 "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -3108,7 +2998,6 @@
             "properties": {
               "cursor": {
                 "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary.",
-                "minLength": 1,
                 "type": "string"
               },
               "entries": {
@@ -3134,7 +3023,6 @@
           },
           "question": {
             "description": "Natural-language question, in the kernel's search language: plain English, with every number, identifier and acronym the user wrote kept exactly. The kernel searches it as given and never translates it. It accepts any language — a question in the store's own language reaches the stored text directly — and a memory written in another language is reached through its English `summary_en`.",
-            "minLength": 1,
             "type": "string"
           }
         },
@@ -3411,7 +3299,6 @@
         "properties": {
           "about": {
             "description": "The current about: the read's root and the first of proof.abouts_selected.",
-            "minLength": 1,
             "type": "string"
           },
           "axis": {
@@ -3477,7 +3364,6 @@
                 "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3485,7 +3371,6 @@
               "exclude": {
                 "items": {
                   "description": "Dimension kind to exclude.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3493,7 +3378,6 @@
               "include": {
                 "items": {
                   "description": "Dimension kind to include.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3518,7 +3402,6 @@
               "scope_ids": {
                 "items": {
                   "description": "Bare label value or complete label ref returned by KMP.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3530,7 +3413,6 @@
                   "properties": {
                     "key": {
                       "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "op": {
@@ -3546,7 +3428,6 @@
                     "values": {
                       "items": {
                         "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "type": "array"
@@ -3569,12 +3450,10 @@
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               },
               "start": {
                 "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -3585,7 +3464,6 @@
             "properties": {
               "cursor": {
                 "description": "Opaque cursor returned by page.next_cursor.",
-                "minLength": 1,
                 "type": "string"
               },
               "entries": {
@@ -3839,7 +3717,6 @@
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
-            "minLength": 1,
             "type": "string"
           },
           "around": {
@@ -3848,7 +3725,6 @@
             "properties": {
               "ref": {
                 "description": "Memory ref cursor.",
-                "minLength": 1,
                 "type": "string"
               },
               "sequence": {
@@ -3858,7 +3734,6 @@
               },
               "time": {
                 "description": "ISO-8601 temporal cursor.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -3870,7 +3745,6 @@
             "properties": {
               "ref": {
                 "description": "Memory ref cursor.",
-                "minLength": 1,
                 "type": "string"
               },
               "sequence": {
@@ -3880,7 +3754,6 @@
               },
               "time": {
                 "description": "ISO-8601 temporal cursor.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -3954,7 +3827,6 @@
                 "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3962,7 +3834,6 @@
               "exclude": {
                 "items": {
                   "description": "Dimension kind to exclude.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3970,7 +3841,6 @@
               "include": {
                 "items": {
                   "description": "Dimension kind to include.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -3995,7 +3865,6 @@
               "scope_ids": {
                 "items": {
                   "description": "Bare label value or complete label ref returned by KMP.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -4007,7 +3876,6 @@
                   "properties": {
                     "key": {
                       "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "op": {
@@ -4023,7 +3891,6 @@
                     "values": {
                       "items": {
                         "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "type": "array"
@@ -4052,8 +3919,7 @@
               ],
               "type": "string"
             },
-            "type": "array",
-            "uniqueItems": true
+            "type": "array"
           },
           "from": {
             "additionalProperties": false,
@@ -4061,7 +3927,6 @@
             "properties": {
               "ref": {
                 "description": "Memory ref cursor.",
-                "minLength": 1,
                 "type": "string"
               },
               "sequence": {
@@ -4071,7 +3936,6 @@
               },
               "time": {
                 "description": "ISO-8601 temporal cursor.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -4104,12 +3968,10 @@
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               },
               "start": {
                 "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -4144,7 +4006,6 @@
             "properties": {
               "cursor": {
                 "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
-                "minLength": 1,
                 "type": "string"
               },
               "entries": {
@@ -4167,12 +4028,10 @@
           "refs": {
             "description": "Optional memory refs to focus entry selection before entry/window limits. Keep the question clock and cutoff; refs neither override scope/labels/time nor filter dependency sources. Omit for all matching entries.",
             "items": {
-              "minLength": 1,
               "type": "string"
             },
             "minItems": 1,
-            "type": "array",
-            "uniqueItems": true
+            "type": "array"
           },
           "window": {
             "additionalProperties": false,
@@ -4586,7 +4445,6 @@
         "properties": {
           "about": {
             "description": "Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path.",
-            "minLength": 1,
             "type": "string"
           },
           "as_of": {
@@ -4595,12 +4453,10 @@
             "properties": {
               "ref": {
                 "description": "Memory ref whose instant on axis selects the historical state.",
-                "minLength": 1,
                 "type": "string"
               },
               "time": {
                 "description": "ISO-8601 instant to stand at.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -4664,12 +4520,10 @@
           },
           "from": {
             "description": "Source memory ref. In live gRPC mode this must resolve to a kernel node id.",
-            "minLength": 1,
             "type": "string"
           },
           "goal": {
             "description": "Optional trace goal.",
-            "minLength": 1,
             "type": "string"
           },
           "interval": {
@@ -4678,12 +4532,10 @@
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               },
               "start": {
                 "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -4694,7 +4546,6 @@
             "properties": {
               "cursor": {
                 "description": "Opaque cursor returned by page.next_cursor.",
-                "minLength": 1,
                 "type": "string"
               },
               "entries": {
@@ -4716,7 +4567,6 @@
           },
           "role": {
             "description": "Optional caller role.",
-            "minLength": 1,
             "type": "string"
           },
           "search": {
@@ -4778,7 +4628,6 @@
                 "properties": {
                   "language": {
                     "description": "Language the cards were written in. A card in another language is absent here, never substituted.",
-                    "minLength": 1,
                     "type": "string"
                   }
                 },
@@ -4794,7 +4643,6 @@
                   "exclude": {
                     "items": {
                       "description": "Dimension kind to exclude.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "maxItems": 64,
@@ -4803,7 +4651,6 @@
                   "include": {
                     "items": {
                       "description": "Dimension kind to include.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "maxItems": 64,
@@ -4826,7 +4673,6 @@
                   "scope_ids": {
                     "items": {
                       "description": "Bare label value or complete label ref returned by KMP.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "maxItems": 64,
@@ -4839,7 +4685,6 @@
                       "properties": {
                         "key": {
                           "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "op": {
@@ -4855,7 +4700,6 @@
                         "values": {
                           "items": {
                             "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
-                            "minLength": 1,
                             "type": "string"
                           },
                           "maxItems": 64,
@@ -4886,7 +4730,6 @@
               },
               "expect_selection": {
                 "description": "The proof.manifest_id returned by the read that named these refs. Compared before any body is read: an equal manifest means the chunks may be joined by ref; a different one is refused with no canonical or card text, because the store keeps only current bodies and an old graph joined to new text is not a proof anybody selected.",
-                "minLength": 1,
                 "type": "string"
               },
               "follow": {
@@ -4902,7 +4745,6 @@
                       "type": "string"
                     },
                     "rel": {
-                      "minLength": 1,
                       "type": "string"
                     }
                   },
@@ -4914,8 +4756,7 @@
                 },
                 "maxItems": 16,
                 "minItems": 1,
-                "type": "array",
-                "uniqueItems": true
+                "type": "array"
               },
               "max_body_record_bytes": {
                 "description": "With proof:true, ceiling on stored record bytes of canonical bodies this response may carry. Body delivery only: discovery, ranking, which paths qualify and which refs are selected are unchanged. A deterministic sorted prefix is admitted; once the next present record does not fit, it and every later one are deferred with their exact requirement, never skipped and never reported absent. Omitted is the unbounded legacy materialization.",
@@ -4963,7 +4804,6 @@
                   "exclude": {
                     "items": {
                       "description": "Dimension kind to exclude.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "maxItems": 64,
@@ -4972,7 +4812,6 @@
                   "include": {
                     "items": {
                       "description": "Dimension kind to include.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "maxItems": 64,
@@ -4995,7 +4834,6 @@
                   "scope_ids": {
                     "items": {
                       "description": "Bare label value or complete label ref returned by KMP.",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "maxItems": 64,
@@ -5008,7 +4846,6 @@
                       "properties": {
                         "key": {
                           "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "op": {
@@ -5024,7 +4861,6 @@
                         "values": {
                           "items": {
                             "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
-                            "minLength": 1,
                             "type": "string"
                           },
                           "maxItems": 64,
@@ -5051,30 +4887,25 @@
               "proof_refs": {
                 "description": "With proof:true, load only these refs of the selected proof table, which must be inside it; a ref outside is refused rather than widening the selection. Present and empty is a descriptor-only view. Nonempty requires both max_body_record_bytes and expect_selection. Named refs affect body delivery only.",
                 "items": {
-                  "minLength": 1,
                   "type": "string"
                 },
                 "maxItems": 64,
-                "type": "array",
-                "uniqueItems": true
+                "type": "array"
               },
               "relations": {
                 "description": "Destination mode only; not with seek. Exact relation types to follow. Omitted/empty admits every non-structural link with stored why and evidence.",
                 "items": {
                   "type": "string"
                 },
-                "type": "array",
-                "uniqueItems": true
+                "type": "array"
               },
               "same_labels": {
                 "description": "Evidence mode only. With seek, require common values for these label keys across all role witnesses. Missing stays unknown. A label never proves identity.",
                 "items": {
-                  "minLength": 1,
                   "type": "string"
                 },
                 "maxItems": 16,
-                "type": "array",
-                "uniqueItems": true
+                "type": "array"
               },
               "same_ref": {
                 "description": "Evidence mode only. With seek, equate exact refs in each group. A role string means its main witness; {role,at:anchor} names the main relation traversal start after via/context. Incoming keeps stored arrows: its anchor is the stored target. Endpoints belong to one group; a role may join by anchor and witness separately. Only when the question requires the same action, equate those anchors. Verifying a copy and authorizing its publication concern different actions: do not add anchor equality. Do not remove a required equality merely to obtain a group. Same event labels alone do not identify an action. Identity needs its evidenced same_entity_as link.",
@@ -5082,7 +4913,6 @@
                   "items": {
                     "oneOf": [
                       {
-                        "minLength": 1,
                         "type": "string"
                       },
                       {
@@ -5095,7 +4925,6 @@
                             ]
                           },
                           "role": {
-                            "minLength": 1,
                             "type": "string"
                           }
                         },
@@ -5109,8 +4938,7 @@
                   },
                   "maxItems": 16,
                   "minItems": 2,
-                  "type": "array",
-                  "uniqueItems": true
+                  "type": "array"
                 },
                 "maxItems": 8,
                 "type": "array"
@@ -5120,7 +4948,6 @@
                 "items": {
                   "oneOf": [
                     {
-                      "minLength": 1,
                       "type": "string"
                     },
                     {
@@ -5130,7 +4957,6 @@
                           "items": {
                             "oneOf": [
                               {
-                                "minLength": 1,
                                 "type": "string"
                               },
                               {
@@ -5145,7 +4971,6 @@
                                     "type": "string"
                                   },
                                   "rel": {
-                                    "minLength": 1,
                                     "type": "string"
                                   }
                                 },
@@ -5170,13 +4995,11 @@
                         "labels": {
                           "additionalProperties": {
                             "items": {
-                              "minLength": 1,
                               "type": "string"
                             },
                             "maxItems": 64,
                             "minItems": 1,
-                            "type": "array",
-                            "uniqueItems": true
+                            "type": "array"
                           },
                           "description": "Allowed witness values per key. Missing membership remains unknown, never an inferred match.",
                           "maxProperties": 16,
@@ -5184,11 +5007,9 @@
                         },
                         "name": {
                           "description": "Unique role name; defaults to rel. Required to distinguish repeated relations.",
-                          "minLength": 1,
                           "type": "string"
                         },
                         "rel": {
-                          "minLength": 1,
                           "type": "string"
                         },
                         "via": {
@@ -5198,7 +5019,6 @@
                               "items": {
                                 "oneOf": [
                                   {
-                                    "minLength": 1,
                                     "type": "string"
                                   },
                                   {
@@ -5213,7 +5033,6 @@
                                         "type": "string"
                                       },
                                       "rel": {
-                                        "minLength": 1,
                                         "type": "string"
                                       }
                                     },
@@ -5256,13 +5075,11 @@
                         "alternatives": {
                           "items": {
                             "items": {
-                              "minLength": 1,
                               "type": "string"
                             },
                             "maxItems": 8,
                             "minItems": 1,
-                            "type": "array",
-                            "uniqueItems": true
+                            "type": "array"
                           },
                           "maxItems": 8,
                           "minItems": 1,
@@ -5308,18 +5125,15 @@
             "description": "Destination ref, or 1..8 distinct same-about entry refs for bounded search.",
             "oneOf": [
               {
-                "minLength": 1,
                 "type": "string"
               },
               {
                 "items": {
-                  "minLength": 1,
                   "type": "string"
                 },
                 "maxItems": 8,
                 "minItems": 1,
-                "type": "array",
-                "uniqueItems": true
+                "type": "array"
               }
             ]
           }
@@ -5612,7 +5426,6 @@
         "properties": {
           "about": {
             "description": "Memory anchor that owns the inspected ref.",
-            "minLength": 1,
             "type": "string"
           },
           "budget": {
@@ -5681,7 +5494,6 @@
             "properties": {
               "cursor": {
                 "description": "Opaque cursor returned by inspect page.next_cursor. Repeat all bound arguments unchanged; budget.max_bytes may change.",
-                "minLength": 1,
                 "type": "string"
               },
               "repeat_object": {
@@ -5703,7 +5515,6 @@
           },
           "ref": {
             "description": "Memory ref to inspect. In live gRPC mode this must resolve to a kernel node id.",
-            "minLength": 1,
             "type": "string"
           }
         },
@@ -5883,24 +5694,20 @@
         "properties": {
           "about": {
             "description": "The about the memory belongs to.",
-            "minLength": 1,
             "type": "string"
           },
           "actor": {
             "description": "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context.",
-            "minLength": 1,
             "type": "string"
           },
           "add": {
             "additionalProperties": {
               "description": "Values of the memberships under this key.",
               "items": {
-                "minLength": 1,
                 "type": "string"
               },
               "minItems": 1,
-              "type": "array",
-              "uniqueItems": true
+              "type": "array"
             },
             "description": "Labels to add as key-to-array values. Multiple values per key and the same value under different keys are valid. An exact membership already present is refused.",
             "type": "object"
@@ -5910,12 +5717,10 @@
           },
           "idempotency_key": {
             "description": "Optional stable idempotency key. Omit to generate one from the arguments.",
-            "minLength": 1,
             "type": "string"
           },
           "observed_at": {
             "description": "RFC3339 timestamp in UTC for the change's provenance. It is kept on the edge each added label makes and in the event log; it never becomes the memory's time. A stamp more than five minutes ahead of the kernel's clock is refused.",
-            "minLength": 1,
             "type": "string"
           },
           "options": {
@@ -5929,7 +5734,6 @@
                 "description": "Label keys you insist are new even where the catalogue holds one that resembles them: you read the catalogue and mean something else. Every other new label that resembles an existing one is refused under strict and written with a warning otherwise.",
                 "items": {
                   "description": "A label key of this relabel.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -5952,19 +5756,16 @@
           },
           "ref": {
             "description": "The memory to relabel: an entry ref inside this about, as a read returned it, byte for byte. Never the about anchor, an evidence id or a dimension id.",
-            "minLength": 1,
             "type": "string"
           },
           "remove": {
             "additionalProperties": {
               "description": "Values of the memberships under this key.",
               "items": {
-                "minLength": 1,
                 "type": "string"
               },
               "minItems": 1,
-              "type": "array",
-              "uniqueItems": true
+              "type": "array"
             },
             "description": "Labels to remove as key-to-array values. Only the named memberships change; a missing membership or removal of the last label is refused.",
             "type": "object"
@@ -5980,7 +5781,6 @@
           },
           "why": {
             "description": "Why the labels change, in one sentence a later reader can check. Kept with the change and on every edge it adds.",
-            "minLength": 1,
             "type": "string"
           }
         },
@@ -6081,18 +5881,15 @@
         "properties": {
           "about": {
             "description": "Memory anchor that owns the ref being condensed.",
-            "minLength": 1,
             "type": "string"
           },
           "actor": {
             "description": "Writer name; defaults to the persistent agent name when context_id is supplied. Required without a context.",
-            "minLength": 1,
             "type": "string"
           },
           "card": {
             "description": "Nonempty text, at most 4096 UTF-8 bytes and strictly shorter in bytes than the canonical body. maxLength alone counts characters; the byte limit also applies.",
             "maxLength": 4096,
-            "minLength": 1,
             "type": "string"
           },
           "context_id": {
@@ -6134,7 +5931,6 @@
           },
           "language": {
             "description": "Language tag the card is written in. Part of its identity: a card in another language neither replaces nor shadows this one.",
-            "minLength": 1,
             "type": "string"
           },
           "purpose": {
@@ -6148,7 +5944,6 @@
           },
           "ref": {
             "description": "Ref whose body this card stands for: an entry of this about, or one of its stored evidence sources. A ref of another about is refused.",
-            "minLength": 1,
             "type": "string"
           },
           "scope": {
@@ -6162,12 +5957,10 @@
             "properties": {
               "content_hash": {
                 "description": "Public token of that body version, kept as provenance. Validity is not decided on it: a write can change the text without changing it.",
-                "minLength": 1,
                 "type": "string"
               },
               "record_digest": {
                 "description": "Digest over the exact stored record of that body version. This is what a later read compares to decide whether the card still stands.",
-                "minLength": 1,
                 "type": "string"
               },
               "revision": {
@@ -6287,7 +6080,6 @@
         "properties": {
           "about": {
             "description": "The about to audit. Required for the default scope; omit it only with dimensions.scope all_abouts, which names no single anchor.",
-            "minLength": 1,
             "type": "string"
           },
           "budget": {
@@ -6313,7 +6105,6 @@
                 "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "minItems": 1,
@@ -6336,7 +6127,6 @@
             "properties": {
               "cursor": {
                 "description": "Opaque cursor returned by page.next_cursor.",
-                "minLength": 1,
                 "type": "string"
               },
               "entries": {
@@ -6368,8 +6158,7 @@
               "type": "string"
             },
             "minItems": 1,
-            "type": "array",
-            "uniqueItems": true
+            "type": "array"
           }
         },
         "type": "object"
@@ -6627,7 +6416,6 @@
         "properties": {
           "about": {
             "description": "The current about: the review's root and the first of the selected abouts.",
-            "minLength": 1,
             "type": "string"
           },
           "accepted": {
@@ -6650,17 +6438,14 @@
                 },
                 "evidence": {
                   "description": "What in the sources shows the link.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "item_id": {
                   "description": "An id `m<n>` from this review.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "rel": {
                   "description": "Overrides the suggested type; a relation a writer may declare, and across abouts only same_event_as or same_entity_as.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "reverse": {
@@ -6669,7 +6454,6 @@
                 },
                 "why": {
                   "description": "Your one checkable sentence for the link. Jev never writes it.",
-                  "minLength": 1,
                   "type": "string"
                 }
               },
@@ -6685,7 +6469,6 @@
           },
           "actor": {
             "description": "apply: writer name; defaults to the persistent agent name when context_id is supplied.",
-            "minLength": 1,
             "type": "string"
           },
           "axis": {
@@ -6746,7 +6529,6 @@
                 "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -6754,7 +6536,6 @@
               "exclude": {
                 "items": {
                   "description": "Dimension kind to exclude.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -6762,7 +6543,6 @@
               "include": {
                 "items": {
                   "description": "Dimension kind to include.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -6787,7 +6567,6 @@
               "scope_ids": {
                 "items": {
                   "description": "Bare label value or complete label ref returned by KMP.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -6799,7 +6578,6 @@
                   "properties": {
                     "key": {
                       "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "op": {
@@ -6815,7 +6593,6 @@
                     "values": {
                       "items": {
                         "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "type": "array"
@@ -6843,12 +6620,10 @@
           },
           "from": {
             "description": "paths: the fact a chain starts from, an entry ref of the selection.",
-            "minLength": 1,
             "type": "string"
           },
           "idempotency_key": {
             "description": "apply: logical write identity; a needs_review answer's next action carries the one to reuse.",
-            "minLength": 1,
             "type": "string"
           },
           "interval": {
@@ -6857,12 +6632,10 @@
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               },
               "start": {
                 "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -6895,7 +6668,6 @@
             "properties": {
               "cursor": {
                 "description": "Opaque cursor returned by page.next_cursor.",
-                "minLength": 1,
                 "type": "string"
               },
               "entries": {
@@ -6922,7 +6694,6 @@
           },
           "to": {
             "description": "paths: the fact the chain must reach. Omitted: the longest chains that follow from `from`.",
-            "minLength": 1,
             "type": "string"
           },
           "write_review_token": {
@@ -7527,7 +7298,6 @@
         "properties": {
           "about": {
             "description": "Memory anchor the loom should weave. It must exist: a view onto absent memory would render an empty loom that looks like an answer, so this is the one view call that fails on absence instead of degrading. Once a view is open, kmp_view_apply_intent drops what it cannot honor and names it in `unhonored`.",
-            "minLength": 1,
             "type": "string"
           },
           "context_id": {
@@ -7549,7 +7319,6 @@
           },
           "view_id": {
             "description": "Which view to open. Omit for the one window a local viewer shows.",
-            "minLength": 1,
             "type": "string"
           }
         },
@@ -7639,7 +7408,6 @@
         "properties": {
           "actor": {
             "description": "Who is moving the view, for provenance. Defaults to `agent`.",
-            "minLength": 1,
             "type": "string"
           },
           "context_id": {
@@ -7652,7 +7420,6 @@
           },
           "explanation": {
             "description": "Why, in the reader's terms. Shown to the human beside the change, because an agent may not rearrange what someone is looking at anonymously.",
-            "minLength": 1,
             "type": "string"
           },
           "focus": {
@@ -7662,7 +7429,6 @@
                 "description": "Refs the view should frame. A ref this store does not hold is dropped and listed in `unhonored` — the loom never draws a placeholder that looks like data. If none of them exist the focus keeps the refs it had.",
                 "items": {
                   "description": "Memory ref to bring into focus.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -7682,12 +7448,10 @@
                   },
                   "from": {
                     "description": "ISO-8601 start of the window.",
-                    "minLength": 1,
                     "type": "string"
                   },
                   "to": {
                     "description": "ISO-8601 end of the window.",
-                    "minLength": 1,
                     "type": "string"
                   }
                 },
@@ -7698,7 +7462,6 @@
           },
           "idempotency_key": {
             "description": "A retried intent must be the same intent, not a second one. A replay answers with applied=false and the CURRENT state — success, not a conflict, because that intent already landed; read the state it returns to see whether the person has moved since.",
-            "minLength": 1,
             "type": "string"
           },
           "paths": {
@@ -7707,7 +7470,6 @@
             "properties": {
               "from": {
                 "description": "The fact every chain starts from, an entry ref of the drawn planes.",
-                "minLength": 1,
                 "type": "string"
               },
               "max_hops": {
@@ -7718,7 +7480,6 @@
               },
               "to": {
                 "description": "The fact a chain must reach. Omitted: the longest chains that follow from `from`.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -7737,7 +7498,6 @@
                 "description": "Explicit additional contexts, at most five. Omit for the primary about alone.",
                 "items": {
                   "description": "Additional about to compare as a plane beside target.about; one this store does not hold is dropped and listed in `unhonored`.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "maxItems": 5,
@@ -7746,7 +7506,6 @@
               "dimensions": {
                 "items": {
                   "description": "Memory dimension to keep as a lane.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -7758,7 +7517,6 @@
                   "properties": {
                     "key": {
                       "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
-                      "minLength": 1,
                       "type": "string"
                     },
                     "op": {
@@ -7774,7 +7532,6 @@
                     "values": {
                       "items": {
                         "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
-                        "minLength": 1,
                         "type": "string"
                       },
                       "type": "array"
@@ -7792,7 +7549,6 @@
                 "description": "Exact observability series to align above the loom on its current time axis. Missing backend series are reported by the viewer without inventing replacements.",
                 "items": {
                   "description": "Observability series to align over the loom.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
@@ -7852,7 +7608,6 @@
             "properties": {
               "about": {
                 "description": "Weave a different about. One this store does not hold is not honored: the loom stays on the about it was weaving and the ref is listed in `unhonored`.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -7864,12 +7619,10 @@
             "properties": {
               "from": {
                 "description": "Where the claim starts.",
-                "minLength": 1,
                 "type": "string"
               },
               "to": {
                 "description": "Where it should lead.",
-                "minLength": 1,
                 "type": "string"
               }
             },
@@ -7880,7 +7633,6 @@
           },
           "view_id": {
             "description": "Which view to move. Omit for the default one.",
-            "minLength": 1,
             "type": "string"
           }
         },
@@ -7978,7 +7730,6 @@
           },
           "view_id": {
             "description": "Which view to read. Omit for the default one.",
-            "minLength": 1,
             "type": "string"
           }
         },
@@ -8065,17 +7816,14 @@
         "properties": {
           "agent_id": {
             "description": "Stable identity, used with context_key to start a fresh context after compaction or a task change.",
-            "minLength": 1,
             "type": "string"
           },
           "context_id": {
             "description": "Exact active context returned by KMP; enough to resume that agent.",
-            "minLength": 1,
             "type": "string"
           },
           "context_key": {
             "description": "Unique logical context reset for this agent; reuse on retry.",
-            "minLength": 1,
             "type": "string"
           },
           "fold": {
@@ -8084,7 +7832,6 @@
           },
           "registration_key": {
             "description": "Unique logical agent registration. Reuse only to retry that registration; a different agent needs another key.",
-            "minLength": 1,
             "type": "string"
           },
           "topic": {
