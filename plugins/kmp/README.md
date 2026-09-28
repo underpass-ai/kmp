@@ -129,7 +129,9 @@ kmp-mcp setup --pi
 That mirrors the `kmp-*` skills into `$PI_CODING_AGENT_DIR/skills` (default
 `~/.pi/agent/skills`). The registration evidence is the `underpass-pi` entry
 under `packages` in Pi's `settings.json`: without it, `setup --pi` fails and
-points to `underpass setup`; a package filter that excludes
+points to `underpass setup`, while a plain `kmp-mcp setup` skips Pi and
+converges the other hosts, reporting Pi as `skipped` with that same advice in
+the receipt's `warning`; a package filter that excludes
 `src/adapters/inbound/pi/entry/kmp.ts` reports KMP as disabled. The package's
 extension runs `kmp-mcp` from `PATH`, so `kmp-mcp doctor` inventories Pi as a
 peer host with the same engine proof as Codex and Hermes.

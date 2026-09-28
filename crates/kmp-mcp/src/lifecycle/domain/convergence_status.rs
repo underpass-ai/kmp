@@ -4,4 +4,6 @@ pub enum ConvergenceStatus {
     PlannedChange,
     Changed,
     Unchanged,
+    /// Detected but deliberately left alone; the convergence says why.
+    Skipped,
 }

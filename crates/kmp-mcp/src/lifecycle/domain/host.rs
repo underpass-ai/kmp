@@ -36,6 +36,16 @@ impl Host {
     pub fn installs_plugin_tree(self) -> bool {
         matches!(self, Self::Claude | Self::Codex)
     }
+
+    /// The package, installed by something other than KMP, that carries this
+    /// host's MCP connection. Pi has no native MCP: `underpass setup` installs
+    /// `underpass-pi`, and KMP can only observe it, never provide it.
+    pub fn external_package(self) -> Option<&'static str> {
+        match self {
+            Self::Pi => Some("underpass-pi"),
+            Self::Claude | Self::Codex | Self::Hermes => None,
+        }
+    }
 }
 
 impl fmt::Display for Host {
@@ -92,6 +102,14 @@ mod tests {
     fn pi_neither_owns_a_plugin_engine_nor_installs_a_plugin_tree() {
         assert!(!Host::Pi.owns_plugin_engine());
         assert!(!Host::Pi.installs_plugin_tree());
+    }
+
+    #[test]
+    fn only_pi_depends_on_a_package_kmp_does_not_install() {
+        assert_eq!(Host::Pi.external_package(), Some("underpass-pi"));
+        for host in [Host::Claude, Host::Codex, Host::Hermes] {
+            assert_eq!(host.external_package(), None, "{host}");
+        }
     }
 
     #[test]

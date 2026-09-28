@@ -30,6 +30,7 @@ use kmp_mcp::lifecycle::domain::engine_artifact::EngineArtifact;
 use kmp_mcp::lifecycle::domain::engine_install_dir::EngineInstallDir;
 use kmp_mcp::lifecycle::domain::host::Host;
 use kmp_mcp::lifecycle::domain::host_installation::HostInstallation;
+use kmp_mcp::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
 use kmp_mcp::lifecycle::domain::lifecycle_action::LifecycleAction;
 use kmp_mcp::lifecycle::domain::lifecycle_error::LifecycleError;
 use kmp_mcp::lifecycle::domain::lifecycle_request::LifecycleRequest;
@@ -401,6 +402,152 @@ fn a_pi_only_update_claims_no_marketplace_tree() {
         vec![PathBuf::from("/tmp/shared")],
         "Pi consumes the shared engine on PATH, so the update installs it there"
     );
+}
+
+/// Auto-detection must not break a machine that merely has Pi installed:
+/// without the underpass-pi package, Pi is skipped with a warning that says
+/// how to add it, and every other host converges.
+#[test]
+fn autodetected_setup_skips_pi_without_its_package_and_says_why() {
+    let target = ReleaseVersion::current();
+    let hosts = FakeHostGateway::with_installations(Vec::new())
+        .reporting_for(Host::Pi, HostRuntimeStatus::Missing);
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::running(EngineArtifact::verified(
+        target.clone(),
+        b"running-engine".to_vec(),
+    ));
+
+    let receipt = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(LifecycleAction::Setup, BTreeSet::new(), None))
+    .expect("Pi without its package must not fail an auto-detected setup");
+
+    assert_eq!(
+        hosts.provisions(),
+        vec![Host::Claude, Host::Codex, Host::Hermes]
+    );
+    let pi = receipt
+        .hosts()
+        .iter()
+        .find(|host| host.host() == Host::Pi)
+        .expect("the skipped Pi is still reported");
+    assert_eq!(pi.status(), ConvergenceStatus::Skipped);
+    assert!(!pi.is_enabled());
+    let warning = pi.warning().expect("a skip says why");
+    assert!(
+        warning.contains("pi present but underpass-pi not registered"),
+        "{warning}"
+    );
+    assert!(warning.contains("`underpass setup`"), "{warning}");
+}
+
+/// A dry run plans the same skip it would perform.
+#[test]
+fn an_autodetected_dry_run_plans_the_pi_skip() {
+    let hosts = FakeHostGateway::with_installations(Vec::new())
+        .reporting_for(Host::Pi, HostRuntimeStatus::Missing);
+    let target = ReleaseVersion::current();
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::empty();
+    let dry_run = LifecycleRequest::new(
+        LifecycleAction::Setup,
+        BTreeSet::new(),
+        None,
+        EngineInstallDir::new("/tmp/shared").expect("shared engine dir"),
+        true,
+    );
+
+    let receipt = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(dry_run)
+    .expect("planned setup");
+
+    let statuses = receipt
+        .hosts()
+        .iter()
+        .map(|host| (host.host(), host.status()))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        statuses,
+        vec![
+            (Host::Claude, ConvergenceStatus::PlannedChange),
+            (Host::Codex, ConvergenceStatus::PlannedChange),
+            (Host::Hermes, ConvergenceStatus::PlannedChange),
+            (Host::Pi, ConvergenceStatus::Skipped),
+        ]
+    );
+}
+
+/// Only an explicit `--pi` insists on Pi, so only it fails without the
+/// package, and it says which command installs it.
+#[test]
+fn an_explicit_pi_setup_without_its_package_still_fails() {
+    let target = ReleaseVersion::current();
+    let hosts = FakeHostGateway::with_installations(Vec::new())
+        .reporting_for(Host::Pi, HostRuntimeStatus::Missing);
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::running(EngineArtifact::verified(
+        target.clone(),
+        b"running-engine".to_vec(),
+    ));
+
+    let error = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(
+        LifecycleAction::Setup,
+        BTreeSet::from([Host::Pi]),
+        None,
+    ))
+    .expect_err("--pi without the underpass-pi package");
+
+    assert!(error.to_string().contains("underpass setup"), "{error}");
+    assert_eq!(hosts.provisions(), vec![Host::Pi]);
+}
+
+/// A registered or disabled package is not a missing one: auto-detection
+/// only skips `Missing`.
+#[test]
+fn autodetection_keeps_a_registered_pi() {
+    let target = ReleaseVersion::current();
+    let hosts = FakeHostGateway::with_installations(Vec::new())
+        .reporting_for(Host::Pi, HostRuntimeStatus::Registered);
+    let releases = FakeReleaseRepository::publishing(target.clone());
+    let engines = FakeEngineStore::running(EngineArtifact::verified(
+        target.clone(),
+        b"running-engine".to_vec(),
+    ));
+
+    let receipt = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &FakeBridgeStore::default(),
+    )
+    .execute(request(LifecycleAction::Setup, BTreeSet::new(), None))
+    .expect("registered Pi converges");
+
+    assert_eq!(
+        hosts.provisions(),
+        vec![Host::Claude, Host::Codex, Host::Hermes, Host::Pi]
+    );
+    assert!(receipt.hosts().iter().all(|host| host.warning().is_none()));
 }
 
 #[test]

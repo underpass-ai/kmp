@@ -9,4 +9,7 @@ pub struct LifecycleHostDto {
     pub version: String,
     pub root: Option<String>,
     pub enabled: bool,
+    /// Why a host needs attention although the run succeeded.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub warning: Option<String>,
 }

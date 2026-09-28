@@ -7,6 +7,7 @@ use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::host_convergence::HostConvergence;
 use crate::lifecycle::domain::host_engine_proof::HostEngineProof;
 use crate::lifecycle::domain::host_installation::HostInstallation;
+use crate::lifecycle::domain::host_runtime_status::HostRuntimeStatus;
 use crate::lifecycle::domain::lifecycle_action::LifecycleAction;
 use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::lifecycle_plan::LifecyclePlan;
@@ -50,8 +51,25 @@ impl<'a> ConvergeLifecycle<'a> {
     pub fn execute(&self, request: LifecycleRequest) -> Result<LifecycleReceipt, LifecycleError> {
         let installed = self.hosts.inventory()?;
         let target = self.target_for(&request)?;
-        let available = self.hosts.available_hosts();
+        let (available, unpackaged) = self.detect_hosts(&request)?;
         let plan = LifecyclePlan::decide(&request, &installed, &available, target)?;
+        let skipped: Vec<HostConvergence> = unpackaged
+            .into_iter()
+            .filter(|host| !plan.hosts().contains(host))
+            .filter_map(|host| host.external_package().map(|package| (host, package)))
+            .map(|(host, package)| {
+                let previous = installed
+                    .iter()
+                    .find(|installation| installation.host() == host)
+                    .cloned();
+                HostConvergence::skipped_without_package(
+                    host,
+                    package,
+                    previous,
+                    plan.target().clone(),
+                )
+            })
+            .collect();
         if plan.is_dry_run() {
             let selected = plan
                 .hosts()
@@ -63,6 +81,7 @@ impl<'a> ConvergeLifecycle<'a> {
                         .cloned();
                     HostConvergence::planned(plan.action(), *host, previous, plan.target().clone())
                 })
+                .chain(skipped)
                 .collect();
             return Ok(LifecycleReceipt::planned(
                 plan.action(),
@@ -143,6 +162,7 @@ impl<'a> ConvergeLifecycle<'a> {
         // answered and every host points at it; a retrieval aid that could
         // not be fetched does not undo any of that (#517).
         let lexical_bridge = self.install_lexical_bridge(&request, plan.target());
+        host_results.extend(skipped);
 
         Ok(LifecycleReceipt::completed(
             plan.action(),
@@ -153,6 +173,30 @@ impl<'a> ConvergeLifecycle<'a> {
             deferred,
             lexical_bridge,
         ))
+    }
+
+    /// What auto-detection may converge, and what it leaves alone. A host
+    /// whose connection comes from a package KMP cannot install (Pi's
+    /// `underpass-pi`) is skipped while that package is missing, so a machine
+    /// that merely has Pi does not fail a setup for every other host. Naming
+    /// the host explicitly still insists on it, and fails with the remedy.
+    fn detect_hosts(
+        &self,
+        request: &LifecycleRequest,
+    ) -> Result<(Vec<Host>, Vec<Host>), LifecycleError> {
+        let mut available = Vec::new();
+        let mut unpackaged = Vec::new();
+        for host in self.hosts.available_hosts() {
+            let unregistered = request.autodetects_hosts()
+                && host.external_package().is_some()
+                && self.hosts.runtime_status(host)? == HostRuntimeStatus::Missing;
+            if unregistered {
+                unpackaged.push(host);
+            } else {
+                available.push(host);
+            }
+        }
+        Ok((available, unpackaged))
     }
 
     /// The machine's table, or a reported reason there is none.

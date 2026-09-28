@@ -19,6 +19,7 @@ pub struct FakeHostGateway {
     refreshes: Mutex<Vec<Host>>,
     refreshed_version: Option<ReleaseVersion>,
     runtime_status: Option<HostRuntimeStatus>,
+    host_statuses: Vec<(Host, HostRuntimeStatus)>,
     hosts_on_path: Option<Vec<Host>>,
 }
 
@@ -30,6 +31,7 @@ impl FakeHostGateway {
             refreshes: Mutex::new(Vec::new()),
             refreshed_version: None,
             runtime_status: None,
+            host_statuses: Vec::new(),
             hosts_on_path: None,
         }
     }
@@ -47,6 +49,21 @@ impl FakeHostGateway {
     pub fn reporting(mut self, status: HostRuntimeStatus) -> Self {
         self.runtime_status = Some(status);
         self
+    }
+
+    /// Makes one host report its own runtime status. A Pi reporting
+    /// `Missing` has no underpass-pi package, and provisioning it fails the
+    /// way the native adapter does.
+    pub fn reporting_for(mut self, host: Host, status: HostRuntimeStatus) -> Self {
+        self.host_statuses.push((host, status));
+        self
+    }
+
+    fn status_of(&self, host: Host) -> Option<HostRuntimeStatus> {
+        self.host_statuses
+            .iter()
+            .find(|(candidate, _)| *candidate == host)
+            .map(|(_, status)| status.clone())
     }
 
     pub fn returning_version(mut self, version: ReleaseVersion) -> Self {
@@ -113,6 +130,9 @@ impl HostGateway for FakeHostGateway {
     }
 
     fn runtime_status(&self, host: Host) -> Result<HostRuntimeStatus, LifecycleError> {
+        if let Some(status) = self.status_of(host) {
+            return Ok(status);
+        }
         if let Some(status) = self.runtime_status.clone() {
             return Ok(status);
         }
@@ -142,6 +162,11 @@ impl HostGateway for FakeHostGateway {
         target: &ReleaseVersion,
     ) -> Result<HostInstallation, LifecycleError> {
         self.provisions.lock().expect("provision lock").push(host);
+        if host == Host::Pi && self.status_of(host) == Some(HostRuntimeStatus::Missing) {
+            return Err(LifecycleError::HostNotInstalled(
+                "Pi settings.json lists no underpass-pi package. Run `underpass setup`".to_string(),
+            ));
+        }
         Ok(self.installation_for(host, target))
     }
 
