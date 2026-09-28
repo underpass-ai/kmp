@@ -506,6 +506,91 @@ fn autodetected_setup_skips_an_installed_but_disabled_pi() {
     );
 }
 
+/// Claude, Codex and a Pi an earlier run converged; the Pi package has since
+/// stopped being usable, as `status` says.
+fn machine_whose_pi_stopped_registering(status: HostRuntimeStatus) -> FakeHostGateway {
+    FakeHostGateway::with_installations(vec![
+        installation(Host::Claude, "0.4.2", "/tmp/claude"),
+        installation(Host::Codex, "0.4.2", "/tmp/codex"),
+        installation(Host::Pi, "0.4.2", "/tmp/pi"),
+    ])
+    .reporting_for(Host::Pi, status)
+}
+
+/// A plain update must not abort Claude and Codex because an installed Pi's
+/// underpass-pi package was removed, disabled or made unreadable since.
+#[test]
+fn a_plain_update_skips_an_installed_pi_that_stopped_registering() {
+    for (status, expected) in unusable_pi_statuses() {
+        let hosts = machine_whose_pi_stopped_registering(status.clone());
+        let target = version("0.5.2");
+        let releases = FakeReleaseRepository::publishing(target.clone());
+        let engines = FakeEngineStore::empty();
+
+        let receipt = UpdateKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(
+            LifecycleAction::Update,
+            BTreeSet::new(),
+            Some(target),
+        ))
+        .unwrap_or_else(|error| panic!("{status:?} Pi aborted a plain update: {error}"));
+
+        assert_eq!(
+            hosts.refreshes(),
+            vec![Host::Claude, Host::Codex],
+            "{status:?}"
+        );
+        let pi = receipt
+            .hosts()
+            .iter()
+            .find(|host| host.host() == Host::Pi)
+            .expect("the skipped Pi is still reported");
+        assert_eq!(pi.status(), ConvergenceStatus::Skipped, "{status:?}");
+        assert_eq!(pi.warning(), Some(expected), "{status:?}");
+        assert_eq!(
+            pi.previous_version().map(ReleaseVersion::as_str),
+            Some("0.4.2"),
+            "{status:?}"
+        );
+    }
+}
+
+/// `update --pi` insists on Pi, so the same state still fails closed.
+#[test]
+fn an_explicit_pi_update_of_a_pi_that_stopped_registering_fails() {
+    for (status, _) in unusable_pi_statuses() {
+        let hosts = machine_whose_pi_stopped_registering(status.clone());
+        let target = version("0.5.2");
+        let releases = FakeReleaseRepository::publishing(target.clone());
+        let engines = FakeEngineStore::empty();
+
+        let error = UpdateKmp::new(
+            &hosts,
+            &releases,
+            &engines,
+            &FakePluginCache::default(),
+            &FakeBridgeStore::default(),
+        )
+        .execute(request(
+            LifecycleAction::Update,
+            BTreeSet::from([Host::Pi]),
+            Some(target),
+        ))
+        .expect_err("update --pi without a usable underpass-pi package");
+
+        assert!(
+            error.to_string().contains("underpass setup"),
+            "{status:?}: {error}"
+        );
+    }
+}
+
 /// A dry run plans the same skip it would perform.
 #[test]
 fn an_autodetected_dry_run_plans_the_pi_skip() {

@@ -29,8 +29,8 @@ Detailed notes from the early release cycle remain available in the
   registration evidence is the `underpass-pi` package in Pi's `settings.json`
   (home resolved like Pi: `$PI_CODING_AGENT_DIR`, else `~/.pi/agent`);
   installing it belongs to `underpass setup`. `setup --pi` fails without a
-  registered, enabled package and says so; an auto-detected `setup` never
-  fails because of Pi and reports it as `skipped` with a `warning` instead.
+  registered, enabled package and says so; a `setup` or `update` that names
+  no host never fails because of Pi and reports it as `skipped` with a `warning` instead.
   Skills are mirrored only when `kmp-mcp` runs from a source checkout;
   released binaries only verify the registration, the same limitation as
   Hermes. The setup and update help now name `--hermes` and `--pi`, and the

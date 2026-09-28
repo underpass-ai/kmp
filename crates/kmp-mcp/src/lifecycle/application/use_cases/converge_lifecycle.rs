@@ -51,8 +51,16 @@ impl<'a> ConvergeLifecycle<'a> {
     pub fn execute(&self, request: LifecycleRequest) -> Result<LifecycleReceipt, LifecycleError> {
         let installed = self.hosts.inventory()?;
         let target = self.target_for(&request)?;
-        let (available, unusable) = self.detect_hosts(&request)?;
-        let plan = LifecyclePlan::decide(&request, &installed, &available, target)?;
+        let found = self.hosts.available_hosts();
+        let unusable = self.unusable_hosts(&request, &installed, &found)?;
+        let usable = |host: &Host| !unusable.iter().any(|reason| reason.host() == *host);
+        let available: Vec<Host> = found.into_iter().filter(|host| usable(host)).collect();
+        let converging: Vec<HostInstallation> = installed
+            .iter()
+            .filter(|installation| usable(&installation.host()))
+            .cloned()
+            .collect();
+        let plan = LifecyclePlan::decide(&request, &converging, &available, target)?;
         let skipped: Vec<HostConvergence> = unusable
             .iter()
             .filter(|reason| !plan.hosts().contains(&reason.host()))
@@ -169,30 +177,39 @@ impl<'a> ConvergeLifecycle<'a> {
         ))
     }
 
-    /// What auto-detection may converge, and what it leaves alone. A host
-    /// whose connection comes from a package KMP cannot install (Pi's
+    /// The hosts a run that names no host leaves alone. A host whose
+    /// connection comes from a package KMP cannot install (Pi's
     /// `underpass-pi`) is skipped unless that package is a usable
-    /// registration, so a machine that merely has Pi never fails a setup for
-    /// every other host. Naming the host explicitly still insists on it, and
-    /// fails with the remedy.
-    fn detect_hosts(
+    /// registration — whether setup found it on PATH or an earlier run
+    /// installed it and the package has since gone — so Pi never fails a
+    /// setup or update for every other host. Naming the host explicitly still
+    /// insists on it, and fails with the remedy.
+    fn unusable_hosts(
         &self,
         request: &LifecycleRequest,
-    ) -> Result<(Vec<Host>, Vec<HostSkipReason>), LifecycleError> {
-        let mut available = Vec::new();
+        installed: &[HostInstallation],
+        found: &[Host],
+    ) -> Result<Vec<HostSkipReason>, LifecycleError> {
+        if !request.names_no_hosts() {
+            return Ok(Vec::new());
+        }
+        let would_converge = |host: Host| {
+            installed.iter().any(|installation| {
+                installation.host() == host && installation.participates_in_convergence()
+            }) || (request.autodetects_hosts() && found.contains(&host))
+        };
         let mut unusable = Vec::new();
-        for host in self.hosts.available_hosts() {
-            let skip = if request.autodetects_hosts() && host.external_package().is_some() {
+        for host in Host::CONVERGENCE_ORDER {
+            if host.external_package().is_none() || !would_converge(host) {
+                continue;
+            }
+            if let Some(reason) =
                 HostSkipReason::for_status(host, &self.hosts.runtime_status(host)?)
-            } else {
-                None
-            };
-            match skip {
-                Some(reason) => unusable.push(reason),
-                None => available.push(host),
+            {
+                unusable.push(reason);
             }
         }
-        Ok((available, unusable))
+        Ok(unusable)
     }
 
     /// The machine's table, or a reported reason there is none.

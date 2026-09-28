@@ -134,9 +134,10 @@ The Pi agent home is resolved the way Pi resolves it: `$PI_CODING_AGENT_DIR`
 
 - `setup --pi` fails unless that package is registered and enabled, and
   points to `underpass setup`.
-- A plain `kmp-mcp setup` never fails because of Pi: when the package is
-  missing, its KMP extension is excluded, or `settings.json` is unreadable, it
-  converges the other hosts and reports Pi as `skipped` with a `warning` in the
+- A plain `kmp-mcp setup` or `kmp-mcp update` (no host flag) never fails
+  because of Pi: when the package is missing, its KMP extension is excluded,
+  or `settings.json` is unreadable — including after an earlier run converged
+  Pi — it converges the other hosts and reports Pi as `skipped` with a `warning` in the
   receipt.
 - Skills are mirrored into `<Pi home>/skills` only when `kmp-mcp` runs from a
   source checkout; released binaries only verify the registration and do not
